@@ -1618,7 +1618,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 250
     ActorMoveSpeed: 3.4
     ActorAdvanceDistance: 4
@@ -1646,7 +1646,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2.36
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 420
     ActorMoveSpeed: 3.8
     ActorAdvanceDistance: 4.8
@@ -1674,7 +1674,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2.74
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 600
     ActorMoveSpeed: 4.2
     ActorAdvanceDistance: 5.6

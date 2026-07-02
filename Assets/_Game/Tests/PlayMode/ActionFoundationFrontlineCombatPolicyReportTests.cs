@@ -33,7 +33,7 @@ namespace DimensionBrawl.Tests
         private const string ReportPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.md";
         private const string JsonPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.json";
         private const string SummonSlot1ActionProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_JumpSlamBruiser.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset";
         private const string SummonSlot2ActionProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_LaserSoldier.asset";
         private const string SummonSlot3ActionProfilePath =
@@ -5654,7 +5654,7 @@ namespace DimensionBrawl.Tests
                 builder,
                 "Slot1 LV2 recovery",
                 "200",
-                "jump-slam screen/counter opener",
+                "charge screen/counter opener",
                 RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
                 repeatabilityResults,
                 "Slot1 locked below LV2",
@@ -8990,7 +8990,7 @@ namespace DimensionBrawl.Tests
                 Does.Contain("PASS"),
                 "The current roster audit should prove profile effect budgets are not identical.");
 
-            Assert.AreEqual(2, rows[0].MinimumTier, "SummonSlot1 should read as the saved-EN jump-slam answer.");
+            Assert.AreEqual(2, rows[0].MinimumTier, "SummonSlot1 should read as the saved-EN charge answer.");
             Assert.AreEqual(1, rows[1].MinimumTier, "SummonSlot2 should stay the low-cost laser poke.");
             Assert.AreEqual(3, rows[2].MinimumTier, "SummonSlot3 should require the LV3 vanguard mana gate.");
             Assert.AreEqual(200f, rows[0].RequiredMana, 0.001f);
@@ -11279,7 +11279,7 @@ namespace DimensionBrawl.Tests
                 builder,
                 "Slot1 LV2 recovery",
                 "200",
-                "jump-slam screen/counter opener",
+                "charge screen/counter opener",
                 RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
                 repeatabilityResults,
                 true);

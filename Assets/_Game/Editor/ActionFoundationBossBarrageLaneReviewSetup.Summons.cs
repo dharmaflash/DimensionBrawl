@@ -43,16 +43,16 @@ namespace DimensionBrawl.Editor
 
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(SummonSlot1PresentationCandidateProfilePath),
-                "PlayerSummon.JumpSlamBruiser",
-                "Player Summon - Jump Slam Bruiser",
+                "PlayerSummon.ChargeBruiser",
+                "Player Summon - Charge Bruiser",
                 SummonPresentationSide.PlayerSummon,
                 SummonSlot1ActorPrefabPath,
                 ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
                 SummonSlot1ActorVisualName,
                 SummonSlot1ActorVisualRoleId,
                 vfxCueProfile,
-                "Promoted ShieldBreakerElite heavy armor Animator stands in for a far jump, arm slam, and lingering melee pressure read.",
-                "Magic-circle entry, high arc, landing pulse, short shock screen, and slam shockwave separate it from ranged summons.",
+                "Promoted ShieldBreakerElite heavy armor Animator stands in for a forward charge, body check, and lingering melee pressure read.",
+                "Magic-circle entry, ground rush trail, front impact burst, short shock screen, and charge shockwave separate it from ranged summons.",
                 "Keep the bulky sci-fi helmet body as the reviewed ally bruiser unless a dedicated ally model is approved.");
 
             ConfigureSummonPresentationCandidateProfile(
@@ -229,8 +229,8 @@ namespace DimensionBrawl.Editor
 
         private static SummonFrontlineProxy EnsureSummonActorPrefab()
         {
-            EnsureSummonSlot1PromotedSlamImpactPrefab();
-            EnsureSummonSlot1PromotedJumpTrailPrefab();
+            EnsureSummonSlot1PromotedChargeImpactPrefab();
+            EnsureSummonSlot1PromotedRushTrailPrefab();
             EnsureFolderForAsset(SummonSlot1ActorPrefabPath);
             Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
@@ -384,10 +384,17 @@ namespace DimensionBrawl.Editor
                     radius: 0.48f);
                 ConfigureSummonStateVfx(
                     editableRoot,
-                    "JumpSlamReadyAura",
+                    "ChargeReadyAura",
                     ImportedMagicMissilesHealingAuraPrefabPath,
                     new Vector3(0f, 0.1f, 0.02f),
                     Vector3.one * 0.52f);
+                DestroyDescendantsIfPresent(
+                    editableRoot.transform,
+                    "JumpSlamReadyAura",
+                    "SlamImpactBurst",
+                    "PF_SummonJumpSlamImpact_SPECIAL",
+                    "JumpSlamAirTrail",
+                    "PF_SummonJumpSlamAirTrail_SPECIAL");
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -397,14 +404,18 @@ namespace DimensionBrawl.Editor
                     new Vector3(0f, -0.04f, -0.08f),
                     Vector3.zero,
                     new Vector3(0.9f, 0.9f, 0.9f));
-                Transform jumpTrailVfx = ConfigureSummonJumpPromotedParticleVfx(
+                DestroyDescendantsIfPresent(
                     summonVisual,
                     "JumpSlamAirTrail",
-                    SummonSlot1PromotedJumpTrailPrefabPath,
-                    new Vector3(0f, 0.72f, -0.18f),
+                    "PF_SummonJumpSlamAirTrail_SPECIAL");
+                Transform chargeTrailVfx = ConfigureSummonMovementPromotedParticleVfx(
+                    summonVisual,
+                    "ChargeRushTrail",
+                    SummonSlot1PromotedRushTrailPrefabPath,
+                    new Vector3(0f, 0.36f, -0.5f),
                     Vector3.zero,
-                    new Vector3(0.58f, 0.58f, 0.58f),
-                    minimumParticleSystems: 6);
+                    new Vector3(0.7f, 0.7f, 0.7f),
+                    minimumParticleSystems: 2);
                 EnsureSummonHealthBar(
                     editableRoot,
                     proxy,
@@ -447,27 +458,27 @@ namespace DimensionBrawl.Editor
                     proxy,
                     summonVisual,
                     airborneHeight: 0f,
-                    jumpArcHeight: 1.35f,
-                    tierArcHeightStep: 0.22f,
-                    landingDip: 0.12f,
+                    jumpArcHeight: 0f,
+                    tierArcHeightStep: 0f,
+                    landingDip: 0f,
                     arcEndProgress: 0.9f,
-                    landingSettleSeconds: 0.18f,
-                    jumpVfxRoot: jumpTrailVfx);
+                    landingSettleSeconds: 0f,
+                    movementVfxRoot: chargeTrailVfx);
                 ConfigureSummonAttackPromotedParticleBeam(
                     editableRoot,
                     proxy,
-                    "SlamImpactBurst",
-                    SummonSlot1PromotedSlamImpactPrefabPath,
-                    new Vector3(0f, 0.06f, 0.62f),
+                    "ChargeImpactBurst",
+                    SummonSlot1PromotedChargeImpactPrefabPath,
+                    new Vector3(0f, 0.42f, 0.86f),
                     Vector3.zero,
-                    new Vector3(0.82f, 0.82f, 0.82f),
+                    new Vector3(0.74f, 0.74f, 0.74f),
                     new Color(1f, 0.78f, 0.28f, 0.62f),
                     new Color(1f, 0.92f, 0.42f, 0.72f),
                     new Color(1f, 0.55f, 0.18f, 0.82f),
                     tierScaleStep: 0.34f,
                     pulseScale: 0.1f,
                     pulseSpeed: 14f,
-                    minimumParticleSystems: 6,
+                    minimumParticleSystems: 3,
                     loopParticles: false);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
@@ -1113,7 +1124,7 @@ namespace DimensionBrawl.Editor
             float landingDip,
             float arcEndProgress = 0.82f,
             float landingSettleSeconds = 0.12f,
-            Transform jumpVfxRoot = null)
+            Transform movementVfxRoot = null)
         {
             SummonProxyVisualMotionPresenter motionPresenter =
                 EnsureComponent<SummonProxyVisualMotionPresenter>(actorRoot);
@@ -1126,12 +1137,12 @@ namespace DimensionBrawl.Editor
             SetFloat(motionPresenter, "arcEndProgress", arcEndProgress);
             SetFloat(motionPresenter, "landingSettleSeconds", landingDip > 0f ? landingSettleSeconds : 0f);
             SetFloat(motionPresenter, "landingDip", landingDip);
-            SetObjectReference(motionPresenter, "jumpVfxRoot", jumpVfxRoot);
+            SetObjectReference(motionPresenter, "movementVfxRoot", movementVfxRoot);
             SetObjectReferenceArray(
                 motionPresenter,
-                "jumpVfxParticles",
-                jumpVfxRoot != null
-                    ? ToObjectReferences(jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
+                "movementVfxParticles",
+                movementVfxRoot != null
+                    ? ToObjectReferences(movementVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
                     : Array.Empty<UnityEngine.Object>());
         }
 
@@ -1394,7 +1405,7 @@ namespace DimensionBrawl.Editor
         {
             ConfigureSummonSlotActionProfile(
                 LoadOrCreateSummonSlotActionProfile(SummonSlot1ActionProfilePath),
-                "SummonSlot1.JumpSlamBruiser",
+                "SummonSlot1.ChargeBruiser",
                 new[]
                 {
                     CreateSummonTierSettings(
@@ -1409,7 +1420,7 @@ namespace DimensionBrawl.Editor
                         1,
                         0f,
                         1.45f,
-                        "JumpSlamBruiser",
+                        "ChargeBruiser",
                         250f,
                         3.4f,
                         1.1f,
@@ -1427,7 +1438,7 @@ namespace DimensionBrawl.Editor
                         2,
                         0f,
                         1.8f,
-                        "JumpSlamBruiser",
+                        "ChargeBruiser",
                         420f,
                         3.8f,
                         1.2f,
@@ -1445,7 +1456,7 @@ namespace DimensionBrawl.Editor
                         3,
                         0f,
                         2.15f,
-                        "JumpSlamBruiser",
+                        "ChargeBruiser",
                         600f,
                         4.2f,
                         1.32f,
@@ -1455,20 +1466,20 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     CreateSummonReadout(
-                        "LV1 Jump Slam",
-                        "Mid-cost bruiser that spends a saved bar for one obvious landing impact, then stays as melee pressure.",
-                        "Hold EN until a boss summon or recovery window is worth a visible slam answer.",
-                        "SciFi bruiser jumps from the player front, lands with a clear slam burst, and keeps punching the frontline."),
+                        "LV1 Charge Break",
+                        "Mid-cost bruiser that spends a saved bar for one obvious forward rush impact, then stays as melee pressure.",
+                        "Hold EN until a boss summon or recovery window is worth a visible charge answer.",
+                        "SciFi bruiser spawns on the frontline, rushes forward with a ground trail, hits with a clear impact burst, and keeps punching."),
                     CreateSummonReadout(
-                        "LV2 Heavy Landing",
-                        "Higher stored-EN version with a wider landing and enough health to hold contact longer.",
+                        "LV2 Heavy Charge",
+                        "Higher stored-EN version with a wider body-check screen and enough health to hold contact longer.",
                         "Use when the boss is about to stay in a punishable lane and a cheap laser will not change the exchange.",
-                        "Bigger arc, two shock bolts, a broader slam ring, and steadier melee lockdown."),
+                        "Longer rush, two shock bolts, a broader collision burst, and steadier melee lockdown."),
                     CreateSummonReadout(
-                        "LV3 Crater Break",
+                        "LV3 Breakthrough Rush",
                         "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                         "Save for the exchange where one big arrival has to change the screen immediately.",
-                        "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee without out-DPSing the boss summons.")
+                        "Fast ground rush, three shock bolts, large forward impact, and a durable bruiser body that remains in melee without out-DPSing the boss summons.")
                 });
 
             ConfigureSummonSlotActionProfile(

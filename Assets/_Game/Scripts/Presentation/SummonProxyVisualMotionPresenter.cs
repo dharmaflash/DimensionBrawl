@@ -1,5 +1,6 @@
 using DimensionBrawl.Combat;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DimensionBrawl.Presentation
 {
@@ -15,22 +16,24 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 1f)] private float arcEndProgress = 0.92f;
         [SerializeField, Min(0f)] private float landingSettleSeconds = 0.12f;
         [SerializeField, Min(0f)] private float landingDip = 0.08f;
-        [SerializeField] private Transform jumpVfxRoot;
-        [SerializeField] private ParticleSystem[] jumpVfxParticles = System.Array.Empty<ParticleSystem>();
+        [FormerlySerializedAs("jumpVfxRoot")]
+        [SerializeField] private Transform movementVfxRoot;
+        [FormerlySerializedAs("jumpVfxParticles")]
+        [SerializeField] private ParticleSystem[] movementVfxParticles = System.Array.Empty<ParticleSystem>();
 
         private Vector3 baseLocalPosition;
         private bool hasBasePose;
-        private bool wasAirborne;
-        private bool jumpVfxVisible;
+        private bool wasArcAirborne;
+        private bool movementVfxVisible;
         private float landingTimer;
 
         public SummonFrontlineProxy Proxy => proxy;
         public Transform MotionRoot => motionRoot;
-        public Transform JumpVfxRoot => jumpVfxRoot;
+        public Transform MovementVfxRoot => movementVfxRoot;
         public float AirborneHeight => airborneHeight;
         public float JumpArcHeight => jumpArcHeight;
         public float TierArcHeightStep => tierArcHeightStep;
-        public int JumpVfxParticleCount => jumpVfxParticles != null ? jumpVfxParticles.Length : 0;
+        public int MovementVfxParticleCount => movementVfxParticles != null ? movementVfxParticles.Length : 0;
 
         private void Awake()
         {
@@ -42,14 +45,14 @@ namespace DimensionBrawl.Presentation
         {
             ResolveReferences();
             CaptureBasePose();
-            wasAirborne = false;
+            wasArcAirborne = false;
             landingTimer = 0f;
             ApplyMotion(0f);
         }
 
         private void OnDisable()
         {
-            SetJumpVfxVisible(false);
+            SetMovementVfxVisible(false);
             ResetMotion();
         }
 
@@ -64,31 +67,46 @@ namespace DimensionBrawl.Presentation
             CaptureBasePose();
             if (motionRoot == null)
             {
-                SetJumpVfxVisible(false);
+                SetMovementVfxVisible(false);
                 return;
             }
 
             bool visible = proxy != null && proxy.IsPresentationVisible;
             if (!visible)
             {
-                wasAirborne = false;
+                wasArcAirborne = false;
                 landingTimer = 0f;
-                SetJumpVfxVisible(false);
+                SetMovementVfxVisible(false);
                 ResetMotion();
                 return;
             }
 
             float arcHeight = ResolveArcHeight();
             bool airborne = arcHeight > 0.001f;
-            SetJumpVfxVisible(airborne);
-            if (wasAirborne && !airborne && landingSettleSeconds > 0f)
+            SetMovementVfxVisible(ShouldShowMovementVfx(airborne));
+            if (wasArcAirborne && !airborne && landingSettleSeconds > 0f)
             {
                 landingTimer = Mathf.Max(landingTimer, landingSettleSeconds);
             }
 
-            wasAirborne = airborne;
+            wasArcAirborne = airborne;
             float landingOffset = ResolveLandingOffset(deltaTime);
             motionRoot.localPosition = baseLocalPosition + Vector3.up * (airborneHeight + arcHeight + landingOffset);
+        }
+
+        private bool ShouldShowMovementVfx(bool airborne)
+        {
+            if (proxy == null || !proxy.IsActive || !proxy.IsAdvancing)
+            {
+                return false;
+            }
+
+            if (jumpArcHeight > 0.001f)
+            {
+                return airborne;
+            }
+
+            return true;
         }
 
         private float ResolveArcHeight()
@@ -134,9 +152,9 @@ namespace DimensionBrawl.Presentation
                 motionRoot = transform;
             }
 
-            if (jumpVfxRoot != null && (jumpVfxParticles == null || jumpVfxParticles.Length == 0))
+            if (movementVfxRoot != null && (movementVfxParticles == null || movementVfxParticles.Length == 0))
             {
-                jumpVfxParticles = jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+                movementVfxParticles = movementVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             }
         }
 
@@ -159,39 +177,39 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private void SetJumpVfxVisible(bool visible)
+        private void SetMovementVfxVisible(bool visible)
         {
-            if (jumpVfxRoot == null)
+            if (movementVfxRoot == null)
             {
-                jumpVfxVisible = false;
+                movementVfxVisible = false;
                 return;
             }
 
-            bool isActive = jumpVfxRoot.gameObject.activeSelf;
-            if (jumpVfxVisible == visible && isActive == visible)
+            bool isActive = movementVfxRoot.gameObject.activeSelf;
+            if (movementVfxVisible == visible && isActive == visible)
             {
                 return;
             }
 
-            jumpVfxVisible = visible;
+            movementVfxVisible = visible;
             if (isActive != visible)
             {
-                jumpVfxRoot.gameObject.SetActive(visible);
+                movementVfxRoot.gameObject.SetActive(visible);
             }
 
-            if (jumpVfxParticles == null || jumpVfxParticles.Length == 0)
+            if (movementVfxParticles == null || movementVfxParticles.Length == 0)
             {
-                jumpVfxParticles = jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+                movementVfxParticles = movementVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             }
 
-            if (jumpVfxParticles == null)
+            if (movementVfxParticles == null)
             {
                 return;
             }
 
-            for (int i = 0; i < jumpVfxParticles.Length; i++)
+            for (int i = 0; i < movementVfxParticles.Length; i++)
             {
-                ParticleSystem particle = jumpVfxParticles[i];
+                ParticleSystem particle = movementVfxParticles[i];
                 if (particle == null)
                 {
                     continue;

@@ -77,7 +77,7 @@ namespace DimensionBrawl.Tests
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         private const string SummonSlot1ActionProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_JumpSlamBruiser.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset";
         private const string BossSummonPressureProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossSummonPressure_SummonCaller.asset";
         private const string BossPressureActionDeckProfilePath =
@@ -87,7 +87,7 @@ namespace DimensionBrawl.Tests
         private const string PressureRescueSegmentProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDesign/Segments/DB_Segment_PressureRescue.asset";
         private const string SummonSlot1PresentationCandidateProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerJumpSlamBruiser.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerChargeBruiser.asset";
         private const string SummonSlot2ActionProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_LaserSoldier.asset";
         private const string SummonSlot2PresentationCandidateProfilePath =
@@ -100,10 +100,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =
             "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonDragonFireBreath_FORGE3D.prefab";
-        private const string SummonSlot1PromotedSlamImpactPrefabPath =
-            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonJumpSlamImpact_SPECIAL.prefab";
-        private const string SummonSlot1PromotedJumpTrailPrefabPath =
-            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonJumpSlamAirTrail_SPECIAL.prefab";
+        private const string SummonSlot1PromotedChargeImpactPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonChargeImpact_SPECIAL.prefab";
+        private const string SummonSlot1PromotedRushTrailPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonChargeRushTrail_SPECIAL.prefab";
         private const string SummonSlot3DragonVisualPrefabPath =
             "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon/PF_SummonVisual_VolcanoDragon.prefab";
         private const string SummonSlot3DragonControllerPath =
@@ -912,65 +912,71 @@ namespace DimensionBrawl.Tests
             SummonProxyVisualMotionPresenter summonSlot1MotionPresenter =
                 RequireComponent<SummonProxyVisualMotionPresenter>(
                     summonActorPrefabObject,
-                    "SummonSlot1 jump-slam motion presenter");
+                    "SummonSlot1 charge motion presenter");
             Transform summonSlot1Visual = summonActorPrefabObject.transform.Find(SummonSlot1ActorVisualName);
             Assert.AreSame(
                 summonSlot1Visual,
                 GetObjectReference<Transform>(summonSlot1MotionPresenter, "motionRoot"),
-                "SummonSlot1 jump-slam motion should lift the promoted bruiser visual, not the root collider.");
-            Assert.AreEqual(1.35f, GetFloat(summonSlot1MotionPresenter, "jumpArcHeight"), 0.001f);
-            Assert.AreEqual(0.22f, GetFloat(summonSlot1MotionPresenter, "tierArcHeightStep"), 0.001f);
+                "SummonSlot1 charge motion should keep the promoted bruiser visual under presentation control without moving the root collider.");
+            Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "jumpArcHeight"), 0.001f);
+            Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "tierArcHeightStep"), 0.001f);
             Assert.AreEqual(0.9f, GetFloat(summonSlot1MotionPresenter, "arcEndProgress"), 0.001f);
-            Assert.AreEqual(0.18f, GetFloat(summonSlot1MotionPresenter, "landingSettleSeconds"), 0.001f);
-            Assert.AreEqual(0.12f, GetFloat(summonSlot1MotionPresenter, "landingDip"), 0.001f);
-            Transform jumpTrailVfx = summonSlot1Visual.Find("JumpSlamAirTrail");
-            AssertPromotedParticleVfx(
-                jumpTrailVfx,
-                "SummonSlot1 airborne jump trail",
-                6);
-            Assert.IsFalse(
-                jumpTrailVfx.gameObject.activeSelf,
-                "SummonSlot1 airborne jump trail should start hidden until the proxy is actually in its jump arc.");
-            Assert.AreSame(
-                jumpTrailVfx,
-                summonSlot1MotionPresenter.JumpVfxRoot,
-                "SummonSlot1 motion presenter should own the jump trail timing.");
-            Assert.GreaterOrEqual(
-                summonSlot1MotionPresenter.JumpVfxParticleCount,
-                6,
-                "SummonSlot1 jump trail should preserve the promoted RisingAttack particle stack.");
-            Transform slamImpactBurst = summonActorPrefabObject.transform.Find("SlamImpactBurst");
-            Assert.IsNotNull(slamImpactBurst, "SummonSlot1 actor prefab should keep a visible landing slam burst.");
-            AssertPromotedParticleVfx(
-                slamImpactBurst,
-                "SummonSlot1 landing slam impact",
-                6);
-            Assert.IsFalse(
-                slamImpactBurst.gameObject.activeSelf,
-                "SummonSlot1 landing slam impact should start hidden until the attack/landing frame.");
+            Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "landingSettleSeconds"), 0.001f);
+            Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "landingDip"), 0.001f);
             Assert.IsNull(
-                slamImpactBurst.GetComponent<MeshRenderer>(),
-                "SummonSlot1 landing slam should not fall back to the old primitive cylinder ring.");
-            SummonAttackBeamPresenter slamImpactPresenter =
+                FindDescendant(summonActorPrefabObject.transform, "JumpSlamAirTrail"),
+                "SummonSlot1 charge contract should remove the retired airborne jump trail.");
+            Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "SlamImpactBurst"),
+                "SummonSlot1 charge contract should remove the retired landing slam impact.");
+            Transform chargeTrailVfx = summonSlot1Visual.Find("ChargeRushTrail");
+            AssertPromotedParticleVfx(
+                chargeTrailVfx,
+                "SummonSlot1 charge rush trail",
+                2);
+            Assert.IsFalse(
+                chargeTrailVfx.gameObject.activeSelf,
+                "SummonSlot1 charge rush trail should start hidden until the proxy is actually advancing.");
+            Assert.AreSame(
+                chargeTrailVfx,
+                summonSlot1MotionPresenter.MovementVfxRoot,
+                "SummonSlot1 motion presenter should own the charge trail timing.");
+            Assert.GreaterOrEqual(
+                summonSlot1MotionPresenter.MovementVfxParticleCount,
+                2,
+                "SummonSlot1 charge trail should preserve the promoted rush particle stack.");
+            Transform chargeImpactBurst = summonActorPrefabObject.transform.Find("ChargeImpactBurst");
+            Assert.IsNotNull(chargeImpactBurst, "SummonSlot1 actor prefab should keep a visible charge impact burst.");
+            AssertPromotedParticleVfx(
+                chargeImpactBurst,
+                "SummonSlot1 charge impact",
+                3);
+            Assert.IsFalse(
+                chargeImpactBurst.gameObject.activeSelf,
+                "SummonSlot1 charge impact should start hidden until the attack/contact frame.");
+            Assert.IsNull(
+                chargeImpactBurst.GetComponent<MeshRenderer>(),
+                "SummonSlot1 charge impact should not fall back to the old primitive cylinder ring.");
+            SummonAttackBeamPresenter chargeImpactPresenter =
                 RequireComponent<SummonAttackBeamPresenter>(
                     summonActorPrefabObject,
-                    "SummonSlot1 slam impact presenter");
+                    "SummonSlot1 charge impact presenter");
             Assert.AreEqual(
-                slamImpactBurst,
-                slamImpactPresenter.BeamRoot);
+                chargeImpactBurst,
+                chargeImpactPresenter.BeamRoot);
             Assert.GreaterOrEqual(
-                slamImpactPresenter.BeamParticleCount,
-                6,
-                "SummonSlot1 landing slam presenter should drive the promoted particle burst.");
+                chargeImpactPresenter.BeamParticleCount,
+                3,
+                "SummonSlot1 charge impact presenter should drive the promoted particle burst.");
             AssertGameOwnedAsset(
-                LoadAsset<GameObject>(SummonSlot1PromotedSlamImpactPrefabPath),
-                "SummonSlot1 promoted slam impact prefab");
+                LoadAsset<GameObject>(SummonSlot1PromotedChargeImpactPrefabPath),
+                "SummonSlot1 promoted charge impact prefab");
             AssertGameOwnedAsset(
-                LoadAsset<GameObject>(SummonSlot1PromotedJumpTrailPrefabPath),
-                "SummonSlot1 promoted jump trail prefab");
+                LoadAsset<GameObject>(SummonSlot1PromotedRushTrailPrefabPath),
+                "SummonSlot1 promoted rush trail prefab");
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
-                "PlayerSummon.JumpSlamBruiser",
+                "PlayerSummon.ChargeBruiser",
                 SummonPresentationSide.PlayerSummon,
                 summonActorPrefabObject,
                 ShieldBreakerEliteRoleCandidateProfilePath,
@@ -1237,29 +1243,29 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
             Assert.AreSame(summonSlot1Profile, summonSlot1Action.SummonActionProfile);
             Assert.IsTrue(summonSlot1Action.HasSummonActionProfile);
-            Assert.AreEqual("SummonSlot1.JumpSlamBruiser", summonSlot1Profile.ActionId);
+            Assert.AreEqual("SummonSlot1.ChargeBruiser", summonSlot1Profile.ActionId);
             Assert.AreEqual(3, summonSlot1Profile.TierCount);
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 1,
-                "LV1 Jump Slam",
-                "Mid-cost bruiser that spends a saved bar for one obvious landing impact, then stays as melee pressure.",
-                "Hold EN until a boss summon or recovery window is worth a visible slam answer.",
-                "SciFi bruiser jumps from the player front, lands with a clear slam burst, and keeps punching the frontline.");
+                "LV1 Charge Break",
+                "Mid-cost bruiser that spends a saved bar for one obvious forward rush impact, then stays as melee pressure.",
+                "Hold EN until a boss summon or recovery window is worth a visible charge answer.",
+                "SciFi bruiser spawns on the frontline, rushes forward with a ground trail, hits with a clear impact burst, and keeps punching.");
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 2,
-                "LV2 Heavy Landing",
-                "Higher stored-EN version with a wider landing and enough health to hold contact longer.",
+                "LV2 Heavy Charge",
+                "Higher stored-EN version with a wider body-check screen and enough health to hold contact longer.",
                 "Use when the boss is about to stay in a punishable lane and a cheap laser will not change the exchange.",
-                "Bigger arc, two shock bolts, a broader slam ring, and steadier melee lockdown.");
+                "Longer rush, two shock bolts, a broader collision burst, and steadier melee lockdown.");
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 3,
-                "LV3 Crater Break",
+                "LV3 Breakthrough Rush",
                 "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                 "Save for the exchange where one big arrival has to change the screen immediately.",
-                "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
+                "Fast ground rush, three shock bolts, large forward impact, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
             Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(reviewHud, "bossBasicFireEmitter"));
             Assert.AreSame(
@@ -1595,11 +1601,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 1,
                 summonTiers[0].ScreenIntercepts,
-                "LV1 JumpSlamBruiser should keep a single short landing shock intercept, not the old full-volley shield.");
+                "LV1 ChargeBruiser should keep a single short collision shock intercept, not the old full-volley shield.");
             Assert.GreaterOrEqual(
                 summonTiers[0].ScreenLifetimeSeconds,
                 1.2f,
-                "LV1 JumpSlamBruiser screen should preserve the reviewed short landing shock duration.");
+                "LV1 ChargeBruiser screen should preserve the reviewed short collision shock duration.");
             Assert.LessOrEqual(
                 summonLv1ReadySeconds + summonOpportunity.OpportunityCueSeconds + followupSequenceSeconds,
                 pressurePocket.TargetDurationSeconds * 0.9f,
@@ -1653,72 +1659,72 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator SupportSummonRoleBudgetKeepsSlamLaserAndDragonReadsDistinct()
+        public IEnumerator SupportSummonRoleBudgetKeepsChargeLaserAndDragonReadsDistinct()
         {
-            SummonSlotActionProfile jumpSlamProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
+            SummonSlotActionProfile chargeProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             SummonSlotActionProfile laserProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath);
             SummonSlotActionProfile dragonProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot3ActionProfilePath);
             BossSummonPressureProfile bossSummonProfile =
                 LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath);
-            PlayerSummonSlot1Action.SummonTierSettings[] jumpSlamTiers =
-                jumpSlamProfile.CopyTierSettings();
+            PlayerSummonSlot1Action.SummonTierSettings[] chargeTiers =
+                chargeProfile.CopyTierSettings();
             PlayerSummonSlot1Action.SummonTierSettings[] laserTiers =
                 laserProfile.CopyTierSettings();
             PlayerSummonSlot1Action.SummonTierSettings[] dragonTiers =
                 dragonProfile.CopyTierSettings();
             BossSummonPressureAction.BossSummonTierSettings[] bossTiers =
                 bossSummonProfile.CopyTierSettings();
-            float[] expectedJumpSlamScales = { 2.0f, 2.36f, 2.74f };
+            float[] expectedChargeScales = { 2.0f, 2.36f, 2.74f };
             float[] expectedLaserScales = { 2.08f, 2.32f, 2.56f };
             float[] expectedDragonScales = { 2.42f, 2.72f, 3.06f };
 
-            Assert.AreEqual(jumpSlamTiers.Length, laserTiers.Length);
-            Assert.AreEqual(jumpSlamTiers.Length, dragonTiers.Length);
-            Assert.AreEqual(jumpSlamTiers.Length, bossTiers.Length);
-            for (int i = 0; i < jumpSlamTiers.Length; i++)
+            Assert.AreEqual(chargeTiers.Length, laserTiers.Length);
+            Assert.AreEqual(chargeTiers.Length, dragonTiers.Length);
+            Assert.AreEqual(chargeTiers.Length, bossTiers.Length);
+            for (int i = 0; i < chargeTiers.Length; i++)
             {
-                float jumpSlamVolleyDamage = jumpSlamTiers[i].Damage * jumpSlamTiers[i].ProjectileCount;
+                float chargeVolleyDamage = chargeTiers[i].Damage * chargeTiers[i].ProjectileCount;
                 float laserVolleyDamage = laserTiers[i].Damage * laserTiers[i].ProjectileCount;
                 float dragonVolleyDamage = dragonTiers[i].Damage * dragonTiers[i].ProjectileCount;
 
-                Assert.AreEqual("JumpSlamBruiser", jumpSlamTiers[i].ActorRoleId);
+                Assert.AreEqual("ChargeBruiser", chargeTiers[i].ActorRoleId);
                 Assert.AreEqual("LaserSoldier", laserTiers[i].ActorRoleId);
                 Assert.AreEqual("FireDragon", dragonTiers[i].ActorRoleId);
-                Assert.AreEqual(expectedJumpSlamScales[i], jumpSlamTiers[i].ActorScale, 0.001f);
+                Assert.AreEqual(expectedChargeScales[i], chargeTiers[i].ActorScale, 0.001f);
                 Assert.AreEqual(expectedLaserScales[i], laserTiers[i].ActorScale, 0.001f);
                 Assert.AreEqual(expectedDragonScales[i], dragonTiers[i].ActorScale, 0.001f);
                 Assert.Greater(
                     dragonVolleyDamage,
-                    jumpSlamVolleyDamage,
+                    chargeVolleyDamage,
                     $"SummonSlot3 tier {i + 1} should own the high-return breath volley read.");
                 Assert.Greater(
                     dragonVolleyDamage,
                     laserVolleyDamage,
                     $"SummonSlot3 tier {i + 1} should hit harder per breath than the cheap laser slot.");
                 Assert.Greater(
-                    jumpSlamTiers[i].ActorMoveSpeed,
+                    chargeTiers[i].ActorMoveSpeed,
                     laserTiers[i].ActorMoveSpeed,
-                    $"SummonSlot1 tier {i + 1} should be the fastest visible arrival through its jump-slam body.");
+                    $"SummonSlot1 tier {i + 1} should be the fastest visible arrival through its charge body.");
                 Assert.Greater(
                     laserTiers[i].ActorMoveSpeed,
                     dragonTiers[i].ActorMoveSpeed,
                     $"SummonSlot2 tier {i + 1} should still move faster than the heavier dragon.");
                 Assert.Greater(
                     dragonTiers[i].LateralReach,
-                    jumpSlamTiers[i].LateralReach,
+                    chargeTiers[i].LateralReach,
                     $"SummonSlot3 tier {i + 1} should own the widest lane coverage.");
                 Assert.Greater(
-                    jumpSlamTiers[i].LateralReach,
+                    chargeTiers[i].LateralReach,
                     laserTiers[i].LateralReach,
-                    $"SummonSlot1 tier {i + 1} slam radius should be wider than the narrow laser line.");
+                    $"SummonSlot1 tier {i + 1} charge collision radius should be wider than the narrow laser line.");
                 Assert.Greater(
-                    jumpSlamTiers[i].ActorAdvanceDistance,
+                    chargeTiers[i].ActorAdvanceDistance,
                     laserTiers[i].ActorAdvanceDistance,
-                    $"SummonSlot1 tier {i + 1} should visibly leap farther than the laser support slide.");
+                    $"SummonSlot1 tier {i + 1} should visibly charge farther than the laser support slide.");
                 Assert.Greater(
-                    jumpSlamTiers[i].ActorAdvanceDistance,
+                    chargeTiers[i].ActorAdvanceDistance,
                     dragonTiers[i].ActorAdvanceDistance,
-                    $"SummonSlot1 tier {i + 1} should visibly leap farther than the hovering dragon reposition.");
+                    $"SummonSlot1 tier {i + 1} should visibly charge farther than the hovering dragon reposition.");
                 Assert.AreEqual(
                     0,
                     laserTiers[i].ScreenIntercepts,
@@ -1728,11 +1734,11 @@ namespace DimensionBrawl.Tests
                     dragonTiers[i].ScreenIntercepts,
                     $"SummonSlot3 tier {i + 1} must stay a breath-damage read, not a hidden shield clone.");
                 Assert.Greater(
-                    jumpSlamTiers[i].ScreenIntercepts,
+                    chargeTiers[i].ScreenIntercepts,
                     0,
-                    $"SummonSlot1 tier {i + 1} should keep only the brief landing shock screen.");
+                    $"SummonSlot1 tier {i + 1} should keep only the brief charge shock screen.");
                 Assert.GreaterOrEqual(
-                    jumpSlamTiers[i].ActorAttackIntervalSeconds,
+                    chargeTiers[i].ActorAttackIntervalSeconds,
                     bossTiers[i].ActorAttackIntervalSeconds,
                     $"SummonSlot1 tier {i + 1} must not attack more frequently than the hostile summon baseline.");
                 Assert.GreaterOrEqual(
@@ -1744,7 +1750,7 @@ namespace DimensionBrawl.Tests
                     bossTiers[i].ActorAttackIntervalSeconds,
                     $"SummonSlot3 tier {i + 1} must pay for its burst with a slower breath cadence.");
                 Assert.LessOrEqual(
-                    jumpSlamTiers[i].ActorAttackDamagePerSecond,
+                    chargeTiers[i].ActorAttackDamagePerSecond,
                     bossTiers[i].ActorAttackDamagePerSecond * 0.55f,
                     $"SummonSlot1 tier {i + 1} should win through entry timing and a screen, not raw sustained DPS.");
                 Assert.LessOrEqual(
@@ -1757,10 +1763,10 @@ namespace DimensionBrawl.Tests
                     $"SummonSlot3 tier {i + 1} can be the high-cost payoff, but not exceed hostile sustained pressure.");
                 Assert.Greater(
                     dragonTiers[i].ActorMaxHealth,
-                    jumpSlamTiers[i].ActorMaxHealth,
+                    chargeTiers[i].ActorMaxHealth,
                     $"SummonSlot3 tier {i + 1} should be the durable high-cost-feeling body.");
                 Assert.Greater(
-                    jumpSlamTiers[i].ActorMaxHealth,
+                    chargeTiers[i].ActorMaxHealth,
                     laserTiers[i].ActorMaxHealth,
                     $"SummonSlot2 tier {i + 1} should remain the fragile ranged support slot.");
             }
@@ -3195,7 +3201,7 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(
                 summonSlot1Action.ActivePressureScreenRemainingIntercepts,
                 2,
-                "SummonSlot1 should expose the reviewed mid-cost jump-slam landing intercept budget to the review HUD.");
+                "SummonSlot1 should expose the reviewed mid-cost charge collision intercept budget to the review HUD.");
             SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
@@ -3208,7 +3214,7 @@ namespace DimensionBrawl.Tests
                     Assert.GreaterOrEqual(
                         pressureScreens[i].RemainingIntercepts,
                         2,
-                        "SummonSlot1 should open with the reviewed mid-cost jump-slam landing intercept budget.");
+                        "SummonSlot1 should open with the reviewed mid-cost charge collision intercept budget.");
                     break;
                 }
             }
@@ -3302,7 +3308,7 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(
                 summonSlot1Action.ActiveProjectileCount,
                 2,
-                "SummonSlot1 should fire its reviewed mid-cost shock bolts when the jump-slam lands.");
+                "SummonSlot1 should fire its reviewed mid-cost shock bolts when the charge connects.");
             LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
@@ -3362,7 +3368,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 2,
                 summonSlot1Action.ActivePressureScreenRemainingIntercepts,
-                "SummonSlot1 LV2 should open the reviewed mid-tier jump-slam landing screen before the player waits for LV3.");
+                "SummonSlot1 LV2 should open the reviewed mid-tier charge collision screen before the player waits for LV3.");
             Assert.IsTrue(
                 laneSpace.IsPastForwardBoundary(summonSlot1Action.LastSummonActorPosition),
                 "SummonSlot1 LV2 still belongs to the frontline exchange beyond the player boundary.");
@@ -3803,7 +3809,7 @@ namespace DimensionBrawl.Tests
                 "The review pocket should pause automatic boss barrage briefly after the close threat is defeated.");
             Assert.That(
                 pocketOwner.ObjectiveCue,
-                Does.Contain("LV1 Jump Slam"),
+                Does.Contain("LV1 Charge Break"),
                 "The summon-block opportunity should name the current SummonSlot1 tier readout instead of only saying SummonSlot1.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
@@ -3838,11 +3844,11 @@ namespace DimensionBrawl.Tests
                 "Boss barrage should resume after the short relief beat if the pocket is still running.");
             Assert.That(
                 pocketOwner.ObjectiveCue,
-                Does.Contain("LV1 Jump Slam"),
+                Does.Contain("LV1 Charge Break"),
                 "After the cue beat ends, the pocket objective should still identify the current summon tier answer.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
-                Does.Contain("LV1 Jump Slam block NOW"),
+                Does.Contain("LV1 Charge Break block NOW"),
                 "After the cue beat, the compact HUD goal should call out the tiered summon block answer.");
 
             yield return null;
@@ -4065,7 +4071,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
             Assert.That(
                 pocketOwner.ObjectiveCue,
-                Does.Contain("LV2 Heavy Landing"),
+                Does.Contain("LV2 Heavy Charge"),
                 "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
@@ -4191,7 +4197,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 1,
                 summonSlot1Action.LastPressureScreenInterceptCount,
-                "LV1 Jump Slam spends its single pressure-screen block before the result transition.");
+                "LV1 Charge Break spends its single pressure-screen block before the result transition.");
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(
                 pocketOwner.IsSummonFollowupWindowActive,
@@ -4593,7 +4599,7 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(
                 physicalIntercepts,
                 1,
-                "The jump-slam landing screen should physically intercept at least one LinePressure projectile instead of relying on a direct test hook. "
+                "The charge collision screen should physically intercept at least one LinePressure projectile instead of relying on a direct test hook. "
                 + $"intercepts={physicalIntercepts}, total={summonSlot1Action.TotalPressureScreenInterceptCount}, "
                 + $"screenActive={activeScreen.IsActive}, remaining={activeScreen.RemainingIntercepts}, damage={physicalDamageTaken:0.0}, "
                 + $"wait={physicalWaitElapsed:0.00}, blocked={pocketOwner.BlockedBossPressureWithSummon}, window={pocketOwner.IsSummonFollowupWindowActive}, "
@@ -4773,7 +4779,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 3,
                 energyLadder.AvailableTier,
-                "A mid-cost jump-slam block should carry enough overflow EN to reopen a strong follow-up choice.");
+                "A mid-cost charge block should carry enough overflow EN to reopen a strong follow-up choice.");
             Assert.AreEqual(
                 3,
                 energyLadder.ChargingTier,

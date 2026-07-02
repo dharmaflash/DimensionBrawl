@@ -84,7 +84,7 @@ namespace DimensionBrawl.Editor
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         public const string SummonSlot1ActionProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_JumpSlamBruiser.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ChargeBruiser.asset";
         public const string SummonSlot2ActionProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot2_LaserSoldier.asset";
         public const string SummonSlot3ActionProfilePath =
@@ -98,7 +98,7 @@ namespace DimensionBrawl.Editor
         private const string UIRouteTablePath =
             "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         public const string SummonSlot1PresentationCandidateProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerJumpSlamBruiser.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerChargeBruiser.asset";
         public const string SummonSlot2PresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerLaserSoldier.asset";
         public const string SummonSlot3PresentationCandidateProfilePath =
@@ -1407,8 +1407,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BossSummonPressurePresentationCandidateProfilePath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
-            ValidateNoImportedAssetReference(SummonSlot1PromotedSlamImpactPrefabPath);
-            ValidateNoImportedAssetReference(SummonSlot1PromotedJumpTrailPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1PromotedChargeImpactPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1PromotedRushTrailPrefabPath);
             ValidateNoImportedAssetReference(SummonSlot2LaserBeamMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3FireBreathMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3DragonBodyMaterialPath);
@@ -7709,28 +7709,28 @@ namespace DimensionBrawl.Editor
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 1,
-                "LV1 Jump Slam",
-                "Mid-cost bruiser that spends a saved bar for one obvious landing impact, then stays as melee pressure.",
-                "Hold EN until a boss summon or recovery window is worth a visible slam answer.",
-                "SciFi bruiser jumps from the player front, lands with a clear slam burst, and keeps punching the frontline.");
+                "LV1 Charge Break",
+                "Mid-cost bruiser that spends a saved bar for one obvious forward rush impact, then stays as melee pressure.",
+                "Hold EN until a boss summon or recovery window is worth a visible charge answer.",
+                "SciFi bruiser spawns on the frontline, rushes forward with a ground trail, hits with a clear impact burst, and keeps punching.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 2,
-                "LV2 Heavy Landing",
-                "Higher stored-EN version with a wider landing and enough health to hold contact longer.",
+                "LV2 Heavy Charge",
+                "Higher stored-EN version with a wider body-check screen and enough health to hold contact longer.",
                 "Use when the boss is about to stay in a punishable lane and a cheap laser will not change the exchange.",
-                "Bigger arc, two shock bolts, a broader slam ring, and steadier melee lockdown.");
+                "Longer rush, two shock bolts, a broader collision burst, and steadier melee lockdown.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 3,
-                "LV3 Crater Break",
+                "LV3 Breakthrough Rush",
                 "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                 "Save for the exchange where one big arrival has to change the screen immediately.",
-                "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
+                "Fast ground rush, three shock bolts, large forward impact, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 1,
-                "JumpSlamBruiser",
+                "ChargeBruiser",
                 expectedActorScale: 2.0f,
                 expectedActorMaxHealth: 250f,
                 expectedActorMoveSpeed: 3.4f,
@@ -7746,7 +7746,7 @@ namespace DimensionBrawl.Editor
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 2,
-                "JumpSlamBruiser",
+                "ChargeBruiser",
                 expectedActorScale: 2.36f,
                 expectedActorMaxHealth: 420f,
                 expectedActorMoveSpeed: 3.8f,
@@ -7762,7 +7762,7 @@ namespace DimensionBrawl.Editor
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 3,
-                "JumpSlamBruiser",
+                "ChargeBruiser",
                 expectedActorScale: 2.74f,
                 expectedActorMaxHealth: 600f,
                 expectedActorMoveSpeed: 4.2f,
@@ -7862,48 +7862,60 @@ namespace DimensionBrawl.Editor
                 RequireComponent<SummonProxyVisualMotionPresenter>(
                     summonActorPrefab.gameObject,
                     "SummonSlot1 visual motion presenter");
-            Transform jumpTrailVfx = summonActorVisual.Find("JumpSlamAirTrail");
-            ValidatePromotedParticleVfx(
-                jumpTrailVfx,
-                "SummonSlot1 airborne jump trail",
-                minimumParticleSystems: 6);
-            if (jumpTrailVfx.gameObject.activeSelf)
+            if (FindDescendant(summonActorPrefab.transform, "JumpSlamAirTrail") != null
+                || FindDescendant(summonActorPrefab.transform, "PF_SummonJumpSlamAirTrail_SPECIAL") != null
+                || FindDescendant(summonActorPrefab.transform, "SlamImpactBurst") != null
+                || FindDescendant(summonActorPrefab.transform, "PF_SummonJumpSlamImpact_SPECIAL") != null)
             {
-                throw new InvalidOperationException("SummonSlot1 airborne jump trail should start hidden.");
+                throw new InvalidOperationException("SummonSlot1 must not keep retired jump-slam VFX children.");
             }
 
-            ValidateObjectReference(motionPresenter, "jumpVfxRoot", jumpTrailVfx);
-            if (motionPresenter.JumpVfxParticleCount < 6)
+            ValidateFloat(motionPresenter, "jumpArcHeight", 0f);
+            ValidateFloat(motionPresenter, "tierArcHeightStep", 0f);
+            ValidateFloat(motionPresenter, "landingSettleSeconds", 0f);
+            ValidateFloat(motionPresenter, "landingDip", 0f);
+            Transform chargeTrailVfx = summonActorVisual.Find("ChargeRushTrail");
+            ValidatePromotedParticleVfx(
+                chargeTrailVfx,
+                "SummonSlot1 charge rush trail",
+                minimumParticleSystems: 2);
+            if (chargeTrailVfx.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException("SummonSlot1 charge rush trail should start hidden.");
+            }
+
+            ValidateObjectReference(motionPresenter, "movementVfxRoot", chargeTrailVfx);
+            if (motionPresenter.MovementVfxParticleCount < 2)
             {
                 throw new InvalidOperationException(
-                    "SummonSlot1 visual motion presenter should drive the promoted airborne jump trail stack.");
+                    "SummonSlot1 visual motion presenter should drive the promoted charge rush trail stack.");
             }
 
-            Transform slamImpactBurst = summonActorPrefab.transform.Find("SlamImpactBurst");
+            Transform chargeImpactBurst = summonActorPrefab.transform.Find("ChargeImpactBurst");
             ValidatePromotedParticleVfx(
-                slamImpactBurst,
-                "SummonSlot1 landing slam impact",
-                minimumParticleSystems: 6);
-            if (slamImpactBurst.gameObject.activeSelf)
+                chargeImpactBurst,
+                "SummonSlot1 charge impact",
+                minimumParticleSystems: 3);
+            if (chargeImpactBurst.gameObject.activeSelf)
             {
-                throw new InvalidOperationException("SummonSlot1 landing slam impact should start hidden.");
+                throw new InvalidOperationException("SummonSlot1 charge impact should start hidden.");
             }
 
-            if (slamImpactBurst.GetComponent<MeshRenderer>() != null)
+            if (chargeImpactBurst.GetComponent<MeshRenderer>() != null)
             {
                 throw new InvalidOperationException(
-                    "SummonSlot1 landing slam impact must not fall back to the old primitive cylinder ring.");
+                    "SummonSlot1 charge impact must not fall back to the old primitive cylinder ring.");
             }
 
-            SummonAttackBeamPresenter slamImpactPresenter =
+            SummonAttackBeamPresenter chargeImpactPresenter =
                 RequireComponent<SummonAttackBeamPresenter>(
                     summonActorPrefab.gameObject,
-                    "SummonSlot1 slam impact presenter");
-            ValidateObjectReference(slamImpactPresenter, "beamRoot", slamImpactBurst);
-            if (slamImpactPresenter.BeamParticleCount < 6)
+                    "SummonSlot1 charge impact presenter");
+            ValidateObjectReference(chargeImpactPresenter, "beamRoot", chargeImpactBurst);
+            if (chargeImpactPresenter.BeamParticleCount < 3)
             {
                 throw new InvalidOperationException(
-                    "SummonSlot1 slam impact presenter should drive the promoted particle burst.");
+                    "SummonSlot1 charge impact presenter should drive the promoted particle burst.");
             }
 
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
@@ -9320,7 +9332,7 @@ namespace DimensionBrawl.Editor
 
             ValidateSummonPresentationCandidateProfile(
                 LoadAsset<SummonPresentationCandidateProfile>(SummonSlot1PresentationCandidateProfilePath),
-                "PlayerSummon.JumpSlamBruiser",
+                "PlayerSummon.ChargeBruiser",
                 SummonPresentationSide.PlayerSummon,
                 SummonSlot1ActorPrefabPath,
                 ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
@@ -10069,6 +10081,34 @@ namespace DimensionBrawl.Editor
             if (existing != null)
             {
                 UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+        }
+
+        private static void DestroyDescendantsIfPresent(Transform root, params string[] childNames)
+        {
+            if (root == null || childNames == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < childNames.Length; i++)
+            {
+                string childName = childNames[i];
+                if (string.IsNullOrWhiteSpace(childName))
+                {
+                    continue;
+                }
+
+                while (true)
+                {
+                    Transform existing = FindDescendant(root, childName);
+                    if (existing == null || existing == root)
+                    {
+                        break;
+                    }
+
+                    UnityEngine.Object.DestroyImmediate(existing.gameObject);
+                }
             }
         }
 

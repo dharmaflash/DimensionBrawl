@@ -15,10 +15,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Plasma Beam/plasma_beam_blue.prefab";
         private const string ImportedForge3DFlameRedPrefabPath =
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Flames/flames_flame_red.prefab";
-        private const string ImportedSpecialSkillOneHandSmashPrefabPath =
-            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_07_OneHandSmash/Effect_07_OneHandSmash.prefab";
-        private const string ImportedSpecialSkillRisingAttackPrefabPath =
-            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_2(ScriptBased)/Effects/Effect_36_RisingAttack/Effect_36_RisingAttack.prefab";
+        private const string ImportedSpecialSkillChargeImpactPrefabPath =
+            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_39_WindBlast/Effect_39_WindBlast.prefab";
+        private const string ImportedSpecialSkillRushTrailPrefabPath =
+            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_13_DangerClose/Effect_13_Base/Effect_13_Trails.prefab";
         private const string ImportedVolcanoDragonModelPath =
             "Assets/_Imported/AssetStore/HEROIC FANTASY CREATURES FULL PACK VOL3/Elemental Dragons Pack/Volcano Dragon/FBX Files/SK_VolcanoDragon.FBX";
         private const string ImportedVolcanoDragonFlyStationaryClipPath =
@@ -42,10 +42,10 @@ namespace DimensionBrawl.Editor
             SummonPromotedVfxPrefabRoot + "/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =
             SummonPromotedVfxPrefabRoot + "/PF_SummonDragonFireBreath_FORGE3D.prefab";
-        private const string SummonSlot1PromotedSlamImpactPrefabPath =
-            SummonPromotedVfxPrefabRoot + "/PF_SummonJumpSlamImpact_SPECIAL.prefab";
-        private const string SummonSlot1PromotedJumpTrailPrefabPath =
-            SummonPromotedVfxPrefabRoot + "/PF_SummonJumpSlamAirTrail_SPECIAL.prefab";
+        private const string SummonSlot1PromotedChargeImpactPrefabPath =
+            SummonPromotedVfxPrefabRoot + "/PF_SummonChargeImpact_SPECIAL.prefab";
+        private const string SummonSlot1PromotedRushTrailPrefabPath =
+            SummonPromotedVfxPrefabRoot + "/PF_SummonChargeRushTrail_SPECIAL.prefab";
 
         private const string SummonDragonPromotedRoot =
             "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon";
@@ -81,33 +81,33 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureSummonPromotedPresentationAssets()
         {
-            EnsureSummonSlot1PromotedSlamImpactPrefab();
-            EnsureSummonSlot1PromotedJumpTrailPrefab();
+            EnsureSummonSlot1PromotedChargeImpactPrefab();
+            EnsureSummonSlot1PromotedRushTrailPrefab();
             EnsureSummonSlot2PromotedLaserBeamPrefab();
             EnsureSummonSlot3PromotedFireBreathPrefab();
             EnsureSummonSlot3PromotedDragonVisualPrefab();
         }
 
-        private static GameObject EnsureSummonSlot1PromotedSlamImpactPrefab()
+        private static GameObject EnsureSummonSlot1PromotedChargeImpactPrefab()
         {
             return EnsureSummonPromotedParticlePrefab(
-                ImportedSpecialSkillOneHandSmashPrefabPath,
-                SummonSlot1PromotedSlamImpactPrefabPath,
-                "PF_SummonJumpSlamImpact_SPECIAL",
+                ImportedSpecialSkillChargeImpactPrefabPath,
+                SummonSlot1PromotedChargeImpactPrefabPath,
+                "PF_SummonChargeImpact_SPECIAL",
                 loopParticles: false,
                 playOnAwake: false,
-                minimumParticleSystems: 6);
+                minimumParticleSystems: 3);
         }
 
-        private static GameObject EnsureSummonSlot1PromotedJumpTrailPrefab()
+        private static GameObject EnsureSummonSlot1PromotedRushTrailPrefab()
         {
             return EnsureSummonPromotedParticlePrefab(
-                ImportedSpecialSkillRisingAttackPrefabPath,
-                SummonSlot1PromotedJumpTrailPrefabPath,
-                "PF_SummonJumpSlamAirTrail_SPECIAL",
+                ImportedSpecialSkillRushTrailPrefabPath,
+                SummonSlot1PromotedRushTrailPrefabPath,
+                "PF_SummonChargeRushTrail_SPECIAL",
                 loopParticles: true,
                 playOnAwake: false,
-                minimumParticleSystems: 6);
+                minimumParticleSystems: 2);
         }
 
         private static GameObject EnsureSummonSlot2PromotedLaserBeamPrefab()
@@ -355,7 +355,7 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(actorRoot);
         }
 
-        private static Transform ConfigureSummonJumpPromotedParticleVfx(
+        private static Transform ConfigureSummonMovementPromotedParticleVfx(
             Transform parent,
             string vfxName,
             string promotedPrefabPath,

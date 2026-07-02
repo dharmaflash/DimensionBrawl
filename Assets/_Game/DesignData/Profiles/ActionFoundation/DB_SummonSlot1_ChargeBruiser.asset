@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2c09f3d5d2d4a9ca1671a60e75091f2, type: 3}
-  m_Name: DB_SummonSlot1_JumpSlamBruiser
+  m_Name: DB_SummonSlot1_ChargeBruiser
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
-  actionId: SummonSlot1.JumpSlamBruiser
+  actionId: SummonSlot1.ChargeBruiser
   tierSettings:
   - Damage: 58
     ProjectileSpeed: 24
@@ -26,7 +26,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 250
     ActorMoveSpeed: 3.4
     ActorAdvanceDistance: 4
@@ -54,7 +54,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2.36
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 420
     ActorMoveSpeed: 3.8
     ActorAdvanceDistance: 4.8
@@ -82,7 +82,7 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 2.74
-    ActorRoleId: JumpSlamBruiser
+    ActorRoleId: ChargeBruiser
     ActorMaxHealth: 600
     ActorMoveSpeed: 4.2
     ActorAdvanceDistance: 5.6
@@ -99,24 +99,24 @@ MonoBehaviour:
     CounterRadius: 0.406
     CounterTargetHeight: 1.35
   tierReadouts:
-  - TierLabel: LV1 Jump Slam
-    StageRole: Mid-cost bruiser that spends a saved bar for one obvious landing impact,
-      then stays as melee pressure.
+  - TierLabel: LV1 Charge Break
+    StageRole: Mid-cost bruiser that spends a saved bar for one obvious forward rush
+      impact, then stays as melee pressure.
     PlayerUse: Hold EN until a boss summon or recovery window is worth a visible
-      slam answer.
-    SummonRead: SciFi bruiser jumps from the player front, lands with a clear slam
-      burst, and keeps punching the frontline.
-  - TierLabel: LV2 Heavy Landing
-    StageRole: Higher stored-EN version with a wider landing and enough health to
-      hold contact longer.
+      charge answer.
+    SummonRead: SciFi bruiser spawns on the frontline, rushes forward with a ground
+      trail, hits with a clear impact burst, and keeps punching.
+  - TierLabel: LV2 Heavy Charge
+    StageRole: Higher stored-EN version with a wider body-check screen and enough
+      health to hold contact longer.
     PlayerUse: Use when the boss is about to stay in a punishable lane and a cheap
       laser will not change the exchange.
-    SummonRead: Bigger arc, two shock bolts, a broader slam ring, and steadier melee
-      lockdown.
-  - TierLabel: LV3 Crater Break
+    SummonRead: Longer rush, two shock bolts, a broader collision burst, and steadier
+      melee lockdown.
+  - TierLabel: LV3 Breakthrough Rush
     StageRole: High-stored-EN payoff that should visibly interrupt the lane and keep
       fighting after impact.
     PlayerUse: Save for the exchange where one big arrival has to change the screen
       immediately.
-    SummonRead: Tall jump arc, three shock bolts, large slam ring, and a durable
-      bruiser body that remains in melee without out-DPSing the boss summons.
+    SummonRead: Fast ground rush, three shock bolts, large forward impact, and a
+      durable bruiser body that remains in melee without out-DPSing the boss summons.
