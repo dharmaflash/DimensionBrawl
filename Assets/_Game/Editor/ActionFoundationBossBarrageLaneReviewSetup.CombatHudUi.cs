@@ -30,6 +30,7 @@ namespace DimensionBrawl.Editor
         private static readonly Color CombatHudSummonStateColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color CombatHudSummonLabelColor = new Color(1f, 0.92f, 0.68f, 1f);
         private static readonly Color CombatHudSummonIconColor = new Color(1f, 1f, 1f, 0.94f);
+        private static readonly Color CombatHudSummonProgressColor = new Color(0.35f, 0.95f, 1f, 0.72f);
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Combat HUD UI")]
         public static void ReapplyBossBarrageCombatHudUiMenu()
@@ -811,17 +812,8 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            Rect barRect = ResolveSummonTextBarRect(buttonSize);
-            Rect labelRect = new Rect(
-                barRect.xMin + 4f,
-                barRect.yMin,
-                Mathf.Min(34f, barRect.width * 0.28f),
-                barRect.height);
-            Rect stateRect = new Rect(
-                labelRect.xMax,
-                barRect.yMin,
-                Mathf.Max(24f, barRect.xMax - labelRect.xMax - 4f),
-                barRect.height);
+            Rect labelRect = ResolveSummonLabelRect(buttonSize);
+            Rect stateRect = ResolveSummonStateRect(buttonSize);
 
             ConfigureLocalImage(
                 button,
@@ -830,38 +822,47 @@ namespace DimensionBrawl.Editor
                 buttonSize,
                 iconSprite,
                 CombatHudSummonIconColor);
+            ConfigureSummonSlotProgressFill(button, buttonSize);
             ConfigureLocalText(
                 button,
                 "Label",
                 labelRect,
                 buttonSize,
                 CombatHudSummonLabelColor,
-                Mathf.Max(13, fontSize - 1));
+                Mathf.Max(18, fontSize + 4));
             ConfigureLocalText(
                 button,
                 "State",
                 stateRect,
                 buttonSize,
                 CombatHudSummonStateColor,
-                Mathf.Max(14, fontSize));
-            HideSummonSlotProgressFill(button);
+                Mathf.Max(20, fontSize + 5));
         }
 
-        private static Rect ResolveSummonTextBarRect(Vector2 buttonSize)
+        private static Rect ResolveSummonLabelRect(Vector2 buttonSize)
         {
-            float x = buttonSize.x * 0.17f;
-            float y = buttonSize.y * 0.74f;
-            float width = buttonSize.x * 0.66f;
-            float height = buttonSize.y * 0.17f;
+            float width = buttonSize.x * 0.36f;
+            float height = buttonSize.y * 0.18f;
+            float x = buttonSize.x * 0.11f;
+            float y = buttonSize.y * 0.14f;
+            return new Rect(x, y, width, height);
+        }
+
+        private static Rect ResolveSummonStateRect(Vector2 buttonSize)
+        {
+            float width = buttonSize.x * 0.78f;
+            float height = buttonSize.y * 0.28f;
+            float x = (buttonSize.x - width) * 0.5f;
+            float y = buttonSize.y * 0.62f;
             return new Rect(x, y, width, height);
         }
 
         private static Rect ResolveSummonIconRect(Vector2 buttonSize)
         {
-            float width = buttonSize.x * 0.58f;
-            float height = buttonSize.y * 0.58f;
+            float width = buttonSize.x * 0.92f;
+            float height = buttonSize.y * 0.92f;
             float x = (buttonSize.x - width) * 0.5f;
-            float y = buttonSize.y * 0.13f;
+            float y = (buttonSize.y - height) * 0.5f;
             return new Rect(x, y, width, height);
         }
 
@@ -893,6 +894,37 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target.gameObject);
         }
 
+        private static void ConfigureSummonSlotProgressFill(Transform button, Vector2 buttonSize)
+        {
+            Transform fill = FindHudDescendant(button, "CooldownFill");
+            if (fill == null)
+            {
+                fill = new GameObject("CooldownFill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).transform;
+                fill.SetParent(button, worldPositionStays: false);
+            }
+
+            fill.gameObject.SetActive(true);
+            if (button.childCount > 1)
+            {
+                fill.SetSiblingIndex(1);
+            }
+
+            ApplyLocalRect(fill.GetComponent<RectTransform>(), new Rect(Vector2.zero, buttonSize), buttonSize);
+            Image image = fill.GetComponent<Image>();
+            Image buttonImage = button.GetComponent<Image>();
+            image.sprite = buttonImage != null ? buttonImage.sprite : null;
+            image.color = image.sprite != null ? CombatHudSummonProgressColor : Color.clear;
+            image.raycastTarget = false;
+            image.preserveAspect = false;
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Radial360;
+            image.fillOrigin = (int)Image.Origin360.Top;
+            image.fillClockwise = true;
+            image.fillAmount = 0f;
+            MarkComponentDirty(image);
+            EditorUtility.SetDirty(fill.gameObject);
+        }
+
         private static void ConfigureLocalText(
             Transform root,
             string objectName,
@@ -908,9 +940,20 @@ namespace DimensionBrawl.Editor
             }
 
             target.gameObject.SetActive(true);
+            target.SetAsLastSibling();
             ApplyLocalRect(target.GetComponent<RectTransform>(), localRect, parentSize);
             Text text = target.GetComponent<Text>();
             SetTextVisible(text, true, color, fontSize);
+            if (string.Equals(objectName, "State", StringComparison.Ordinal))
+            {
+                text.lineSpacing = 0.86f;
+                text.resizeTextForBestFit = true;
+                text.resizeTextMinSize = 14;
+                text.resizeTextMaxSize = fontSize;
+                text.horizontalOverflow = HorizontalWrapMode.Wrap;
+                MarkComponentDirty(text);
+            }
+
             EditorUtility.SetDirty(target.gameObject);
         }
 
@@ -936,23 +979,6 @@ namespace DimensionBrawl.Editor
             ConfigureTextOutline(text);
             MarkComponentDirty(text);
             EditorUtility.SetDirty(text.gameObject);
-        }
-
-        private static void HideSummonSlotProgressFill(Transform button)
-        {
-            Transform fill = FindHudDescendant(button, "CooldownFill");
-            Image image = fill != null ? fill.GetComponent<Image>() : null;
-            if (image == null)
-            {
-                return;
-            }
-
-            image.sprite = null;
-            image.color = Color.clear;
-            image.raycastTarget = false;
-            image.fillAmount = 0f;
-            MarkComponentDirty(image);
-            EditorUtility.SetDirty(image.gameObject);
         }
 
         private static void ConfigureTextOutline(Text text)

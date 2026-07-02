@@ -373,7 +373,7 @@ namespace DimensionBrawl.UI
             }
 
             float seconds = energyLadder.EstimateSecondsToMana(requiredMana);
-            string eta = seconds >= 0f ? $" {Mathf.CeilToInt(seconds)}s" : string.Empty;
+            string eta = seconds >= 0f ? $" / {Mathf.CeilToInt(seconds)}s" : string.Empty;
             return $"+{Mathf.CeilToInt(shortage)}{eta}";
         }
 
@@ -399,7 +399,7 @@ namespace DimensionBrawl.UI
 
         private static string BuildSummonState(float requiredMana, string status)
         {
-            return $"{Mathf.CeilToInt(Mathf.Max(1f, requiredMana))}EN {status}";
+            return $"{Mathf.CeilToInt(Mathf.Max(1f, requiredMana))}EN\n{status}";
         }
     }
 }

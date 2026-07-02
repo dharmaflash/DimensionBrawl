@@ -11,6 +11,9 @@ namespace DimensionBrawl.UI
         private static readonly Color ResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
+        private static readonly Color SummonReadyFillColor = new Color(1f, 0.9f, 0.46f, 0.74f);
+        private static readonly Color SummonChargingFillColor = new Color(0.35f, 0.95f, 1f, 0.72f);
+        private static readonly Color SummonUnavailableFillColor = new Color(0f, 0.02f, 0.03f, 0.18f);
 
         [Serializable]
         public sealed class ActionSlotBinding
@@ -103,32 +106,46 @@ namespace DimensionBrawl.UI
                 if (stateText != null)
                 {
                     stateText.text = state;
-                    stateText.fontSize = Mathf.Max(stateText.fontSize, 13);
+                    stateText.fontSize = Mathf.Max(stateText.fontSize, 20);
                     stateText.fontStyle = FontStyle.Bold;
                     stateText.color = enabled ? HealthReadoutColor : InputModeReadoutColor;
-                    stateText.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    stateText.alignment = TextAnchor.MiddleCenter;
+                    stateText.lineSpacing = 0.86f;
+                    stateText.resizeTextForBestFit = true;
+                    stateText.resizeTextMinSize = 14;
+                    stateText.resizeTextMaxSize = stateText.fontSize;
+                    stateText.horizontalOverflow = HorizontalWrapMode.Wrap;
                     stateText.verticalOverflow = VerticalWrapMode.Overflow;
                     ApplySlotTextOutline(stateText);
                 }
 
                 if (cooldownFill != null)
                 {
-                    HideSummonProgressFill(cooldownFill);
+                    ConfigureClockwiseSummonFill(cooldownFill, enabled, availabilityFill01);
                 }
 
                 if (canvasGroup != null)
                 {
-                    canvasGroup.alpha = enabled ? 1f : 0.72f;
+                    canvasGroup.alpha = enabled ? 1f : 0.88f;
                     canvasGroup.interactable = enabled;
                     canvasGroup.blocksRaycasts = enabled;
                 }
             }
 
-            private static void HideSummonProgressFill(Image image)
+            private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
             {
                 image.raycastTarget = false;
-                image.fillAmount = 0f;
-                image.color = Color.clear;
+                image.preserveAspect = false;
+                image.type = Image.Type.Filled;
+                image.fillMethod = Image.FillMethod.Radial360;
+                image.fillOrigin = (int)Image.Origin360.Top;
+                image.fillClockwise = true;
+                image.fillAmount = Mathf.Clamp01(availabilityFill01);
+                image.color = enabled
+                    ? SummonReadyFillColor
+                    : availabilityFill01 > 0.001f
+                        ? SummonChargingFillColor
+                        : SummonUnavailableFillColor;
             }
 
             private static void ApplySlotTextOutline(Text text)

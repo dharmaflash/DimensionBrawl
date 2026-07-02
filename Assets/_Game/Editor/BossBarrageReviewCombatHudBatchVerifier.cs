@@ -507,6 +507,9 @@ namespace DimensionBrawl.Editor
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot1Button", "Icon", report);
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot2Button", "Icon", report);
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot3Button", "Icon", report);
+            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot1Button", "CooldownFill", report);
+            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot2Button", "CooldownFill", report);
+            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot3Button", "CooldownFill", report);
             return ready;
         }
 
@@ -717,7 +720,8 @@ namespace DimensionBrawl.Editor
                     continue;
                 }
 
-                if (IsAllowedSummonSlotIcon(buttonName, image))
+                if (IsAllowedSummonSlotIcon(buttonName, image)
+                    || IsAllowedSummonSlotProgressFill(buttonName, image))
                 {
                     continue;
                 }
@@ -736,6 +740,18 @@ namespace DimensionBrawl.Editor
                 && image.sprite != null
                 && image.type == Image.Type.Simple
                 && image.preserveAspect
+                && !image.raycastTarget;
+        }
+
+        private static bool IsAllowedSummonSlotProgressFill(string buttonName, Image image)
+        {
+            return buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
+                && image.gameObject.name == "CooldownFill"
+                && image.sprite != null
+                && image.type == Image.Type.Filled
+                && image.fillMethod == Image.FillMethod.Radial360
+                && image.fillOrigin == (int)Image.Origin360.Top
+                && image.fillClockwise
                 && !image.raycastTarget;
         }
 
@@ -1339,6 +1355,29 @@ namespace DimensionBrawl.Editor
             if (!ready)
             {
                 report.AppendLine($"IMAGE_{rootName}_{childName}=FAIL");
+            }
+
+            return ready;
+        }
+
+        private static bool HasVisibleChildRadialFill(
+            GameObject hudInstance,
+            string rootName,
+            string childName,
+            StringBuilder report)
+        {
+            GameObject root = FindChild(hudInstance.transform, rootName);
+            GameObject child = root != null ? FindChild(root.transform, childName) : null;
+            Image image = child != null ? child.GetComponent<Image>() : null;
+            bool ready = child != null
+                && child.activeInHierarchy
+                && image != null
+                && image.enabled
+                && IsAllowedSummonSlotProgressFill(rootName, image)
+                && image.color.a > 0.001f;
+            if (!ready)
+            {
+                report.AppendLine($"RADIAL_FILL_{rootName}_{childName}=FAIL");
             }
 
             return ready;
