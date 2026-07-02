@@ -433,6 +433,10 @@ PrefabInstance:
       propertyPath: transitionPresenter
       value:
       objectReference: {fileID: 626763483}
+    - target: {fileID: 6148092337995762595, guid: d8088cb97419c034ca4029890cf4d239, type: 3}
+      propertyPath: catalog
+      value:
+      objectReference: {fileID: 11400000, guid: 1c6f8de9a0a54d9db65c9933587a21f8, type: 2}
     - target: {fileID: 2125348368331879324, guid: d8088cb97419c034ca4029890cf4d239, type: 3}
       propertyPath: m_Name
       value: Canvas

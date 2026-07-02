@@ -41,17 +41,17 @@ namespace DimensionBrawl.Editor
                 AddMotion(prefabRoot, "StageSelectArtRoot", "stage_screen_enter", 0f, motionCatalog, entries);
                 AddMotion(prefabRoot, "BackButton", "stage_back_button_enter", 0.04f, motionCatalog, entries);
                 AddMotion(prefabRoot, "ChapterScrollArea", "stage_chapter_list_enter", 0.08f, motionCatalog, entries);
-                AddMotion(prefabRoot, "EP 01_ChapterCard", "stage_card_enter", 0.12f, motionCatalog, entries);
+                AddMotion(prefabRoot, "EP 01_SelectedChapterCard", "stage_card_enter", 0.12f, motionCatalog, entries);
                 AddMotion(prefabRoot, "EP 02_ChapterCard", "stage_card_enter", 0.15f, motionCatalog, entries);
-                AddMotion(prefabRoot, "EP 03_SelectedChapterCard", "stage_card_enter", 0.18f, motionCatalog, entries);
+                AddMotion(prefabRoot, "EP 03_ChapterCard", "stage_card_enter", 0.18f, motionCatalog, entries);
                 AddMotion(prefabRoot, "EP 04_ChapterCard", "stage_card_enter", 0.21f, motionCatalog, entries);
                 AddMotion(prefabRoot, "SelectedPanel", "stage_feature_panel_enter", 0.12f, motionCatalog, entries);
                 AddMotion(prefabRoot, "CurrentChapterFrame", "stage_feature_panel_enter", 0.16f, motionCatalog, entries);
                 AddMotion(prefabRoot, "StageScrollArea", "stage_stage_grid_enter", 0.22f, motionCatalog, entries);
-                AddMotion(prefabRoot, "03-1_StageCard", "stage_card_enter", 0.27f, motionCatalog, entries);
-                AddMotion(prefabRoot, "03-2_StageCard", "stage_card_enter", 0.31f, motionCatalog, entries);
-                AddMotion(prefabRoot, "03-3_StageCard", "stage_card_enter", 0.35f, motionCatalog, entries);
-                AddMotion(prefabRoot, "03-4_StageCard", "stage_card_enter", 0.39f, motionCatalog, entries);
+                AddMotion(prefabRoot, "01-1_StageCard", "stage_card_enter", 0.27f, motionCatalog, entries);
+                AddMotion(prefabRoot, "01-2_StageCard", "stage_card_enter", 0.31f, motionCatalog, entries);
+                AddMotion(prefabRoot, "01-3_StageCard", "stage_card_enter", 0.35f, motionCatalog, entries);
+                AddMotion(prefabRoot, "01-4_StageCard", "stage_card_enter", 0.39f, motionCatalog, entries);
                 AddMotion(prefabRoot, "BottomLeftButton", "stage_bottom_nav_enter", 0.42f, motionCatalog, entries);
                 AddMotion(prefabRoot, "BottomCenterSelectedButton", "stage_bottom_nav_enter", 0.46f, motionCatalog, entries);
                 AddMotion(prefabRoot, "BottomRightButton", "stage_bottom_nav_enter", 0.5f, motionCatalog, entries);
@@ -224,7 +224,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Stage select scroll setup could not find StageSelectScreenPresenter on the prefab root.");
             }
 
-            RectTransform selectedChapterTarget = RequireRectTransform(prefabRoot, "EP 03_SelectedChapterCard");
+            RectTransform selectedChapterTarget = RequireRectTransform(prefabRoot, "EP 01_SelectedChapterCard");
             SerializedObject serializedObject = new SerializedObject(presenter);
             serializedObject.FindProperty("stageScrollMotion").objectReferenceValue = stageScrollMotion;
             serializedObject.FindProperty("chapterScrollMotion").objectReferenceValue = chapterScrollMotion;
@@ -238,12 +238,12 @@ namespace DimensionBrawl.Editor
             ConfigureStageFocusEntry(
                 entriesProperty.GetArrayElementAtIndex(0),
                 RequireStageId(stageCatalog, 0),
-                RequireRectTransform(prefabRoot, "03-3_StageCard"),
+                RequireRectTransform(prefabRoot, "01-1_StageCard"),
                 selectedChapterTarget);
             ConfigureStageFocusEntry(
                 entriesProperty.GetArrayElementAtIndex(1),
                 RequireStageId(stageCatalog, 1),
-                RequireRectTransform(prefabRoot, "03-2_StageCard"),
+                RequireRectTransform(prefabRoot, "01-2_StageCard"),
                 selectedChapterTarget);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }

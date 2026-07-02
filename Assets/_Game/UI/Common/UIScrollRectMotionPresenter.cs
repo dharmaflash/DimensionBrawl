@@ -169,6 +169,19 @@ namespace DimensionBrawl.UI
 
             Vector2 offset = targetCenterInViewport - desiredCenter;
             Vector2 targetPosition = content.anchoredPosition - offset;
+            if (scrollRect != null)
+            {
+                if (!scrollRect.horizontal)
+                {
+                    targetPosition.x = content.anchoredPosition.x;
+                }
+
+                if (!scrollRect.vertical)
+                {
+                    targetPosition.y = content.anchoredPosition.y;
+                }
+            }
+
             return ClampAnchoredPosition(targetPosition);
         }
 
