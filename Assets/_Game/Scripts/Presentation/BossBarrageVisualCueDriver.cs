@@ -149,6 +149,17 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float pressureActionCueIntensity = 0.95f;
         [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.08f;
 
+        [Header("Damage Feedback")]
+        [SerializeField] private CombatHealth damageFeedbackHealth;
+        [SerializeField] private CombatVfxCueId damageCueId = CombatVfxCueId.EnemyHit;
+        [SerializeField, Min(0f)] private float damageCueIntensity = 0.65f;
+        [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.78f;
+        [SerializeField] private bool playDamageVfx = true;
+        [SerializeField] private Renderer[] damageFlashRenderers = Array.Empty<Renderer>();
+        [SerializeField] private Color damageFlashColor = new Color(1f, 0.18f, 0.08f, 1f);
+        [SerializeField] private Color damageFlashEmissionColor = new Color(1f, 0.48f, 0.24f, 1f);
+        [SerializeField, Min(0.01f)] private float damageFlashSeconds = 0.14f;
+
         [Header("Pattern Cues")]
         [SerializeField] private PatternAnimationCue[] patternCues = Array.Empty<PatternAnimationCue>();
 
@@ -156,13 +167,16 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PressureActionCue[] pressureActionCues = Array.Empty<PressureActionCue>();
 
         private MaterialPropertyBlock propertyBlock;
+        private MaterialPropertyBlock damagePropertyBlock;
         private Vector3 baseScale = Vector3.one;
         private Color activeColor;
         private float activePulseScale;
         private float cueTimer;
         private float cueDuration = 0.01f;
+        private float damageFlashTimer;
         private bool subscribed;
         private bool pressureActionSubscribed;
+        private bool damageFeedbackSubscribed;
         private string lastWindupTrigger = string.Empty;
         private string lastReleaseTrigger = string.Empty;
         private string lastPressureActionTrigger = string.Empty;
@@ -172,7 +186,9 @@ namespace DimensionBrawl.Presentation
         private int windupWorldVfxCueRequestCount;
         private int releaseWorldVfxCueRequestCount;
         private int pressureActionWorldVfxCueRequestCount;
+        private int damageWorldVfxCueRequestCount;
         private CombatVfxCueId lastPressureActionWorldVfxCueId;
+        private float lastDamageCueIntensity;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
@@ -186,6 +202,9 @@ namespace DimensionBrawl.Presentation
         public CombatVfxCueId SkillPressureCueId => skillPressureCueId;
         public CombatVfxCueId SummonPressureCueId => summonPressureCueId;
         public CombatVfxCueId PunishPressureCueId => punishPressureCueId;
+        public CombatVfxCueId DamageCueId => damageCueId;
+        public bool PlayDamageVfx => playDamageVfx;
+        public int DamageFlashRendererCount => damageFlashRenderers != null ? damageFlashRenderers.Length : 0;
         public int PulseRendererCount => pulseRenderers != null ? pulseRenderers.Length : 0;
         public int PatternCueCount => patternCues != null ? patternCues.Length : 0;
         public int PressureActionCueCount => pressureActionCues != null ? pressureActionCues.Length : 0;
@@ -199,7 +218,9 @@ namespace DimensionBrawl.Presentation
         public int WindupWorldVfxCueRequestCount => windupWorldVfxCueRequestCount;
         public int ReleaseWorldVfxCueRequestCount => releaseWorldVfxCueRequestCount;
         public int PressureActionWorldVfxCueRequestCount => pressureActionWorldVfxCueRequestCount;
+        public int DamageWorldVfxCueRequestCount => damageWorldVfxCueRequestCount;
         public CombatVfxCueId LastPressureActionWorldVfxCueId => lastPressureActionWorldVfxCueId;
+        public float LastDamageCueIntensity => lastDamageCueIntensity;
 
         public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
         {
@@ -236,6 +257,7 @@ namespace DimensionBrawl.Presentation
             animator = newAnimator;
             pulseRoot = newPulseRoot;
             pulseRenderers = newPulseRenderers != null ? (Renderer[])newPulseRenderers.Clone() : Array.Empty<Renderer>();
+            damageFlashRenderers = Array.Empty<Renderer>();
             CaptureBaseScale();
             ApplyColor(baseColor);
             Subscribe();
@@ -450,6 +472,16 @@ namespace DimensionBrawl.Presentation
                 pulseRenderers = pulseRoot.GetComponentsInChildren<Renderer>(true);
             }
 
+            if (damageFeedbackHealth == null)
+            {
+                damageFeedbackHealth = GetComponentInParent<CombatHealth>();
+            }
+
+            if (damageFlashRenderers == null || damageFlashRenderers.Length == 0)
+            {
+                damageFlashRenderers = ResolveDamageFlashRenderers();
+            }
+
             CaptureBaseScale();
             ApplyColor(baseColor);
         }
@@ -463,6 +495,7 @@ namespace DimensionBrawl.Presentation
         {
             Unsubscribe();
             ResetPulse();
+            ClearDamageFlash();
         }
 
         private void Update()
@@ -473,6 +506,7 @@ namespace DimensionBrawl.Presentation
             }
 
             RefreshPulse();
+            RefreshDamageFlash();
         }
 
         private void OnWindupStarted(BossBarrageEmitter emitter, BossBarragePatternProfile pattern)
@@ -526,10 +560,31 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        private void OnDamaged(DamageInfo damageInfo)
+        {
+            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            {
+                return;
+            }
+
+            float policyScale = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy)
+                ? 1f
+                : Mathf.Clamp(pressureDamageCueScale, 0.1f, 1f);
+            lastDamageCueIntensity = damageCueIntensity * policyScale;
+            damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
+            StartCue(new Color(1f, 0.22f, 0.12f, 1f), 0.14f, 0.26f);
+
+            if (playDamageVfx && PlayWorldVfx(damageCueId, 1, lastDamageCueIntensity))
+            {
+                damageWorldVfxCueRequestCount++;
+            }
+        }
+
         private void Subscribe()
         {
             SubscribeBarrageEmitter();
             SubscribePressureActionSource();
+            SubscribeDamageFeedback();
         }
 
         private void SubscribeBarrageEmitter()
@@ -555,10 +610,32 @@ namespace DimensionBrawl.Presentation
             pressureActionSubscribed = true;
         }
 
+        private void SubscribeDamageFeedback()
+        {
+            if (damageFeedbackSubscribed)
+            {
+                return;
+            }
+
+            if (damageFeedbackHealth == null)
+            {
+                damageFeedbackHealth = GetComponentInParent<CombatHealth>();
+            }
+
+            if (damageFeedbackHealth == null)
+            {
+                return;
+            }
+
+            damageFeedbackHealth.Damaged += OnDamaged;
+            damageFeedbackSubscribed = true;
+        }
+
         private void Unsubscribe()
         {
             UnsubscribeBarrageEmitter();
             UnsubscribePressureActionSource();
+            UnsubscribeDamageFeedback();
         }
 
         private void UnsubscribeBarrageEmitter()
@@ -584,6 +661,18 @@ namespace DimensionBrawl.Presentation
 
             bossPressureActionDirector.ActionQueued -= OnPressureActionQueued;
             pressureActionSubscribed = false;
+        }
+
+        private void UnsubscribeDamageFeedback()
+        {
+            if (!damageFeedbackSubscribed || damageFeedbackHealth == null)
+            {
+                damageFeedbackSubscribed = false;
+                return;
+            }
+
+            damageFeedbackHealth.Damaged -= OnDamaged;
+            damageFeedbackSubscribed = false;
         }
 
         private PatternAnimationCue ResolveCue(BossBarragePatternProfile pattern)
@@ -671,6 +760,109 @@ namespace DimensionBrawl.Presentation
             }
 
             ApplyColor(baseColor);
+        }
+
+        private void RefreshDamageFlash()
+        {
+            if (damageFlashTimer <= 0f)
+            {
+                return;
+            }
+
+            damageFlashTimer = Mathf.Max(0f, damageFlashTimer - Time.deltaTime);
+            if (damageFlashTimer <= 0f)
+            {
+                ClearDamageFlash();
+                return;
+            }
+
+            float flash01 = Mathf.Clamp01(damageFlashTimer / Mathf.Max(0.01f, damageFlashSeconds));
+            float weight = Mathf.SmoothStep(0f, 1f, flash01);
+            ApplyDamageFlash(
+                Color.Lerp(Color.white, damageFlashColor, weight),
+                damageFlashEmissionColor * (0.35f + weight * 1.65f));
+        }
+
+        private Renderer[] ResolveDamageFlashRenderers()
+        {
+            Transform root = animator != null ? animator.transform : transform;
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers == null || renderers.Length == 0)
+            {
+                return Array.Empty<Renderer>();
+            }
+
+            var results = new System.Collections.Generic.List<Renderer>(renderers.Length);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer candidate = renderers[i];
+                if (candidate == null || IsPulseRenderer(candidate))
+                {
+                    continue;
+                }
+
+                results.Add(candidate);
+            }
+
+            return results.ToArray();
+        }
+
+        private bool IsPulseRenderer(Renderer renderer)
+        {
+            if (pulseRenderers == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < pulseRenderers.Length; i++)
+            {
+                if (pulseRenderers[i] == renderer)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ApplyDamageFlash(Color color, Color emissionColor)
+        {
+            if (damageFlashRenderers == null)
+            {
+                return;
+            }
+
+            damagePropertyBlock ??= new MaterialPropertyBlock();
+            for (int i = 0; i < damageFlashRenderers.Length; i++)
+            {
+                Renderer targetRenderer = damageFlashRenderers[i];
+                if (targetRenderer == null)
+                {
+                    continue;
+                }
+
+                targetRenderer.GetPropertyBlock(damagePropertyBlock);
+                damagePropertyBlock.SetColor(BaseColorId, color);
+                damagePropertyBlock.SetColor(ColorId, color);
+                damagePropertyBlock.SetColor("_EmissionColor", emissionColor);
+                targetRenderer.SetPropertyBlock(damagePropertyBlock);
+            }
+        }
+
+        private void ClearDamageFlash()
+        {
+            if (damageFlashRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < damageFlashRenderers.Length; i++)
+            {
+                if (damageFlashRenderers[i] != null)
+                {
+                    damageFlashRenderers[i].SetPropertyBlock(null);
+                }
+            }
         }
 
         private void CaptureBaseScale()

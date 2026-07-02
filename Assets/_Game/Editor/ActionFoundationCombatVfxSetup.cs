@@ -46,6 +46,12 @@ namespace DimensionBrawl.Editor
         private const string MuzzleSmokeTexturePath = TextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
         private const string MuzzleFlashShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
         private const string MuzzleSmokeShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
+        private const string ImportedVefectsHitOnceRoot =
+            "Assets/_Imported/AssetStore/VFX/Vefects/Combat Flipbook VFX/VFX/Hit/Particles/Once";
+        private const string ImportedVefectsHit05DirectionalPrefabPath =
+            ImportedVefectsHitOnceRoot + "/VFX_Hit_05_Directional_Bunch_01.prefab";
+        private const string ImportedVefectsHit06DirectionalPrefabPath =
+            ImportedVefectsHitOnceRoot + "/VFX_Hit_06_Directional_Bunch_01.prefab";
         private static readonly string[] PlayerRangedGunshotClipPaths =
         {
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
@@ -200,6 +206,29 @@ namespace DimensionBrawl.Editor
             Debug.Log("Refreshed reviewed combat cue audio banks on promoted cue prefabs.");
         }
 
+        [MenuItem("DimensionBrawl/Refresh Reviewed Hit Feedback VFX")]
+        public static void RefreshReviewedHitFeedbackVfxMenu()
+        {
+            EnsureFolder("Assets/_Game/Art/VFX");
+            EnsureFolder(CombatVfxRoot);
+            EnsureFolder(MaterialRoot);
+            EnsureFolder(PrefabRoot);
+            EnsureFolder(TextureRoot);
+            EnsureFolder(ShaderRoot);
+
+            SavePromotedHitFeedbackPrefab(
+                "DB_VFX_EnemyHit",
+                ImportedVefectsHit05DirectionalPrefabPath,
+                0.30f);
+            SavePromotedHitFeedbackPrefab(
+                "DB_VFX_EnemyHit_Alt_Hit06",
+                ImportedVefectsHit06DirectionalPrefabPath,
+                0.30f);
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("Refreshed reviewed hit feedback VFX prefabs.");
+        }
+
         [MenuItem("DimensionBrawl/Validate Action Foundation Combat VFX Cues")]
         public static void ValidateCombatVfxCuesMenu()
         {
@@ -316,6 +345,15 @@ namespace DimensionBrawl.Editor
                 0.02f,
                 0f);
 
+            GameObject enemyHitFeedback = SavePromotedHitFeedbackPrefab(
+                "DB_VFX_EnemyHit",
+                ImportedVefectsHit05DirectionalPrefabPath,
+                0.30f);
+            SavePromotedHitFeedbackPrefab(
+                "DB_VFX_EnemyHit_Alt_Hit06",
+                ImportedVefectsHit06DirectionalPrefabPath,
+                0.30f);
+
             CombatCuePrefabs prefabs = new CombatCuePrefabs
             {
                 PlayerAttackStart = SaveBurstPrefab("DB_VFX_PlayerAttackStart", cyan, ParticleSystemShapeType.Cone, 0.16f, 24f, 115f, 0.16f, 0.36f, 0.12f, 0.32f, 18, new Color(0.26f, 0.95f, 1f, 0.86f), new Color(0.14f, 0.42f, 1f, 0f)),
@@ -325,7 +363,7 @@ namespace DimensionBrawl.Editor
                 PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
                 EnemyAttackActive = SaveBurstPrefab("DB_VFX_EnemyAttackActive_Generic", white, ParticleSystemShapeType.Cone, 0.36f, 42f, 120f, 0.10f, 0.24f, 0.22f, 0.55f, 36, new Color(1f, 0.9f, 0.55f, 0.95f), new Color(1f, 0.2f, 0.02f, 0f)),
-                EnemyHit = SaveBurstPrefab("DB_VFX_EnemyHit", white, ParticleSystemShapeType.Sphere, 0.28f, 28f, 360f, 0.12f, 0.26f, 0.10f, 0.34f, 24, new Color(1f, 0.96f, 0.72f, 0.9f), new Color(0.8f, 0.16f, 0.04f, 0f)),
+                EnemyHit = enemyHitFeedback,
                 EnemyDeath = SaveBurstPrefab("DB_VFX_EnemyDeath", smoke, ParticleSystemShapeType.Sphere, 0.42f, 16f, 360f, 0.30f, 0.72f, 0.20f, 0.68f, 42, new Color(0.58f, 0.66f, 0.72f, 0.58f), new Color(0.08f, 0.12f, 0.16f, 0f)),
                 ClosePunishWindup = SaveBurstPrefab("DB_VFX_ClosePunishWindup", orange, ParticleSystemShapeType.Cone, 0.22f, 12f, 105f, 0.26f, 0.50f, 0.12f, 0.34f, 24, new Color(1f, 0.42f, 0.08f, 0.8f), new Color(1f, 0.06f, 0f, 0f)),
                 ClosePunishActive = SaveBurstPrefab("DB_VFX_ClosePunishActive", red, ParticleSystemShapeType.Cone, 0.34f, 42f, 95f, 0.09f, 0.22f, 0.20f, 0.52f, 38, new Color(1f, 0.24f, 0.05f, 0.92f), new Color(1f, 0.8f, 0.16f, 0f)),
@@ -711,6 +749,504 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static GameObject SavePromotedHitFeedbackPrefab(
+            string name,
+            string sourcePrefabPath,
+            float lifetimeSeconds)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Missing source hit feedback VFX prefab at {sourcePrefabPath}.");
+            }
+
+            GameObject root = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
+            if (root == null)
+            {
+                root = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            try
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(root))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        root,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                }
+
+                root.name = name;
+                root.transform.localPosition = Vector3.zero;
+                root.transform.localRotation = Quaternion.identity;
+                root.transform.localScale = Vector3.one;
+                UnpackNestedPrefabInstances(root);
+                StripNonGameMonoBehaviours(root);
+                RemoveColliders(root);
+                DisableVfxAudioSources(root);
+                ConfigurePromotedHitFeedbackParticles(root);
+                RemapPromotedHitFeedbackRenderers(root);
+
+                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+                CombatVfxCueVisual visual = root.GetComponent<CombatVfxCueVisual>();
+                if (visual == null)
+                {
+                    visual = root.AddComponent<CombatVfxCueVisual>();
+                }
+
+                ConfigureCueVisual(
+                    visual,
+                    renderers,
+                    lifetimeSeconds,
+                    Color.white,
+                    Color.white,
+                    Vector3.one,
+                    Vector3.one,
+                    0f,
+                    0f,
+                    0f);
+
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save promoted hit feedback VFX prefab at {prefabPath}.");
+                }
+
+                AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
+                ValidateNoImportedAssetDependencies(CombatVfxCueId.EnemyHit, prefabPath);
+                return savedPrefab;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void ConfigurePromotedHitFeedbackParticles(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length == 0)
+            {
+                throw new InvalidOperationException($"{root.name} should preserve authored hit feedback particles.");
+            }
+
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void RemapPromotedHitFeedbackRenderers(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            Material fallbackMaterial = null;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        materials[materialIndex] = EnsurePromotedHitFeedbackMaterial(materials[materialIndex]);
+                        fallbackMaterial ??= materials[materialIndex];
+                    }
+                }
+
+                renderer.sharedMaterials = materials;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            if (fallbackMaterial == null)
+            {
+                throw new InvalidOperationException($"{root.name} should expose at least one promoted hit feedback material.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                Material[] materials = renderer.sharedMaterials;
+                bool changed = false;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] == null)
+                    {
+                        materials[materialIndex] = fallbackMaterial;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    renderer.sharedMaterials = materials;
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
+        }
+
+        private static Material EnsurePromotedHitFeedbackMaterial(Material sourceMaterial)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMaterial;
+            }
+
+            string targetPath = MaterialRoot + "/DB_CombatHit_"
+                + SanitizeAssetFileName(sourceMaterial.name)
+                + ".mat";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+            if (material == null)
+            {
+                material = new Material(EnsurePromotedHitFeedbackShader(sourceMaterial.shader));
+                AssetDatabase.CreateAsset(material, targetPath);
+            }
+
+            Shader promotedShader = EnsurePromotedHitFeedbackShader(sourceMaterial.shader);
+            material.shader = promotedShader;
+            material.CopyPropertiesFromMaterial(sourceMaterial);
+            material.shader = promotedShader;
+            material.renderQueue = sourceMaterial.renderQueue;
+
+            string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
+            for (int i = 0; i < textureProperties.Length; i++)
+            {
+                Texture texture = sourceMaterial.GetTexture(textureProperties[i]);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                Texture promotedTexture = EnsurePromotedHitFeedbackTexture(texture);
+                SetMaterialTextureIfPresent(material, textureProperties[i], promotedTexture);
+            }
+
+            RemapImportedSerializedHitFeedbackTextures(material);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            return material;
+        }
+
+        private static void RemapImportedSerializedHitFeedbackTextures(Material material)
+        {
+            SerializedObject serializedMaterial = new SerializedObject(material);
+            SerializedProperty texEnvs = serializedMaterial.FindProperty("m_SavedProperties.m_TexEnvs");
+            if (texEnvs == null || !texEnvs.isArray)
+            {
+                return;
+            }
+
+            for (int i = 0; i < texEnvs.arraySize; i++)
+            {
+                SerializedProperty entry = texEnvs.GetArrayElementAtIndex(i);
+                SerializedProperty propertyName = entry.FindPropertyRelative("first");
+                SerializedProperty textureRef = entry.FindPropertyRelative("second.m_Texture");
+                if (textureRef != null
+                    && propertyName != null
+                    && propertyName.stringValue == "_disolveMap")
+                {
+                    Texture promotedNoise =
+                        AssetDatabase.LoadAssetAtPath<Texture>(TextureRoot + "/DB_CombatHit_T_VFX_Noise_Perlin_01.tga");
+                    if (promotedNoise != null)
+                    {
+                        textureRef.objectReferenceValue = promotedNoise;
+                    }
+
+                    continue;
+                }
+
+                if (textureRef == null || textureRef.objectReferenceValue is not Texture texture)
+                {
+                    continue;
+                }
+
+                string texturePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                if (!texturePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                textureRef.objectReferenceValue = EnsurePromotedHitFeedbackTexture(texture);
+            }
+
+            serializedMaterial.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(material);
+        }
+
+        private static Shader EnsurePromotedHitFeedbackShader(Shader sourceShader)
+        {
+            if (sourceShader == null)
+            {
+                return FindParticleShader();
+            }
+
+            string sourcePath = AssetDatabase.GetAssetPath(sourceShader).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceShader;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceShader;
+            }
+
+            string targetPath = ShaderRoot + "/DB_CombatHit_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Shader>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote hit feedback shader from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            RemapPromotedShaderDefaultTextures(sourcePath, targetPath);
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(targetPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted hit feedback shader at {targetPath}.");
+            }
+
+            return shader;
+        }
+
+        private static void RemapPromotedShaderDefaultTextures(string sourceShaderPath, string targetShaderPath)
+        {
+            string sourceMetaPath = ToProjectAbsolutePath(sourceShaderPath + ".meta");
+            string targetMetaPath = ToProjectAbsolutePath(targetShaderPath + ".meta");
+            if (!File.Exists(sourceMetaPath) || !File.Exists(targetMetaPath))
+            {
+                return;
+            }
+
+            System.Collections.Generic.List<string> defaultTextureLines =
+                ExtractPromotedShaderDefaultTextureLines(File.ReadAllLines(sourceMetaPath));
+            if (defaultTextureLines.Count == 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < defaultTextureLines.Count; i++)
+            {
+                defaultTextureLines[i] = RemapSerializedTextureGuidsToPromotedAssets(defaultTextureLines[i]);
+            }
+
+            string[] lines = File.ReadAllLines(targetMetaPath);
+            var rewritten = new System.Collections.Generic.List<string>(lines.Length + defaultTextureLines.Count);
+            bool skippingDefaultTextures = false;
+            bool changed = false;
+            bool wroteDefaultTextures = false;
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string trimmed = lines[i].TrimStart();
+                if (!skippingDefaultTextures && (trimmed == "defaultTextures:" || trimmed == "defaultTextures: []"))
+                {
+                    rewritten.AddRange(defaultTextureLines);
+                    skippingDefaultTextures = trimmed == "defaultTextures:";
+                    changed = true;
+                    wroteDefaultTextures = true;
+                    continue;
+                }
+
+                if (skippingDefaultTextures)
+                {
+                    if (trimmed.StartsWith("nonModifiableTextures:", StringComparison.Ordinal))
+                    {
+                        rewritten.Add(lines[i]);
+                        skippingDefaultTextures = false;
+                    }
+
+                    continue;
+                }
+
+                if (!wroteDefaultTextures && trimmed.StartsWith("nonModifiableTextures:", StringComparison.Ordinal))
+                {
+                    rewritten.AddRange(defaultTextureLines);
+                    wroteDefaultTextures = true;
+                    changed = true;
+                }
+
+                rewritten.Add(lines[i]);
+            }
+
+            if (!wroteDefaultTextures)
+            {
+                rewritten.AddRange(defaultTextureLines);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                File.WriteAllLines(targetMetaPath, rewritten);
+            }
+        }
+
+        private static System.Collections.Generic.List<string> ExtractPromotedShaderDefaultTextureLines(string[] sourceMetaLines)
+        {
+            var defaultTextureLines = new System.Collections.Generic.List<string>();
+            bool copying = false;
+            for (int i = 0; i < sourceMetaLines.Length; i++)
+            {
+                string trimmed = sourceMetaLines[i].TrimStart();
+                if (!copying && trimmed == "defaultTextures:")
+                {
+                    copying = true;
+                    defaultTextureLines.Add(sourceMetaLines[i]);
+                    continue;
+                }
+
+                if (!copying)
+                {
+                    continue;
+                }
+
+                if (trimmed.StartsWith("nonModifiableTextures:", StringComparison.Ordinal))
+                {
+                    break;
+                }
+
+                defaultTextureLines.Add(sourceMetaLines[i]);
+            }
+
+            return defaultTextureLines;
+        }
+
+        private static string RemapSerializedTextureGuidsToPromotedAssets(string line)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+                line,
+                "guid: ([0-9a-fA-F]{32})",
+                match =>
+                {
+                    string sourceAssetPath = AssetDatabase.GUIDToAssetPath(match.Groups[1].Value).Replace('\\', '/');
+                    Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(sourceAssetPath);
+                    if (texture == null)
+                    {
+                        return match.Value;
+                    }
+
+                    Texture promotedTexture = EnsurePromotedHitFeedbackTexture(texture);
+                    string promotedPath = AssetDatabase.GetAssetPath(promotedTexture).Replace('\\', '/');
+                    string promotedGuid = AssetDatabase.AssetPathToGUID(promotedPath);
+                    return string.IsNullOrWhiteSpace(promotedGuid) ? match.Value : "guid: " + promotedGuid;
+                });
+        }
+
+        private static Texture EnsurePromotedHitFeedbackTexture(Texture sourceTexture)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceTexture;
+            }
+
+            string targetPath = TextureRoot + "/DB_CombatHit_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Texture>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote hit feedback texture from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted hit feedback texture at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static void UnpackNestedPrefabInstances(GameObject root)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = transforms.Length - 1; i >= 0; i--)
+            {
+                GameObject candidate = transforms[i].gameObject;
+                if (candidate != root
+                    && PrefabUtility.IsAnyPrefabInstanceRoot(candidate)
+                    && PrefabUtility.IsPartOfPrefabInstance(candidate))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        candidate,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                }
+            }
+        }
+
+        private static void StripNonGameMonoBehaviours(GameObject root)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                GameObjectUtility.RemoveMonoBehavioursWithMissingScript(transforms[i].gameObject);
+            }
+
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
+            for (int i = behaviours.Length - 1; i >= 0; i--)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                MonoScript script = MonoScript.FromMonoBehaviour(behaviour);
+                string scriptPath = script != null
+                    ? AssetDatabase.GetAssetPath(script).Replace('\\', '/')
+                    : string.Empty;
+                if (!scriptPath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+                {
+                    UnityEngine.Object.DestroyImmediate(behaviour);
+                }
+            }
+        }
+
+        private static void RemoveColliders(GameObject root)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = colliders.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(colliders[i]);
+            }
+        }
+
+        private static void DisableVfxAudioSources(GameObject root)
+        {
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = audioSources.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(audioSources[i]);
+            }
         }
 
         private static GameObject SaveMuzzleFlashPrefab(
@@ -1724,6 +2260,23 @@ namespace DimensionBrawl.Editor
             {
                 material.SetColor(propertyName, color);
             }
+        }
+
+        private static string SanitizeAssetFileName(string rawName)
+        {
+            if (string.IsNullOrWhiteSpace(rawName))
+            {
+                return "Asset";
+            }
+
+            char[] invalid = Path.GetInvalidFileNameChars();
+            string safe = rawName.Trim();
+            for (int i = 0; i < invalid.Length; i++)
+            {
+                safe = safe.Replace(invalid[i], '_');
+            }
+
+            return safe.Replace(' ', '_');
         }
 
         private static string ToProjectAbsolutePath(string assetPath)

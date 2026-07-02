@@ -264,6 +264,8 @@ MonoBehaviour:
   aimOrbitHoldsYawUntilAimEnds: 1
   aimOrbitRotatesCameraPosition: 0
   aimOrbitYawLimitDegrees: 45
+  aimOrbitUsesPitchInput: 1
+  aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
   aimAssistUsesYawTarget: 1
@@ -407,6 +409,42 @@ MonoBehaviour:
     focusHeightDelta: -0.02
     durationSeconds: 0.18
     finisherScale: 1
+  counterWaveCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.22}
+    planarDirectionOffset: -0.12
+    fieldOfViewDelta: 2
+    cameraDistanceDelta: -0.22
+    focusHeightDelta: 0.05
+    durationSeconds: 0.2
+    finisherScale: 1.2
+  counterWaveStabilizedCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: -0.1}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 1
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.03
+    durationSeconds: 0.18
+    finisherScale: 1.1
+  pocketClearCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.18}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.05
+    durationSeconds: 0.32
+    finisherScale: 1.15
+  pocketFailCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.04, z: -0.12}
+    planarDirectionOffset: -0.06
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: -0.02
+    durationSeconds: 0.34
+    finisherScale: 1.05
 --- !u!114 &1006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -983,6 +1021,7 @@ MonoBehaviour:
   - {fileID: 9157468826393851034}
   - {fileID: 6514434415308070}
   - {fileID: 5938638756418942863}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 1, g: 1, b: 1, a: 1}
   flashSeconds: 0.08
@@ -1088,6 +1127,8 @@ MonoBehaviour:
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
+  playDamageVfx: 0
+  playCriticalVfx: 0
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1458,6 +1499,7 @@ MonoBehaviour:
   - {fileID: 342490191}
   - {fileID: 18432601}
   - {fileID: 18432600}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -1536,6 +1578,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 5010}
   cueAnchor: {fileID: 438186050}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -5332,6 +5378,7 @@ MonoBehaviour:
   - {fileID: 433714988}
   - {fileID: 1662178650}
   - {fileID: 1642175824}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -5475,6 +5522,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 102419988}
   cueAnchor: {fileID: 723355191}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -11341,6 +11392,7 @@ MonoBehaviour:
   - {fileID: 1013182973}
   - {fileID: 1006242760}
   - {fileID: 1542378823}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -11484,6 +11536,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 272183517}
   cueAnchor: {fileID: 376970272}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -17101,6 +17157,7 @@ MonoBehaviour:
   - {fileID: 1912202654}
   - {fileID: 1075528932}
   - {fileID: 1600964819}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -17223,6 +17280,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 408449254}
   cueAnchor: {fileID: 2098182088}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -22375,6 +22436,7 @@ MonoBehaviour:
   - {fileID: 531586074}
   - {fileID: 998761623}
   - {fileID: 1135410564}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -22518,6 +22580,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 548236421}
   cueAnchor: {fileID: 290488739}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -27680,6 +27746,7 @@ MonoBehaviour:
   - {fileID: 1661658943}
   - {fileID: 1105082898}
   - {fileID: 784491659}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -27824,6 +27891,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 682321481}
   cueAnchor: {fileID: 952636866}
   elitePatternController: {fileID: 682321471}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -31945,6 +32016,7 @@ MonoBehaviour:
   - {fileID: 464832342}
   - {fileID: 2061065982}
   - {fileID: 2019138694}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -32088,6 +32160,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 771332239}
   cueAnchor: {fileID: 300006871}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -40033,6 +40109,7 @@ MonoBehaviour:
   - {fileID: 2114406264}
   - {fileID: 262808912}
   - {fileID: 1058113286}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -40176,6 +40253,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 946888089}
   cueAnchor: {fileID: 1201602420}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -46934,6 +47015,7 @@ MonoBehaviour:
   - {fileID: 863032100}
   - {fileID: 2071501901}
   - {fileID: 811046044}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -47077,6 +47159,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 1123467321}
   cueAnchor: {fileID: 923697551}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -58772,6 +58858,7 @@ MonoBehaviour:
   - {fileID: 602835910}
   - {fileID: 1348720372}
   - {fileID: 920280922}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -58915,6 +59002,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 1403009141}
   cueAnchor: {fileID: 438230569}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -62351,6 +62442,7 @@ MonoBehaviour:
   - {fileID: 781494623}
   - {fileID: 828941769}
   - {fileID: 1087189150}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -62494,6 +62586,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 1468388283}
   cueAnchor: {fileID: 303258897}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -88992,6 +89088,7 @@ MonoBehaviour:
   - {fileID: 391147347}
   - {fileID: 1426060015}
   - {fileID: 200963101}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
   flashSeconds: 0.08
@@ -89135,6 +89232,10 @@ MonoBehaviour:
   cuePlayer: {fileID: 2082642308}
   cueAnchor: {fileID: 583420765}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 0
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8

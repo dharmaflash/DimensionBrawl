@@ -50,6 +50,7 @@ namespace DimensionBrawl.Presentation
     public enum CombatVfxCuePlaybackMode
     {
         AllAuthoredCues,
+        ReviewedCombatFeedbackOnly,
         PlayerRangedOnly
     }
 
@@ -65,6 +66,9 @@ namespace DimensionBrawl.Presentation
         {
             switch (playbackMode)
             {
+                case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
+                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                        || cueId == CombatVfxCueId.EnemyHit;
                 case CombatVfxCuePlaybackMode.PlayerRangedOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
                 default:

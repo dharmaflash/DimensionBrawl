@@ -1434,18 +1434,19 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void CombatVfxCueProfileOnlyPlaysRangedMuzzleCueDuringCleanupPass()
+        public void CombatVfxCueProfileOnlyPlaysReviewedCombatFeedbackDuringCleanupPass()
         {
             CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
 
             Assert.AreEqual(
-                CombatVfxCuePlaybackMode.PlayerRangedOnly,
+                CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly,
                 profile.PlaybackMode,
-                "The shared ActionFoundation combat VFX profile should keep authored cue data but only play the reviewed ranged muzzle cue in the cleanup pass.");
+                "The shared ActionFoundation combat VFX profile should keep authored cue data but only play reviewed combat feedback cues in the cleanup pass.");
 
             foreach (CombatVfxCueId cueId in System.Enum.GetValues(typeof(CombatVfxCueId)))
             {
-                bool shouldPlay = cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
+                bool shouldPlay = cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                    || cueId == CombatVfxCueId.EnemyHit;
                 Assert.AreEqual(shouldPlay, profile.AllowsPlayback(cueId), $"{cueId} playback policy should stay explicit.");
             }
         }

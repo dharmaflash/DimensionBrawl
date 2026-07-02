@@ -11,14 +11,10 @@
             "id": "cf872e5bf08e6bdb",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "SUMMON_SYSTEM_REFERENCE_RESEARCH.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "SUMMON_SYSTEM_REFERENCE_RESEARCH"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "그래프 뷰"
             }
           }
         ]
@@ -185,13 +181,24 @@
   },
   "active": "cf872e5bf08e6bdb",
   "lastOpenFiles": [
+    "ACTIVE_COMBAT_PRESENTATION_CONTEXT.md.meta",
+    "ACTIVE_COMBAT_PRESENTATION_CONTEXT.md",
+    "무제 1.canvas.meta",
+    "무제 1.canvas",
+    "SUBCULTURE_UI_REFERENCE_RESEARCH.md",
+    "ACTION_FOUNDATION_TESTING.md",
+    "COMBO_SYSTEM_REFERENCE_RESEARCH.md",
+    "FRONTLINE_COMBAT_STRUCTURE_ANCHOR.md",
+    "ACTION_FEEL_TARGETS.md",
+    "ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md",
+    "무제.canvas",
+    "무제.canvas.meta",
+    "SUMMON_SYSTEM_REFERENCE_RESEARCH.md",
     "CURRENT_CONTEXT.md.meta",
     "00_INDEX.md.meta",
     "CURRENT_CONTEXT.md",
     "00_INDEX.md",
     "CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md",
-    "ACTION_FEEL_TARGETS.md",
-    "ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md",
     "ARPG_REFERENCE_RESEARCH.md",
     "ART_ASSET_STORAGE_WORKFLOW.md",
     "INTRO_GATEPOD_INVASION_ARKDATA_EVIDENCE.md"
