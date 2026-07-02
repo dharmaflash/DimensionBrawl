@@ -10,6 +10,8 @@ namespace DimensionBrawl.UI
     {
         [SerializeField] private BossBarrageLaneReviewTutorialProfile profile;
         [SerializeField] private bool startOnEnable = true;
+        [SerializeField, Min(0f)] private float minimumStepReadSeconds = 0.85f;
+        [SerializeField, Min(0f)] private float completionHoldSeconds = 0.85f;
 
         private BossBarragePocketReviewOwner pocketReviewOwner;
         private SummonEnergyLadder energyLadder;
@@ -20,10 +22,13 @@ namespace DimensionBrawl.UI
 
         private int stepIndex;
         private float stepTimer;
+        private float completionTimer;
         private bool subscribed;
         private bool completed;
         private bool failed;
         private bool pocketGuideStarted;
+        private bool stepCompletionPending;
+        private string completionPrompt;
         private bool dodgeObserved;
         private bool basicDefenseFireObserved;
         private bool forwardRiskObserved;
@@ -69,6 +74,11 @@ namespace DimensionBrawl.UI
                 if (!HasActiveStep)
                 {
                     return completed || failed ? CurrentObjective : null;
+                }
+
+                if (stepCompletionPending)
+                {
+                    return completionPrompt;
                 }
 
                 return CurrentStep.PromptText;
@@ -152,9 +162,20 @@ namespace DimensionBrawl.UI
             }
 
             stepTimer += Mathf.Max(0f, deltaTime);
+            if (stepCompletionPending)
+            {
+                completionTimer += Mathf.Max(0f, deltaTime);
+                if (completionTimer >= completionHoldSeconds)
+                {
+                    AdvanceStep();
+                }
+
+                return;
+            }
+
             if (IsStepSatisfied(step))
             {
-                AdvanceStep();
+                ConfirmStep(step);
             }
         }
 
@@ -162,9 +183,12 @@ namespace DimensionBrawl.UI
         {
             stepIndex = 0;
             stepTimer = 0f;
+            completionTimer = 0f;
             completed = false;
             failed = false;
             pocketGuideStarted = IsPocketReadyForGuide;
+            stepCompletionPending = false;
+            completionPrompt = string.Empty;
             dodgeObserved = false;
             basicDefenseFireObserved = false;
             forwardRiskObserved = false;
@@ -291,7 +315,7 @@ namespace DimensionBrawl.UI
 
         private bool IsStepSatisfied(BossBarrageLaneReviewTutorialProfile.Step step)
         {
-            if (stepTimer < step.MinimumSeconds)
+            if (stepTimer < Mathf.Max(step.MinimumSeconds, minimumStepReadSeconds))
             {
                 return false;
             }
@@ -343,13 +367,53 @@ namespace DimensionBrawl.UI
                 && energyLadder.CanSpendMana(requiredMana);
         }
 
+        private void ConfirmStep(BossBarrageLaneReviewTutorialProfile.Step step)
+        {
+            stepCompletionPending = true;
+            completionTimer = 0f;
+            completionPrompt = ResolveCompletionPrompt(step);
+        }
+
         private void AdvanceStep()
         {
             stepIndex++;
             stepTimer = 0f;
+            completionTimer = 0f;
+            stepCompletionPending = false;
+            completionPrompt = string.Empty;
             if (profile == null || stepIndex >= profile.StepCount)
             {
                 completed = true;
+            }
+        }
+
+        private static string ResolveCompletionPrompt(BossBarrageLaneReviewTutorialProfile.Step step)
+        {
+            if (step == null)
+            {
+                return "\ud655\uc778\ub428.";
+            }
+
+            switch (step.CompletionCondition)
+            {
+                case BossBarrageLaneReviewTutorialCondition.DodgeStarted:
+                    return "\ud68c\ud53c \ud655\uc778. \ub2e4\uc74c \uc555\ubc15\uc744 \uc77d\uc5b4.";
+                case BossBarrageLaneReviewTutorialCondition.ForwardRiskEntered:
+                    return "EN \ucda9\uc804 \uc704\uce58 \ud655\uc778.";
+                case BossBarrageLaneReviewTutorialCondition.SummonSlot1Ready:
+                case BossBarrageLaneReviewTutorialCondition.EnergyTierAvailable:
+                    return "EN \ub2e8\uacc4\uc640 \uc2ac\ub86f \uc900\ube44 \ud655\uc778.";
+                case BossBarrageLaneReviewTutorialCondition.CloseThreatDefeated:
+                case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
+                    return "\uadfc\uc811 \uc555\ubc15 \ucc98\ub9ac \ud655\uc778.";
+                case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
+                    return "S1 \ucc28\ub2e8 \ud655\uc778. \uc5f4\ub9b0 \ud2c8\uc744 \uc77d\uc5b4.";
+                case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
+                    return "Skill1 \ud655\uc778 \uc644\ub8cc. \uc555\ubc15 \uae30\ub85d \uac31\uc2e0.";
+                case BossBarrageLaneReviewTutorialCondition.PocketCleared:
+                    return "\ud3ec\ucf13 \uae30\ub85d \uc644\ub8cc.";
+                default:
+                    return "\ud655\uc778\ub428.";
             }
         }
 
