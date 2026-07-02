@@ -504,6 +504,9 @@ namespace DimensionBrawl.Editor
             ready &= HasVisibleChildText(hudInstance, "SummonSlot2Button", "State", report);
             ready &= HasVisibleChildText(hudInstance, "SummonSlot3Button", "Label", report);
             ready &= HasVisibleChildText(hudInstance, "SummonSlot3Button", "State", report);
+            ready &= HasVisibleChildImage(hudInstance, "SummonSlot1Button", "Icon", report);
+            ready &= HasVisibleChildImage(hudInstance, "SummonSlot2Button", "Icon", report);
+            ready &= HasVisibleChildImage(hudInstance, "SummonSlot3Button", "Icon", report);
             return ready;
         }
 
@@ -714,11 +717,26 @@ namespace DimensionBrawl.Editor
                     continue;
                 }
 
+                if (IsAllowedSummonSlotIcon(buttonName, image))
+                {
+                    continue;
+                }
+
                 ready = false;
                 report.AppendLine($"BUTTON_OVERLAY_{buttonName}=VISIBLE_CHILD name={image.gameObject.name} alpha={image.color.a:0.###}");
             }
 
             return ready;
+        }
+
+        private static bool IsAllowedSummonSlotIcon(string buttonName, Image image)
+        {
+            return buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
+                && image.gameObject.name == "Icon"
+                && image.sprite != null
+                && image.type == Image.Type.Simple
+                && image.preserveAspect
+                && !image.raycastTarget;
         }
 
         private static bool HasButtonClickRoute(
@@ -1297,6 +1315,30 @@ namespace DimensionBrawl.Editor
             if (!ready)
             {
                 report.AppendLine($"TEXT_{rootName}_{childName}=FAIL");
+            }
+
+            return ready;
+        }
+
+        private static bool HasVisibleChildImage(
+            GameObject hudInstance,
+            string rootName,
+            string childName,
+            StringBuilder report)
+        {
+            GameObject root = FindChild(hudInstance.transform, rootName);
+            GameObject child = root != null ? FindChild(root.transform, childName) : null;
+            Image image = child != null ? child.GetComponent<Image>() : null;
+            bool ready = child != null
+                && child.activeInHierarchy
+                && image != null
+                && image.enabled
+                && image.sprite != null
+                && image.color.a > 0.5f
+                && !image.raycastTarget;
+            if (!ready)
+            {
+                report.AppendLine($"IMAGE_{rootName}_{childName}=FAIL");
             }
 
             return ready;

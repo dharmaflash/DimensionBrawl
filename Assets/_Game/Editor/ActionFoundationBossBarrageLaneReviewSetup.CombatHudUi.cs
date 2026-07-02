@@ -29,7 +29,7 @@ namespace DimensionBrawl.Editor
         private static readonly Color CombatHudReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
         private static readonly Color CombatHudSummonStateColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color CombatHudSummonLabelColor = new Color(1f, 0.92f, 0.68f, 1f);
-        private static readonly Color CombatHudSummonProgressColor = new Color(0.36f, 0.95f, 1f, 0.42f);
+        private static readonly Color CombatHudSummonIconColor = new Color(1f, 1f, 1f, 0.94f);
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Combat HUD UI")]
         public static void ReapplyBossBarrageCombatHudUiMenu()
@@ -585,9 +585,24 @@ namespace DimensionBrawl.Editor
             ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(915f, 1299f, 605f, 21f));
             HideLegacyHudLabels(hudRoot);
             HideActionButtonTexts(hudRoot);
-            ConfigureSummonSlotText(hudRoot, "SummonSlot1Button", new Vector2(211f, 216f), 16);
-            ConfigureSummonSlotText(hudRoot, "SummonSlot2Button", new Vector2(182f, 186f), 15);
-            ConfigureSummonSlotText(hudRoot, "SummonSlot3Button", new Vector2(179f, 183f), 15);
+            ConfigureSummonSlotPresentation(
+                hudRoot,
+                "SummonSlot1Button",
+                new Vector2(211f, 216f),
+                16,
+                sprites["Hud_SummonSlot1Icon"]);
+            ConfigureSummonSlotPresentation(
+                hudRoot,
+                "SummonSlot2Button",
+                new Vector2(182f, 186f),
+                15,
+                sprites["Hud_SummonSlot2Icon"]);
+            ConfigureSummonSlotPresentation(
+                hudRoot,
+                "SummonSlot3Button",
+                new Vector2(179f, 183f),
+                15,
+                sprites["Hud_SummonSlot3Icon"]);
             EditorUtility.SetDirty(hudRoot);
         }
 
@@ -783,11 +798,12 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ConfigureSummonSlotText(
+        private static void ConfigureSummonSlotPresentation(
             GameObject hudRoot,
             string buttonName,
             Vector2 buttonSize,
-            int fontSize)
+            int fontSize,
+            Sprite iconSprite)
         {
             Transform button = FindHudDescendant(hudRoot.transform, buttonName);
             if (button == null)
@@ -807,6 +823,13 @@ namespace DimensionBrawl.Editor
                 Mathf.Max(24f, barRect.xMax - labelRect.xMax - 4f),
                 barRect.height);
 
+            ConfigureLocalImage(
+                button,
+                "Icon",
+                ResolveSummonIconRect(buttonSize),
+                buttonSize,
+                iconSprite,
+                CombatHudSummonIconColor);
             ConfigureLocalText(
                 button,
                 "Label",
@@ -821,7 +844,7 @@ namespace DimensionBrawl.Editor
                 buttonSize,
                 CombatHudSummonStateColor,
                 Mathf.Max(14, fontSize));
-            ConfigureSummonSlotProgressFill(button);
+            HideSummonSlotProgressFill(button);
         }
 
         private static Rect ResolveSummonTextBarRect(Vector2 buttonSize)
@@ -831,6 +854,43 @@ namespace DimensionBrawl.Editor
             float width = buttonSize.x * 0.66f;
             float height = buttonSize.y * 0.17f;
             return new Rect(x, y, width, height);
+        }
+
+        private static Rect ResolveSummonIconRect(Vector2 buttonSize)
+        {
+            float width = buttonSize.x * 0.58f;
+            float height = buttonSize.y * 0.58f;
+            float x = (buttonSize.x - width) * 0.5f;
+            float y = buttonSize.y * 0.13f;
+            return new Rect(x, y, width, height);
+        }
+
+        private static void ConfigureLocalImage(
+            Transform root,
+            string objectName,
+            Rect localRect,
+            Vector2 parentSize,
+            Sprite sprite,
+            Color color)
+        {
+            Transform target = root.Find(objectName);
+            if (target == null)
+            {
+                target = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).transform;
+                target.SetParent(root, worldPositionStays: false);
+            }
+
+            target.gameObject.SetActive(true);
+            target.SetAsFirstSibling();
+            ApplyLocalRect(target.GetComponent<RectTransform>(), localRect, parentSize);
+            Image image = target.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = sprite != null ? color : Color.clear;
+            image.raycastTarget = false;
+            image.preserveAspect = true;
+            image.type = Image.Type.Simple;
+            MarkComponentDirty(image);
+            EditorUtility.SetDirty(target.gameObject);
         }
 
         private static void ConfigureLocalText(
@@ -878,7 +938,7 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(text.gameObject);
         }
 
-        private static void ConfigureSummonSlotProgressFill(Transform button)
+        private static void HideSummonSlotProgressFill(Transform button)
         {
             Transform fill = FindHudDescendant(button, "CooldownFill");
             Image image = fill != null ? fill.GetComponent<Image>() : null;
@@ -887,13 +947,9 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            image.color = CombatHudSummonProgressColor;
+            image.sprite = null;
+            image.color = Color.clear;
             image.raycastTarget = false;
-            image.preserveAspect = false;
-            image.type = Image.Type.Filled;
-            image.fillMethod = Image.FillMethod.Radial360;
-            image.fillOrigin = (int)Image.Origin360.Top;
-            image.fillClockwise = true;
             image.fillAmount = 0f;
             MarkComponentDirty(image);
             EditorUtility.SetDirty(image.gameObject);
@@ -1006,8 +1062,11 @@ namespace DimensionBrawl.Editor
                 "Hud_PlayerMpFill",
                 "Hud_PlayerNameArea",
                 "Hud_PlayerSymbol",
+                "Hud_SummonSlot1Icon",
                 "Hud_SummonSlot1Frame",
+                "Hud_SummonSlot2Icon",
                 "Hud_SummonSlot2Frame",
+                "Hud_SummonSlot3Icon",
                 "Hud_SummonSlot3Frame",
                 "Hud_TopLeftPanel"
             };

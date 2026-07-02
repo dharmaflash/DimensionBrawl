@@ -11,9 +11,6 @@ namespace DimensionBrawl.UI
         private static readonly Color ResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
-        private static readonly Color SummonReadyFillColor = new Color(1f, 0.86f, 0.35f, 0.32f);
-        private static readonly Color SummonChargingFillColor = new Color(0.36f, 0.95f, 1f, 0.42f);
-        private static readonly Color SummonUnavailableFillColor = new Color(0.03f, 0.04f, 0.045f, 0.52f);
 
         [Serializable]
         public sealed class ActionSlotBinding
@@ -116,7 +113,7 @@ namespace DimensionBrawl.UI
 
                 if (cooldownFill != null)
                 {
-                    ConfigureClockwiseSummonFill(cooldownFill, enabled, availabilityFill01);
+                    HideSummonProgressFill(cooldownFill);
                 }
 
                 if (canvasGroup != null)
@@ -127,19 +124,11 @@ namespace DimensionBrawl.UI
                 }
             }
 
-            private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
+            private static void HideSummonProgressFill(Image image)
             {
-                image.type = Image.Type.Filled;
-                image.fillMethod = Image.FillMethod.Radial360;
-                image.fillOrigin = (int)Image.Origin360.Top;
-                image.fillClockwise = true;
                 image.raycastTarget = false;
-                image.fillAmount = Mathf.Clamp01(availabilityFill01);
-                image.color = enabled
-                    ? SummonReadyFillColor
-                    : availabilityFill01 > 0.001f
-                        ? SummonChargingFillColor
-                        : SummonUnavailableFillColor;
+                image.fillAmount = 0f;
+                image.color = Color.clear;
             }
 
             private static void ApplySlotTextOutline(Text text)
