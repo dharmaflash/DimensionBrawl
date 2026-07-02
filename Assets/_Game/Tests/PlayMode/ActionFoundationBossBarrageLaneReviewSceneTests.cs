@@ -156,14 +156,24 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
-        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier01Commando";
+        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
         private const string BossHumanoidControllerPath =
             "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
-        private const string BossHumanoidModelPath =
-            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
+        private const string BossHumanoidImportedRoot =
+            "Assets/_Imported/AssetStore/Protofactor/Sci Fi";
+        private const string BossHumanoidShooterRoot =
+            BossHumanoidImportedRoot + "/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3";
+        private const string BossHumanoidCommonWeaponRoot =
+            BossHumanoidImportedRoot + "/Common/Weapons";
+        private const string BossHumanoidSourcePrefabPath =
+            BossHumanoidShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string BossHumanoidSourceModelPath =
+            BossHumanoidShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
+        private const string BossHumanoidSourceAssaultRifleModelPath =
+            BossHumanoidCommonWeaponRoot + "/FBX Files/SM_SciFiAssaultRifle_01.FBX";
         private const string BossHumanoidLineCasterVariantModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
-        private const string BossHumanoidAssaultRifleName = "SciFiSoldier01_AssaultRifle";
+        private const string BossHumanoidAssaultRifleName = "SM_SciFiAssaultRifle_01";
         private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_Inori";
         private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
@@ -7256,8 +7266,13 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 BossHumanoidControllerPath,
                 controllerPath,
-                "Boss humanoid visual should use the direct promoted SciFiSoldier01 Commando controller.");
+                "Boss humanoid visual should use the reviewed boss cue Animator Controller.");
             AssertGameOwnedAsset(animator.runtimeAnimatorController, "boss humanoid Animator Controller");
+            Assert.IsFalse(animator.applyRootMotion, "Boss humanoid visual should not apply source prefab root motion.");
+            AssertPrefabSourcePath(
+                visual.gameObject,
+                BossHumanoidSourcePrefabPath,
+                "Boss humanoid visual should keep the exact SciFiSoldier_01_Commando prefab source.");
 
             Assert.IsNull(
                 visual.GetComponentInChildren<CombatHealth>(true),
@@ -7273,16 +7288,16 @@ namespace DimensionBrawl.Tests
                 "Boss humanoid visual should not carry elite gameplay traits.");
 
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
-            Assert.Greater(renderers.Length, 0, "Boss humanoid visual should expose promoted renderers.");
+            Assert.Greater(renderers.Length, 0, "Boss humanoid visual should expose source Commando renderers.");
             for (int i = 0; i < renderers.Length; i++)
             {
-                AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
+                AssertBossHumanoidRendererUsesCommandoAssets(renderers[i], renderers[i].name);
             }
 
-            AssertBossHumanoidUsesDirectCommandoMesh(visual);
-            Assert.IsNotNull(
-                FindDescendant(visual, BossHumanoidAssaultRifleName),
-                $"Boss humanoid visual should carry promoted {BossHumanoidAssaultRifleName}.");
+            AssertBossHumanoidUsesSourceCommandoMesh(visual);
+            Transform assaultRifle = FindDescendant(visual, BossHumanoidAssaultRifleName);
+            Assert.IsNotNull(assaultRifle, $"Boss humanoid visual should carry source {BossHumanoidAssaultRifleName}.");
+            AssertBossHumanoidAssaultRifleUsesSourceMesh(assaultRifle);
 
             Transform projectileCore = bossRoot.transform.Find(BossProjectileCoreName);
             Assert.IsNotNull(projectileCore, "Boss proxy should keep a hidden projectile source anchor.");
@@ -7307,9 +7322,9 @@ namespace DimensionBrawl.Tests
             Assert.Greater(cueDriver.PulseRendererCount, 0);
         }
 
-        private static void AssertBossHumanoidUsesDirectCommandoMesh(Transform visual)
+        private static void AssertBossHumanoidUsesSourceCommandoMesh(Transform visual)
         {
-            bool foundDirectCommandoMesh = false;
+            bool foundSourceCommandoMesh = false;
             SkinnedMeshRenderer[] skinnedRenderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             for (int i = 0; i < skinnedRenderers.Length; i++)
             {
@@ -7324,15 +7339,39 @@ namespace DimensionBrawl.Tests
                     BossHumanoidLineCasterVariantModelPath,
                     meshPath,
                     "Boss humanoid visual should not use the LineCaster role variant mesh.");
-                if (string.Equals(meshPath, BossHumanoidModelPath, System.StringComparison.Ordinal))
+                if (string.Equals(meshPath, BossHumanoidSourceModelPath, System.StringComparison.Ordinal))
                 {
-                    foundDirectCommandoMesh = true;
+                    foundSourceCommandoMesh = true;
                 }
             }
 
             Assert.IsTrue(
-                foundDirectCommandoMesh,
-                $"Boss humanoid visual should use the direct promoted SciFiSoldier01 Commando model at {BossHumanoidModelPath}.");
+                foundSourceCommandoMesh,
+                $"Boss humanoid visual should use the source SciFiSoldier_01_Commando model at {BossHumanoidSourceModelPath}.");
+        }
+
+        private static void AssertBossHumanoidAssaultRifleUsesSourceMesh(Transform assaultRifle)
+        {
+            bool foundAssaultRifleMesh = false;
+            MeshFilter[] meshes = assaultRifle.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                Mesh mesh = meshes[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                if (string.Equals(meshPath, BossHumanoidSourceAssaultRifleModelPath, System.StringComparison.Ordinal))
+                {
+                    foundAssaultRifleMesh = true;
+                }
+            }
+
+            Assert.IsTrue(
+                foundAssaultRifleMesh,
+                $"Boss humanoid assault rifle should render {BossHumanoidSourceAssaultRifleModelPath}.");
         }
 
         private static void AssertSingleCharacterCombatModeVisual(
@@ -7744,6 +7783,51 @@ namespace DimensionBrawl.Tests
                     AssertRenderableMaterialShader(materials[i], $"{label} material shader");
                 }
             }
+        }
+
+        private static void AssertPrefabSourcePath(GameObject instance, string expectedPath, string label)
+        {
+            GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
+            string sourcePath = AssetDatabase.GetAssetPath(source).Replace('\\', '/');
+            Assert.AreEqual(expectedPath, sourcePath, label);
+        }
+
+        private static void AssertBossHumanoidRendererUsesCommandoAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                AssertBossHumanoidCommandoAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                AssertBossHumanoidCommandoAsset(skinnedMeshRenderer.sharedMesh, $"{label} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    AssertBossHumanoidCommandoAsset(materials[i], $"{label} material");
+                    AssertRenderableMaterialShader(materials[i], $"{label} material shader");
+                }
+            }
+        }
+
+        private static void AssertBossHumanoidCommandoAsset(Object asset, string label)
+        {
+            Assert.IsNotNull(asset, $"{label} should be assigned.");
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            bool isGameOwned = assetPath.StartsWith("Assets/_Game/")
+                && !assetPath.Contains("/_Imported/");
+            bool isExactCommandoSource = assetPath.StartsWith(BossHumanoidShooterRoot + "/SciFiSoldier_01/")
+                || assetPath.StartsWith(BossHumanoidCommonWeaponRoot + "/");
+            Assert.IsTrue(
+                isGameOwned || isExactCommandoSource,
+                $"{label} should reference the exact SciFiSoldier_01_Commando source or a promoted `_Game` asset, found {assetPath}.");
         }
 
         private static void AssertRenderableMaterialShader(Material material, string label)

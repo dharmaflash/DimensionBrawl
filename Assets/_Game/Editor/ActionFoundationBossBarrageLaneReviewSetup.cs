@@ -272,9 +272,20 @@ namespace DimensionBrawl.Editor
         private const float CloseThreatBodyHitboxRadius = 0.68f;
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
-        private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SciFiSoldier01Commando";
-        private const string BossProxyHumanoidSourceVisualName = ActionFoundationSciFiSoldier01VisualSetup.VisualName;
-        private const string BossProxyHumanoidSourcePrefabPath = ActionFoundationEnemyPrefabSetup.GeneralDeckSoldierPrefabPath;
+        private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SciFiSoldier_01_Commando";
+        private const string BossProxyHumanoidImportedRoot =
+            "Assets/_Imported/AssetStore/Protofactor/Sci Fi";
+        private const string BossProxyHumanoidShooterRoot =
+            BossProxyHumanoidImportedRoot + "/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3";
+        private const string BossProxyHumanoidCommonWeaponRoot =
+            BossProxyHumanoidImportedRoot + "/Common/Weapons";
+        private const string BossProxyHumanoidSourcePrefabPath =
+            BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string BossProxyHumanoidSourceModelPath =
+            BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
+        private const string BossProxyHumanoidSourceAssaultRifleModelPath =
+            BossProxyHumanoidCommonWeaponRoot + "/FBX Files/SM_SciFiAssaultRifle_01.FBX";
+        private const string BossProxyHumanoidSourceAssaultRifleName = "SM_SciFiAssaultRifle_01";
         private const string BossProxyLineCasterVariantModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
         private const string CinematicSupportDragonRootName = ReviewRootPrefix + "CinematicSupportDragon_Volcano";
@@ -3781,28 +3792,28 @@ namespace DimensionBrawl.Editor
                     $"SciFiSoldier01 Commando boss source should be {BossProxyHumanoidSourcePrefabPath}, found {prefabPath}.");
             }
 
-            GameObject prefabContents = PrefabUtility.LoadPrefabContents(BossProxyHumanoidSourcePrefabPath);
-            try
+            GameObject visual = PrefabUtility.InstantiatePrefab(prefabAsset, parent) as GameObject;
+            if (visual == null)
             {
-                Transform sourceVisual = prefabContents.transform.Find(BossProxyHumanoidSourceVisualName);
-                if (sourceVisual == null)
-                {
-                    throw new InvalidOperationException(
-                        $"{BossProxyHumanoidSourcePrefabPath} is missing {BossProxyHumanoidSourceVisualName}.");
-                }
+                throw new InvalidOperationException($"Failed to instantiate {BossProxyHumanoidSourcePrefabPath}.");
+            }
 
-                GameObject visual = UnityEngine.Object.Instantiate(sourceVisual.gameObject);
-                visual.name = BossProxyHumanoidVisualName;
-                SceneManager.MoveGameObjectToScene(visual, parent.gameObject.scene);
-                visual.transform.SetParent(parent, worldPositionStays: false);
-                visual.transform.localPosition = new Vector3(0f, -1.58f, 0f);
-                visual.transform.localRotation = Quaternion.identity;
-                visual.transform.localScale *= 1.22f;
-            }
-            finally
+            visual.name = BossProxyHumanoidVisualName;
+            visual.transform.localPosition = new Vector3(0f, -1.58f, 0f);
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = new Vector3(1.22f, 1.22f, 1.22f);
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null)
             {
-                PrefabUtility.UnloadPrefabContents(prefabContents);
+                throw new InvalidOperationException($"{BossProxyHumanoidSourcePrefabPath} is missing its source Animator.");
             }
+
+            animator.runtimeAnimatorController =
+                LoadAsset<RuntimeAnimatorController>(ActionFoundationSciFiSoldier01VisualSetup.ControllerPath);
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            EditorUtility.SetDirty(animator);
         }
 
         private static void CreateBossProjectileCore(Transform parent)
@@ -8994,7 +9005,7 @@ namespace DimensionBrawl.Editor
             Animator animator = visual.GetComponent<Animator>();
             if (animator == null || animator.runtimeAnimatorController == null)
             {
-                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the promoted SciFiSoldier01 Commando Animator.");
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the reviewed boss cue Animator.");
             }
 
             string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
@@ -9017,14 +9028,15 @@ namespace DimensionBrawl.Editor
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
             if (renderers.Length == 0)
             {
-                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should expose promoted renderers.");
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should expose source Commando renderers.");
             }
 
             for (int i = 0; i < renderers.Length; i++)
             {
-                ValidateRendererAssets(renderers[i], $"{BossProxyHumanoidVisualName}.{renderers[i].name}");
+                ValidateBossProxyCommandoRendererAssets(renderers[i], $"{BossProxyHumanoidVisualName}.{renderers[i].name}");
             }
 
+            ValidateBossProxyCommandoPrefabSource(visual.gameObject);
             ValidateBossProxyCommandoMeshSource(visual);
 
             Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
@@ -9064,7 +9076,7 @@ namespace DimensionBrawl.Editor
 
             if (cueDriver.Animator != animator)
             {
-                throw new InvalidOperationException("Boss visual cue driver should drive the promoted humanoid Animator.");
+                throw new InvalidOperationException("Boss visual cue driver should drive the source Commando humanoid Animator.");
             }
 
             if (cueDriver.PulseRoot != projectileCore)
@@ -9116,7 +9128,7 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateBossProxyCommandoMeshSource(Transform visual)
         {
-            bool foundDirectCommandoMesh = false;
+            bool foundSourceCommandoMesh = false;
             SkinnedMeshRenderer[] skinnedRenderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
             for (int i = 0; i < skinnedRenderers.Length; i++)
             {
@@ -9133,22 +9145,46 @@ namespace DimensionBrawl.Editor
                         $"{BossProxyHumanoidVisualName} should not use the LineCaster role variant mesh: {meshPath}.");
                 }
 
-                if (string.Equals(meshPath, ActionFoundationSciFiSoldier01VisualSetup.ModelPath, StringComparison.Ordinal))
+                if (string.Equals(meshPath, BossProxyHumanoidSourceModelPath, StringComparison.Ordinal))
                 {
-                    foundDirectCommandoMesh = true;
+                    foundSourceCommandoMesh = true;
                 }
             }
 
-            if (!foundDirectCommandoMesh)
+            if (!foundSourceCommandoMesh)
             {
                 throw new InvalidOperationException(
-                    $"{BossProxyHumanoidVisualName} should use the direct promoted SciFiSoldier01 Commando model at {ActionFoundationSciFiSoldier01VisualSetup.ModelPath}.");
+                    $"{BossProxyHumanoidVisualName} should use the source SciFiSoldier_01_Commando model at {BossProxyHumanoidSourceModelPath}.");
             }
 
-            if (FindDescendant(visual, ActionFoundationSciFiSoldier01VisualSetup.AssaultRifleName) == null)
+            Transform assaultRifle = FindDescendant(visual, BossProxyHumanoidSourceAssaultRifleName);
+            if (assaultRifle == null)
             {
                 throw new InvalidOperationException(
-                    $"{BossProxyHumanoidVisualName} should carry {ActionFoundationSciFiSoldier01VisualSetup.AssaultRifleName} from the promoted Commando visual.");
+                    $"{BossProxyHumanoidVisualName} should carry {BossProxyHumanoidSourceAssaultRifleName} from the source Commando prefab.");
+            }
+
+            MeshFilter[] assaultRifleMeshes = assaultRifle.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            bool foundAssaultRifleMesh = false;
+            for (int i = 0; i < assaultRifleMeshes.Length; i++)
+            {
+                Mesh mesh = assaultRifleMeshes[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                if (string.Equals(meshPath, BossProxyHumanoidSourceAssaultRifleModelPath, StringComparison.Ordinal))
+                {
+                    foundAssaultRifleMesh = true;
+                }
+            }
+
+            if (!foundAssaultRifleMesh)
+            {
+                throw new InvalidOperationException(
+                    $"{BossProxyHumanoidVisualName} assault rifle should render {BossProxyHumanoidSourceAssaultRifleModelPath}.");
             }
         }
 
@@ -9803,6 +9839,60 @@ namespace DimensionBrawl.Editor
                 {
                     ValidateGameOwnedAsset(materials[i], $"{label} material");
                 }
+            }
+        }
+
+        private static void ValidateBossProxyCommandoPrefabSource(GameObject visual)
+        {
+            GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(visual);
+            string sourcePath = AssetDatabase.GetAssetPath(source).Replace('\\', '/');
+            if (!string.Equals(sourcePath, BossProxyHumanoidSourcePrefabPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{BossProxyHumanoidVisualName} should be a prefab instance of {BossProxyHumanoidSourcePrefabPath}, found {sourcePath}.");
+            }
+        }
+
+        private static void ValidateBossProxyCommandoRendererAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                ValidateBossProxyCommandoVisualAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                ValidateBossProxyCommandoVisualAsset(skinnedMeshRenderer.sharedMesh, $"{label} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    ValidateBossProxyCommandoVisualAsset(materials[i], $"{label} material");
+                }
+            }
+        }
+
+        private static void ValidateBossProxyCommandoVisualAsset(UnityEngine.Object asset, string label)
+        {
+            if (asset == null)
+            {
+                throw new InvalidOperationException($"{label} must be assigned.");
+            }
+
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            bool isGameOwned = assetPath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                && !assetPath.Contains("/_Imported/", StringComparison.Ordinal);
+            bool isExactCommandoSource = assetPath.StartsWith(BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/", StringComparison.Ordinal)
+                || assetPath.StartsWith(BossProxyHumanoidCommonWeaponRoot + "/", StringComparison.Ordinal);
+            if (!isGameOwned && !isExactCommandoSource)
+            {
+                throw new InvalidOperationException(
+                    $"{label} should reference the exact SciFiSoldier_01_Commando source or a promoted `_Game` asset, found {assetPath}.");
             }
         }
 
