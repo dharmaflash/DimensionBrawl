@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: DB_BossBarragePocketTutorial_Invasion
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewTutorialProfile
   tutorialEnabled: 1
-  clearObjective: 'CLEAR: S1 cover created the Skill1 confirm.'
-  failObjective: 'FAIL: HP or route pressure broke before the summon answer completed.'
+  clearObjective: '압박 차단 완료: S1이 막고 Skill1이 확인했다.'
+  failObjective: '실패: HP가 먼저 무너졌거나 소환 답이 늦었다.'
   steps:
   - stepId: dodge_barrage
-    objectiveText: 'Read the rear barrage and dodge before committing EN.'
-    promptText: 'Move first. Dodge the warning line; BasicDefenseFire is not the boss answer.'
+    objectiveText: '보스 경고선을 먼저 읽어라.'
+    promptText: '경고선은 막지 말고 피한다. 기본 사격은 보스 해답이 아니다.'
     focusAction: 110
     dimUnfocusedActions: 1
     completionCondition: 10
@@ -26,8 +26,8 @@ MonoBehaviour:
     requiredMana: 0
     minimumSeconds: 0.25
   - stepId: forward_en
-    objectiveText: 'Step into forward risk long enough to charge EN.'
-    promptText: 'Forward risk charges EN faster. Do not cross the frontline; summons take that side.'
+    objectiveText: '전방 위험선에서 EN을 충전해라.'
+    promptText: '앞쪽일수록 EN이 빨리 찬다. 경계선 너머는 소환수가 맡는다.'
     focusAction: 10
     dimUnfocusedActions: 1
     completionCondition: 30
@@ -35,8 +35,8 @@ MonoBehaviour:
     requiredMana: 0
     minimumSeconds: 0.25
   - stepId: slot_read
-    objectiveText: 'Build enough EN for S1. S1 blocks, S2/S3 punish openings.'
-    promptText: 'Keep all three slots visible: S1 cover, S2 laser support, S3 high-cost punish.'
+    objectiveText: 'EN LV와 S1/S2/S3 역할을 확인해라.'
+    promptText: 'S1은 차단, S2는 원거리 지원, S3는 고비용 돌파. 세 슬롯을 따로 읽어.'
     focusAction: 200
     dimUnfocusedActions: 1
     completionCondition: 40
@@ -44,8 +44,8 @@ MonoBehaviour:
     requiredMana: 200
     minimumSeconds: 0.35
   - stepId: close_probe
-    objectiveText: 'Stop the close pressure without treating basic fire as boss DPS.'
-    promptText: 'Use local defense to survive the probe, then preserve S1 for the curtain.'
+    objectiveText: '붙은 적은 근접 방어로 끊어라.'
+    promptText: '가까운 압박만 직접 처리하고, 보스 압박용 EN은 남겨라.'
     focusAction: 100
     dimUnfocusedActions: 1
     completionCondition: 51
@@ -53,8 +53,8 @@ MonoBehaviour:
     requiredMana: 0
     minimumSeconds: 0.35
   - stepId: s1_block
-    objectiveText: 'Spend S1 on the boss curtain.'
-    promptText: 'S1 is the block. Wait for the pressure screen, then commit the bruiser.'
+    objectiveText: '보스 압박이 열리면 S1을 투입해라.'
+    promptText: 'S1은 첫 차단 역할이다. 전선 너머는 직접 건너지 않는다.'
     focusAction: 200
     dimUnfocusedActions: 1
     completionCondition: 60
@@ -62,8 +62,8 @@ MonoBehaviour:
     requiredMana: 200
     minimumSeconds: 0.35
   - stepId: skill1_followup
-    objectiveText: 'Confirm the summon opening with Skill1.'
-    promptText: 'When S1 suppresses the curtain, Skill1 is the confirm. S2/S3 are not the block proof.'
+    objectiveText: '차단으로 열린 틈을 Skill1으로 확인해라.'
+    promptText: 'S1이 막은 뒤에만 Skill1 확인. 무작정 사격으로 밀지 않는다.'
     focusAction: 120
     dimUnfocusedActions: 1
     completionCondition: 72
@@ -71,8 +71,8 @@ MonoBehaviour:
     requiredMana: 0
     minimumSeconds: 0.35
   - stepId: pocket_result
-    objectiveText: 'Finish the pocket by surviving the pressure route.'
-    promptText: 'Clear/fail is recorded from pocket evidence, not a next button.'
+    objectiveText: '생존 기록을 확인해라.'
+    promptText: '성공/실패는 버튼 넘김이 아니라 HP, 차단, 확인 기록으로 정해진다.'
     focusAction: 0
     dimUnfocusedActions: 0
     completionCondition: 90

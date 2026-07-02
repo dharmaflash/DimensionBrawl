@@ -463,8 +463,8 @@ namespace DimensionBrawl.LevelDesign
             RestoreActionEnabledStates();
             ShowGuide(
                 "\uc774\ub178\ub9ac",
-                "\uc88b\uc544. \uc544\ub798 \ud1b5\ub85c\ub85c \ub0b4\ub824\uac00. \uac70\uae30\uc11c\ubd80\ud130\ub294 \uc9c4\uc9dc \uc804\ud22c\uac00 \uc2dc\uc791\ub3fc.",
-                "ROUTE",
+                "\uc88b\uc544. \uc544\ub798 \ud1b5\ub85c\ub85c \ub0b4\ub824\uac00. \ub2e4\uc74c \uc804\ud22c\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f \uae30\ub85d\uc73c\ub85c \ud310\uc815\ub3fc.",
+                "\uc9c4\uc785",
                 OlympusTutorialOverlayPresenter.FocusKind.Route,
                 new Vector2(0.5f, 0.76f));
             SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState.Ready);
@@ -575,49 +575,49 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uc190\uc774 \ub5a8\ub824\ub3c4 \uad1c\ucc2e\uc544. \uba3c\uc800 \uc55e\uc758 \uc801\uc744 \ubca0\uc5b4\ub0b4.",
-                        "\uacf5\uaca9 \ubc84\ud2bc",
+                        "\uc624\ud37c\ub808\uc774\ud130",
+                        "\uadfc\uc811 \uc555\ubc15 \uac10\uc9c0. \uce7c\uc740 \ubd99\uc740 \uc801\uc744 \ub04a\ub294 \uc6a9\ub3c4\uc57c.",
+                        "\uadfc\uc811 \ubc29\uc5b4",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uba48\ucd94\uba74 \ud3ec\uc704\ub3fc. \uc67c\ucabd \ud328\ub4dc\ub85c \uc606\uc73c\ub85c \ube60\uc838 \uacf5\uac04\uc744 \ub9cc\ub4e4\uc5b4.",
-                        "\uc774\ub3d9 \ud328\ub4dc",
+                        "\ubcf4\uc2a4 \uacbd\uace0\uc120\uc740 \ub9c9\uc9c0 \ub9d0\uace0 \ube44\ucf1c. \uc606\uc73c\ub85c \ube60\uc838 \uc548\uc804 \uce78\uc744 \ub9cc\ub4e4\uc5b4.",
+                        "\uc774\ub3d9",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uac70\ub9ac\uac00 \ubc8c\uc5b4\uc84c\uc5b4. \uc6d0\uac70\ub9ac \ubaa8\ub4dc\ub85c \uc804\ud658\ud574.",
-                        "\uc804\ud658 \ubc84\ud2bc",
+                        "\uac70\ub9ac \ud655\uc778. \uae30\ubcf8 \uc0ac\uaca9\uc740 \uc555\ubc15 \ub300\uc751\uc6a9\uc774\uc57c. \ubcf4\uc2a4 \ud574\ub2f5\uc740 \uc18c\ud658 \uc2ac\ub86f\uc73c\ub85c \ub9cc\ub4e0\ub2e4.",
+                        "\uc804\ud658",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uc870\uc900\uc120 \uc548\uc5d0 \ub123\uace0 \uc3f4. \ud0c4\ub3c4 \ubcf4\uc815\uc740 \uba85\uc911\uae4c\uc9c0 \ud655\uc778\ud574\uc57c \ud574.",
-                        "\uc0ac\uaca9 \ubc84\ud2bc",
+                        "\uc624\ud37c\ub808\uc774\ud130",
+                        "\ud55c \ubc1c\ub9cc \ud655\uc778\ud574. \ubb34\uc791\uc815 \uc3d8\ub294 \uac8c \uc544\ub2c8\ub77c, \uba85\uc911 \uc0c1\ud0dc\ub97c \uc77d\uc5b4.",
+                        "\uae30\ubcf8 \uc0ac\uaca9",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uacbd\uace0\uc120\uc774 \ubcf4\uc774\uba74 \ub9de\ubc1b\uc544\uce58\uc9c0 \ub9c8. \uc9c0\uae08\uc740 \ud53c\ud574\uc57c \ud574.",
-                        "\ud68c\ud53c \ubc84\ud2bc",
+                        "\ubd89\uc740 \uacbd\uace0\uc120\uc740 \ub9de\uad50\ud658\ud558\uc9c0 \ub9c8. \ud68c\ud53c\ub85c \uc555\ubc15\uc744 \ub04a\uc5b4.",
+                        "\ud68c\ud53c",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
                         "\uc774\ub178\ub9ac",
-                        "\uc88b\uc544. \uc774\uc81c \ub0a8\uc740 \uc801\uc744 \uc804\ubd80 \uc815\ub9ac\ud574. \uc14b \ubaa8\ub450 \uc4f0\ub7ec\uc838\uc57c \uae38\uc774 \uc5f4\ub824.",
-                        "ALL CLEAR",
+                        "\ub0a8\uc740 \uadfc\uc811 \uc704\ud611\uc744 \uc815\ub9ac\ud574. \ub2e4\uc74c \ud3ec\ucf13\ubd80\ud130\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f\uc774 \uc804\uc120\uc744 \ub9e1\ub294\ub2e4.",
+                        "\ud3ec\ucf13 \uc815\ub9ac",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
                     break;
@@ -631,32 +631,32 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.Melee:
                     ShowGuide(
                         "\uc774\ub178\ub9ac",
-                        "\uadfc\uc811 \uc555\ubc15 \ucc98\ub9ac \ud655\uc778.",
-                        "RECORDED",
+                        "\uac00\uae4c\uc6b4 \uc704\ud611 \ucc98\ub9ac \ud655\uc778.",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uacf5\uac04 \ud655\ubcf4 \ud655\uc778.",
-                        "RECORDED",
+                        "\uc548\uc804 \uce78 \ud655\ubcf4 \ud655\uc778.",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc6d0\uac70\ub9ac \uc804\ud658 \ud655\uc778.",
-                        "RECORDED",
+                        "\uc804\ud658 \ud655\uc778.",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
                         "\uc774\ub178\ub9ac",
-                        "\uba85\uc911 \ud655\uc778.",
-                        "RECORDED",
+                        "\uba85\uc911 \uc0c1\ud0dc \ud655\uc778.",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
@@ -664,7 +664,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
                         "\ud68c\ud53c \ud655\uc778.",
-                        "RECORDED",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
@@ -672,7 +672,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         "\uc774\ub178\ub9ac",
                         "\ud3ec\ucf13 \uc815\ub9ac \ud655\uc778.",
-                        "RECORDED",
+                        "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
                     break;
