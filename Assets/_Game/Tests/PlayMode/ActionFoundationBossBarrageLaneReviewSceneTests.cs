@@ -100,6 +100,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =
             "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonDragonFireBreath_FORGE3D.prefab";
+        private const string SummonSlot1PromotedSlamImpactPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonJumpSlamImpact_SPECIAL.prefab";
+        private const string SummonSlot1PromotedJumpTrailPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonJumpSlamAirTrail_SPECIAL.prefab";
         private const string SummonSlot3DragonVisualPrefabPath =
             "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon/PF_SummonVisual_VolcanoDragon.prefab";
         private const string SummonSlot3DragonControllerPath =
@@ -919,17 +923,51 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.9f, GetFloat(summonSlot1MotionPresenter, "arcEndProgress"), 0.001f);
             Assert.AreEqual(0.18f, GetFloat(summonSlot1MotionPresenter, "landingSettleSeconds"), 0.001f);
             Assert.AreEqual(0.12f, GetFloat(summonSlot1MotionPresenter, "landingDip"), 0.001f);
+            Transform jumpTrailVfx = summonSlot1Visual.Find("JumpSlamAirTrail");
+            AssertPromotedParticleVfx(
+                jumpTrailVfx,
+                "SummonSlot1 airborne jump trail",
+                6);
+            Assert.IsFalse(
+                jumpTrailVfx.gameObject.activeSelf,
+                "SummonSlot1 airborne jump trail should start hidden until the proxy is actually in its jump arc.");
+            Assert.AreSame(
+                jumpTrailVfx,
+                summonSlot1MotionPresenter.JumpVfxRoot,
+                "SummonSlot1 motion presenter should own the jump trail timing.");
+            Assert.GreaterOrEqual(
+                summonSlot1MotionPresenter.JumpVfxParticleCount,
+                6,
+                "SummonSlot1 jump trail should preserve the promoted RisingAttack particle stack.");
             Transform slamImpactBurst = summonActorPrefabObject.transform.Find("SlamImpactBurst");
             Assert.IsNotNull(slamImpactBurst, "SummonSlot1 actor prefab should keep a visible landing slam burst.");
-            Assert.GreaterOrEqual(
-                slamImpactBurst.localScale.x,
-                3f,
-                "SummonSlot1 landing slam should read as a broad impact ring, not a tiny contact puff.");
-            Assert.AreEqual(
+            AssertPromotedParticleVfx(
                 slamImpactBurst,
+                "SummonSlot1 landing slam impact",
+                6);
+            Assert.IsFalse(
+                slamImpactBurst.gameObject.activeSelf,
+                "SummonSlot1 landing slam impact should start hidden until the attack/landing frame.");
+            Assert.IsNull(
+                slamImpactBurst.GetComponent<MeshRenderer>(),
+                "SummonSlot1 landing slam should not fall back to the old primitive cylinder ring.");
+            SummonAttackBeamPresenter slamImpactPresenter =
                 RequireComponent<SummonAttackBeamPresenter>(
                     summonActorPrefabObject,
-                    "SummonSlot1 slam impact presenter").BeamRoot);
+                    "SummonSlot1 slam impact presenter");
+            Assert.AreEqual(
+                slamImpactBurst,
+                slamImpactPresenter.BeamRoot);
+            Assert.GreaterOrEqual(
+                slamImpactPresenter.BeamParticleCount,
+                6,
+                "SummonSlot1 landing slam presenter should drive the promoted particle burst.");
+            AssertGameOwnedAsset(
+                LoadAsset<GameObject>(SummonSlot1PromotedSlamImpactPrefabPath),
+                "SummonSlot1 promoted slam impact prefab");
+            AssertGameOwnedAsset(
+                LoadAsset<GameObject>(SummonSlot1PromotedJumpTrailPrefabPath),
+                "SummonSlot1 promoted jump trail prefab");
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
                 "PlayerSummon.JumpSlamBruiser",

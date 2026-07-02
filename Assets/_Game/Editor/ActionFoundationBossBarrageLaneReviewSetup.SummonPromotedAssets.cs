@@ -15,6 +15,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Plasma Beam/plasma_beam_blue.prefab";
         private const string ImportedForge3DFlameRedPrefabPath =
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Flames/flames_flame_red.prefab";
+        private const string ImportedSpecialSkillOneHandSmashPrefabPath =
+            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_07_OneHandSmash/Effect_07_OneHandSmash.prefab";
+        private const string ImportedSpecialSkillRisingAttackPrefabPath =
+            "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_2(ScriptBased)/Effects/Effect_36_RisingAttack/Effect_36_RisingAttack.prefab";
         private const string ImportedVolcanoDragonModelPath =
             "Assets/_Imported/AssetStore/HEROIC FANTASY CREATURES FULL PACK VOL3/Elemental Dragons Pack/Volcano Dragon/FBX Files/SK_VolcanoDragon.FBX";
         private const string ImportedVolcanoDragonFlyStationaryClipPath =
@@ -38,6 +42,10 @@ namespace DimensionBrawl.Editor
             SummonPromotedVfxPrefabRoot + "/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =
             SummonPromotedVfxPrefabRoot + "/PF_SummonDragonFireBreath_FORGE3D.prefab";
+        private const string SummonSlot1PromotedSlamImpactPrefabPath =
+            SummonPromotedVfxPrefabRoot + "/PF_SummonJumpSlamImpact_SPECIAL.prefab";
+        private const string SummonSlot1PromotedJumpTrailPrefabPath =
+            SummonPromotedVfxPrefabRoot + "/PF_SummonJumpSlamAirTrail_SPECIAL.prefab";
 
         private const string SummonDragonPromotedRoot =
             "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon";
@@ -73,9 +81,33 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureSummonPromotedPresentationAssets()
         {
+            EnsureSummonSlot1PromotedSlamImpactPrefab();
+            EnsureSummonSlot1PromotedJumpTrailPrefab();
             EnsureSummonSlot2PromotedLaserBeamPrefab();
             EnsureSummonSlot3PromotedFireBreathPrefab();
             EnsureSummonSlot3PromotedDragonVisualPrefab();
+        }
+
+        private static GameObject EnsureSummonSlot1PromotedSlamImpactPrefab()
+        {
+            return EnsureSummonPromotedParticlePrefab(
+                ImportedSpecialSkillOneHandSmashPrefabPath,
+                SummonSlot1PromotedSlamImpactPrefabPath,
+                "PF_SummonJumpSlamImpact_SPECIAL",
+                loopParticles: false,
+                playOnAwake: false,
+                minimumParticleSystems: 6);
+        }
+
+        private static GameObject EnsureSummonSlot1PromotedJumpTrailPrefab()
+        {
+            return EnsureSummonPromotedParticlePrefab(
+                ImportedSpecialSkillRisingAttackPrefabPath,
+                SummonSlot1PromotedJumpTrailPrefabPath,
+                "PF_SummonJumpSlamAirTrail_SPECIAL",
+                loopParticles: true,
+                playOnAwake: false,
+                minimumParticleSystems: 6);
         }
 
         private static GameObject EnsureSummonSlot2PromotedLaserBeamPrefab()
@@ -285,7 +317,8 @@ namespace DimensionBrawl.Editor
             float tierScaleStep,
             float pulseScale,
             float pulseSpeed,
-            int minimumParticleSystems)
+            int minimumParticleSystems,
+            bool loopParticles = true)
         {
             DestroyChildIfPresent(actorRoot.transform, beamName);
             GameObject sourcePrefab = LoadAsset<GameObject>(promotedPrefabPath);
@@ -302,7 +335,7 @@ namespace DimensionBrawl.Editor
             beamRoot.transform.localScale = localScale;
             RemoveColliders(beamRoot);
             DisableVfxAudioSources(beamRoot);
-            ConfigurePromotedVfxParticles(beamRoot, loopParticles: true, playOnAwake: false);
+            ConfigurePromotedVfxParticles(beamRoot, loopParticles, playOnAwake: false);
             ValidatePromotedParticleVfx(beamRoot.transform, beamName, minimumParticleSystems);
             beamRoot.SetActive(false);
 
@@ -320,6 +353,37 @@ namespace DimensionBrawl.Editor
             SetFloat(beamPresenter, "pulseScale", pulseScale);
             SetFloat(beamPresenter, "pulseSpeed", pulseSpeed);
             EditorUtility.SetDirty(actorRoot);
+        }
+
+        private static Transform ConfigureSummonJumpPromotedParticleVfx(
+            Transform parent,
+            string vfxName,
+            string promotedPrefabPath,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale,
+            int minimumParticleSystems)
+        {
+            DestroyChildIfPresent(parent, vfxName);
+            GameObject sourcePrefab = LoadAsset<GameObject>(promotedPrefabPath);
+            GameObject vfxRoot = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (vfxRoot == null)
+            {
+                vfxRoot = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            vfxRoot.name = vfxName;
+            vfxRoot.transform.SetParent(parent, worldPositionStays: false);
+            vfxRoot.transform.localPosition = localPosition;
+            vfxRoot.transform.localRotation = Quaternion.Euler(localEulerAngles);
+            vfxRoot.transform.localScale = localScale;
+            RemoveColliders(vfxRoot);
+            DisableVfxAudioSources(vfxRoot);
+            ConfigurePromotedVfxParticles(vfxRoot, loopParticles: true, playOnAwake: false);
+            ValidatePromotedParticleVfx(vfxRoot.transform, vfxName, minimumParticleSystems);
+            vfxRoot.SetActive(false);
+            EditorUtility.SetDirty(vfxRoot);
+            return vfxRoot.transform;
         }
 
         private static UnityEngine.Object[] ToObjectReferences(UnityEngine.Object[] values)

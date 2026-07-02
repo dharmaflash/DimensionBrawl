@@ -1407,6 +1407,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BossSummonPressurePresentationCandidateProfilePath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot1PromotedSlamImpactPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1PromotedJumpTrailPrefabPath);
             ValidateNoImportedAssetReference(SummonSlot2LaserBeamMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3FireBreathMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3DragonBodyMaterialPath);
@@ -7854,6 +7856,54 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException(
                     $"{SummonSlot1ActorVisualName} should expose at least one enabled renderer.");
+            }
+
+            SummonProxyVisualMotionPresenter motionPresenter =
+                RequireComponent<SummonProxyVisualMotionPresenter>(
+                    summonActorPrefab.gameObject,
+                    "SummonSlot1 visual motion presenter");
+            Transform jumpTrailVfx = summonActorVisual.Find("JumpSlamAirTrail");
+            ValidatePromotedParticleVfx(
+                jumpTrailVfx,
+                "SummonSlot1 airborne jump trail",
+                minimumParticleSystems: 6);
+            if (jumpTrailVfx.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException("SummonSlot1 airborne jump trail should start hidden.");
+            }
+
+            ValidateObjectReference(motionPresenter, "jumpVfxRoot", jumpTrailVfx);
+            if (motionPresenter.JumpVfxParticleCount < 6)
+            {
+                throw new InvalidOperationException(
+                    "SummonSlot1 visual motion presenter should drive the promoted airborne jump trail stack.");
+            }
+
+            Transform slamImpactBurst = summonActorPrefab.transform.Find("SlamImpactBurst");
+            ValidatePromotedParticleVfx(
+                slamImpactBurst,
+                "SummonSlot1 landing slam impact",
+                minimumParticleSystems: 6);
+            if (slamImpactBurst.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException("SummonSlot1 landing slam impact should start hidden.");
+            }
+
+            if (slamImpactBurst.GetComponent<MeshRenderer>() != null)
+            {
+                throw new InvalidOperationException(
+                    "SummonSlot1 landing slam impact must not fall back to the old primitive cylinder ring.");
+            }
+
+            SummonAttackBeamPresenter slamImpactPresenter =
+                RequireComponent<SummonAttackBeamPresenter>(
+                    summonActorPrefab.gameObject,
+                    "SummonSlot1 slam impact presenter");
+            ValidateObjectReference(slamImpactPresenter, "beamRoot", slamImpactBurst);
+            if (slamImpactPresenter.BeamParticleCount < 6)
+            {
+                throw new InvalidOperationException(
+                    "SummonSlot1 slam impact presenter should drive the promoted particle burst.");
             }
 
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");

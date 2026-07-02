@@ -229,6 +229,8 @@ namespace DimensionBrawl.Editor
 
         private static SummonFrontlineProxy EnsureSummonActorPrefab()
         {
+            EnsureSummonSlot1PromotedSlamImpactPrefab();
+            EnsureSummonSlot1PromotedJumpTrailPrefab();
             EnsureFolderForAsset(SummonSlot1ActorPrefabPath);
             Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
@@ -395,6 +397,14 @@ namespace DimensionBrawl.Editor
                     new Vector3(0f, -0.04f, -0.08f),
                     Vector3.zero,
                     new Vector3(0.9f, 0.9f, 0.9f));
+                Transform jumpTrailVfx = ConfigureSummonJumpPromotedParticleVfx(
+                    summonVisual,
+                    "JumpSlamAirTrail",
+                    SummonSlot1PromotedJumpTrailPrefabPath,
+                    new Vector3(0f, 0.72f, -0.18f),
+                    Vector3.zero,
+                    new Vector3(0.58f, 0.58f, 0.58f),
+                    minimumParticleSystems: 6);
                 EnsureSummonHealthBar(
                     editableRoot,
                     proxy,
@@ -441,24 +451,24 @@ namespace DimensionBrawl.Editor
                     tierArcHeightStep: 0.22f,
                     landingDip: 0.12f,
                     arcEndProgress: 0.9f,
-                    landingSettleSeconds: 0.18f);
-                ConfigureSummonAttackBeamVisual(
+                    landingSettleSeconds: 0.18f,
+                    jumpVfxRoot: jumpTrailVfx);
+                ConfigureSummonAttackPromotedParticleBeam(
                     editableRoot,
                     proxy,
                     "SlamImpactBurst",
-                    LoadOrCreateTransparentMaterial(
-                        SummonSlot1SlamImpactMaterialPath,
-                        new Color(1f, 0.78f, 0.28f, 0.62f)),
-                    PrimitiveType.Cylinder,
+                    SummonSlot1PromotedSlamImpactPrefabPath,
                     new Vector3(0f, 0.06f, 0.62f),
-                    new Vector3(90f, 0f, 0f),
-                    new Vector3(3.15f, 0.04f, 3.15f),
+                    Vector3.zero,
+                    new Vector3(0.82f, 0.82f, 0.82f),
                     new Color(1f, 0.78f, 0.28f, 0.62f),
                     new Color(1f, 0.92f, 0.42f, 0.72f),
                     new Color(1f, 0.55f, 0.18f, 0.82f),
                     tierScaleStep: 0.34f,
                     pulseScale: 0.1f,
-                    pulseSpeed: 14f);
+                    pulseSpeed: 14f,
+                    minimumParticleSystems: 6,
+                    loopParticles: false);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -1102,7 +1112,8 @@ namespace DimensionBrawl.Editor
             float tierArcHeightStep,
             float landingDip,
             float arcEndProgress = 0.82f,
-            float landingSettleSeconds = 0.12f)
+            float landingSettleSeconds = 0.12f,
+            Transform jumpVfxRoot = null)
         {
             SummonProxyVisualMotionPresenter motionPresenter =
                 EnsureComponent<SummonProxyVisualMotionPresenter>(actorRoot);
@@ -1115,55 +1126,13 @@ namespace DimensionBrawl.Editor
             SetFloat(motionPresenter, "arcEndProgress", arcEndProgress);
             SetFloat(motionPresenter, "landingSettleSeconds", landingDip > 0f ? landingSettleSeconds : 0f);
             SetFloat(motionPresenter, "landingDip", landingDip);
-        }
-
-        private static void ConfigureSummonAttackBeamVisual(
-            GameObject actorRoot,
-            SummonFrontlineProxy proxy,
-            string beamName,
-            Material material,
-            PrimitiveType primitiveType,
-            Vector3 localPosition,
-            Vector3 localEulerAngles,
-            Vector3 localScale,
-            Color tierOneColor,
-            Color tierTwoColor,
-            Color tierThreeColor,
-            float tierScaleStep,
-            float pulseScale,
-            float pulseSpeed)
-        {
-            Transform beamRoot = EnsureChild(actorRoot.transform, beamName);
-            beamRoot.localPosition = localPosition;
-            beamRoot.localRotation = Quaternion.Euler(localEulerAngles);
-            beamRoot.localScale = localScale;
-
-            MeshFilter filter = EnsureComponent<MeshFilter>(beamRoot.gameObject);
-            filter.sharedMesh = LoadPrimitiveMesh(primitiveType);
-            MeshRenderer renderer = EnsureComponent<MeshRenderer>(beamRoot.gameObject);
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            renderer.allowOcclusionWhenDynamic = false;
-
-            Collider[] colliders = beamRoot.GetComponents<Collider>();
-            for (int i = colliders.Length - 1; i >= 0; i--)
-            {
-                UnityEngine.Object.DestroyImmediate(colliders[i]);
-            }
-
-            beamRoot.gameObject.SetActive(false);
-            SummonAttackBeamPresenter beamPresenter = EnsureComponent<SummonAttackBeamPresenter>(actorRoot);
-            SetObjectReference(beamPresenter, "proxy", proxy);
-            SetObjectReference(beamPresenter, "beamRoot", beamRoot);
-            SetObjectReferenceArray(beamPresenter, "beamRenderers", new UnityEngine.Object[] { renderer });
-            SetColor(beamPresenter, "tierOneColor", tierOneColor);
-            SetColor(beamPresenter, "tierTwoColor", tierTwoColor);
-            SetColor(beamPresenter, "tierThreeColor", tierThreeColor);
-            SetFloat(beamPresenter, "tierScaleStep", tierScaleStep);
-            SetFloat(beamPresenter, "pulseScale", pulseScale);
-            SetFloat(beamPresenter, "pulseSpeed", pulseSpeed);
-            EditorUtility.SetDirty(actorRoot);
+            SetObjectReference(motionPresenter, "jumpVfxRoot", jumpVfxRoot);
+            SetObjectReferenceArray(
+                motionPresenter,
+                "jumpVfxParticles",
+                jumpVfxRoot != null
+                    ? ToObjectReferences(jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
+                    : Array.Empty<UnityEngine.Object>());
         }
 
         private static Transform AttachPrimitiveDragonVisual(

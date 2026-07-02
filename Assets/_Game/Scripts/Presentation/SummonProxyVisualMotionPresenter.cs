@@ -15,17 +15,22 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 1f)] private float arcEndProgress = 0.92f;
         [SerializeField, Min(0f)] private float landingSettleSeconds = 0.12f;
         [SerializeField, Min(0f)] private float landingDip = 0.08f;
+        [SerializeField] private Transform jumpVfxRoot;
+        [SerializeField] private ParticleSystem[] jumpVfxParticles = System.Array.Empty<ParticleSystem>();
 
         private Vector3 baseLocalPosition;
         private bool hasBasePose;
         private bool wasAirborne;
+        private bool jumpVfxVisible;
         private float landingTimer;
 
         public SummonFrontlineProxy Proxy => proxy;
         public Transform MotionRoot => motionRoot;
+        public Transform JumpVfxRoot => jumpVfxRoot;
         public float AirborneHeight => airborneHeight;
         public float JumpArcHeight => jumpArcHeight;
         public float TierArcHeightStep => tierArcHeightStep;
+        public int JumpVfxParticleCount => jumpVfxParticles != null ? jumpVfxParticles.Length : 0;
 
         private void Awake()
         {
@@ -44,6 +49,7 @@ namespace DimensionBrawl.Presentation
 
         private void OnDisable()
         {
+            SetJumpVfxVisible(false);
             ResetMotion();
         }
 
@@ -58,6 +64,7 @@ namespace DimensionBrawl.Presentation
             CaptureBasePose();
             if (motionRoot == null)
             {
+                SetJumpVfxVisible(false);
                 return;
             }
 
@@ -66,12 +73,14 @@ namespace DimensionBrawl.Presentation
             {
                 wasAirborne = false;
                 landingTimer = 0f;
+                SetJumpVfxVisible(false);
                 ResetMotion();
                 return;
             }
 
             float arcHeight = ResolveArcHeight();
             bool airborne = arcHeight > 0.001f;
+            SetJumpVfxVisible(airborne);
             if (wasAirborne && !airborne && landingSettleSeconds > 0f)
             {
                 landingTimer = Mathf.Max(landingTimer, landingSettleSeconds);
@@ -124,6 +133,11 @@ namespace DimensionBrawl.Presentation
             {
                 motionRoot = transform;
             }
+
+            if (jumpVfxRoot != null && (jumpVfxParticles == null || jumpVfxParticles.Length == 0))
+            {
+                jumpVfxParticles = jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            }
         }
 
         private void CaptureBasePose()
@@ -142,6 +156,58 @@ namespace DimensionBrawl.Presentation
             if (motionRoot != null && hasBasePose)
             {
                 motionRoot.localPosition = baseLocalPosition;
+            }
+        }
+
+        private void SetJumpVfxVisible(bool visible)
+        {
+            if (jumpVfxRoot == null)
+            {
+                jumpVfxVisible = false;
+                return;
+            }
+
+            bool isActive = jumpVfxRoot.gameObject.activeSelf;
+            if (jumpVfxVisible == visible && isActive == visible)
+            {
+                return;
+            }
+
+            jumpVfxVisible = visible;
+            if (isActive != visible)
+            {
+                jumpVfxRoot.gameObject.SetActive(visible);
+            }
+
+            if (jumpVfxParticles == null || jumpVfxParticles.Length == 0)
+            {
+                jumpVfxParticles = jumpVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            }
+
+            if (jumpVfxParticles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < jumpVfxParticles.Length; i++)
+            {
+                ParticleSystem particle = jumpVfxParticles[i];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                if (visible)
+                {
+                    particle.Clear(withChildren: true);
+                    particle.Play(withChildren: true);
+                }
+                else
+                {
+                    particle.Stop(
+                        withChildren: true,
+                        ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
             }
         }
     }
