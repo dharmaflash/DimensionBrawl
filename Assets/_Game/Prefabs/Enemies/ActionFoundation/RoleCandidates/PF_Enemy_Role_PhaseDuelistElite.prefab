@@ -164,10 +164,14 @@ MonoBehaviour:
   flashRenderers:
   - {fileID: 2003680919128980258}
   - {fileID: 2499070433155047227}
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &3221476925659345416
 MonoBehaviour:
@@ -312,6 +316,12 @@ MonoBehaviour:
   - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
     signalCueId: 28
     intensity: 1.18
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
+  playDeathVfx: 0
 --- !u!114 &7387209403817158195
 MonoBehaviour:
   m_ObjectHideFlags: 0

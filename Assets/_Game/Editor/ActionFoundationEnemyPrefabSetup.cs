@@ -276,6 +276,8 @@ namespace DimensionBrawl.Editor
             {
                 SetObjectReference(hitFeedback, "health", health);
                 SetObjectReferenceArray(hitFeedback, "flashRenderers", feedbackRenderers);
+                SetBool(hitFeedback, "renderHitFeedback", true);
+                SetBool(hitFeedback, "applyIdleColorOnEnable", false);
             }
 
             EnemyActionCameraCueDriver cameraCueDriver = root.GetComponent<EnemyActionCameraCueDriver>();
@@ -313,6 +315,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(vfxCueDriver, "elitePatternController", eliteController);
                 SetFloat(vfxCueDriver, "damageCueIntensity", 1f);
                 SetFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
+                SetBool(vfxCueDriver, "playDamageVfx", true);
             }
         }
 
@@ -693,6 +696,14 @@ namespace DimensionBrawl.Editor
         {
             var serializedObject = new SerializedObject(target);
             RequireProperty(serializedObject, propertyName).floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).boolValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
         }

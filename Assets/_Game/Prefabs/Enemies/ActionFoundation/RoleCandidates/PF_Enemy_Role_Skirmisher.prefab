@@ -172,10 +172,14 @@ MonoBehaviour:
   - {fileID: 6951661941825462229}
   - {fileID: 2744505591842728468}
   - {fileID: 8825535547011259802}
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &7621183854720865437
 MonoBehaviour:
@@ -320,6 +324,12 @@ MonoBehaviour:
   - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
     signalCueId: 28
     intensity: 1.18
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
+  playDeathVfx: 0
 --- !u!1 &3057589024989585961
 GameObject:
   m_ObjectHideFlags: 0

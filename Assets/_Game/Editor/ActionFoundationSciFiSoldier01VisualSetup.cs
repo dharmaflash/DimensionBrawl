@@ -110,6 +110,7 @@ namespace DimensionBrawl.Editor
             SetBool(soldier, "usePrototypeBodyColors", false);
             SetObjectReference(telegraphPresenter, "poseRoot", visual.transform);
             SetObjectReferenceArray(hitFeedback, "flashRenderers", renderers.Cast<UnityEngine.Object>().ToArray());
+            SetBool(hitFeedback, "renderHitFeedback", true);
             SetBool(hitFeedback, "applyIdleColorOnEnable", false);
 
             EditorUtility.SetDirty(root);

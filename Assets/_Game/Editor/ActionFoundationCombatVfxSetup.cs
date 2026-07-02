@@ -468,6 +468,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "elitePatternController", eliteController);
             SetFloat(driver, "damageCueIntensity", 1f);
             SetFloat(driver, "pressureDamageCueScale", 0.66f);
+            SetBool(driver, "playDamageVfx", true);
             SetPatternCueOverrides(driver);
             SetEliteCueOverrides(driver);
             ConfigureThreatTelegraphVisual(soldier);

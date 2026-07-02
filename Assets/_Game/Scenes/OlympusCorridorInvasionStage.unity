@@ -243692,7 +243692,9 @@ MonoBehaviour:
   elitePatternController: {fileID: 0}
   damageCueIntensity: 1
   pressureDamageCueScale: 0.66
-  playDamageVfx: 0
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
   playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -243837,11 +243839,14 @@ MonoBehaviour:
   flashRenderers:
   - {fileID: 1010728504}
   - {fileID: 1078189758}
-  renderHitFeedback: 0
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &1484262217
 MonoBehaviour:
@@ -259076,7 +259081,9 @@ MonoBehaviour:
   elitePatternController: {fileID: 0}
   damageCueIntensity: 1
   pressureDamageCueScale: 0.66
-  playDamageVfx: 0
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
   playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -259221,11 +259228,14 @@ MonoBehaviour:
   flashRenderers:
   - {fileID: 666986269}
   - {fileID: 1260256992}
-  renderHitFeedback: 0
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &1570869590
 MonoBehaviour:
@@ -328717,7 +328727,9 @@ MonoBehaviour:
   elitePatternController: {fileID: 0}
   damageCueIntensity: 1
   pressureDamageCueScale: 0.66
-  playDamageVfx: 0
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
   playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -328862,11 +328874,14 @@ MonoBehaviour:
   flashRenderers:
   - {fileID: 1301576461}
   - {fileID: 1533736527}
-  renderHitFeedback: 0
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &1972162868
 MonoBehaviour:
