@@ -1517,6 +1517,16 @@ namespace DimensionBrawl.Tests
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            CombatHitFeedback closeThreatHitFeedback =
+                RequireComponent<CombatHitFeedback>(closeThreatRoot, "close threat hit feedback");
+            EnemyCombatVfxCueDriver closeThreatVfxCueDriver =
+                RequireComponent<EnemyCombatVfxCueDriver>(closeThreatRoot, "close threat VFX cue driver");
+            Assert.IsTrue(
+                closeThreatHitFeedback.RenderHitFeedback,
+                "Close threat should flash its promoted renderers when damaged.");
+            Assert.IsTrue(
+                closeThreatVfxCueDriver.PlayDamageVfx,
+                "Close threat should emit EnemyHit VFX cues when damaged so hits read in combat.");
             BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
             if (closeThreatEnemy != null)
             {
@@ -10213,7 +10223,7 @@ namespace DimensionBrawl.Tests
         {
             Assert.That(
                 FormatSupportUpgradeDecisionHudState("Slot2 LV2 now", slot2DelayedRecovery),
-                Does.Contain("S2 CD").And.Contain("S1 ready LV2"),
+                Does.Contain("S2 CD").And.Contain("S1 ready 200EN"),
                 "The current Slot2 readout should show the slot cooldown and promoted Slot1 readiness before the next spend.");
             Assert.That(
                 slot2DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
@@ -10225,7 +10235,7 @@ namespace DimensionBrawl.Tests
                 "At a full bank, the live route incentive should keep both support choices visible instead of making S3 a universal upgrade.");
             Assert.That(
                 FormatSupportUpgradeDecisionHudState("Slot3 LV3 payoff", slot3DelayedRecovery),
-                Does.Contain("S3").And.Contain("CD").And.Contain("S1 ready LV2"),
+                Does.Contain("S3").And.Contain("CD").And.Contain("S1 ready 200EN"),
                 "The Slot3 payoff readout should preserve slot cooldown plus promoted Slot1 readiness instead of reading as a global cooldown.");
             Assert.That(
                 slot3DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
@@ -10431,7 +10441,7 @@ namespace DimensionBrawl.Tests
                 "Slot1 should not look globally cooled down after Slot3 fires.");
             Assert.That(
                 slot3Blocked.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S3 CD").And.Contain("S1 LV1 0%"),
+                Does.Contain("S3 CD").And.Contain("S1 +200EN/200"),
                 "The review overlay should name Slot3 cooldown while showing Slot1 is resource-empty, not globally cooling down.");
             Assert.Less(
                 slot3Blocked.SupportComboHudSlot1FillBeforeAttempt,
@@ -10447,7 +10457,7 @@ namespace DimensionBrawl.Tests
                 Does.Contain("READY LV2"));
             Assert.That(
                 slot2DelayedRecovery.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S2 CD").And.Contain("S1 ready LV2"),
+                Does.Contain("S2 CD").And.Contain("S1 ready 200EN"),
                 "Slot2 delayed recovery should read as slot cooldown while Slot1 is ready.");
             Assert.GreaterOrEqual(
                 slot2DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,
@@ -10462,7 +10472,7 @@ namespace DimensionBrawl.Tests
                 Does.Contain("READY LV2"));
             Assert.That(
                 slot3DelayedRecovery.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S3 CD").And.Contain("S1 ready LV2"),
+                Does.Contain("S3 CD").And.Contain("S1 ready 200EN"),
                 "Slot3 delayed recovery should read as slot cooldown while Slot1 is ready.");
             Assert.GreaterOrEqual(
                 slot3DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,

@@ -94,9 +94,7 @@ namespace DimensionBrawl.UI
 
             if (energyLadder != null)
             {
-                float target = Mathf.Max(1f, energyLadder.CurrentTierTarget);
-                float current = energyLadder.CanSpend ? target : energyLadder.CurrentTierEnergy;
-                hudPresenter.SetResource(current, target);
+                hudPresenter.SetResource(energyLadder.CurrentMana, Mathf.Max(1f, energyLadder.MaxMana));
                 hudPresenter.SetInputMode(ResolveEnergyInputModeLabel());
             }
 
@@ -118,9 +116,10 @@ namespace DimensionBrawl.UI
             hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot1, true);
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot1,
-                "SUMMON",
+                "S1",
                 ResolvePrimarySummonState(),
-                IsPrimarySummonReady());
+                IsPrimarySummonReady(),
+                ResolvePrimarySummonAvailabilityFill01());
             bool showSupportSummonSlots = !useSingleSummonPresentation;
             hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot2, showSupportSummonSlots);
             hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot3, showSupportSummonSlots);
@@ -133,12 +132,14 @@ namespace DimensionBrawl.UI
                 CombatHudActionId.SummonSlot2,
                 "S2",
                 ResolveSupportSummonState(summonSlot2Action),
-                IsSupportSummonReady(summonSlot2Action));
+                IsSupportSummonReady(summonSlot2Action),
+                ResolveSupportSummonAvailabilityFill01(summonSlot2Action));
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot3,
                 "S3",
                 ResolveSupportSummonState(summonSlot3Action),
-                IsSupportSummonReady(summonSlot3Action));
+                IsSupportSummonReady(summonSlot3Action),
+                ResolveSupportSummonAvailabilityFill01(summonSlot3Action));
         }
 
         private void HandleActionRequested(CombatHudActionId actionId)
@@ -267,10 +268,18 @@ namespace DimensionBrawl.UI
 
             if (summonSlot1Action.IsSlotOnCooldown)
             {
-                return $"{summonSlot1Action.SlotCooldownRemaining:0.0}s";
+                return BuildSummonState(
+                    summonSlot1Action.RequiredSummonMana,
+                    $"CD {Mathf.Max(0f, summonSlot1Action.SlotCooldownRemaining):0.0}s");
             }
 
-            return IsPrimarySummonReady() ? $"READY LV{energyLadder.AvailableTier}" : "CHARGE";
+            return IsPrimarySummonReady()
+                ? BuildSummonState(
+                    summonSlot1Action.RequiredSummonMana,
+                    $"READY LV{energyLadder.AvailableTier}")
+                : BuildSummonState(
+                    summonSlot1Action.RequiredSummonMana,
+                    BuildManaWaitText(summonSlot1Action.RequiredSummonMana));
         }
 
         private bool IsSupportSummonReady(PlayerSupportSummonSlotAction action)
@@ -291,10 +300,106 @@ namespace DimensionBrawl.UI
 
             if (action.IsSlotOnCooldown)
             {
-                return $"{action.SlotCooldownRemaining:0.0}s";
+                return BuildSummonState(
+                    action.RequiredSummonMana,
+                    $"CD {Mathf.Max(0f, action.SlotCooldownRemaining):0.0}s");
             }
 
-            return IsSupportSummonReady(action) ? $"READY LV{energyLadder.AvailableTier}" : $"LV{action.MinimumSummonTier}";
+            return IsSupportSummonReady(action)
+                ? BuildSummonState(
+                    action.RequiredSummonMana,
+                    $"READY LV{energyLadder.AvailableTier}")
+                : BuildSummonState(
+                    action.RequiredSummonMana,
+                    BuildManaWaitText(ResolveSupportGateMana(action)));
+        }
+
+        private float ResolvePrimarySummonAvailabilityFill01()
+        {
+            if (summonSlot1Action == null || energyLadder == null)
+            {
+                return 0f;
+            }
+
+            if (summonSlot1Action.IsSlotOnCooldown)
+            {
+                return ResolveCooldownProgress01(
+                    summonSlot1Action.SlotCooldownRemaining,
+                    summonSlot1Action.SlotCooldownSeconds);
+            }
+
+            return ResolveManaProgress01(summonSlot1Action.RequiredSummonMana);
+        }
+
+        private float ResolveSupportSummonAvailabilityFill01(PlayerSupportSummonSlotAction action)
+        {
+            if (action == null || energyLadder == null)
+            {
+                return 0f;
+            }
+
+            if (action.IsSlotOnCooldown)
+            {
+                return ResolveCooldownProgress01(action.SlotCooldownRemaining, action.SlotCooldownSeconds);
+            }
+
+            return ResolveManaProgress01(ResolveSupportGateMana(action));
+        }
+
+        private float ResolveSupportGateMana(PlayerSupportSummonSlotAction action)
+        {
+            if (action == null)
+            {
+                return 1f;
+            }
+
+            float minimumTierMana = energyLadder != null
+                ? energyLadder.GetMinimumManaForTier(action.MinimumSummonTier)
+                : 1f;
+            return Mathf.Max(action.RequiredSummonMana, minimumTierMana);
+        }
+
+        private string BuildManaWaitText(float requiredMana)
+        {
+            if (energyLadder == null)
+            {
+                return "WAIT";
+            }
+
+            float shortage = energyLadder.GetManaShortage(requiredMana);
+            if (shortage <= 0.001f)
+            {
+                return $"LV{energyLadder.ChargingTier}";
+            }
+
+            float seconds = energyLadder.EstimateSecondsToMana(requiredMana);
+            string eta = seconds >= 0f ? $" {Mathf.CeilToInt(seconds)}s" : string.Empty;
+            return $"+{Mathf.CeilToInt(shortage)}{eta}";
+        }
+
+        private float ResolveManaProgress01(float requiredMana)
+        {
+            if (energyLadder == null)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(energyLadder.CurrentMana / Mathf.Max(1f, requiredMana));
+        }
+
+        private static float ResolveCooldownProgress01(float cooldownRemaining, float cooldownSeconds)
+        {
+            if (cooldownSeconds <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(1f - Mathf.Max(0f, cooldownRemaining) / cooldownSeconds);
+        }
+
+        private static string BuildSummonState(float requiredMana, string status)
+        {
+            return $"{Mathf.CeilToInt(Mathf.Max(1f, requiredMana))}EN {status}";
         }
     }
 }

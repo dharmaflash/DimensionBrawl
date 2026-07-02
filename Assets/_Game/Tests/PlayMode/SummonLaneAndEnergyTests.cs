@@ -185,14 +185,14 @@ namespace DimensionBrawl.Tests
                         energy,
                         slot1));
                 StringAssert.Contains(
-                    "NEED 200 EN",
+                    "NEED +100 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot2,
                         BossBarrageSummonReviewContract.Slot2HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
-                    "NEED 300 EN",
+                    "NEED +200 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
@@ -221,7 +221,7 @@ namespace DimensionBrawl.Tests
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
-                    "NEED 300 EN",
+                    "NEED +100 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
@@ -250,7 +250,7 @@ namespace DimensionBrawl.Tests
                     BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
                     0.001f);
                 StringAssert.Contains(
-                    "NEED 300 EN",
+                    "NEED +100 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
@@ -333,28 +333,28 @@ namespace DimensionBrawl.Tests
 
                 energy.GrantCurrentTierEnergy(100f);
 
-                StringAssert.Contains("S1 ready LV1", hud.SummonReadinessReadout);
-                StringAssert.Contains("S2 need 200 EN", hud.SummonReadinessReadout);
-                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S1 ready 100EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S2 +100EN/200", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 +200EN/300", hud.SummonReadinessReadout);
 
                 energy.GrantCurrentTierEnergy(100f);
 
-                StringAssert.Contains("S1 ready LV2", hud.SummonReadinessReadout);
-                StringAssert.Contains("S2 ready LV2", hud.SummonReadinessReadout);
-                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S1 ready 100EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S2 ready 200EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 +100EN/300", hud.SummonReadinessReadout);
 
                 SetPrivateInstanceField(slot2, "slotCooldownRemaining", 0.8f);
 
                 StringAssert.Contains("S2 CD 0.8s", hud.SummonReadinessReadout);
-                StringAssert.Contains("S1 ready LV2", hud.SummonReadinessReadout);
-                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S1 ready 100EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 +100EN/300", hud.SummonReadinessReadout);
 
                 energy.ResetLadder();
                 energy.GrantCurrentTierEnergy(300f);
                 Assert.IsTrue(energy.TrySpend(300f, out _));
                 SetPrivateInstanceField(slot3, "slotCooldownRemaining", 1.5f);
 
-                StringAssert.Contains("S1 LV1 0%", hud.SummonReadinessReadout);
+                StringAssert.Contains("S1 +100EN/100", hud.SummonReadinessReadout);
                 StringAssert.Contains("S3 CD 1.5s", hud.SummonReadinessReadout);
             }
             finally
@@ -827,9 +827,9 @@ namespace DimensionBrawl.Tests
             energy.GrantCurrentTierEnergy(100f);
             CombatResourceReadout energyReadout = CombatResourceReadout.FromEnergy("Player EN", energy);
             Assert.AreEqual("Player EN", energyReadout.Label);
-            Assert.AreEqual("LV2 0%", energyReadout.ValueText);
+            Assert.AreEqual("100/300 EN", energyReadout.ValueText);
             Assert.AreEqual("READY LV1", energyReadout.StateText);
-            Assert.AreEqual(0f, energyReadout.Fill01, 0.001f);
+            Assert.AreEqual(1f / 3f, energyReadout.Fill01, 0.001f);
             Assert.IsTrue(energyReadout.IsReady);
 
             GameObject bossObject = new GameObject("Boss");

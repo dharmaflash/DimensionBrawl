@@ -29,7 +29,7 @@ namespace DimensionBrawl.UI
                 return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
             }
 
-            return BuildChargingLabel(slotLabel, energyLadder);
+            return BuildMissingManaLabel(slotLabel, energyLadder, requiredMana);
         }
 
         public static string BuildSupportSummonLabel(
@@ -61,7 +61,7 @@ namespace DimensionBrawl.UI
                 return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
             }
 
-            return BuildRequiredManaLabel(slotLabel, supportAction.RequiredSummonMana);
+            return BuildMissingManaLabel(slotLabel, energyLadder, supportAction.RequiredSummonMana);
         }
 
         public static float ResolvePrimarySummonFill01(
@@ -113,14 +113,20 @@ namespace DimensionBrawl.UI
             return ResolveManaFill01(energyLadder, supportAction.RequiredSummonMana);
         }
 
-        private static string BuildRequiredManaLabel(string slotLabel, float requiredMana)
-        {
-            return $"{slotLabel}\nNEED {Mathf.Max(1f, requiredMana):0} EN";
-        }
-
         private static string BuildCooldownLabel(string slotLabel, float cooldownRemaining)
         {
             return $"{slotLabel}\nCD {Mathf.Max(0f, cooldownRemaining):0.0}s";
+        }
+
+        private static string BuildMissingManaLabel(
+            string slotLabel,
+            SummonEnergyLadder energyLadder,
+            float requiredMana)
+        {
+            float shortage = energyLadder != null
+                ? energyLadder.GetManaShortage(requiredMana)
+                : Mathf.Max(1f, requiredMana);
+            return $"{slotLabel}\nNEED +{Mathf.CeilToInt(shortage)} EN";
         }
 
         private static float ResolveManaFill01(SummonEnergyLadder energyLadder, float requiredMana)
@@ -141,13 +147,6 @@ namespace DimensionBrawl.UI
             }
 
             return Mathf.Clamp01(1f - Mathf.Max(0f, cooldownRemaining) / cooldownSeconds);
-        }
-
-        private static string BuildChargingLabel(string slotLabel, SummonEnergyLadder energyLadder)
-        {
-            int chargingTier = Mathf.Clamp(energyLadder.ChargingTier, 1, 3);
-            int fillPercent = Mathf.RoundToInt(energyLadder.CurrentTierFillRatio * 100f);
-            return $"{slotLabel}\nLV{chargingTier} {fillPercent}%";
         }
 
         private static string TryGetPrimarySummonTierShortName(

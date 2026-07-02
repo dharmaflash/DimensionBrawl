@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -121,6 +122,7 @@ namespace DimensionBrawl.Editor
             SetString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             SetString(overlayHud, "retryScenePath", ScenePath);
             ActionFoundationPromotedSummonReviewContractSetup.ApplyToActiveScene();
+            EnsureEnemyHitFeedbackEnabled(scene);
 
             ValidateSceneBindings(profile);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -230,7 +232,88 @@ namespace DimensionBrawl.Editor
 
             ValidateString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             ValidateString(overlayHud, "retryScenePath", ScenePath);
+            ValidateEnemyHitFeedbackEnabled(SceneManager.GetActiveScene());
             ActionFoundationPromotedSummonReviewContractSetup.ValidateActiveScene();
+        }
+
+        private static void EnsureEnemyHitFeedbackEnabled(Scene scene)
+        {
+            int enemyCount = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            foreach (GameObject root in roots)
+            {
+                BasicSoldierEnemy[] enemies = root.GetComponentsInChildren<BasicSoldierEnemy>(true);
+                for (int i = 0; i < enemies.Length; i++)
+                {
+                    BasicSoldierEnemy enemy = enemies[i];
+                    if (enemy == null)
+                    {
+                        continue;
+                    }
+
+                    enemyCount++;
+                    CombatHitFeedback hitFeedback = enemy.GetComponent<CombatHitFeedback>();
+                    if (hitFeedback == null)
+                    {
+                        throw new InvalidOperationException($"{enemy.name} is missing CombatHitFeedback.");
+                    }
+
+                    EnemyCombatVfxCueDriver vfxCueDriver = enemy.GetComponent<EnemyCombatVfxCueDriver>();
+                    if (vfxCueDriver == null)
+                    {
+                        throw new InvalidOperationException($"{enemy.name} is missing EnemyCombatVfxCueDriver.");
+                    }
+
+                    SetBool(hitFeedback, "renderHitFeedback", true);
+                    SetBool(hitFeedback, "applyIdleColorOnEnable", false);
+                    SetBool(vfxCueDriver, "playDamageVfx", true);
+                }
+            }
+
+            if (enemyCount == 0)
+            {
+                throw new InvalidOperationException("Frontline motivation review scene is missing BasicSoldierEnemy.");
+            }
+        }
+
+        private static void ValidateEnemyHitFeedbackEnabled(Scene scene)
+        {
+            int enemyCount = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            foreach (GameObject root in roots)
+            {
+                BasicSoldierEnemy[] enemies = root.GetComponentsInChildren<BasicSoldierEnemy>(true);
+                for (int i = 0; i < enemies.Length; i++)
+                {
+                    BasicSoldierEnemy enemy = enemies[i];
+                    if (enemy == null)
+                    {
+                        continue;
+                    }
+
+                    enemyCount++;
+                    CombatHitFeedback hitFeedback = enemy.GetComponent<CombatHitFeedback>();
+                    if (hitFeedback == null)
+                    {
+                        throw new InvalidOperationException($"{enemy.name} is missing CombatHitFeedback.");
+                    }
+
+                    EnemyCombatVfxCueDriver vfxCueDriver = enemy.GetComponent<EnemyCombatVfxCueDriver>();
+                    if (vfxCueDriver == null)
+                    {
+                        throw new InvalidOperationException($"{enemy.name} is missing EnemyCombatVfxCueDriver.");
+                    }
+
+                    ValidateBool(hitFeedback, "renderHitFeedback", true);
+                    ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
+                    ValidateBool(vfxCueDriver, "playDamageVfx", true);
+                }
+            }
+
+            if (enemyCount == 0)
+            {
+                throw new InvalidOperationException("Frontline motivation review scene is missing BasicSoldierEnemy.");
+            }
         }
 
         private static void EnsureSceneAsset()
@@ -717,6 +800,14 @@ namespace DimensionBrawl.Editor
             MarkDirty(target);
         }
 
+        private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).boolValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            MarkDirty(target);
+        }
+
         private static void MarkDirty(UnityEngine.Object target)
         {
             EditorUtility.SetDirty(target);
@@ -760,6 +851,16 @@ namespace DimensionBrawl.Editor
         {
             string actual = RequireProperty(new SerializedObject(target), propertyName).stringValue;
             if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateBool(UnityEngine.Object target, string propertyName, bool expected)
+        {
+            bool actual = RequireProperty(new SerializedObject(target), propertyName).boolValue;
+            if (actual != expected)
             {
                 throw new InvalidOperationException(
                     $"{target.name}.{propertyName} expected {expected}, found {actual}.");

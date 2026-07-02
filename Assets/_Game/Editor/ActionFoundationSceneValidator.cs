@@ -612,6 +612,7 @@ namespace DimensionBrawl.Editor
             ValidateVector3(soldierTelegraphPresenter, "activeScale", new Vector3(1.25f, 0.025f, 1.8f));
             ValidateVector3(soldierTelegraphPresenter, "windupPoseOffset", new Vector3(0f, 0f, -0.08f));
             ValidateVector3(soldierTelegraphPresenter, "activePoseOffset", new Vector3(0f, 0f, 0.12f));
+            ValidateBool(soldierHitFeedback, "renderHitFeedback", true);
             ValidateBool(soldierHitFeedback, "applyIdleColorOnEnable", false);
             ValidateArrayMinSize(soldierHitFeedback, "flashRenderers", 1);
 
@@ -1367,6 +1368,7 @@ namespace DimensionBrawl.Editor
             ValidateReference(telegraphPresenter, "telegraphTransform");
             ValidateReference(telegraphPresenter, "telegraphRenderer");
             ValidateReference(telegraphPresenter, "poseRoot");
+            ValidateBool(hitFeedback, "renderHitFeedback", true);
             ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
             ValidateArrayMinSize(hitFeedback, "flashRenderers", 1);
             ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);
@@ -1410,6 +1412,7 @@ namespace DimensionBrawl.Editor
             ValidateReference(telegraphPresenter, "telegraphTransform");
             ValidateReference(telegraphPresenter, "telegraphRenderer");
             ValidateReference(telegraphPresenter, "poseRoot");
+            ValidateBool(hitFeedback, "renderHitFeedback", true);
             ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
             ValidateArrayMinSize(hitFeedback, "flashRenderers", 1);
             ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);
@@ -1461,6 +1464,7 @@ namespace DimensionBrawl.Editor
             ValidateReference(telegraphPresenter, "telegraphTransform");
             ValidateReference(telegraphPresenter, "telegraphRenderer");
             ValidateReference(telegraphPresenter, "poseRoot");
+            ValidateBool(hitFeedback, "renderHitFeedback", true);
             ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
             ValidateArrayMinSize(hitFeedback, "flashRenderers", 1);
             ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);

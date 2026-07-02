@@ -121,9 +121,9 @@ namespace DimensionBrawl.Presentation
             string capped = energy.IsCapped ? " capped" : string.Empty;
             return new CombatResourceReadout(
                 label,
-                $"LV{energy.ChargingTier} {energy.CurrentTierFillRatio * 100f:0}%",
+                $"{energy.CurrentMana:0}/{energy.MaxMana:0} EN",
                 $"{ready}{capped}",
-                energy.CurrentTierFillRatio,
+                energy.CurrentManaFillRatio,
                 new Color(0.18f, 0.92f, 1f, 1f),
                 energy.CanSpend);
         }

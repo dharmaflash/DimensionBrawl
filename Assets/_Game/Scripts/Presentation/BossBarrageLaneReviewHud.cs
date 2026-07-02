@@ -467,17 +467,13 @@ namespace DimensionBrawl.Presentation
                 return "EN -";
             }
 
-            if (energyLadder.CanSpend)
-            {
-                return $"{ResolvePrimarySummonCueName()} ready LV{energyLadder.AvailableTier}";
-            }
-
-            return $"Cost LV{energyLadder.ChargingTier} {energyLadder.CurrentTierEnergy:0}/{energyLadder.CurrentTierTarget:0}";
+            string ready = energyLadder.CanSpend ? $" READY LV{energyLadder.AvailableTier}" : string.Empty;
+            return $"EN {energyLadder.CurrentMana:0}/{energyLadder.MaxMana:0}{ready}";
         }
 
         private float ResolveEnergyFill01()
         {
-            return energyLadder != null ? energyLadder.CurrentTierFillRatio : 0f;
+            return energyLadder != null ? energyLadder.CurrentManaFillRatio : 0f;
         }
 
         private float ResolveBossCostFill01()
@@ -1168,10 +1164,10 @@ namespace DimensionBrawl.Presentation
             float requiredMana = summonSlot1Action != null ? summonSlot1Action.RequiredSummonMana : 1f;
             if (energyLadder.CanSpendMana(requiredMana))
             {
-                return $"S1 ready LV{energyLadder.AvailableTier}";
+                return $"S1 ready {requiredMana:0}EN";
             }
 
-            return $"S1 LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
+            return $"S1 +{Mathf.CeilToInt(energyLadder.GetManaShortage(requiredMana))}EN/{requiredMana:0}";
         }
 
         private string ResolveSupportSummonCompactText(PlayerSupportSummonSlotAction supportAction, string slotLabel)
@@ -1194,10 +1190,10 @@ namespace DimensionBrawl.Presentation
             if (energyLadder.AvailableTier >= supportAction.MinimumSummonTier
                 && energyLadder.CanSpendMana(supportAction.RequiredSummonMana))
             {
-                return $"{slotLabel} ready LV{energyLadder.AvailableTier}";
+                return $"{slotLabel} ready {supportAction.RequiredSummonMana:0}EN";
             }
 
-            return $"{slotLabel} need {supportAction.RequiredSummonMana:0} EN";
+            return $"{slotLabel} +{Mathf.CeilToInt(energyLadder.GetManaShortage(supportAction.RequiredSummonMana))}EN/{supportAction.RequiredSummonMana:0}";
         }
 
         private string ResolveBossCostTuningText()

@@ -62,6 +62,8 @@ namespace DimensionBrawl.Combat
         public float CurrentManaFillRatio => MaxMana > 0f ? Mathf.Clamp01(currentMana / MaxMana) : 0f;
         public float CurrentForwardRisk01 => currentForwardRisk01;
         public float CurrentGainMultiplier => currentGainMultiplier;
+        public float CurrentEnergyPerSecond =>
+            gainEnabled && !IsCapped ? baseEnergyPerSecond * Mathf.Max(0f, currentGainMultiplier) : 0f;
         public SummonEnergyRiskBand CurrentRiskBand => EvaluateRiskBand(currentForwardRisk01);
         public bool CanSpend => availableTier > 0;
         public bool IsCapped => currentMana >= MaxMana - 0.001f;
@@ -102,6 +104,28 @@ namespace DimensionBrawl.Combat
         public bool CanSpendMana(float requiredMana)
         {
             return currentMana + 0.001f >= Mathf.Max(1f, requiredMana);
+        }
+
+        public float GetManaShortage(float requiredMana)
+        {
+            return Mathf.Max(0f, Mathf.Max(1f, requiredMana) - currentMana);
+        }
+
+        public float EstimateSecondsToMana(float requiredMana)
+        {
+            float shortage = GetManaShortage(requiredMana);
+            if (shortage <= 0.001f)
+            {
+                return 0f;
+            }
+
+            float energyPerSecond = CurrentEnergyPerSecond;
+            return energyPerSecond > 0.001f ? shortage / energyPerSecond : -1f;
+        }
+
+        public float GetMinimumManaForTier(int tier)
+        {
+            return GetCumulativeTierTarget(Mathf.Clamp(tier, 1, MaxTier));
         }
 
         public int ResolveTierForManaCost(float requiredMana)

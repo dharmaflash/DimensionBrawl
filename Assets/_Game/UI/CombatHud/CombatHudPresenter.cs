@@ -81,6 +81,11 @@ namespace DimensionBrawl.UI
 
             public void SetState(string label, string state, bool enabled)
             {
+                SetState(label, state, enabled, enabled ? 1f : 0f);
+            }
+
+            public void SetState(string label, string state, bool enabled, float availabilityFill01)
+            {
                 SetVisible(true);
                 if (labelText != null)
                 {
@@ -94,7 +99,7 @@ namespace DimensionBrawl.UI
 
                 if (cooldownFill != null)
                 {
-                    cooldownFill.fillAmount = enabled ? 0f : 1f;
+                    cooldownFill.fillAmount = enabled ? 0f : 1f - Mathf.Clamp01(availabilityFill01);
                 }
 
                 if (canvasGroup != null)
@@ -217,6 +222,17 @@ namespace DimensionBrawl.UI
         {
             SummonSlotBinding slot = FindSummonSlot(actionId);
             slot?.SetState(label, state, enabled);
+        }
+
+        public void SetSummonSlotState(
+            CombatHudActionId actionId,
+            string label,
+            string state,
+            bool enabled,
+            float availabilityFill01)
+        {
+            SummonSlotBinding slot = FindSummonSlot(actionId);
+            slot?.SetState(label, state, enabled, availabilityFill01);
         }
 
         public void SetSummonSlotVisible(CombatHudActionId actionId, bool visible)

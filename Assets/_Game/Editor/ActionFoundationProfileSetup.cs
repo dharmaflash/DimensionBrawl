@@ -313,6 +313,7 @@ namespace DimensionBrawl.Editor
 
             SetObjectReference(hitFeedback, "health", selfHealth);
             SetObjectReferenceArray(hitFeedback, "flashRenderers", renderers);
+            SetBool(hitFeedback, "renderHitFeedback", true);
             SetBool(hitFeedback, "applyIdleColorOnEnable", false);
 
             SetObjectReference(enemyCameraCueDriver, "agentSource", soldier);
