@@ -4372,7 +4372,6 @@ namespace DimensionBrawl.Tests
                 newInitialDelaySeconds: 1.0f,
                 newRespawnIntervalSeconds: 5.0f,
                 newSummonTier: 1,
-                newMaxActiveSummonActors: 1,
                 newRetryIntervalSeconds: 0.25f);
 
             pacingDirector.Tick(0.5f);
@@ -4391,9 +4390,13 @@ namespace DimensionBrawl.Tests
             pacingDirector.Tick(10f);
 
             Assert.AreEqual(
-                1,
+                2,
+                pacingDirector.TotalPacingReleaseCount,
+                "Enemy summon pacing should not stop just because a previous boss summon actor is still active.");
+            Assert.AreEqual(
+                2,
                 summonAction.TotalReleaseCount,
-                "Pacing should wait while its max active summon count is already on the field.");
+                "Enemy summon pacing should keep releasing on its own cadence; actor replacement policy belongs to the summon action pool, not the pacing director.");
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);
@@ -4423,6 +4426,11 @@ namespace DimensionBrawl.Tests
             GameObject actorRoot = new GameObject("BossSummonActorRoot");
             BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
             summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+            SerializedObject serializedSummonAction = new SerializedObject(summonAction);
+            SerializedProperty maxActiveActors = serializedSummonAction.FindProperty("maxActiveSummonActors");
+            Assert.IsNotNull(maxActiveActors);
+            maxActiveActors.intValue = 3;
+            serializedSummonAction.ApplyModifiedPropertiesWithoutUndo();
 
             EnemySummonPacingDirector pacingDirector = bossObject.AddComponent<EnemySummonPacingDirector>();
             pacingDirector.ConfigureReferences(summonAction);
@@ -4430,7 +4438,6 @@ namespace DimensionBrawl.Tests
                 newInitialDelaySeconds: 0.1f,
                 newRespawnIntervalSeconds: 0.5f,
                 newSummonTier: 1,
-                newMaxActiveSummonActors: 1,
                 newRetryIntervalSeconds: 0.1f,
                 newSummonTierSequence: new[] { 1, 2, 3 });
 
@@ -4442,18 +4449,20 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, summonAction.LastReleasedTier);
             Assert.AreEqual(2, pacingDirector.NextPacingTier);
 
-            summonAction.LastSummonActor.Deactivate(SummonFrontlineProxyExitReason.Suppressed);
             pacingDirector.Tick(0.5f);
 
             Assert.AreEqual(2, summonAction.LastReleasedTier);
             Assert.AreEqual(3, pacingDirector.NextPacingTier);
 
-            summonAction.LastSummonActor.Deactivate(SummonFrontlineProxyExitReason.Suppressed);
             pacingDirector.Tick(0.5f);
 
             Assert.AreEqual(3, summonAction.LastReleasedTier);
             Assert.AreEqual(1, pacingDirector.NextPacingTier);
             Assert.AreEqual(3, pacingDirector.TotalPacingReleaseCount);
+            Assert.AreEqual(
+                3,
+                summonAction.ActiveSummonActorCount,
+                "Pacing should cycle through configured tiers while previous summons are still alive when the summon action pool allows it.");
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);

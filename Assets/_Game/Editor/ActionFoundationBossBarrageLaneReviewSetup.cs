@@ -3661,7 +3661,6 @@ namespace DimensionBrawl.Editor
                 newInitialDelaySeconds: 2.0f,
                 newRespawnIntervalSeconds: 6.5f,
                 newSummonTier: 1,
-                newMaxActiveSummonActors: 1,
                 newRetryIntervalSeconds: 0.35f,
                 newSummonTierSequence: BossEnemySummonPacingTierSequence);
             enemySummonPacingDirector.SetPacingEnabled(true);
@@ -3671,7 +3670,6 @@ namespace DimensionBrawl.Editor
             SetFloat(enemySummonPacingDirector, "initialDelaySeconds", 2.0f);
             SetFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
             SetFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
-            SetInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
             SetIntArray(enemySummonPacingDirector, "summonTierSequence", BossEnemySummonPacingTierSequence);
             return enemySummonPacingDirector;
         }
@@ -8550,7 +8548,6 @@ namespace DimensionBrawl.Editor
             ValidateFloat(enemySummonPacingDirector, "initialDelaySeconds", 2.0f);
             ValidateFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
             ValidateFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
-            ValidateInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
             ValidateIntArray(enemySummonPacingDirector, "summonTierSequence", BossEnemySummonPacingTierSequence);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,

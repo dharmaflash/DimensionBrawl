@@ -14,7 +14,6 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float initialDelaySeconds = 2f;
         [SerializeField, Min(0.1f)] private float respawnIntervalSeconds = 6.5f;
         [SerializeField, Min(0.05f)] private float retryIntervalSeconds = 0.35f;
-        [SerializeField, Min(1)] private int maxActiveSummonActors = 1;
         [SerializeField] private int[] summonTierSequence = { 1, 2, 1, 3 };
 
         private float nextReleaseTimer;
@@ -28,7 +27,6 @@ namespace DimensionBrawl.Combat
         public float InitialDelaySeconds => initialDelaySeconds;
         public float RespawnIntervalSeconds => respawnIntervalSeconds;
         public float RetryIntervalSeconds => retryIntervalSeconds;
-        public int MaxActiveSummonActors => maxActiveSummonActors;
         public int SummonTierSequenceCount => summonTierSequence != null ? summonTierSequence.Length : 0;
         public int NextPacingTier => ResolveNextSummonTier();
         public float NextReleaseRemainingSeconds => nextReleaseTimer;
@@ -47,7 +45,6 @@ namespace DimensionBrawl.Combat
             initialDelaySeconds = Mathf.Max(0f, initialDelaySeconds);
             respawnIntervalSeconds = Mathf.Max(0.1f, respawnIntervalSeconds);
             retryIntervalSeconds = Mathf.Max(0.05f, retryIntervalSeconds);
-            maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
             summonTierSequence = NormalizeTierSequence(summonTierSequence, summonTier);
         }
 
@@ -60,14 +57,12 @@ namespace DimensionBrawl.Combat
             float newInitialDelaySeconds,
             float newRespawnIntervalSeconds,
             int newSummonTier,
-            int newMaxActiveSummonActors,
             float newRetryIntervalSeconds = 0.35f,
             int[] newSummonTierSequence = null)
         {
             initialDelaySeconds = Mathf.Max(0f, newInitialDelaySeconds);
             respawnIntervalSeconds = Mathf.Max(0.1f, newRespawnIntervalSeconds);
             summonTier = Mathf.Clamp(newSummonTier, 1, 3);
-            maxActiveSummonActors = Mathf.Max(1, newMaxActiveSummonActors);
             retryIntervalSeconds = Mathf.Max(0.05f, newRetryIntervalSeconds);
             summonTierSequence = NormalizeTierSequence(newSummonTierSequence, summonTier);
             summonTierSequenceCursor = 0;
@@ -152,8 +147,7 @@ namespace DimensionBrawl.Combat
         private bool CanReleasePacedSummon()
         {
             return summonPressureAction != null
-                && summonPressureAction.CanRelease
-                && summonPressureAction.ActiveSummonActorCount < maxActiveSummonActors;
+                && summonPressureAction.CanRelease;
         }
 
         private int ResolveNextSummonTier()
