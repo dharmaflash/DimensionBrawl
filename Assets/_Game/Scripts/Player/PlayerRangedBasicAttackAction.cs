@@ -95,6 +95,7 @@ namespace DimensionBrawl.Player
         private bool pendingFireThisFrame;
         private bool suppressDeviceFallbackThisFrame;
         private bool cinematicInputLocked;
+        private bool preserveHeldAimWhileCinematicLocked;
         private float nextFireTime;
         private float blockedHintUntil;
         private Vector2 aimInput;
@@ -141,12 +142,41 @@ namespace DimensionBrawl.Player
 
         public void QueueFire()
         {
+            if (!CanAcceptQueuedFireInput())
+            {
+                queuedFire = false;
+                return;
+            }
+
             queuedFire = true;
             RangedFireInputStarted?.Invoke();
         }
 
         public void SetFireHeld(bool active)
         {
+            if (!CanAcceptContinuousFireInput())
+            {
+                if (CanPreserveHeldAimWhileLocked())
+                {
+                    mobileFireHeld = active;
+                    currentFireHeld = active;
+                    if (!active)
+                    {
+                        preserveHeldAimWhileCinematicLocked = false;
+                    }
+
+                    SetFireAimHold(currentFireHeld);
+                    InvalidateFirePreviewCache();
+                    return;
+                }
+
+                mobileFireHeld = false;
+                currentFireHeld = false;
+                SetFireAimHold(false);
+                InvalidateFirePreviewCache();
+                return;
+            }
+
             mobileFireHeld = active;
             currentFireHeld = active && !cinematicInputLocked && IsRangedModeActive();
             SetFireAimHold(currentFireHeld);
@@ -155,6 +185,14 @@ namespace DimensionBrawl.Player
 
         public void SetExternalAimPreviewHeld(bool active)
         {
+            if (active && !CanAcceptExternalAimPreview())
+            {
+                externalAimPreviewHeld = false;
+                SetFireAimHold(false);
+                InvalidateFirePreviewCache();
+                return;
+            }
+
             externalAimPreviewHeld = active;
             InvalidateFirePreviewCache();
             SetFireAimHold(currentFireHeld);
@@ -162,6 +200,13 @@ namespace DimensionBrawl.Player
 
         public void SetAimInput(Vector2 input)
         {
+            if (!CanAcceptContinuousFireInput())
+            {
+                aimInput = Vector2.zero;
+                InvalidateFirePreviewCache();
+                return;
+            }
+
             aimInput = Vector2.ClampMagnitude(input, 1f);
             InvalidateFirePreviewCache();
         }
@@ -179,19 +224,35 @@ namespace DimensionBrawl.Player
 
         public void SetCinematicInputLocked(bool locked)
         {
+            SetCinematicInputLocked(locked, false);
+        }
+
+        public void SetCinematicInputLocked(bool locked, bool preserveHeldAim)
+        {
             cinematicInputLocked = locked;
             if (!locked)
             {
+                preserveHeldAimWhileCinematicLocked = false;
                 return;
             }
 
             queuedFire = false;
-            mobileFireHeld = false;
-            currentFireHeld = false;
-            externalAimPreviewHeld = false;
             pendingFireThisFrame = false;
             suppressDeviceFallbackThisFrame = true;
             InvalidateFirePreviewCache();
+            preserveHeldAimWhileCinematicLocked = preserveHeldAim
+                && IsRangedModeActive()
+                && (currentFireHeld || mobileFireHeld);
+            if (preserveHeldAimWhileCinematicLocked)
+            {
+                mobileFireHeld = true;
+                currentFireHeld = true;
+                SetFireAimHold(true);
+                return;
+            }
+
+            mobileFireHeld = false;
+            currentFireHeld = false;
             SetFireAimHold(false);
         }
 
@@ -329,12 +390,20 @@ namespace DimensionBrawl.Player
 
             if (cinematicInputLocked)
             {
-                SetFireAimHold(false);
                 queuedFire = false;
-                mobileFireHeld = false;
-                currentFireHeld = false;
                 pendingFireThisFrame = false;
                 suppressDeviceFallbackThisFrame = false;
+                if (CanPreserveHeldAimWhileLocked())
+                {
+                    currentFireHeld = mobileFireHeld;
+                    SetFireAimHold(currentFireHeld);
+                    return;
+                }
+
+                preserveHeldAimWhileCinematicLocked = false;
+                SetFireAimHold(false);
+                mobileFireHeld = false;
+                currentFireHeld = false;
                 return;
             }
 
@@ -1076,6 +1145,33 @@ namespace DimensionBrawl.Player
         private bool IsRangedModeActive()
         {
             return combatModeController == null || combatModeController.IsRangedMode;
+        }
+
+        private bool CanAcceptQueuedFireInput()
+        {
+            return isActiveAndEnabled
+                && !cinematicInputLocked
+                && IsRangedModeActive();
+        }
+
+        private bool CanAcceptContinuousFireInput()
+        {
+            return isActiveAndEnabled
+                && !cinematicInputLocked
+                && IsRangedModeActive();
+        }
+
+        private bool CanPreserveHeldAimWhileLocked()
+        {
+            return isActiveAndEnabled
+                && cinematicInputLocked
+                && preserveHeldAimWhileCinematicLocked
+                && IsRangedModeActive();
+        }
+
+        private bool CanAcceptExternalAimPreview()
+        {
+            return isActiveAndEnabled && IsRangedModeActive();
         }
 
         private bool ReadFirePressed()

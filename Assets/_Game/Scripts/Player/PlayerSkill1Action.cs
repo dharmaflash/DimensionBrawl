@@ -133,6 +133,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            queued = false;
             DisableActionIfOwned(skillAction, actionEnabledHere);
             actionEnabledHere = false;
         }
@@ -163,6 +164,12 @@ namespace DimensionBrawl.Player
 
         public void QueueSkill1()
         {
+            if (!CanAcceptQueuedInput())
+            {
+                queued = false;
+                return;
+            }
+
             queued = true;
         }
 
@@ -395,6 +402,11 @@ namespace DimensionBrawl.Player
             }
 
             return pressed;
+        }
+
+        private bool CanAcceptQueuedInput()
+        {
+            return isActiveAndEnabled && !cinematicInputLocked;
         }
 
         private static Vector3 ResolveRight(Vector3 direction)

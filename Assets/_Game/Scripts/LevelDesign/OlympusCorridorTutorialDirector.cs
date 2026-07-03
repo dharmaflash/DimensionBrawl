@@ -33,11 +33,11 @@ namespace DimensionBrawl.LevelDesign
         [Header("Flow")]
         [SerializeField] private bool tutorialEnabled = true;
         [SerializeField, Min(0f)] private float cuePrimeSeconds = 0.45f;
-        [SerializeField, Min(0f)] private float completionRecordSeconds = 0.55f;
+        [SerializeField, Min(0f)] private float completionRecordSeconds = 0.7f;
         [SerializeField, Min(0.1f)] private float promptRepeatSeconds = 4.0f;
 
         [Header("Movement Step")]
-        [SerializeField, Min(0f)] private float movementCompleteDistance = 1.25f;
+        [SerializeField, Min(0f)] private float movementCompleteDistance = 0.75f;
 
         [Header("Melee Step")]
         [SerializeField] private bool positionFirstTargetForMeleeStep = true;
@@ -95,10 +95,14 @@ namespace DimensionBrawl.LevelDesign
         private bool dodgeObserved;
         private bool hasRuntimeBoundsCenter;
         private bool hasCachedActionEnabledStates;
+        private bool hasCachedBossTelegraphStates;
         private bool cachedRangedBasicEnabled;
         private bool cachedSkill1Enabled;
         private bool cachedSummonSlot1Enabled;
         private bool[] cachedSupportEnabled = Array.Empty<bool>();
+        private BossBarrageLaneTelegraphPresenter[] cachedBossTelegraphPresenters =
+            Array.Empty<BossBarrageLaneTelegraphPresenter>();
+        private bool[] cachedBossTelegraphEnabled = Array.Empty<bool>();
         private float stepTimer;
         private float phaseTimer;
         private float nextPromptTime;
@@ -166,6 +170,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             CacheActionEnabledStates();
+            CacheAndDisableBossTelegraphs();
             meleeHitObserved = false;
             movementObserved = false;
             rangedModeObserved = false;
@@ -211,6 +216,7 @@ namespace DimensionBrawl.LevelDesign
             promptPresenter?.HidePrompt();
             overlayPresenter?.Hide();
             SetEnemyGameplayEnabled(false);
+            RestoreBossTelegraphs();
             RestoreActionEnabledStates();
             step = TutorialStep.Inactive;
             stepPhase = TutorialStepPhase.Inactive;
@@ -238,7 +244,6 @@ namespace DimensionBrawl.LevelDesign
             phaseTimer += Time.deltaTime;
             EnforcePlayerTutorialBounds();
             ApplyStepInputLocks();
-            UpdateTutorialAimPreviewHold();
             RepeatPromptIfNeeded();
 
             switch (stepPhase)
@@ -353,7 +358,7 @@ namespace DimensionBrawl.LevelDesign
                     SetRangedMode();
                     SetCombatModeInputLocked(true);
                     SetRangedFireEnabled(true);
-                    SetTutorialAimPreviewHeld(true);
+                    SetTutorialAimPreviewHeld(false);
                     PositionFirstTargetForRangedStep();
                     SetOptionalActionsEnabled(false);
                     SetEnemyGameplayEnabled(false);
@@ -460,6 +465,7 @@ namespace DimensionBrawl.LevelDesign
             SetCollidersEnabled(tutorialRouteBlockers, false);
             SetObjectsActive(tutorialBoundsRoots, false);
             ConfigureTargetCandidates(Array.Empty<CombatHealth>());
+            RestoreBossTelegraphs();
             RestoreActionEnabledStates();
             ShowGuide(
                 "\uc774\ub178\ub9ac",
@@ -517,19 +523,19 @@ namespace DimensionBrawl.LevelDesign
 
         private bool HasCompletedMovementStep()
         {
-            if (movementObserved)
+            if (player == null)
             {
-                return true;
-            }
-
-            if (player == null || movementCompleteDistance <= 0f)
-            {
-                return false;
+                return movementCompleteDistance <= 0f && movementObserved;
             }
 
             Vector3 offset = Vector3.ProjectOnPlane(
                 player.transform.position - movementStartPosition,
                 Vector3.up);
+            if (movementCompleteDistance <= 0f)
+            {
+                return movementObserved && offset.magnitude > 0.05f;
+            }
+
             return offset.magnitude >= movementCompleteDistance;
         }
 
@@ -584,7 +590,7 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.Move:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ubcf4\uc2a4 \uacbd\uace0\uc120\uc740 \ub9c9\uc9c0 \ub9d0\uace0 \ube44\ucf1c. \uc606\uc73c\ub85c \ube60\uc838 \uc548\uc804 \uce78\uc744 \ub9cc\ub4e4\uc5b4.",
+                        "\uc67c\ucabd \uc870\uc774\uc2a4\ud2f1\uc744 \ubc00\uba74 \uc774\ub3d9\ud574. \ud30c\ub780 \uc601\uc5ed \uc548\uc5d0\uc11c \uc9e7\uac8c \uc6c0\uc9c1\uc5ec \ubd10.",
                         "\uc774\ub3d9",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
@@ -639,7 +645,7 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.Move:
                     ShowGuide(
                         "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc548\uc804 \uce78 \ud655\ubcf4 \ud655\uc778.",
+                        "\uc870\uc774\uc2a4\ud2f1 \uc774\ub3d9 \ud655\uc778.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
@@ -1162,6 +1168,62 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void CacheAndDisableBossTelegraphs()
+        {
+            if (hasCachedBossTelegraphStates)
+            {
+                return;
+            }
+
+            cachedBossTelegraphPresenters =
+                UnityEngine.Object.FindObjectsByType<BossBarrageLaneTelegraphPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            int presenterCount = cachedBossTelegraphPresenters != null
+                ? cachedBossTelegraphPresenters.Length
+                : 0;
+            cachedBossTelegraphEnabled = new bool[presenterCount];
+
+            for (int i = 0; i < presenterCount; i++)
+            {
+                BossBarrageLaneTelegraphPresenter presenter = cachedBossTelegraphPresenters[i];
+                if (presenter == null)
+                {
+                    continue;
+                }
+
+                cachedBossTelegraphEnabled[i] = presenter.enabled;
+                presenter.enabled = false;
+            }
+
+            hasCachedBossTelegraphStates = true;
+        }
+
+        private void RestoreBossTelegraphs()
+        {
+            if (!hasCachedBossTelegraphStates)
+            {
+                return;
+            }
+
+            int presenterCount = cachedBossTelegraphPresenters != null
+                ? cachedBossTelegraphPresenters.Length
+                : 0;
+            for (int i = 0; i < presenterCount; i++)
+            {
+                BossBarrageLaneTelegraphPresenter presenter = cachedBossTelegraphPresenters[i];
+                if (presenter != null)
+                {
+                    presenter.enabled = i < cachedBossTelegraphEnabled.Length
+                        && cachedBossTelegraphEnabled[i];
+                }
+            }
+
+            cachedBossTelegraphPresenters = Array.Empty<BossBarrageLaneTelegraphPresenter>();
+            cachedBossTelegraphEnabled = Array.Empty<bool>();
+            hasCachedBossTelegraphStates = false;
+        }
+
         private void SetMeleeMode()
         {
             if (combatModeController == null)
@@ -1196,7 +1258,28 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetRangedBasicAttackInputLocked(bool locked)
         {
-            rangedBasicAttackAction?.SetCinematicInputLocked(locked);
+            SetRangedBasicAttackInputLocked(locked, false);
+        }
+
+        private void SetRangedBasicAttackInputLocked(bool locked, bool preserveHeldAim)
+        {
+            rangedBasicAttackAction?.SetCinematicInputLocked(locked, preserveHeldAim);
+        }
+
+        private void SetMovementInputLocked(bool locked)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            if (locked)
+            {
+                player.SetCinematicMoveInputSpeedScale(0f);
+                return;
+            }
+
+            player.ClearCinematicMoveInputSpeedScale();
         }
 
         private void SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState guideState)
@@ -1212,37 +1295,44 @@ namespace DimensionBrawl.LevelDesign
             switch (step)
             {
                 case TutorialStep.Melee:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.Move:
+                    SetMovementInputLocked(cueLocked || committed);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.SwapToRanged:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(cueLocked || committed);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.Fire:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(true);
-                    SetRangedBasicAttackInputLocked(cueLocked || committed);
+                    SetRangedBasicAttackInputLocked(cueLocked || committed, committed);
                     break;
                 case TutorialStep.Dodge:
+                    SetMovementInputLocked(cueLocked);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.ClearTargets:
+                    SetMovementInputLocked(cueLocked || committed);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(false);
                     SetRangedBasicAttackInputLocked(cueLocked || committed);
                     break;
                 case TutorialStep.Completed:
                 case TutorialStep.Inactive:
+                    SetMovementInputLocked(false);
                     SetPlayerActionInputLocked(false);
                     SetCombatModeInputLocked(false);
                     SetRangedBasicAttackInputLocked(false);
@@ -1434,14 +1524,6 @@ namespace DimensionBrawl.LevelDesign
         {
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             return right.sqrMagnitude > 0.0001f ? right.normalized : Vector3.right;
-        }
-
-        private void UpdateTutorialAimPreviewHold()
-        {
-            if (step == TutorialStep.Fire)
-            {
-                SetTutorialAimPreviewHeld(true);
-            }
         }
 
         private void SetTutorialAimPreviewHeld(bool active)

@@ -101,6 +101,12 @@ namespace DimensionBrawl.Player
 
         public void QueueCombatModeSwap()
         {
+            if (!CanAcceptQueuedInput())
+            {
+                queuedSwap = false;
+                return;
+            }
+
             queuedSwap = true;
         }
 
@@ -275,6 +281,11 @@ namespace DimensionBrawl.Player
         private static bool IsActionMissing(InputActionReference actionReference)
         {
             return actionReference == null || actionReference.action == null;
+        }
+
+        private bool CanAcceptQueuedInput()
+        {
+            return isActiveAndEnabled && !cinematicInputLocked;
         }
     }
 }

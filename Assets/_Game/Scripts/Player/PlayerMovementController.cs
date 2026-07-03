@@ -122,11 +122,23 @@ namespace DimensionBrawl.Player
 
         public void SetMoveInput(Vector2 input)
         {
+            if (!CanAcceptSharedInput())
+            {
+                mobileMoveInput = Vector2.zero;
+                return;
+            }
+
             mobileMoveInput = Vector2.ClampMagnitude(input, 1f);
         }
 
         public void SetLookInput(Vector2 input)
         {
+            if (!CanAcceptSharedInput())
+            {
+                mobileLookInput = Vector2.zero;
+                return;
+            }
+
             mobileLookInput = Vector2.ClampMagnitude(input, 1f);
         }
 
@@ -198,6 +210,7 @@ namespace DimensionBrawl.Player
             cinematicMoveInputScaleActive = true;
             if (cinematicMoveInputSpeedScale <= 0f)
             {
+                ClearSharedInput();
                 planarVelocity = Vector3.zero;
                 externalPlanarVelocity = Vector3.zero;
                 externalPlanarDuration = 0f;
@@ -259,9 +272,12 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            ClearSharedInput();
             ClearScriptedInputOverride();
             DisableActionIfOwned(moveAction, enabledMoveAction);
             DisableActionIfOwned(lookAction, enabledLookAction);
+            enabledMoveAction = false;
+            enabledLookAction = false;
         }
 
         private void Update()
@@ -346,6 +362,17 @@ namespace DimensionBrawl.Player
         private static bool IsActionMissing(InputActionReference actionReference)
         {
             return actionReference == null || actionReference.action == null;
+        }
+
+        private bool CanAcceptSharedInput()
+        {
+            return isActiveAndEnabled && !IsCinematicMoveInputLocked;
+        }
+
+        private void ClearSharedInput()
+        {
+            mobileMoveInput = Vector2.zero;
+            mobileLookInput = Vector2.zero;
         }
 
         private static Vector2 ReadMoveDeviceFallback()

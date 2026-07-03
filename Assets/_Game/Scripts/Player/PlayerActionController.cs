@@ -194,11 +194,23 @@ namespace DimensionBrawl.Player
 
         public void QueueBasicAttack()
         {
+            if (!CanAcceptQueuedInput())
+            {
+                mobileAttackQueued = false;
+                return;
+            }
+
             mobileAttackQueued = true;
         }
 
         public void QueueDodge()
         {
+            if (!CanAcceptQueuedInput())
+            {
+                mobileDodgeQueued = false;
+                return;
+            }
+
             mobileDodgeQueued = true;
         }
 
@@ -272,9 +284,11 @@ namespace DimensionBrawl.Player
         {
             EndDodgeFeedbackIfNeeded();
             movement?.ClearActionMoveInputSpeedScale();
-            suppressBasicAttackDeviceFallback = false;
+            ClearQueuedInput();
             DisableActionIfOwned(basicAttackAction, enabledAttackAction);
             DisableActionIfOwned(dodgeAction, enabledDodgeAction);
+            enabledAttackAction = false;
+            enabledDodgeAction = false;
         }
 
         private void Update()
@@ -619,6 +633,20 @@ namespace DimensionBrawl.Player
             comboResetTimer = 0f;
             attackHasHit = false;
             nextAttackQueued = false;
+        }
+
+        private bool CanAcceptQueuedInput()
+        {
+            return isActiveAndEnabled && !cinematicInputLocked;
+        }
+
+        private void ClearQueuedInput()
+        {
+            mobileAttackQueued = false;
+            mobileDodgeQueued = false;
+            attackBufferTimer = 0f;
+            nextAttackQueued = false;
+            suppressBasicAttackDeviceFallback = false;
         }
 
         private PlayerActionProfile.AttackStep CurrentAttackStep()

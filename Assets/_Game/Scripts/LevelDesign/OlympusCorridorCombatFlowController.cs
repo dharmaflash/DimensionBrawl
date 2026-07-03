@@ -1,4 +1,3 @@
-using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -12,6 +11,8 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
+        private const string CombatHudInstanceName = "PF_UI_CombatHud";
+
         private enum FlowPhase
         {
             WaitingForIntroHandoff,
@@ -53,6 +54,7 @@ namespace DimensionBrawl.LevelDesign
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
+        [SerializeField] private CanvasGroup combatHudCanvasGroup;
         [SerializeField, Min(0f)] private float hudRevealDelaySeconds = 0.08f;
         [SerializeField, Min(0.01f)] private float hudRevealDurationSeconds = 0.18f;
 
@@ -395,6 +397,7 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetHudOpacity(0f);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
@@ -433,6 +436,7 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetHudOpacity(0f);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
@@ -852,6 +856,78 @@ namespace DimensionBrawl.LevelDesign
             float resolvedOpacity = Mathf.Clamp01(opacity);
             reviewHud?.SetHudOpacity(resolvedOpacity);
             mobileHud?.SetHudOpacity(resolvedOpacity);
+            SetCombatHudCanvasGroupOpacity(resolvedOpacity);
+        }
+
+        private void SetCombatHudCanvasGroupOpacity(float opacity)
+        {
+            CanvasGroup canvasGroup = ResolveCombatHudCanvasGroup();
+            if (canvasGroup == null)
+            {
+                return;
+            }
+
+            bool acceptsInput = opacity > 0.999f;
+            canvasGroup.alpha = opacity;
+            canvasGroup.interactable = acceptsInput;
+            canvasGroup.blocksRaycasts = acceptsInput;
+        }
+
+        private CanvasGroup ResolveCombatHudCanvasGroup()
+        {
+            if (combatHudCanvasGroup != null)
+            {
+                return combatHudCanvasGroup;
+            }
+
+            if (handoffRoots == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < handoffRoots.Length; i++)
+            {
+                GameObject root = handoffRoots[i];
+                if (root == null)
+                {
+                    continue;
+                }
+
+                CanvasGroup canvasGroup = FindNamedCanvasGroup(root.transform, CombatHudInstanceName);
+                if (canvasGroup == null)
+                {
+                    continue;
+                }
+
+                combatHudCanvasGroup = canvasGroup;
+                return combatHudCanvasGroup;
+            }
+
+            return null;
+        }
+
+        private static CanvasGroup FindNamedCanvasGroup(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            if (string.Equals(root.name, objectName, System.StringComparison.Ordinal))
+            {
+                return root.GetComponent<CanvasGroup>();
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                CanvasGroup canvasGroup = FindNamedCanvasGroup(root.GetChild(i), objectName);
+                if (canvasGroup != null)
+                {
+                    return canvasGroup;
+                }
+            }
+
+            return null;
         }
 
         private void SnapPlayerToHandoffGround()
@@ -1040,6 +1116,7 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
+            combatCameraController.CaptureBaseFieldOfViewFromControlledCamera();
             Camera activeIntroCamera = ResolveActiveIntroCamera();
             if (activeIntroCamera != null)
             {
@@ -1052,89 +1129,10 @@ namespace DimensionBrawl.LevelDesign
                     combatCameraController.PrimeFromHandoffCamera(activeIntroCamera);
                 }
 
-                CopyCameraPresentationSettings(activeIntroCamera);
                 return;
             }
 
             combatCameraController.PrimeFromHandoffPose(combatCameraHandoffPose);
-        }
-
-        private void CopyCameraPresentationSettings(Camera sourceCamera)
-        {
-            Camera combatCamera = combatCameraController != null
-                ? combatCameraController.GetComponent<Camera>()
-                : null;
-            if (sourceCamera == null || combatCamera == null)
-            {
-                return;
-            }
-
-            combatCamera.fieldOfView = sourceCamera.fieldOfView;
-            combatCamera.orthographic = sourceCamera.orthographic;
-            combatCamera.orthographicSize = sourceCamera.orthographicSize;
-            combatCamera.clearFlags = sourceCamera.clearFlags;
-            combatCamera.backgroundColor = sourceCamera.backgroundColor;
-            combatCamera.allowHDR = sourceCamera.allowHDR;
-            combatCamera.allowMSAA = sourceCamera.allowMSAA;
-            combatCamera.nearClipPlane = sourceCamera.nearClipPlane;
-            combatCamera.farClipPlane = sourceCamera.farClipPlane;
-
-            CopyUniversalCameraData(sourceCamera, combatCamera);
-        }
-
-        private static void CopyUniversalCameraData(Camera sourceCamera, Camera targetCamera)
-        {
-            Component sourceData = FindComponentByTypeName(
-                sourceCamera != null ? sourceCamera.gameObject : null,
-                "UniversalAdditionalCameraData");
-            Component targetData = FindComponentByTypeName(
-                targetCamera != null ? targetCamera.gameObject : null,
-                "UniversalAdditionalCameraData");
-            if (sourceData == null || targetData == null)
-            {
-                return;
-            }
-
-            CopyPropertyValue(sourceData, targetData, "renderPostProcessing");
-            CopyPropertyValue(sourceData, targetData, "antialiasing");
-            CopyPropertyValue(sourceData, targetData, "antialiasingQuality");
-        }
-
-        private static Component FindComponentByTypeName(GameObject root, string typeName)
-        {
-            if (root == null)
-            {
-                return null;
-            }
-
-            Component[] components = root.GetComponents<Component>();
-            for (int i = 0; i < components.Length; i++)
-            {
-                Component component = components[i];
-                if (component != null
-                    && string.Equals(component.GetType().Name, typeName, System.StringComparison.Ordinal))
-                {
-                    return component;
-                }
-            }
-
-            return null;
-        }
-
-        private static void CopyPropertyValue(Component source, Component target, string propertyName)
-        {
-            const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            PropertyInfo sourceProperty = source.GetType().GetProperty(propertyName, Flags);
-            PropertyInfo targetProperty = target.GetType().GetProperty(propertyName, Flags);
-            if (sourceProperty == null
-                || targetProperty == null
-                || !sourceProperty.CanRead
-                || !targetProperty.CanWrite)
-            {
-                return;
-            }
-
-            targetProperty.SetValue(target, sourceProperty.GetValue(source));
         }
 
         private Camera ResolveActiveIntroCamera()

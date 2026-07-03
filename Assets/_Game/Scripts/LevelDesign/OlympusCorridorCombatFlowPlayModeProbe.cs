@@ -359,13 +359,12 @@ namespace DimensionBrawl.LevelDesign
             yield return null;
             AppendTutorialUiDiagnostics("tutorialUi_Move", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
 
-            Vector3 tutorialMoveTarget = player.transform.position
-                + Vector3.ProjectOnPlane(player.transform.right, Vector3.up).normalized * 2f;
-            yield return MovePlayerWithInputToPosition(
+            yield return MoveTutorialUntilStep(
+                flow,
+                tutorialDirector,
                 player,
-                tutorialMoveTarget,
+                "SwapToRanged",
                 deadline,
-                "tutorialMoveInput",
                 report,
                 result);
             if (result.Failed)
@@ -467,6 +466,67 @@ namespace DimensionBrawl.LevelDesign
             }
 
             report.AppendLine("tutorial completed from runtime inputs=True");
+        }
+
+        private static IEnumerator MoveTutorialUntilStep(
+            OlympusCorridorCombatFlowController flow,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            Player.PlayerMovementController player,
+            string expectedStep,
+            float deadline,
+            StringBuilder report,
+            ProbeResult result)
+        {
+            if (player == null)
+            {
+                result.Fail("Missing player for tutorial move input.");
+                yield break;
+            }
+
+            Vector3 start = player.transform.position;
+            int frames = 0;
+            report.AppendLine($"tutorialMoveInputStart={FormatVector3(start)}");
+            report.AppendLine($"tutorialMoveInputLaneConstraint={player.LaneConstraintEnabled}");
+            report.AppendLine($"tutorialMoveInputCinematicLockedAtStart={player.IsCinematicMoveInputLocked}");
+            while (tutorialDirector.CurrentStepId != expectedStep && !flow.TutorialCompleted)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    player.SetMoveInput(Vector2.zero);
+                    Vector3 timeoutDelta = Vector3.ProjectOnPlane(
+                        player.transform.position - start,
+                        Vector3.up);
+                    report.AppendLine($"tutorialMoveInputFrames={frames}");
+                    report.AppendLine($"tutorialMoveInputFinal={FormatVector3(player.transform.position)}");
+                    report.AppendLine($"tutorialMoveInputDistance={timeoutDelta.magnitude:0.###}");
+                    AppendNearbySolidColliders(
+                        player.transform.position,
+                        player.transform,
+                        "tutorialMoveInputTimeout",
+                        report);
+                    result.Fail($"Timed out waiting for tutorial step {expectedStep} from move input.");
+                    yield break;
+                }
+
+                player.SetMoveInput(Vector2.up);
+                frames++;
+                yield return null;
+            }
+
+            player.SetMoveInput(Vector2.zero);
+            Vector3 moved = Vector3.ProjectOnPlane(player.transform.position - start, Vector3.up);
+            report.AppendLine($"tutorialMoveInputFrames={frames}");
+            report.AppendLine($"tutorialMoveInputFinal={FormatVector3(player.transform.position)}");
+            report.AppendLine($"tutorialMoveInputDistance={moved.magnitude:0.###}");
+            report.AppendLine($"tutorialMoveInputCinematicLockedAtEnd={player.IsCinematicMoveInputLocked}");
+            if (moved.magnitude < 0.65f)
+            {
+                result.Fail(
+                    $"Tutorial move input advanced with too little movement: {moved.magnitude:0.###}m.");
+                yield break;
+            }
+
+            report.AppendLine($"tutorial advanced to {expectedStep} step from movement input=True");
         }
 
         private static IEnumerator QueueBasicAttackUntilStep(

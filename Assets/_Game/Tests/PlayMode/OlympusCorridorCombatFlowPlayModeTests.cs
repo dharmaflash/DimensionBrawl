@@ -1,9 +1,11 @@
 using System.Collections;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,8 +21,11 @@ namespace DimensionBrawl.Tests
         private const string DirectorName = "IntroGatePodReview_TimelineDirector";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
         private const string PlayerRootName = "Player_CombatGirl_ActionFoundation";
+        private const string CombatPackageRootName = "OlympusCorridor_BossBarrageCombatPackage";
         private const string IntroSwordGateRootName = "OlympusCorridor_IntroSwordGate";
+        private const string CombatHudRootName = "PF_UI_CombatHud";
         private const string TutorialTimingReportPath = "C:/tmp/DimensionBrawl-OlympusTutorialTimingReport.md";
+        private const string TutorialAimFovReportPath = "C:/tmp/DimensionBrawl-OlympusAimFovReport.md";
         private const float ExpectedMinimumTutorialStepSeconds = 0.85f;
 
         [UnitySetUp]
@@ -106,18 +111,52 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        [Timeout(90000)]
-        public IEnumerator TutorialRuntimeInputsAdvanceByExpectedTriggers()
+        public IEnumerator CombatHudJoystickIsMutedBeforeIntroHandoff()
+        {
+            CanvasGroup combatHudCanvasGroup = RequireComponent<CanvasGroup>(
+                CombatHudRootName,
+                "combat HUD root canvas group");
+
+            yield return null;
+
+            AssertCombatHudInputMuted(combatHudCanvasGroup, "before intro handoff");
+        }
+
+        [UnityTest]
+        public IEnumerator CombatHudJoystickUnlocksOnlyAfterHudReveal()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            CanvasGroup combatHudCanvasGroup = RequireComponent<CanvasGroup>(
+                CombatHudRootName,
+                "combat HUD root canvas group");
+
+            flowController.SkipIntroCutscene();
+            AssertCombatHudInputMuted(combatHudCanvasGroup, "immediately after intro skip");
+
+            float startedAt = Time.realtimeSinceStartup;
+            while (!combatHudCanvasGroup.interactable || !combatHudCanvasGroup.blocksRaycasts)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    2f,
+                    "Combat HUD joystick never unlocked after the HUD reveal.");
+                yield return null;
+            }
+
+            Assert.That(combatHudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialCueRejectsStaleMoveAndCombatInput()
         {
             var report = new StringBuilder();
             OlympusCorridorCombatFlowController flowController =
                 RequireComponent<OlympusCorridorCombatFlowController>(
                     FlowRootName,
                     "Olympus corridor combat flow controller");
-            OlympusCorridorTutorialDirector tutorialDirector =
-                RequireComponent<OlympusCorridorTutorialDirector>(
-                    FlowRootName,
-                    "Olympus corridor tutorial director");
             GameObject playerRoot = RequireSceneObject(PlayerRootName);
             PlayerMovementController player = RequireComponent<PlayerMovementController>(
                 PlayerRootName,
@@ -132,6 +171,103 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedBasicAttackAction>(
                     PlayerRootName,
                     "player ranged basic action");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(
+                PlayerRootName,
+                "player skill 1 action");
+            PlayerSummonSlot1Action summonSlot1Action = RequireComponent<PlayerSummonSlot1Action>(
+                PlayerRootName,
+                "player summon slot 1 action");
+            PlayerSupportSummonSlotAction[] supportSummonActions =
+                playerRoot.GetComponentsInChildren<PlayerSupportSummonSlotAction>(true);
+
+            flowController.SkipIntroCutscene();
+            yield return null;
+            yield return null;
+
+            OlympusCorridorTutorialDirector tutorialDirector =
+                RequireComponent<OlympusCorridorTutorialDirector>(
+                    FlowRootName,
+                    "Olympus corridor tutorial director");
+
+            yield return WaitForStep(tutorialDirector, "Melee", 5f, report);
+            Assert.AreEqual("Cue", tutorialDirector.CurrentPhaseId, "Tutorial should begin with a locked cue window.");
+
+            player.SetMoveInput(Vector2.right);
+            player.SetLookInput(Vector2.right);
+            actionController.QueueBasicAttack();
+            actionController.QueueDodge();
+            combatModeController.QueueCombatModeSwap();
+            rangedBasicAttackAction.QueueFire();
+            rangedBasicAttackAction.SetFireHeld(true);
+            rangedBasicAttackAction.SetExternalAimPreviewHeld(true);
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            skill1Action.QueueSkill1();
+            summonSlot1Action.QueueSummonSlot1();
+            for (int i = 0; i < supportSummonActions.Length; i++)
+            {
+                supportSummonActions[i].QueueSummon();
+            }
+
+            AssertPrivateVector2Zero(player, "mobileMoveInput", "move input should not be stored during a tutorial cue.");
+            AssertPrivateVector2Zero(player, "mobileLookInput", "look input should not be stored during a tutorial cue.");
+            AssertPrivateBoolFalse(actionController, "mobileAttackQueued", "basic attack should not queue during a tutorial cue.");
+            AssertPrivateBoolFalse(actionController, "mobileDodgeQueued", "dodge should not queue during a tutorial cue.");
+            AssertPrivateBoolFalse(combatModeController, "queuedSwap", "combat mode swap should not queue during a tutorial cue.");
+            AssertPrivateBoolFalse(rangedBasicAttackAction, "queuedFire", "ranged fire should not queue while disabled or locked.");
+            AssertPrivateBoolFalse(rangedBasicAttackAction, "mobileFireHeld", "held fire should not persist while disabled or locked.");
+            AssertPrivateBoolFalse(rangedBasicAttackAction, "currentFireHeld", "held fire should not become active while disabled or locked.");
+            AssertPrivateBoolFalse(rangedBasicAttackAction, "externalAimPreviewHeld", "aim preview should not persist while disabled or locked.");
+            AssertPrivateVector2Zero(rangedBasicAttackAction, "aimInput", "aim input should not persist while disabled or locked.");
+            AssertPrivateBoolFalse(skill1Action, "queued", "Skill1 should not queue while disabled.");
+            AssertPrivateBoolFalse(summonSlot1Action, "queued", "SummonSlot1 should not queue while disabled.");
+            for (int i = 0; i < supportSummonActions.Length; i++)
+            {
+                AssertPrivateBoolFalse(
+                    supportSummonActions[i],
+                    "queued",
+                    $"Support summon slot {i + 2} should not queue while disabled.");
+            }
+
+            yield return null;
+
+            Assert.AreEqual("Melee", tutorialDirector.CurrentStepId);
+            Assert.IsTrue(combatModeController.IsMeleeMode, "Rejected early inputs should not break the initial sword lock.");
+        }
+
+        [UnityTest]
+        [Timeout(90000)]
+        public IEnumerator TutorialRuntimeInputsAdvanceByExpectedTriggers()
+        {
+            var report = new StringBuilder();
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            GameObject playerRoot = RequireSceneObject(PlayerRootName);
+            PlayerMovementController player = RequireComponent<PlayerMovementController>(
+                PlayerRootName,
+                "player movement controller");
+            PlayerActionController actionController = RequireComponent<PlayerActionController>(
+                PlayerRootName,
+                "player action controller");
+            PlayerCombatModeController combatModeController = RequireComponent<PlayerCombatModeController>(
+                PlayerRootName,
+                "player combat mode controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(
+                    PlayerRootName,
+                    "player ranged basic action");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(
+                    PlayerRootName,
+                    "player ranged aim controller");
+            ActionCameraController cameraController =
+                RequireComponent<ActionCameraController>(
+                    "OlympusCorridor_Combat_MainCamera",
+                    "combat action camera controller");
+            Camera combatCamera = RequireComponent<Camera>(
+                "OlympusCorridor_Combat_MainCamera",
+                "combat camera");
 
             report.AppendLine("# Olympus Corridor Tutorial Runtime Timing");
             report.AppendLine();
@@ -144,6 +280,17 @@ namespace DimensionBrawl.Tests
             flowController.SkipIntroCutscene();
             yield return null;
             yield return null;
+            AppendCameraSnapshot(report, "After skip handoff", cameraController, combatCamera, rangedAimController);
+            Assert.AreSame(combatCamera, Camera.main, "Combat camera should be the active MainCamera after intro handoff.");
+            Assert.That(
+                ReadPrivateField<float>(cameraController, "baseFieldOfView"),
+                Is.GreaterThan(45f),
+                "Combat camera aim base FOV should stay on the authored gameplay value instead of inheriting the intro handoff lens.");
+
+            OlympusCorridorTutorialDirector tutorialDirector =
+                RequireComponent<OlympusCorridorTutorialDirector>(
+                    FlowRootName,
+                    "Olympus corridor tutorial director");
 
             Assert.IsTrue(playerRoot.activeInHierarchy, "Player should be active after intro handoff.");
             yield return WaitForStep(tutorialDirector, "Melee", 5f, report);
@@ -167,6 +314,8 @@ namespace DimensionBrawl.Tests
                 report);
             Assert.AreEqual("Move", tutorialDirector.CurrentStepId);
             Assert.That(tutorialDirector.LastCompletionRecord, Does.StartWith("Melee:"));
+            AssertBossTelegraphsSuppressed("move step after melee local-defense cue");
+            report.AppendLine("- Boss telegraph suppression: presenters disabled during the tutorial pocket.");
 
             yield return MoveUntilStep(
                 tutorialDirector,
@@ -177,6 +326,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("SwapToRanged", tutorialDirector.CurrentStepId);
             Assert.That(tutorialDirector.LastCompletionRecord, Does.StartWith("Move:"));
             Assert.IsTrue(combatModeController.IsMeleeMode, "Swap step should start from sword mode.");
+            float preFireFieldOfView = combatCamera.fieldOfView;
+            Vector3 preFireCameraPosition = combatCamera.transform.position;
+            AppendCameraSnapshot(report, "Before ranged swap", cameraController, combatCamera, rangedAimController);
 
             yield return QueueSwapUntilStep(
                 tutorialDirector,
@@ -187,13 +339,61 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("Fire", tutorialDirector.CurrentStepId);
             Assert.That(tutorialDirector.LastCompletionRecord, Does.StartWith("SwapToRanged:"));
             Assert.IsTrue(combatModeController.IsRangedMode, "Fire step should enter ranged mode only after the swap input.");
-
-            yield return QueueFireUntilStep(
-                tutorialDirector,
+            AssertPrivateBoolFalse(
                 rangedBasicAttackAction,
-                "Dodge",
-                8f,
-                report);
+                "externalAimPreviewHeld",
+                "Fire tutorial must use the real held-fire path, not the external aim preview shortcut.");
+            Assert.IsFalse(rangedAimController.IsAiming, "Fire cue should not auto-aim before the fire button is held.");
+            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
+            rangedBasicAttackAction.SetFireHeld(true);
+            yield return null;
+            AppendCameraSnapshot(report, "Held fire aim started", cameraController, combatCamera, rangedAimController);
+            report.AppendLine();
+            report.AppendLine("## Held Fire Aim FOV Trace");
+            report.AppendLine("| Frame | Time | Combat FOV | Main Camera | Base FOV | Aim Target | Aim Weight | Is Aiming |");
+            report.AppendLine("|---:|---:|---:|---|---:|---:|---:|---|");
+            float minFireFieldOfView = combatCamera.fieldOfView;
+            for (int i = 0; i < 60; i++)
+            {
+                yield return null;
+                minFireFieldOfView = Mathf.Min(minFireFieldOfView, combatCamera.fieldOfView);
+                AppendCameraFovSample(report, i + 1, cameraController, combatCamera, rangedAimController);
+            }
+
+            Assert.IsTrue(rangedAimController.IsAiming, "Fire cue should put the player ranged aim controller into aim mode.");
+            Assert.That(
+                ReadPrivateField<float>(cameraController, "aimWeight"),
+                Is.GreaterThan(0.75f),
+                "Held fire should drive the camera aim weight high enough to be visible.");
+            Assert.Less(
+                minFireFieldOfView,
+                preFireFieldOfView - 3f,
+                "Held fire should visibly tighten FOV through the normal combat aim path.");
+            float fireAimCameraShift = Vector3.Distance(preFireCameraPosition, combatCamera.transform.position);
+            report.AppendLine($"- Fire aim camera shift: `{fireAimCameraShift:0.00}m`.");
+            Assert.Greater(
+                fireAimCameraShift,
+                0.35f,
+                "Held fire should move the visible combat camera through the normal combat aim path, not only change FOV.");
+            AppendCameraSnapshot(report, "Fire aim settled", cameraController, combatCamera, rangedAimController);
+            AppendAndAssertAimCameraLaneComposition(report, "Fire aim settled", combatCamera, player);
+            yield return WaitForPhase(tutorialDirector, "Committed", 3f, report);
+            Assert.AreEqual("Fire", tutorialDirector.CurrentStepId);
+            Assert.IsTrue(rangedAimController.IsAiming, "Held-fire aim should stay active through the Fire confirmation beat.");
+            Assert.That(
+                ReadPrivateField<float>(cameraController, "aimWeight"),
+                Is.GreaterThan(0.5f),
+                "Fire confirmation should not clear the normal held-fire camera aim.");
+            rangedBasicAttackAction.QueueFire();
+            yield return null;
+            AssertPrivateBoolFalse(
+                rangedBasicAttackAction,
+                "queuedFire",
+                "Fire confirmation should preserve held aim without accepting fresh fire queues.");
+            report.AppendLine("- Fire confirmation held-fire aim: still active.");
+
+            yield return WaitForStep(tutorialDirector, "Dodge", 3f, report);
+            rangedBasicAttackAction.SetFireHeld(false);
             Assert.AreEqual("Dodge", tutorialDirector.CurrentStepId);
             Assert.That(tutorialDirector.LastCompletionRecord, Does.StartWith("Fire:"));
 
@@ -205,17 +405,169 @@ namespace DimensionBrawl.Tests
                 report);
             Assert.AreEqual("ClearTargets", tutorialDirector.CurrentStepId);
             Assert.That(tutorialDirector.LastCompletionRecord, Does.StartWith("Dodge:"));
+            AppendCameraSnapshot(report, "ClearTargets step reached", cameraController, combatCamera, rangedAimController);
+            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
+            float clearStepPreFireFieldOfView = combatCamera.fieldOfView;
+            rangedBasicAttackAction.SetFireHeld(true);
+            float clearStepMinFireFieldOfView = combatCamera.fieldOfView;
+            for (int i = 0; i < 45; i++)
+            {
+                yield return null;
+                clearStepMinFireFieldOfView = Mathf.Min(clearStepMinFireFieldOfView, combatCamera.fieldOfView);
+            }
+
+            Assert.IsTrue(rangedAimController.IsAiming, "ClearTargets should keep normal held-fire aim available for cleanup enemies.");
+            Assert.Less(
+                clearStepMinFireFieldOfView,
+                clearStepPreFireFieldOfView - 2f,
+                "ClearTargets held fire should use the normal combat aim zoom.");
+            AppendCameraSnapshot(report, "ClearTargets held fire aim", cameraController, combatCamera, rangedAimController);
+            AppendAndAssertAimCameraLaneComposition(report, "ClearTargets held fire aim", combatCamera, player);
 
             report.AppendLine();
             report.AppendLine("## Static Step Gates");
             report.AppendLine("- Cue phase: `0.45s` focus/read window with step input muted.");
             report.AppendLine("- AwaitingAction phase: only live observer events can commit completion.");
-            report.AppendLine("- Committed phase: `0.55s` RECORDED confirmation before the next cue.");
-            report.AppendLine("- Move gate: `1.25m` or movement started event.");
+            report.AppendLine("- Committed phase: `0.70s` RECORDED confirmation before the next cue; Fire keeps held-fire aim alive during this beat.");
+            report.AppendLine("- Move gate: `0.75m` confirmed position movement inside the tutorial area.");
             report.AppendLine("- Fire gate: `0.7s` aim preview lead after Ready + fire event + player-side target damage/death.");
             report.AppendLine("- Clear gate: all tutorial targets defeated.");
             Directory.CreateDirectory(Path.GetDirectoryName(TutorialTimingReportPath));
             File.WriteAllText(TutorialTimingReportPath, report.ToString());
+        }
+
+        [UnityTest]
+        [Timeout(90000)]
+        public IEnumerator TutorialFireAimFovUsesVisibleCombatCamera()
+        {
+            var report = new StringBuilder();
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            PlayerMovementController player = RequireComponent<PlayerMovementController>(
+                PlayerRootName,
+                "player movement controller");
+            PlayerActionController actionController = RequireComponent<PlayerActionController>(
+                PlayerRootName,
+                "player action controller");
+            PlayerCombatModeController combatModeController = RequireComponent<PlayerCombatModeController>(
+                PlayerRootName,
+                "player combat mode controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(
+                    PlayerRootName,
+                    "player ranged basic action");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(
+                    PlayerRootName,
+                    "player ranged aim controller");
+            ActionCameraController cameraController =
+                RequireComponent<ActionCameraController>(
+                    "OlympusCorridor_Combat_MainCamera",
+                    "combat action camera controller");
+            Camera combatCamera = RequireComponent<Camera>(
+                "OlympusCorridor_Combat_MainCamera",
+                "combat camera");
+
+            bool combatCameraWasMainAfterHandoff = false;
+            float preFireFieldOfView = 0f;
+            float minFireFieldOfView = 0f;
+            Vector3 preFireCameraPosition = Vector3.zero;
+            float fireAimCameraShift = 0f;
+            report.AppendLine("# Olympus Corridor Fire Aim FOV Diagnostic");
+            report.AppendLine();
+            report.AppendLine("- This diagnostic bypasses minimum step-duration assertions so it can reach the Fire cue.");
+            report.AppendLine("- It records enabled cameras, `Camera.main`, combat camera FOV, and aim weights during the Fire cue.");
+
+            try
+            {
+                flowController.SkipIntroCutscene();
+                yield return null;
+                yield return null;
+                AppendCameraSnapshot(report, "After skip handoff", cameraController, combatCamera, rangedAimController);
+                combatCameraWasMainAfterHandoff = Camera.main == combatCamera;
+
+                OlympusCorridorTutorialDirector tutorialDirector =
+                    RequireComponent<OlympusCorridorTutorialDirector>(
+                        FlowRootName,
+                        "Olympus corridor tutorial director");
+
+                yield return WaitForStep(tutorialDirector, "Melee", 5f, report);
+                yield return DriveUntilStep(
+                    tutorialDirector,
+                    "Move",
+                    8f,
+                    "melee hit diagnostic",
+                    report,
+                    actionController.QueueBasicAttack);
+                yield return DriveUntilStep(
+                    tutorialDirector,
+                    "SwapToRanged",
+                    8f,
+                    "move input diagnostic",
+                    report,
+                    () => player.SetMoveInput(Vector2.up),
+                    () => player.SetMoveInput(Vector2.zero));
+
+                preFireFieldOfView = combatCamera.fieldOfView;
+                preFireCameraPosition = combatCamera.transform.position;
+                AppendCameraSnapshot(report, "Before ranged swap", cameraController, combatCamera, rangedAimController);
+                yield return DriveUntilStep(
+                    tutorialDirector,
+                    "Fire",
+                    5f,
+                    "swap input diagnostic",
+                    report,
+                    combatModeController.QueueCombatModeSwap);
+
+                AssertPrivateBoolFalse(
+                    rangedBasicAttackAction,
+                    "externalAimPreviewHeld",
+                    "Fire diagnostic must not rely on the external aim preview shortcut.");
+                Assert.IsFalse(rangedAimController.IsAiming, "Fire cue should not auto-aim before the fire button is held.");
+                yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
+                rangedBasicAttackAction.SetFireHeld(true);
+                yield return null;
+                AppendCameraSnapshot(report, "Held fire aim started", cameraController, combatCamera, rangedAimController);
+                report.AppendLine();
+                report.AppendLine("## Held Fire Aim FOV Trace");
+                report.AppendLine("| Frame | Time | Combat FOV | Main Camera | Base FOV | Aim Target | Aim Weight | Is Aiming |");
+                report.AppendLine("|---:|---:|---:|---|---:|---:|---:|---|");
+                minFireFieldOfView = combatCamera.fieldOfView;
+                for (int i = 0; i < 60; i++)
+                {
+                    yield return null;
+                    minFireFieldOfView = Mathf.Min(minFireFieldOfView, combatCamera.fieldOfView);
+                    AppendCameraFovSample(report, i + 1, cameraController, combatCamera, rangedAimController);
+                }
+
+                AppendCameraSnapshot(report, "Fire aim settled", cameraController, combatCamera, rangedAimController);
+                AppendAndAssertAimCameraLaneComposition(report, "Fire aim settled", combatCamera, player);
+                fireAimCameraShift = Vector3.Distance(preFireCameraPosition, combatCamera.transform.position);
+                report.AppendLine($"- Fire aim camera shift: `{fireAimCameraShift:0.00}m`.");
+            }
+            finally
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(TutorialAimFovReportPath));
+                File.WriteAllText(TutorialAimFovReportPath, report.ToString());
+            }
+
+            Assert.IsTrue(combatCameraWasMainAfterHandoff, "Combat camera should become Camera.main after intro handoff.");
+            Assert.AreSame(combatCamera, Camera.main, "Combat camera should remain the active MainCamera during the Fire cue.");
+            Assert.IsTrue(rangedAimController.IsAiming, "Fire cue should put the player ranged aim controller into aim mode.");
+            Assert.That(
+                ReadPrivateField<float>(cameraController, "aimWeight"),
+                Is.GreaterThan(0.75f),
+                "Fire cue should drive the camera aim weight high enough to be visible.");
+            Assert.Less(
+                minFireFieldOfView,
+                preFireFieldOfView - 3f,
+                "Fire cue should tighten FOV by a visible amount, not only by a tiny numeric delta.");
+            Assert.Greater(
+                fireAimCameraShift,
+                0.35f,
+                "Fire cue should move the visible combat camera into the authored aim rig, not only change FOV.");
         }
 
         private static T RequireComponent<T>(string objectName, string label)
@@ -260,6 +612,7 @@ namespace DimensionBrawl.Tests
             StringBuilder report)
         {
             float startedAt = Time.realtimeSinceStartup;
+            float gameplayStartedAt = Time.time;
             int frames = 0;
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
@@ -272,7 +625,7 @@ namespace DimensionBrawl.Tests
                 yield return null;
             }
 
-            AppendStepTiming(report, expectedStep, triggerLabel, frames, startedAt);
+            AppendStepTiming(report, expectedStep, triggerLabel, frames, gameplayStartedAt);
         }
 
         private static IEnumerator MoveUntilStep(
@@ -283,6 +636,8 @@ namespace DimensionBrawl.Tests
             StringBuilder report)
         {
             float startedAt = Time.realtimeSinceStartup;
+            float gameplayStartedAt = Time.time;
+            Vector3 startPosition = player.transform.position;
             int frames = 0;
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
@@ -290,13 +645,21 @@ namespace DimensionBrawl.Tests
                     Time.realtimeSinceStartup - startedAt,
                     timeoutSeconds,
                     $"Timed out waiting for {expectedStep} from move input.");
-                player.SetMoveInput(Vector2.right);
+                player.SetMoveInput(Vector2.up);
                 frames++;
                 yield return null;
             }
 
             player.SetMoveInput(Vector2.zero);
-            AppendStepTiming(report, expectedStep, "move input", frames, startedAt);
+            float movedDistance = Vector3.ProjectOnPlane(
+                player.transform.position - startPosition,
+                Vector3.up).magnitude;
+            Assert.GreaterOrEqual(
+                movedDistance,
+                0.65f,
+                "Move tutorial should require a visible amount of player displacement, not only a run-start event.");
+            report.AppendLine($"- Move displacement before completion: `{movedDistance:0.00}m`.");
+            AppendStepTiming(report, expectedStep, "move input", frames, gameplayStartedAt);
         }
 
         private static IEnumerator QueueSwapUntilStep(
@@ -307,6 +670,7 @@ namespace DimensionBrawl.Tests
             StringBuilder report)
         {
             float startedAt = Time.realtimeSinceStartup;
+            float gameplayStartedAt = Time.time;
             int frames = 0;
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
@@ -319,7 +683,7 @@ namespace DimensionBrawl.Tests
                 yield return null;
             }
 
-            AppendStepTiming(report, expectedStep, "swap input", frames, startedAt);
+            AppendStepTiming(report, expectedStep, "swap input", frames, gameplayStartedAt);
         }
 
         private static IEnumerator QueueFireUntilStep(
@@ -330,6 +694,7 @@ namespace DimensionBrawl.Tests
             StringBuilder report)
         {
             float startedAt = Time.realtimeSinceStartup;
+            float gameplayStartedAt = Time.time;
             int frames = 0;
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
@@ -342,7 +707,7 @@ namespace DimensionBrawl.Tests
                 yield return null;
             }
 
-            AppendStepTiming(report, expectedStep, "ranged fire hit", frames, startedAt);
+            AppendStepTiming(report, expectedStep, "ranged fire hit", frames, gameplayStartedAt);
         }
 
         private static IEnumerator QueueDodgeUntilStep(
@@ -353,6 +718,7 @@ namespace DimensionBrawl.Tests
             StringBuilder report)
         {
             float startedAt = Time.realtimeSinceStartup;
+            float gameplayStartedAt = Time.time;
             int frames = 0;
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
@@ -365,7 +731,35 @@ namespace DimensionBrawl.Tests
                 yield return null;
             }
 
-            AppendStepTiming(report, expectedStep, "dodge input", frames, startedAt);
+            AppendStepTiming(report, expectedStep, "dodge input", frames, gameplayStartedAt);
+        }
+
+        private static IEnumerator DriveUntilStep(
+            OlympusCorridorTutorialDirector tutorialDirector,
+            string expectedStep,
+            float timeoutSeconds,
+            string trigger,
+            StringBuilder report,
+            System.Action driveInput,
+            System.Action cleanupInput = null)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+            int frames = 0;
+            while (tutorialDirector.CurrentStepId != expectedStep)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    $"Timed out waiting for {expectedStep} from {trigger}.");
+                driveInput();
+                frames++;
+                yield return null;
+            }
+
+            cleanupInput?.Invoke();
+            float elapsedSeconds = Time.realtimeSinceStartup - startedAt;
+            report.AppendLine(
+                $"- `{expectedStep}` via {trigger}: `{frames}` frames, `{elapsedSeconds:0.000}s`.");
         }
 
         private static IEnumerator WaitForStep(
@@ -387,20 +781,204 @@ namespace DimensionBrawl.Tests
             report.AppendLine($"- Reached `{expectedStep}` after `{Time.realtimeSinceStartup - startedAt:0.000}s`.");
         }
 
+        private static IEnumerator WaitForPhase(
+            OlympusCorridorTutorialDirector tutorialDirector,
+            string expectedPhase,
+            float timeoutSeconds,
+            StringBuilder report)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+            while (tutorialDirector.CurrentPhaseId != expectedPhase)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    $"Timed out waiting for tutorial phase {expectedPhase}.");
+                yield return null;
+            }
+
+            report.AppendLine(
+                $"- Reached phase `{expectedPhase}` after `{Time.realtimeSinceStartup - startedAt:0.000}s`.");
+        }
+
+        private static void AppendAndAssertAimCameraLaneComposition(
+            StringBuilder report,
+            string label,
+            Camera combatCamera,
+            PlayerMovementController player)
+        {
+            Assert.IsNotNull(combatCamera, $"{label}: missing combat camera.");
+            Assert.IsNotNull(player, $"{label}: missing player movement controller.");
+
+            Transform combatPackageRoot = RequireSceneObject(CombatPackageRootName).transform;
+            Vector3 laneForward = Vector3.ProjectOnPlane(combatPackageRoot.forward, Vector3.up);
+            Assert.Greater(
+                laneForward.sqrMagnitude,
+                0.0001f,
+                $"{label}: combat package forward must define a planar lane axis.");
+            laneForward.Normalize();
+
+            Vector3 laneRight = Vector3.Cross(Vector3.up, laneForward).normalized;
+            Vector3 toCamera = Vector3.ProjectOnPlane(
+                combatCamera.transform.position - player.transform.position,
+                Vector3.up);
+            Vector3 cameraForward = Vector3.ProjectOnPlane(combatCamera.transform.forward, Vector3.up);
+            Assert.Greater(
+                cameraForward.sqrMagnitude,
+                0.0001f,
+                $"{label}: combat camera forward must define a planar view direction.");
+            cameraForward.Normalize();
+
+            float behindMeters = -Vector3.Dot(toCamera, laneForward);
+            float lateralMeters = Vector3.Dot(toCamera, laneRight);
+            float viewForwardDot = Vector3.Dot(cameraForward, laneForward);
+
+            report.AppendLine();
+            report.AppendLine($"## Aim Camera Lane Composition: {label}");
+            report.AppendLine($"- Lane forward `{FormatVector3(laneForward)}`, lane right `{FormatVector3(laneRight)}`.");
+            report.AppendLine(
+                $"- Camera behind `{behindMeters:0.00}m`, lateral `{lateralMeters:0.00}m`, planar distance `{toCamera.magnitude:0.00}m`, view forward dot `{viewForwardDot:0.00}`.");
+
+            Assert.Greater(
+                behindMeters,
+                0.75f,
+                $"{label}: aim camera should remain behind the player in combat-lane space.");
+            Assert.LessOrEqual(
+                Mathf.Abs(lateralMeters),
+                2.35f,
+                $"{label}: aim camera should not swing into a side-wall composition.");
+            Assert.Greater(
+                viewForwardDot,
+                0.55f,
+                $"{label}: aim camera should keep looking down the combat lane.");
+        }
+
         private static void AppendStepTiming(
             StringBuilder report,
             string step,
             string trigger,
             int frames,
-            float startedAt)
+            float gameplayStartedAt)
         {
-            float elapsedSeconds = Time.realtimeSinceStartup - startedAt;
+            float elapsedSeconds = Time.time - gameplayStartedAt;
             Assert.GreaterOrEqual(
                 elapsedSeconds,
                 ExpectedMinimumTutorialStepSeconds,
                 $"{step} advanced too quickly from {trigger}.");
             report.AppendLine(
                 $"- `{step}` via {trigger}: `{frames}` frames, `{elapsedSeconds:0.000}s`.");
+        }
+
+        private static void AppendCameraSnapshot(
+            StringBuilder report,
+            string label,
+            ActionCameraController cameraController,
+            Camera combatCamera,
+            PlayerRangedAimController rangedAimController)
+        {
+            Camera mainCamera = Camera.main;
+            report.AppendLine();
+            report.AppendLine($"## Camera Snapshot: {label}");
+            report.AppendLine(
+                $"- Combat camera `{combatCamera.name}` active `{combatCamera.gameObject.activeInHierarchy}`, enabled `{combatCamera.enabled}`, FOV `{combatCamera.fieldOfView:0.00}`, position `{FormatVector3(combatCamera.transform.position)}`.");
+            report.AppendLine(
+                $"- Camera.main `{FormatCamera(mainCamera)}`.");
+            report.AppendLine(
+                $"- Action camera base `{ReadPrivateField<float>(cameraController, "baseFieldOfView"):0.00}`, aim target `{ReadPrivateField<float>(cameraController, "aimTargetWeight"):0.00}`, aim weight `{ReadPrivateField<float>(cameraController, "aimWeight"):0.00}`.");
+            report.AppendLine(
+                $"- Ranged aim can `{rangedAimController.CanAim}`, active `{rangedAimController.IsAiming}`.");
+            report.AppendLine("- Enabled runtime cameras:");
+
+            Camera[] cameras = Object.FindObjectsByType<Camera>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                Camera camera = cameras[i];
+                if (!camera.enabled || !camera.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                report.AppendLine(
+                    $"  - `{camera.name}` tag `{camera.tag}`, FOV `{camera.fieldOfView:0.00}`, depth `{camera.depth:0.0}`.");
+            }
+        }
+
+        private static void AppendCameraFovSample(
+            StringBuilder report,
+            int frame,
+            ActionCameraController cameraController,
+            Camera combatCamera,
+            PlayerRangedAimController rangedAimController)
+        {
+            report.AppendLine(
+                $"| {frame} | {Time.time:0.000} | {combatCamera.fieldOfView:0.00} | `{FormatCamera(Camera.main)}` | {ReadPrivateField<float>(cameraController, "baseFieldOfView"):0.00} | {ReadPrivateField<float>(cameraController, "aimTargetWeight"):0.00} | {ReadPrivateField<float>(cameraController, "aimWeight"):0.00} | `{rangedAimController.IsAiming}` |");
+        }
+
+        private static string FormatCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return "<none>";
+            }
+
+            return $"{camera.name} / FOV {camera.fieldOfView:0.00}";
+        }
+
+        private static string FormatVector3(Vector3 value)
+        {
+            return $"{value.x:0.00}, {value.y:0.00}, {value.z:0.00}";
+        }
+
+        private static void AssertBossTelegraphsSuppressed(string context)
+        {
+            BossBarrageLaneTelegraphPresenter[] presenters =
+                Object.FindObjectsByType<BossBarrageLaneTelegraphPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            Assert.IsNotEmpty(presenters, $"{context}: expected at least one boss telegraph presenter in the scene.");
+
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                BossBarrageLaneTelegraphPresenter presenter = presenters[i];
+                Assert.IsFalse(presenter.enabled, $"{context}: boss telegraph presenter should be disabled.");
+                Assert.Zero(presenter.VisibleMarkerCount, $"{context}: disabled boss telegraph should not keep visible markers.");
+            }
+        }
+
+        private static void AssertCombatHudInputMuted(CanvasGroup canvasGroup, string context)
+        {
+            Assert.IsNotNull(canvasGroup);
+            Assert.That(canvasGroup.alpha, Is.EqualTo(0f).Within(0.001f), $"HUD should be hidden {context}.");
+            Assert.IsFalse(canvasGroup.interactable, $"HUD should not accept input {context}.");
+            Assert.IsFalse(canvasGroup.blocksRaycasts, $"HUD should not block raycasts {context}.");
+        }
+
+        private static void AssertPrivateBoolFalse(object target, string fieldName, string message)
+        {
+            Assert.IsFalse(ReadPrivateField<bool>(target, fieldName), message);
+        }
+
+        private static void AssertPrivateBoolTrue(object target, string fieldName, string message)
+        {
+            Assert.IsTrue(ReadPrivateField<bool>(target, fieldName), message);
+        }
+
+        private static void AssertPrivateVector2Zero(object target, string fieldName, string message)
+        {
+            Vector2 value = ReadPrivateField<Vector2>(target, fieldName);
+            Assert.That(value.sqrMagnitude, Is.EqualTo(0f).Within(0.0001f), message);
+        }
+
+        private static T ReadPrivateField<T>(object target, string fieldName)
+        {
+            Assert.IsNotNull(target);
+            FieldInfo fieldInfo = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(fieldInfo, $"Missing private field `{fieldName}` on {target.GetType().Name}.");
+            return (T)fieldInfo.GetValue(target);
         }
 
         private static void ExpectKnownMissingSupportDragonPrefabLogs()
