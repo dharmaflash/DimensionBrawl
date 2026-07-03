@@ -3322,6 +3322,77 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressureActionDirectorRequiresBasicFireVolleysBeforeCostedAction()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBasicFireProfile basicFireProfile = ScriptableObject.CreateInstance<BossBasicFireProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossBasicFireEmitter basicFireEmitter = bossObject.AddComponent<BossBasicFireEmitter>();
+            basicFireEmitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            basicFireEmitter.ConfigureProfile(basicFireProfile, projectilePrefab, 4);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(100f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, null, lane, playerObject.transform, basicFireEmitter);
+            director.ConfigureBasicFireRhythmGate(3, 0f);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f)
+            });
+
+            Assert.IsFalse(
+                director.TryQueueBestAvailableAction(),
+                "The boss should not spend into a skill before regular rifle fire has established the combat rhythm.");
+
+            Assert.AreEqual(1, basicFireEmitter.FireVolley());
+            Assert.AreEqual(1, director.BasicFireVolleysSinceLastPressureAction);
+            Assert.IsFalse(director.TryQueueBestAvailableAction());
+
+            Assert.AreEqual(1, basicFireEmitter.FireVolley());
+            Assert.AreEqual(1, basicFireEmitter.FireVolley());
+            Assert.AreEqual(3, director.BasicFireVolleysSinceLastPressureAction);
+            Assert.IsTrue(director.IsBasicFireRhythmGateOpen);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
+            Assert.AreEqual(0, director.BasicFireVolleysSinceLastPressureAction);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(basicFireProfile);
+            Object.DestroyImmediate(specialPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorUsesThinkIntervalBetweenAutomaticDecisions()
         {
             GameObject laneObject = new GameObject("Lane");

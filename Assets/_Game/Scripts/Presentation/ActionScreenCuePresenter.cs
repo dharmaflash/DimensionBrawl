@@ -35,6 +35,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
+        [SerializeField] private bool showEventColorCues;
         [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.10f;
         [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.26f;
         [SerializeField, Min(0f)] private float edgeThickness = 104f;
@@ -171,6 +172,7 @@ namespace DimensionBrawl.Presentation
         private BossSummonDuelReviewOwner.DuelPhase lastDuelPhase = BossSummonDuelReviewOwner.DuelPhase.BuildPressure;
 
         public bool ShowScreenCues => showScreenCues;
+        public bool ShowEventColorCues => showEventColorCues;
         public bool HasActiveCue => flashTimer > 0f || vignetteTimer > 0f || perfectDodgeDomainTimer > 0f;
         private bool HasActiveGuiCue => flashTimer > 0f || vignetteTimer > 0f;
         public bool HasActiveDamageFeedback => damageFeedbackTimer > 0f || criticalHealthPulseTimer > 0f;
@@ -250,6 +252,11 @@ namespace DimensionBrawl.Presentation
         public void SetScreenCuesVisible(bool visible)
         {
             showScreenCues = visible;
+        }
+
+        public void SetEventColorCuesVisible(bool visible)
+        {
+            showEventColorCues = visible;
         }
 
         public void SetPerfectDodgeDomainMaterial(Material material)
@@ -333,7 +340,8 @@ namespace DimensionBrawl.Presentation
 
         private void OnGUI()
         {
-            if (!showScreenCues || (!HasActiveGuiCue && !HasActiveDamageFeedback))
+            bool drawEventColorCue = showEventColorCues && HasActiveGuiCue;
+            if (!showScreenCues || (!drawEventColorCue && !HasActiveDamageFeedback))
             {
                 return;
             }
@@ -342,13 +350,13 @@ namespace DimensionBrawl.Presentation
             Color previousColor = GUI.color;
             GUI.depth = 1000;
 
-            if (flashTimer > 0f)
+            if (drawEventColorCue && flashTimer > 0f)
             {
                 float alpha = maxFullScreenAlpha * activeIntensity * ResolveFade01(flashTimer, flashDuration);
                 DrawRect(new Rect(0f, 0f, Screen.width, Screen.height), WithAlpha(activeFlashColor, alpha));
             }
 
-            if (vignetteTimer > 0f)
+            if (drawEventColorCue && vignetteTimer > 0f)
             {
                 float alpha = maxEdgeAlpha * activeIntensity * ResolveFade01(vignetteTimer, vignetteDuration);
                 DrawVignette(WithAlpha(activeVignetteColor, alpha));

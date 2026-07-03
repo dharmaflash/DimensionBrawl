@@ -4734,6 +4734,7 @@ MonoBehaviour:
   pocketReviewOwner: {fileID: 724347369}
   duelReviewOwner: {fileID: 0}
   showScreenCues: 1
+  showEventColorCues: 0
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
@@ -11800,9 +11801,11 @@ MonoBehaviour:
     ForwardRiskPriorityBonus: 80
     SummonResponsePriorityBonus: 0
     MovementIntent: 3
-  globalRecoverySeconds: 1.1
+  globalRecoverySeconds: 1.65
   decisionThinkIntervalSeconds: 0.25
-  basicFireSuppressionSecondsAfterPressureAction: 0.65
+  basicFireSuppressionSecondsAfterPressureAction: 0.2
+  minimumBasicFireVolleysBeforePressureAction: 4
+  minimumBasicFireAgeBeforePressureActionSeconds: 0.08
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
   playerSummonResponseWindowSeconds: 4

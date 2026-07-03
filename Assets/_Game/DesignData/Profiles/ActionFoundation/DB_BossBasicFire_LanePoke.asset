@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: DB_BossBasicFire_LanePoke
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireProfile
   fireId: LanePoke
-  readoutLabel: Lane Poke
-  initialDelaySeconds: 1.05
-  fireIntervalSeconds: 1.95
-  projectilesPerVolley: 2
-  damage: 3.6
-  projectileSpeed: 11.5
-  projectileLifetimeSeconds: 5.2
-  projectileRadius: 0.22
+  readoutLabel: Rifle Poke
+  initialDelaySeconds: 0.45
+  fireIntervalSeconds: 0.32
+  projectilesPerVolley: 1
+  damage: 1.2
+  projectileSpeed: 24
+  projectileLifetimeSeconds: 1.75
+  projectileRadius: 0.31
   damageResponsePolicy: 2
   controlLockPolicy: 0
-  backlineHalfSpread: 1.45
-  forwardHalfSpread: 0.48
-  spawnLateralFollowRatio: 0.2
-  spawnHeight: 1.28
-  targetHeight: 1.02
+  backlineHalfSpread: 0.45
+  forwardHalfSpread: 0.18
+  spawnLateralFollowRatio: 0.92
+  spawnHeight: 1.2
+  targetHeight: 1.1
   projectileColor: {r: 0.7, g: 0.95, b: 1, a: 1}
-  projectileVisualScale: {x: 0.62, y: 0.62, z: 0.62}
+  projectileVisualScale: {x: 0.44, y: 0.44, z: 0.44}
   projectileMaterial: {fileID: 0}

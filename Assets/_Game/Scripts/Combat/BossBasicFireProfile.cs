@@ -12,28 +12,28 @@ namespace DimensionBrawl.Combat
         [SerializeField] private string readoutLabel = "Basic Fire";
 
         [Header("Timing")]
-        [SerializeField, Min(0f)] private float initialDelaySeconds = 1.1f;
-        [SerializeField, Min(0.15f)] private float fireIntervalSeconds = 2.2f;
+        [SerializeField, Min(0f)] private float initialDelaySeconds = 0.45f;
+        [SerializeField, Min(0.15f)] private float fireIntervalSeconds = 0.32f;
 
         [Header("Projectile")]
-        [SerializeField, Range(1, 3)] private int projectilesPerVolley = 2;
-        [SerializeField, Min(0f)] private float damage = 5f;
-        [SerializeField, Min(0.1f)] private float projectileSpeed = 11.5f;
-        [SerializeField, Min(0.1f)] private float projectileLifetimeSeconds = 5.2f;
-        [SerializeField, Min(0f)] private float projectileRadius = 0.22f;
+        [SerializeField, Range(1, 3)] private int projectilesPerVolley = 1;
+        [SerializeField, Min(0f)] private float damage = 1.2f;
+        [SerializeField, Min(0.1f)] private float projectileSpeed = 24f;
+        [SerializeField, Min(0.1f)] private float projectileLifetimeSeconds = 1.75f;
+        [SerializeField, Min(0f)] private float projectileRadius = 0.31f;
         [SerializeField] private DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly;
         [SerializeField] private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
 
         [Header("Forward Risk Shape")]
-        [SerializeField, Min(0f)] private float backlineHalfSpread = 1.45f;
-        [SerializeField, Min(0f)] private float forwardHalfSpread = 0.48f;
-        [SerializeField, Range(0f, 1f)] private float spawnLateralFollowRatio = 0.2f;
-        [SerializeField, Min(0f)] private float spawnHeight = 1.28f;
-        [SerializeField, Min(0f)] private float targetHeight = 1.02f;
+        [SerializeField, Min(0f)] private float backlineHalfSpread = 0.45f;
+        [SerializeField, Min(0f)] private float forwardHalfSpread = 0.18f;
+        [SerializeField, Range(0f, 1f)] private float spawnLateralFollowRatio = 0.92f;
+        [SerializeField, Min(0f)] private float spawnHeight = 1.2f;
+        [SerializeField, Min(0f)] private float targetHeight = 1.1f;
 
         [Header("Projectile Read")]
         [SerializeField] private Color projectileColor = new Color(0.7f, 0.95f, 1f, 1f);
-        [SerializeField] private Vector3 projectileVisualScale = new Vector3(0.62f, 0.62f, 0.62f);
+        [SerializeField] private Vector3 projectileVisualScale = new Vector3(0.44f, 0.44f, 0.44f);
         [SerializeField] private Material projectileMaterial;
 
         public string FireId => string.IsNullOrWhiteSpace(fireId) ? name : fireId;

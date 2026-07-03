@@ -13,14 +13,17 @@ MonoBehaviour:
   m_Name: DB_BossPressureActionDeck_PocketReview
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
   deckId: PocketReviewBoss
-  globalRecoverySeconds: 1.1
+  globalRecoverySeconds: 1.65
   decisionThinkIntervalSeconds: 0.25
+  basicFireSuppressionSecondsAfterPressureAction: 0.2
+  minimumBasicFireVolleysBeforePressureAction: 4
+  minimumBasicFireAgeBeforePressureActionSeconds: 0.08
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
     ActionKind: 4
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
+    MinimumIntervalSeconds: 7.5
     ResponseId: DodgeBossLinePressureSpecial
     StageLoopRole: LV1 boss special shot that asks the player to read a committed rail before spending summon resources.
     PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.
@@ -38,7 +41,7 @@ MonoBehaviour:
     ActionKind: 2
     MinimumTier: 3
     QueuedWaves: 1
-    MinimumIntervalSeconds: 6
+    MinimumIntervalSeconds: 10
     ResponseId: RetreatOrSpendHighTierAnswer
     StageLoopRole: LV3 overextend punish that closes gaps when the player stays near the forward boundary too long.
     PlayerAnswer: Retreat from forward-risk space or dodge through the shrinking net before firing back.

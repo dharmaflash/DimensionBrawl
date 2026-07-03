@@ -1965,21 +1965,21 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "fireId").stringValue = "LanePoke";
-            RequireProperty(serializedObject, "readoutLabel").stringValue = "Lane Poke";
-            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.05f;
-            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 1.95f;
-            RequireProperty(serializedObject, "projectilesPerVolley").intValue = 2;
-            RequireProperty(serializedObject, "damage").floatValue = 3.6f;
-            RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.5f;
-            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
-            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.22f;
-            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 1.45f;
-            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 0.48f;
-            RequireProperty(serializedObject, "spawnLateralFollowRatio").floatValue = 0.2f;
-            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.28f;
-            RequireProperty(serializedObject, "targetHeight").floatValue = 1.02f;
+            RequireProperty(serializedObject, "readoutLabel").stringValue = "Rifle Poke";
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.45f;
+            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 0.32f;
+            RequireProperty(serializedObject, "projectilesPerVolley").intValue = 1;
+            RequireProperty(serializedObject, "damage").floatValue = 1.2f;
+            RequireProperty(serializedObject, "projectileSpeed").floatValue = 24f;
+            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 1.75f;
+            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.31f;
+            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 0.45f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 0.18f;
+            RequireProperty(serializedObject, "spawnLateralFollowRatio").floatValue = 0.92f;
+            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.2f;
+            RequireProperty(serializedObject, "targetHeight").floatValue = 1.1f;
             RequireProperty(serializedObject, "projectileColor").colorValue = new Color(0.7f, 0.95f, 1f, 1f);
-            RequireProperty(serializedObject, "projectileVisualScale").vector3Value = new Vector3(0.62f, 0.62f, 0.62f);
+            RequireProperty(serializedObject, "projectileVisualScale").vector3Value = new Vector3(0.44f, 0.44f, 0.44f);
             RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = null;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
@@ -3635,7 +3635,9 @@ namespace DimensionBrawl.Editor
             bossPressureActionDirector.SetHoldForNextTierActionWhenGateAllows(true);
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
             SetFloat(bossPressureActionDirector, "playerSummonResponseWindowSeconds", 4f);
-            SetFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.65f);
+            SetFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.2f);
+            SetInt(bossPressureActionDirector, "minimumBasicFireVolleysBeforePressureAction", 4);
+            SetFloat(bossPressureActionDirector, "minimumBasicFireAgeBeforePressureActionSeconds", 0.08f);
 
             BossPressurePositionController bossPressurePosition =
                 EnsureComponent<BossPressurePositionController>(bossProxy);
@@ -6115,6 +6117,7 @@ namespace DimensionBrawl.Editor
                 pocketOwner);
             SetObjectReference(screenCuePresenter, "duelReviewOwner", null);
             SetBool(screenCuePresenter, "showScreenCues", true);
+            SetBool(screenCuePresenter, "showEventColorCues", false);
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
@@ -7854,21 +7857,21 @@ namespace DimensionBrawl.Editor
 
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             ValidateString(profile, "fireId", "LanePoke");
-            ValidateString(profile, "readoutLabel", "Lane Poke");
-            ValidateFloat(profile, "initialDelaySeconds", 1.05f);
-            ValidateFloat(profile, "fireIntervalSeconds", 1.95f);
-            ValidateInt(profile, "projectilesPerVolley", 2);
-            ValidateFloat(profile, "damage", 3.6f);
-            ValidateFloat(profile, "projectileSpeed", 11.5f);
-            ValidateFloat(profile, "projectileLifetimeSeconds", 5.2f);
-            ValidateFloat(profile, "projectileRadius", 0.22f);
-            ValidateFloat(profile, "backlineHalfSpread", 1.45f);
-            ValidateFloat(profile, "forwardHalfSpread", 0.48f);
-            ValidateFloat(profile, "spawnLateralFollowRatio", 0.2f);
-            ValidateFloat(profile, "spawnHeight", 1.28f);
-            ValidateFloat(profile, "targetHeight", 1.02f);
+            ValidateString(profile, "readoutLabel", "Rifle Poke");
+            ValidateFloat(profile, "initialDelaySeconds", 0.45f);
+            ValidateFloat(profile, "fireIntervalSeconds", 0.32f);
+            ValidateInt(profile, "projectilesPerVolley", 1);
+            ValidateFloat(profile, "damage", 1.2f);
+            ValidateFloat(profile, "projectileSpeed", 24f);
+            ValidateFloat(profile, "projectileLifetimeSeconds", 1.75f);
+            ValidateFloat(profile, "projectileRadius", 0.31f);
+            ValidateFloat(profile, "backlineHalfSpread", 0.45f);
+            ValidateFloat(profile, "forwardHalfSpread", 0.18f);
+            ValidateFloat(profile, "spawnLateralFollowRatio", 0.92f);
+            ValidateFloat(profile, "spawnHeight", 1.2f);
+            ValidateFloat(profile, "targetHeight", 1.1f);
             ValidateColor(profile, "projectileColor", new Color(0.7f, 0.95f, 1f, 1f));
-            ValidateVector3(profile, "projectileVisualScale", new Vector3(0.62f, 0.62f, 0.62f));
+            ValidateVector3(profile, "projectileVisualScale", new Vector3(0.44f, 0.44f, 0.44f));
             ValidateObjectReference(profile, "projectileMaterial", null);
         }
 
@@ -9068,10 +9071,12 @@ namespace DimensionBrawl.Editor
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
             ValidateBool(bossPressureActionDirector, "holdForNextTierActionWhenGateAllows", true);
-            ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 1.1f);
+            ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 1.65f);
             ValidateFloat(bossPressureActionDirector, "decisionThinkIntervalSeconds", 0.25f);
             ValidateFloat(bossPressureActionDirector, "playerSummonResponseWindowSeconds", 4f);
-            ValidateFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.65f);
+            ValidateFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.2f);
+            ValidateInt(bossPressureActionDirector, "minimumBasicFireVolleysBeforePressureAction", 4);
+            ValidateFloat(bossPressureActionDirector, "minimumBasicFireAgeBeforePressureActionSeconds", 0.08f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 0,
@@ -10912,6 +10917,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(presenter, "duelReviewOwner", null);
             ValidateBool(presenter, "showScreenCues", true);
+            ValidateBool(presenter, "showEventColorCues", false);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
