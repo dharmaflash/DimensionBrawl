@@ -61,18 +61,9 @@ MonoBehaviour:
     requiredTier: 2
     requiredMana: 200
     minimumSeconds: 0.75
-  - stepId: followup_window
-    objectiveText: '결과: S1 차단으로 Skill1 확인 창이 열린다.'
-    promptText: '확인: followup 기록은 창이 열린 뒤에만 남는다. 창과 기록 표시를 보고 Skill1을 준비해라.'
-    focusAction: 120
-    dimUnfocusedActions: 1
-    completionCondition: 70
-    requiredTier: 1
-    requiredMana: 0
-    minimumSeconds: 0.7
   - stepId: skill1_followup
-    objectiveText: '입력: 열린 창에 Skill1을 맞혀라.'
-    promptText: '결과: Skill1 hit가 followup 기록을 채운다. 무작정 사격으로 밀지 않는다.'
+    objectiveText: '결과: S1 차단으로 Skill1 확인 창이 열린다.'
+    promptText: '확인: 창과 기록 표시를 보고 Skill1을 맞혀라. hit가 followup 기록을 채운다.'
     focusAction: 120
     dimUnfocusedActions: 1
     completionCondition: 72
