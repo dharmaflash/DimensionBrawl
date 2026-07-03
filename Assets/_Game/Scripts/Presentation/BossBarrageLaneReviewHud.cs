@@ -1052,10 +1052,10 @@ namespace DimensionBrawl.Presentation
                 return "Boss Summon -";
             }
 
-            string tier = bossSummonPressureAction.LastReleasedTier > 0
-                ? ResolveBossSummonTierLabel(bossSummonPressureAction.LastReleasedTier)
-                : "LV-";
-            return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
+            string responseSlot = bossSummonPressureAction.LastReleasedResponseSlot > 0
+                ? ResolveBossSummonResponseSlotLabel(bossSummonPressureAction.LastReleasedResponseSlot)
+                : "Response -";
+            return $"Boss Summon {responseSlot} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
                 + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
                 + $"blocks {bossSummonPressureAction.ActivePressureScreenRemainingIntercepts} "
                 + BossBarrageLaneReviewHudText.ResolveSummonLifecycleLine(
@@ -1354,15 +1354,17 @@ namespace DimensionBrawl.Presentation
             return $"LV{Mathf.Clamp(tier, 1, 3)}";
         }
 
-        private string ResolveBossSummonTierLabel(int tier)
+        private string ResolveBossSummonResponseSlotLabel(int responseSlot)
         {
             if (bossSummonPressureAction != null
-                && bossSummonPressureAction.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
+                && bossSummonPressureAction.TryGetResponseSlotReadout(
+                    responseSlot,
+                    out BossSummonPressureProfile.BossSummonTierReadout readout))
             {
                 return readout.TierLabel;
             }
 
-            return $"LV{Mathf.Clamp(tier, 1, 3)}";
+            return $"Response {Mathf.Clamp(responseSlot, 1, 3)}";
         }
 
         private string ResolveActionHintLine()

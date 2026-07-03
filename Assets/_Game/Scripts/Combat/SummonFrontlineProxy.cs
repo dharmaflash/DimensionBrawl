@@ -23,6 +23,17 @@ namespace DimensionBrawl.Combat
         Defeated = 5
     }
 
+    public enum SummonFrontlineProxyActionPhase
+    {
+        Inactive = 0,
+        Entry = 1,
+        Locomotion = 2,
+        Engage = 3,
+        Attack = 4,
+        Recovery = 5,
+        Defeated = 6
+    }
+
     [DisallowMultipleComponent]
     public sealed class SummonFrontlineProxy : MonoBehaviour
     {
@@ -83,7 +94,9 @@ namespace DimensionBrawl.Combat
             ? 1f - Mathf.Clamp01(remainingLifetime / lifetimeSeconds)
             : 0f;
         public SummonFrontlineProxyState CurrentState => currentState;
+        public SummonFrontlineProxyActionPhase ActionPhase => ResolveActionPhase();
         public SummonFrontlineProxyExitReason LastExitReason => lastExitReason;
+        public DamageTeam OwnerTeam => health != null ? health.Team : DamageTeam.Neutral;
         public Vector3 AdvanceStartPosition => advanceStartPosition;
         public Vector3 AdvanceTargetPosition => advanceTargetPosition;
         public float AdvanceDistance => advanceDistance;
@@ -559,6 +572,42 @@ namespace DimensionBrawl.Combat
             {
                 currentState = SummonFrontlineProxyState.Spawned;
             }
+        }
+
+        private SummonFrontlineProxyActionPhase ResolveActionPhase()
+        {
+            if (currentState == SummonFrontlineProxyState.Defeated
+                || (!active && defeatedLingerTimer > 0f && lastExitReason == SummonFrontlineProxyExitReason.Defeated))
+            {
+                return SummonFrontlineProxyActionPhase.Defeated;
+            }
+
+            if (!IsActive)
+            {
+                return SummonFrontlineProxyActionPhase.Inactive;
+            }
+
+            if (attackStateTimer > 0f || currentState == SummonFrontlineProxyState.Attacking)
+            {
+                return SummonFrontlineProxyActionPhase.Attack;
+            }
+
+            if (advanceHoldTimer > 0f || currentState == SummonFrontlineProxyState.Engaging)
+            {
+                return SummonFrontlineProxyActionPhase.Engage;
+            }
+
+            if (advanceStartDelayTimer > 0f || advancePresentationLocked)
+            {
+                return SummonFrontlineProxyActionPhase.Entry;
+            }
+
+            if (IsAdvancing || currentState == SummonFrontlineProxyState.Advancing || currentMoveSpeed > 0.001f)
+            {
+                return SummonFrontlineProxyActionPhase.Locomotion;
+            }
+
+            return SummonFrontlineProxyActionPhase.Recovery;
         }
 
         private void ResetLifecycle(float requestedLifetimeSeconds)

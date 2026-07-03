@@ -694,15 +694,15 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual(
                     0,
                     tiers[i].ScreenIntercepts,
-                    "Boss LV3 laser soldier should be a dodge-line threat, not another pressure screen.");
+                    "Boss response slot 3 laser soldier should be a dodge-line threat, not another pressure screen.");
                 Assert.Less(
                     tiers[i].ActorMaxHealth,
                     900f,
-                    "Boss LV3 laser soldier should stay punishable after the dodge read instead of out-tanking the player's high-cost dragon.");
+                    "Boss response slot 3 laser soldier should stay punishable after the dodge read instead of out-tanking the player's high-cost dragon.");
                 Assert.Less(
                     tiers[i].ActorAttackIntervalSeconds,
                     tiers[i - 1].ActorAttackIntervalSeconds,
-                    "Boss LV3 laser soldier should trade screen blocks for a faster ticking laser cadence.");
+                    "Boss response slot 3 laser soldier should trade screen blocks for a faster ticking laser cadence.");
             }
         }
 

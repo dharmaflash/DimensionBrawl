@@ -520,6 +520,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
             Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
             Assert.AreEqual(1, bossSummonPressureAction.TotalReleaseCount);
             Assert.AreEqual(1, bossSummonPressureAction.ActiveSummonActorCount);
@@ -556,7 +557,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator BossResponseLoopSceneReleasesLevelOneLaserPressureAfterOpening()
+        public IEnumerator BossResponseLoopSceneReleasesResponseOneLaserPressureAfterOpening()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
@@ -586,6 +587,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
             Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
             Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
 
             yield return null;
@@ -812,24 +814,25 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<CombatVfxCuePlayer>(bossSummonPressureAction, "combatVfxCuePlayer"));
             Assert.AreEqual("BossSummonPressure.SummonCaller", bossSummonPressureProfile.PressureId);
             Assert.AreEqual(3, bossSummonPressureProfile.TierCount);
+            Assert.AreEqual(3, bossSummonPressureProfile.ResponseSlotCount);
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
-                "LV1 Laser Soldier",
+                "Response 1 Laser Soldier",
                 "Low-cost boss rifleman that creates the first readable dodge-line check without waiting for a high-tier bank.",
                 "Read the thin aim line, dodge after the lock, then punish the rifleman before the next boss action.",
                 "A cheap summon can body-clash the rifleman, but the primary read is movement first.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
-                "LV2 Pressure Screen",
+                "Response 2 Pressure Screen",
                 "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
                 "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
                 "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
-                "LV3 Laser Soldier",
+                "Response 3 Laser Soldier",
                 "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
                 "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
                 "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
@@ -7248,7 +7251,7 @@ namespace DimensionBrawl.Tests
             string expectedPlayerRead,
             string expectedSummonRead)
         {
-            Assert.IsTrue(profile.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout));
+            Assert.IsTrue(profile.TryGetResponseSlotReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout));
             Assert.AreEqual(expectedTierLabel, readout.TierLabel);
             Assert.AreEqual(expectedStageRole, readout.StageRole);
             Assert.AreEqual(expectedPlayerRead, readout.PlayerRead);

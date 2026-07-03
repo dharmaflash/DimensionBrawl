@@ -1471,6 +1471,7 @@ namespace DimensionBrawl.Tests
             health.ConfigureTeam(DamageTeam.AllySummon);
             SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
             proxy.ConfigureHealth(health);
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Inactive, proxy.ActionPhase);
 
             proxy.Activate(
                 Vector3.zero,
@@ -1485,7 +1486,9 @@ namespace DimensionBrawl.Tests
 
             Assert.AreEqual(180f, proxy.MaxHealth, 0.001f);
             Assert.AreEqual(1f, proxy.HealthRatio, 0.001f);
+            Assert.AreEqual(DamageTeam.AllySummon, proxy.OwnerTeam);
             Assert.AreEqual(SummonFrontlineProxyState.Advancing, proxy.CurrentState);
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Locomotion, proxy.ActionPhase);
             Assert.AreEqual(1.5f, proxy.ActiveMoveSpeed, 0.001f);
 
             proxy.Tick(1f);
@@ -1494,20 +1497,26 @@ namespace DimensionBrawl.Tests
 
             proxy.RequestAdvanceHold(0.25f);
             Assert.AreEqual(SummonFrontlineProxyState.Engaging, proxy.CurrentState);
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Engage, proxy.ActionPhase);
             Vector3 heldPosition = proxy.transform.position;
             proxy.Tick(0.1f);
             Assert.AreEqual(heldPosition.z, proxy.transform.position.z, 0.001f);
 
             proxy.NotifyAttackPerformed(0.2f);
             Assert.AreEqual(SummonFrontlineProxyState.Attacking, proxy.CurrentState);
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Attack, proxy.ActionPhase);
             proxy.Tick(0.3f);
             Assert.AreEqual(SummonFrontlineProxyState.Advancing, proxy.CurrentState);
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Locomotion, proxy.ActionPhase);
             proxy.Tick(1f);
             Assert.AreEqual(
                 3f,
                 proxy.transform.position.z,
                 0.001f,
                 "Speed-based summon advance should continue until the target distance is reached, not stop after the old duration value.");
+
+            proxy.Deactivate();
+            Assert.AreEqual(SummonFrontlineProxyActionPhase.Inactive, proxy.ActionPhase);
 
             Object.DestroyImmediate(proxyObject);
         }
@@ -1979,6 +1988,10 @@ namespace DimensionBrawl.Tests
                     SummonFrontlineProxyState.Spawned,
                     proxy.CurrentState,
                     "Spawn presentation lock should hold the gameplay proxy out of Advancing until the readable entry beat clears.");
+                Assert.AreEqual(
+                    SummonFrontlineProxyActionPhase.Entry,
+                    proxy.ActionPhase,
+                    "The common summon action contract should expose the spawn presentation lock as Entry instead of Locomotion.");
             }
             finally
             {
@@ -4278,7 +4291,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void EnemySummonPacingReleasesLevelOneSummonWithoutBossCost()
+        public void EnemySummonPacingReleasesResponseSlotOneSummonWithoutBossCost()
         {
             GameObject laneObject = new GameObject("Lane");
             SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
@@ -4532,7 +4545,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void BossPressureActionDirectorReleasesLevelOneLaserAfterOpeningAction()
+        public void BossPressureActionDirectorReleasesResponseSlotOneLaserAfterOpeningAction()
         {
             GameObject laneObject = new GameObject("Lane");
             SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();

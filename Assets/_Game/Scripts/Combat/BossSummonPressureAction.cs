@@ -70,13 +70,13 @@ namespace DimensionBrawl.Combat
 
         private readonly SummonFrontlineProxyPool summonActorPool = new SummonFrontlineProxyPool();
 
-        private int lastReleasedTier;
+        private int lastReleasedResponseSlot;
         private int totalReleaseCount;
         private int lastPressureScreenMaxIntercepts;
         private int lastPressureScreenInterceptCount;
-        private int lastPressureScreenInterceptTier;
+        private int lastPressureScreenInterceptResponseSlot;
         private int totalPressureScreenInterceptCount;
-        private int lastPressureScreenSuppressTier;
+        private int lastPressureScreenSuppressResponseSlot;
         private int totalPressureScreenSuppressCount;
         private int totalPressureActorSuppressCount;
         private int totalSummonActorDefeatCount;
@@ -87,13 +87,16 @@ namespace DimensionBrawl.Combat
         public event Action<BossSummonPressureAction, int> PressureSummonReleased;
         public event Action<BossSummonPressureAction, int> PressureSummonIntercepted;
 
-        public int LastReleasedTier => lastReleasedTier;
+        public int LastReleasedTier => lastReleasedResponseSlot;
+        public int LastReleasedResponseSlot => lastReleasedResponseSlot;
         public int TotalReleaseCount => totalReleaseCount;
         public int LastPressureScreenMaxIntercepts => lastPressureScreenMaxIntercepts;
         public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
-        public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
+        public int LastPressureScreenInterceptTier => lastPressureScreenInterceptResponseSlot;
+        public int LastPressureScreenInterceptResponseSlot => lastPressureScreenInterceptResponseSlot;
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
-        public int LastPressureScreenSuppressTier => lastPressureScreenSuppressTier;
+        public int LastPressureScreenSuppressTier => lastPressureScreenSuppressResponseSlot;
+        public int LastPressureScreenSuppressResponseSlot => lastPressureScreenSuppressResponseSlot;
         public int TotalPressureScreenSuppressCount => totalPressureScreenSuppressCount;
         public int TotalPressureActorSuppressCount => totalPressureActorSuppressCount;
         public int TotalSummonActorDefeatCount => totalSummonActorDefeatCount;
@@ -210,15 +213,33 @@ namespace DimensionBrawl.Combat
             return pressureProfile.TryGetTierReadout(tier, out readout);
         }
 
-        public bool TryReleasePressureSummon(int tier)
+        public bool TryGetResponseSlotReadout(
+            int responseSlot,
+            out BossSummonPressureProfile.BossSummonTierReadout readout)
+        {
+            if (pressureProfile == null)
+            {
+                readout = default;
+                return false;
+            }
+
+            return pressureProfile.TryGetResponseSlotReadout(responseSlot, out readout);
+        }
+
+        public bool TryReleasePressureResponse(int responseSlot)
+        {
+            return TryReleasePressureSummon(responseSlot);
+        }
+
+        public bool TryReleasePressureSummon(int responseSlot)
         {
             if (laneSpace == null)
             {
                 return false;
             }
 
-            int resolvedTier = Mathf.Clamp(tier, 1, 3);
-            BossSummonTierSettings settings = ResolveTierSettings(resolvedTier);
+            int resolvedResponseSlot = Mathf.Clamp(responseSlot, 1, 3);
+            BossSummonTierSettings settings = ResolveTierSettings(resolvedResponseSlot);
             SummonFrontlineProxy actorPrefab = ResolveSummonActorPrefab(settings);
             if (actorPrefab == null)
             {
@@ -247,7 +268,7 @@ namespace DimensionBrawl.Combat
             actor.Activate(
                 entryPosition,
                 facingDirection,
-                resolvedTier,
+                resolvedResponseSlot,
                 settings.ActorLifetimeSeconds,
                 settings.ActorScale,
                 targetPosition,
@@ -257,7 +278,7 @@ namespace DimensionBrawl.Combat
 
             lastPressureScreenMaxIntercepts = 0;
             lastPressureScreenInterceptCount = 0;
-            lastPressureScreenInterceptTier = 0;
+            lastPressureScreenInterceptResponseSlot = 0;
             if (actor.PressureScreen != null)
             {
                 actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
@@ -273,18 +294,23 @@ namespace DimensionBrawl.Combat
                     actor.ActiveTier);
             }
 
-            lastReleasedTier = resolvedTier;
+            lastReleasedResponseSlot = resolvedResponseSlot;
             totalReleaseCount++;
             lastSummonActorPosition = actor.transform.position;
             lastSummonActor = actor;
             lastSummonActorRoleId = settings.ActorRoleId;
-            PressureSummonReleased?.Invoke(this, resolvedTier);
+            PressureSummonReleased?.Invoke(this, resolvedResponseSlot);
             return true;
         }
 
-        public int SuppressActivePressureScreens(int tier)
+        public int SuppressActivePressureResponses(int responseSlot)
         {
-            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            return SuppressActivePressureScreens(responseSlot);
+        }
+
+        public int SuppressActivePressureScreens(int responseSlot)
+        {
+            int resolvedResponseSlot = Mathf.Clamp(responseSlot, 1, 3);
             int suppressedScreens = 0;
             int suppressedActors = 0;
             summonActorPool.ForEach(actor =>
@@ -311,7 +337,7 @@ namespace DimensionBrawl.Combat
                 return 0;
             }
 
-            lastPressureScreenSuppressTier = resolvedTier;
+            lastPressureScreenSuppressResponseSlot = resolvedResponseSlot;
             totalPressureScreenSuppressCount += suppressedScreens;
             totalPressureActorSuppressCount += suppressedActors;
             return suppressedScreens + suppressedActors;
@@ -497,7 +523,7 @@ namespace DimensionBrawl.Combat
             }
 
             lastPressureScreenInterceptCount++;
-            lastPressureScreenInterceptTier = actor.ActiveTier;
+            lastPressureScreenInterceptResponseSlot = actor.ActiveTier;
             totalPressureScreenInterceptCount++;
             PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
         }
@@ -511,7 +537,7 @@ namespace DimensionBrawl.Combat
             }
 
             lastPressureScreenInterceptCount++;
-            lastPressureScreenInterceptTier = actor.ActiveTier;
+            lastPressureScreenInterceptResponseSlot = actor.ActiveTier;
             totalPressureScreenInterceptCount++;
             PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
         }

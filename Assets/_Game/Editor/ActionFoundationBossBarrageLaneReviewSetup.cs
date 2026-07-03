@@ -8549,7 +8549,7 @@ namespace DimensionBrawl.Editor
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
-                "LV1 Laser Soldier",
+                "Response 1 Laser Soldier",
                 "Low-cost boss rifleman that creates the first readable dodge-line check without waiting for a high-tier bank.",
                 "Read the thin aim line, dodge after the lock, then punish the rifleman before the next boss action.",
                 "A cheap summon can body-clash the rifleman, but the primary read is movement first.");
@@ -8571,7 +8571,7 @@ namespace DimensionBrawl.Editor
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
-                "LV2 Pressure Screen",
+                "Response 2 Pressure Screen",
                 "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
                 "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
                 "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time.");
@@ -8593,7 +8593,7 @@ namespace DimensionBrawl.Editor
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
-                "LV3 Laser Soldier",
+                "Response 3 Laser Soldier",
                 "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
                 "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
                 "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
@@ -8621,13 +8621,13 @@ namespace DimensionBrawl.Editor
                 || bossSummonTiers[2].ActorPrefabOverride != bossLaserSummonActorPrefab)
             {
                 throw new InvalidOperationException(
-                    "Boss summon pressure tiers 1 and 3 should use the reviewed boss laser summon actor prefab.");
+                    "Boss summon pressure response slots 1 and 3 should use the reviewed boss laser summon actor prefab.");
             }
 
             if (bossSummonTiers[1].ActorPrefabOverride != null)
             {
                 throw new InvalidOperationException(
-                    "Boss summon pressure tier 2 should keep the pressure-screen default actor prefab.");
+                    "Boss summon pressure response slot 2 should keep the pressure-screen default actor prefab.");
             }
 
             ValidateFloat(bossLaserSummonActorPrefab, "advanceStartDelaySeconds", 0.16f);
@@ -8896,15 +8896,15 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Boss summon pressure profile is missing.");
             }
 
-            if (!profile.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
+            if (!profile.TryGetResponseSlotReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
             {
                 throw new InvalidOperationException($"Boss summon pressure profile is missing tier {tier} readout.");
             }
 
-            ValidateString(readout.TierLabel, expectedTierLabel, $"Boss summon pressure tier {tier} has the wrong label.");
-            ValidateString(readout.StageRole, expectedStageRole, $"Boss summon pressure tier {tier} has the wrong stage role.");
-            ValidateString(readout.PlayerRead, expectedPlayerRead, $"Boss summon pressure tier {tier} has the wrong player-read note.");
-            ValidateString(readout.SummonRead, expectedSummonRead, $"Boss summon pressure tier {tier} has the wrong summon-read note.");
+            ValidateString(readout.TierLabel, expectedTierLabel, $"Boss summon pressure response slot {tier} has the wrong label.");
+            ValidateString(readout.StageRole, expectedStageRole, $"Boss summon pressure response slot {tier} has the wrong stage role.");
+            ValidateString(readout.PlayerRead, expectedPlayerRead, $"Boss summon pressure response slot {tier} has the wrong player-read note.");
+            ValidateString(readout.SummonRead, expectedSummonRead, $"Boss summon pressure response slot {tier} has the wrong summon-read note.");
         }
 
         private static void ValidateBossSummonPressureTier(
@@ -8939,55 +8939,55 @@ namespace DimensionBrawl.Editor
             if (!string.Equals(settings.ActorRoleId, expectedActorRoleId, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"Boss summon pressure tier {tier} has the wrong actor role id.");
+                    $"Boss summon pressure response slot {tier} has the wrong actor role id.");
             }
 
             ValidateFloatValue(
                 settings.EntryForwardBlend01,
                 expectedEntryForwardBlend01,
-                $"Boss summon pressure tier {tier} has the wrong entry forward blend.");
+                $"Boss summon pressure response slot {tier} has the wrong entry forward blend.");
             ValidateFloatValue(
                 settings.ActorLifetimeSeconds,
                 expectedActorLifetimeSeconds,
-                $"Boss summon pressure tier {tier} has the wrong actor lifetime.");
+                $"Boss summon pressure response slot {tier} has the wrong actor lifetime.");
             ValidateFloatValue(
                 settings.ActorScale,
                 expectedActorScale,
-                $"Boss summon pressure tier {tier} has the wrong actor scale.");
+                $"Boss summon pressure response slot {tier} has the wrong actor scale.");
             ValidateFloatValue(
                 settings.ActorAdvanceDistance,
                 expectedActorAdvanceDistance,
-                $"Boss summon pressure tier {tier} has the wrong actor advance distance.");
+                $"Boss summon pressure response slot {tier} has the wrong actor advance distance.");
             ValidateFloatValue(
                 settings.ActorMaxHealth,
                 expectedActorMaxHealth,
-                $"Boss summon pressure tier {tier} has the wrong actor max health.");
+                $"Boss summon pressure response slot {tier} has the wrong actor max health.");
             ValidateFloatValue(
                 settings.ActorMoveSpeed,
                 expectedActorMoveSpeed,
-                $"Boss summon pressure tier {tier} has the wrong actor move speed.");
+                $"Boss summon pressure response slot {tier} has the wrong actor move speed.");
             ValidateFloatValue(
                 settings.ActorEngageRadius,
                 expectedActorEngageRadius,
-                $"Boss summon pressure tier {tier} has the wrong actor engage radius.");
+                $"Boss summon pressure response slot {tier} has the wrong actor engage radius.");
             ValidateFloatValue(
                 settings.ActorAttackDamagePerSecond,
                 expectedActorAttackDamagePerSecond,
-                $"Boss summon pressure tier {tier} has the wrong actor attack damage.");
+                $"Boss summon pressure response slot {tier} has the wrong actor attack damage.");
             ValidateFloatValue(
                 settings.ActorAttackIntervalSeconds,
                 expectedActorAttackIntervalSeconds,
-                $"Boss summon pressure tier {tier} has the wrong actor attack interval.");
+                $"Boss summon pressure response slot {tier} has the wrong actor attack interval.");
             if (settings.ScreenIntercepts != expectedScreenIntercepts)
             {
                 throw new InvalidOperationException(
-                    $"Boss summon pressure tier {tier} has the wrong screen intercept count.");
+                    $"Boss summon pressure response slot {tier} has the wrong screen intercept count.");
             }
 
             ValidateFloatValue(
                 settings.ScreenLifetimeSeconds,
                 expectedScreenLifetimeSeconds,
-                $"Boss summon pressure tier {tier} has the wrong screen lifetime.");
+                $"Boss summon pressure response slot {tier} has the wrong screen lifetime.");
         }
 
         private static void ValidateSummonSlotTier(

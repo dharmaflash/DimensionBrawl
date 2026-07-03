@@ -1761,17 +1761,17 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     CreateBossSummonReadout(
-                        "LV1 Laser Soldier",
+                        "Response 1 Laser Soldier",
                         "Low-cost boss rifleman that creates the first readable dodge-line check without waiting for a high-tier bank.",
                         "Read the thin aim line, dodge after the lock, then punish the rifleman before the next boss action.",
                         "A cheap summon can body-clash the rifleman, but the primary read is movement first."),
                     CreateBossSummonReadout(
-                        "LV2 Pressure Screen",
+                        "Response 2 Pressure Screen",
                         "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
                         "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
                         "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time."),
                     CreateBossSummonReadout(
-                        "LV3 Laser Soldier",
+                        "Response 3 Laser Soldier",
                         "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
                         "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
                         "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.")

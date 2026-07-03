@@ -66,21 +66,21 @@ MonoBehaviour:
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2
   tierReadouts:
-  - TierLabel: LV1 Laser Soldier
+  - TierLabel: Response 1 Laser Soldier
     StageRole: Low-cost boss rifleman that creates the first readable dodge-line
       check without waiting for a high-tier bank.
     PlayerRead: Read the thin aim line, dodge after the lock, then punish the rifleman
       before the next boss action.
     SummonRead: A cheap summon can body-clash the rifleman, but the primary read is
       movement first.
-  - TierLabel: LV2 Pressure Screen
+  - TierLabel: Response 2 Pressure Screen
     StageRole: Boss-side summon pressure that contests the frontline for several
       seconds and blocks player follow-up shots.
     PlayerRead: Take EN only long enough to prepare a clean response, then break
       the screen before the next boss pattern layers on top.
     SummonRead: Use SummonSlot1 or Vanguard support to absorb the curtain and reopen
       ranged punish time.
-  - TierLabel: LV3 Laser Soldier
+  - TierLabel: Response 3 Laser Soldier
     StageRole: High-cost boss laser summon that creates a dodgeable line threat instead
       of another pressure screen.
     PlayerRead: Read the thin line, dodge after the aim locks, then punish during
