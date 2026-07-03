@@ -276,7 +276,7 @@ namespace DimensionBrawl.UI
             float size = pauseButtonSize * scale;
             float inset = edgeInset * scale;
             Rect rect = new Rect(Screen.width - inset - size, inset, size, size);
-            if (GUI.Button(rect, "II", smallButtonStyle))
+            if (DrawImmediateButton(rect, "II", smallButtonStyle))
             {
                 OpenPauseMenu();
             }
@@ -431,7 +431,25 @@ namespace DimensionBrawl.UI
         private bool DrawMenuButton(string label, bool primary)
         {
             GUILayout.Space(6f);
-            return GUILayout.Button(label, primary ? primaryButtonStyle : buttonStyle, GUILayout.Height(48f));
+            GUIStyle style = primary ? primaryButtonStyle : buttonStyle;
+            Rect rect = GUILayoutUtility.GetRect(new GUIContent(label), style, GUILayout.Height(48f));
+            return DrawImmediateButton(rect, label, style);
+        }
+
+        private static bool DrawImmediateButton(Rect rect, string label, GUIStyle style)
+        {
+            GUI.Label(rect, label, style);
+            Event current = Event.current;
+            if (current == null
+                || current.type != EventType.MouseDown
+                || current.button != 0
+                || !rect.Contains(current.mousePosition))
+            {
+                return false;
+            }
+
+            current.Use();
+            return true;
         }
 
         private string ResolveResultTitle()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -49,13 +50,12 @@ namespace DimensionBrawl.Combat
         [SerializeField] private LineRenderer telegraphLine;
         [SerializeField] private Color telegraphStartColor = new Color(0.1f, 0.95f, 1f, 0.2f);
         [SerializeField] private Color telegraphEndColor = new Color(0.1f, 0.95f, 1f, 0.86f);
-        [SerializeField] private Color activeColor = new Color(0.72f, 1f, 1f, 1f);
         [SerializeField, Min(0.001f)] private float telegraphStartWidth = 0.045f;
         [SerializeField, Min(0.001f)] private float telegraphEndWidth = 0.115f;
-        [SerializeField, Min(0.001f)] private float activeWidth = 0.26f;
 
         private readonly Collider[] hitBuffer = new Collider[32];
         private readonly List<CombatHealth> uniqueTargets = new List<CombatHealth>(8);
+        private SummonAttackBeamPresenter beamPresenter;
         private BossLaserSummonPatternState state;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 lockedDirection = Vector3.back;
@@ -91,6 +91,7 @@ namespace DimensionBrawl.Combat
         private void OnDisable()
         {
             HideLine();
+            ClearBeamPresenter();
             state = BossLaserSummonPatternState.Inactive;
         }
 
@@ -198,7 +199,8 @@ namespace DimensionBrawl.Combat
             stateTimer += deltaTime;
             proxy.RequestAdvanceHold(0.08f);
             FaceLockedDirection();
-            ShowLine(activeColor, activeWidth);
+            HideLine();
+            SyncBeamPresenter();
 
             if (Time.time >= nextDamageTime)
             {
@@ -238,12 +240,14 @@ namespace DimensionBrawl.Combat
             if (state == BossLaserSummonPatternState.Inactive)
             {
                 HideLine();
+                ClearBeamPresenter();
                 return;
             }
 
             state = BossLaserSummonPatternState.Inactive;
             stateTimer = 0f;
             HideLine();
+            ClearBeamPresenter();
         }
 
         private void EnterWaitingForAdvance()
@@ -251,12 +255,14 @@ namespace DimensionBrawl.Combat
             state = BossLaserSummonPatternState.WaitingForAdvance;
             stateTimer = 0f;
             HideLine();
+            ClearBeamPresenter();
         }
 
         private void EnterTelegraph()
         {
             state = BossLaserSummonPatternState.Telegraph;
             stateTimer = 0f;
+            ClearBeamPresenter();
             lockedDirection = ResolveTargetDirection();
             FaceLockedDirection();
             ShowLine(telegraphStartColor, telegraphStartWidth);
@@ -269,7 +275,8 @@ namespace DimensionBrawl.Combat
             nextDamageTime = 0f;
             proxy.NotifyAttackPerformed(activeSeconds + 0.05f);
             LaserFired?.Invoke(this);
-            ShowLine(activeColor, activeWidth);
+            HideLine();
+            SyncBeamPresenter();
         }
 
         private void EnterRecovery()
@@ -277,12 +284,14 @@ namespace DimensionBrawl.Combat
             state = BossLaserSummonPatternState.Recovery;
             stateTimer = 0f;
             HideLine();
+            ClearBeamPresenter();
         }
 
         private void EnterReposition()
         {
             state = BossLaserSummonPatternState.Reposition;
             stateTimer = 0f;
+            ClearBeamPresenter();
             cycleIndex++;
             proxy.BeginAdvanceTo(
                 ResolveRepositionTarget(),
@@ -448,6 +457,25 @@ namespace DimensionBrawl.Combat
             }
         }
 
+        private void SyncBeamPresenter()
+        {
+            ResolveReferences();
+            if (beamPresenter == null)
+            {
+                return;
+            }
+
+            Vector3 origin = ResolveLaserOrigin();
+            Vector3 end = origin + lockedDirection * Mathf.Max(0.1f, laserLength);
+            beamPresenter.SetWorldBeamEndpoints(origin, end);
+        }
+
+        private void ClearBeamPresenter()
+        {
+            ResolveReferences();
+            beamPresenter?.ClearWorldBeamEndpoints();
+        }
+
         private void EnsureTelegraphLine()
         {
             if (telegraphLine != null)
@@ -490,6 +518,11 @@ namespace DimensionBrawl.Combat
             if (laserOrigin == null && proxy != null)
             {
                 laserOrigin = proxy.ProjectileOrigin;
+            }
+
+            if (beamPresenter == null)
+            {
+                beamPresenter = GetComponent<SummonAttackBeamPresenter>();
             }
 
             if (targetHealth == null && target != null)

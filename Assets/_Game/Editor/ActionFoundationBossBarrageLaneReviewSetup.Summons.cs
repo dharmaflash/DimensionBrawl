@@ -598,6 +598,18 @@ namespace DimensionBrawl.Editor
                 SetFloat(laserPattern, "strafeDistance", 1.45f);
                 SetFloat(laserPattern, "repositionMoveSpeed", 4f);
 
+                SummonAttackBeamPresenter beamPresenter = EnsureComponent<SummonAttackBeamPresenter>(editableRoot);
+                SetColor(beamPresenter, "tierOneColor", new Color(1f, 0.24f, 0.12f, 0.88f));
+                SetColor(beamPresenter, "tierTwoColor", new Color(1f, 0.46f, 0.14f, 0.94f));
+                SetColor(beamPresenter, "tierThreeColor", new Color(1f, 0.78f, 0.24f, 1f));
+                SetBool(beamPresenter, "overrideBeamColor", false);
+                SetFloat(beamPresenter, "beamUvScrollSpeed", -6f);
+                SetFloat(beamPresenter, "beamTextureScalePerMeter", 0.1f);
+                SetFloat(beamPresenter, "beamMuzzleOffset", 0.1f);
+                SetFloat(beamPresenter, "beamImpactBackOffset", 0.5f);
+                SetFloat(beamPresenter, "beamWidthMultiplier", 2.2f);
+                SetFloat(beamPresenter, "authoredBeamLength", 10f);
+
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, BossLaserSummonActorPrefabPath);
             }
             finally
