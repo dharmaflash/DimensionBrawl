@@ -23,6 +23,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 1
     prefab: {fileID: 839988571434316585, guid: 7e9ddd025bcff4a448c3843d9d46881c, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.82}
@@ -32,6 +42,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 2
     prefab: {fileID: 1910420011276933064, guid: 86d3aa59849aff34183dce7d0ea172bc, type: 3}
     localPositionOffset: {x: 0, y: 0, z: -0.15}
@@ -41,6 +61,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 39
     prefab: {fileID: 6495717365732578751, guid: 7b8563761c7bc55419f9ecdecc5f554c, type: 3}
     localPositionOffset: {x: 0, y: -0.08, z: 0}
@@ -50,6 +80,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 40
     prefab: {fileID: 2931620212918913059, guid: 71536d845daddbe45a78cbfb982cd4d6, type: 3}
     localPositionOffset: {x: 0, y: -0.16, z: 0}
@@ -59,6 +99,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 41
     prefab: {fileID: 827216260487425286, guid: d9a813e3696a3624aafa8c224bd60a56, type: 3}
     localPositionOffset: {x: 0, y: 0.62, z: 0.05}
@@ -68,6 +118,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 42
     prefab: {fileID: 7363812077356106408, guid: 23dec3295197b794c913a63ad7496fde, type: 3}
     localPositionOffset: {x: 0, y: 0.34, z: 0.16}
@@ -77,6 +137,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 37
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.72, z: 0}
@@ -86,6 +156,22 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips:
+    - {fileID: 8300000, guid: 1717306c713f4f448a4223f6cc2bfe70, type: 3}
+    - {fileID: 8300000, guid: 3dcde7761e4ea0646aa2aa92fc689f66, type: 3}
+    - {fileID: 8300000, guid: e78d6bec49a98b34487ce36630bad38d, type: 3}
+    - {fileID: 8300000, guid: 6a130b53bd1c2cb4fa1d2458895e0eeb, type: 3}
+    - {fileID: 8300000, guid: a7c3a6659409b2b4bba84ee74ad4c542, type: 3}
+    - {fileID: 8300000, guid: bc7766e8162786443bfc91c253667f28, type: 3}
+    audioBaseVolume: 0.49
+    audioMinimumPitch: 0.97
+    audioMaximumPitch: 1.04
+    audioMinimumVolumeMultiplier: 1
+    audioMaximumVolumeMultiplier: 1.12
+    audioSpatialBlend: 0
+    audioMinDistance: 6
+    audioMaxDistance: 36
+    audioPriority: 40
   - cueId: 38
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.82, z: 0}
@@ -95,6 +181,18 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips:
+    - {fileID: 8300000, guid: 05c39c411c539c24a95ac8dcbaab1e5f, type: 3}
+    - {fileID: 8300000, guid: 47244091285f83b418476cf5d4bd1f2a, type: 3}
+    audioBaseVolume: 0.5
+    audioMinimumPitch: 0.94
+    audioMaximumPitch: 1
+    audioMinimumVolumeMultiplier: 1
+    audioMaximumVolumeMultiplier: 1.12
+    audioSpatialBlend: 0
+    audioMinDistance: 6
+    audioMaxDistance: 36
+    audioPriority: 32
   - cueId: 33
     prefab: {fileID: 8980601270831269164, guid: f9fc85eada6840147a96d36d88284e79, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.08}
@@ -104,6 +202,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 34
     prefab: {fileID: 3204485409673659939, guid: 73e0ef70f45b2834ba962a131d2ab3ec, type: 3}
     localPositionOffset: {x: 0, y: 0.04, z: 0}
@@ -113,6 +221,19 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips:
+    - {fileID: 8300000, guid: 0dac72a27a620204babdcb714f488d1c, type: 3}
+    - {fileID: 8300000, guid: b460f5122b104f44f950628c5c7f319a, type: 3}
+    - {fileID: 8300000, guid: 6fe356dade4cc754292c940351628f05, type: 3}
+    audioBaseVolume: 0.36
+    audioMinimumPitch: 1.02
+    audioMaximumPitch: 1.1
+    audioMinimumVolumeMultiplier: 0.92
+    audioMaximumVolumeMultiplier: 1.04
+    audioSpatialBlend: 0.02
+    audioMinDistance: 8
+    audioMaxDistance: 40
+    audioPriority: 72
   - cueId: 3
     prefab: {fileID: 6317775638521204061, guid: 89d9b914c94405042b977ab715f15e61, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -122,6 +243,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 4
     prefab: {fileID: 611018418029765372, guid: d22b9cd6efb673245accc08d6b8dbc58, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.7}
@@ -131,6 +262,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 5
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.1, z: 0}
@@ -140,6 +281,38 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips:
+    - {fileID: 8300000, guid: a7863f039e06907459d9204f013ede06, type: 3}
+    - {fileID: 8300000, guid: 43ed97734194cba48856da9cf1c6585d, type: 3}
+    - {fileID: 8300000, guid: 7136d486df98b6e4bb30050f59e81937, type: 3}
+    - {fileID: 8300000, guid: e94ddac03fb29dc438e1ffb7fb7c02b5, type: 3}
+    - {fileID: 8300000, guid: a7863f039e06907459d9204f013ede06, type: 3}
+    - {fileID: 8300000, guid: 43ed97734194cba48856da9cf1c6585d, type: 3}
+    - {fileID: 8300000, guid: 7136d486df98b6e4bb30050f59e81937, type: 3}
+    - {fileID: 8300000, guid: e94ddac03fb29dc438e1ffb7fb7c02b5, type: 3}
+    - {fileID: 8300000, guid: a2cbb7208b99a3e4f823e7291658897d, type: 3}
+    - {fileID: 8300000, guid: 61ec40dca95866140972024ef5b20285, type: 3}
+    - {fileID: 8300000, guid: b2c42d05946b61d45b8d99f1295b0b8c, type: 3}
+    - {fileID: 8300000, guid: b2be00a267b401841bdec91e92019c8e, type: 3}
+    - {fileID: 8300000, guid: a9d5ca5fddc4a6d4fbd8dea305a5b98d, type: 3}
+    - {fileID: 8300000, guid: 3f2253688372edb4aa6b9e972d1a3a9d, type: 3}
+    - {fileID: 8300000, guid: 72e879bbf137d6e41aabf2302ccb651b, type: 3}
+    - {fileID: 8300000, guid: 5741ac266f3b873469ecb1e87feec475, type: 3}
+    - {fileID: 8300000, guid: 06f488f46132e194998353289991a17a, type: 3}
+    - {fileID: 8300000, guid: 1b490d73d14c9d1498ba806e6205027e, type: 3}
+    - {fileID: 8300000, guid: 7cabb75e809ea0d4caa04d73e1836da4, type: 3}
+    - {fileID: 8300000, guid: 3d519136fc5922f42a1963350dc0181d, type: 3}
+    - {fileID: 8300000, guid: e1e6a807134c9884bb52e0b71a93d5cd, type: 3}
+    - {fileID: 8300000, guid: 31562cf0256c1e045b3768b6227c8f1e, type: 3}
+    audioBaseVolume: 0.48
+    audioMinimumPitch: 0.96
+    audioMaximumPitch: 1.05
+    audioMinimumVolumeMultiplier: 0.98
+    audioMaximumVolumeMultiplier: 1.1
+    audioSpatialBlend: 0.05
+    audioMinDistance: 10
+    audioMaxDistance: 45
+    audioPriority: 48
   - cueId: 6
     prefab: {fileID: 7478284790387558022, guid: 1ee6562adf95d1740901f3b53124cafd, type: 3}
     localPositionOffset: {x: 0, y: 0.05, z: 0}
@@ -149,6 +322,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 7
     prefab: {fileID: 5420902348688501287, guid: 224c0a8c6be3c4441826de22c6c3d53b, type: 3}
     localPositionOffset: {x: 0, y: 0.1, z: 0}
@@ -158,6 +341,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 8
     prefab: {fileID: 7878148650246846911, guid: 2a281657c7b206541b4c4943b06e0583, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -167,6 +360,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 9
     prefab: {fileID: 618084549798882698, guid: e3b4e7bd60d98b842a731d9d49ffafb4, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.75}
@@ -176,6 +379,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 10
     prefab: {fileID: 1595223751924817789, guid: 09c25efc227ef5340ba0241f3b40b18e, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.25}
@@ -185,6 +398,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 11
     prefab: {fileID: 4129677355910100076, guid: d7206d9850d3dcc42abc7f04d58a221b, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 1.2}
@@ -194,6 +417,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 12
     prefab: {fileID: 2982588325708910665, guid: 8645d21a8db98624db46ffac50ba113a, type: 3}
     localPositionOffset: {x: 0, y: 0.12, z: 0}
@@ -203,6 +436,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 13
     prefab: {fileID: 4560642670583762643, guid: c73589c87fbfc5441a7419bb0645f938, type: 3}
     localPositionOffset: {x: 0, y: -0.15, z: 0.85}
@@ -212,6 +455,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 14
     prefab: {fileID: 3019848627291474742, guid: 82fd0c4ba1a387c4e82463401371fbd0, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.45}
@@ -221,6 +474,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 15
     prefab: {fileID: 6244074342710107144, guid: 64f8795fc99852b48b2ba209c65d9a03, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.85}
@@ -230,6 +493,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 16
     prefab: {fileID: 4551952403004015369, guid: 5902d0164b92fb44fa0a260f23859b51, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.45}
@@ -239,6 +512,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 17
     prefab: {fileID: 1622047292471772830, guid: 1883f8be812228042bf195368fb0fe8a, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 1.35}
@@ -248,6 +531,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 18
     prefab: {fileID: 7462109794064683954, guid: 8ca5fa33d6daf5e4d9f0bb39322cf9cc, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.35}
@@ -257,6 +550,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 19
     prefab: {fileID: 4098616489179289316, guid: d0dbd3c9fa3c3564ab88f52b39fe0908, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.75}
@@ -266,6 +569,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 20
     prefab: {fileID: 8024361439104715923, guid: 995d4a39bcd5acd428eeb8d3d5fa2961, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -275,6 +588,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 21
     prefab: {fileID: 3813203227593438923, guid: daa604ba4e5b0774d9b390ca50c3a1b8, type: 3}
     localPositionOffset: {x: 0, y: -0.05, z: 0}
@@ -284,6 +607,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 22
     prefab: {fileID: 345921571143529403, guid: bf58f0aad3589954f899e7c909598b93, type: 3}
     localPositionOffset: {x: 0, y: 0.1, z: 0}
@@ -293,6 +626,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 23
     prefab: {fileID: 948675577035483295, guid: c000d3d4b785b8d4a8d4571dea58750d, type: 3}
     localPositionOffset: {x: 0, y: -0.12, z: 0.8}
@@ -302,6 +645,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 24
     prefab: {fileID: 5420902348688501287, guid: 224c0a8c6be3c4441826de22c6c3d53b, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -311,6 +664,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 25
     prefab: {fileID: 9126571759284103868, guid: b48f67d5b994ff84e852b1cf7f43065e, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -320,6 +683,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 26
     prefab: {fileID: 9088812326609845108, guid: 1186c759186667947b161a8d65d47300, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -329,6 +702,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 27
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -338,6 +721,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 28
     prefab: {fileID: 5711843019214175258, guid: e1b41e4db5569a547b8ad7f9e93b5e8f, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
@@ -347,6 +740,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 29
     prefab: {fileID: 8666660637357580547, guid: f7455ae1f4665c14486a0e7859904d5a, type: 3}
     localPositionOffset: {x: 0, y: 0.36, z: 0.2}
@@ -356,6 +759,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 30
     prefab: {fileID: 3204485409673659939, guid: 73e0ef70f45b2834ba962a131d2ab3ec, type: 3}
     localPositionOffset: {x: 0, y: 1.05, z: -0.35}
@@ -365,6 +778,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 31
     prefab: {fileID: 7478284790387558022, guid: 1ee6562adf95d1740901f3b53124cafd, type: 3}
     localPositionOffset: {x: 0, y: 0.08, z: -0.2}
@@ -374,6 +797,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 32
     prefab: {fileID: 7428633424889265235, guid: 9f873826e7092c7429618ea15857be24, type: 3}
     localPositionOffset: {x: 0, y: 0.24, z: 0.42}
@@ -383,6 +816,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 35
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0.42, z: 0}
@@ -392,6 +835,16 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 36
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.18, z: -0.08}
@@ -401,3 +854,13 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0

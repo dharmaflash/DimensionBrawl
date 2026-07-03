@@ -56,6 +56,15 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float maxCueFocusHeightDelta = 0.25f;
         [SerializeField, Min(0f)] private float cueFieldOfViewSmooth = 18f;
 
+        [Header("Micro Shake")]
+        [Tooltip("Short deterministic impact shake layered after the main camera cue. Tuned from PGR/ZZZ camera-shake tables as a fast non-cinematic hit accent.")]
+        [SerializeField] private bool enableMicroShake = true;
+        [SerializeField, Min(0f)] private float maxMicroShakePosition = 0.085f;
+        [SerializeField, Min(0f)] private float maxMicroShakeEuler = 0.9f;
+        [SerializeField, Min(0f)] private float microShakeFrequency = 34f;
+        [SerializeField] private Vector3 microShakePositionAxes = new Vector3(1f, 0.58f, 0.05f);
+        [SerializeField] private Vector3 microShakeEulerAxes = new Vector3(0.34f, 0.28f, 1f);
+
         [Header("Aim Mode")]
         [Tooltip("Persistent ranged-aim shoulder offset. This is a mode modifier, not a short combat cue.")]
         [SerializeField] private Vector3 aimCameraOffset = new Vector3(0.5f, 0.18f, 0.12f);
@@ -104,8 +113,18 @@ namespace DimensionBrawl.Presentation
         private float requestedAimAssistStrength01;
         private float aimAssistYawOffsetDegrees;
         private bool wasAimFollowActive;
+        private float microShakeTimer;
+        private float microShakeDuration;
+        private float microShakePositionAmplitude;
+        private float microShakeEulerAmplitude;
+        private float microShakeSeed;
+        private Vector2 microShakeDirectionBias;
+        private Vector3 lastMicroShakeLocalOffset;
+        private Vector3 lastMicroShakeEulerOffset;
+        private int microShakeRequestCount;
 
         public bool HasActiveCue => cueTimer > 0f;
+        public bool HasActiveMicroShake => microShakeTimer > 0f;
         public bool IsAimModifierActive => aimTargetWeight > 0.5f;
         public float AimWeight => aimWeight;
         public Vector2 AimOrbitInput => aimOrbitInput;
@@ -117,6 +136,9 @@ namespace DimensionBrawl.Presentation
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
+        public int MicroShakeRequestCount => microShakeRequestCount;
+        public Vector3 LastMicroShakeLocalOffset => lastMicroShakeLocalOffset;
+        public Vector3 LastMicroShakeEulerOffset => lastMicroShakeEulerOffset;
 
         public Vector3 GetAimPlanarForward()
         {
@@ -236,6 +258,13 @@ namespace DimensionBrawl.Presentation
             cueFocusHeightDelta = 0f;
             cueTimer = 0f;
             cueDuration = 0f;
+            microShakeTimer = 0f;
+            microShakeDuration = 0f;
+            microShakePositionAmplitude = 0f;
+            microShakeEulerAmplitude = 0f;
+            microShakeDirectionBias = Vector2.zero;
+            lastMicroShakeLocalOffset = Vector3.zero;
+            lastMicroShakeEulerOffset = Vector3.zero;
             orbitInitialized = false;
             aimTargetWeight = 0f;
             aimWeight = 0f;
@@ -272,6 +301,30 @@ namespace DimensionBrawl.Presentation
             cueFocusHeightDelta = Mathf.Clamp(focusHeightDelta, -maxCueFocusHeightDelta, maxCueFocusHeightDelta);
             cueDuration = Mathf.Max(0.01f, durationSeconds);
             cueTimer = cueDuration;
+        }
+
+        public void RequestMicroShake(
+            float durationSeconds,
+            float positionAmplitude,
+            float eulerAmplitude,
+            Vector3 planarDirection)
+        {
+            if (!enableMicroShake || durationSeconds <= 0f || (positionAmplitude <= 0f && eulerAmplitude <= 0f))
+            {
+                return;
+            }
+
+            microShakeDuration = Mathf.Max(microShakeDuration, Mathf.Max(0.01f, durationSeconds));
+            microShakeTimer = Mathf.Max(microShakeTimer, Mathf.Max(0.01f, durationSeconds));
+            microShakePositionAmplitude = Mathf.Max(
+                microShakePositionAmplitude,
+                Mathf.Clamp(positionAmplitude, 0f, maxMicroShakePosition));
+            microShakeEulerAmplitude = Mathf.Max(
+                microShakeEulerAmplitude,
+                Mathf.Clamp(eulerAmplitude, 0f, maxMicroShakeEuler));
+            microShakeDirectionBias = ResolveMicroShakeDirectionBias(planarDirection);
+            microShakeSeed = Mathf.Repeat(microShakeSeed + 0.371f, 100f);
+            microShakeRequestCount++;
         }
 
         public void SetAimModifierActive(bool active)
@@ -375,6 +428,7 @@ namespace DimensionBrawl.Presentation
             Quaternion desiredRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
             float rotationStep = 1f - Mathf.Exp(-rotationSmooth * deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationStep);
+            ApplyMicroShake(Time.unscaledDeltaTime);
         }
 
         private void Awake()
@@ -408,6 +462,13 @@ namespace DimensionBrawl.Presentation
             requestedAimAssistYawTargetDegrees = 0f;
             requestedAimAssistStrength01 = 0f;
             aimAssistYawOffsetDegrees = 0f;
+            microShakeTimer = 0f;
+            microShakeDuration = 0f;
+            microShakePositionAmplitude = 0f;
+            microShakeEulerAmplitude = 0f;
+            microShakeDirectionBias = Vector2.zero;
+            lastMicroShakeLocalOffset = Vector3.zero;
+            lastMicroShakeEulerOffset = Vector3.zero;
         }
 
         private Vector3 BuildFocusPoint()
@@ -747,6 +808,63 @@ namespace DimensionBrawl.Presentation
                 + aimFieldOfViewDelta * aimWeight;
             float fovStep = 1f - Mathf.Exp(-cueFieldOfViewSmooth * deltaTime);
             controlledCamera.fieldOfView = Mathf.Lerp(controlledCamera.fieldOfView, targetFieldOfView, fovStep);
+        }
+
+        private void ApplyMicroShake(float deltaTime)
+        {
+            if (microShakeTimer <= 0f)
+            {
+                lastMicroShakeLocalOffset = Vector3.zero;
+                lastMicroShakeEulerOffset = Vector3.zero;
+                return;
+            }
+
+            float duration = Mathf.Max(0.01f, microShakeDuration);
+            float normalized = Mathf.Clamp01(microShakeTimer / duration);
+            float envelope = normalized * normalized * (3f - 2f * normalized);
+            float phase = (Time.unscaledTime + microShakeSeed) * Mathf.Max(1f, microShakeFrequency);
+            float x = Mathf.Sin(phase * 6.283185f);
+            float y = Mathf.Sin((phase * 1.37f + 0.23f + microShakeSeed) * 6.283185f);
+            float z = Mathf.Sin((phase * 1.91f + 0.41f + microShakeSeed) * 6.283185f);
+
+            x = Mathf.Lerp(x, microShakeDirectionBias.x, 0.22f);
+            y = Mathf.Lerp(y, microShakeDirectionBias.y, 0.16f);
+
+            lastMicroShakeLocalOffset = Vector3.Scale(
+                new Vector3(x, y, z),
+                microShakePositionAxes) * (microShakePositionAmplitude * envelope);
+            lastMicroShakeEulerOffset = Vector3.Scale(
+                new Vector3(y, -x, x - y * 0.35f),
+                microShakeEulerAxes) * (microShakeEulerAmplitude * envelope);
+
+            transform.position += transform.right * lastMicroShakeLocalOffset.x
+                + transform.up * lastMicroShakeLocalOffset.y
+                + transform.forward * lastMicroShakeLocalOffset.z;
+            transform.rotation *= Quaternion.Euler(lastMicroShakeEulerOffset);
+
+            microShakeTimer = Mathf.Max(0f, microShakeTimer - Mathf.Max(0f, deltaTime));
+            if (microShakeTimer <= 0f)
+            {
+                microShakePositionAmplitude = 0f;
+                microShakeEulerAmplitude = 0f;
+                microShakeDirectionBias = Vector2.zero;
+            }
+        }
+
+        private Vector2 ResolveMicroShakeDirectionBias(Vector3 planarDirection)
+        {
+            Vector3 direction = Vector3.ProjectOnPlane(planarDirection, Vector3.up);
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return Vector2.zero;
+            }
+
+            direction.Normalize();
+            return Vector2.ClampMagnitude(
+                new Vector2(
+                    Vector3.Dot(direction, transform.right),
+                    Vector3.Dot(direction, transform.forward)),
+                1f);
         }
     }
 }

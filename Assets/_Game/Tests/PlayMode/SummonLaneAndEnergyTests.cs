@@ -671,6 +671,29 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ReviewedCombatFeedbackProfileAllowsHitFeedbackCues()
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            try
+            {
+                SerializedObject serializedProfile = new SerializedObject(profile);
+                serializedProfile.FindProperty("playbackMode").enumValueIndex =
+                    (int)CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly;
+                serializedProfile.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerDamaged));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerCritical));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
+            }
+            finally
+            {
+                Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void PlayerCombatVfxCueDriverSoftensNonLockingPressureDamage()
         {
             GameObject playerObject = new GameObject("Player");
@@ -862,6 +885,86 @@ namespace DimensionBrawl.Tests
                     Object.DestroyImmediate(bodyMaterial);
                 }
 
+                Object.DestroyImmediate(enemyObject);
+            }
+        }
+
+        [Test]
+        public void CombatHitFeedbackRequestsCameraRecoilAndHitStopForHeavyHit()
+        {
+            GameObject enemyObject = new GameObject("Enemy");
+            GameObject bodyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            GameObject cameraObject = new GameObject("ActionCamera");
+            Material bodyMaterial = null;
+            float previousTimeScale = Time.timeScale;
+            try
+            {
+                bodyObject.name = "EnemyBody";
+                bodyObject.transform.SetParent(enemyObject.transform, worldPositionStays: false);
+                Renderer bodyRenderer = bodyObject.GetComponent<Renderer>();
+                Assert.IsNotNull(bodyRenderer);
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Standard");
+                }
+
+                bodyMaterial = new Material(shader);
+                bodyMaterial.SetColor("_BaseColor", new Color(0.18f, 0.24f, 0.32f, 1f));
+                bodyRenderer.sharedMaterial = bodyMaterial;
+
+                Camera camera = cameraObject.AddComponent<Camera>();
+                Assert.IsNotNull(camera);
+                ActionCameraController cameraController = cameraObject.AddComponent<ActionCameraController>();
+
+                CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+                enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+                enemyHealth.ConfigureMaxHealth(100f);
+
+                CombatHitFeedback feedback = enemyObject.AddComponent<CombatHitFeedback>();
+                feedback.enabled = false;
+                SerializedObject serializedFeedback = new SerializedObject(feedback);
+                serializedFeedback.FindProperty("health").objectReferenceValue = enemyHealth;
+                serializedFeedback.FindProperty("cameraController").objectReferenceValue = cameraController;
+                serializedFeedback.FindProperty("visualRecoilRoot").objectReferenceValue = bodyObject.transform;
+                SerializedProperty flashRenderers = serializedFeedback.FindProperty("flashRenderers");
+                flashRenderers.arraySize = 1;
+                flashRenderers.GetArrayElementAtIndex(0).objectReferenceValue = bodyRenderer;
+                serializedFeedback.FindProperty("renderHitFeedback").boolValue = true;
+                serializedFeedback.FindProperty("applyIdleColorOnEnable").boolValue = false;
+                serializedFeedback.ApplyModifiedPropertiesWithoutUndo();
+                feedback.enabled = true;
+
+                Assert.IsTrue(enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    18f,
+                    enemyObject.transform.position,
+                    Vector3.forward,
+                    0.04f,
+                    DamageResponsePolicy.Stagger,
+                    CombatControlLockPolicy.InterruptAction)));
+
+                Assert.AreEqual(CombatHitFeedbackTier.Heavy, feedback.LastHitFeedbackTier);
+                Assert.AreEqual(1, feedback.CameraImpulseRequestCount);
+                Assert.AreEqual(1, feedback.VisualRecoilRequestCount);
+                Assert.AreEqual(1, feedback.HitStopRequestCount);
+                Assert.IsTrue(cameraController.HasActiveCue);
+                Assert.AreEqual(1, cameraController.MicroShakeRequestCount);
+                Assert.IsTrue(cameraController.HasActiveMicroShake);
+                Assert.AreNotEqual(Vector3.zero, bodyObject.transform.localPosition);
+                Assert.Less(Time.timeScale, 1f);
+            }
+            finally
+            {
+                Time.timeScale = previousTimeScale;
+
+                if (bodyMaterial != null)
+                {
+                    Object.DestroyImmediate(bodyMaterial);
+                }
+
+                Object.DestroyImmediate(cameraObject);
                 Object.DestroyImmediate(enemyObject);
             }
         }
