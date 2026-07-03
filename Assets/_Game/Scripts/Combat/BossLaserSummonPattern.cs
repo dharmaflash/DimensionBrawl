@@ -380,7 +380,7 @@ namespace DimensionBrawl.Combat
         private Vector3 ResolveTargetDirection()
         {
             Vector3 origin = ResolveLaserOrigin();
-            Vector3 direction = Vector3.ProjectOnPlane(ResolveTargetPoint() - origin, Vector3.up);
+            Vector3 direction = ResolveTargetPoint() - origin;
             if (direction.sqrMagnitude <= 0.0001f)
             {
                 direction = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
@@ -406,12 +406,13 @@ namespace DimensionBrawl.Combat
 
         private void FaceLockedDirection()
         {
-            if (lockedDirection.sqrMagnitude <= 0.0001f)
+            Vector3 planarDirection = Vector3.ProjectOnPlane(lockedDirection, Vector3.up);
+            if (planarDirection.sqrMagnitude <= 0.0001f)
             {
                 return;
             }
 
-            transform.rotation = Quaternion.LookRotation(lockedDirection, Vector3.up);
+            transform.rotation = Quaternion.LookRotation(planarDirection.normalized, Vector3.up);
         }
 
         private void ShowLine(Color color, float width)

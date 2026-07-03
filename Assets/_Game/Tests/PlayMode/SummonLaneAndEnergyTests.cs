@@ -1,3 +1,4 @@
+using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.AI;
 using DimensionBrawl.Enemies;
@@ -4349,6 +4350,53 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossLaserSummonPatternAimsDownFromHighOriginToTargetHeight()
+        {
+            GameObject bossObject = new GameObject("BossLaserSummon");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy proxy = bossObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(bossHealth);
+            BossLaserSummonPattern laserPattern = bossObject.AddComponent<BossLaserSummonPattern>();
+
+            GameObject originObject = new GameObject("HighLaserOrigin");
+            originObject.transform.SetParent(bossObject.transform, worldPositionStays: true);
+            originObject.transform.position = new Vector3(0f, 3.2f, 6f);
+
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = Vector3.zero;
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+
+            var serializedPattern = new SerializedObject(laserPattern);
+            serializedPattern.FindProperty("laserOrigin").objectReferenceValue = originObject.transform;
+            serializedPattern.FindProperty("targetHeightOffset").floatValue = 1.05f;
+            serializedPattern.ApplyModifiedPropertiesWithoutUndo();
+            laserPattern.ConfigurePattern(playerObject.transform, DamageTeam.Enemy, 58f, 0.12f, 4f);
+
+            MethodInfo resolveDirection = typeof(BossLaserSummonPattern).GetMethod(
+                "ResolveTargetDirection",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(resolveDirection);
+
+            Vector3 resolvedDirection = (Vector3)resolveDirection.Invoke(laserPattern, null);
+            Vector3 expectedDirection =
+                (playerObject.transform.position + Vector3.up * 1.05f - originObject.transform.position).normalized;
+
+            Assert.Less(
+                resolvedDirection.y,
+                -0.1f,
+                "Boss laser summons must aim down from a high muzzle to the player's body height instead of firing a horizontal capsule above the player.");
+            Assert.AreEqual(expectedDirection.x, resolvedDirection.x, 0.001f);
+            Assert.AreEqual(expectedDirection.y, resolvedDirection.y, 0.001f);
+            Assert.AreEqual(expectedDirection.z, resolvedDirection.z, 0.001f);
+
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(originObject);
+            Object.DestroyImmediate(bossObject);
         }
 
         [Test]
