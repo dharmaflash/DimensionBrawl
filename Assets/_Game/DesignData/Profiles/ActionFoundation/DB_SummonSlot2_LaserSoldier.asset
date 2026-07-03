@@ -53,7 +53,7 @@ MonoBehaviour:
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 2.32
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorMaxHealth: 205
     ActorMoveSpeed: 3.1
@@ -81,7 +81,7 @@ MonoBehaviour:
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 2.56
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorMaxHealth: 250
     ActorMoveSpeed: 3.4

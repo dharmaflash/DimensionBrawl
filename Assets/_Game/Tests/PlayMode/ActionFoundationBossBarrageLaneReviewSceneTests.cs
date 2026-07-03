@@ -838,9 +838,9 @@ namespace DimensionBrawl.Tests
                 "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
             BossSummonPressureAction.BossSummonTierSettings[] bossSummonTiers =
                 bossSummonPressureProfile.CopyTierSettings();
-            Assert.AreEqual(1.82f, bossSummonTiers[0].ActorScale, 0.001f);
+            Assert.AreEqual(2.08f, bossSummonTiers[0].ActorScale, 0.001f);
             Assert.AreEqual(2.12f, bossSummonTiers[1].ActorScale, 0.001f);
-            Assert.AreEqual(2.10f, bossSummonTiers[2].ActorScale, 0.001f);
+            Assert.AreEqual(2.08f, bossSummonTiers[2].ActorScale, 0.001f);
             GameObject bossLaserSummonActorPrefabObject = LoadAsset<GameObject>(BossLaserSummonActorPrefabPath);
             SummonFrontlineProxy bossLaserSummonActorPrefab =
                 RequireComponent<SummonFrontlineProxy>(
@@ -2031,7 +2031,7 @@ namespace DimensionBrawl.Tests
             BossSummonPressureAction.BossSummonTierSettings[] bossTiers =
                 bossSummonProfile.CopyTierSettings();
             float[] expectedChargeScales = { 2.0f, 2.36f, 2.74f };
-            float[] expectedLaserScales = { 2.08f, 2.32f, 2.56f };
+            float[] expectedLaserScales = { 2.08f, 2.08f, 2.08f };
             float[] expectedDragonScales = { 2.42f, 2.72f, 3.06f };
 
             Assert.AreEqual(chargeTiers.Length, laserTiers.Length);

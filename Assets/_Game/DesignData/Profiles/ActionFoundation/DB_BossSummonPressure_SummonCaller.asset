@@ -18,7 +18,7 @@ MonoBehaviour:
     LateralOffset: 0.9
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 1.82
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 460
@@ -52,7 +52,7 @@ MonoBehaviour:
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.10
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 760

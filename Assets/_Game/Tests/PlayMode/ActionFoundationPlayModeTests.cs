@@ -654,16 +654,16 @@ namespace DimensionBrawl.Tests
             CombatAiPatternDeck trainingDeck = LoadPatternDeck(BasicSoldierTrainingDeckPath);
 
             Assert.AreEqual("SciFiSoldier.Basic", closePunish.ActorTypeId, "ClosePunish should declare the actor type used by visual/Animator setup.");
-            Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the first readable melee pattern id.");
-            Assert.AreEqual(CombatAiAttackShape.MeleeArc, closePunish.AttackShape, "ClosePunish should keep a compact melee attack shape.");
-            Assert.AreEqual(0f, closePunish.ActiveLungeSpeed, 0.001f, "ClosePunish should stay a stationary melee release.");
+            Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the legacy first-slot pattern id while its behavior becomes a standoff shot.");
+            Assert.AreEqual(CombatAiAttackShape.ProjectileLine, closePunish.AttackShape, "ClosePunish should now advertise a projectile line instead of a contact melee arc.");
+            Assert.AreEqual(0f, closePunish.ActiveLungeSpeed, 0.001f, "ClosePunish should stop before contact and fire from standoff range.");
             Assert.AreEqual(CombatAiCameraCueKind.ClosePunish, closePunish.CameraCueKind, "ClosePunish should expose camera cue semantics as profile data.");
             Assert.AreEqual("SciFiSoldier.Basic", lungeStrike.ActorTypeId, "LungeStrike should use the same actor type so model/Animator setup remains swappable.");
             Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier pattern should be a distinct profile instead of a hardcoded mode flag.");
             Assert.AreEqual(CombatAiAttackShape.ForwardLine, lungeStrike.AttackShape, "LungeStrike should use the same forward-line hit-shape contract that future line pressure patterns reuse.");
             Assert.IsTrue(lungeStrike.LockAttackDirectionOnWindup, "LungeStrike should commit its lunge lane once the warning starts.");
             Assert.AreEqual(CombatAiCameraCueKind.LungeStrike, lungeStrike.CameraCueKind, "LungeStrike should expose lunge camera cue semantics through the shared profile.");
-            Assert.Greater(lungeStrike.AttackRange, closePunish.AttackRange, "LungeStrike should advertise longer reach through data.");
+            Assert.Greater(closePunish.AttackRange, lungeStrike.AttackRange, "ClosePunish should now hold a standoff projectile range rather than forcing full contact.");
             Assert.Greater(lungeStrike.ActiveLungeSpeed, closePunish.ActiveLungeSpeed, "LungeStrike should add forward active movement through data.");
             Assert.Greater(lungeStrike.Damage, closePunish.Damage, "LungeStrike should be distinguishable as a heavier pattern through profile data.");
             Assert.AreEqual("SciFiSoldier.Basic", heavyWindup.ActorTypeId, "HeavyWindup should share the same actor type so the same visual can test pattern variety.");
@@ -672,9 +672,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatAiCameraCueKind.HeavyWindup, heavyWindup.CameraCueKind, "HeavyWindup should select its camera read cue through profile data.");
             Assert.Greater(heavyWindup.TelegraphSeconds, lungeStrike.TelegraphSeconds, "HeavyWindup should advertise a longer warning window through data.");
             Assert.Greater(heavyWindup.WindupThreatLevel, lungeStrike.WindupThreatLevel, "HeavyWindup should mark stronger camera/readability emphasis through data.");
-            Assert.Greater(closePunish.RecoveryRetreatSpeed, 0f, "ClosePunish should include a short reference-backed backstep after the melee burst.");
-            Assert.Greater(lungeStrike.TelegraphActiveScale.z, closePunish.TelegraphActiveScale.z, "LungeStrike should expose a longer forward telegraph than ClosePunish.");
-            Assert.Less(lungeStrike.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "LungeStrike should expose a narrow line-shaped telegraph instead of the same melee footprint.");
+            Assert.Greater(closePunish.RecoveryRetreatSpeed, 0f, "ClosePunish should include a short reference-backed backstep after firing.");
+            Assert.Greater(closePunish.TelegraphActiveScale.z, lungeStrike.TelegraphActiveScale.z, "ClosePunish should expose a longer projectile lane than the short lunge sample.");
+            Assert.LessOrEqual(closePunish.TelegraphActiveScale.x, 0.6f, "ClosePunish projectile warning should stay narrow enough to dodge sideways.");
             Assert.Greater(heavyWindup.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "HeavyWindup should expose a wider heavy-warning telegraph than ClosePunish.");
             Assert.Greater(lungeStrike.ActiveCameraCue.fieldOfViewDelta, closePunish.ActiveCameraCue.fieldOfViewDelta, "Pattern camera cue intensity should now be profile data instead of a driver enum switch.");
             Assert.Greater(heavyWindup.WindupCameraCue.durationSeconds, closePunish.WindupCameraCue.durationSeconds, "HeavyWindup should own its longer warning camera cue timing through profile data.");
@@ -702,7 +702,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(lungeStrike, trainingDeck.GetEntry(1).Profile, "Training deck entry 1 should be the mid-range lunge pattern.");
             Assert.AreSame(fanPressure, trainingDeck.GetEntry(2).Profile, "Training deck entry 2 should be the fan pressure pattern.");
             Assert.AreSame(linePressure, trainingDeck.GetEntry(3).Profile, "Training deck entry 3 should be the long line pressure pattern.");
-            Assert.AreEqual("Attack", closePunish.AttackTrigger, "ClosePunish should keep the compact melee attack animation as the baseline soldier read.");
+            Assert.AreEqual("Attack", closePunish.AttackTrigger, "ClosePunish should keep the baseline attack trigger while projectile damage is driven by the standoff shot component.");
             Assert.AreEqual("AttackCombo2", lungeStrike.AttackTrigger, "LungeStrike should now use a promoted two-hit combat clip instead of sharing ClosePunish animation.");
             Assert.AreEqual("AttackHeavy", heavyWindup.AttackTrigger, "HeavyWindup should request a heavier promoted combo clip through data.");
             Assert.AreEqual("HitHeavy", heavyWindup.HitTrigger, "HeavyWindup should use the heavier reaction tag when interrupted.");

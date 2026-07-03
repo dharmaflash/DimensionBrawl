@@ -408,7 +408,7 @@ namespace DimensionBrawl.Player
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
                 actor.FaceTowards(targetPosition);
-                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f));
+                actor.NotifyAttackPerformed(ResolveAttackFeedbackSeconds(settings));
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;
@@ -421,6 +421,14 @@ namespace DimensionBrawl.Player
 
                 yield return new WaitForSeconds(owner.VolleyIntervalSeconds);
             }
+        }
+
+        private float ResolveAttackFeedbackSeconds(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            float defaultSeconds = Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f);
+            return string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
+                ? Mathf.Clamp(owner.VolleyIntervalSeconds * 0.82f, 0.55f, 0.95f)
+                : defaultSeconds;
         }
 
         private IEnumerator ReleaseCueAfterSeconds(GameObject instance, float seconds)

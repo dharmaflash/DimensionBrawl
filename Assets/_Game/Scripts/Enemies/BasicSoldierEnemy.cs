@@ -578,6 +578,11 @@ namespace DimensionBrawl.Enemies
                 return false;
             }
 
+            if (ActiveAttackShape == CombatAiAttackShape.ProjectileLine)
+            {
+                return false;
+            }
+
             if (ActiveAttackShape == CombatAiAttackShape.ForwardLine)
             {
                 Vector3 localTarget = transform.InverseTransformPoint(target.position);

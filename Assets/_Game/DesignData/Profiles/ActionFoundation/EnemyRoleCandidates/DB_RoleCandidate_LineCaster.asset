@@ -21,8 +21,8 @@ MonoBehaviour:
   prefabStrategy: Dedicated line-caster prefab using the SciFiSoldier_01 rifleman
     only; no turret is layered onto the soldier.
   animationRead: 'Assault-rifle humanoid clips are promoted for aim idle, run, line
-    shot, retreat shot, hit, and death reads. Assault-rifle common humanoid set:
-    aim idle, run, primary/secondary shots, line shot, retreat shot.'
+    shot, retreat shot, hit, and death reads. Gatlin-gun common humanoid set: aim
+    idle, run, primary/secondary shots, line shot, retreat shot.'
   vfxRead: LinePressure projectile cues remain explicit and are not hidden behind
     a static turret overlay.
   reuseJustification: Candidate keeps role behavior in data so the same pattern/deck

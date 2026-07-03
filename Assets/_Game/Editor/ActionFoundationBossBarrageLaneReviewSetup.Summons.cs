@@ -1646,8 +1646,8 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     CreateSummonTierSettings(16f, 30f, 0.95f, 0.16f, 1, 0.3f, 1.35f, 2.08f, 0, 0f, 0.2f, "LaserSoldier", 170f, 2.8f, 0.72f, 9f, 1.15f),
-                    CreateSummonTierSettings(22f, 32f, 1.05f, 0.2f, 1, 0.8f, 1.6f, 2.32f, 0, 0f, 0.2f, "LaserSoldier", 205f, 3.1f, 0.78f, 12f, 1.25f),
-                    CreateSummonTierSettings(28f, 34f, 1.15f, 0.24f, 2, 1.3f, 1.85f, 2.56f, 0, 0f, 0.2f, "LaserSoldier", 250f, 3.4f, 0.84f, 16f, 1.35f)
+                    CreateSummonTierSettings(22f, 32f, 1.05f, 0.2f, 1, 0.8f, 1.6f, 2.08f, 0, 0f, 0.2f, "LaserSoldier", 205f, 3.1f, 0.78f, 12f, 1.25f),
+                    CreateSummonTierSettings(28f, 34f, 1.15f, 0.24f, 2, 1.3f, 1.85f, 2.08f, 0, 0f, 0.2f, "LaserSoldier", 250f, 3.4f, 0.84f, 16f, 1.35f)
                 },
                 new[]
                 {
@@ -1711,7 +1711,7 @@ namespace DimensionBrawl.Editor
                         entryForwardBlend01: 0.28f,
                         lateralOffset: 0.9f,
                         actorLifetimeSeconds: 0f,
-                        actorScale: 1.82f,
+                        actorScale: 2.08f,
                         actorAdvanceDistance: 2.8f,
                         actorAdvanceSeconds: 1.55f,
                         actorRoleId: "LaserSoldier",
@@ -1744,7 +1744,7 @@ namespace DimensionBrawl.Editor
                         entryForwardBlend01: 0.5f,
                         lateralOffset: 2.0f,
                         actorLifetimeSeconds: 0f,
-                        actorScale: 2.10f,
+                        actorScale: 2.08f,
                         actorAdvanceDistance: 4.4f,
                         actorAdvanceSeconds: 2.05f,
                         actorRoleId: "LaserSoldier",

@@ -22,6 +22,7 @@ namespace DimensionBrawl.Editor
         private const string GeneralDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_GeneralDeck";
         private const string EliteDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_EliteDeck";
         private const string VfxPoolChildName = "CombatVfxPool";
+        private const string ProjectileOriginChildName = "ProjectileOrigin";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Enemy Prefab Candidates")]
         public static void ReapplyEnemyPrefabCandidatesMenu()
@@ -265,6 +266,7 @@ namespace DimensionBrawl.Editor
 
             SetObjectReference(targetSensor, "selfHealth", health);
             SetObjectReferenceArray(targetSensor, "targetCandidates", Array.Empty<UnityEngine.Object>());
+            ConfigureProjectileAttackDriver(root, soldier, health, targetSensor, startingProfile);
 
             SetObjectReference(telegraphPresenter, "telegraphObject", telegraphObject);
             SetObjectReference(telegraphPresenter, "telegraphTransform", telegraphObject.transform);
@@ -317,6 +319,57 @@ namespace DimensionBrawl.Editor
                 SetFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
                 SetBool(vfxCueDriver, "playDamageVfx", true);
             }
+        }
+
+        private static void ConfigureProjectileAttackDriver(
+            GameObject root,
+            BasicSoldierEnemy soldier,
+            CombatHealth health,
+            CombatTargetSensor targetSensor,
+            CombatAiPatternProfile startingProfile)
+        {
+            BasicSoldierProjectileAttackDriver driver = root.GetComponent<BasicSoldierProjectileAttackDriver>();
+            if (startingProfile == null || startingProfile.AttackShape != CombatAiAttackShape.ProjectileLine)
+            {
+                if (driver != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(driver);
+                }
+
+                return;
+            }
+
+            if (driver == null)
+            {
+                driver = root.AddComponent<BasicSoldierProjectileAttackDriver>();
+            }
+
+            Transform projectileOrigin = EnsureLocalChild(root.transform, ProjectileOriginChildName);
+            projectileOrigin.localPosition = new Vector3(0f, 1.22f, 0.32f);
+            projectileOrigin.localRotation = Quaternion.identity;
+            projectileOrigin.localScale = Vector3.one;
+
+            GameObject projectilePrefabObject =
+                LoadAsset<GameObject>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath);
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.GetComponent<LaneActionProjectile>();
+            if (projectilePrefab == null)
+            {
+                throw new InvalidOperationException(
+                    $"{ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath} is missing LaneActionProjectile.");
+            }
+
+            SetObjectReference(driver, "soldier", soldier);
+            SetObjectReference(driver, "sourceHealth", health);
+            SetObjectReference(driver, "targetSensor", targetSensor);
+            SetObjectReference(driver, "projectileOrigin", projectileOrigin);
+            SetObjectReference(driver, "projectilePrefab", projectilePrefab);
+            SetObjectReference(driver, "projectileRoot", EnsureLocalChild(root.transform, VfxPoolChildName));
+            SetFloat(driver, "projectileDamageOverride", 0f);
+            SetFloat(driver, "projectileSpeed", 18f);
+            SetFloat(driver, "projectileLifetimeSeconds", 1.25f);
+            SetFloat(driver, "projectileRadius", 0.2f);
+            SetFloat(driver, "originHeight", 1.22f);
+            SetFloat(driver, "targetHeightOffset", 0.9f);
         }
 
         private static void ConfigureEliteProfiles(GameObject root, CombatAiElitePatternProfile[] eliteProfiles)
@@ -400,6 +453,7 @@ namespace DimensionBrawl.Editor
             ValidateLocalReference(telegraphPresenter, "telegraphTransform", root);
             ValidateLocalReference(telegraphPresenter, "telegraphRenderer", root);
             ValidateLocalReference(telegraphPresenter, "poseRoot", root);
+            ValidateProjectileAttackDriver(root, soldier, health, targetSensor, expectedProfile);
 
             EnemyActionCameraCueDriver cameraCueDriver = root.GetComponent<EnemyActionCameraCueDriver>();
             if (cameraCueDriver != null)
@@ -446,6 +500,44 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateNoRawImportedOrExternalSceneReferences(root);
+        }
+
+        private static void ValidateProjectileAttackDriver(
+            GameObject root,
+            BasicSoldierEnemy soldier,
+            CombatHealth health,
+            CombatTargetSensor targetSensor,
+            CombatAiPatternProfile expectedProfile)
+        {
+            BasicSoldierProjectileAttackDriver driver = root.GetComponent<BasicSoldierProjectileAttackDriver>();
+            if (expectedProfile == null || expectedProfile.AttackShape != CombatAiAttackShape.ProjectileLine)
+            {
+                if (driver != null)
+                {
+                    throw new InvalidOperationException($"{root.name} should not carry a projectile attack driver.");
+                }
+
+                return;
+            }
+
+            if (driver == null)
+            {
+                throw new InvalidOperationException($"{root.name} should carry a projectile attack driver for {expectedProfile.PatternId}.");
+            }
+
+            ValidateObjectReference(driver, "soldier", soldier);
+            ValidateObjectReference(driver, "sourceHealth", health);
+            ValidateObjectReference(driver, "targetSensor", targetSensor);
+            ValidateLocalReference(driver, "projectileOrigin", root);
+            ValidateObjectReference(
+                driver,
+                "projectilePrefab",
+                LoadAsset<GameObject>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath)
+                    .GetComponent<LaneActionProjectile>());
+            ValidateLocalReference(driver, "projectileRoot", root);
+            ValidateFloat(driver, "projectileSpeed", 18f);
+            ValidateFloat(driver, "projectileLifetimeSeconds", 1.25f);
+            ValidateFloat(driver, "projectileRadius", 0.2f);
         }
 
         private static GameObject EnsureLocalTelegraphObject(

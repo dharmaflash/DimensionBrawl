@@ -7,7 +7,8 @@ namespace DimensionBrawl.AI
     {
         MeleeArc,
         ForwardLine,
-        ForwardFan
+        ForwardFan,
+        ProjectileLine
     }
 
     public abstract class CombatAiPatternProfile : ScriptableObject

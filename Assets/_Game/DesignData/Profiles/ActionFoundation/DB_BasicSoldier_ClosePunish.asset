@@ -22,30 +22,30 @@ MonoBehaviour:
   attackRangeSlowdownDistance: 0.95
   minimumAttackRangeSpeedScale: 0.34
   turnAlignmentSpeedFloor: 0.45
-  prepareSeconds: 0.14
-  prepareRetreatSpeed: 0.65
+  prepareSeconds: 0.18
+  prepareRetreatSpeed: 0.95
   lockAttackDirectionAfterPrepare: 1
-  attackRange: 1.72
-  attackFacingDotThreshold: -0.15
-  telegraphSeconds: 0.58
-  activeSeconds: 0.18
-  activeLungeSpeed: 1.65
-  recoverySeconds: 0.54
-  damage: 15
-  hitStopSeconds: 0.035
+  attackRange: 5.8
+  attackFacingDotThreshold: -0.05
+  telegraphSeconds: 0.52
+  activeSeconds: 0.12
+  activeLungeSpeed: 0
+  recoverySeconds: 0.48
+  damage: 12
+  hitStopSeconds: 0.02
   damageResponsePolicy: 2
   controlLockPolicy: 0
-  attackShape: 0
-  attackHalfWidth: 0.65
-  attackHalfAngleDegrees: 28
-  lockAttackDirectionOnWindup: 0
+  attackShape: 3
+  attackHalfWidth: 0.34
+  attackHalfAngleDegrees: 12
+  lockAttackDirectionOnWindup: 1
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
-  recoveryRetreatSpeed: 1.4
-  recoveryRetreatSeconds: 0.18
+  recoveryRetreatSpeed: 1.15
+  recoveryRetreatSeconds: 0.2
   cameraCueKind: 0
-  windupThreatLevel: 0.95
-  activeCameraCueStrength: 0.85
+  windupThreatLevel: 0.82
+  activeCameraCueStrength: 0.62
   deathCameraCueStrength: 0.6
   windupCameraCue:
     enabled: 1
@@ -74,14 +74,14 @@ MonoBehaviour:
     focusHeightDelta: -0.02
     durationSeconds: 0.24
     finisherScale: 1
-  telegraphWindupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  telegraphWindupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  telegraphActiveScale: {x: 1.32, y: 0.025, z: 2.05}
-  windupPoseOffset: {x: 0, y: 0, z: -0.12}
-  activePoseOffset: {x: 0, y: 0, z: 0.22}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  telegraphWindupStartScale: {x: 0.22, y: 0.02, z: 1.1}
+  telegraphWindupEndScale: {x: 0.46, y: 0.02, z: 4.1}
+  telegraphActiveScale: {x: 0.54, y: 0.025, z: 5.1}
+  windupPoseOffset: {x: 0, y: 0, z: -0.16}
+  activePoseOffset: {x: 0, y: 0, z: 0.06}
+  windupStartColor: {r: 0.26, g: 0.72, b: 1, a: 1}
+  windupEndColor: {r: 0.08, g: 0.92, b: 1, a: 1}
+  activeColor: {r: 0.72, g: 0.98, b: 1, a: 1}
   moveSpeedParameter: MoveSpeed
   prepareTrigger: 
   attackTrigger: Attack
