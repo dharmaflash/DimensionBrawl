@@ -4234,6 +4234,64 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnemySummonPacingReleasesLevelOneSummonWithoutBossCost()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            EnemySummonPacingDirector pacingDirector = bossObject.AddComponent<EnemySummonPacingDirector>();
+            pacingDirector.ConfigureReferences(summonAction);
+            pacingDirector.ConfigurePacing(
+                newInitialDelaySeconds: 1.0f,
+                newRespawnIntervalSeconds: 5.0f,
+                newSummonTier: 1,
+                newMaxActiveSummonActors: 1,
+                newRetryIntervalSeconds: 0.25f);
+
+            pacingDirector.Tick(0.5f);
+
+            Assert.AreEqual(0, pacingDirector.TotalPacingReleaseCount);
+            Assert.AreEqual(0, summonAction.TotalReleaseCount);
+
+            pacingDirector.Tick(0.6f);
+
+            Assert.AreEqual(1, pacingDirector.TotalPacingReleaseCount);
+            Assert.AreEqual(1, pacingDirector.LastPacingReleasedTier);
+            Assert.AreEqual(1, summonAction.TotalReleaseCount);
+            Assert.AreEqual(1, summonAction.LastReleasedTier);
+            Assert.AreEqual(1, summonAction.ActiveSummonActorCount);
+
+            pacingDirector.Tick(10f);
+
+            Assert.AreEqual(
+                1,
+                summonAction.TotalReleaseCount,
+                "Pacing should wait while its max active summon count is already on the field.");
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorCanHoldLevelOneForNextTierSummonPressure()
         {
             GameObject laneObject = new GameObject("Lane");

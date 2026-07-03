@@ -24,7 +24,7 @@ MonoBehaviour:
     ResponseId: DodgeBossLinePressureSpecial
     StageLoopRole: LV1 boss special shot that asks the player to read a committed rail before spending summon resources.
     PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.
-    SummonAnswer: No summon is required; save SummonSlot1 for boss-side summon pressure.
+    SummonAnswer: No summon is required; enemy summon pressure now runs on its own pacing lane.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
@@ -34,60 +34,6 @@ MonoBehaviour:
     ForwardRiskPriorityBonus: 0
     SummonResponsePriorityBonus: 0
     MovementIntent: 2
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 1
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 3.8
-    ResponseId: LaserSoldierDodgeLine
-    StageLoopRole: LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.
-    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.
-    SummonAnswer: A low-tier summon can body-clash the rifleman, but the intended read is movement first.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 15
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 2
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
-    ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.
-    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.
-    SummonAnswer: The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 2
-    SelectionPriority: 30
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 140
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 3
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 7.5
-    ResponseId: LaserSoldierDodgeLine
-    StageLoopRole: LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.
-    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.
-    SummonAnswer: A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 35
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3

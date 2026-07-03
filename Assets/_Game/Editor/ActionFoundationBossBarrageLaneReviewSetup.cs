@@ -503,6 +503,13 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation boss barrage lane review balance tuning.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Enemy Summon Pacing")]
+        public static void ReapplyBossBarrageLaneReviewEnemySummonPacingMenu()
+        {
+            PatchBossBarrageLaneReviewEnemySummonPacing(ReviewScenePath);
+            Debug.Log("Reapplied ActionFoundation boss enemy summon pacing.");
+        }
+
         [MenuItem("DimensionBrawl/Rebind Action Foundation Boss Barrage Lane Review Single Character Mode")]
         public static void RebindBossBarrageLaneReviewSingleCharacterModeMenu()
         {
@@ -3560,6 +3567,9 @@ namespace DimensionBrawl.Editor
             bossSummonPressureAction.ConfigurePressureProfile(
                 LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath));
 
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                ConfigureEnemySummonPacingDirector(bossProxy, bossSummonPressureAction);
+
             BossPressureActionDirector bossPressureActionDirector =
                 EnsureComponent<BossPressureActionDirector>(bossProxy);
             bossPressureActionDirector.ConfigureReferences(
@@ -3602,12 +3612,59 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(bossPressureCost);
             EditorUtility.SetDirty(basicFireEmitter);
             EditorUtility.SetDirty(bossSummonPressureAction);
+            EditorUtility.SetDirty(enemySummonPacingDirector);
             EditorUtility.SetDirty(bossPressureActionDirector);
             EditorUtility.SetDirty(bossPressurePosition);
 
             CreateBossProxyVisual(bossProxy.transform);
             ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
             return bossProxy;
+        }
+
+        private static void PatchBossBarrageLaneReviewEnemySummonPacing(string scenePath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+            {
+                return;
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                ConfigureEnemySummonPacingDirector(bossProxy, bossSummonPressureAction);
+            EditorUtility.SetDirty(enemySummonPacingDirector);
+            EditorUtility.SetDirty(bossProxy);
+
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss enemy summon pacing in {scenePath}.");
+            }
+        }
+
+        private static EnemySummonPacingDirector ConfigureEnemySummonPacingDirector(
+            GameObject bossProxy,
+            BossSummonPressureAction bossSummonPressureAction)
+        {
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                EnsureComponent<EnemySummonPacingDirector>(bossProxy);
+            enemySummonPacingDirector.ConfigureReferences(bossSummonPressureAction);
+            enemySummonPacingDirector.ConfigurePacing(
+                newInitialDelaySeconds: 2.0f,
+                newRespawnIntervalSeconds: 6.5f,
+                newSummonTier: 1,
+                newMaxActiveSummonActors: 1,
+                newRetryIntervalSeconds: 0.35f);
+            enemySummonPacingDirector.SetPacingEnabled(true);
+            SetObjectReference(enemySummonPacingDirector, "summonPressureAction", bossSummonPressureAction);
+            SetBool(enemySummonPacingDirector, "pacingEnabled", true);
+            SetInt(enemySummonPacingDirector, "summonTier", 1);
+            SetFloat(enemySummonPacingDirector, "initialDelaySeconds", 2.0f);
+            SetFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
+            SetFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
+            SetInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
+            return enemySummonPacingDirector;
         }
 
         private static BossBasicFireEmitter ConfigureBossBasicFireEmitter(
@@ -8476,6 +8533,15 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureAction,
                 "pressureProfile",
                 bossSummonPressureProfile);
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                RequireComponent<EnemySummonPacingDirector>(bossTransform.gameObject, "enemy summon pacing director");
+            ValidateObjectReference(enemySummonPacingDirector, "summonPressureAction", bossSummonPressureAction);
+            ValidateBool(enemySummonPacingDirector, "pacingEnabled", true);
+            ValidateInt(enemySummonPacingDirector, "summonTier", 1);
+            ValidateFloat(enemySummonPacingDirector, "initialDelaySeconds", 2.0f);
+            ValidateFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
+            ValidateFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
+            ValidateInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
@@ -8641,7 +8707,7 @@ namespace DimensionBrawl.Editor
                 "DodgeBossLinePressureSpecial",
                 "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
                 "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
-                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
+                "No summon is required; enemy summon pressure now runs on its own pacing lane.",
                 false,
                 0f,
                 1f,
@@ -8654,63 +8720,6 @@ namespace DimensionBrawl.Editor
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                1,
-                "LaserSoldierDodgeLine",
-                "LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.",
-                "Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.",
-                "A low-tier summon can body-clash the rifleman, but the intended read is movement first.",
-                false,
-                0f,
-                1f,
-                false,
-                1,
-                15,
-                0,
-                0,
-                BossPressureMovementIntent.RetreatAndSummon);
-            ValidateBossPressureActionSlot(
-                bossPressureActionDirector,
-                2,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                2,
-                "SummonSlot1PressureBlock",
-                "LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.",
-                "Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.",
-                "The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.",
-                false,
-                0f,
-                1f,
-                true,
-                2,
-                30,
-                0,
-                140,
-                BossPressureMovementIntent.RetreatAndSummon);
-            ValidateBossPressureActionSlot(
-                bossPressureActionDirector,
-                3,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                3,
-                "LaserSoldierDodgeLine",
-                "LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.",
-                "Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.",
-                "A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.",
-                false,
-                0f,
-                1f,
-                false,
-                1,
-                35,
-                0,
-                0,
-                BossPressureMovementIntent.RetreatAndSummon);
-            ValidateBossPressureActionSlot(
-                bossPressureActionDirector,
-                4,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,

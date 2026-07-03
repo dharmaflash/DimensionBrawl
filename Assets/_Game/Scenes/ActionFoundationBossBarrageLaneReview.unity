@@ -14543,6 +14543,7 @@ GameObject:
   - component: {fileID: 1466271906}
   - component: {fileID: 1466271910}
   - component: {fileID: 1466271911}
+  - component: {fileID: 1466271914}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_BossProxy_NeedleLock
   m_TagString: Untagged
@@ -14653,7 +14654,8 @@ MonoBehaviour:
       rail before spending summon resources.
     PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when
       the lane is clear.
-    SummonAnswer: No summon is required; save SummonSlot1 for boss-side summon pressure.
+    SummonAnswer: No summon is required; enemy summon pressure now runs on its own
+      pacing lane.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
@@ -14663,69 +14665,6 @@ MonoBehaviour:
     ForwardRiskPriorityBonus: 0
     SummonResponsePriorityBonus: 0
     MovementIntent: 2
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 1
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 3.8
-    ResponseId: EscortProbeFrontlineCheck
-    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the
-      frontline before the player reaches a full support stack.
-    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns
-      the lane into a screen trade.
-    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting
-      for a perfect LV2 answer.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 5
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 2
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
-    ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON
-      with an immediate boss-side body screen.
-    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible
-      pressure body before the punish window opens.
-    SummonAnswer: The player summon should clash with the boss screen, break the
-      curtain, and reopen ranged punish time.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 2
-    SelectionPriority: 30
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 140
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 3
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 7.5
-    ResponseId: LaserSoldierDodgeLine
-    StageLoopRole: LV3 laser-soldier summon pressure that turns stored boss cost
-      into a readable dodge line instead of another body block.
-    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while
-      the laser soldier recovers.
-    SummonAnswer: A prepared summon can body-screen the lane, but the intended read
-      is movement first and summon only as a backup.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 35
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
@@ -14748,6 +14687,7 @@ MonoBehaviour:
     SummonResponsePriorityBonus: 0
     MovementIntent: 3
   globalRecoverySeconds: 1.1
+  decisionThinkIntervalSeconds: 0.25
   basicFireSuppressionSecondsAfterPressureAction: 0.65
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
@@ -14783,19 +14723,19 @@ MonoBehaviour:
     LateralOffset: 0.9
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.07
-    ActorRoleId: EscortProbe
-    ActorPrefabOverride: {fileID: 0}
-    ActorMaxHealth: 520
-    ActorMoveSpeed: 3.2
-    ActorAdvanceDistance: 2.4
-    ActorAdvanceSeconds: 1.4
-    ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 42
-    ActorAttackIntervalSeconds: 0.78
-    ScreenIntercepts: 3
-    ScreenRadius: 1.2
-    ScreenLifetimeSeconds: 3.2
+    ActorScale: 2.16
+    ActorRoleId: LaserSoldier
+    ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
+    ActorMaxHealth: 460
+    ActorMoveSpeed: 3.5
+    ActorAdvanceDistance: 2.8
+    ActorAdvanceSeconds: 1.55
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 34
+    ActorAttackIntervalSeconds: 0.18
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
   - EntryForwardBlend01: 0.38
     LateralOffset: 1.4
     EntryHeight: 0.2
@@ -15172,6 +15112,25 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.05
   m_Center: {x: 0, y: -0.35, z: -0.05}
+--- !u!114 &1466271914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1466271902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a7403340c564fa49bdb37b281821b39, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.EnemySummonPacingDirector
+  summonPressureAction: {fileID: 1466271907}
+  pacingEnabled: 1
+  summonTier: 1
+  initialDelaySeconds: 2
+  respawnIntervalSeconds: 6.5
+  retryIntervalSeconds: 0.35
+  maxActiveSummonActors: 1
 --- !u!114 &1477203557
 MonoBehaviour:
   m_ObjectHideFlags: 0
