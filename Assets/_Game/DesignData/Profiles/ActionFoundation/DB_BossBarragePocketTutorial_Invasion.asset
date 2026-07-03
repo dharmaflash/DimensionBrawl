@@ -13,69 +13,78 @@ MonoBehaviour:
   m_Name: DB_BossBarragePocketTutorial_Invasion
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewTutorialProfile
   tutorialEnabled: 1
-  clearObjective: '압박 차단 완료: S1이 막고 Skill1이 확인했다.'
-  failObjective: '실패: HP가 먼저 무너졌거나 소환 답이 늦었다.'
+  clearObjective: '전선 기록 완료: HP 생존, S1 차단, Skill1 확인.'
+  failObjective: '실패 기록: HP가 먼저 무너졌다. close/summon/followup 기록을 다시 확인.'
   steps:
   - stepId: dodge_barrage
-    objectiveText: '보스 경고선을 먼저 읽어라.'
-    promptText: '경고선은 막지 말고 피한다. 기본 사격은 보스 해답이 아니다.'
+    objectiveText: '상황: 보스 경고선이 깔린다.'
+    promptText: '입력: 회피로 선을 비워라. 기본 사격은 보스 압박의 해답이 아니다.'
     focusAction: 110
     dimUnfocusedActions: 1
     completionCondition: 10
     requiredTier: 1
     requiredMana: 0
-    minimumSeconds: 0.25
+    minimumSeconds: 0.35
   - stepId: forward_en
-    objectiveText: '전방 위험선에서 EN을 충전해라.'
-    promptText: '앞쪽일수록 EN이 빨리 찬다. 경계선 너머는 소환수가 맡는다.'
+    objectiveText: '상황: 소환 답을 쓰려면 EN이 필요하다.'
+    promptText: '입력: 전방 위험선 안에서 버텨 EN을 올려라. 플레이어는 경계선 너머로 가지 않는다.'
     focusAction: 10
     dimUnfocusedActions: 1
     completionCondition: 30
     requiredTier: 1
     requiredMana: 0
-    minimumSeconds: 0.25
+    minimumSeconds: 0.55
   - stepId: slot_read
-    objectiveText: 'EN LV와 S1/S2/S3 역할을 확인해라.'
-    promptText: 'S1은 차단, S2는 원거리 지원, S3는 고비용 돌파. 세 슬롯을 따로 읽어.'
+    objectiveText: '결과: EN LV가 소환 슬롯 선택지를 연다.'
+    promptText: '확인: S1은 차단, S2는 지원, S3는 고비용 돌파다. READY/NEED EN을 따로 읽어라.'
     focusAction: 200
     dimUnfocusedActions: 1
     completionCondition: 40
     requiredTier: 2
     requiredMana: 200
-    minimumSeconds: 0.35
+    minimumSeconds: 0.75
   - stepId: close_probe
-    objectiveText: '붙은 적은 근접 방어로 끊어라.'
-    promptText: '가까운 압박만 직접 처리하고, 보스 압박용 EN은 남겨라.'
+    objectiveText: '상황: 근접 압박이 플레이어 쪽에 붙는다.'
+    promptText: '입력: BasicDefenseFire로 가까운 적만 끊어라. 보스 주력 딜은 소환 답으로 처리한다.'
     focusAction: 100
     dimUnfocusedActions: 1
-    completionCondition: 51
+    completionCondition: 50
     requiredTier: 1
     requiredMana: 0
-    minimumSeconds: 0.35
+    minimumSeconds: 0.6
   - stepId: s1_block
-    objectiveText: '보스 압박이 열리면 S1을 투입해라.'
-    promptText: 'S1은 첫 차단 역할이다. 전선 너머는 직접 건너지 않는다.'
+    objectiveText: '상황: 보스 커튼이 전선을 압박한다.'
+    promptText: '입력: S1을 투입해 전선 너머 압박을 막아라. 플레이어가 직접 넘어가지 않는다.'
     focusAction: 200
     dimUnfocusedActions: 1
     completionCondition: 60
     requiredTier: 2
     requiredMana: 200
-    minimumSeconds: 0.35
+    minimumSeconds: 0.75
+  - stepId: followup_window
+    objectiveText: '결과: S1 차단으로 Skill1 확인 창이 열린다.'
+    promptText: '확인: followup 기록은 창이 열린 뒤에만 남는다. 창과 기록 표시를 보고 Skill1을 준비해라.'
+    focusAction: 120
+    dimUnfocusedActions: 1
+    completionCondition: 70
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.7
   - stepId: skill1_followup
-    objectiveText: '차단으로 열린 틈을 Skill1으로 확인해라.'
-    promptText: 'S1이 막은 뒤에만 Skill1 확인. 무작정 사격으로 밀지 않는다.'
+    objectiveText: '입력: 열린 창에 Skill1을 맞혀라.'
+    promptText: '결과: Skill1 hit가 followup 기록을 채운다. 무작정 사격으로 밀지 않는다.'
     focusAction: 120
     dimUnfocusedActions: 1
     completionCondition: 72
     requiredTier: 1
     requiredMana: 0
-    minimumSeconds: 0.35
+    minimumSeconds: 0.75
   - stepId: pocket_result
-    objectiveText: '생존 기록을 확인해라.'
-    promptText: '성공/실패는 버튼 넘김이 아니라 HP, 차단, 확인 기록으로 정해진다.'
+    objectiveText: '기록: 포켓 clear/fail을 확인해라.'
+    promptText: '확인: 성공/실패는 버튼 넘김이 아니라 HP, close, summon, followup 기록으로 결정된다.'
     focusAction: 0
     dimUnfocusedActions: 0
     completionCondition: 90
     requiredTier: 1
     requiredMana: 0
-    minimumSeconds: 0.1
+    minimumSeconds: 0.75
