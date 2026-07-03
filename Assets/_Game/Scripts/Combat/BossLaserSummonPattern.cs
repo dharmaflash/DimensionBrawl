@@ -152,7 +152,7 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
+            float deltaTime = Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this);
             if (deltaTime <= 0f)
             {
                 return;

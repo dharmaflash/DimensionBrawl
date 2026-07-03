@@ -23,6 +23,8 @@ namespace DimensionBrawl.Editor
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
         private const string TextureRoot = CombatVfxRoot + "/Textures";
         private const string ShaderRoot = CombatVfxRoot + "/Shaders";
+        private const string PerfectDodgeWorldFxShaderPath = ShaderRoot + "/DB_PerfectDodgeWorldFx.shader";
+        private const string PerfectDodgeAfterimageShaderPath = ShaderRoot + "/DB_PerfectDodgeAfterimage.shader";
         private const string CombatCueAudioRoot = "Assets/_Game/Art/Audio/SFX/CombatCues";
         private const string ImportedGunshotAudioRoot =
             "Assets/_Imported/AssetStore/Gun Sounds Pack Vol 1/Gun Shot";
@@ -30,6 +32,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/Action RPG SFX V2/Combat";
         private const string ImportedActionRpgSfxDesignedSkillRoot =
             "Assets/_Imported/AssetStore/Action RPG SFX V2/Designed Skill";
+        private const string ImportedActionRpgSfxMovementRoot =
+            "Assets/_Imported/AssetStore/Action RPG SFX V2/Movement";
+        private const string ImportedRpgMagicDarkMagicRoot =
+            "Assets/_Imported/AssetStore/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Dark Magic";
         private const string ImportedMuzzleFlashRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
         private const string ImportedMuzzleFlashShaderRoot =
@@ -52,6 +58,18 @@ namespace DimensionBrawl.Editor
             ImportedVefectsHitOnceRoot + "/VFX_Hit_05_Directional_Bunch_01.prefab";
         private const string ImportedVefectsHit06DirectionalPrefabPath =
             ImportedVefectsHitOnceRoot + "/VFX_Hit_06_Directional_Bunch_01.prefab";
+        private const string ShapesFxRoot = "Assets/_Game/Art/VFX/ShapesFXArena";
+        private const string ShapesFxGeometryRoot = ShapesFxRoot + "/Geometry";
+        private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
+        private const string ShapesFxTextureRoot = ShapesFxRoot + "/Textures";
+        private const string ImportedShapesFxTextureRoot = "Assets/_Imported/AssetStore/VFX/ShapesFX_Pack";
+        private const string ShapesFxTorusMeshPath = ShapesFxGeometryRoot + "/Geo_Torus_Hex_Hi.fbx";
+        private const string ShapesFxDodecaMeshPath = ShapesFxGeometryRoot + "/Geo_Dodecahedron.fbx";
+        private const string ShapesFxIcosaMeshPath = ShapesFxGeometryRoot + "/Geo_Icosahedron_Hex.fbx";
+        private const string ShapesFxPortalOuterMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_PortalOuter.mat";
+        private const string ShapesFxPortalInnerMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_PortalInner.mat";
+        private const string ShapesFxCyanDodecaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_CyanDodeca.mat";
+        private const string ShapesFxVioletIcosaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_VioletIcosa.mat";
         private static readonly string[] PlayerRangedGunshotClipPaths =
         {
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
@@ -76,6 +94,9 @@ namespace DimensionBrawl.Editor
         private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.98f;
         private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.06f;
         private const string PlayerRangedProjectileImpactAudioName = "ReviewedSfx_PlayerRangedProjectileImpact";
+        private const string PlayerDodgeStartAudioName = "ReviewedSfx_PlayerDodgeStart";
+        private const string PlayerPerfectDodgeTimeWarpAudioName = "ReviewedSfx_PlayerPerfectDodgeTimeWarp";
+        private const string PlayerPerfectDodgeSuccessAudioName = "ReviewedSfx_PlayerPerfectDodgeSuccess";
         private const string EliteSummonSignalAudioName = "ReviewedSfx_EliteSummonSignal";
         private const string SummonBlockOpportunityAudioName = "ReviewedSfx_SummonBlockOpportunity";
         private const string SummonFollowupWindowAudioName = "ReviewedSfx_SummonFollowupWindow";
@@ -91,6 +112,48 @@ namespace DimensionBrawl.Editor
             CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_01.wav",
             CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_02.wav",
             CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_03.wav"
+        };
+
+        private static readonly string[] PlayerDodgeStartSourceClipPaths =
+        {
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_01.wav",
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_02.wav",
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_03.wav"
+        };
+
+        private static readonly string[] PlayerDodgeStartClipPaths =
+        {
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeTimeWarpSourceClipPaths =
+        {
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast01.wav",
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast02.wav",
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeTimeWarpClipPaths =
+        {
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeSuccessSourceClipPaths =
+        {
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_01.wav",
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_02.wav",
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeSuccessClipPaths =
+        {
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_03.wav"
         };
 
         private static readonly string[] EliteSummonSignalSourceClipPaths =
@@ -144,6 +207,21 @@ namespace DimensionBrawl.Editor
         public static string[] GetPlayerRangedProjectileImpactClipPaths()
         {
             return (string[])PlayerRangedProjectileImpactClipPaths.Clone();
+        }
+
+        public static string[] GetPlayerDodgeStartClipPaths()
+        {
+            return (string[])PlayerDodgeStartClipPaths.Clone();
+        }
+
+        public static string[] GetPlayerPerfectDodgeTimeWarpClipPaths()
+        {
+            return (string[])PlayerPerfectDodgeTimeWarpClipPaths.Clone();
+        }
+
+        public static string[] GetPlayerPerfectDodgeSuccessClipPaths()
+        {
+            return (string[])PlayerPerfectDodgeSuccessClipPaths.Clone();
         }
 
         public static string[] GetEliteSummonSignalClipPaths()
@@ -344,6 +422,13 @@ namespace DimensionBrawl.Editor
                 (float)BlendMode.OneMinusSrcAlpha,
                 0.02f,
                 0f);
+            Material shapesPortalOuter = LoadReviewedShapesFxMaterial(ShapesFxPortalOuterMaterialPath);
+            Material shapesPortalInner = LoadReviewedShapesFxMaterial(ShapesFxPortalInnerMaterialPath);
+            Material shapesCyanDodeca = LoadReviewedShapesFxMaterial(ShapesFxCyanDodecaMaterialPath);
+            Material shapesVioletIcosa = LoadReviewedShapesFxMaterial(ShapesFxVioletIcosaMaterialPath);
+            Mesh shapesTorus = LoadRequiredMesh(ShapesFxTorusMeshPath);
+            Mesh shapesDodeca = LoadRequiredMesh(ShapesFxDodecaMeshPath);
+            Mesh shapesIcosa = LoadRequiredMesh(ShapesFxIcosaMeshPath);
 
             GameObject enemyHitFeedback = SavePromotedHitFeedbackPrefab(
                 "DB_VFX_EnemyHit",
@@ -359,6 +444,10 @@ namespace DimensionBrawl.Editor
                 PlayerAttackStart = SaveBurstPrefab("DB_VFX_PlayerAttackStart", cyan, ParticleSystemShapeType.Cone, 0.16f, 24f, 115f, 0.16f, 0.36f, 0.12f, 0.32f, 18, new Color(0.26f, 0.95f, 1f, 0.86f), new Color(0.14f, 0.42f, 1f, 0f)),
                 PlayerAttackHit = SaveBurstPrefab("DB_VFX_PlayerAttackHit", white, ParticleSystemShapeType.Sphere, 0.32f, 35f, 360f, 0.12f, 0.28f, 0.16f, 0.42f, 34, new Color(1f, 0.95f, 0.75f, 0.95f), new Color(0.18f, 0.74f, 1f, 0f)),
                 PlayerDodgeStart = SaveBurstPrefab("DB_VFX_PlayerDodgeStart", blue, ParticleSystemShapeType.Cone, 0.22f, 18f, 75f, 0.18f, 0.40f, 0.18f, 0.46f, 28, new Color(0.18f, 0.58f, 1f, 0.75f), new Color(0.1f, 0.2f, 0.7f, 0f)),
+                PlayerPerfectDodgeTimeField = SavePerfectDodgeTimeFieldPrefab("DB_VFX_PlayerPerfectDodgeTimeField", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
+                PlayerPerfectDodgePulsewave = SavePerfectDodgePulsewavePrefab("DB_VFX_PlayerPerfectDodgePulsewave", cyan, white, shapesPortalOuter, shapesTorus),
+                PlayerPerfectDodgeHoloCube = SavePerfectDodgeHoloCubePrefab("DB_VFX_PlayerPerfectDodgeHoloCube", cyan, violet, white, shapesCyanDodeca, shapesVioletIcosa, shapesDodeca, shapesIcosa),
+                PlayerPerfectDodgeWindow = SaveBurstPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 2.2f, 3.0f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
                 PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
                 PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
@@ -414,6 +503,8 @@ namespace DimensionBrawl.Editor
         {
             CombatVfxCuePlayer cuePlayer = EnsureComponent<CombatVfxCuePlayer>(player.gameObject);
             PlayerCombatVfxCueDriver driver = EnsureComponent<PlayerCombatVfxCueDriver>(player.gameObject);
+            PerfectDodgeVfxDirector perfectDodgeDirector = EnsureComponent<PerfectDodgeVfxDirector>(player.gameObject);
+            CombatHealth playerHealth = player.GetComponent<CombatHealth>();
             PlayerRangedBasicAttackAction rangedBasicAttackAction = player.GetComponent<PlayerRangedBasicAttackAction>();
             Transform attackAnchor = EnsureChild(player.transform, "Player_CombatVfx_AttackAnchor", new Vector3(0f, 1.05f, 0.65f));
             Transform dodgeAnchor = EnsureChild(player.transform, "Player_CombatVfx_DodgeAnchor", new Vector3(0f, 0.18f, -0.22f));
@@ -421,13 +512,16 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cuePlayer, "profile", profile);
             SetObjectReference(cuePlayer, "pooledRoot", poolRoot);
             SetObjectReference(driver, "actionController", player);
-            SetObjectReference(driver, "playerHealth", player.GetComponent<CombatHealth>());
+            SetObjectReference(driver, "playerHealth", playerHealth);
+            SetObjectReference(driver, "perfectDodgeVfxDirector", perfectDodgeDirector);
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "attackAnchor", attackAnchor);
             SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
             SetObjectReference(driver, "damageAnchor", attackAnchor);
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            ConfigurePerfectDodgeCueDriverDefaults(driver);
+            ConfigurePerfectDodgeVfxDirector(perfectDodgeDirector, player, playerHealth);
             SetFloat(driver, "pressureDamageCueScale", 0.62f);
             if (rangedBasicAttackAction != null)
             {
@@ -449,6 +543,34 @@ namespace DimensionBrawl.Editor
             }
 
             EditorUtility.SetDirty(player.gameObject);
+        }
+
+        private static void ConfigurePerfectDodgeCueDriverDefaults(PlayerCombatVfxCueDriver driver)
+        {
+            SetEnum(driver, "perfectDodgeTimeFieldCueId", (int)CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
+            SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
+            SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
+            SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
+            SetFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
+        }
+
+        private static void ConfigurePerfectDodgeVfxDirector(
+            PerfectDodgeVfxDirector director,
+            PlayerActionController actionController,
+            CombatHealth playerHealth)
+        {
+            director.Configure(actionController, playerHealth);
+            SetObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
+            SetObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            director.ConfigureAudio(
+                LoadReviewedAudioClips(PlayerPerfectDodgeTimeWarpClipPaths),
+                LoadReviewedAudioClips(PlayerPerfectDodgeSuccessClipPaths));
+            EditorUtility.SetDirty(director);
         }
 
         private static void ConfigureEnemyCombatVfx(BasicSoldierEnemy soldier, CombatVfxCueProfile profile, Transform poolRoot)
@@ -614,6 +736,10 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackStart, prefabs.PlayerAttackStart, new Vector3(0f, 0f, 0.35f), Vector3.zero, new Vector3(1f, 1f, 1.25f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackHit, prefabs.PlayerAttackHit, new Vector3(0f, 0f, 0.82f), Vector3.zero, Vector3.one, 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDodgeStart, prefabs.PlayerDodgeStart, new Vector3(0f, 0f, -0.15f), Vector3.zero, new Vector3(1.1f, 0.8f, 1.5f), 0.46f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, -0.08f, 0f), Vector3.zero, new Vector3(3.8f, 0.72f, 3.8f), 3.0f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, -0.16f, 0f), Vector3.zero, new Vector3(7.0f, 0.5f, 7.0f), 0.9f, false, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.62f, 0.05f), Vector3.zero, new Vector3(1.1f, 1.1f, 1.1f), 1.2f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.16f), Vector3.zero, new Vector3(0.42f, 0.26f, 0.42f), 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.72f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.14f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyHit, new Vector3(0f, 0.82f, 0f), Vector3.zero, new Vector3(0.1f, 0.09f, 0.1f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.42f, false, true),
@@ -747,6 +873,335 @@ namespace DimensionBrawl.Editor
             float visualSpin = ResolveVisualSpin(shapeType, speed);
             float verticalLift = shapeType == ParticleSystemShapeType.Sphere ? Mathf.Clamp(radius * 0.45f, 0.04f, 0.22f) : 0f;
             ConfigureCueVisual(visual, renderers.ToArray(), Mathf.Max(0.12f, maxLifetime), startColor, endColor, startVisualScale, endVisualScale, visualSpin, verticalLift, forwardTravelDistance);
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgeTimeFieldPrefab(
+            string name,
+            Material cyanMaterial,
+            Material blueMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Material shapesPortalInnerMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_TimeField_ShapesFxOuterTorus",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.052f, 0f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.82f, 0.82f, 0.82f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_TimeField_ShapesFxInnerTorus",
+                    shapesTorusMesh,
+                    shapesPortalInnerMaterial,
+                    new Vector3(0f, 0.074f, 0f),
+                    new Vector3(90f, 35f, 0f),
+                    new Vector3(0.48f, 0.48f, 0.48f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_OuterDisc",
+                    PrimitiveType.Cylinder,
+                    cyanMaterial,
+                    Vector3.zero,
+                    Vector3.zero,
+                    new Vector3(1.08f, 0.014f, 1.08f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_InnerDisc",
+                    PrimitiveType.Cylinder,
+                    blueMaterial,
+                    new Vector3(0f, 0.018f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.62f, 0.012f, 0.62f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_CrossA",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.036f, 0f),
+                    Vector3.zero,
+                    new Vector3(1.35f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_CrossB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, 90f, 0f),
+                    new Vector3(1.35f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_VerticalGlintA",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.46f, 0.38f, 0.08f),
+                    new Vector3(0f, 14f, 0f),
+                    new Vector3(0.028f, 0.58f, 0.028f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_VerticalGlintB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(-0.38f, 0.3f, -0.16f),
+                    new Vector3(0f, -21f, 0f),
+                    new Vector3(0.024f, 0.46f, 0.024f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_TimeField_SparkShell",
+                cyanMaterial,
+                new Vector3(0f, 0.22f, 0f),
+                Vector3.zero,
+                3.0f,
+                1.85f,
+                0.28f,
+                0.08f,
+                84,
+                ParticleSystemShapeType.Sphere,
+                0.72f,
+                360f,
+                new Color(0.34f, 0.96f, 1f, 0.62f));
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_TimeField_MicroTicks",
+                whiteMaterial,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                2.8f,
+                1.6f,
+                0.32f,
+                0.05f,
+                72,
+                ParticleSystemShapeType.Circle,
+                0.86f,
+                360f,
+                new Color(0.9f, 1f, 1f, 0.74f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                3.0f,
+                new Color(0.36f, 0.98f, 1f, 0.78f),
+                new Color(0.08f, 0.18f, 0.86f, 0f),
+                new Vector3(0.92f, 0.72f, 0.92f),
+                new Vector3(3.25f, 0.92f, 3.25f),
+                86f,
+                0.02f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgePulsewavePrefab(
+            string name,
+            Material cyanMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_ShapesFxShockTorus",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.03f, 0f),
+                    new Vector3(90f, 18f, 0f),
+                    new Vector3(0.72f, 0.72f, 0.72f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_Outer",
+                    PrimitiveType.Cylinder,
+                    cyanMaterial,
+                    Vector3.zero,
+                    Vector3.zero,
+                    new Vector3(0.84f, 0.012f, 0.84f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_Inner",
+                    PrimitiveType.Cylinder,
+                    whiteMaterial,
+                    new Vector3(0f, 0.018f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.38f, 0.01f, 0.38f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_SlashA",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.035f, 0f),
+                    new Vector3(0f, 28f, 0f),
+                    new Vector3(1.18f, 0.016f, 0.04f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_SlashB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, -34f, 0f),
+                    new Vector3(1.05f, 0.014f, 0.032f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_Pulsewave_EdgeSparks",
+                whiteMaterial,
+                new Vector3(0f, 0.05f, 0f),
+                Vector3.zero,
+                0.72f,
+                0.18f,
+                2.4f,
+                0.04f,
+                96,
+                ParticleSystemShapeType.Circle,
+                1.15f,
+                360f,
+                new Color(0.88f, 1f, 1f, 0.78f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.9f,
+                new Color(0.56f, 1f, 1f, 0.72f),
+                new Color(0.04f, 0.18f, 0.95f, 0f),
+                new Vector3(0.64f, 0.58f, 0.64f),
+                new Vector3(4.2f, 0.8f, 4.2f),
+                240f,
+                0f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgeHoloCubePrefab(
+            string name,
+            Material cyanMaterial,
+            Material violetMaterial,
+            Material whiteMaterial,
+            Material shapesCyanDodecaMaterial,
+            Material shapesVioletIcosaMaterial,
+            Mesh shapesDodecaMesh,
+            Mesh shapesIcosaMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxCoreDodeca",
+                    shapesDodecaMesh,
+                    shapesCyanDodecaMaterial,
+                    new Vector3(0f, 0.5f, 0f),
+                    new Vector3(18f, 36f, 12f),
+                    new Vector3(0.2f, 0.2f, 0.2f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxLeftIcosa",
+                    shapesIcosaMesh,
+                    shapesVioletIcosaMaterial,
+                    new Vector3(-0.32f, 0.58f, -0.1f),
+                    new Vector3(-24f, 28f, -18f),
+                    new Vector3(0.12f, 0.12f, 0.12f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxRightIcosa",
+                    shapesIcosaMesh,
+                    shapesVioletIcosaMaterial,
+                    new Vector3(0.34f, 0.72f, 0.08f),
+                    new Vector3(22f, -34f, 26f),
+                    new Vector3(0.105f, 0.105f, 0.105f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_Core",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.42f, 0f),
+                    new Vector3(21f, 34f, 12f),
+                    new Vector3(0.24f, 0.24f, 0.24f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentA",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.34f, 0.68f, 0.04f),
+                    new Vector3(12f, -22f, 38f),
+                    new Vector3(0.12f, 0.12f, 0.12f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentB",
+                    PrimitiveType.Cube,
+                    violetMaterial,
+                    new Vector3(-0.28f, 0.55f, -0.08f),
+                    new Vector3(-18f, 35f, -24f),
+                    new Vector3(0.10f, 0.10f, 0.10f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentC",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.06f, 0.78f, -0.28f),
+                    new Vector3(36f, 12f, -18f),
+                    new Vector3(0.08f, 0.08f, 0.08f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentD",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(-0.1f, 0.34f, 0.26f),
+                    new Vector3(-34f, -12f, 27f),
+                    new Vector3(0.09f, 0.09f, 0.09f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_HoloCube_Glints",
+                whiteMaterial,
+                new Vector3(0f, 0.54f, 0f),
+                Vector3.zero,
+                0.38f,
+                0.22f,
+                0.62f,
+                0.045f,
+                34,
+                ParticleSystemShapeType.Sphere,
+                0.34f,
+                360f,
+                new Color(0.88f, 1f, 1f, 0.8f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                1.2f,
+                new Color(0.58f, 1f, 1f, 0.86f),
+                new Color(0.62f, 0.28f, 1f, 0f),
+                new Vector3(0.62f, 0.62f, 0.62f),
+                new Vector3(1.85f, 1.85f, 1.85f),
+                180f,
+                0.12f,
+                0f);
+
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
@@ -1405,10 +1860,58 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureReviewedCombatCueAudioBanks()
         {
+            PromoteReviewedAudioClips(PlayerDodgeStartSourceClipPaths, PlayerDodgeStartClipPaths);
+            PromoteReviewedAudioClips(PlayerPerfectDodgeTimeWarpSourceClipPaths, PlayerPerfectDodgeTimeWarpClipPaths);
+            PromoteReviewedAudioClips(PlayerPerfectDodgeSuccessSourceClipPaths, PlayerPerfectDodgeSuccessClipPaths);
             PromoteReviewedAudioClips(PlayerRangedProjectileImpactSourceClipPaths, PlayerRangedProjectileImpactClipPaths);
             PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
             PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
             PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerDodgeStart.prefab",
+                PlayerDodgeStartAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerDodgeStart.prefab",
+                PlayerDodgeStartAudioName,
+                PlayerDodgeStartClipPaths,
+                0.34f,
+                1.02f,
+                1.08f,
+                0.9f,
+                1.04f,
+                0.08f,
+                142);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeTimeField.prefab",
+                PlayerPerfectDodgeTimeWarpAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeTimeField.prefab",
+                PlayerPerfectDodgeTimeWarpAudioName,
+                PlayerPerfectDodgeTimeWarpClipPaths,
+                0.38f,
+                1.02f,
+                1.06f,
+                0.86f,
+                0.98f,
+                0.04f,
+                130);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeWindow.prefab",
+                PlayerPerfectDodgeSuccessAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeWindow.prefab",
+                PlayerPerfectDodgeSuccessAudioName,
+                PlayerPerfectDodgeSuccessClipPaths,
+                0.46f,
+                1.04f,
+                1.1f,
+                0.9f,
+                1.05f,
+                0.10f,
+                132);
 
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
@@ -1954,6 +2457,40 @@ namespace DimensionBrawl.Editor
             return primitive.GetComponent<Renderer>();
         }
 
+        private static Renderer AddMesh(
+            Transform parent,
+            string name,
+            Mesh mesh,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale)
+        {
+            if (mesh == null)
+            {
+                throw new InvalidOperationException($"{name} requires a mesh.");
+            }
+
+            if (material == null)
+            {
+                throw new InvalidOperationException($"{name} requires a material.");
+            }
+
+            GameObject meshObject = new GameObject(name);
+            meshObject.transform.SetParent(parent, worldPositionStays: false);
+
+            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+            MeshRenderer renderer = meshObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            ConfigureRendererForCue(renderer);
+
+            meshObject.transform.localPosition = localPosition;
+            meshObject.transform.localRotation = Quaternion.Euler(localEuler);
+            meshObject.transform.localScale = localScale;
+            return renderer;
+        }
+
         private static Renderer EnsurePrimitiveChild(
             Transform parent,
             string name,
@@ -2022,6 +2559,98 @@ namespace DimensionBrawl.Editor
             return mesh;
         }
 
+        private static Material LoadRequiredMaterial(string assetPath)
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(assetPath);
+            if (material == null)
+            {
+                throw new InvalidOperationException($"Missing required material at {assetPath}.");
+            }
+
+            return material;
+        }
+
+        private static Material LoadReviewedShapesFxMaterial(string assetPath)
+        {
+            Material material = LoadRequiredMaterial(assetPath);
+            RemapShapesFxImportedTextures(material);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void RemapShapesFxImportedTextures(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            string[] propertyNames = material.GetTexturePropertyNames();
+            for (int i = 0; i < propertyNames.Length; i++)
+            {
+                Texture texture = material.GetTexture(propertyNames[i]);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                string sourcePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                if (!sourcePath.StartsWith(ImportedShapesFxTextureRoot + "/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Texture promotedTexture = ResolveReviewedShapesFxTexture(sourcePath);
+                material.SetTexture(propertyNames[i], promotedTexture);
+            }
+        }
+
+        private static Texture ResolveReviewedShapesFxTexture(string sourcePath)
+        {
+            string relativePath = sourcePath.Substring(ImportedShapesFxTextureRoot.Length + 1);
+            string targetPath = ShapesFxTextureRoot + "/" + relativePath;
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture != null)
+            {
+                return texture;
+            }
+
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+            {
+                throw new InvalidOperationException($"Failed to promote Shapes FX texture from {sourcePath} to {targetPath}.");
+            }
+
+            AssetDatabase.ImportAsset(targetPath);
+            texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Promoted Shapes FX texture did not import at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static Mesh LoadRequiredMesh(string assetPath)
+        {
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Mesh embeddedMesh && !embeddedMesh.name.Contains("__preview"))
+                {
+                    return embeddedMesh;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing required mesh at {assetPath}.");
+        }
+
         private static Material LoadOrCreateParticleMaterial(string name, Color color, bool additive = true)
         {
             string path = $"{MaterialRoot}/{name}.mat";
@@ -2055,6 +2684,58 @@ namespace DimensionBrawl.Editor
                 material.renderQueue = (int)RenderQueue.Transparent;
             }
 
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeWorldFxMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                "DB_PerfectDodgeWorldFx",
+                PerfectDodgeWorldFxShaderPath);
+            SetMaterialColorIfPresent(material, "_ColorA", new Color(0.12f, 0.96f, 1f, 0.82f));
+            SetMaterialColorIfPresent(material, "_ColorB", new Color(0.58f, 0.24f, 1f, 0.72f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.7f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1.35f);
+            SetMaterialFloatIfPresent(material, "_RimPower", 2.8f);
+            SetMaterialFloatIfPresent(material, "_NoiseScale", 7f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeAfterimageMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                "DB_PerfectDodgeAfterimage",
+                PerfectDodgeAfterimageShaderPath);
+            SetMaterialColorIfPresent(material, "_BaseColor", new Color(0.34f, 0.98f, 1f, 0.42f));
+            SetMaterialColorIfPresent(material, "_RimColor", new Color(0.72f, 0.36f, 1f, 0.9f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.42f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1f);
+            SetMaterialFloatIfPresent(material, "_FresnelPower", 2.2f);
+            SetMaterialFloatIfPresent(material, "_ScanStrength", 0.48f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeMaterial(string materialName, string shaderPath)
+        {
+            EnsureFolder(MaterialRoot);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Missing perfect dodge shader at {shaderPath}.");
+            }
+
+            string materialPath = $"{MaterialRoot}/{materialName}.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+
+            material.shader = shader;
+            material.enableInstancing = true;
+            material.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -2584,6 +3265,10 @@ namespace DimensionBrawl.Editor
             public GameObject PlayerAttackStart;
             public GameObject PlayerAttackHit;
             public GameObject PlayerDodgeStart;
+            public GameObject PlayerPerfectDodgeTimeField;
+            public GameObject PlayerPerfectDodgePulsewave;
+            public GameObject PlayerPerfectDodgeHoloCube;
+            public GameObject PlayerPerfectDodgeWindow;
             public GameObject PlayerRangedMuzzleFlash;
             public GameObject PlayerRangedProjectileImpact;
             public GameObject EnemyWindup;

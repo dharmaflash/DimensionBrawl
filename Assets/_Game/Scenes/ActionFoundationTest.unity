@@ -328,6 +328,15 @@ MonoBehaviour:
     focusHeightDelta: 0.03
     durationSeconds: 0.28
     finisherScale: 1
+  perfectDodgeCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.12, z: -0.32}
+    planarDirectionOffset: -0.3
+    fieldOfViewDelta: 3.6
+    cameraDistanceDelta: -0.34
+    focusHeightDelta: 0.08
+    durationSeconds: 0.34
+    finisherScale: 1
   attackStartCue:
     enabled: 1
     localOffset: {x: 0, y: -0.03, z: 0.14}
@@ -983,6 +992,7 @@ MonoBehaviour:
   dodgeInvulnerableFromSeconds: 0.05
   dodgeInvulnerableToSeconds: 0.32
   dodgeRecoverySeconds: 0.14
+  dodgeCooldownSeconds: 1.15
   dodgeSpeed: 10.2
   dodgeTrigger: DodgeForward
   dodgeBackTrigger: DodgeBack
@@ -1026,6 +1036,9 @@ MonoBehaviour:
   idleColor: {r: 1, g: 1, b: 1, a: 1}
   flashSeconds: 0.08
   hitColor: {r: 1, g: 1, b: 1, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &4007
 MonoBehaviour:
@@ -1083,12 +1096,6 @@ MonoBehaviour:
   - {fileID: 1123467317}
   - {fileID: 102419984}
   - {fileID: 946888085}
-  - {fileID: 548236417}
-  - {fileID: 771332235}
-  - {fileID: 1403009137}
-  - {fileID: 272183513}
-  - {fileID: 408449245}
-  - {fileID: 682321477}
   includeActiveHostileSummons: 1
   selectionRadius: 12
   retargetIntervalSeconds: 0.12
@@ -1124,6 +1131,20 @@ MonoBehaviour:
   damagedCueId: 37
   criticalCueId: 38
   damagedCueIntensity: 1
+  perfectDodgeCueIntensity: 1.55
+  perfectDodgeTimeFieldCueId: 39
+  perfectDodgePulsewaveCueId: 40
+  perfectDodgeHoloCubeCueId: 41
+  perfectDodgeWindowCueId: 42
+  perfectDodgeTimeFieldIntensity: 1
+  perfectDodgePulsewaveIntensity: 1.12
+  perfectDodgeHoloCubeIntensity: 0.92
+  perfectDodgeWindowIntensity: 0.86
+  perfectDodgeAudioIntensity: 1
+  perfectDodgeTimeFieldLocalOffset: {x: 0, y: -0.08, z: 0}
+  perfectDodgePulsewaveLocalOffset: {x: 0, y: -0.18, z: 0}
+  perfectDodgeHoloCubeLocalOffset: {x: 0, y: 0.62, z: 0.06}
+  perfectDodgeWindowLocalOffset: {x: 0, y: 0.24, z: 0.16}
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
@@ -1441,6 +1462,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -5420,6 +5446,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -11439,6 +11470,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -17209,6 +17245,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -22493,6 +22534,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -27808,6 +27854,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -32083,6 +32134,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -40181,6 +40237,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -47092,6 +47153,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -58940,6 +59006,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -62529,6 +62600,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -89180,6 +89256,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1

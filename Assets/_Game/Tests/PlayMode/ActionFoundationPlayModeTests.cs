@@ -243,6 +243,305 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator DodgeUsesCooldownBeforeItCanRestart()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+
+            Assert.IsTrue(actions.IsDodgeReady, "Dodge should start ready in a fresh action scene.");
+
+            actions.QueueDodge();
+            yield return null;
+
+            Assert.IsTrue(actions.IsDodging, "First dodge input should start immediately.");
+            Assert.Greater(actions.DodgeCooldownRemaining, 0.5f, "Starting a dodge should arm its cooldown.");
+
+            yield return new WaitForSeconds(0.78f);
+
+            Assert.IsFalse(actions.IsDodging, "Dodge movement/recovery should end before the cooldown fully refills.");
+            Assert.IsFalse(actions.IsDodgeReady, "Cooldown should prevent immediate dodge chaining after recovery.");
+
+            actions.QueueDodge();
+            yield return null;
+
+            Assert.IsFalse(actions.IsDodging, "Queued dodge should be ignored while the cooldown is still active.");
+
+            yield return new WaitForSeconds(actions.DodgeCooldownRemaining + 0.05f);
+            actions.QueueDodge();
+            yield return null;
+
+            Assert.IsTrue(actions.IsDodging, "Dodge should restart once the cooldown has expired.");
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeTriggersWhenInvulnerableDamageIsBlocked()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth playerHealth = actions.GetComponent<CombatHealth>();
+            Assert.IsNotNull(playerHealth, "Player action controller should share a root with player health.");
+            int perfectDodgeCount = 0;
+            DamageInfo lastPerfectDodgeDamage = default;
+
+            void HandlePerfectDodge(DamageInfo damageInfo)
+            {
+                perfectDodgeCount++;
+                lastPerfectDodgeDamage = damageInfo;
+            }
+
+            actions.PerfectDodgeTriggered += HandlePerfectDodge;
+            try
+            {
+                float startHealth = playerHealth.CurrentHealth;
+                actions.QueueDodge();
+                yield return new WaitForSeconds(0.03f);
+
+                bool damageApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(damageApplied, "Damage should be blocked by the dodge invulnerability window.");
+                Assert.AreEqual(startHealth, playerHealth.CurrentHealth, 0.001f);
+                Assert.AreEqual(1, perfectDodgeCount, "Blocked hostile damage during dodge should trigger exactly one perfect dodge.");
+                Assert.AreEqual(DamageTeam.Enemy, lastPerfectDodgeDamage.SourceTeam);
+            }
+            finally
+            {
+                actions.PerfectDodgeTriggered -= HandlePerfectDodge;
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeProtectionBlocksFollowUpDamageAfterBaseWindow()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth playerHealth = actions.GetComponent<CombatHealth>();
+            Assert.IsNotNull(playerHealth, "Player action controller should share a root with player health.");
+            int perfectDodgeCount = 0;
+
+            void HandlePerfectDodge(DamageInfo _)
+            {
+                perfectDodgeCount++;
+            }
+
+            actions.PerfectDodgeTriggered += HandlePerfectDodge;
+            try
+            {
+                float startHealth = playerHealth.CurrentHealth;
+                actions.QueueDodge();
+                yield return new WaitForSeconds(0.03f);
+
+                bool firstDamageApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(firstDamageApplied, "The first hostile hit inside the dodge window should be blocked.");
+                Assert.AreEqual(1, perfectDodgeCount, "The first blocked hit should trigger the perfect dodge reward.");
+
+                yield return new WaitForSeconds(0.43f);
+
+                bool followUpApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(
+                    followUpApplied,
+                    "Perfect dodge success armor should block overlapping follow-up damage after the base invulnerability window.");
+                Assert.AreEqual(startHealth, playerHealth.CurrentHealth, 0.001f);
+                Assert.AreEqual(1, perfectDodgeCount, "Follow-up protection should not retrigger the perfect dodge reward.");
+            }
+            finally
+            {
+                actions.PerfectDodgeTriggered -= HandlePerfectDodge;
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeTimingGraceBlocksStartupEdgeDamage()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth playerHealth = actions.GetComponent<CombatHealth>();
+            Assert.IsNotNull(playerHealth, "Player action controller should share a root with player health.");
+            int perfectDodgeCount = 0;
+
+            void HandlePerfectDodge(DamageInfo _)
+            {
+                perfectDodgeCount++;
+            }
+
+            actions.PerfectDodgeTriggered += HandlePerfectDodge;
+            try
+            {
+                float startHealth = playerHealth.CurrentHealth;
+                actions.QueueDodge();
+                yield return null;
+
+                bool damageApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(
+                    damageApplied,
+                    "A hostile hit on the dodge startup edge should be converted into a perfect dodge instead of clipping the player.");
+                Assert.AreEqual(startHealth, playerHealth.CurrentHealth, 0.001f);
+                Assert.AreEqual(1, perfectDodgeCount);
+            }
+            finally
+            {
+                actions.PerfectDodgeTriggered -= HandlePerfectDodge;
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeTimeWarpSlowsAndRestoresTimeScale()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth playerHealth = actions.GetComponent<CombatHealth>();
+            Assert.IsNotNull(playerHealth, "Player action controller should share a root with player health.");
+
+            PerfectDodgeTimeWarp timeWarp = actions.GetComponent<PerfectDodgeTimeWarp>();
+            bool addedTimeWarp = timeWarp == null;
+            if (addedTimeWarp)
+            {
+                timeWarp = actions.gameObject.AddComponent<PerfectDodgeTimeWarp>();
+            }
+
+            Time.timeScale = 1f;
+            try
+            {
+                actions.QueueDodge();
+                yield return new WaitForSecondsRealtime(0.03f);
+
+                bool damageApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(damageApplied, "Perfect dodge setup should block damage during the invulnerability window.");
+                Assert.IsTrue(timeWarp.IsWarpActive, "Blocked hostile dodge damage should activate the perfect-dodge time warp.");
+                Assert.Less(Time.timeScale, 0.6f, "Perfect dodge should visibly slow gameplay time.");
+
+                yield return new WaitForSecondsRealtime(timeWarp.DurationSeconds + timeWarp.BlendOutSeconds + 0.12f);
+
+                Assert.IsFalse(timeWarp.IsWarpActive, "Perfect dodge time warp should finish after its real-time duration.");
+                Assert.AreEqual(1f, Time.timeScale, 0.001f, "Perfect dodge time warp should restore normal gameplay speed.");
+            }
+            finally
+            {
+                if (addedTimeWarp && timeWarp != null)
+                {
+                    Object.Destroy(timeWarp);
+                }
+
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CombatTimeDilationReceiverResolvesParentScaleForChildLoops()
+        {
+            GameObject root = new GameObject("Test_TimeDilationRoot");
+            GameObject child = new GameObject("Test_TimeDilationChild");
+            child.transform.SetParent(root.transform, false);
+
+            try
+            {
+                CombatTimeDilationReceiver receiver = root.AddComponent<CombatTimeDilationReceiver>();
+                receiver.ApplyTimeDilation(0.2f, 1f, 0.1f);
+                yield return null;
+
+                Assert.Less(
+                    CombatTimeDilationReceiver.ResolveTimeScale(child.transform),
+                    0.3f,
+                    "Child combat loops should inherit a parent/root time dilation receiver.");
+            }
+            finally
+            {
+                Object.Destroy(root);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeTimeWarpRefreshesEnemyProjectilesSpawnedDuringWarp()
+        {
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth playerHealth = actions.GetComponent<CombatHealth>();
+            Assert.IsNotNull(playerHealth, "Player action controller should share a root with player health.");
+
+            PerfectDodgeTimeWarp timeWarp = actions.GetComponent<PerfectDodgeTimeWarp>();
+            bool addedTimeWarp = timeWarp == null;
+            if (addedTimeWarp)
+            {
+                timeWarp = actions.gameObject.AddComponent<PerfectDodgeTimeWarp>();
+            }
+
+            GameObject projectileObject = null;
+            Time.timeScale = 1f;
+            try
+            {
+                actions.QueueDodge();
+                yield return new WaitForSecondsRealtime(0.03f);
+
+                bool damageApplied = playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    18f,
+                    playerHealth.transform.position,
+                    Vector3.back,
+                    0f));
+
+                Assert.IsFalse(damageApplied, "Perfect dodge setup should block damage during the invulnerability window.");
+                Assert.IsTrue(timeWarp.IsWarpActive, "Blocked hostile dodge damage should activate the perfect-dodge time warp.");
+
+                projectileObject = new GameObject("Test_EnemyProjectileSpawnedDuringPerfectDodge");
+                projectileObject.transform.position = playerHealth.transform.position + Vector3.right * 6f;
+                LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+                projectile.Configure(null, DamageTeam.Enemy, 0f, Vector3.right, 0f, 2f, 0.1f);
+
+                yield return new WaitForSecondsRealtime(timeWarp.ReceiverRefreshIntervalSeconds + 0.08f);
+
+                CombatTimeDilationReceiver receiver = projectileObject.GetComponent<CombatTimeDilationReceiver>();
+                Assert.IsNotNull(receiver, "Enemy projectiles spawned after the perfect dodge should be collected by receiver refresh.");
+                Assert.IsTrue(receiver.IsDilationActive, "Newly spawned hostile projectiles should still be slowed during the active time warp.");
+                Assert.Less(receiver.CurrentTimeScale, 0.6f, "Refreshed hostile projectile receiver should run well below normal speed.");
+            }
+            finally
+            {
+                if (projectileObject != null)
+                {
+                    Object.Destroy(projectileObject);
+                }
+
+                if (addedTimeWarp && timeWarp != null)
+                {
+                    Object.Destroy(timeWarp);
+                }
+
+                Time.timeScale = 1f;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PlayerRunStartAndSharpTurnUsePromotedLocomotionClips()
         {
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
@@ -1446,7 +1745,11 @@ namespace DimensionBrawl.Tests
             foreach (CombatVfxCueId cueId in System.Enum.GetValues(typeof(CombatVfxCueId)))
             {
                 bool shouldPlay = cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
-                    || cueId == CombatVfxCueId.EnemyHit;
+                    || cueId == CombatVfxCueId.EnemyHit
+                    || cueId == CombatVfxCueId.PlayerPerfectDodgeTimeField
+                    || cueId == CombatVfxCueId.PlayerPerfectDodgePulsewave
+                    || cueId == CombatVfxCueId.PlayerPerfectDodgeHoloCube
+                    || cueId == CombatVfxCueId.PlayerPerfectDodgeWindow;
                 Assert.AreEqual(shouldPlay, profile.AllowsPlayback(cueId), $"{cueId} playback policy should stay explicit.");
             }
         }

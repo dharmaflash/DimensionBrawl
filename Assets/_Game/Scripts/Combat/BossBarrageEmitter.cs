@@ -288,7 +288,7 @@ namespace DimensionBrawl.Combat
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX, float targetLaneZ)

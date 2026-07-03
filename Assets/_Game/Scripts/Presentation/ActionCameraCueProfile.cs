@@ -68,6 +68,18 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1f
         };
 
+        [SerializeField] private CameraCue perfectDodgeCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.12f, -0.32f),
+            planarDirectionOffset = -0.30f,
+            fieldOfViewDelta = 3.6f,
+            cameraDistanceDelta = -0.34f,
+            focusHeightDelta = 0.08f,
+            durationSeconds = 0.34f,
+            finisherScale = 1f
+        };
+
         [SerializeField] private CameraCue attackStartCue = new CameraCue
         {
             enabled = true,
@@ -228,6 +240,7 @@ namespace DimensionBrawl.Presentation
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
         public CameraCue DodgeCue => dodgeCue;
+        public CameraCue PerfectDodgeCue => perfectDodgeCue;
         public CameraCue AttackStartCue => attackStartCue;
         public CameraCue AttackHitCue => attackHitCue;
         public CameraCue Skill1Cue => skill1Cue;

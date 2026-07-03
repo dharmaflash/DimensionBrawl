@@ -827,9 +827,12 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "attackFacingHoldPaddingSeconds", 0.06f);
             SetBool(serializedObject, "snapBasicAttackFacing", true);
             SetFloat(serializedObject, "dodgeDurationSeconds", 0.56f);
-            SetFloat(serializedObject, "dodgeInvulnerableFromSeconds", 0.05f);
-            SetFloat(serializedObject, "dodgeInvulnerableToSeconds", 0.32f);
+            SetFloat(serializedObject, "dodgeInvulnerableFromSeconds", 0.02f);
+            SetFloat(serializedObject, "dodgeInvulnerableToSeconds", 0.40f);
             SetFloat(serializedObject, "dodgeRecoverySeconds", 0.14f);
+            SetFloat(serializedObject, "dodgeCooldownSeconds", 1.15f);
+            SetFloat(serializedObject, "perfectDodgeProtectionSeconds", 0.65f);
+            SetFloat(serializedObject, "perfectDodgeTimingGraceSeconds", 0.08f);
             SetFloat(serializedObject, "dodgeSpeed", 10.2f);
             SetString(serializedObject, "dodgeTrigger", "DodgeForward");
             SetString(serializedObject, "dodgeBackTrigger", "DodgeBack");
@@ -847,6 +850,7 @@ namespace DimensionBrawl.Editor
             SetCameraCue(serializedObject.FindProperty("stopSettleCue"), new Vector3(0f, -0.02f, -0.06f), -0.02f, -0.8f, -0.12f, -0.02f, 0.22f, 1f);
             SetCameraCue(serializedObject.FindProperty("sharpTurnCue"), new Vector3(0.08f, 0f, -0.10f), 0.06f, 0.6f, -0.06f, 0f, 0.24f, 1f);
             SetCameraCue(serializedObject.FindProperty("dodgeCue"), new Vector3(0f, 0.04f, -0.20f), -0.18f, 2.2f, -0.20f, 0.03f, 0.28f, 1f);
+            SetCameraCue(serializedObject.FindProperty("perfectDodgeCue"), new Vector3(0f, 0.12f, -0.32f), -0.30f, 3.6f, -0.34f, 0.08f, 0.34f, 1f);
             SetCameraCue(serializedObject.FindProperty("attackStartCue"), new Vector3(0f, -0.03f, 0.14f), 0.08f, -1.2f, 0.12f, -0.02f, 0.22f, 1.2f);
             SetCameraCue(serializedObject.FindProperty("attackHitCue"), new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
             SetCameraCue(serializedObject.FindProperty("skill1Cue"), new Vector3(0f, 0.02f, 0.12f), 0.10f, -1.2f, 0.10f, 0.01f, 0.24f, 1.2f);

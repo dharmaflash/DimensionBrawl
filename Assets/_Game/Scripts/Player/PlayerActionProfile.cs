@@ -157,9 +157,14 @@ namespace DimensionBrawl.Player
 
         [Header("Dodge")]
         [SerializeField] private float dodgeDurationSeconds = 0.56f;
-        [SerializeField] private float dodgeInvulnerableFromSeconds = 0.05f;
-        [SerializeField] private float dodgeInvulnerableToSeconds = 0.32f;
+        [SerializeField] private float dodgeInvulnerableFromSeconds = 0.02f;
+        [SerializeField] private float dodgeInvulnerableToSeconds = 0.40f;
         [SerializeField] private float dodgeRecoverySeconds = 0.14f;
+        [SerializeField, Min(0f)] private float dodgeCooldownSeconds = 1.15f;
+        [Tooltip("PGR-style armor after a successful perfect dodge, so overlapping follow-up hits do not punish the success.")]
+        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 0.65f;
+        [Tooltip("Small timing grace around the authored invulnerability window to keep perfect dodge from feeling frame-tight.")]
+        [SerializeField, Min(0f)] private float perfectDodgeTimingGraceSeconds = 0.08f;
         [SerializeField] private float dodgeSpeed = 10.2f;
         [SerializeField] private string dodgeTrigger = "DodgeForward";
         [SerializeField] private string dodgeBackTrigger = "DodgeBack";
@@ -178,6 +183,9 @@ namespace DimensionBrawl.Player
         public float DodgeInvulnerableFromSeconds => dodgeInvulnerableFromSeconds;
         public float DodgeInvulnerableToSeconds => dodgeInvulnerableToSeconds;
         public float DodgeRecoverySeconds => dodgeRecoverySeconds;
+        public float DodgeCooldownSeconds => dodgeCooldownSeconds;
+        public float PerfectDodgeProtectionSeconds => perfectDodgeProtectionSeconds;
+        public float PerfectDodgeTimingGraceSeconds => perfectDodgeTimingGraceSeconds;
         public float DodgeSpeed => dodgeSpeed;
         public string DodgeTrigger => dodgeTrigger;
         public string DodgeBackTrigger => dodgeBackTrigger;

@@ -27,7 +27,7 @@ namespace DimensionBrawl.UI
 
             public CombatHudActionId ActionId => actionId;
 
-            public void SetCooldown(float normalizedRemaining, string label)
+            public void SetCooldown(float normalizedRemaining, string label, float secondsRemaining = -1f)
             {
                 if (labelText != null && !string.IsNullOrWhiteSpace(label))
                 {
@@ -42,7 +42,8 @@ namespace DimensionBrawl.UI
 
                 if (cooldownText != null)
                 {
-                    cooldownText.text = clamped > 0f ? $"{Mathf.CeilToInt(clamped * 10f) / 10f:0.0}s" : string.Empty;
+                    float displaySeconds = secondsRemaining >= 0f ? secondsRemaining : Mathf.CeilToInt(clamped * 10f) / 10f;
+                    cooldownText.text = clamped > 0f ? $"{displaySeconds:0.0}s" : string.Empty;
                 }
 
                 if (canvasGroup != null)
@@ -324,10 +325,10 @@ namespace DimensionBrawl.UI
             SetText(ammoText, label);
         }
 
-        public void SetSkillCooldown(CombatHudActionId actionId, float normalizedRemaining, string label)
+        public void SetSkillCooldown(CombatHudActionId actionId, float normalizedRemaining, string label, float secondsRemaining = -1f)
         {
             ActionSlotBinding slot = FindActionSlot(actionId);
-            slot?.SetCooldown(normalizedRemaining, label);
+            slot?.SetCooldown(normalizedRemaining, label, secondsRemaining);
         }
 
         public void SetSummonSlotState(CombatHudActionId actionId, string label, string state, bool enabled)

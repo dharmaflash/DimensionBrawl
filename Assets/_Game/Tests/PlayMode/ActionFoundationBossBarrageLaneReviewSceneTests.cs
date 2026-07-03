@@ -290,6 +290,36 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator ReviewSceneBindsPerfectDodgeCooldownAndTimeWarp()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerActionController playerActionController =
+                RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
+            PlayerCombatVfxCueDriver playerVfxCueDriver =
+                RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
+            Component perfectDodgeTimeWarp =
+                RequireObjectByTypeName("DimensionBrawl.Presentation.PerfectDodgeTimeWarp");
+            PlayerActionProfile localDefenseProfile = LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath);
+
+            Assert.AreSame(localDefenseProfile, playerActionController.ActionProfile);
+            Assert.AreEqual(1.15f, localDefenseProfile.DodgeCooldownSeconds, 0.001f);
+            Assert.AreEqual(0.02f, localDefenseProfile.DodgeInvulnerableFromSeconds, 0.001f);
+            Assert.AreEqual(0.40f, localDefenseProfile.DodgeInvulnerableToSeconds, 0.001f);
+            Assert.AreEqual(1.55f, playerVfxCueDriver.PerfectDodgeCueIntensity, 0.001f);
+            Assert.AreSame(player.gameObject, perfectDodgeTimeWarp.gameObject);
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(perfectDodgeTimeWarp, "actionController"));
+            Assert.AreEqual(0.18f, GetFloat(perfectDodgeTimeWarp, "timeScale"), 0.001f);
+            Assert.AreEqual(3f, GetFloat(perfectDodgeTimeWarp, "durationSeconds"), 0.001f);
+            Assert.AreEqual(0.42f, GetFloat(perfectDodgeTimeWarp, "blendOutSeconds"), 0.001f);
+            Assert.AreEqual(0.08f, GetFloat(perfectDodgeTimeWarp, "globalHitStopTimeScale"), 0.001f);
+            Assert.AreEqual(0.055f, GetFloat(perfectDodgeTimeWarp, "globalHitStopSeconds"), 0.001f);
+            Assert.AreEqual(42f, GetFloat(perfectDodgeTimeWarp, "radius"), 0.001f);
+            Assert.AreEqual(18f, GetFloat(perfectDodgeTimeWarp, "innerRadius"), 0.001f);
+            Assert.AreEqual(0.08f, GetFloat(perfectDodgeTimeWarp, "receiverRefreshIntervalSeconds"), 0.001f);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator BossBarrageLaneReviewScenePreservesFrontlineStageProfileParity()
         {
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
@@ -673,6 +703,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
             PlayerCombatVfxCueDriver playerVfxCueDriver =
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
+            Component perfectDodgeTimeWarp =
+                RequireObjectByTypeName("DimensionBrawl.Presentation.PerfectDodgeTimeWarp");
             PlayerRangedBasicVfxCueDriver rangedBasicVfxCueDriver =
                 RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "player ranged basic VFX cue driver");
             SummonEnergyVfxCuePresenter energyVfxCuePresenter =
@@ -707,9 +739,29 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<Transform>(playerVfxCueDriver, "damageAnchor"));
             Assert.AreEqual(CombatVfxCueId.PlayerDamaged, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "damagedCueId"));
             Assert.AreEqual(CombatVfxCueId.PlayerCritical, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "criticalCueId"));
+            Assert.AreEqual(CombatVfxCueId.PlayerPerfectDodgeTimeField, playerVfxCueDriver.PerfectDodgeTimeFieldCueId);
+            Assert.AreEqual(CombatVfxCueId.PlayerPerfectDodgePulsewave, playerVfxCueDriver.PerfectDodgePulsewaveCueId);
+            Assert.AreEqual(CombatVfxCueId.PlayerPerfectDodgeHoloCube, playerVfxCueDriver.PerfectDodgeHoloCubeCueId);
+            Assert.AreEqual(CombatVfxCueId.PlayerPerfectDodgeWindow, playerVfxCueDriver.PerfectDodgeWindowCueId);
+            Assert.AreEqual(1.55f, playerVfxCueDriver.PerfectDodgeCueIntensity, 0.001f);
+            Assert.AreEqual(1f, playerVfxCueDriver.PerfectDodgeTimeFieldIntensity, 0.001f);
+            Assert.AreEqual(1.12f, playerVfxCueDriver.PerfectDodgePulsewaveIntensity, 0.001f);
+            Assert.AreEqual(0.92f, playerVfxCueDriver.PerfectDodgeHoloCubeIntensity, 0.001f);
+            Assert.AreEqual(0.86f, playerVfxCueDriver.PerfectDodgeWindowIntensity, 0.001f);
+            Assert.AreEqual(1f, playerVfxCueDriver.PerfectDodgeAudioIntensity, 0.001f);
             Assert.AreEqual(0.62f, playerVfxCueDriver.PressureDamageCueScale, 0.001f);
             Assert.IsTrue(playerVfxCueDriver.PlayDamageVfx);
             Assert.IsTrue(playerVfxCueDriver.PlayCriticalVfx);
+            Assert.AreSame(player.gameObject, perfectDodgeTimeWarp.gameObject);
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(perfectDodgeTimeWarp, "actionController"));
+            Assert.AreEqual(0.18f, GetFloat(perfectDodgeTimeWarp, "timeScale"), 0.001f);
+            Assert.AreEqual(3f, GetFloat(perfectDodgeTimeWarp, "durationSeconds"), 0.001f);
+            Assert.AreEqual(0.42f, GetFloat(perfectDodgeTimeWarp, "blendOutSeconds"), 0.001f);
+            Assert.AreEqual(0.08f, GetFloat(perfectDodgeTimeWarp, "globalHitStopTimeScale"), 0.001f);
+            Assert.AreEqual(0.055f, GetFloat(perfectDodgeTimeWarp, "globalHitStopSeconds"), 0.001f);
+            Assert.AreEqual(42f, GetFloat(perfectDodgeTimeWarp, "radius"), 0.001f);
+            Assert.AreEqual(18f, GetFloat(perfectDodgeTimeWarp, "innerRadius"), 0.001f);
+            Assert.AreEqual(0.08f, GetFloat(perfectDodgeTimeWarp, "receiverRefreshIntervalSeconds"), 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedMuzzleFlash, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "muzzleFlashCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
             Assert.IsFalse(rangedBasicVfxCueDriver.PlayImpactVfx);
@@ -1012,6 +1064,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 (int)CombatControlLockPolicy.InterruptAction,
                 localDefenseStep.FindPropertyRelative("controlLockPolicy").enumValueIndex);
+            Assert.AreEqual(1.15f, localDefenseProfile.DodgeCooldownSeconds, 0.001f);
             Assert.AreSame(localDefenseProfile, playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
@@ -1722,10 +1775,23 @@ namespace DimensionBrawl.Tests
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", false);
             Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);
             Assert.AreEqual(1f, GetFloatProperty(combatHudPresenter, "BossHealthFillAmount"), 0.001f);
-            Assert.IsFalse(screenCuePresenter.ShowScreenCues);
+            Assert.IsTrue(screenCuePresenter.ShowScreenCues);
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(104f, screenCuePresenter.EdgeThickness, 0.001f);
+            Assert.AreEqual(0.42f, screenCuePresenter.MaxPerfectDodgeDomainAlpha, 0.001f);
+            Assert.AreEqual(0.18f, screenCuePresenter.MaxPerfectDodgeInvertAlpha, 0.001f);
+            Assert.AreEqual(0.48f, screenCuePresenter.MaxPerfectDodgeEdgeAlpha, 0.001f);
+            Assert.AreEqual(3f, screenCuePresenter.PerfectDodgeDomainSeconds, 0.001f);
+            Assert.AreEqual(0.22f, screenCuePresenter.PerfectDodgePulseSeconds, 0.001f);
+            Assert.IsNotNull(screenCuePresenter.PerfectDodgeDomainMaterial);
+            Assert.IsNotNull(screenCuePresenter.PerfectDodgeGlitchOverlayMaterial);
+            Assert.AreEqual(0.92f, screenCuePresenter.PerfectDodgeShaderIntensity, 0.001f);
+            Assert.AreEqual(0.72f, screenCuePresenter.PerfectDodgeRadialWarpStrength, 0.001f);
+            Assert.AreEqual(0.34f, screenCuePresenter.PerfectDodgeScanlineStrength, 0.001f);
+            Assert.AreEqual(0.16f, screenCuePresenter.PerfectDodgeGlitchOverlayAlpha, 0.001f);
+            Assert.AreEqual(1.25f, screenCuePresenter.PerfectDodgeGlitchNoiseStrength, 0.001f);
+            Assert.AreEqual(0.42f, screenCuePresenter.PerfectDodgeGlitchJitterStrength, 0.001f);
             Assert.IsFalse(screenCuePresenter.UseDamageScreenFeedback);
             Assert.AreEqual(0.42f, screenCuePresenter.MaxDamageVignetteAlpha, 0.001f);
             Assert.AreEqual(0.11f, screenCuePresenter.MaxDamageFlashAlpha, 0.001f);
@@ -6823,6 +6889,35 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly, profile.PlaybackMode);
             Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
             Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeTimeField));
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgePulsewave));
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeHoloCube));
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeWindow));
+            AssertCombatCueHasChild(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeTimeField,
+                "PerfectDodge_TimeField_ShapesFxOuterTorus",
+                "perfect dodge time field Shapes FX outer torus");
+            AssertCombatCueHasChild(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeTimeField,
+                "PerfectDodge_TimeField_ShapesFxInnerTorus",
+                "perfect dodge time field Shapes FX inner torus");
+            AssertCombatCueHasChild(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgePulsewave,
+                "PerfectDodge_Pulsewave_ShapesFxShockTorus",
+                "perfect dodge pulsewave Shapes FX shock torus");
+            AssertCombatCueHasChild(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeHoloCube,
+                "PerfectDodge_HoloCube_ShapesFxCoreDodeca",
+                "perfect dodge holo core Shapes FX dodeca");
+            AssertCombatCueHasChild(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeHoloCube,
+                "PerfectDodge_HoloCube_ShapesFxLeftIcosa",
+                "perfect dodge holo fragment Shapes FX icosa");
             Assert.IsFalse(
                 profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact),
                 "Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
@@ -6958,6 +7053,22 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
             AssertPromotedParticleVfx(cue.Prefab.transform, label, 1);
             AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
+        }
+
+        private static void AssertCombatCueHasChild(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string label)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            Transform child = cue.Prefab.transform.Find(childName);
+            Assert.IsNotNull(child, $"{label} should exist on {cueId} prefab.");
+            Renderer renderer = child.GetComponent<Renderer>();
+            Assert.IsNotNull(renderer, $"{label} should render through a Shapes FX renderer.");
+            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep its Shapes FX material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
         }
 
         private static void AssertCombatCueHasReviewedAudioBank(

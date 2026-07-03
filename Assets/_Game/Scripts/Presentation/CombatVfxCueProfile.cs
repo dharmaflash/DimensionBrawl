@@ -44,7 +44,11 @@ namespace DimensionBrawl.Presentation
         PocketCleared,
         PocketFailed,
         PlayerDamaged,
-        PlayerCritical
+        PlayerCritical,
+        PlayerPerfectDodgeTimeField,
+        PlayerPerfectDodgePulsewave,
+        PlayerPerfectDodgeHoloCube,
+        PlayerPerfectDodgeWindow
     }
 
     public enum CombatVfxCuePlaybackMode
@@ -68,7 +72,11 @@ namespace DimensionBrawl.Presentation
             {
                 case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
-                        || cueId == CombatVfxCueId.EnemyHit;
+                        || cueId == CombatVfxCueId.EnemyHit
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeTimeField
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgePulsewave
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeHoloCube
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeWindow;
                 case CombatVfxCuePlaybackMode.PlayerRangedOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
                 default:

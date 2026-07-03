@@ -71,8 +71,8 @@ MonoBehaviour:
       check without waiting for a high-tier bank.
     PlayerRead: Read the thin aim line, dodge after the lock, then punish the rifleman
       before the next boss action.
-    SummonRead: A cheap summon can body-clash the rifleman, but the primary read is
-      movement first.
+    SummonRead: A cheap summon can body-clash the rifleman, but the primary read
+      is movement first.
   - TierLabel: Response 2 Pressure Screen
     StageRole: Boss-side summon pressure that contests the frontline for several
       seconds and blocks player follow-up shots.

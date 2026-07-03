@@ -48,6 +48,15 @@ MonoBehaviour:
     focusHeightDelta: 0.03
     durationSeconds: 0.28
     finisherScale: 1
+  perfectDodgeCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.12, z: -0.32}
+    planarDirectionOffset: -0.3
+    fieldOfViewDelta: 3.6
+    cameraDistanceDelta: -0.34
+    focusHeightDelta: 0.08
+    durationSeconds: 0.34
+    finisherScale: 1
   attackStartCue:
     enabled: 1
     localOffset: {x: 0, y: -0.03, z: 0.14}

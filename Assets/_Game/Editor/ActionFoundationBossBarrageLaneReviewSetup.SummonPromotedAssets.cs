@@ -38,6 +38,8 @@ namespace DimensionBrawl.Editor
             SummonPromotedVfxRoot + "/Textures";
         private const string SummonPromotedVfxMeshRoot =
             SummonPromotedVfxRoot + "/Meshes";
+        private const string SummonRoleVisualTextureRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVisualTextures";
         private const string SummonSlot2PromotedLaserBeamPrefabPath =
             SummonPromotedVfxPrefabRoot + "/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =

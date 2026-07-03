@@ -90,9 +90,12 @@ MonoBehaviour:
   snapBasicAttackFacing: 1
   basicAttackMoveInputSpeedScale: 0
   dodgeDurationSeconds: 0.56
-  dodgeInvulnerableFromSeconds: 0.05
-  dodgeInvulnerableToSeconds: 0.32
+  dodgeInvulnerableFromSeconds: 0.02
+  dodgeInvulnerableToSeconds: 0.4
   dodgeRecoverySeconds: 0.14
+  dodgeCooldownSeconds: 1.15
+  perfectDodgeProtectionSeconds: 0.65
+  perfectDodgeTimingGraceSeconds: 0.08
   dodgeSpeed: 10.2
   dodgeTrigger: DodgeForward
   dodgeBackTrigger: DodgeBack

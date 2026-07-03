@@ -10,12 +10,23 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private PerfectDodgeVfxDirector perfectDodgeVfxDirector;
         [SerializeField] private Transform attackAnchor;
         [SerializeField] private Transform dodgeAnchor;
         [SerializeField] private Transform damageAnchor;
         [SerializeField] private CombatVfxCueId damagedCueId = CombatVfxCueId.PlayerDamaged;
         [SerializeField] private CombatVfxCueId criticalCueId = CombatVfxCueId.PlayerCritical;
         [SerializeField, Min(0f)] private float damagedCueIntensity = 1f;
+        [SerializeField, Min(0f)] private float perfectDodgeCueIntensity = 1.55f;
+        [SerializeField] private CombatVfxCueId perfectDodgeTimeFieldCueId = CombatVfxCueId.PlayerPerfectDodgeTimeField;
+        [SerializeField] private CombatVfxCueId perfectDodgePulsewaveCueId = CombatVfxCueId.PlayerPerfectDodgePulsewave;
+        [SerializeField] private CombatVfxCueId perfectDodgeHoloCubeCueId = CombatVfxCueId.PlayerPerfectDodgeHoloCube;
+        [SerializeField] private CombatVfxCueId perfectDodgeWindowCueId = CombatVfxCueId.PlayerPerfectDodgeWindow;
+        [SerializeField, Min(0f)] private float perfectDodgeTimeFieldIntensity = 1f;
+        [SerializeField, Min(0f)] private float perfectDodgePulsewaveIntensity = 1.12f;
+        [SerializeField, Min(0f)] private float perfectDodgeHoloCubeIntensity = 0.92f;
+        [SerializeField, Min(0f)] private float perfectDodgeWindowIntensity = 0.86f;
+        [SerializeField, Min(0f)] private float perfectDodgeAudioIntensity = 1f;
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.62f;
         [SerializeField, Range(0.05f, 0.95f)] private float criticalHealthRatio = 0.35f;
         [SerializeField, Min(0f)] private float criticalCueIntensity = 1.18f;
@@ -37,6 +48,17 @@ namespace DimensionBrawl.Presentation
         public Transform DamageAnchor => damageAnchor != null ? damageAnchor : attackAnchor;
         public CombatVfxCueId DamagedCueId => damagedCueId;
         public CombatVfxCueId CriticalCueId => criticalCueId;
+        public float PerfectDodgeCueIntensity => perfectDodgeCueIntensity;
+        public CombatVfxCueId PerfectDodgeTimeFieldCueId => perfectDodgeTimeFieldCueId;
+        public CombatVfxCueId PerfectDodgePulsewaveCueId => perfectDodgePulsewaveCueId;
+        public CombatVfxCueId PerfectDodgeHoloCubeCueId => perfectDodgeHoloCubeCueId;
+        public CombatVfxCueId PerfectDodgeWindowCueId => perfectDodgeWindowCueId;
+        public float PerfectDodgeTimeFieldIntensity => perfectDodgeTimeFieldIntensity;
+        public float PerfectDodgePulsewaveIntensity => perfectDodgePulsewaveIntensity;
+        public float PerfectDodgeHoloCubeIntensity => perfectDodgeHoloCubeIntensity;
+        public float PerfectDodgeWindowIntensity => perfectDodgeWindowIntensity;
+        public float PerfectDodgeAudioIntensity => perfectDodgeAudioIntensity;
+        public PerfectDodgeVfxDirector PerfectDodgeVfxDirector => perfectDodgeVfxDirector;
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int CriticalVfxCueRequestCount => criticalVfxCueRequestCount;
         public float PressureDamageCueScale => pressureDamageCueScale;
@@ -72,6 +94,18 @@ namespace DimensionBrawl.Presentation
             {
                 cuePlayer = GetComponent<CombatVfxCuePlayer>();
             }
+
+            if (perfectDodgeVfxDirector == null)
+            {
+                perfectDodgeVfxDirector = GetComponent<PerfectDodgeVfxDirector>();
+            }
+
+            if (perfectDodgeVfxDirector == null)
+            {
+                perfectDodgeVfxDirector = gameObject.AddComponent<PerfectDodgeVfxDirector>();
+            }
+
+            perfectDodgeVfxDirector.Configure(actionController, playerHealth);
         }
 
         private void OnEnable()
@@ -96,6 +130,7 @@ namespace DimensionBrawl.Presentation
             actionController.BasicAttackStarted += HandleBasicAttackStarted;
             actionController.BasicAttackHit += HandleBasicAttackHit;
             actionController.DodgeStarted += HandleDodgeStarted;
+            actionController.PerfectDodgeTriggered += HandlePerfectDodgeTriggered;
             actionSubscribed = true;
         }
 
@@ -110,6 +145,7 @@ namespace DimensionBrawl.Presentation
             actionController.BasicAttackStarted -= HandleBasicAttackStarted;
             actionController.BasicAttackHit -= HandleBasicAttackHit;
             actionController.DodgeStarted -= HandleDodgeStarted;
+            actionController.PerfectDodgeTriggered -= HandlePerfectDodgeTriggered;
             actionSubscribed = false;
         }
 
@@ -151,6 +187,22 @@ namespace DimensionBrawl.Presentation
         private void HandleDodgeStarted()
         {
             Play(CombatVfxCueId.PlayerDodgeStart, dodgeAnchor, actionController.LastDodgeDirection, 1f);
+        }
+
+        private void HandlePerfectDodgeTriggered(DamageInfo damageInfo)
+        {
+            Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : transform.forward;
+            Transform anchor = dodgeAnchor != null ? dodgeAnchor : transform;
+            float masterIntensity = Mathf.Max(0f, perfectDodgeCueIntensity);
+            if (perfectDodgeVfxDirector != null)
+            {
+                perfectDodgeVfxDirector.Play(
+                    damageInfo,
+                    anchor,
+                    dodgeDirection,
+                    masterIntensity,
+                    perfectDodgeAudioIntensity);
+            }
         }
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)
@@ -218,12 +270,29 @@ namespace DimensionBrawl.Presentation
 
         private bool Play(CombatVfxCueId cueId, Transform anchor, Vector3 direction, float intensity)
         {
+            return Play(cueId, anchor, direction, intensity, -1f, Vector3.zero);
+        }
+
+        private bool Play(
+            CombatVfxCueId cueId,
+            Transform anchor,
+            Vector3 direction,
+            float intensity,
+            float audioIntensity,
+            Vector3 additionalLocalPositionOffset)
+        {
             if (cuePlayer == null)
             {
                 return false;
             }
 
-            return cuePlayer.PlayCue(cueId, anchor != null ? anchor : transform, direction, intensity);
+            return cuePlayer.PlayCue(
+                cueId,
+                anchor != null ? anchor : transform,
+                direction,
+                intensity,
+                audioIntensity,
+                additionalLocalPositionOffset);
         }
 
         private static float ResolveComboIntensity(int comboIndex)

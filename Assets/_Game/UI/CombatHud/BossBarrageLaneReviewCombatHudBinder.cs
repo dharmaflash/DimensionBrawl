@@ -128,7 +128,11 @@ namespace DimensionBrawl.UI
             bool canSpend = energyLadder != null && energyLadder.CanSpend;
             int tier = canSpend ? energyLadder.AvailableTier : energyLadder != null ? energyLadder.ChargingTier : 0;
             hudPresenter.SetSkillCooldown(CombatHudActionId.BasicAttack, 0f, ResolveBasicAttackLabel());
-            hudPresenter.SetSkillCooldown(CombatHudActionId.Dodge, 0f, "DODGE");
+            hudPresenter.SetSkillCooldown(
+                CombatHudActionId.Dodge,
+                ResolveDodgeCooldownFill01(),
+                ResolveDodgeLabel(),
+                actionController != null ? actionController.DodgeCooldownRemaining : -1f);
             hudPresenter.SetSkillCooldown(CombatHudActionId.Skill1, canSpend ? 0f : 1f, tier > 0 ? $"SKILL LV{tier}" : "SKILL");
             hudPresenter.SetSkillCooldown(CombatHudActionId.Ultimate, 0f, "SWAP");
         }
@@ -273,6 +277,26 @@ namespace DimensionBrawl.UI
         private string ResolveBasicAttackLabel()
         {
             return combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE";
+        }
+
+        private string ResolveDodgeLabel()
+        {
+            if (actionController == null || actionController.IsDodgeReady)
+            {
+                return "DODGE";
+            }
+
+            return $"DODGE\n{actionController.DodgeCooldownRemaining:0.0}s";
+        }
+
+        private float ResolveDodgeCooldownFill01()
+        {
+            if (actionController == null || actionController.DodgeCooldownSeconds <= 0f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(actionController.DodgeCooldownRemaining / actionController.DodgeCooldownSeconds);
         }
 
         private string ResolveAmmoReadout()

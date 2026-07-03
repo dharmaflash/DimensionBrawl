@@ -133,6 +133,30 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
         private const string ImportedRifleShotLoopedVfxPrefabPath =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Looped/VFX_Muzzle_Flash_Rifle_Looped.prefab";
+        private const string PerfectDodgeScreenDomainShaderPath =
+            "Assets/_Game/Art/VFX/CombatCues/Shaders/DB_PerfectDodgeScreenDomain.shader";
+        private const string PerfectDodgeWorldFxShaderPath =
+            "Assets/_Game/Art/VFX/CombatCues/Shaders/DB_PerfectDodgeWorldFx.shader";
+        private const string PerfectDodgeAfterimageShaderPath =
+            "Assets/_Game/Art/VFX/CombatCues/Shaders/DB_PerfectDodgeAfterimage.shader";
+        private const string PerfectDodgeScreenDomainMaterialPath =
+            "Assets/_Game/Art/VFX/CombatCues/Materials/DB_PerfectDodgeScreenDomain.mat";
+        private const string PerfectDodgeWorldFxMaterialPath =
+            "Assets/_Game/Art/VFX/CombatCues/Materials/DB_PerfectDodgeWorldFx.mat";
+        private const string PerfectDodgeAfterimageMaterialPath =
+            "Assets/_Game/Art/VFX/CombatCues/Materials/DB_PerfectDodgeAfterimage.mat";
+        private const string PerfectDodgeGlitchOverlayMaterialPath =
+            "Assets/_Game/Art/Materials/Cinematics/IntroGatePod/DB_UI_FirstPersonGlitchOverlay.mat";
+        private const float PerfectDodgeScreenShaderIntensity = 0.92f;
+        private const float PerfectDodgeScreenRadialWarpStrength = 0.72f;
+        private const float PerfectDodgeScreenScanlineStrength = 0.34f;
+        private const float PerfectDodgeScreenRadialBlurStrength = 0.54f;
+        private const float PerfectDodgeScreenGridStrength = 0.68f;
+        private const float PerfectDodgeScreenFractureStrength = 0.74f;
+        private const float PerfectDodgeScreenChromaticStrength = 0.86f;
+        private const float PerfectDodgeGlitchOverlayAlpha = 0.16f;
+        private const float PerfectDodgeGlitchNoiseStrength = 1.25f;
+        private const float PerfectDodgeGlitchJitterStrength = 0.42f;
         private const string ImportedMagicMissilesPrefabRoot =
             "Assets/_Imported/AssetStore/VFX/MagicMissiles/Prefabs";
         private const string ImportedMagicMissilesFireMissilePrefabPath =
@@ -1011,6 +1035,7 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 playerCuePlayer,
                 bossProxy.transform);
+            ConfigurePerfectDodgeTimeWarp(player.gameObject, playerActionController);
             ConfigureBossProxyWorldVfxCueDriver(
                 bossProxy,
                 playerCuePlayer,
@@ -1153,6 +1178,8 @@ namespace DimensionBrawl.Editor
                 RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
             PlayerCombatVfxCueDriver playerVfxCueDriver =
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
+            PerfectDodgeTimeWarp perfectDodgeTimeWarp =
+                RequireComponent<PerfectDodgeTimeWarp>(player.gameObject, "perfect dodge time warp");
             CombatVfxCuePlayer playerCuePlayer =
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
             PlayerRangedBasicVfxCueDriver rangedBasicVfxCueDriver =
@@ -1216,6 +1243,7 @@ namespace DimensionBrawl.Editor
                 playerActionController,
                 playerHealth,
                 playerCuePlayer);
+            ValidatePerfectDodgeTimeWarp(perfectDodgeTimeWarp, playerActionController);
             ValidateSummonEnergyVfxCuePresenter(
                 RequireComponent<SummonEnergyVfxCuePresenter>(player.gameObject, "summon energy VFX cue presenter"),
                 energyLadder,
@@ -1648,6 +1676,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
             SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
             SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
+            ConfigurePerfectDodgeScreenCueMaterials(screenCuePresenter);
 
             if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
             {
@@ -1717,6 +1746,7 @@ namespace DimensionBrawl.Editor
                 failMarker);
             SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
             SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
+            ConfigurePerfectDodgeScreenCueMaterials(screenCuePresenter);
 
             if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
             {
@@ -2380,6 +2410,19 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "attackFacingHoldPaddingSeconds").floatValue = 0.04f;
             RequireProperty(serializedObject, "snapBasicAttackFacing").boolValue = true;
             RequireProperty(serializedObject, "basicAttackMoveInputSpeedScale").floatValue = 0f;
+            RequireProperty(serializedObject, "dodgeDurationSeconds").floatValue = 0.56f;
+            RequireProperty(serializedObject, "dodgeInvulnerableFromSeconds").floatValue = 0.02f;
+            RequireProperty(serializedObject, "dodgeInvulnerableToSeconds").floatValue = 0.40f;
+            RequireProperty(serializedObject, "dodgeRecoverySeconds").floatValue = 0.14f;
+            RequireProperty(serializedObject, "dodgeCooldownSeconds").floatValue = 1.15f;
+            RequireProperty(serializedObject, "perfectDodgeProtectionSeconds").floatValue = 0.65f;
+            RequireProperty(serializedObject, "perfectDodgeTimingGraceSeconds").floatValue = 0.08f;
+            RequireProperty(serializedObject, "dodgeSpeed").floatValue = 10.2f;
+            RequireProperty(serializedObject, "dodgeTrigger").stringValue = "DodgeForward";
+            RequireProperty(serializedObject, "dodgeBackTrigger").stringValue = "DodgeBack";
+            RequireProperty(serializedObject, "dodgeLeftTrigger").stringValue = "DodgeLeft";
+            RequireProperty(serializedObject, "dodgeRightTrigger").stringValue = "DodgeRight";
+            RequireProperty(serializedObject, "dodgingParameter").stringValue = "IsDodging";
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
@@ -5505,23 +5548,85 @@ namespace DimensionBrawl.Editor
             CombatVfxCuePlayer cuePlayer)
         {
             PlayerCombatVfxCueDriver driver = EnsureComponent<PlayerCombatVfxCueDriver>(player);
+            PerfectDodgeVfxDirector perfectDodgeDirector =
+                ConfigurePerfectDodgeVfxDirector(player, actionController, playerHealth);
             Transform attackAnchor = EnsureChild(player.transform, "Player_CombatVfx_AttackAnchor");
             Transform dodgeAnchor = EnsureChild(player.transform, "Player_CombatVfx_DodgeAnchor");
             attackAnchor.localPosition = new Vector3(0f, 1.05f, 0.65f);
             dodgeAnchor.localPosition = new Vector3(0f, 0.18f, -0.22f);
             SetObjectReference(driver, "actionController", actionController);
             SetObjectReference(driver, "playerHealth", playerHealth);
+            SetObjectReference(driver, "perfectDodgeVfxDirector", perfectDodgeDirector);
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "attackAnchor", attackAnchor);
             SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
             SetObjectReference(driver, "damageAnchor", attackAnchor);
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            ConfigurePerfectDodgeCueDriverDefaults(driver);
             SetFloat(driver, "pressureDamageCueScale", 0.62f);
             SetBool(driver, "playDamageVfx", true);
             SetBool(driver, "playCriticalVfx", true);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
+        }
+
+        private static void ConfigurePerfectDodgeCueDriverDefaults(PlayerCombatVfxCueDriver driver)
+        {
+            SetEnum(driver, "perfectDodgeTimeFieldCueId", (int)CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
+            SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
+            SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
+            SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
+            SetFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
+        }
+
+        private static PerfectDodgeVfxDirector ConfigurePerfectDodgeVfxDirector(
+            GameObject player,
+            PlayerActionController actionController,
+            CombatHealth playerHealth)
+        {
+            PerfectDodgeVfxDirector director = EnsureComponent<PerfectDodgeVfxDirector>(player);
+            SetObjectReference(director, "actionController", actionController);
+            SetObjectReference(director, "playerHealth", playerHealth);
+            SetObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
+            SetObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            SetObjectReferenceArray(
+                director,
+                "timeWarpClips",
+                LoadAudioClipArray(ActionFoundationCombatVfxSetup.GetPlayerPerfectDodgeTimeWarpClipPaths()));
+            SetObjectReferenceArray(
+                director,
+                "successClips",
+                LoadAudioClipArray(ActionFoundationCombatVfxSetup.GetPlayerPerfectDodgeSuccessClipPaths()));
+            SetFloat(director, "domainSeconds", 3f);
+            SetFloat(director, "shockwaveSeconds", 0.72f);
+            SetFloat(director, "counterWindowSeconds", 1.05f);
+            SetFloat(director, "afterimageSeconds", 0.48f);
+            SetFloat(director, "matrixDomainRadius", 7.2f);
+            SetFloat(director, "shockwaveRadius", 14.5f);
+            SetFloat(director, "worldIntensity", 1.35f);
+            SetFloat(director, "threatRadius", 42f);
+            return director;
+        }
+
+        private static void ConfigurePerfectDodgeTimeWarp(GameObject player, PlayerActionController actionController)
+        {
+            PerfectDodgeTimeWarp timeWarp = EnsureComponent<PerfectDodgeTimeWarp>(player);
+            SetObjectReference(timeWarp, "actionController", actionController);
+            SetFloat(timeWarp, "timeScale", 0.18f);
+            SetFloat(timeWarp, "durationSeconds", 3f);
+            SetFloat(timeWarp, "blendOutSeconds", 0.42f);
+            SetFloat(timeWarp, "globalHitStopTimeScale", 0.08f);
+            SetFloat(timeWarp, "globalHitStopSeconds", 0.055f);
+            SetFloat(timeWarp, "radius", 42f);
+            SetFloat(timeWarp, "innerRadius", 18f);
+            SetFloat(timeWarp, "receiverRefreshIntervalSeconds", 0.08f);
+            EditorUtility.SetDirty(timeWarp);
         }
 
         private static void ConfigureSummonEnergyVfxCuePresenter(
@@ -5674,11 +5779,66 @@ namespace DimensionBrawl.Editor
             Transform attackAnchor = RequireReferencedObject<Transform>(driver, "attackAnchor");
             RequireReferencedObject<Transform>(driver, "dodgeAnchor");
             ValidateObjectReference(driver, "damageAnchor", attackAnchor);
+            PerfectDodgeVfxDirector perfectDodgeDirector =
+                RequireReferencedObject<PerfectDodgeVfxDirector>(driver, "perfectDodgeVfxDirector");
+            ValidatePerfectDodgeVfxDirector(perfectDodgeDirector, actionController, playerHealth);
             ValidateEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             ValidateEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            ValidateEnum(driver, "perfectDodgeTimeFieldCueId", (int)CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            ValidateEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            ValidateEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            ValidateEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            ValidateFloat(driver, "perfectDodgeCueIntensity", 1.55f);
+            ValidateFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
+            ValidateFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
+            ValidateFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
+            ValidateFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            ValidateFloat(driver, "perfectDodgeAudioIntensity", 1f);
             ValidateFloat(driver, "pressureDamageCueScale", 0.62f);
             ValidateBool(driver, "playDamageVfx", true);
             ValidateBool(driver, "playCriticalVfx", true);
+        }
+
+        private static void ValidatePerfectDodgeVfxDirector(
+            PerfectDodgeVfxDirector director,
+            PlayerActionController actionController,
+            CombatHealth playerHealth)
+        {
+            ValidateObjectReference(director, "actionController", actionController);
+            ValidateObjectReference(director, "playerHealth", playerHealth);
+            ValidateObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
+            ValidateObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            ValidateAudioClipArray(
+                director,
+                "timeWarpClips",
+                ActionFoundationCombatVfxSetup.GetPlayerPerfectDodgeTimeWarpClipPaths());
+            ValidateAudioClipArray(
+                director,
+                "successClips",
+                ActionFoundationCombatVfxSetup.GetPlayerPerfectDodgeSuccessClipPaths());
+            ValidateFloat(director, "domainSeconds", 3f);
+            ValidateFloat(director, "shockwaveSeconds", 0.72f);
+            ValidateFloat(director, "counterWindowSeconds", 1.05f);
+            ValidateFloat(director, "afterimageSeconds", 0.48f);
+            ValidateFloat(director, "matrixDomainRadius", 7.2f);
+            ValidateFloat(director, "shockwaveRadius", 14.5f);
+            ValidateFloat(director, "worldIntensity", 1.35f);
+            ValidateFloat(director, "threatRadius", 42f);
+        }
+
+        private static void ValidatePerfectDodgeTimeWarp(
+            PerfectDodgeTimeWarp timeWarp,
+            PlayerActionController actionController)
+        {
+            ValidateObjectReference(timeWarp, "actionController", actionController);
+            ValidateFloat(timeWarp, "timeScale", 0.18f);
+            ValidateFloat(timeWarp, "durationSeconds", 3f);
+            ValidateFloat(timeWarp, "blendOutSeconds", 0.42f);
+            ValidateFloat(timeWarp, "globalHitStopTimeScale", 0.08f);
+            ValidateFloat(timeWarp, "globalHitStopSeconds", 0.055f);
+            ValidateFloat(timeWarp, "radius", 42f);
+            ValidateFloat(timeWarp, "innerRadius", 18f);
+            ValidateFloat(timeWarp, "receiverRefreshIntervalSeconds", 0.08f);
         }
 
         private static void ValidateSummonEnergyVfxCuePresenter(
@@ -5954,10 +6114,17 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector,
                 pocketOwner);
             SetObjectReference(screenCuePresenter, "duelReviewOwner", null);
-            SetBool(screenCuePresenter, "showScreenCues", false);
+            SetBool(screenCuePresenter, "showScreenCues", true);
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeDomainAlpha", 0.42f);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeInvertAlpha", 0.18f);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeEdgeAlpha", 0.48f);
+            SetFloat(screenCuePresenter, "perfectDodgeDomainSeconds", 3f);
+            SetFloat(screenCuePresenter, "perfectDodgePulseSeconds", 0.22f);
+            SetFloat(screenCuePresenter, "perfectDodgeBandThickness", 26f);
+            ConfigurePerfectDodgeScreenCueMaterials(screenCuePresenter);
             SetBool(screenCuePresenter, "useDamageScreenFeedback", false);
             SetFloat(screenCuePresenter, "maxDamageVignetteAlpha", 0.42f);
             SetFloat(screenCuePresenter, "maxDamageFlashAlpha", 0.11f);
@@ -6017,6 +6184,31 @@ namespace DimensionBrawl.Editor
                 stageSelectRoute.ScenePath,
                 lobbyRoute.SceneName,
                 lobbyRoute.ScenePath);
+        }
+
+        private static void ConfigurePerfectDodgeScreenCueMaterials(ActionScreenCuePresenter screenCuePresenter)
+        {
+            if (screenCuePresenter == null)
+            {
+                return;
+            }
+
+            SetObjectReference(screenCuePresenter, "perfectDodgeDomainMaterial", LoadOrCreatePerfectDodgeScreenDomainMaterial());
+            SetObjectReference(
+                screenCuePresenter,
+                "perfectDodgeGlitchOverlayMaterial",
+                LoadAsset<Material>(PerfectDodgeGlitchOverlayMaterialPath));
+            SetFloat(screenCuePresenter, "perfectDodgeShaderIntensity", PerfectDodgeScreenShaderIntensity);
+            SetFloat(screenCuePresenter, "perfectDodgeRadialWarpStrength", PerfectDodgeScreenRadialWarpStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeScanlineStrength", PerfectDodgeScreenScanlineStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeRadialBlurStrength", PerfectDodgeScreenRadialBlurStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeGridStrength", PerfectDodgeScreenGridStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeFractureStrength", PerfectDodgeScreenFractureStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeChromaticStrength", PerfectDodgeScreenChromaticStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeGlitchOverlayAlpha", PerfectDodgeGlitchOverlayAlpha);
+            SetFloat(screenCuePresenter, "perfectDodgeGlitchNoiseStrength", PerfectDodgeGlitchNoiseStrength);
+            SetFloat(screenCuePresenter, "perfectDodgeGlitchJitterStrength", PerfectDodgeGlitchJitterStrength);
+            EditorUtility.SetDirty(screenCuePresenter);
         }
 
         private static UIScreenRouteTable.Route ResolveRoute(UIScreenRouteTable routeTable, UIRouteId routeId)
@@ -7422,6 +7614,14 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Enemy hit VFX should play in the reviewed combat feedback pass.");
             }
 
+            if (!profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeTimeField)
+                || !profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgePulsewave)
+                || !profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeHoloCube)
+                || !profile.AllowsPlayback(CombatVfxCueId.PlayerPerfectDodgeWindow))
+            {
+                throw new InvalidOperationException("Reviewed perfect dodge VFX cues should play in the combat feedback cleanup pass.");
+            }
+
             if (profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact))
             {
                 throw new InvalidOperationException("Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
@@ -7474,6 +7674,22 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
+            ValidateCombatCueVisualPrefab(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeTimeField,
+                "perfect dodge time field");
+            ValidateCombatCueVisualPrefab(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgePulsewave,
+                "perfect dodge pulsewave");
+            ValidateCombatCueVisualPrefab(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeHoloCube,
+                "perfect dodge holo cube");
+            ValidateCombatCueVisualPrefab(
+                profile,
+                CombatVfxCueId.PlayerPerfectDodgeWindow,
+                "perfect dodge follow-up window");
         }
 
         private static void ValidateCombatCueAssetOverlay(
@@ -7505,6 +7721,61 @@ namespace DimensionBrawl.Editor
             ValidatePromotedParticleVfx(cue.Prefab.transform, label, 1);
             string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
             ValidateNoImportedAssetReference(prefabPath);
+        }
+
+        private static void ValidateCombatCueVisualPrefab(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            ValidateNoImportedAssetReference(prefabPath);
+
+            if (cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true) == null)
+            {
+                throw new InvalidOperationException($"{label} should include a promoted CombatVfxCueVisual.");
+            }
+
+            Renderer[] renderers = cue.Prefab.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{label} should expose promoted renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] == null)
+                    {
+                        continue;
+                    }
+
+                    ValidateGameOwnedAsset(materials[materialIndex], $"{label}.{renderer.name} material");
+                    ValidateRenderableMaterialShader(materials[materialIndex], $"{label}.{renderer.name} material shader");
+                    ValidateNoImportedDependencies(materials[materialIndex], $"{label}.{renderer.name} material");
+                }
+            }
+
+            CombatVfxCueAudioRandomizer[] randomizers =
+                cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            for (int randomizerIndex = 0; randomizerIndex < randomizers.Length; randomizerIndex++)
+            {
+                CombatVfxCueAudioRandomizer randomizer = randomizers[randomizerIndex];
+                for (int clipIndex = 0; clipIndex < randomizer.ClipCount; clipIndex++)
+                {
+                    AudioClip clip = randomizer.GetClip(clipIndex);
+                    ValidateGameOwnedAsset(clip, $"{label}.{randomizer.name} clip {clipIndex + 1}");
+                    ValidateNoImportedDependencies(clip, $"{label}.{randomizer.name} clip {clipIndex + 1}");
+                }
+            }
         }
 
         private static void ValidatePromotedParticleVfx(Transform root, string label, int minimumParticleSystems)
@@ -9487,6 +9758,7 @@ namespace DimensionBrawl.Editor
                 existingVisual.localPosition = localPosition;
                 existingVisual.localRotation = Quaternion.Euler(localEulerAngles);
                 existingVisual.localScale = localScale;
+                RemapRoleVisualImportedDependencies(existingVisual.gameObject);
                 ValidateSummonActorRoleVisualContents(existingVisual.gameObject, targetVisualName);
                 return existingVisual;
             }
@@ -9512,6 +9784,7 @@ namespace DimensionBrawl.Editor
                 visual.transform.localPosition = localPosition;
                 visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
                 visual.transform.localScale = localScale;
+                RemapRoleVisualImportedDependencies(visual);
                 ValidateSummonActorRoleVisualContents(visual, targetVisualName);
                 return visual.transform;
             }
@@ -9519,6 +9792,40 @@ namespace DimensionBrawl.Editor
             {
                 PrefabUtility.UnloadPrefabContents(prefabContents);
             }
+        }
+
+        private static void RemapRoleVisualImportedDependencies(GameObject visual)
+        {
+            if (visual == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Material[] materials = renderers[rendererIndex].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    Material material = materials[materialIndex];
+                    if (material == null)
+                    {
+                        continue;
+                    }
+
+                    RemapImportedMaterialTextures(material, SummonRoleVisualTextureRoot);
+                    RemapImportedSerializedMaterialTextures(material, SummonRoleVisualTextureRoot);
+                    EditorUtility.SetDirty(material);
+                    string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+                    if (!string.IsNullOrWhiteSpace(materialPath)
+                        && materialPath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+                    {
+                        AssetDatabase.ImportAsset(materialPath, ImportAssetOptions.ForceUpdate);
+                    }
+                }
+            }
+
+            AssetDatabase.SaveAssets();
         }
 
         private static void RemoveChildrenWithPrefix(Transform parent, string prefix)
@@ -10604,10 +10911,31 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(presenter, "duelReviewOwner", null);
-            ValidateBool(presenter, "showScreenCues", false);
+            ValidateBool(presenter, "showScreenCues", true);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
+            ValidateFloat(presenter, "maxPerfectDodgeDomainAlpha", 0.42f);
+            ValidateFloat(presenter, "maxPerfectDodgeInvertAlpha", 0.18f);
+            ValidateFloat(presenter, "maxPerfectDodgeEdgeAlpha", 0.48f);
+            ValidateFloat(presenter, "perfectDodgeDomainSeconds", 3f);
+            ValidateFloat(presenter, "perfectDodgePulseSeconds", 0.22f);
+            ValidateFloat(presenter, "perfectDodgeBandThickness", 26f);
+            ValidateObjectReference(presenter, "perfectDodgeDomainMaterial", LoadOrCreatePerfectDodgeScreenDomainMaterial());
+            ValidateObjectReference(
+                presenter,
+                "perfectDodgeGlitchOverlayMaterial",
+                LoadAsset<Material>(PerfectDodgeGlitchOverlayMaterialPath));
+            ValidateFloat(presenter, "perfectDodgeShaderIntensity", PerfectDodgeScreenShaderIntensity);
+            ValidateFloat(presenter, "perfectDodgeRadialWarpStrength", PerfectDodgeScreenRadialWarpStrength);
+            ValidateFloat(presenter, "perfectDodgeScanlineStrength", PerfectDodgeScreenScanlineStrength);
+            ValidateFloat(presenter, "perfectDodgeRadialBlurStrength", PerfectDodgeScreenRadialBlurStrength);
+            ValidateFloat(presenter, "perfectDodgeGridStrength", PerfectDodgeScreenGridStrength);
+            ValidateFloat(presenter, "perfectDodgeFractureStrength", PerfectDodgeScreenFractureStrength);
+            ValidateFloat(presenter, "perfectDodgeChromaticStrength", PerfectDodgeScreenChromaticStrength);
+            ValidateFloat(presenter, "perfectDodgeGlitchOverlayAlpha", PerfectDodgeGlitchOverlayAlpha);
+            ValidateFloat(presenter, "perfectDodgeGlitchNoiseStrength", PerfectDodgeGlitchNoiseStrength);
+            ValidateFloat(presenter, "perfectDodgeGlitchJitterStrength", PerfectDodgeGlitchJitterStrength);
             ValidateBool(presenter, "useDamageScreenFeedback", false);
             ValidateFloat(presenter, "maxDamageVignetteAlpha", 0.42f);
             ValidateFloat(presenter, "maxDamageFlashAlpha", 0.11f);
@@ -11390,11 +11718,136 @@ namespace DimensionBrawl.Editor
             return material;
         }
 
+        private static Material LoadOrCreatePerfectDodgeScreenDomainMaterial()
+        {
+            EnsureFolderForAsset(PerfectDodgeScreenDomainMaterialPath);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(PerfectDodgeScreenDomainShaderPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing perfect dodge screen domain shader at {PerfectDodgeScreenDomainShaderPath}.");
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(PerfectDodgeScreenDomainMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, PerfectDodgeScreenDomainMaterialPath);
+            }
+
+            material.shader = shader;
+            material.renderQueue = (int)RenderQueue.Overlay;
+            SetMaterialColorIfPresent(material, "_DomainColor", new Color(0.025f, 0.035f, 0.045f, 1f));
+            SetMaterialColorIfPresent(material, "_EdgeColor", new Color(0.12f, 0.96f, 1f, 1f));
+            SetMaterialColorIfPresent(material, "_InvertColor", new Color(0.92f, 1f, 1f, 1f));
+            SetMaterialFloatIfPresent(material, "_DomainAlpha", 0.42f);
+            SetMaterialFloatIfPresent(material, "_InvertAlpha", 0.18f);
+            SetMaterialFloatIfPresent(material, "_EdgeAlpha", 0.48f);
+            SetMaterialFloatIfPresent(material, "_BandAlpha", 0.13f);
+            SetMaterialFloatIfPresent(material, "_Intensity", PerfectDodgeScreenShaderIntensity);
+            SetMaterialFloatIfPresent(material, "_Sustain", 1f);
+            SetMaterialFloatIfPresent(material, "_Age01", 0f);
+            SetMaterialFloatIfPresent(material, "_Pulse", 0f);
+            SetMaterialFloatIfPresent(material, "_RadialWarp", PerfectDodgeScreenRadialWarpStrength);
+            SetMaterialFloatIfPresent(material, "_ScanlineStrength", PerfectDodgeScreenScanlineStrength);
+            SetMaterialFloatIfPresent(material, "_RadialBlurStrength", PerfectDodgeScreenRadialBlurStrength);
+            SetMaterialFloatIfPresent(material, "_GridStrength", PerfectDodgeScreenGridStrength);
+            SetMaterialFloatIfPresent(material, "_FractureStrength", PerfectDodgeScreenFractureStrength);
+            SetMaterialFloatIfPresent(material, "_ChromaticStrength", PerfectDodgeScreenChromaticStrength);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeWorldFxMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                PerfectDodgeWorldFxMaterialPath,
+                PerfectDodgeWorldFxShaderPath);
+            SetMaterialColorIfPresent(material, "_ColorA", new Color(0.12f, 0.96f, 1f, 0.82f));
+            SetMaterialColorIfPresent(material, "_ColorB", new Color(0.58f, 0.24f, 1f, 0.72f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.7f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1.35f);
+            SetMaterialFloatIfPresent(material, "_RimPower", 2.8f);
+            SetMaterialFloatIfPresent(material, "_NoiseScale", 7f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeAfterimageMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                PerfectDodgeAfterimageMaterialPath,
+                PerfectDodgeAfterimageShaderPath);
+            SetMaterialColorIfPresent(material, "_BaseColor", new Color(0.34f, 0.98f, 1f, 0.42f));
+            SetMaterialColorIfPresent(material, "_RimColor", new Color(0.72f, 0.36f, 1f, 0.9f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.42f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1f);
+            SetMaterialFloatIfPresent(material, "_FresnelPower", 2.2f);
+            SetMaterialFloatIfPresent(material, "_ScanStrength", 0.48f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeMaterial(string materialPath, string shaderPath)
+        {
+            EnsureFolderForAsset(materialPath);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Missing perfect dodge shader at {shaderPath}.");
+            }
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+
+            material.shader = shader;
+            material.enableInstancing = true;
+            material.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static AudioClip[] LoadAudioClipArray(string[] clipPaths)
+        {
+            AudioClip[] clips = new AudioClip[clipPaths.Length];
+            for (int i = 0; i < clipPaths.Length; i++)
+            {
+                clips[i] = LoadAsset<AudioClip>(clipPaths[i]);
+            }
+
+            return clips;
+        }
+
+        private static void ValidateAudioClipArray(UnityEngine.Object target, string propertyName, string[] expectedClipPaths)
+        {
+            SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
+            if (!array.isArray || array.arraySize != expectedClipPaths.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} expected {expectedClipPaths.Length} audio clips, found {array.arraySize}.");
+            }
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                ValidateArrayReference(target, propertyName, i, LoadAsset<AudioClip>(expectedClipPaths[i]));
+            }
+        }
+
         private static void SetMaterialFloatIfPresent(Material material, string propertyName, float value)
         {
             if (material != null && material.HasProperty(propertyName))
             {
                 material.SetFloat(propertyName, value);
+            }
+        }
+
+        private static void SetMaterialColorIfPresent(Material material, string propertyName, Color value)
+        {
+            if (material != null && material.HasProperty(propertyName))
+            {
+                material.SetColor(propertyName, value);
             }
         }
 
