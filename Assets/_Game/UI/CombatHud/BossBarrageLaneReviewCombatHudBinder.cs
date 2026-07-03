@@ -12,6 +12,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
         [SerializeField] private BossBarrageLaneReviewOverlayHud overlayHud;
+        [SerializeField] private BossBarrageLaneReviewTutorialGuide tutorialGuide;
         [SerializeField] private bool useSingleSummonPresentation;
 
         [Header("Combat State")]
@@ -40,10 +41,19 @@ namespace DimensionBrawl.UI
             {
                 inputBridge = GetComponentInChildren<CombatHudInputBridge>(includeInactive: true);
             }
+
+            if (tutorialGuide == null)
+            {
+                tutorialGuide = GetComponent<BossBarrageLaneReviewTutorialGuide>();
+            }
+
+            BindTutorialGuide();
         }
 
         private void OnEnable()
         {
+            BindTutorialGuide();
+
             if (inputBridge != null)
             {
                 inputBridge.ActionRequested += HandleActionRequested;
@@ -69,14 +79,21 @@ namespace DimensionBrawl.UI
                 return;
             }
 
+            tutorialGuide?.TickTutorial(Time.deltaTime);
             UpdatePrimaryReadouts();
             UpdateActionReadouts();
             UpdateSummonReadouts();
+            UpdateTutorialGuideReadouts();
         }
 
         private void UpdatePrimaryReadouts()
         {
-            hudPresenter.SetObjective(pocketReviewOwner != null ? pocketReviewOwner.ObjectiveCue : "Survive the boss lane.");
+            string objective = tutorialGuide != null && tutorialGuide.HasReadoutOverride
+                ? tutorialGuide.CurrentObjective
+                : pocketReviewOwner != null
+                    ? pocketReviewOwner.ObjectiveCue
+                    : "Survive the boss lane.";
+            hudPresenter.SetObjective(objective);
             hudPresenter.SetTimer(ResolveRemainingSeconds());
             if (playerHealth != null)
             {
@@ -98,7 +115,10 @@ namespace DimensionBrawl.UI
                 hudPresenter.SetInputMode(ResolveEnergyInputModeLabel());
             }
 
-            hudPresenter.SetActionFeedbackText(ResolveCombatModeLabel());
+            string feedback = tutorialGuide != null && tutorialGuide.HasReadoutOverride
+                ? tutorialGuide.CurrentPrompt
+                : ResolveCombatModeLabel();
+            hudPresenter.SetActionFeedbackText(feedback);
         }
 
         private void UpdateActionReadouts()
@@ -140,6 +160,19 @@ namespace DimensionBrawl.UI
                 ResolveSupportSummonState(summonSlot3Action),
                 IsSupportSummonReady(summonSlot3Action),
                 ResolveSupportSummonAvailabilityFill01(summonSlot3Action));
+        }
+
+        private void UpdateTutorialGuideReadouts()
+        {
+            if (tutorialGuide == null || !tutorialGuide.HasActiveStep)
+            {
+                hudPresenter.SetGuideFocus(CombatHudActionId.None, dimUnfocused: false);
+                return;
+            }
+
+            hudPresenter.SetGuideFocus(
+                tutorialGuide.CurrentFocusAction,
+                tutorialGuide.CurrentFocusDimUnfocusedActions);
         }
 
         private void HandleActionRequested(CombatHudActionId actionId)
@@ -204,6 +237,22 @@ namespace DimensionBrawl.UI
             {
                 rangedBasicAttackAction?.SetFireHeld(false);
             }
+        }
+
+        private void BindTutorialGuide()
+        {
+            if (tutorialGuide == null)
+            {
+                return;
+            }
+
+            tutorialGuide.BindRuntimeContext(
+                pocketReviewOwner,
+                energyLadder,
+                actionController,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action);
         }
 
         private float ResolveRemainingSeconds()

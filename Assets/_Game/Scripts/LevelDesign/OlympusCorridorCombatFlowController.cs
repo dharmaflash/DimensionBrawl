@@ -4,6 +4,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 
 namespace DimensionBrawl.LevelDesign
@@ -24,6 +25,10 @@ namespace DimensionBrawl.LevelDesign
         [Header("Intro Handoff")]
         [SerializeField] private PlayableDirector introDirector;
         [SerializeField, Min(0f)] private double introHandoffSeconds = 36.5d;
+        [SerializeField] private bool showIntroSkipButton = true;
+        [SerializeField] private Key introSkipKey = Key.Escape;
+        [SerializeField] private string introSkipButtonLabel = "SKIP";
+        [SerializeField] private Rect introSkipButtonNormalizedRect = new Rect(0.84f, 0.045f, 0.12f, 0.06f);
         [SerializeField] private Camera[] introCamerasToDisable = System.Array.Empty<Camera>();
         [SerializeField] private AudioListener[] introAudioListenersToDisable = System.Array.Empty<AudioListener>();
         [SerializeField] private Behaviour[] cutsceneBehavioursToDisableOnHandoff =
@@ -75,6 +80,7 @@ namespace DimensionBrawl.LevelDesign
 
         private float hudRevealTimer;
         private bool observedIntroDirectorPlayback;
+        private GUIStyle introSkipButtonStyle;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -187,6 +193,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void OnDisable()
         {
+            SetPlayerCombatInputLocked(false);
             UnregisterIntroDirectorStoppedHandler();
             UnregisterTutorialCompletedHandler();
             UnregisterIntroSwordEnemyHandlers();
@@ -202,6 +209,7 @@ namespace DimensionBrawl.LevelDesign
 
             UpdateHudReveal();
             UpdateIntroDirectorPlaybackObservation();
+            UpdateIntroSkipInput();
 
             switch (phase)
             {
@@ -244,6 +252,21 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void OnGUI()
+        {
+            if (!showIntroSkipButton || !CanSkipIntroCutscene())
+            {
+                return;
+            }
+
+            EnsureIntroSkipButtonStyle();
+            Rect rect = ResolveIntroSkipButtonRect();
+            if (GUI.Button(rect, introSkipButtonLabel, introSkipButtonStyle))
+            {
+                SkipIntroCutscene();
+            }
+        }
+
         private void PrepareInitialState()
         {
             if (phase != FlowPhase.WaitingForIntroHandoff)
@@ -256,12 +279,51 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(alwaysDisabledRoots, false);
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
+            SetPlayerCombatInputLocked(true);
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
             SetObjectActive(introSwordGateRoot, false);
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
             SetPlayerLaneConstraintEnabled(true);
+        }
+
+        public void SkipIntroCutscene()
+        {
+            if (!CanSkipIntroCutscene())
+            {
+                return;
+            }
+
+            observedIntroDirectorPlayback = true;
+            if (introDirector != null)
+            {
+                introDirector.time = ResolveIntroHandoffTime();
+                introDirector.Evaluate();
+            }
+
+            BeginPostIntroHandoffGameplay();
+        }
+
+        private void UpdateIntroSkipInput()
+        {
+            if (!CanSkipIntroCutscene() || introSkipKey == Key.None || Keyboard.current == null)
+            {
+                return;
+            }
+
+            var key = Keyboard.current[introSkipKey];
+            if (key != null && key.wasPressedThisFrame)
+            {
+                SkipIntroCutscene();
+            }
+        }
+
+        private bool CanSkipIntroCutscene()
+        {
+            return Application.isPlaying
+                && phase == FlowPhase.WaitingForIntroHandoff
+                && introDirector != null;
         }
 
         private bool IsIntroHandoffReady()
@@ -272,13 +334,52 @@ namespace DimensionBrawl.LevelDesign
             }
 
             double duration = introDirector.duration;
-            double resolvedHandoff = introHandoffSeconds > 0d
-                ? introHandoffSeconds
-                : (double.IsInfinity(duration) ? 0d : duration);
-            return introDirector.time >= resolvedHandoff
+            return introDirector.time >= ResolveIntroHandoffTime()
                 || (!double.IsInfinity(duration)
                     && duration > 0d
                     && introDirector.time >= duration - 0.05d);
+        }
+
+        private double ResolveIntroHandoffTime()
+        {
+            if (introDirector == null)
+            {
+                return 0d;
+            }
+
+            double duration = introDirector.duration;
+            double resolvedHandoff = introHandoffSeconds > 0d
+                ? introHandoffSeconds
+                : (double.IsInfinity(duration) ? 0d : duration);
+            if (!double.IsInfinity(duration) && duration > 0d)
+            {
+                return System.Math.Min(resolvedHandoff, System.Math.Max(0d, duration - 0.05d));
+            }
+
+            return resolvedHandoff;
+        }
+
+        private Rect ResolveIntroSkipButtonRect()
+        {
+            float width = Mathf.Max(96f, introSkipButtonNormalizedRect.width * Screen.width);
+            float height = Mathf.Max(40f, introSkipButtonNormalizedRect.height * Screen.height);
+            float x = Mathf.Clamp01(introSkipButtonNormalizedRect.x) * Screen.width;
+            float y = Mathf.Clamp01(introSkipButtonNormalizedRect.y) * Screen.height;
+            return new Rect(x, y, width, height);
+        }
+
+        private void EnsureIntroSkipButtonStyle()
+        {
+            if (introSkipButtonStyle == null)
+            {
+                introSkipButtonStyle = new GUIStyle(GUI.skin.button)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Bold
+                };
+            }
+
+            introSkipButtonStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * 0.018f, 16f, 24f));
         }
 
         private void BeginIntroSwordGate()
@@ -296,6 +397,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(handoffRoots, true);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
+            SetPlayerCombatInputLocked(false);
             ReleasePlayerMovementLocksForGameplay();
             SetPlayerLaneConstraintEnabled(true);
             SetSwordGateMode(true);
@@ -333,9 +435,10 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(handoffRoots, true);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
+            SetPlayerCombatInputLocked(false);
             ReleasePlayerMovementLocksForGameplay();
             SetPlayerLaneConstraintEnabled(false);
-            SetSwordGateMode(false);
+            SetTutorialEntryMode();
             SnapPlayerToHandoffGround();
             SetCombatHealthRootsActive(introSwordEnemies, true);
             SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
@@ -508,6 +611,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorBoundsRoots, true);
             SetCollidersEnabled(stairBlockers, false);
             ReleasePlayerMovementLocksForGameplay();
+            SetPlayerCombatInputLocked(false);
             SetPlayerLaneConstraintEnabled(false);
             SetSwordGateMode(false);
             ConfigureTargetCandidates(corridorTargets);
@@ -866,6 +970,7 @@ namespace DimensionBrawl.LevelDesign
         {
             if (combatModeController != null)
             {
+                combatModeController.SetCinematicInputLocked(false);
                 if (swordOnly)
                 {
                     combatModeController.enabled = true;
@@ -885,6 +990,46 @@ namespace DimensionBrawl.LevelDesign
             for (int i = 0; i < supportSummonActions.Length; i++)
             {
                 SetBehaviourEnabled(supportSummonActions[i], !swordOnly);
+            }
+        }
+
+        private void SetTutorialEntryMode()
+        {
+            if (combatModeController != null)
+            {
+                combatModeController.enabled = true;
+                combatModeController.SetCinematicInputLocked(false);
+                combatModeController.SetMeleeMode();
+            }
+
+            SetBehaviourEnabled(rangedBasicAttackAction, true);
+            SetBehaviourEnabled(skill1Action, true);
+            SetBehaviourEnabled(summonSlot1Action, true);
+            for (int i = 0; i < supportSummonActions.Length; i++)
+            {
+                SetBehaviourEnabled(supportSummonActions[i], true);
+            }
+        }
+
+        private void SetPlayerCombatInputLocked(bool locked)
+        {
+            if (player != null && player.TryGetComponent(out PlayerActionController actionController))
+            {
+                actionController.SetCinematicInputLocked(locked);
+            }
+
+            combatModeController?.SetCinematicInputLocked(locked);
+            rangedBasicAttackAction?.SetCinematicInputLocked(locked);
+            skill1Action?.SetCinematicInputLocked(locked);
+            summonSlot1Action?.SetCinematicInputLocked(locked);
+            if (supportSummonActions == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < supportSummonActions.Length; i++)
+            {
+                supportSummonActions[i]?.SetCinematicInputLocked(locked);
             }
         }
 

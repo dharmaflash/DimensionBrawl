@@ -60,6 +60,7 @@ namespace DimensionBrawl.Player
         private SupportSummonSlotExecutor executor;
         private bool actionEnabledHere;
         private bool queued;
+        private bool cinematicInputLocked;
         private int lastSpentTier;
         private int totalUseCount;
         private float blockedHintTimer;
@@ -245,6 +246,15 @@ namespace DimensionBrawl.Player
             queued = true;
         }
 
+        public void SetCinematicInputLocked(bool locked)
+        {
+            cinematicInputLocked = locked;
+            if (locked)
+            {
+                queued = false;
+            }
+        }
+
         public bool TryUseSummon()
         {
             if (energyLadder == null)
@@ -379,6 +389,12 @@ namespace DimensionBrawl.Player
 
         private bool ReadSummonPressed()
         {
+            if (cinematicInputLocked)
+            {
+                queued = false;
+                return false;
+            }
+
             bool pressed = queued;
             queued = false;
             if (summonAction != null && summonAction.action != null)
