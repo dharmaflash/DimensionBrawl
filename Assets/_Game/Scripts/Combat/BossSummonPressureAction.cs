@@ -436,7 +436,21 @@ namespace DimensionBrawl.Combat
             }
 
             targetZ = Mathf.Clamp(targetZ, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ);
-            return laneSpace.GetBattlefieldWorldPoint(targetX, targetZ, settings.EntryHeight);
+            Vector3 playerSideTarget = laneSpace.GetBattlefieldWorldPoint(targetX, targetZ, settings.EntryHeight);
+            if (!IsLaserSoldier(settings))
+            {
+                return playerSideTarget;
+            }
+
+            Vector3 towardPlayer = Vector3.ProjectOnPlane(playerSideTarget - entryPosition, Vector3.up);
+            if (towardPlayer.sqrMagnitude <= 0.0001f)
+            {
+                towardPlayer = Vector3.back;
+            }
+
+            Vector3 standoffTarget = entryPosition + towardPlayer.normalized * Mathf.Max(0.1f, settings.ActorAdvanceDistance);
+            standoffTarget.y = entryPosition.y;
+            return standoffTarget;
         }
 
         private float ResolveActorAdvanceSeconds(float resolvedAdvanceDistance, BossSummonTierSettings settings)

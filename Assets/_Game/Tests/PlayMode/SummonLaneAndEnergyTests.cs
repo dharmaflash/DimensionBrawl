@@ -4291,6 +4291,60 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossLaserSummonStagesAtRangeBeforeSharedLaserPattern()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+
+            GameObject actorPrefabObject = new GameObject("BossLaserSummonPrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefabObject.AddComponent<BossLaserSummonPattern>();
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            Assert.IsTrue(summonAction.TryReleasePressureSummon(1));
+
+            SummonFrontlineProxy activeProxy = summonAction.LastSummonActor;
+            Assert.IsNotNull(activeProxy);
+            Assert.AreEqual("LaserSoldier", summonAction.LastSummonActorRoleId);
+            Assert.IsNotNull(
+                activeProxy.GetComponent<BossLaserSummonPattern>(),
+                "Boss LaserSoldier should keep the shared laser pattern component.");
+            Assert.LessOrEqual(
+                activeProxy.AdvanceDistance,
+                2.95f,
+                "Boss LaserSoldier should stage at ranged standoff instead of walking all the way into the player.");
+
+            Vector2 startLane = lane.GetLaneCoordinates(activeProxy.AdvanceStartPosition);
+            Vector2 targetLane = lane.GetLaneCoordinates(activeProxy.AdvanceTargetPosition);
+            Assert.Greater(
+                startLane.y,
+                lane.ForwardBoundaryZ,
+                "Boss LaserSoldier should still enter from the boss/frontline side.");
+            Assert.Greater(
+                targetLane.y,
+                lane.ForwardBoundaryZ,
+                "Boss LaserSoldier should stop on the boss/frontline side and attack at range, not become a melee pressure body.");
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void EnemySummonPacingReleasesResponseSlotOneSummonWithoutBossCost()
         {
             GameObject laneObject = new GameObject("Lane");
