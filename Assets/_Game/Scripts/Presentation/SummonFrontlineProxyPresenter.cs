@@ -309,6 +309,7 @@ namespace DimensionBrawl.Presentation
                     entryFlashTimer = Mathf.Max(entryFlashTimer, entryFlashSeconds);
                     impactFlashedThisActivation = false;
                     entryFlashCount++;
+                    BeginSpawnMovementLock();
                     if (PlayVfxCue(entryCueId, tier, entryCueIntensity))
                     {
                         entryVfxCueRequestCount++;
@@ -317,12 +318,6 @@ namespace DimensionBrawl.Presentation
                     if (active && TriggerAnimator(spawnTrigger))
                     {
                         animatorSpawnTriggerCount++;
-                        if (lockAdvanceDuringSpawnState)
-                        {
-                            spawnMovementLockTimer = Mathf.Max(
-                                spawnMovementLockTimer,
-                                spawnMovementLockSeconds);
-                        }
                     }
                 }
 
@@ -631,6 +626,12 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            if (active && spawnMovementLockTimer > 0f)
+            {
+                proxy.SetAdvancePresentationLocked(true);
+                return;
+            }
+
             if (!lockAdvanceDuringSpawnState)
             {
                 proxy.SetAdvancePresentationLocked(false);
@@ -638,8 +639,20 @@ namespace DimensionBrawl.Presentation
             }
 
             bool shouldLock = active
-                && (spawnMovementLockTimer > 0f || IsAnimatorInState(spawnStateName));
+                && IsAnimatorInState(spawnStateName);
             proxy.SetAdvancePresentationLocked(shouldLock);
+        }
+
+        private void BeginSpawnMovementLock()
+        {
+            if (spawnMovementLockSeconds <= 0f)
+            {
+                return;
+            }
+
+            spawnMovementLockTimer = Mathf.Max(
+                spawnMovementLockTimer,
+                spawnMovementLockSeconds);
         }
 
         private bool IsAnimatorInState(string stateName)

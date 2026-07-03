@@ -1944,6 +1944,49 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineProxyPresenterLocksInitialAdvanceDuringSpawnPresentation()
+        {
+            GameObject proxyObject = new GameObject("SpawnLockedSummonProxy");
+            try
+            {
+                SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+                SummonFrontlineProxyPresenter presenter = proxyObject.AddComponent<SummonFrontlineProxyPresenter>();
+                presenter.ConfigurePresentation(proxy, null, System.Array.Empty<Renderer>());
+                SetPrivateInstanceField(presenter, "lockAdvanceDuringSpawnState", false);
+                SetPrivateInstanceField(presenter, "spawnMovementLockSeconds", 0.22f);
+
+                proxy.Activate(
+                    Vector3.zero,
+                    Vector3.forward,
+                    1,
+                    0f,
+                    1f,
+                    Vector3.forward * 2f,
+                    1f,
+                    120f,
+                    3f);
+
+                Vector3 positionBeforeTick = proxy.transform.position;
+                presenter.RefreshNow();
+                proxy.Tick(0.1f);
+
+                Assert.AreEqual(
+                    positionBeforeTick.z,
+                    proxy.transform.position.z,
+                    0.001f,
+                    "Summon proxies should not slide forward during the first spawn presentation beat.");
+                Assert.AreEqual(
+                    SummonFrontlineProxyState.Spawned,
+                    proxy.CurrentState,
+                    "Spawn presentation lock should hold the gameplay proxy out of Advancing until the readable entry beat clears.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(proxyObject);
+            }
+        }
+
+        [Test]
         public void SummonFrontlineProxyPresenterShowsAttackDamageAndDeathFeedback()
         {
             GameObject proxyObject = new GameObject("SummonProxy");

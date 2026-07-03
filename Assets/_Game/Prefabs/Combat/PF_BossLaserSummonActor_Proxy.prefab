@@ -2346,7 +2346,7 @@ MonoBehaviour:
   defaultAdvanceDistance: 0
   defaultAdvanceSeconds: 0.25
   defeatedLingerSeconds: 0.22
-  advanceStartDelaySeconds: 0
+  advanceStartDelaySeconds: 0.16
   advanceAcceleration: 9.5
   advanceDeceleration: 12
   advanceSlowdownDistance: 1.7
@@ -2469,9 +2469,9 @@ MonoBehaviour:
   animator: {fileID: 4915991491568417323}
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
-  lockAdvanceDuringSpawnState: 0
+  lockAdvanceDuringSpawnState: 1
   spawnStateName: EliteSummonPackage
-  spawnMovementLockSeconds: 0
+  spawnMovementLockSeconds: 0.22
   attackTrigger: Attack
   hitTrigger: 
   deathTrigger: Death

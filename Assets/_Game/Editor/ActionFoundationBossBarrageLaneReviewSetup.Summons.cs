@@ -569,12 +569,18 @@ namespace DimensionBrawl.Editor
             try
             {
                 SummonFrontlineProxy editableProxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                SetFloat(editableProxy, "advanceStartDelaySeconds", 0.16f);
                 SetFloat(editableProxy, "advanceAcceleration", 9.5f);
                 SetFloat(editableProxy, "advanceDeceleration", 12f);
                 SetFloat(editableProxy, "advanceSlowdownDistance", 1.7f);
                 SetFloat(editableProxy, "minimumAdvanceSpeedScale", 0.38f);
                 SetFloat(editableProxy, "facingTurnSpeedDegrees", 540f);
                 SetFloat(editableProxy, "turnAlignmentSpeedFloor", 0.34f);
+
+                SummonFrontlineProxyPresenter presenter =
+                    EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
+                SetBool(presenter, "lockAdvanceDuringSpawnState", true);
+                SetFloat(presenter, "spawnMovementLockSeconds", 0.22f);
 
                 BossLaserSummonPattern laserPattern = EnsureComponent<BossLaserSummonPattern>(editableRoot);
                 SetObjectReference(laserPattern, "proxy", editableProxy);

@@ -76,6 +76,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string BossLaserSummonActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
         private const string SummonSlot1ActionProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset";
         private const string BossSummonPressureProfilePath =
@@ -836,6 +838,31 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1.82f, bossSummonTiers[0].ActorScale, 0.001f);
             Assert.AreEqual(2.12f, bossSummonTiers[1].ActorScale, 0.001f);
             Assert.AreEqual(2.10f, bossSummonTiers[2].ActorScale, 0.001f);
+            GameObject bossLaserSummonActorPrefabObject = LoadAsset<GameObject>(BossLaserSummonActorPrefabPath);
+            SummonFrontlineProxy bossLaserSummonActorPrefab =
+                RequireComponent<SummonFrontlineProxy>(
+                    bossLaserSummonActorPrefabObject,
+                    "Boss laser summon actor prefab");
+            Assert.AreSame(bossLaserSummonActorPrefab, bossSummonTiers[0].ActorPrefabOverride);
+            Assert.IsNull(bossSummonTiers[1].ActorPrefabOverride);
+            Assert.AreSame(bossLaserSummonActorPrefab, bossSummonTiers[2].ActorPrefabOverride);
+            Assert.AreEqual(
+                0.16f,
+                GetFloat(bossLaserSummonActorPrefab, "advanceStartDelaySeconds"),
+                0.001f,
+                "Boss laser summon should hold its transform briefly so the entry pose does not slide forward.");
+            SummonFrontlineProxyPresenter bossLaserPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(
+                    bossLaserSummonActorPrefabObject,
+                    "Boss laser summon actor presenter");
+            Assert.IsTrue(
+                GetBool(bossLaserPresenter, "lockAdvanceDuringSpawnState"),
+                "Boss laser summon should lock advance while the entry animation is playing.");
+            Assert.AreEqual(
+                0.22f,
+                GetFloat(bossLaserPresenter, "spawnMovementLockSeconds"),
+                0.001f,
+                "Boss laser summon should reserve a short readable entry beat before locomotion.");
             GameObject bossSummonActorPrefabObject = LoadAsset<GameObject>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(

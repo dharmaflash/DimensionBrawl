@@ -8613,6 +8613,29 @@ namespace DimensionBrawl.Editor
                 expectedScreenIntercepts: 0,
                 expectedScreenLifetimeSeconds: 0.2f);
 
+            BossSummonPressureAction.BossSummonTierSettings[] bossSummonTiers =
+                bossSummonPressureProfile.CopyTierSettings();
+            SummonFrontlineProxy bossLaserSummonActorPrefab =
+                LoadPrefabComponent<SummonFrontlineProxy>(BossLaserSummonActorPrefabPath);
+            if (bossSummonTiers[0].ActorPrefabOverride != bossLaserSummonActorPrefab
+                || bossSummonTiers[2].ActorPrefabOverride != bossLaserSummonActorPrefab)
+            {
+                throw new InvalidOperationException(
+                    "Boss summon pressure tiers 1 and 3 should use the reviewed boss laser summon actor prefab.");
+            }
+
+            if (bossSummonTiers[1].ActorPrefabOverride != null)
+            {
+                throw new InvalidOperationException(
+                    "Boss summon pressure tier 2 should keep the pressure-screen default actor prefab.");
+            }
+
+            ValidateFloat(bossLaserSummonActorPrefab, "advanceStartDelaySeconds", 0.16f);
+            SummonFrontlineProxyPresenter bossLaserSummonPresenter =
+                LoadPrefabComponent<SummonFrontlineProxyPresenter>(BossLaserSummonActorPrefabPath);
+            ValidateBool(bossLaserSummonPresenter, "lockAdvanceDuringSpawnState", true);
+            ValidateFloat(bossLaserSummonPresenter, "spawnMovementLockSeconds", 0.22f);
+
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
