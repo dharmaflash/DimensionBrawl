@@ -667,11 +667,7 @@ namespace DimensionBrawl.Presentation
         {
             string cue = ResolvePrimaryCombatCueText();
             string risk = ResolveCompactRiskText();
-            string ranged = rangedBasicAttackAction != null
-                ? rangedBasicAttackAction.IsFireReady
-                    ? "Fire ready"
-                    : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s"
-                : "Fire -";
+            string ranged = ResolveCompactFireText();
             return $"{cue}   {risk}   {ranged}";
         }
 
@@ -1027,8 +1023,20 @@ namespace DimensionBrawl.Presentation
                 return "Fire -";
             }
 
+            if (rangedBasicAttackAction.IsReloading)
+            {
+                return $"Reload {rangedBasicAttackAction.ReloadRemaining:0.0}s";
+            }
+
+            if (!rangedBasicAttackAction.HasAmmo)
+            {
+                return "Reload";
+            }
+
             return rangedBasicAttackAction.IsFireReady
-                ? "Fire ready"
+                ? rangedBasicAttackAction.UsesMagazineReload
+                    ? $"Fire {rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}"
+                    : "Fire ready"
                 : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s";
         }
 
@@ -1255,10 +1263,15 @@ namespace DimensionBrawl.Presentation
                 return "Ranged Fire -";
             }
 
-            string ready = rangedBasicAttackAction.IsFireReady
-                ? "READY"
-                : $"{rangedBasicAttackAction.FireCooldownRemaining:0.00}s";
-            return $"Ranged Fire {ready}   bolts {rangedBasicAttackAction.ActiveProjectileCount}";
+            string ready = rangedBasicAttackAction.IsReloading
+                ? $"RELOAD {rangedBasicAttackAction.ReloadRemaining:0.00}s"
+                : rangedBasicAttackAction.IsFireReady
+                    ? "READY"
+                    : $"{rangedBasicAttackAction.FireCooldownRemaining:0.00}s";
+            string ammo = rangedBasicAttackAction.UsesMagazineReload
+                ? $"   ammo {rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}"
+                : string.Empty;
+            return $"Ranged Fire {ready}{ammo}   bolts {rangedBasicAttackAction.ActiveProjectileCount}";
         }
 
         private string ResolveSummonExchangeLine()

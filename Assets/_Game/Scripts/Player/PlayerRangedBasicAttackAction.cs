@@ -54,6 +54,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool requireAimToFire;
         [SerializeField] private string fireTrigger;
 
+        [Header("Reload")]
+        [SerializeField] private bool useMagazineReload = true;
+        [SerializeField, Min(1)] private int magazineSize = 30;
+        [SerializeField, Min(0.01f)] private float reloadSeconds = 2f;
+        [SerializeField] private bool autoReloadWhenEmpty = true;
+        [SerializeField] private bool reloadWhenAimReleased = true;
+        [SerializeField] private bool cancelAimReleaseReloadOnAimResume = true;
+
         [Header("Manual Aim")]
         [SerializeField, Range(0f, 1f)] private float aimInputDeadZone = 0.18f;
         [SerializeField, Range(0f, 85f)] private float aimInputYawDegrees = 34f;
@@ -97,6 +105,12 @@ namespace DimensionBrawl.Player
         private bool cinematicInputLocked;
         private float nextFireTime;
         private float blockedHintUntil;
+        private bool ammoInitialized;
+        private int currentAmmo;
+        private bool isReloading;
+        private bool reloadStartedByAimRelease;
+        private float reloadFinishTime;
+        private PlayerRangedAimController subscribedAimController;
         private Vector2 aimInput;
         private int firePreviewFrame = -1;
         private bool hasCachedFirePreview;
@@ -109,7 +123,42 @@ namespace DimensionBrawl.Player
         private bool aimAssistSuppressesViewportReprojection;
 
         public float FireCooldownRemaining => Mathf.Max(0f, nextFireTime - Time.time);
-        public bool IsFireReady => FireCooldownRemaining <= 0f;
+        public bool UsesMagazineReload => useMagazineReload;
+        public int MagazineSize => Mathf.Max(1, magazineSize);
+        public int CurrentAmmo
+        {
+            get
+            {
+                EnsureAmmoInitialized();
+                return useMagazineReload ? currentAmmo : MagazineSize;
+            }
+        }
+
+        public bool HasAmmo
+        {
+            get
+            {
+                EnsureAmmoInitialized();
+                return !useMagazineReload || currentAmmo > 0;
+            }
+        }
+
+        public bool IsReloading => isReloading;
+        public float ReloadRemaining => isReloading ? Mathf.Max(0f, reloadFinishTime - Time.time) : 0f;
+        public float ReloadProgress01 => isReloading
+            ? 1f - Mathf.Clamp01(ReloadRemaining / Mathf.Max(0.01f, reloadSeconds))
+            : 1f;
+        public bool IsFireReady
+        {
+            get
+            {
+                EnsureAmmoInitialized();
+                return FireCooldownRemaining <= 0f
+                    && !isReloading
+                    && (!useMagazineReload || currentAmmo > 0);
+            }
+        }
+
         public bool IsFireHeld => currentFireHeld;
         public bool HasExternalFireHeldInput => mobileFireHeld;
         public bool IsAimPreviewActive => IsRangedModeActive()
@@ -137,6 +186,9 @@ namespace DimensionBrawl.Player
 
         public event Action RangedFireStarted;
         public event Action RangedFireInputStarted;
+        public event Action RangedReloadStarted;
+        public event Action RangedReloadCompleted;
+        public event Action RangedReloadCanceled;
         public event Action<LaneActionProjectile> RangedProjectileFired;
 
         public void QueueFire()
@@ -197,6 +249,14 @@ namespace DimensionBrawl.Player
 
         public bool TryFire()
         {
+            EnsureAmmoInitialized();
+            UpdateReloadState();
+            TryCancelAimReleaseReloadForImmediateUse();
+            if (useMagazineReload && currentAmmo <= 0 && autoReloadWhenEmpty)
+            {
+                BeginReload();
+            }
+
             if (!CanFire(out string blockedReason))
             {
                 SetBlockedHint(blockedReason);
@@ -233,9 +293,18 @@ namespace DimensionBrawl.Player
             nextFireTime = Time.time + fireIntervalSeconds;
             LastUseBlockedReason = string.Empty;
             blockedHintUntil = 0f;
+            ConsumeAmmoAfterFire();
             RangedProjectileFired?.Invoke(projectile);
             RangedFireStarted?.Invoke();
+            TryBeginAutoReloadIfEmpty();
             return true;
+        }
+
+        public bool TryStartReload()
+        {
+            EnsureAmmoInitialized();
+            UpdateReloadState();
+            return BeginReload();
         }
 
         public void ConfigureReferences(
@@ -247,6 +316,12 @@ namespace DimensionBrawl.Player
             ActionCameraController newCameraController,
             Animator newAnimator)
         {
+            bool resubscribeAim = isActiveAndEnabled;
+            if (resubscribeAim)
+            {
+                UnsubscribeAimController();
+            }
+
             combatModeController = newCombatModeController;
             aimController = newAimController;
             movement = newMovement;
@@ -254,6 +329,11 @@ namespace DimensionBrawl.Player
             sourceHealth = newSourceHealth;
             cameraController = newCameraController;
             animator = newAnimator;
+
+            if (resubscribeAim)
+            {
+                SubscribeAimController();
+            }
         }
 
         public void SetAnimator(Animator newAnimator)
@@ -292,16 +372,21 @@ namespace DimensionBrawl.Player
             {
                 sourceHealth = GetComponent<CombatHealth>();
             }
+
+            EnsureAmmoInitialized();
         }
 
         private void OnEnable()
         {
+            EnsureAmmoInitialized();
+            SubscribeAimController();
             actionEnabledHere = EnableActionIfNeeded(fireAction);
             projectilePool.Prewarm(ResolveProjectilePrefab(), projectileRoot, prewarmCount);
         }
 
         private void OnDisable()
         {
+            UnsubscribeAimController();
             externalAimPreviewHeld = false;
             SetFireAimHold(false);
             DisableActionIfOwned(fireAction, actionEnabledHere);
@@ -318,6 +403,9 @@ namespace DimensionBrawl.Player
 
         private void Update()
         {
+            EnsureAmmoInitialized();
+            UpdateReloadState();
+
             if (!IsRangedModeActive())
             {
                 SetFireAimHold(false);
@@ -381,6 +469,9 @@ namespace DimensionBrawl.Player
 
         private bool CanFire(out string blockedReason)
         {
+            EnsureAmmoInitialized();
+            UpdateReloadState();
+
             if (!IsRangedModeActive())
             {
                 blockedReason = "Switch to ranged mode.";
@@ -399,6 +490,18 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
+            if (isReloading)
+            {
+                blockedReason = "Reloading.";
+                return false;
+            }
+
+            if (useMagazineReload && currentAmmo <= 0)
+            {
+                blockedReason = "Magazine empty.";
+                return false;
+            }
+
             if (Time.time < nextFireTime)
             {
                 blockedReason = string.Empty;
@@ -413,6 +516,154 @@ namespace DimensionBrawl.Player
 
             blockedReason = string.Empty;
             return true;
+        }
+
+        private void EnsureAmmoInitialized()
+        {
+            ClampReloadSettings();
+            if (!ammoInitialized)
+            {
+                currentAmmo = magazineSize;
+                ammoInitialized = true;
+            }
+
+            if (!useMagazineReload)
+            {
+                currentAmmo = magazineSize;
+                isReloading = false;
+                reloadStartedByAimRelease = false;
+                reloadFinishTime = 0f;
+                return;
+            }
+
+            currentAmmo = Mathf.Clamp(currentAmmo, 0, magazineSize);
+        }
+
+        private void ClampReloadSettings()
+        {
+            magazineSize = Mathf.Max(1, magazineSize);
+            reloadSeconds = Mathf.Max(0.01f, reloadSeconds);
+            if (currentAmmo > magazineSize)
+            {
+                currentAmmo = magazineSize;
+            }
+        }
+
+        private void UpdateReloadState()
+        {
+            if (!isReloading || Time.time < reloadFinishTime)
+            {
+                return;
+            }
+
+            isReloading = false;
+            reloadStartedByAimRelease = false;
+            reloadFinishTime = 0f;
+            currentAmmo = magazineSize;
+            LastUseBlockedReason = string.Empty;
+            blockedHintUntil = 0f;
+            RangedReloadCompleted?.Invoke();
+        }
+
+        private void ConsumeAmmoAfterFire()
+        {
+            if (!useMagazineReload)
+            {
+                return;
+            }
+
+            currentAmmo = Mathf.Max(0, currentAmmo - 1);
+        }
+
+        private void TryBeginAutoReloadIfEmpty()
+        {
+            if (useMagazineReload && autoReloadWhenEmpty && currentAmmo <= 0)
+            {
+                BeginReload();
+            }
+        }
+
+        private bool BeginReload(bool startedByAimRelease = false)
+        {
+            if (!useMagazineReload || isReloading || currentAmmo >= magazineSize)
+            {
+                return false;
+            }
+
+            isReloading = true;
+            reloadStartedByAimRelease = startedByAimRelease;
+            reloadFinishTime = Time.time + reloadSeconds;
+            pendingFireThisFrame = false;
+            RangedReloadStarted?.Invoke();
+            return true;
+        }
+
+        private bool TryCancelAimReleaseReloadForImmediateUse()
+        {
+            if (!cancelAimReleaseReloadOnAimResume
+                || !isReloading
+                || !reloadStartedByAimRelease
+                || currentAmmo <= 0)
+            {
+                return false;
+            }
+
+            isReloading = false;
+            reloadStartedByAimRelease = false;
+            reloadFinishTime = 0f;
+            LastUseBlockedReason = string.Empty;
+            blockedHintUntil = 0f;
+            RangedReloadCanceled?.Invoke();
+            return true;
+        }
+
+        private void SubscribeAimController()
+        {
+            if (subscribedAimController == aimController)
+            {
+                return;
+            }
+
+            UnsubscribeAimController();
+            if (aimController == null)
+            {
+                return;
+            }
+
+            subscribedAimController = aimController;
+            subscribedAimController.AimModeChanged += HandleAimModeChanged;
+        }
+
+        private void UnsubscribeAimController()
+        {
+            if (subscribedAimController == null)
+            {
+                return;
+            }
+
+            subscribedAimController.AimModeChanged -= HandleAimModeChanged;
+            subscribedAimController = null;
+        }
+
+        private void HandleAimModeChanged(bool isAiming)
+        {
+            if (isAiming)
+            {
+                TryCancelAimReleaseReloadForImmediateUse();
+                return;
+            }
+
+            if (!reloadWhenAimReleased || cinematicInputLocked || !IsRangedModeActive())
+            {
+                return;
+            }
+
+            EnsureAmmoInitialized();
+            UpdateReloadState();
+            if (useMagazineReload && currentAmmo < magazineSize)
+            {
+                BeginReload(startedByAimRelease: true);
+            }
         }
 
         private Vector3 ResolveFireDirection(out Vector3 spawnPosition)

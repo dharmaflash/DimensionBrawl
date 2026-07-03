@@ -150,6 +150,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdle.fbx";
         private const string RifleGirlShootClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Shoot.fbx";
+        private const string RifleGirlReloadClipPath =
+            "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Reload.fbx";
         private const string RifleGirlDrawClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_DrawRangedFocus.fbx";
         private const string RifleGirlHolsterClipPath =
@@ -7780,6 +7782,7 @@ namespace DimensionBrawl.Tests
                 "Inori ranged controller should preserve an explicit default state.");
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlIdleClipPath));
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlAimIdleClipPath));
+            AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlReloadClipPath));
             AssertControllerUsesGameOwnedMotions(rangedController);
             AssertRifleGirlAvatarUsesAuthoredMapping();
 
@@ -7855,6 +7858,7 @@ namespace DimensionBrawl.Tests
             AssertAnimatorParameter(rangedAnimator, "IDLE 0", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "IDLE", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "SHOOT", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "RELOAD", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "RUN", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK F", AnimatorControllerParameterType.Trigger);

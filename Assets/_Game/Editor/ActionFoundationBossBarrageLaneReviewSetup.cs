@@ -4501,6 +4501,7 @@ namespace DimensionBrawl.Editor
             AddTrigger(controller, "IDLE 0");
             AddTrigger(controller, "SHOOT");
             AddTrigger(controller, "AUTO SHOOT");
+            AddTrigger(controller, "RELOAD");
             AddTrigger(controller, "JOG");
             AddTrigger(controller, "WALK");
             AddTrigger(controller, "RUN");
@@ -4554,6 +4555,12 @@ namespace DimensionBrawl.Editor
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdleAutoShoot.fbx",
                 true,
                 new Vector3(640f, 160f, 0f));
+            AnimatorState reload = CreateState(
+                stateMachine,
+                "R_Reload",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Reload.fbx",
+                false,
+                new Vector3(640f, 240f, 0f));
             AnimatorState aimJog = CreateState(
                 stateMachine,
                 "R_AimJog",
@@ -4608,6 +4615,7 @@ namespace DimensionBrawl.Editor
             AddAnyTriggerTransition(stateMachine, "IDLE 0", aimIdle);
             AddAnyTriggerTransition(stateMachine, "SHOOT", shoot);
             AddAnyTriggerTransition(stateMachine, "AUTO SHOOT", autoShoot);
+            AddAnyTriggerTransition(stateMachine, "RELOAD", reload, 0f, true);
             AddAnyTriggerTransition(stateMachine, "JOG", aimJog);
             AddAnyTriggerTransition(stateMachine, "WALK", normalWalk);
             AddAnyTriggerTransition(stateMachine, "RUN", normalRun);
@@ -4640,6 +4648,7 @@ namespace DimensionBrawl.Editor
                 && HasTrigger(controller, "IDLE 0")
                 && HasTrigger(controller, "SHOOT")
                 && HasTrigger(controller, "AUTO SHOOT")
+                && HasTrigger(controller, "RELOAD")
                 && HasTrigger(controller, "JOG")
                 && HasTrigger(controller, "WALK")
                 && HasTrigger(controller, "RUN")
@@ -4658,6 +4667,7 @@ namespace DimensionBrawl.Editor
                 && HasState(stateMachine, "R_AimIdle")
                 && HasState(stateMachine, "R_Shoot")
                 && HasState(stateMachine, "R_AimIdleAutoShoot")
+                && HasState(stateMachine, "R_Reload")
                 && HasState(stateMachine, "R_AimJog")
                 && HasState(stateMachine, "R_AimWalkForward")
                 && HasState(stateMachine, "R_AimWalkBack")
@@ -4665,7 +4675,8 @@ namespace DimensionBrawl.Editor
                 && HasState(stateMachine, "R_AimWalkForwardRight")
                 && HasState(stateMachine, "R_AimWalkBackLeft")
                 && HasState(stateMachine, "R_AimWalkBackRight")
-                && HasState(stateMachine, "R_Evade");
+                && HasState(stateMachine, "R_Evade")
+                && HasAnyStateTriggerTransition(stateMachine, "RELOAD", "R_Reload");
         }
 
         private static bool HasTrigger(AnimatorController controller, string parameterName)
@@ -4706,6 +4717,35 @@ namespace DimensionBrawl.Editor
             return false;
         }
 
+        private static bool HasAnyStateTriggerTransition(
+            AnimatorStateMachine stateMachine,
+            string trigger,
+            string destinationStateName)
+        {
+            AnimatorStateTransition[] transitions = stateMachine.anyStateTransitions;
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (transition.destinationState == null
+                    || !string.Equals(transition.destinationState.name, destinationStateName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                AnimatorCondition[] conditions = transition.conditions;
+                for (int j = 0; j < conditions.Length; j++)
+                {
+                    if (conditions[j].mode == AnimatorConditionMode.If
+                        && string.Equals(conditions[j].parameter, trigger, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private static void AddTrigger(AnimatorController controller, string parameterName)
         {
             controller.AddParameter(parameterName, AnimatorControllerParameterType.Trigger);
@@ -4737,12 +4777,14 @@ namespace DimensionBrawl.Editor
         private static void AddAnyTriggerTransition(
             AnimatorStateMachine stateMachine,
             string trigger,
-            AnimatorState destination)
+            AnimatorState destination,
+            float duration = 0.04f,
+            bool canTransitionToSelf = false)
         {
             AnimatorStateTransition transition = stateMachine.AddAnyStateTransition(destination);
             transition.hasExitTime = false;
-            transition.duration = 0.04f;
-            transition.canTransitionToSelf = false;
+            transition.duration = duration;
+            transition.canTransitionToSelf = canTransitionToSelf;
             transition.AddCondition(AnimatorConditionMode.If, 0f, trigger);
             EditorUtility.SetDirty(transition);
         }

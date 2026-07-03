@@ -1400,6 +1400,241 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RangedBasicStartsReloadWhenMagazineRunsEmpty()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+
+            GameObject projectilePrefabObject = new GameObject("RangedProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.AddComponent<LaneActionProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("projectilePrefab").objectReferenceValue = projectilePrefab;
+            serializedAction.FindProperty("projectileRoot").objectReferenceValue = playerObject.transform;
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 1f;
+            serializedAction.FindProperty("fireIntervalSeconds").floatValue = 0.01f;
+            serializedAction.FindProperty("prewarmCount").intValue = 0;
+            serializedAction.FindProperty("aimFromCameraViewport").boolValue = false;
+            serializedAction.FindProperty("useAimAssist").boolValue = false;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 2);
+
+            int reloadStartedCount = 0;
+            rangedAction.RangedReloadStarted += () => reloadStartedCount++;
+
+            Assert.IsTrue(rangedAction.TryFire());
+            Assert.AreEqual(1, rangedAction.CurrentAmmo);
+            Assert.IsFalse(rangedAction.IsReloading);
+
+            SetPrivateInstanceField(rangedAction, "nextFireTime", Time.time - 0.01f);
+            Assert.IsTrue(rangedAction.TryFire());
+
+            Assert.AreEqual(0, rangedAction.CurrentAmmo);
+            Assert.IsTrue(rangedAction.IsReloading);
+            Assert.AreEqual(1, reloadStartedCount);
+            Assert.IsFalse(rangedAction.IsFireReady);
+
+            Assert.IsFalse(rangedAction.TryFire());
+            StringAssert.Contains("Reloading", rangedAction.LastUseBlockedReason);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void RangedBasicRefillsMagazineAfterReloadFinishes()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+
+            GameObject projectilePrefabObject = new GameObject("RangedProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.AddComponent<LaneActionProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("projectilePrefab").objectReferenceValue = projectilePrefab;
+            serializedAction.FindProperty("projectileRoot").objectReferenceValue = playerObject.transform;
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 0.25f;
+            serializedAction.FindProperty("fireIntervalSeconds").floatValue = 0.01f;
+            serializedAction.FindProperty("prewarmCount").intValue = 0;
+            serializedAction.FindProperty("aimFromCameraViewport").boolValue = false;
+            serializedAction.FindProperty("useAimAssist").boolValue = false;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 1);
+
+            int reloadCompletedCount = 0;
+            rangedAction.RangedReloadCompleted += () => reloadCompletedCount++;
+
+            Assert.IsTrue(rangedAction.TryFire());
+            Assert.AreEqual(0, rangedAction.CurrentAmmo);
+            Assert.IsTrue(rangedAction.IsReloading);
+
+            SetPrivateInstanceField(rangedAction, "reloadFinishTime", Time.time - 0.01f);
+            SetPrivateInstanceField(rangedAction, "nextFireTime", Time.time - 0.01f);
+            Assert.IsTrue(rangedAction.TryFire());
+
+            Assert.IsFalse(rangedAction.IsReloading);
+            Assert.AreEqual(1, reloadCompletedCount);
+            Assert.AreEqual(1, rangedAction.CurrentAmmo, "Reload should refill to magazine size before the next shot consumes one round.");
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void RangedBasicStartsReloadWhenAimIsReleasedWithSpentAmmo()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedAimController aimController = playerObject.AddComponent<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+            rangedAction.ConfigureReferences(null, aimController, null, null, null, null, null);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 1f;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 1);
+
+            int reloadStartedCount = 0;
+            rangedAction.RangedReloadStarted += () => reloadStartedCount++;
+
+            aimController.SetAimMode(true);
+            Assert.IsTrue(aimController.IsAiming);
+            Assert.IsFalse(rangedAction.IsReloading);
+
+            aimController.SetAimMode(false);
+
+            Assert.IsFalse(aimController.IsAiming);
+            Assert.IsTrue(rangedAction.IsReloading);
+            Assert.AreEqual(1, reloadStartedCount);
+            Assert.AreEqual(1, rangedAction.CurrentAmmo);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void RangedBasicCancelsAimReleaseReloadWhenAimResumesWithAmmo()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedAimController aimController = playerObject.AddComponent<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+            rangedAction.ConfigureReferences(null, aimController, null, null, null, null, null);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 1f;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 1);
+
+            int reloadCanceledCount = 0;
+            rangedAction.RangedReloadCanceled += () => reloadCanceledCount++;
+
+            aimController.SetAimMode(true);
+            aimController.SetAimMode(false);
+            Assert.IsTrue(rangedAction.IsReloading);
+
+            aimController.SetAimMode(true);
+
+            Assert.IsFalse(rangedAction.IsReloading);
+            Assert.AreEqual(1, reloadCanceledCount);
+            Assert.AreEqual(1, rangedAction.CurrentAmmo);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void RangedBasicCanFireImmediatelyAfterCancelingAimReleaseReload()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedAimController aimController = playerObject.AddComponent<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+            rangedAction.ConfigureReferences(null, aimController, null, null, null, null, null);
+
+            GameObject projectilePrefabObject = new GameObject("RangedProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.AddComponent<LaneActionProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("projectilePrefab").objectReferenceValue = projectilePrefab;
+            serializedAction.FindProperty("projectileRoot").objectReferenceValue = playerObject.transform;
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 1f;
+            serializedAction.FindProperty("fireIntervalSeconds").floatValue = 0.01f;
+            serializedAction.FindProperty("prewarmCount").intValue = 0;
+            serializedAction.FindProperty("aimFromCameraViewport").boolValue = false;
+            serializedAction.FindProperty("useAimAssist").boolValue = false;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 1);
+
+            aimController.SetAimMode(true);
+            aimController.SetAimMode(false);
+            Assert.IsTrue(rangedAction.IsReloading);
+
+            aimController.SetAimMode(true);
+            Assert.IsTrue(rangedAction.TryFire());
+
+            Assert.AreEqual(0, rangedAction.CurrentAmmo);
+            Assert.IsTrue(
+                rangedAction.IsReloading,
+                "After the remaining round is fired, the empty magazine should begin its non-cancelable reload.");
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void RangedBasicKeepsReloadingWhenAimResumesWithEmptyMagazine()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            PlayerRangedAimController aimController = playerObject.AddComponent<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+            rangedAction.ConfigureReferences(null, aimController, null, null, null, null, null);
+
+            SerializedObject serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("magazineSize").intValue = 2;
+            serializedAction.FindProperty("reloadSeconds").floatValue = 1f;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+            SetPrivateInstanceField(rangedAction, "ammoInitialized", true);
+            SetPrivateInstanceField(rangedAction, "currentAmmo", 0);
+
+            int reloadCanceledCount = 0;
+            rangedAction.RangedReloadCanceled += () => reloadCanceledCount++;
+
+            aimController.SetAimMode(true);
+            aimController.SetAimMode(false);
+            Assert.IsTrue(rangedAction.IsReloading);
+
+            aimController.SetAimMode(true);
+
+            Assert.IsTrue(rangedAction.IsReloading);
+            Assert.AreEqual(0, reloadCanceledCount);
+            Assert.IsFalse(rangedAction.TryFire());
+            StringAssert.Contains("Reloading", rangedAction.LastUseBlockedReason);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonHealthBarPresenterShowsAfterActivationAndTracksDamage()
         {
             GameObject proxyObject = new GameObject("SummonProxy");
