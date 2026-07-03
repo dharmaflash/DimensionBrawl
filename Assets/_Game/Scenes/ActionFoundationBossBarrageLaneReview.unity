@@ -14723,7 +14723,7 @@ MonoBehaviour:
     LateralOffset: 0.9
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.16
+    ActorScale: 1.82
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 460
@@ -14740,7 +14740,7 @@ MonoBehaviour:
     LateralOffset: 1.4
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.52
+    ActorScale: 2.12
     ActorRoleId: PressureScreen
     ActorPrefabOverride: {fileID: 0}
     ActorMaxHealth: 700
@@ -14757,7 +14757,7 @@ MonoBehaviour:
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.48
+    ActorScale: 2.10
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 760

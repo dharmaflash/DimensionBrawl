@@ -833,9 +833,9 @@ namespace DimensionBrawl.Tests
                 "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
             BossSummonPressureAction.BossSummonTierSettings[] bossSummonTiers =
                 bossSummonPressureProfile.CopyTierSettings();
-            Assert.AreEqual(2.07f, bossSummonTiers[0].ActorScale, 0.001f);
-            Assert.AreEqual(2.52f, bossSummonTiers[1].ActorScale, 0.001f);
-            Assert.AreEqual(2.48f, bossSummonTiers[2].ActorScale, 0.001f);
+            Assert.AreEqual(1.82f, bossSummonTiers[0].ActorScale, 0.001f);
+            Assert.AreEqual(2.12f, bossSummonTiers[1].ActorScale, 0.001f);
+            Assert.AreEqual(2.10f, bossSummonTiers[2].ActorScale, 0.001f);
             GameObject bossSummonActorPrefabObject = LoadAsset<GameObject>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(
