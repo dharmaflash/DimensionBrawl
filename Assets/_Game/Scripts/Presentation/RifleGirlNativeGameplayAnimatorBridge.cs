@@ -22,6 +22,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private string idleTrigger = "IDLE 0";
         [SerializeField] private string shootTrigger = "SHOOT";
         [SerializeField] private string autoShootTrigger = "AUTO SHOOT";
+        [SerializeField] private string reloadTrigger = "RELOAD";
         [SerializeField] private string jogTrigger = "JOG";
         [SerializeField] private string walkForwardTrigger = "WALK F";
         [SerializeField] private string walkBackTrigger = "WALK B";
@@ -48,6 +49,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private bool useNativeAutoShootLoop = true;
         [SerializeField] private bool triggerAutoShootOncePerHold = true;
         [SerializeField, Min(0f)] private float stationaryFirePoseHoldSeconds = 0.36f;
+        [SerializeField, Min(0f)] private float reloadPoseHoldSeconds = 0.62f;
         [SerializeField] private bool keepMovingLocomotionDuringFire = true;
         [SerializeField, Min(0f)] private float locomotionTriggerHoldSeconds = 0.18f;
         [SerializeField, Min(0f)] private float dodgePoseSuppressSeconds = 0.42f;
@@ -90,6 +92,8 @@ namespace DimensionBrawl.Presentation
             if (rangedBasicAttackAction != null)
             {
                 rangedBasicAttackAction.RangedFireStarted += HandleRangedFireStarted;
+                rangedBasicAttackAction.RangedReloadStarted += HandleRangedReloadStarted;
+                rangedBasicAttackAction.RangedReloadCanceled += HandleRangedReloadCanceled;
             }
 
             if (actionController != null)
@@ -116,6 +120,8 @@ namespace DimensionBrawl.Presentation
             if (rangedBasicAttackAction != null)
             {
                 rangedBasicAttackAction.RangedFireStarted -= HandleRangedFireStarted;
+                rangedBasicAttackAction.RangedReloadStarted -= HandleRangedReloadStarted;
+                rangedBasicAttackAction.RangedReloadCanceled -= HandleRangedReloadCanceled;
             }
 
             if (actionController != null)
@@ -206,6 +212,38 @@ namespace DimensionBrawl.Presentation
             {
                 ResetLastLocomotionTrigger();
             }
+        }
+
+        private void HandleRangedReloadStarted()
+        {
+            if (animator == null || !IsRangedModeActive)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            float poseHoldSeconds = Mathf.Max(fireAimPoseLingerSeconds, reloadPoseHoldSeconds);
+            aimPoseUntil = Mathf.Max(aimPoseUntil, now + poseHoldSeconds);
+            moveTriggerSuppressedUntil = Mathf.Max(moveTriggerSuppressedUntil, now + poseHoldSeconds);
+            autoShootLoopTriggered = false;
+            ApplyMovementParameters(true);
+            if (Trigger(reloadTrigger))
+            {
+                ResetLastLocomotionTrigger();
+            }
+        }
+
+        private void HandleRangedReloadCanceled()
+        {
+            if (animator == null || !IsRangedModeActive)
+            {
+                return;
+            }
+
+            moveTriggerSuppressedUntil = 0f;
+            autoShootLoopTriggered = false;
+            ApplyMovementParameters(true);
+            ApplyNativeLocomotion(true);
         }
 
         private void HandleAimModeChanged(bool isAiming)

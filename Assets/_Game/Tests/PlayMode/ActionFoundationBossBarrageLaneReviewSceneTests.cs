@@ -26,7 +26,7 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         private const string StageProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
-        private const float ReviewBossMaxHealth = 7200f;
+        private const float ReviewBossMaxHealth = 4800f;
         private const float Skill1VisibleBossHpShiftRatio = 0.008f;
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
@@ -76,6 +76,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string BossLaserSummonActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
         private const string SummonSlot1ActionProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset";
         private const string BossSummonPressureProfilePath =
@@ -148,6 +150,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdle.fbx";
         private const string RifleGirlShootClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Shoot.fbx";
+        private const string RifleGirlReloadClipPath =
+            "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Reload.fbx";
         private const string RifleGirlDrawClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_DrawRangedFocus.fbx";
         private const string RifleGirlHolsterClipPath =
@@ -156,7 +160,24 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
-        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier01Commando";
+        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
+        private const string BossHumanoidControllerPath =
+            "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        private const string BossHumanoidImportedRoot =
+            "Assets/_Imported/AssetStore/Protofactor/Sci Fi";
+        private const string BossHumanoidShooterRoot =
+            BossHumanoidImportedRoot + "/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3";
+        private const string BossHumanoidCommonWeaponRoot =
+            BossHumanoidImportedRoot + "/Common/Weapons";
+        private const string BossHumanoidSourcePrefabPath =
+            BossHumanoidShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string BossHumanoidSourceModelPath =
+            BossHumanoidShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
+        private const string BossHumanoidSourceAssaultRifleModelPath =
+            BossHumanoidCommonWeaponRoot + "/FBX Files/SM_SciFiAssaultRifle_01.FBX";
+        private const string BossHumanoidLineCasterVariantModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
+        private const string BossHumanoidAssaultRifleName = "SM_SciFiAssaultRifle_01";
         private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_Inori";
         private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
@@ -248,7 +269,7 @@ namespace DimensionBrawl.Tests
         };
         private static readonly BossPressureActionKind[] RequiredBossPressureActionCueKinds =
         {
-            BossPressureActionKind.SkillPattern,
+            BossPressureActionKind.SpecialSkill,
             BossPressureActionKind.SummonPressure,
             BossPressureActionKind.PunishOverextend
         };
@@ -326,6 +347,255 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator BossResponseLoopSceneBindsActionDeckBasicFireAndMovement()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            AssertBossHumanoidVisual(bossRoot);
+
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            BossPressurePositionController bossPressurePosition =
+                RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
+            BossPressureActionDeckProfile bossPressureActionDeck =
+                LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath);
+            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossBasicFireEmitter, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossBasicFireEmitter, "trackedPlayer"));
+            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(bossBasicFireEmitter, "sourceHealth"));
+            Assert.AreSame(bossBasicFireProfile, bossBasicFireEmitter.FireProfile);
+            Assert.IsTrue(bossBasicFireEmitter.IsFiringEnabled);
+            Assert.AreEqual(0.25f, GetFloat(bossBasicFireEmitter, "resumeCooldownAfterSuppressionSeconds"), 0.001f);
+
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureCost, "laneSpace"));
+            Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressureCost, "trackedBoss"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressurePosition, "laneSpace"));
+            Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(bossPressurePosition, "costLadder"));
+            Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(bossPressurePosition, "actionDirector"));
+            Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressurePosition, "movedTransform"));
+            Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
+            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
+            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
+            Assert.IsTrue(GetBool(bossPressurePosition, "lateralStrafeEnabled"));
+
+            Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
+            Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossPressureActionDirector, "bossBarrageEmitter"));
+            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(bossPressureActionDirector, "basicFireEmitter"));
+            Assert.AreSame(bossSummonPressureAction, GetObjectReference<BossSummonPressureAction>(bossPressureActionDirector, "summonPressureAction"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureActionDirector, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressureActionDirector, "trackedPlayer"));
+            Assert.AreSame(bossPressureActionDeck, bossPressureActionDirector.ActionDeckProfile);
+            Assert.AreEqual(5, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(0.25f, bossPressureActionDeck.DecisionThinkIntervalSeconds, 0.001f);
+            Assert.AreEqual(0.25f, bossPressureActionDirector.DecisionThinkIntervalSeconds, 0.001f);
+            Assert.AreEqual(0.65f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
+
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                0,
+                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
+                BossPressureActionKind.SpecialSkill,
+                1,
+                "DodgeBossLinePressureSpecial",
+                "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
+                "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
+                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
+                false,
+                0f,
+                1f,
+                false,
+                1,
+                15,
+                0,
+                0,
+                BossPressureMovementIntent.StrafeFire);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                2,
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                BossPressureActionKind.SummonPressure,
+                2,
+                "SummonSlot1PressureBlock",
+                "LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.",
+                "Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.",
+                "The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.",
+                false,
+                0f,
+                1f,
+                true,
+                2,
+                30,
+                0,
+                140,
+                BossPressureMovementIntent.RetreatAndSummon);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                4,
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
+                BossPressureActionKind.PunishOverextend,
+                3,
+                "RetreatOrSpendHighTierAnswer",
+                "LV3 overextend punish that closes gaps when the player stays near the forward boundary too long.",
+                "Retreat from forward-risk space or dodge through the shrinking net before firing back.",
+                "A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.",
+                true,
+                0.66f,
+                1f,
+                false,
+                1,
+                80,
+                80,
+                0,
+                BossPressureMovementIntent.CommitForward);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BossResponseLoopSceneExercisesBasicFireSpecialSummonPunishAndMovement()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            BossPressurePositionController bossPressurePosition =
+                RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
+            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+
+            Assert.IsTrue(bossHealth.IsAlive);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.BackLimitZ);
+
+            bossBasicFireEmitter.Tick(bossBasicFireProfile.InitialDelaySeconds + 0.05f);
+
+            Assert.GreaterOrEqual(
+                bossPressureActionDirector.TotalBasicShotVolleys,
+                1,
+                "The real review scene should let the boss maintain a weak basic-fire layer between pressure actions.");
+            Assert.Greater(
+                bossPressureActionDirector.LastBasicShotProjectileCount,
+                0,
+                "Boss basic-fire volleys should spawn projectiles in the real review scene.");
+
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(0.3f);
+            Vector3 bossPositionBeforeSpecialMove = bossRoot.transform.position;
+            float bossRiskBeforeSpecialMove = bossPressurePosition.CurrentRisk01;
+            bossPressurePosition.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.StrafeFire, bossPressureActionDirector.LastMovementIntent);
+            Assert.AreEqual(0.34f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
+            Assert.Greater(
+                Vector3.Distance(bossPositionBeforeSpecialMove, bossRoot.transform.position),
+                0.001f,
+                "The real review-scene boss should visibly reposition after selecting its strafe-fire intent.");
+            Assert.Greater(
+                bossPressurePosition.CurrentRisk01,
+                bossRiskBeforeSpecialMove,
+                "The real review-scene boss should not remain frozen at the backline after a pressure action.");
+            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
+            emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(1.2f);
+            bossPressurePosition.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
+            Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
+            Assert.AreEqual(1, bossSummonPressureAction.TotalReleaseCount);
+            Assert.AreEqual(1, bossSummonPressureAction.ActiveSummonActorCount);
+            Assert.AreEqual(0.18f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
+            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath), emitter.QueuedPriorityPattern);
+            emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ);
+            bossPressureCost.GrantCurrentTierCost(300f);
+            bossPressureActionDirector.Tick(1.2f);
+            Vector3 bossPositionBeforePunishMove = bossRoot.transform.position;
+            float bossRiskBeforePunishMove = bossPressurePosition.CurrentRisk01;
+            bossPressurePosition.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.PunishOverextend, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.CommitForward, bossPressureActionDirector.LastMovementIntent);
+            Assert.AreEqual(
+                1,
+                bossSummonPressureAction.TotalReleaseCount,
+                "An active boss pressure summon should not be replaced before the boss switches to an overextend punish.");
+            Assert.IsTrue(bossPressureActionDirector.LastDecisionContext.HasActiveBossPressureSummon);
+            Assert.AreEqual(0.74f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
+            Assert.Greater(
+                Vector3.Distance(bossPositionBeforePunishMove, bossRoot.transform.position),
+                0.001f,
+                "The real review-scene boss should actively commit forward when punishing player overextension.");
+            Assert.Greater(
+                bossPressurePosition.CurrentRisk01,
+                bossRiskBeforePunishMove,
+                "The overextend punish should move the real scene boss toward the forward-risk lane band.");
+            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath), emitter.QueuedPriorityPattern);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BossResponseLoopSceneReleasesResponseOneLaserPressureAfterOpening()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.BackLimitZ);
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(0.3f);
+
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
+            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
+            emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+            bossPressureActionDirector.Tick(8f);
+
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(1.2f);
+
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
+            Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
+            Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator ReviewSceneBindsPlayerEnergyAndBossBarrage()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -347,7 +617,12 @@ namespace DimensionBrawl.Tests
             AssertBossHumanoidVisual(bossRoot);
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
-            AssertPlayerDamageShaderFeedback(player.gameObject, playerHealth);
+            AssertPlayerDamageShaderFeedback(player.gameObject, playerHealth, closeThreatRoot, closeThreatHealth);
+            EnemyCombatVfxCueDriver closeThreatVfxCueDriver =
+                RequireComponent<EnemyCombatVfxCueDriver>(closeThreatRoot, "close threat VFX cue driver");
+            Assert.IsTrue(
+                closeThreatVfxCueDriver.PlayDamageVfx,
+                "Close threat should keep EnemyHit VFX enabled alongside body shader feedback.");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             BossBasicFireEmitter bossBasicFireEmitter =
                 RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
@@ -457,6 +732,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(bossBasicFireEmitter, "projectileRoot"));
             Assert.AreEqual(DamageTeam.Enemy, GetEnum<DamageTeam>(bossBasicFireEmitter, "sourceTeam"));
             Assert.IsTrue(GetBool(bossBasicFireEmitter, "firingEnabled"));
+            Assert.AreEqual(0.25f, GetFloat(bossBasicFireEmitter, "resumeCooldownAfterSuppressionSeconds"), 0.001f);
             Assert.AreEqual(10, GetInt(bossBasicFireEmitter, "prewarmCount"));
             Assert.AreEqual("LanePoke", bossBasicFireProfile.FireId);
             Assert.AreEqual("Lane Poke", bossBasicFireProfile.ReadoutLabel);
@@ -494,12 +770,24 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.32f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "returnToRestWhenActionsDisabled"));
             Assert.IsTrue(GetBool(bossPressurePosition, "movementEnabled"));
+            Assert.AreEqual(1.35f, GetFloat(bossPressurePosition, "actionIntentHoldSeconds"), 0.001f);
+            Assert.AreEqual(0.16f, GetFloat(bossPressurePosition, "holdBacklineRisk01"), 0.001f);
+            Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
+            Assert.AreEqual(0.68f, GetFloat(bossPressurePosition, "specialCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
+            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
+            Assert.IsTrue(GetBool(bossPressurePosition, "lateralStrafeEnabled"));
+            Assert.AreEqual(1.25f, GetFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond"), 0.001f);
+            Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "lateralStrafeHalfWidthRatio"), 0.001f);
             Assert.AreSame(
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
             Assert.AreSame(
                 emitter,
                 GetObjectReference<BossBarrageEmitter>(bossPressureActionDirector, "bossBarrageEmitter"));
+            Assert.AreSame(
+                bossBasicFireEmitter,
+                GetObjectReference<BossBasicFireEmitter>(bossPressureActionDirector, "basicFireEmitter"));
             Assert.AreSame(
                 bossSummonPressureAction,
                 GetObjectReference<BossSummonPressureAction>(bossPressureActionDirector, "summonPressureAction"));
@@ -511,8 +799,11 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Boss pressure should be allowed to bank LV1 cost when the next-tier exchange is gated open.");
             Assert.AreEqual("PocketReviewBoss", bossPressureActionDeck.DeckId);
-            Assert.AreEqual(4, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(5, bossPressureActionDeck.ActionSlotCount);
             Assert.AreEqual(1.1f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
+            Assert.AreEqual(0.25f, bossPressureActionDeck.DecisionThinkIntervalSeconds, 0.001f);
+            Assert.AreEqual(0.25f, bossPressureActionDirector.DecisionThinkIntervalSeconds, 0.001f);
+            Assert.AreEqual(0.65f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
             Assert.AreSame(
@@ -525,32 +816,58 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<CombatVfxCuePlayer>(bossSummonPressureAction, "combatVfxCuePlayer"));
             Assert.AreEqual("BossSummonPressure.SummonCaller", bossSummonPressureProfile.PressureId);
             Assert.AreEqual(3, bossSummonPressureProfile.TierCount);
+            Assert.AreEqual(3, bossSummonPressureProfile.ResponseSlotCount);
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
-                "LV1 Escort Probe",
-                "Low-cost boss proxy that holds the lane long enough for the player to answer with fire or a saved summon.",
-                "Strafe and keep firing; spend SummonSlot1 only if the next barrage overlaps this proxy.",
-                "A short relief answer should remove the screen and keep the lane from being locked.");
+                "Response 1 Laser Soldier",
+                "Low-cost boss rifleman that creates the first readable dodge-line check without waiting for a high-tier bank.",
+                "Read the thin aim line, dodge after the lock, then punish the rifleman before the next boss action.",
+                "A cheap summon can body-clash the rifleman, but the primary read is movement first.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
-                "LV2 Pressure Screen",
+                "Response 2 Pressure Screen",
                 "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
                 "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
                 "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
-                "LV3 Clamp Guard",
-                "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
-                "Back off from forward-risk lanes unless a summon answer is already charged.",
-                "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
+                "Response 3 Laser Soldier",
+                "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
+                "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
+                "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
             BossSummonPressureAction.BossSummonTierSettings[] bossSummonTiers =
                 bossSummonPressureProfile.CopyTierSettings();
-            Assert.AreEqual(2.07f, bossSummonTiers[0].ActorScale, 0.001f);
-            Assert.AreEqual(2.52f, bossSummonTiers[1].ActorScale, 0.001f);
-            Assert.AreEqual(3.06f, bossSummonTiers[2].ActorScale, 0.001f);
+            Assert.AreEqual(2.08f, bossSummonTiers[0].ActorScale, 0.001f);
+            Assert.AreEqual(2.12f, bossSummonTiers[1].ActorScale, 0.001f);
+            Assert.AreEqual(2.08f, bossSummonTiers[2].ActorScale, 0.001f);
+            GameObject bossLaserSummonActorPrefabObject = LoadAsset<GameObject>(BossLaserSummonActorPrefabPath);
+            SummonFrontlineProxy bossLaserSummonActorPrefab =
+                RequireComponent<SummonFrontlineProxy>(
+                    bossLaserSummonActorPrefabObject,
+                    "Boss laser summon actor prefab");
+            Assert.AreSame(bossLaserSummonActorPrefab, bossSummonTiers[0].ActorPrefabOverride);
+            Assert.IsNull(bossSummonTiers[1].ActorPrefabOverride);
+            Assert.AreSame(bossLaserSummonActorPrefab, bossSummonTiers[2].ActorPrefabOverride);
+            Assert.AreEqual(
+                0.16f,
+                GetFloat(bossLaserSummonActorPrefab, "advanceStartDelaySeconds"),
+                0.001f,
+                "Boss laser summon should hold its transform briefly so the entry pose does not slide forward.");
+            SummonFrontlineProxyPresenter bossLaserPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(
+                    bossLaserSummonActorPrefabObject,
+                    "Boss laser summon actor presenter");
+            Assert.IsTrue(
+                GetBool(bossLaserPresenter, "lockAdvanceDuringSpawnState"),
+                "Boss laser summon should lock advance while the entry animation is playing.");
+            Assert.AreEqual(
+                0.22f,
+                GetFloat(bossLaserPresenter, "spawnMovementLockSeconds"),
+                0.001f,
+                "Boss laser summon should reserve a short readable entry beat before locomotion.");
             GameObject bossSummonActorPrefabObject = LoadAsset<GameObject>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(
@@ -583,28 +900,40 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector,
                 0,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
-                BossPressureActionKind.SkillPattern,
+                BossPressureActionKind.SpecialSkill,
                 1,
-                "DodgeLineOrUseSkill1",
-                "LV1 skill pressure that asks the player to read a committed rail before spending summon resources.",
-                "Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.",
-                "No summon is required; save SummonSlot1 for screen pressure.",
+                "DodgeBossLinePressureSpecial",
+                "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
+                "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
+                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
                 false,
                 0f,
-                1f);
+                1f,
+                false,
+                1,
+                15,
+                0,
+                0,
+                BossPressureMovementIntent.StrafeFire);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
                 1,
-                "EscortProbeFrontlineCheck",
-                "LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.",
-                "Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.",
-                "A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.",
+                "LaserSoldierDodgeLine",
+                "LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.",
+                "Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.",
+                "A low-tier summon can body-clash the rifleman, but the intended read is movement first.",
                 false,
                 0f,
-                1f);
+                1f,
+                false,
+                1,
+                15,
+                0,
+                0,
+                BossPressureMovementIntent.RetreatAndSummon);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 2,
@@ -619,10 +948,33 @@ namespace DimensionBrawl.Tests
                 0f,
                 1f,
                 true,
-                2);
+                2,
+                30,
+                0,
+                140,
+                BossPressureMovementIntent.RetreatAndSummon);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 3,
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                BossPressureActionKind.SummonPressure,
+                3,
+                "LaserSoldierDodgeLine",
+                "LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.",
+                "Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.",
+                "A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.",
+                false,
+                0f,
+                1f,
+                false,
+                1,
+                35,
+                0,
+                0,
+                BossPressureMovementIntent.RetreatAndSummon);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                4,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
@@ -632,7 +984,13 @@ namespace DimensionBrawl.Tests
                 "A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.",
                 true,
                 0.66f,
-                1f);
+                1f,
+                false,
+                1,
+                80,
+                80,
+                0,
+                BossPressureMovementIntent.CommitForward);
             Assert.GreaterOrEqual(
                 telegraphPresenter.MarkerCount,
                 9,
@@ -1627,7 +1985,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator BossHealthAndBasicFireBudgetAvoidsTwentySecondBurstClear()
+        public IEnumerator BossHealthAndBasicFireBudgetKeepsReadableButNotSpongyClear()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
@@ -1648,8 +2006,8 @@ namespace DimensionBrawl.Tests
 
             Assert.That(
                 basicOnlyBossClearSeconds,
-                Is.InRange(65f, 85f),
-                "Restored basic-fire cadence should feel responsive while the per-shot damage keeps basic-only boss clear time out of burst-clear territory.");
+                Is.InRange(44f, 56f),
+                "Boss HP should keep a readable response loop without stretching the review fight into a sponge check.");
             Assert.That(
                 levelOneReadySeconds,
                 Is.InRange(9f, 13.5f),
@@ -1675,7 +2033,7 @@ namespace DimensionBrawl.Tests
             BossSummonPressureAction.BossSummonTierSettings[] bossTiers =
                 bossSummonProfile.CopyTierSettings();
             float[] expectedChargeScales = { 2.0f, 2.36f, 2.74f };
-            float[] expectedLaserScales = { 2.08f, 2.32f, 2.56f };
+            float[] expectedLaserScales = { 2.08f, 2.08f, 2.08f };
             float[] expectedDragonScales = { 2.42f, 2.72f, 3.06f };
 
             Assert.AreEqual(chargeTiers.Length, laserTiers.Length);
@@ -1757,10 +2115,20 @@ namespace DimensionBrawl.Tests
                     laserTiers[i].ActorAttackDamagePerSecond,
                     bossTiers[i].ActorAttackDamagePerSecond * 0.65f,
                     $"SummonSlot2 tier {i + 1} should stay below hostile sustained pressure.");
-                Assert.LessOrEqual(
-                    dragonTiers[i].ActorAttackDamagePerSecond,
-                    bossTiers[i].ActorAttackDamagePerSecond * 0.95f,
-                    $"SummonSlot3 tier {i + 1} can be the high-cost payoff, but not exceed hostile sustained pressure.");
+                if (string.Equals(bossTiers[i].ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal))
+                {
+                    Assert.Greater(
+                        dragonTiers[i].ActorAttackIntervalSeconds,
+                        bossTiers[i].ActorAttackIntervalSeconds,
+                        $"SummonSlot3 tier {i + 1} should remain a slower burst read than the boss laser cadence.");
+                }
+                else
+                {
+                    Assert.LessOrEqual(
+                        dragonTiers[i].ActorAttackDamagePerSecond,
+                        bossTiers[i].ActorAttackDamagePerSecond * 0.95f,
+                        $"SummonSlot3 tier {i + 1} can be the high-cost payoff, but not exceed hostile sustained pressure.");
+                }
                 Assert.Greater(
                     dragonTiers[i].ActorMaxHealth,
                     chargeTiers[i].ActorMaxHealth,
@@ -3416,16 +3784,20 @@ namespace DimensionBrawl.Tests
                 0f)));
             activeActorPresenter.RefreshNow();
 
-            Assert.AreEqual(
-                damageVfxCueCountBefore,
+            Assert.Greater(
                 activeActorPresenter.DamageVfxCueRequestCount,
-                "SummonSlot1 actor damage should not request a hit VFX cue while using lightweight in-world flash feedback.");
-            Assert.IsFalse(activeActorPresenter.PlayDamageVfx);
+                damageVfxCueCountBefore,
+                "SummonSlot1 actor damage should request the shared hit VFX cue so summon hits are readable in play.");
+            Assert.IsTrue(activeActorPresenter.PlayDamageVfx);
             Assert.IsTrue(activeActorPresenter.RenderDamageFeedback);
+            Assert.Greater(
+                activeActorPresenter.DamageFlashRendererCount,
+                0,
+                "SummonSlot1 actor damage should bind promoted body renderers for material hit flash.");
             Assert.Greater(
                 activeActorPresenter.DamageFlashCount,
                 0,
-                "SummonSlot1 actor damage should visibly flash without spawning extra hit VFX.");
+                "SummonSlot1 actor damage should visibly flash its promoted body material.");
             Assert.AreEqual(0, activeActorPresenter.AnimatorHitTriggerCount);
             Assert.AreEqual(CombatVfxCueId.EnemyHit, activeActorPresenter.DamageCueId);
 
@@ -4950,16 +5322,22 @@ namespace DimensionBrawl.Tests
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             BossBasicFireEmitter basicFireEmitter =
                 RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
 
             basicFireEmitter.SetFiringEnabled(false);
             basicFireEmitter.SetFiringEnabled(true);
             float playerHealthBefore = playerHealth.CurrentHealth;
+            int observedBasicVolleysBefore = bossPressureActionDirector.TotalBasicShotVolleys;
             int firedCount = basicFireEmitter.FireVolley();
 
             Assert.AreEqual(profile.ProjectilesPerVolley, firedCount);
             Assert.AreEqual(firedCount, basicFireEmitter.LastVolleyProjectileCount);
             Assert.AreEqual(1, basicFireEmitter.TotalVolleysFired);
+            Assert.AreEqual(observedBasicVolleysBefore + 1, bossPressureActionDirector.TotalBasicShotVolleys);
+            Assert.AreEqual(firedCount, bossPressureActionDirector.LastBasicShotProjectileCount);
+            Assert.AreEqual(0f, bossPressureActionDirector.LastBasicShotAgeSeconds, 0.001f);
             Assert.AreSame(profile, basicFireEmitter.FireProfile);
             Assert.GreaterOrEqual(basicFireEmitter.ActiveProjectileCount, firedCount);
             Assert.AreEqual(laneSpace.EvaluateForwardRisk01(player.transform.position), basicFireEmitter.LastForwardRisk01, 0.001f);
@@ -6044,7 +6422,11 @@ namespace DimensionBrawl.Tests
             float expectedMinimumPlayerForwardRisk01 = 0f,
             float expectedMaximumPlayerForwardRisk01 = 1f,
             bool expectedUsePlayerSummonResponseGate = false,
-            int expectedMinimumPlayerSummonTier = 1)
+            int expectedMinimumPlayerSummonTier = 1,
+            int expectedSelectionPriority = 0,
+            int expectedForwardRiskPriorityBonus = 0,
+            int expectedSummonResponsePriorityBonus = 0,
+            BossPressureMovementIntent expectedMovementIntent = BossPressureMovementIntent.CostPressure)
         {
             Assert.IsTrue(director.TryGetActionSlot(index, out BossPressureActionDirector.BossPressureActionSlot slot));
             Assert.AreSame(expectedPattern, slot.Pattern);
@@ -6060,6 +6442,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedMaximumPlayerForwardRisk01, slot.MaximumPlayerForwardRisk01, 0.001f);
             Assert.AreEqual(expectedUsePlayerSummonResponseGate, slot.UsePlayerSummonResponseGate);
             Assert.AreEqual(expectedMinimumPlayerSummonTier, slot.MinimumPlayerSummonTier);
+            Assert.AreEqual(expectedSelectionPriority, slot.SelectionPriority);
+            Assert.AreEqual(expectedForwardRiskPriorityBonus, slot.ForwardRiskPriorityBonus);
+            Assert.AreEqual(expectedSummonResponsePriorityBonus, slot.SummonResponsePriorityBonus);
+            Assert.AreEqual(expectedMovementIntent, slot.MovementIntent);
         }
 
         private static void AssertBossPatternSkillGrammar(
@@ -6372,7 +6758,11 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(root.gameObject.activeSelf, $"{label} should not be active during the gameplay VFX cleanup pass.");
         }
 
-        private static void AssertPlayerDamageShaderFeedback(GameObject player, CombatHealth playerHealth)
+        private static void AssertPlayerDamageShaderFeedback(
+            GameObject player,
+            CombatHealth playerHealth,
+            GameObject closeThreat,
+            CombatHealth closeThreatHealth)
         {
             CombatHitFeedback playerFeedback =
                 RequireComponent<CombatHitFeedback>(player, "player damage shader feedback");
@@ -6397,12 +6787,25 @@ namespace DimensionBrawl.Tests
                     $"Player damage shader feedback slot {i} should reference a renderer.");
             }
 
+            CombatHitFeedback closeThreatFeedback =
+                RequireComponent<CombatHitFeedback>(closeThreat, "close threat damage shader feedback");
+            Assert.IsTrue(
+                closeThreatFeedback.RenderHitFeedback,
+                "Close threat should flash its promoted renderers when damaged.");
+            Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(closeThreatFeedback, "health"));
+            Assert.IsFalse(GetBool(closeThreatFeedback, "applyIdleColorOnEnable"));
+            Assert.AreEqual(0.12f, GetFloat(closeThreatFeedback, "flashSeconds"), 0.001f);
+            Assert.Greater(
+                closeThreatFeedback.FlashRendererCount,
+                0,
+                "Close threat damage shader feedback should bind promoted enemy renderers.");
+
             CombatHitFeedback[] hitFeedbacks = Object.FindObjectsByType<CombatHitFeedback>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
             for (int i = 0; i < hitFeedbacks.Length; i++)
             {
-                if (hitFeedbacks[i] == playerFeedback)
+                if (hitFeedbacks[i] == playerFeedback || hitFeedbacks[i] == closeThreatFeedback)
                 {
                     continue;
                 }
@@ -6850,7 +7253,7 @@ namespace DimensionBrawl.Tests
             string expectedPlayerRead,
             string expectedSummonRead)
         {
-            Assert.IsTrue(profile.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout));
+            Assert.IsTrue(profile.TryGetResponseSlotReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout));
             Assert.AreEqual(expectedTierLabel, readout.TierLabel);
             Assert.AreEqual(expectedStageRole, readout.StageRole);
             Assert.AreEqual(expectedPlayerRead, readout.PlayerRead);
@@ -7245,7 +7648,17 @@ namespace DimensionBrawl.Tests
             Animator animator = visual.GetComponent<Animator>();
             Assert.IsNotNull(animator, "Boss humanoid visual should use a promoted Animator.");
             Assert.IsNotNull(animator.runtimeAnimatorController, "Boss humanoid visual should keep its promoted Animator Controller.");
+            string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
+            Assert.AreEqual(
+                BossHumanoidControllerPath,
+                controllerPath,
+                "Boss humanoid visual should use the reviewed boss cue Animator Controller.");
             AssertGameOwnedAsset(animator.runtimeAnimatorController, "boss humanoid Animator Controller");
+            Assert.IsFalse(animator.applyRootMotion, "Boss humanoid visual should not apply source prefab root motion.");
+            AssertPrefabSourcePath(
+                visual.gameObject,
+                BossHumanoidSourcePrefabPath,
+                "Boss humanoid visual should keep the exact SciFiSoldier_01_Commando prefab source.");
 
             Assert.IsNull(
                 visual.GetComponentInChildren<CombatHealth>(true),
@@ -7261,16 +7674,22 @@ namespace DimensionBrawl.Tests
                 "Boss humanoid visual should not carry elite gameplay traits.");
 
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
-            Assert.Greater(renderers.Length, 0, "Boss humanoid visual should expose promoted renderers.");
+            Assert.Greater(renderers.Length, 0, "Boss humanoid visual should expose source Commando renderers.");
             for (int i = 0; i < renderers.Length; i++)
             {
-                AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
+                AssertBossHumanoidRendererUsesCommandoAssets(renderers[i], renderers[i].name);
             }
 
+            AssertBossHumanoidUsesSourceCommandoMesh(visual);
+            Transform assaultRifle = FindDescendant(visual, BossHumanoidAssaultRifleName);
+            Assert.IsNotNull(assaultRifle, $"Boss humanoid visual should carry source {BossHumanoidAssaultRifleName}.");
+            AssertBossHumanoidAssaultRifleUsesSourceMesh(assaultRifle);
+
             Transform projectileCore = bossRoot.transform.Find(BossProjectileCoreName);
-            Assert.IsNotNull(projectileCore, "Boss proxy should keep a readable projectile source core.");
+            Assert.IsNotNull(projectileCore, "Boss proxy should keep a hidden projectile source anchor.");
             MeshRenderer coreRenderer = projectileCore.GetComponent<MeshRenderer>();
-            Assert.IsNotNull(coreRenderer, "Boss projectile source core should be visible.");
+            Assert.IsNotNull(coreRenderer, "Boss projectile source anchor should keep a repairable MeshRenderer.");
+            Assert.IsFalse(coreRenderer.enabled, "Boss projectile source anchor renderer must stay hidden in gameplay.");
             AssertGameOwnedAsset(coreRenderer.sharedMaterial, "boss projectile source material");
 
             BossBarrageVisualCueDriver cueDriver =
@@ -7287,6 +7706,58 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(cueDriver.PressureActionCueCount, RequiredBossPressureActionCueKinds.Length);
             AssertBossPressureActionCueBindings(cueDriver, animator);
             Assert.Greater(cueDriver.PulseRendererCount, 0);
+        }
+
+        private static void AssertBossHumanoidUsesSourceCommandoMesh(Transform visual)
+        {
+            bool foundSourceCommandoMesh = false;
+            SkinnedMeshRenderer[] skinnedRenderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh mesh = skinnedRenderers[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                Assert.AreNotEqual(
+                    BossHumanoidLineCasterVariantModelPath,
+                    meshPath,
+                    "Boss humanoid visual should not use the LineCaster role variant mesh.");
+                if (string.Equals(meshPath, BossHumanoidSourceModelPath, System.StringComparison.Ordinal))
+                {
+                    foundSourceCommandoMesh = true;
+                }
+            }
+
+            Assert.IsTrue(
+                foundSourceCommandoMesh,
+                $"Boss humanoid visual should use the source SciFiSoldier_01_Commando model at {BossHumanoidSourceModelPath}.");
+        }
+
+        private static void AssertBossHumanoidAssaultRifleUsesSourceMesh(Transform assaultRifle)
+        {
+            bool foundAssaultRifleMesh = false;
+            MeshFilter[] meshes = assaultRifle.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                Mesh mesh = meshes[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                if (string.Equals(meshPath, BossHumanoidSourceAssaultRifleModelPath, System.StringComparison.Ordinal))
+                {
+                    foundAssaultRifleMesh = true;
+                }
+            }
+
+            Assert.IsTrue(
+                foundAssaultRifleMesh,
+                $"Boss humanoid assault rifle should render {BossHumanoidSourceAssaultRifleModelPath}.");
         }
 
         private static void AssertSingleCharacterCombatModeVisual(
@@ -7311,6 +7782,7 @@ namespace DimensionBrawl.Tests
                 "Inori ranged controller should preserve an explicit default state.");
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlIdleClipPath));
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlAimIdleClipPath));
+            AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlReloadClipPath));
             AssertControllerUsesGameOwnedMotions(rangedController);
             AssertRifleGirlAvatarUsesAuthoredMapping();
 
@@ -7386,6 +7858,7 @@ namespace DimensionBrawl.Tests
             AssertAnimatorParameter(rangedAnimator, "IDLE 0", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "IDLE", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "SHOOT", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "RELOAD", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "RUN", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK F", AnimatorControllerParameterType.Trigger);
@@ -7573,8 +8046,15 @@ namespace DimensionBrawl.Tests
                 GetFloat(presenter, "animatorMoveSpeedScale"),
                 0.001f,
                 $"{label} should keep fast arrival from turning into frantic foot motion.");
-            Assert.IsFalse(presenter.PlayDamageVfx);
+            Assert.IsTrue(presenter.PlayDamageVfx);
             Assert.IsTrue(presenter.RenderDamageFeedback);
+            Assert.IsNotNull(presenter.DamageVfxAnchor, $"{label} should route hit VFX through a body-height damage anchor.");
+            Assert.AreNotSame(presenter.transform, presenter.DamageVfxAnchor, $"{label} hit VFX should not use the floor/root anchor.");
+            Assert.AreNotSame(presenter.PulseRoot, presenter.DamageVfxAnchor, $"{label} hit VFX should not use the hidden tier pulse anchor.");
+            Assert.Greater(
+                presenter.DamageFlashRendererCount,
+                0,
+                $"{label} should bind promoted body renderers for readable summon hit flash.");
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
@@ -7698,6 +8178,61 @@ namespace DimensionBrawl.Tests
                     AssertRenderableMaterialShader(materials[i], $"{label} material shader");
                 }
             }
+        }
+
+        private static void AssertPrefabSourcePath(GameObject instance, string expectedPath, string label)
+        {
+            GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
+            string sourcePath = AssetDatabase.GetAssetPath(source).Replace('\\', '/');
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                sourcePath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(instance).Replace('\\', '/');
+            }
+
+            if (string.IsNullOrEmpty(sourcePath) && Application.isPlaying)
+            {
+                return;
+            }
+
+            Assert.AreEqual(expectedPath, sourcePath, label);
+        }
+
+        private static void AssertBossHumanoidRendererUsesCommandoAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                AssertBossHumanoidCommandoAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                AssertBossHumanoidCommandoAsset(skinnedMeshRenderer.sharedMesh, $"{label} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    AssertBossHumanoidCommandoAsset(materials[i], $"{label} material");
+                    AssertRenderableMaterialShader(materials[i], $"{label} material shader");
+                }
+            }
+        }
+
+        private static void AssertBossHumanoidCommandoAsset(Object asset, string label)
+        {
+            Assert.IsNotNull(asset, $"{label} should be assigned.");
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            bool isGameOwned = assetPath.StartsWith("Assets/_Game/")
+                && !assetPath.Contains("/_Imported/");
+            bool isExactCommandoSource = assetPath.StartsWith(BossHumanoidShooterRoot + "/SciFiSoldier_01/")
+                || assetPath.StartsWith(BossHumanoidCommonWeaponRoot + "/");
+            Assert.IsTrue(
+                isGameOwned || isExactCommandoSource,
+                $"{label} should reference the exact SciFiSoldier_01_Commando source or a promoted `_Game` asset, found {assetPath}.");
         }
 
         private static void AssertRenderableMaterialShader(Material material, string label)

@@ -468,6 +468,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "elitePatternController", eliteController);
             SetFloat(driver, "damageCueIntensity", 1f);
             SetFloat(driver, "pressureDamageCueScale", 0.66f);
+            SetBool(driver, "playDamageVfx", true);
             SetPatternCueOverrides(driver);
             SetEliteCueOverrides(driver);
             ConfigureThreatTelegraphVisual(soldier);
@@ -940,6 +941,7 @@ namespace DimensionBrawl.Editor
             }
 
             RemapImportedSerializedHitFeedbackTextures(material);
+            ReplacePromotedHitFeedbackCoreTexture(material);
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
@@ -2055,6 +2057,21 @@ namespace DimensionBrawl.Editor
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static void ReplacePromotedHitFeedbackCoreTexture(Material material)
+        {
+            Texture directionalMask = material.HasProperty("_MaskTexture")
+                ? material.GetTexture("_MaskTexture")
+                : null;
+            if (directionalMask == null)
+            {
+                return;
+            }
+
+            SetMaterialTextureIfPresent(material, "_MainTexture", directionalMask);
+            SetMaterialTextureIfPresent(material, "_MainTex", directionalMask);
+            SetMaterialTextureIfPresent(material, "_BaseMap", directionalMask);
         }
 
         private static Texture2D EnsurePromotedTexture(string sourcePath, string targetPath)

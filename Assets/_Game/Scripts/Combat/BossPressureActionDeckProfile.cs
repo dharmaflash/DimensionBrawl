@@ -13,6 +13,7 @@ namespace DimensionBrawl.Combat
 
         [Header("Recovery")]
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
+        [SerializeField, Min(0f)] private float decisionThinkIntervalSeconds = 0.25f;
 
         [Header("Slots")]
         [SerializeField] private BossPressureActionDirector.BossPressureActionSlot[] actionSlots =
@@ -20,10 +21,12 @@ namespace DimensionBrawl.Combat
 
         public string DeckId => deckId;
         public float GlobalRecoverySeconds => globalRecoverySeconds;
+        public float DecisionThinkIntervalSeconds => decisionThinkIntervalSeconds;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
 
         private void OnValidate()
         {
+            decisionThinkIntervalSeconds = Mathf.Max(0f, decisionThinkIntervalSeconds);
             if (actionSlots == null)
             {
                 return;
@@ -38,6 +41,9 @@ namespace DimensionBrawl.Combat
                 slot.MinimumPlayerForwardRisk01 = Mathf.Clamp01(slot.MinimumPlayerForwardRisk01);
                 slot.MaximumPlayerForwardRisk01 = Mathf.Clamp01(slot.MaximumPlayerForwardRisk01);
                 slot.MinimumPlayerSummonTier = Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
+                slot.SelectionPriority = Mathf.Max(0, slot.SelectionPriority);
+                slot.ForwardRiskPriorityBonus = Mathf.Max(0, slot.ForwardRiskPriorityBonus);
+                slot.SummonResponsePriorityBonus = Mathf.Max(0, slot.SummonResponsePriorityBonus);
                 if (slot.MaximumPlayerForwardRisk01 < slot.MinimumPlayerForwardRisk01)
                 {
                     slot.MaximumPlayerForwardRisk01 = slot.MinimumPlayerForwardRisk01;

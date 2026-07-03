@@ -14,49 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
   deckId: PocketReviewBoss
   globalRecoverySeconds: 1.1
+  decisionThinkIntervalSeconds: 0.25
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
-    ActionKind: 0
+    ActionKind: 4
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.2
-    ResponseId: DodgeLineOrUseSkill1
-    StageLoopRole: LV1 skill pressure that asks the player to read a committed rail before spending summon resources.
-    PlayerAnswer: Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.
-    SummonAnswer: No summon is required; save SummonSlot1 for screen pressure.
+    ResponseId: DodgeBossLinePressureSpecial
+    StageLoopRole: LV1 boss special shot that asks the player to read a committed rail before spending summon resources.
+    PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.
+    SummonAnswer: No summon is required; enemy summon pressure now runs on its own pacing lane.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 1
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 3.8
-    ResponseId: EscortProbeFrontlineCheck
-    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.
-    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.
-    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 2
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
-    ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.
-    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.
-    SummonAnswer: The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 2
+    SelectionPriority: 15
+    ForwardRiskPriorityBonus: 0
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 2
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
@@ -71,3 +48,7 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
+    SelectionPriority: 80
+    ForwardRiskPriorityBonus: 80
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 3

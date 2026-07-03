@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &2211442703525046050
 GameObject:
@@ -229,6 +229,7 @@ GameObject:
   - component: {fileID: 2432299348145812702}
   - component: {fileID: 7852586539142257683}
   - component: {fileID: 7703122165935449738}
+  - component: {fileID: 7723459012345678103}
   m_Layer: 0
   m_Name: PF_Enemy_SciFiSoldier_GeneralDeck
   m_TagString: Untagged
@@ -252,6 +253,7 @@ Transform:
   - {fileID: 139591568045488651}
   - {fileID: 6437920728469524356}
   - {fileID: 1799102231278236667}
+  - {fileID: 7723459012345678102}
   - {fileID: 7258947503424077132}
   - {fileID: 6148754420004621536}
   m_Father: {fileID: 0}
@@ -291,8 +293,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   team: 2
   maxHealth: 90
   startAtFullHealth: 1
@@ -312,8 +314,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   enemyTypeId: SciFiSoldier.Basic
   patternId: GeneralDeck
   patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -330,6 +332,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -348,7 +355,7 @@ MonoBehaviour:
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed
-  prepareTrigger: 
+  prepareTrigger:
   attackTrigger: Attack
   hitTrigger: Hit
   deathTrigger: Death
@@ -368,16 +375,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   health: {fileID: 2543752285036013719}
   flashRenderers:
   - {fileID: 5045094329779882211}
   - {fileID: 960070690308902955}
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &1378693207892875223
 MonoBehaviour:
@@ -389,7 +400,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 2543752285036013719}
   searchRadius: 12
@@ -405,7 +416,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 6813915391257616754}
   telegraphTransform: {fileID: 6437920728469524356}
@@ -429,7 +440,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 8364958233054210603}
   cameraController: {fileID: 0}
@@ -444,7 +455,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 7258947503424077132}
@@ -458,13 +469,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
   agentSource: {fileID: 8364958233054210603}
   health: {fileID: 2543752285036013719}
   cuePlayer: {fileID: 7852586539142257683}
   cueAnchor: {fileID: 7199018487821922694}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -522,6 +539,32 @@ MonoBehaviour:
   - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
     signalCueId: 28
     intensity: 1.18
+--- !u!114 &7723459012345678103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4947365042495544270}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7d0a6e6c70a42eab404e4b7d463a8d4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.BasicSoldierProjectileAttackDriver
+  soldier: {fileID: 8364958233054210603}
+  sourceHealth: {fileID: 2543752285036013719}
+  targetSensor: {fileID: 1378693207892875223}
+  projectileOrigin: {fileID: 7723459012345678102}
+  projectilePrefab: {fileID: 7222746313675744862, guid: c48e9c6d705747541b11659f513a0297, type: 3}
+  projectileRoot: {fileID: 7258947503424077132}
+  projectileDamageOverride: 0
+  projectileSpeed: 18
+  projectileLifetimeSeconds: 1.25
+  projectileRadius: 0.2
+  originHeight: 1.22
+  targetHeightOffset: 0.9
+  responsePolicy: 2
+  controlLockPolicy: 0
 --- !u!1 &6813915391257616754
 GameObject:
   m_ObjectHideFlags: 0
@@ -614,6 +657,37 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7723459012345678101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7723459012345678102}
+  m_Layer: 0
+  m_Name: ProjectileOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7723459012345678102
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7723459012345678101}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.22, z: 0.32}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7199018487821922694}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8609630407382963910
 GameObject:
   m_ObjectHideFlags: 0
@@ -801,7 +875,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2300000, guid: da24038125db80a42b4d618e7fdded25, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 27cdeac92b4b56c4c92cc2ea4b7214b3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -876,7 +950,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -2338316153151014112, guid: 63b3ecebef3250e428299643d7626153, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 0f461eb78155f4741b37bc784272c243, type: 2}
     - target: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
       propertyPath: m_Name
@@ -884,7 +958,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 63b3ecebef3250e428299643d7626153, type: 3}
       propertyPath: m_Controller
-      value: 
+      value:
       objectReference: {fileID: 9100000, guid: 8af592b4e53c1154d8dc59d699963e68, type: 2}
     - target: {fileID: 5866666021909216657, guid: 63b3ecebef3250e428299643d7626153, type: 3}
       propertyPath: m_CullingMode

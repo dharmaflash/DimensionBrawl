@@ -567,7 +567,9 @@ namespace DimensionBrawl.Presentation
             BossBasicFireProfile profile = bossBasicFireEmitter.FireProfile;
             string label = profile != null ? profile.ReadoutLabel : "-";
             string state = bossBasicFireEmitter.IsFiringEnabled
-                ? $"next {bossBasicFireEmitter.CooldownRemaining:0.0}s"
+                ? bossBasicFireEmitter.IsAutoFireSuppressed
+                    ? $"hold {bossBasicFireEmitter.AutoFireSuppressionRemaining:0.0}s"
+                    : $"next {bossBasicFireEmitter.CooldownRemaining:0.0}s"
                 : "off";
             return $"Boss Basic Fire {label}   {state}   shots {bossBasicFireEmitter.ActiveProjectileCount} "
                 + $"volley {bossBasicFireEmitter.LastVolleyProjectileCount} "
@@ -665,11 +667,7 @@ namespace DimensionBrawl.Presentation
         {
             string cue = ResolvePrimaryCombatCueText();
             string risk = ResolveCompactRiskText();
-            string ranged = rangedBasicAttackAction != null
-                ? rangedBasicAttackAction.IsFireReady
-                    ? "Fire ready"
-                    : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s"
-                : "Fire -";
+            string ranged = ResolveCompactFireText();
             return $"{cue}   {risk}   {ranged}";
         }
 
@@ -1025,8 +1023,20 @@ namespace DimensionBrawl.Presentation
                 return "Fire -";
             }
 
+            if (rangedBasicAttackAction.IsReloading)
+            {
+                return $"Reload {rangedBasicAttackAction.ReloadRemaining:0.0}s";
+            }
+
+            if (!rangedBasicAttackAction.HasAmmo)
+            {
+                return "Reload";
+            }
+
             return rangedBasicAttackAction.IsFireReady
-                ? "Fire ready"
+                ? rangedBasicAttackAction.UsesMagazineReload
+                    ? $"Fire {rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}"
+                    : "Fire ready"
                 : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s";
         }
 
@@ -1050,10 +1060,10 @@ namespace DimensionBrawl.Presentation
                 return "Boss Summon -";
             }
 
-            string tier = bossSummonPressureAction.LastReleasedTier > 0
-                ? ResolveBossSummonTierLabel(bossSummonPressureAction.LastReleasedTier)
-                : "LV-";
-            return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
+            string responseSlot = bossSummonPressureAction.LastReleasedResponseSlot > 0
+                ? ResolveBossSummonResponseSlotLabel(bossSummonPressureAction.LastReleasedResponseSlot)
+                : "Response -";
+            return $"Boss Summon {responseSlot} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
                 + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
                 + $"blocks {bossSummonPressureAction.ActivePressureScreenRemainingIntercepts} "
                 + BossBarrageLaneReviewHudText.ResolveSummonLifecycleLine(
@@ -1253,10 +1263,15 @@ namespace DimensionBrawl.Presentation
                 return "Ranged Fire -";
             }
 
-            string ready = rangedBasicAttackAction.IsFireReady
-                ? "READY"
-                : $"{rangedBasicAttackAction.FireCooldownRemaining:0.00}s";
-            return $"Ranged Fire {ready}   bolts {rangedBasicAttackAction.ActiveProjectileCount}";
+            string ready = rangedBasicAttackAction.IsReloading
+                ? $"RELOAD {rangedBasicAttackAction.ReloadRemaining:0.00}s"
+                : rangedBasicAttackAction.IsFireReady
+                    ? "READY"
+                    : $"{rangedBasicAttackAction.FireCooldownRemaining:0.00}s";
+            string ammo = rangedBasicAttackAction.UsesMagazineReload
+                ? $"   ammo {rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}"
+                : string.Empty;
+            return $"Ranged Fire {ready}{ammo}   bolts {rangedBasicAttackAction.ActiveProjectileCount}";
         }
 
         private string ResolveSummonExchangeLine()
@@ -1352,15 +1367,17 @@ namespace DimensionBrawl.Presentation
             return $"LV{Mathf.Clamp(tier, 1, 3)}";
         }
 
-        private string ResolveBossSummonTierLabel(int tier)
+        private string ResolveBossSummonResponseSlotLabel(int responseSlot)
         {
             if (bossSummonPressureAction != null
-                && bossSummonPressureAction.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
+                && bossSummonPressureAction.TryGetResponseSlotReadout(
+                    responseSlot,
+                    out BossSummonPressureProfile.BossSummonTierReadout readout))
             {
                 return readout.TierLabel;
             }
 
-            return $"LV{Mathf.Clamp(tier, 1, 3)}";
+            return $"Response {Mathf.Clamp(responseSlot, 1, 3)}";
         }
 
         private string ResolveActionHintLine()

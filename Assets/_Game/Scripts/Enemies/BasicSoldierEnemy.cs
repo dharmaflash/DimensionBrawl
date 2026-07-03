@@ -50,6 +50,13 @@ namespace DimensionBrawl.Enemies
         [SerializeField, Min(0f)] private float turnRateDegrees = 540f;
         [SerializeField] private float gravity = -24f;
 
+        [Header("Approach Motion")]
+        [SerializeField, Min(0f)] private float approachAcceleration = 10f;
+        [SerializeField, Min(0f)] private float approachDeceleration = 16f;
+        [SerializeField, Min(0f)] private float attackRangeSlowdownDistance = 0.75f;
+        [SerializeField, Range(0f, 1f)] private float minimumAttackRangeSpeedScale = 0.38f;
+        [SerializeField, Range(0f, 1f)] private float turnAlignmentSpeedFloor = 0.42f;
+
         [Header("Attack")]
         [SerializeField, Min(0f)] private float prepareSeconds;
         [SerializeField, Min(0f)] private float prepareRetreatSpeed;
@@ -93,6 +100,7 @@ namespace DimensionBrawl.Enemies
 
         private MaterialPropertyBlock propertyBlock;
         private SoldierState state;
+        private Vector3 approachPlanarVelocity;
         private Vector3 knockbackVelocity;
         private float stateTimer;
         private float verticalVelocity;
@@ -122,6 +130,11 @@ namespace DimensionBrawl.Enemies
         private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
         private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
         private float ActiveGravity => patternProfile != null ? patternProfile.Gravity : gravity;
+        private float ActiveApproachAcceleration => patternProfile != null ? patternProfile.ApproachAcceleration : approachAcceleration;
+        private float ActiveApproachDeceleration => patternProfile != null ? patternProfile.ApproachDeceleration : approachDeceleration;
+        private float ActiveAttackRangeSlowdownDistance => patternProfile != null ? patternProfile.AttackRangeSlowdownDistance : attackRangeSlowdownDistance;
+        private float ActiveMinimumAttackRangeSpeedScale => patternProfile != null ? patternProfile.MinimumAttackRangeSpeedScale : minimumAttackRangeSpeedScale;
+        private float ActiveTurnAlignmentSpeedFloor => patternProfile != null ? patternProfile.TurnAlignmentSpeedFloor : turnAlignmentSpeedFloor;
         private float ActivePrepareSeconds => patternProfile != null ? patternProfile.PrepareSeconds : prepareSeconds;
         private float ActivePrepareRetreatSpeed => patternProfile != null ? patternProfile.PrepareRetreatSpeed : prepareRetreatSpeed;
         private bool ActiveLockAttackDirectionAfterPrepare => patternProfile != null ? patternProfile.LockAttackDirectionAfterPrepare : lockAttackDirectionAfterPrepare;
@@ -299,6 +312,7 @@ namespace DimensionBrawl.Enemies
 
             if (hasReadyPattern && IsTargetInAttackRange())
             {
+                ResetApproachVelocity();
                 if (ActivePrepareSeconds > 0f)
                 {
                     BeginPrepare();
@@ -311,14 +325,15 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            Vector3 direction = DirectionToTarget();
-            Move(direction * ActiveApproachSpeed, deltaTime);
-            UpdateAnimation(ActiveApproachSpeed);
+            Vector3 velocity = ResolveApproachVelocity(deltaTime);
+            Move(velocity, deltaTime);
+            UpdateAnimation(velocity.magnitude);
             SetBodyColor(normalColor);
         }
 
         private void BeginPrepare()
         {
+            ResetApproachVelocity();
             EnterState(SoldierState.Prepare, CombatAiPatternState.Repositioning);
             stateTimer = 0f;
             dealtDamageThisSwing = false;
@@ -347,6 +362,7 @@ namespace DimensionBrawl.Enemies
 
         private void BeginTelegraph()
         {
+            ResetApproachVelocity();
             EnterState(SoldierState.Telegraph, CombatAiPatternState.Windup);
             stateTimer = 0f;
             dealtDamageThisSwing = false;
@@ -392,6 +408,7 @@ namespace DimensionBrawl.Enemies
             FaceCurrentAttackDirection(deltaTime);
             Vector3 lungeVelocity = ActiveActiveLungeSpeed > 0f ? CurrentAttackDirection() * ActiveActiveLungeSpeed : Vector3.zero;
             Move(lungeVelocity, deltaTime);
+            UpdateAnimation(lungeVelocity.magnitude);
             ShowTelegraphActive(ActiveActiveSeconds > 0f ? stateTimer / ActiveActiveSeconds : 1f);
 
             if (!dealtDamageThisSwing && IsTargetInsideActiveHitShape())
@@ -420,6 +437,7 @@ namespace DimensionBrawl.Enemies
                 ? -DirectionToTarget() * ActiveRecoveryRetreatSpeed
                 : Vector3.zero;
             Move(retreatVelocity, deltaTime);
+            UpdateAnimation(retreatVelocity.magnitude);
 
             if (stateTimer < ActiveRecoverySeconds)
             {
@@ -499,6 +517,7 @@ namespace DimensionBrawl.Enemies
             EnterState(SoldierState.Stagger, CombatAiPatternState.Stagger);
             stateTimer = 0f;
             hasLockedAttackDirection = false;
+            ResetApproachVelocity();
             knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * ActiveKnockbackSpeed;
             HideTelegraph();
             SetBodyColor(staggerColor);
@@ -509,6 +528,7 @@ namespace DimensionBrawl.Enemies
         {
             EnterState(SoldierState.Dead, CombatAiPatternState.Death);
             hasLockedAttackDirection = false;
+            ResetApproachVelocity();
             HideTelegraph();
             SetBodyColor(deadColor);
             ResetAnimatorTrigger(ActivePrepareTrigger);
@@ -554,6 +574,11 @@ namespace DimensionBrawl.Enemies
         private bool IsTargetInsideActiveHitShape()
         {
             if (target == null)
+            {
+                return false;
+            }
+
+            if (ActiveAttackShape == CombatAiAttackShape.ProjectileLine)
             {
                 return false;
             }
@@ -699,6 +724,57 @@ namespace DimensionBrawl.Enemies
             }
 
             return Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up).magnitude;
+        }
+
+        private Vector3 ResolveApproachVelocity(float deltaTime)
+        {
+            Vector3 direction = DirectionToTarget();
+            float targetSpeed = ActiveApproachSpeed * ResolveApproachSpeedScale(direction);
+            Vector3 desiredVelocity = direction * targetSpeed;
+            float acceleration = desiredVelocity.sqrMagnitude > approachPlanarVelocity.sqrMagnitude
+                ? ActiveApproachAcceleration
+                : ActiveApproachDeceleration;
+
+            if (acceleration <= 0f || deltaTime <= 0f)
+            {
+                approachPlanarVelocity = desiredVelocity;
+            }
+            else
+            {
+                approachPlanarVelocity = Vector3.MoveTowards(
+                    approachPlanarVelocity,
+                    desiredVelocity,
+                    acceleration * deltaTime);
+            }
+
+            return approachPlanarVelocity;
+        }
+
+        private float ResolveApproachSpeedScale(Vector3 direction)
+        {
+            float distancePastAttackRange = HorizontalDistanceToTarget() - ActiveAttackRange;
+            float slowdownDistance = ActiveAttackRangeSlowdownDistance;
+            float rangeScale = 1f;
+            if (slowdownDistance > 0f)
+            {
+                float progress = Mathf.Clamp01(distancePastAttackRange / slowdownDistance);
+                rangeScale = Mathf.Lerp(
+                    Mathf.Clamp01(ActiveMinimumAttackRangeSpeedScale),
+                    1f,
+                    Mathf.SmoothStep(0f, 1f, progress));
+            }
+
+            float facingDot = Vector3.Dot(transform.forward, direction);
+            float facingScale = Mathf.Lerp(
+                Mathf.Clamp01(ActiveTurnAlignmentSpeedFloor),
+                1f,
+                Mathf.Clamp01((facingDot + 0.2f) / 1.2f));
+            return Mathf.Clamp01(rangeScale * facingScale);
+        }
+
+        private void ResetApproachVelocity()
+        {
+            approachPlanarVelocity = Vector3.zero;
         }
 
         private void FaceTarget(float deltaTime)

@@ -953,6 +953,7 @@ namespace DimensionBrawl.Test
             switch (actionKind)
             {
                 case BossPressureActionKind.SkillPattern:
+                case BossPressureActionKind.SpecialSkill:
                     observedBossSkillPatterns++;
                     break;
                 case BossPressureActionKind.SummonPressure:
@@ -971,6 +972,7 @@ namespace DimensionBrawl.Test
                 switch (actionKind)
                 {
                     case BossPressureActionKind.SkillPattern:
+                    case BossPressureActionKind.SpecialSkill:
                         observedBossSkillResponsesToPlayerSummons++;
                         break;
                     case BossPressureActionKind.SummonPressure:

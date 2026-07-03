@@ -77,11 +77,11 @@ namespace DimensionBrawl.Editor
                     ShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx",
                     ShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab",
                     ShooterRoot + "/SciFiSoldier_01/Materials/M_SciFiSoldier_01.mat",
-                    "AssaultRifle",
-                    new[] { CommonWeapon("SM_SciFiAssaultRifle_01.FBX", "M_AssaultRifle.mat", "AssaultRifle", "RefPosAssaultRifle_Action") },
+                    "GatlinGun",
+                    new[] { CommonWeapon("SK_SciFiLaserGatlinGun.FBX", "M_LaserGatlinGun.mat", "SK_SciFiLaserGatlinGun", "RefPosLaserGatlinGun_Action") },
                     Vector3.one,
-                    "Rifle soldier kept as the clean line-pressure caster; no turret is layered on top.",
-                    "Assault-rifle common humanoid set: aim idle, run, primary/secondary shots, line shot, retreat shot.",
+                    "Laser-gatlin soldier kept as the clean line-pressure caster; no turret is layered on top.",
+                    "Gatlin-gun common humanoid set: aim idle, run, primary/secondary shots, line shot, retreat shot.",
                     TelegraphStyle.Line),
                 "SciFiSoldier.FanSuppressor" => CommonWeaponRole(
                     roleId,
@@ -205,6 +205,7 @@ namespace DimensionBrawl.Editor
             SetBool(soldier, "usePrototypeBodyColors", false);
             SetObjectReference(telegraphPresenter, "poseRoot", visual.transform);
             SetObjectReferenceArray(hitFeedback, "flashRenderers", renderers.Cast<UnityEngine.Object>().ToArray());
+            SetBool(hitFeedback, "renderHitFeedback", true);
             SetBool(hitFeedback, "applyIdleColorOnEnable", false);
             ConfigureTelegraph(telegraphPresenter, spec);
             ConfigureElitePresentation(root, animator, bodyRenderer, spec);

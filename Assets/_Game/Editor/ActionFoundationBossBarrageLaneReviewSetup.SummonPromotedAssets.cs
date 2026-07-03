@@ -318,6 +318,7 @@ namespace DimensionBrawl.Editor
             float pulseScale,
             float pulseSpeed,
             int minimumParticleSystems,
+            float beamWidthMultiplier = 1f,
             bool loopParticles = true)
         {
             DestroyChildIfPresent(actorRoot.transform, beamName);
@@ -352,6 +353,7 @@ namespace DimensionBrawl.Editor
             SetFloat(beamPresenter, "tierScaleStep", tierScaleStep);
             SetFloat(beamPresenter, "pulseScale", pulseScale);
             SetFloat(beamPresenter, "pulseSpeed", pulseSpeed);
+            SetFloat(beamPresenter, "beamWidthMultiplier", beamWidthMultiplier);
             EditorUtility.SetDirty(actorRoot);
         }
 

@@ -8,12 +8,54 @@ namespace DimensionBrawl.Combat
     {
         SkillPattern,
         SummonPressure,
-        PunishOverextend
+        PunishOverextend,
+        BasicShot,
+        SpecialSkill
+    }
+
+    public enum BossPressureMovementIntent
+    {
+        CostPressure,
+        HoldBacklineFire,
+        StrafeFire,
+        CommitForward,
+        RetreatAndSummon
     }
 
     [DisallowMultipleComponent]
     public sealed class BossPressureActionDirector : MonoBehaviour
     {
+        public struct BossPressureDecisionContext
+        {
+            public int AvailableTier;
+            public float PlayerForwardRisk01;
+            public bool PlayerSummonResponseWindowActive;
+            public int LastObservedPlayerSummonTier;
+            public float BossForwardRisk01;
+            public bool CanReleaseSummonPressure;
+            public int ActiveBossPressureSummonCount;
+            public bool HasActiveBossPressureSummon;
+
+            public BossPressureDecisionContext(
+                int availableTier,
+                float playerForwardRisk01,
+                bool playerSummonResponseWindowActive,
+                int lastObservedPlayerSummonTier,
+                float bossForwardRisk01,
+                bool canReleaseSummonPressure,
+                int activeBossPressureSummonCount)
+            {
+                AvailableTier = Mathf.Clamp(availableTier, 0, 3);
+                PlayerForwardRisk01 = Mathf.Clamp01(playerForwardRisk01);
+                PlayerSummonResponseWindowActive = playerSummonResponseWindowActive;
+                LastObservedPlayerSummonTier = Mathf.Clamp(lastObservedPlayerSummonTier, 0, 3);
+                BossForwardRisk01 = Mathf.Clamp01(bossForwardRisk01);
+                CanReleaseSummonPressure = canReleaseSummonPressure;
+                ActiveBossPressureSummonCount = Mathf.Max(0, activeBossPressureSummonCount);
+                HasActiveBossPressureSummon = ActiveBossPressureSummonCount > 0;
+            }
+        }
+
         [Serializable]
         public struct BossPressureActionSlot
         {
@@ -31,6 +73,10 @@ namespace DimensionBrawl.Combat
             [Range(0f, 1f)] public float MaximumPlayerForwardRisk01;
             public bool UsePlayerSummonResponseGate;
             [Range(1, 3)] public int MinimumPlayerSummonTier;
+            [Min(0)] public int SelectionPriority;
+            [Min(0)] public int ForwardRiskPriorityBonus;
+            [Min(0)] public int SummonResponsePriorityBonus;
+            public BossPressureMovementIntent MovementIntent;
 
             public bool HasResponsePlan =>
                 !string.IsNullOrWhiteSpace(ResponseId)
@@ -51,7 +97,11 @@ namespace DimensionBrawl.Combat
                 string responseId = "",
                 string stageLoopRole = "",
                 string playerAnswer = "",
-                string summonAnswer = "")
+                string summonAnswer = "",
+                int selectionPriority = 0,
+                int forwardRiskPriorityBonus = 0,
+                int summonResponsePriorityBonus = 0,
+                BossPressureMovementIntent movementIntent = BossPressureMovementIntent.CostPressure)
             {
                 Pattern = pattern;
                 ActionKind = actionKind;
@@ -72,12 +122,17 @@ namespace DimensionBrawl.Combat
 
                 UsePlayerSummonResponseGate = usePlayerSummonResponseGate;
                 MinimumPlayerSummonTier = Mathf.Clamp(minimumPlayerSummonTier, 1, 3);
+                SelectionPriority = Mathf.Max(0, selectionPriority);
+                ForwardRiskPriorityBonus = Mathf.Max(0, forwardRiskPriorityBonus);
+                SummonResponsePriorityBonus = Mathf.Max(0, summonResponsePriorityBonus);
+                MovementIntent = movementIntent;
             }
         }
 
         [Header("References")]
         [SerializeField] private BossPressureCostLadder costLadder;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossBasicFireEmitter basicFireEmitter;
         [SerializeField] private BossSummonPressureAction summonPressureAction;
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform trackedPlayer;
@@ -86,6 +141,8 @@ namespace DimensionBrawl.Combat
         [SerializeField] private BossPressureActionDeckProfile actionDeckProfile;
         [SerializeField] private BossPressureActionSlot[] actionSlots = Array.Empty<BossPressureActionSlot>();
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
+        [SerializeField, Min(0f)] private float decisionThinkIntervalSeconds = 0.25f;
+        [SerializeField, Min(0f)] private float basicFireSuppressionSecondsAfterPressureAction = 0.65f;
         [SerializeField] private bool holdForNextTierActionWhenGateAllows;
         [SerializeField] private bool actionsEnabled = true;
 
@@ -95,6 +152,7 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float maxHeldResponseWindowExtensionSeconds = 1.5f;
 
         private float globalRecoveryTimer;
+        private float decisionThinkTimer;
         private float playerSummonResponseTimer;
         private float heldResponseWindowExtensionRemainingSeconds;
         private float[] perSlotTimers = Array.Empty<float>();
@@ -108,6 +166,14 @@ namespace DimensionBrawl.Combat
         private BossPressureActionKind lastPlayerSummonResponseKind;
         private BossBarragePatternProfile lastQueuedPattern;
         private BossPressureActionSlot lastQueuedActionSlot;
+        private BossPressureDecisionContext lastDecisionContext;
+        private int lastQueuedActionSlotIndex = -1;
+        private int lastSelectionScore;
+        private float lastActionAgeSeconds = float.PositiveInfinity;
+        private int totalBasicShotVolleys;
+        private int lastBasicShotProjectileCount;
+        private float lastBasicShotAgeSeconds = float.PositiveInfinity;
+        private bool basicFireSubscribed;
         private bool lastActionRespondedToPlayerSummon;
 
         public event Action<BossPressureActionDirector, BossPressureActionKind, BossBarragePatternProfile, int> ActionQueued;
@@ -119,11 +185,16 @@ namespace DimensionBrawl.Combat
         public BossBarragePatternProfile LastQueuedPattern => lastQueuedPattern;
         public BossPressureActionSlot LastQueuedActionSlot => lastQueuedActionSlot;
         public bool HasLastQueuedActionSlot => totalActionCount > 0 && lastQueuedActionSlot.Pattern != null;
+        public BossBasicFireEmitter BasicFireEmitter => basicFireEmitter;
+        public bool HasBasicFireEmitter => basicFireEmitter != null;
         public BossSummonPressureAction SummonPressureAction => summonPressureAction;
         public BossPressureActionDeckProfile ActionDeckProfile => actionDeckProfile;
         public bool HasActionDeckProfile => actionDeckProfile != null;
         public bool HoldForNextTierActionWhenGateAllows => holdForNextTierActionWhenGateAllows;
         public float GlobalRecoveryRemainingSeconds => globalRecoveryTimer;
+        public float DecisionThinkIntervalSeconds => decisionThinkIntervalSeconds;
+        public float DecisionThinkRemainingSeconds => decisionThinkTimer;
+        public float BasicFireSuppressionSecondsAfterPressureAction => basicFireSuppressionSecondsAfterPressureAction;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
         public bool IsPlayerSummonResponseWindowActive => playerSummonResponseTimer > 0f;
@@ -135,10 +206,29 @@ namespace DimensionBrawl.Combat
         public int TotalPlayerSummonResponseCount => totalPlayerSummonResponseCount;
         public BossPressureActionKind LastPlayerSummonResponseKind => lastPlayerSummonResponseKind;
         public int LastPlayerSummonResponseTier => lastPlayerSummonResponseTier;
+        public BossPressureDecisionContext LastDecisionContext => lastDecisionContext;
+        public int LastQueuedActionSlotIndex => lastQueuedActionSlotIndex;
+        public int LastSelectionScore => lastSelectionScore;
+        public float LastActionAgeSeconds => lastActionAgeSeconds;
+        public int TotalBasicShotVolleys => totalBasicShotVolleys;
+        public int LastBasicShotProjectileCount => lastBasicShotProjectileCount;
+        public float LastBasicShotAgeSeconds => lastBasicShotAgeSeconds;
+        public BossPressureMovementIntent LastMovementIntent =>
+            HasLastQueuedActionSlot ? lastQueuedActionSlot.MovementIntent : BossPressureMovementIntent.CostPressure;
 
         private void Awake()
         {
             ApplyActionDeckProfile();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeBasicFireEmitter();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeBasicFireEmitter();
         }
 
         private void OnValidate()
@@ -159,6 +249,9 @@ namespace DimensionBrawl.Combat
                 slot.MinimumPlayerForwardRisk01 = Mathf.Clamp01(slot.MinimumPlayerForwardRisk01);
                 slot.MaximumPlayerForwardRisk01 = Mathf.Clamp01(slot.MaximumPlayerForwardRisk01);
                 slot.MinimumPlayerSummonTier = Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
+                slot.SelectionPriority = Mathf.Max(0, slot.SelectionPriority);
+                slot.ForwardRiskPriorityBonus = Mathf.Max(0, slot.ForwardRiskPriorityBonus);
+                slot.SummonResponsePriorityBonus = Mathf.Max(0, slot.SummonResponsePriorityBonus);
                 if (slot.MaximumPlayerForwardRisk01 < slot.MinimumPlayerForwardRisk01)
                 {
                     slot.MaximumPlayerForwardRisk01 = slot.MinimumPlayerForwardRisk01;
@@ -170,6 +263,8 @@ namespace DimensionBrawl.Combat
             playerSummonResponseWindowSeconds = Mathf.Max(0f, playerSummonResponseWindowSeconds);
             heldResponseWindowFloorSeconds = Mathf.Max(0f, heldResponseWindowFloorSeconds);
             maxHeldResponseWindowExtensionSeconds = Mathf.Max(0f, maxHeldResponseWindowExtensionSeconds);
+            decisionThinkIntervalSeconds = Mathf.Max(0f, decisionThinkIntervalSeconds);
+            basicFireSuppressionSecondsAfterPressureAction = Mathf.Max(0f, basicFireSuppressionSecondsAfterPressureAction);
         }
 
         public void ConfigureReferences(
@@ -177,14 +272,18 @@ namespace DimensionBrawl.Combat
             BossBarrageEmitter newBossBarrageEmitter,
             BossSummonPressureAction newSummonPressureAction = null,
             SummonLaneSpace newLaneSpace = null,
-            Transform newTrackedPlayer = null)
+            Transform newTrackedPlayer = null,
+            BossBasicFireEmitter newBasicFireEmitter = null)
         {
+            UnsubscribeBasicFireEmitter();
             costLadder = newCostLadder;
             bossBarrageEmitter = newBossBarrageEmitter;
+            basicFireEmitter = newBasicFireEmitter;
             summonPressureAction = newSummonPressureAction;
             laneSpace = newLaneSpace;
             trackedPlayer = newTrackedPlayer;
             ApplyActionDeckProfile();
+            SubscribeBasicFireEmitter();
         }
 
         public void ConfigureActionSlots(BossPressureActionSlot[] newActionSlots)
@@ -247,7 +346,9 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            return TryGetNextTierHoldCandidate(costLadder.AvailableTier, out slot, out nextTier);
+            BossPressureDecisionContext context = BuildDecisionContext(costLadder.AvailableTier);
+            lastDecisionContext = context;
+            return TryGetNextTierHoldCandidate(context, out slot, out nextTier);
         }
 
         public void Tick(float deltaTime)
@@ -259,7 +360,13 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            if (decisionThinkTimer > 0f)
+            {
+                return;
+            }
+
             TryQueueBestAvailableAction();
+            decisionThinkTimer = Mathf.Max(decisionThinkTimer, decisionThinkIntervalSeconds);
         }
 
         public bool TryQueueBestAvailableAction()
@@ -270,13 +377,14 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            int availableTier = costLadder.AvailableTier;
-            if (ShouldHoldForNextTierAction(availableTier))
+            BossPressureDecisionContext context = BuildDecisionContext(costLadder.AvailableTier);
+            lastDecisionContext = context;
+            if (ShouldHoldForNextTierAction(context))
             {
                 return false;
             }
 
-            int slotIndex = ResolveBestSlotIndex(availableTier);
+            int slotIndex = ResolveBestSlotIndex(context, out int selectionScore);
             if (slotIndex < 0)
             {
                 return false;
@@ -305,11 +413,16 @@ namespace DimensionBrawl.Combat
                 summonPressureAction?.TryReleasePressureSummon(spentTier);
             }
 
+            SuppressBasicFireForPressureAction(slot);
+
             totalActionCount++;
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             lastActionKind = slot.ActionKind;
             lastQueuedPattern = slot.Pattern;
             lastQueuedActionSlot = slot;
+            lastQueuedActionSlotIndex = slotIndex;
+            lastSelectionScore = selectionScore;
+            lastActionAgeSeconds = 0f;
             lastActionRespondedToPlayerSummon = respondsToPlayerSummon;
             if (respondsToPlayerSummon)
             {
@@ -342,6 +455,7 @@ namespace DimensionBrawl.Combat
 
             actionSlots = actionDeckProfile.CopyActionSlots();
             globalRecoverySeconds = actionDeckProfile.GlobalRecoverySeconds;
+            decisionThinkIntervalSeconds = actionDeckProfile.DecisionThinkIntervalSeconds;
             EnsurePerSlotTimers(reset: true);
         }
 
@@ -359,10 +473,22 @@ namespace DimensionBrawl.Combat
                 && actionSlots.Length > 0;
         }
 
-        private int ResolveBestSlotIndex(int availableTier)
+        private BossPressureDecisionContext BuildDecisionContext(int availableTier)
+        {
+            return new BossPressureDecisionContext(
+                availableTier,
+                ResolvePlayerForwardRisk01(),
+                IsPlayerSummonResponseWindowActive,
+                lastObservedPlayerSummonTier,
+                costLadder != null ? costLadder.EvaluateBossForwardRisk01(transform.position) : 0f,
+                summonPressureAction != null && summonPressureAction.CanRelease,
+                summonPressureAction != null ? summonPressureAction.ActiveSummonActorCount : 0);
+        }
+
+        private int ResolveBestSlotIndex(BossPressureDecisionContext context, out int bestScore)
         {
             int bestIndex = -1;
-            int bestScore = int.MinValue;
+            bestScore = int.MinValue;
             int slotCount = actionSlots != null ? actionSlots.Length : 0;
             if (slotCount <= 0)
             {
@@ -376,16 +502,17 @@ namespace DimensionBrawl.Combat
                 int index = (startIndex + step) % slotCount;
                 BossPressureActionSlot slot = actionSlots[index];
                 if (slot.Pattern == null
-                    || slot.MinimumTier > availableTier
+                    || slot.MinimumTier > context.AvailableTier
                     || perSlotTimers[index] > 0f
                     || !CanRunActionKind(slot.ActionKind)
-                    || !IsPlayerRiskAllowed(slot)
-                    || !IsPlayerSummonResponseAllowed(slot))
+                    || !IsBossSummonPressureAllowed(slot, context)
+                    || !IsPlayerRiskAllowed(slot, context)
+                    || !IsPlayerSummonResponseAllowed(slot, context))
                 {
                     continue;
                 }
 
-                int score = ResolveSlotSelectionScore(slot);
+                int score = ResolveSlotSelectionScore(slot, context, step);
                 if (score < bestScore)
                 {
                     continue;
@@ -398,26 +525,43 @@ namespace DimensionBrawl.Combat
             return bestIndex;
         }
 
-        private int ResolveSlotSelectionScore(BossPressureActionSlot slot)
+        private int ResolveSlotSelectionScore(
+            BossPressureActionSlot slot,
+            BossPressureDecisionContext context,
+            int selectionStep)
         {
-            int score = slot.MinimumTier * 100;
-            if (!IsPlayerSummonResponseWindowActive || !slot.UsePlayerSummonResponseGate)
+            int score = slot.MinimumTier * 100 + Mathf.Max(0, slot.SelectionPriority);
+            if (slot.UsePlayerForwardRiskGate)
             {
-                return score;
+                float riskBand01 = Mathf.InverseLerp(
+                    slot.MinimumPlayerForwardRisk01,
+                    slot.MaximumPlayerForwardRisk01,
+                    context.PlayerForwardRisk01);
+                score += Mathf.RoundToInt(Mathf.Clamp01(riskBand01) * 40f)
+                    + Mathf.Max(0, slot.ForwardRiskPriorityBonus);
             }
 
-            score += 80;
+            if (!context.PlayerSummonResponseWindowActive || !slot.UsePlayerSummonResponseGate)
+            {
+                return score - selectionStep;
+            }
+
+            score += slot.SummonResponsePriorityBonus > 0
+                ? slot.SummonResponsePriorityBonus
+                : 80;
 
             switch (slot.ActionKind)
             {
                 case BossPressureActionKind.SummonPressure:
-                    return score + 160;
+                    return score + 160 - selectionStep;
+                case BossPressureActionKind.SpecialSkill:
+                    return score + 80 - selectionStep;
                 case BossPressureActionKind.SkillPattern:
-                    return score + 40;
+                    return score + 40 - selectionStep;
                 case BossPressureActionKind.PunishOverextend:
-                    return score + 20;
+                    return score + 20 - selectionStep;
                 default:
-                    return score;
+                    return score - selectionStep;
             }
         }
 
@@ -427,76 +571,136 @@ namespace DimensionBrawl.Combat
                 || (summonPressureAction != null && summonPressureAction.CanRelease);
         }
 
-        private bool ShouldHoldForNextTierAction(int availableTier)
+        private static bool IsBossSummonPressureAllowed(
+            BossPressureActionSlot slot,
+            BossPressureDecisionContext context)
         {
-            return TryGetNextTierHoldCandidate(availableTier, out _, out _);
+            return slot.ActionKind != BossPressureActionKind.SummonPressure
+                || !context.HasActiveBossPressureSummon;
         }
 
-        private bool TryGetNextTierHoldCandidate(
-            int availableTier,
-            out BossPressureActionSlot holdSlot,
-            out int nextTier)
+        private bool ShouldHoldForNextTierAction(BossPressureDecisionContext context)
         {
-            holdSlot = default;
-            nextTier = 0;
-            if (!holdForNextTierActionWhenGateAllows || availableTier <= 0 || availableTier >= 3)
+            if (!TryGetNextTierHoldCandidate(context, out BossPressureActionSlot holdSlot, out int nextTier, out int holdScore))
             {
                 return false;
             }
 
-            nextTier = availableTier + 1;
+            int currentSlotIndex = ResolveBestSlotIndex(context, out int currentScore);
+            if (currentSlotIndex < 0)
+            {
+                return true;
+            }
+
+            return holdSlot.Pattern != null
+                && nextTier > context.AvailableTier
+                && holdScore > currentScore;
+        }
+
+        private bool TryGetNextTierHoldCandidate(
+            BossPressureDecisionContext context,
+            out BossPressureActionSlot holdSlot,
+            out int nextTier)
+        {
+            return TryGetNextTierHoldCandidate(context, out holdSlot, out nextTier, out _);
+        }
+
+        private bool TryGetNextTierHoldCandidate(
+            BossPressureDecisionContext context,
+            out BossPressureActionSlot holdSlot,
+            out int nextTier,
+            out int holdScore)
+        {
+            holdSlot = default;
+            nextTier = 0;
+            holdScore = int.MinValue;
+            if (!holdForNextTierActionWhenGateAllows || context.AvailableTier <= 0 || context.AvailableTier >= 3)
+            {
+                return false;
+            }
+
+            int highestHoldTier = context.AvailableTier + 1;
             int slotCount = actionSlots != null ? actionSlots.Length : 0;
             if (slotCount <= 0)
             {
                 nextTier = 0;
+                holdScore = int.MinValue;
                 return false;
             }
 
             EnsurePerSlotTimers();
+            int bestIndex = -1;
             for (int i = 0; i < slotCount; i++)
             {
                 BossPressureActionSlot slot = actionSlots[i];
+                if (slot.MinimumTier <= context.AvailableTier || slot.MinimumTier > highestHoldTier)
+                {
+                    continue;
+                }
+
+                BossPressureDecisionContext holdContext = new BossPressureDecisionContext(
+                    slot.MinimumTier,
+                    context.PlayerForwardRisk01,
+                    context.PlayerSummonResponseWindowActive,
+                    context.LastObservedPlayerSummonTier,
+                    context.BossForwardRisk01,
+                    context.CanReleaseSummonPressure,
+                    context.ActiveBossPressureSummonCount);
                 if (slot.Pattern == null
-                    || slot.MinimumTier != nextTier
                     || perSlotTimers[i] > 0f
                     || !CanRunActionKind(slot.ActionKind)
-                    || !IsPlayerRiskAllowed(slot)
-                    || !IsPlayerSummonResponseAllowed(slot)
+                    || !IsBossSummonPressureAllowed(slot, holdContext)
+                    || !IsPlayerRiskAllowed(slot, holdContext)
+                    || !IsPlayerSummonResponseAllowed(slot, holdContext)
                     || bossBarrageEmitter == null
                     || !bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
                 {
                     continue;
                 }
 
-                holdSlot = slot;
+                int score = ResolveSlotSelectionScore(slot, holdContext, i);
+                if (score < holdScore)
+                {
+                    continue;
+                }
+
+                bestIndex = i;
+                nextTier = slot.MinimumTier;
+                holdScore = score;
+            }
+
+            if (bestIndex >= 0)
+            {
+                holdSlot = actionSlots[bestIndex];
                 return true;
             }
 
             nextTier = 0;
+            holdScore = int.MinValue;
             return false;
         }
 
-        private bool IsPlayerRiskAllowed(BossPressureActionSlot slot)
+        private bool IsPlayerRiskAllowed(BossPressureActionSlot slot, BossPressureDecisionContext context)
         {
             if (!slot.UsePlayerForwardRiskGate)
             {
                 return true;
             }
 
-            float risk01 = ResolvePlayerForwardRisk01();
+            float risk01 = context.PlayerForwardRisk01;
             return risk01 >= slot.MinimumPlayerForwardRisk01
                 && risk01 <= slot.MaximumPlayerForwardRisk01;
         }
 
-        private bool IsPlayerSummonResponseAllowed(BossPressureActionSlot slot)
+        private bool IsPlayerSummonResponseAllowed(BossPressureActionSlot slot, BossPressureDecisionContext context)
         {
             if (!slot.UsePlayerSummonResponseGate)
             {
                 return true;
             }
 
-            return IsPlayerSummonResponseWindowActive
-                && lastObservedPlayerSummonTier >= Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
+            return context.PlayerSummonResponseWindowActive
+                && context.LastObservedPlayerSummonTier >= Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
         }
 
         private float ResolvePlayerForwardRisk01()
@@ -512,6 +716,23 @@ namespace DimensionBrawl.Combat
             {
                 globalRecoveryTimer = Mathf.Max(0f, globalRecoveryTimer - deltaTime);
             }
+
+            if (decisionThinkTimer > 0f)
+            {
+                decisionThinkTimer = Mathf.Max(0f, decisionThinkTimer - deltaTime);
+            }
+
+            if (!float.IsPositiveInfinity(lastActionAgeSeconds))
+            {
+                lastActionAgeSeconds += deltaTime;
+            }
+
+            if (!float.IsPositiveInfinity(lastBasicShotAgeSeconds))
+            {
+                lastBasicShotAgeSeconds += deltaTime;
+            }
+
+            lastDecisionContext = BuildDecisionContext(costLadder != null ? costLadder.AvailableTier : 0);
 
             bool preserveHeldResponseWindow = ShouldPreserveHeldPlayerSummonResponseWindow();
             if (playerSummonResponseTimer > 0f)
@@ -558,7 +779,7 @@ namespace DimensionBrawl.Combat
                 && heldResponseWindowExtensionRemainingSeconds > 0f
                 && IsPlayerSummonResponseWindowActive
                 && CanAttemptAction()
-                && TryGetNextTierHoldCandidate(costLadder.AvailableTier, out _, out _);
+                && TryGetNextTierHoldCandidate(lastDecisionContext, out _, out _);
         }
 
         private void PreserveHeldPlayerSummonResponseWindow()
@@ -576,6 +797,52 @@ namespace DimensionBrawl.Combat
 
             playerSummonResponseTimer += extensionSeconds;
             heldResponseWindowExtensionRemainingSeconds -= extensionSeconds;
+        }
+
+        private void SubscribeBasicFireEmitter()
+        {
+            if (basicFireSubscribed || basicFireEmitter == null)
+            {
+                return;
+            }
+
+            basicFireEmitter.VolleyFired += HandleBasicFireVolleyFired;
+            basicFireSubscribed = true;
+        }
+
+        private void UnsubscribeBasicFireEmitter()
+        {
+            if (!basicFireSubscribed || basicFireEmitter == null)
+            {
+                basicFireSubscribed = false;
+                return;
+            }
+
+            basicFireEmitter.VolleyFired -= HandleBasicFireVolleyFired;
+            basicFireSubscribed = false;
+        }
+
+        private void HandleBasicFireVolleyFired(BossBasicFireEmitter emitter, int projectileCount)
+        {
+            totalBasicShotVolleys++;
+            lastBasicShotProjectileCount = Mathf.Max(0, projectileCount);
+            lastBasicShotAgeSeconds = 0f;
+        }
+
+        private void SuppressBasicFireForPressureAction(BossPressureActionSlot slot)
+        {
+            if (basicFireEmitter == null || basicFireSuppressionSecondsAfterPressureAction <= 0f)
+            {
+                return;
+            }
+
+            float suppressionSeconds = basicFireSuppressionSecondsAfterPressureAction;
+            if (slot.ActionKind == BossPressureActionKind.PunishOverextend)
+            {
+                suppressionSeconds += 0.2f;
+            }
+
+            basicFireEmitter.SuppressAutoFire(suppressionSeconds);
         }
     }
 }

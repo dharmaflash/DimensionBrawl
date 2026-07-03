@@ -17,6 +17,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float damageCueIntensity = 1f;
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.66f;
         [SerializeField] private bool playDamageVfx;
+        [SerializeField] private bool offsetDamageVfxToHitPoint = true;
+        [SerializeField, Min(0f)] private float maxHitPointLocalOffset = 1.35f;
         [SerializeField] private bool playDeathVfx;
         [SerializeField] private CombatPatternVfxCueOverride[] patternCueOverrides = Array.Empty<CombatPatternVfxCueOverride>();
         [SerializeField] private CombatEliteVfxCueOverride[] eliteCueOverrides = Array.Empty<CombatEliteVfxCueOverride>();
@@ -134,7 +136,8 @@ namespace DimensionBrawl.Presentation
             lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
             lastDamageCueInterruptedAction = interruptsAction;
 
-            if (playDamageVfx && Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, intensity))
+            Vector3 localHitOffset = ResolveDamageVfxLocalOffset(damageInfo.Point);
+            if (playDamageVfx && Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, intensity, localHitOffset))
             {
                 damageVfxCueRequestCount++;
             }
@@ -165,12 +168,56 @@ namespace DimensionBrawl.Presentation
 
         private bool Play(CombatVfxCueId cueId, Vector3 direction, float intensity)
         {
+            return Play(cueId, direction, intensity, Vector3.zero);
+        }
+
+        private bool Play(CombatVfxCueId cueId, Vector3 direction, float intensity, Vector3 additionalLocalPositionOffset)
+        {
             if (cuePlayer == null)
             {
                 return false;
             }
 
-            return cuePlayer.PlayCue(cueId, cueAnchor != null ? cueAnchor : transform, direction, intensity);
+            return cuePlayer.PlayCue(
+                cueId,
+                cueAnchor != null ? cueAnchor : transform,
+                direction,
+                intensity,
+                -1f,
+                additionalLocalPositionOffset);
+        }
+
+        private Vector3 ResolveDamageVfxLocalOffset(Vector3 hitPoint)
+        {
+            if (!offsetDamageVfxToHitPoint || !IsFinite(hitPoint))
+            {
+                return Vector3.zero;
+            }
+
+            Transform anchor = cueAnchor != null ? cueAnchor : transform;
+            Vector3 worldOffset = hitPoint - anchor.position;
+            if (!IsFinite(worldOffset) || worldOffset.sqrMagnitude < 0.0001f)
+            {
+                return Vector3.zero;
+            }
+
+            float maxOffset = Mathf.Max(0f, maxHitPointLocalOffset);
+            if (maxOffset > 0f && worldOffset.sqrMagnitude > maxOffset * maxOffset)
+            {
+                worldOffset = worldOffset.normalized * maxOffset;
+            }
+
+            return Quaternion.Inverse(anchor.rotation) * worldOffset;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private void ResolveAgent()

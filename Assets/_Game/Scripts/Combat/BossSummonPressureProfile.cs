@@ -34,6 +34,8 @@ namespace DimensionBrawl.Combat
         public string PressureId => pressureId;
         public int TierCount => tierSettings != null ? tierSettings.Length : 0;
         public int TierReadoutCount => tierReadouts != null ? tierReadouts.Length : 0;
+        public int ResponseSlotCount => TierCount;
+        public int ResponseSlotReadoutCount => TierReadoutCount;
 
         private void OnValidate()
         {
@@ -67,6 +69,11 @@ namespace DimensionBrawl.Combat
             return copy;
         }
 
+        public BossSummonPressureAction.BossSummonTierSettings[] CopyResponseSlotSettings()
+        {
+            return CopyTierSettings();
+        }
+
         public bool TryGetTierReadout(int tier, out BossSummonTierReadout readout)
         {
             int index = Mathf.Clamp(tier - 1, 0, Mathf.Max(0, TierReadoutCount - 1));
@@ -78,6 +85,11 @@ namespace DimensionBrawl.Combat
 
             readout = tierReadouts[index];
             return readout.HasReadout;
+        }
+
+        public bool TryGetResponseSlotReadout(int responseSlot, out BossSummonTierReadout readout)
+        {
+            return TryGetTierReadout(responseSlot, out readout);
         }
     }
 }

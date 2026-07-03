@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &120357852264106
 GameObject:
@@ -820,6 +820,7 @@ GameObject:
   - component: {fileID: 1543923529739882463}
   - component: {fileID: 5543306513787069222}
   - component: {fileID: 7926784191252455313}
+  - component: {fileID: 7723459012345678003}
   m_Layer: 0
   m_Name: PF_Enemy_SciFiSoldier_Melee_ClosePunish
   m_TagString: Untagged
@@ -844,6 +845,7 @@ Transform:
   - {fileID: 6164861598717738194}
   - {fileID: 2851516760841846840}
   - {fileID: 7959817154321324074}
+  - {fileID: 7723459012345678002}
   - {fileID: 4509711021267372791}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
@@ -882,8 +884,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   team: 2
   maxHealth: 90
   startAtFullHealth: 1
@@ -903,8 +905,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   enemyTypeId: SciFiSoldier.Basic
   patternId: ClosePunish
   patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -921,6 +923,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 0.75
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
@@ -939,7 +946,7 @@ MonoBehaviour:
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed
-  prepareTrigger: 
+  prepareTrigger:
   attackTrigger: Attack
   hitTrigger: Hit
   deathTrigger: Death
@@ -959,8 +966,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   health: {fileID: 7977794529452437881}
   flashRenderers:
   - {fileID: 5021009831468980178}
@@ -979,10 +986,14 @@ MonoBehaviour:
   - {fileID: 347176310937955706}
   - {fileID: 1396976821505878528}
   - {fileID: 7145386169842424839}
+  renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
-  flashSeconds: 0.08
-  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  flashSeconds: 0.12
+  hitColor: {r: 1, g: 0.36, b: 0.18, a: 1}
+  hitEmissionColor: {r: 1, g: 0.7, b: 0.28, a: 1}
+  hitColorBlend: 0.72
+  hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
 --- !u!114 &396118273611275809
 MonoBehaviour:
@@ -994,7 +1005,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 7977794529452437881}
   searchRadius: 12
@@ -1010,7 +1021,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 3955577306872378770}
   telegraphTransform: {fileID: 6164861598717738194}
@@ -1034,7 +1045,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 2003955919364432102}
   cameraController: {fileID: 0}
@@ -1049,7 +1060,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 4509711021267372791}
@@ -1063,13 +1074,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
   agentSource: {fileID: 2003955919364432102}
   health: {fileID: 7977794529452437881}
   cuePlayer: {fileID: 5543306513787069222}
   cueAnchor: {fileID: 4358676765322598395}
   elitePatternController: {fileID: 0}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -1127,6 +1144,32 @@ MonoBehaviour:
   - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
     signalCueId: 28
     intensity: 1.18
+--- !u!114 &7723459012345678003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086411759956909423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7d0a6e6c70a42eab404e4b7d463a8d4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.BasicSoldierProjectileAttackDriver
+  soldier: {fileID: 2003955919364432102}
+  sourceHealth: {fileID: 7977794529452437881}
+  targetSensor: {fileID: 396118273611275809}
+  projectileOrigin: {fileID: 7723459012345678002}
+  projectilePrefab: {fileID: 7222746313675744862, guid: c48e9c6d705747541b11659f513a0297, type: 3}
+  projectileRoot: {fileID: 4509711021267372791}
+  projectileDamageOverride: 0
+  projectileSpeed: 18
+  projectileLifetimeSeconds: 1.25
+  projectileRadius: 0.2
+  originHeight: 1.22
+  targetHeightOffset: 0.9
+  responsePolicy: 2
+  controlLockPolicy: 0
 --- !u!1 &1152712318712075456
 GameObject:
   m_ObjectHideFlags: 0
@@ -6198,7 +6241,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -6266,6 +6309,37 @@ Transform:
   m_Children:
   - {fileID: 4751172292072775034}
   m_Father: {fileID: 4372210559417359795}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7723459012345678001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7723459012345678002}
+  m_Layer: 0
+  m_Name: ProjectileOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7723459012345678002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7723459012345678001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.22, z: 0.32}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4358676765322598395}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7754260875813476092
 GameObject:

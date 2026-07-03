@@ -136,19 +136,19 @@ namespace DimensionBrawl.Tests
                 new Vector3(0.45f, 0.88f, 2.72f),
                 GetVector3(cameraController, "aimCameraOffset"),
                 "Boss summon duel aim camera offset should keep the reviewed inspector framing.");
-            Assert.AreEqual(4, bossPressureActionDirector.ActionSlotCount);
+            Assert.AreEqual(5, bossPressureActionDirector.ActionSlotCount);
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 0,
-                BossPressureActionKind.SkillPattern,
+                BossPressureActionKind.SpecialSkill,
                 1,
-                "DodgeLineOrUseSkill1");
+                "DodgeBossLinePressureSpecial");
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 1,
                 BossPressureActionKind.SummonPressure,
                 1,
-                "EscortProbeFrontlineCheck");
+                "LaserSoldierDodgeLine");
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 2,
@@ -160,6 +160,12 @@ namespace DimensionBrawl.Tests
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 3,
+                BossPressureActionKind.SummonPressure,
+                3,
+                "LaserSoldierDodgeLine");
+            AssertBossPressureSlot(
+                bossPressureActionDirector,
+                4,
                 BossPressureActionKind.PunishOverextend,
                 3,
                 "RetreatOrSpendHighTierAnswer");
@@ -291,18 +297,23 @@ namespace DimensionBrawl.Tests
             SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 2.8f, "S2");
             AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
             AssertSummonProxyIsMarching(slot2Proxy, 2.8f, "S2");
+            BossLaserSummonPattern slot2LaserPattern =
+                RequireComponent<BossLaserSummonPattern>(slot2Proxy.gameObject, "S2 laser pattern");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
-            yield return new WaitForSeconds(0.25f);
-            Assert.Greater(
-                summonSlot2Action.ActiveProjectileCount,
+            Assert.AreNotEqual(
+                BossLaserSummonPatternState.Inactive,
+                slot2LaserPattern.CurrentState,
+                "S2 should run the shared laser-soldier pattern after spawning, not the old projectile-only volley path.");
+            Assert.LessOrEqual(
+                slot2Proxy.AdvanceDistance,
+                3.75f,
+                "S2 should stage locally before its shared laser pattern starts instead of marching across the lane before firing.");
+            Assert.AreEqual(
                 0,
-                "S2 should read as a ranged support summon by firing visible lane projectiles after entry.");
-            Assert.GreaterOrEqual(
-                summonSlot2Action.LastVolleyWaveCount,
-                1,
-                "S2 should expose its repeated support-volley behavior for HUD and review tests.");
+                summonSlot2Action.ActiveProjectileCount,
+                "S2 should read through its BossLaserSummonPattern beam, not by reviving the old fake lane projectile.");
 
             GrantEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
@@ -651,11 +662,11 @@ namespace DimensionBrawl.Tests
         private static void AssertBossSummonPressureRoleProfile(BossSummonPressureProfile profile)
         {
             BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
-            string[] expectedRoles = { "EscortProbe", "PressureScreen", "ClampGuard" };
-            float[] expectedHealth = { 560f, 820f, 1180f };
+            string[] expectedRoles = { "EscortProbe", "PressureScreen", "LaserSoldier" };
+            float[] expectedHealth = { 520f, 700f, 760f };
             float[] expectedMoveSpeed = { 3.2f, 3.6f, 4.0f };
-            float[] expectedDps = { 42f, 62f, 88f };
-            int[] expectedScreens = { 3, 5, 8 };
+            float[] expectedDps = { 42f, 62f, 58f };
+            int[] expectedScreens = { 3, 5, 0 };
 
             Assert.AreEqual(3, tiers.Length);
             for (int i = 0; i < tiers.Length; i++)
@@ -678,8 +689,25 @@ namespace DimensionBrawl.Tests
 
                 Assert.Greater(tiers[i].ActorMaxHealth, tiers[i - 1].ActorMaxHealth);
                 Assert.Greater(tiers[i].ActorMoveSpeed, tiers[i - 1].ActorMoveSpeed);
-                Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
-                Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
+                if (i == 1)
+                {
+                    Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
+                    Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
+                    continue;
+                }
+
+                Assert.AreEqual(
+                    0,
+                    tiers[i].ScreenIntercepts,
+                    "Boss response slot 3 laser soldier should be a dodge-line threat, not another pressure screen.");
+                Assert.Less(
+                    tiers[i].ActorMaxHealth,
+                    900f,
+                    "Boss response slot 3 laser soldier should stay punishable after the dodge read instead of out-tanking the player's high-cost dragon.");
+                Assert.Less(
+                    tiers[i].ActorAttackIntervalSeconds,
+                    tiers[i - 1].ActorAttackIntervalSeconds,
+                    "Boss response slot 3 laser soldier should trade screen blocks for a faster ticking laser cadence.");
             }
         }
 

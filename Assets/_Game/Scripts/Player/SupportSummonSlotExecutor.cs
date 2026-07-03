@@ -12,6 +12,7 @@ namespace DimensionBrawl.Player
         private readonly Queue<LaneActionProjectile> projectilePool = new Queue<LaneActionProjectile>();
         private readonly List<GameObject> entryCues = new List<GameObject>();
         private readonly Queue<GameObject> entryCuePool = new Queue<GameObject>();
+        private readonly List<BossLaserSummonPattern> laserPatterns = new List<BossLaserSummonPattern>(4);
         private readonly SummonFrontlineProxyPool summonActorPool = new SummonFrontlineProxyPool();
         private SummonFrontlineProxy lastSummonActor;
         private string lastSummonActorRoleId;
@@ -76,6 +77,7 @@ namespace DimensionBrawl.Player
         {
             UnsubscribePressureScreens();
             UnsubscribeProjectileDamageApplied();
+            UnsubscribeLaserPatterns();
         }
 
         public void FireTier(int tier, PlayerSummonSlot1Action.SummonTierSettings settings)
@@ -88,7 +90,9 @@ namespace DimensionBrawl.Player
             Vector2 targetLane = ResolveTargetLaneCoordinates(new Vector2(entryX, ResolveFallbackTargetLaneZ()));
             Vector3 entryPosition = ResolveBattlefieldPoint(entryX, entryZ, settings.EntryHeight);
             float actorTargetX = Mathf.Lerp(entryX, targetLane.x, 0.45f);
-            Vector3 actorTargetPosition = ResolveBattlefieldPoint(actorTargetX, targetLane.y, settings.EntryHeight);
+            Vector3 actorTargetPosition = IsLaserSoldier(settings)
+                ? ResolveLaserStandoffPosition(entryPosition, targetLane, settings)
+                : ResolveBattlefieldPoint(actorTargetX, targetLane.y, settings.EntryHeight);
             Vector3 projectileTargetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
             Vector3 facingDirection = ResolvePlanarDirection(actorTargetPosition - entryPosition);
             float actorAdvanceDistance = Vector3.Distance(
@@ -108,7 +112,14 @@ namespace DimensionBrawl.Player
             {
                 lastSummonActorRoleId = settings.ActorRoleId;
                 lastVolleyWaveCount = 0;
-                owner.RunRoutine(RunPersistentVolley(actor, projectileTargetPosition, settings));
+                if (IsLaserSoldier(settings))
+                {
+                    ConfigureLaserPattern(actor, settings);
+                }
+                else
+                {
+                    owner.RunRoutine(RunPersistentVolley(actor, projectileTargetPosition, settings));
+                }
             }
         }
 
@@ -408,7 +419,7 @@ namespace DimensionBrawl.Player
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
                 actor.FaceTowards(targetPosition);
-                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f));
+                actor.NotifyAttackPerformed(ResolveAttackFeedbackSeconds(settings));
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;
@@ -421,6 +432,129 @@ namespace DimensionBrawl.Player
 
                 yield return new WaitForSeconds(owner.VolleyIntervalSeconds);
             }
+        }
+
+        private float ResolveAttackFeedbackSeconds(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            float defaultSeconds = Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f);
+            return string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
+                ? Mathf.Clamp(owner.VolleyIntervalSeconds * 0.82f, 0.55f, 0.95f)
+                : defaultSeconds;
+        }
+
+        private void ConfigureLaserPattern(
+            SummonFrontlineProxy actor,
+            PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            BossLaserSummonPattern pattern = actor.GetComponent<BossLaserSummonPattern>();
+            if (pattern == null)
+            {
+                pattern = actor.gameObject.AddComponent<BossLaserSummonPattern>();
+            }
+
+            pattern.LaserFired -= OnLaserPatternFired;
+            pattern.DamageApplied -= OnLaserPatternDamageApplied;
+            pattern.LaserFired += OnLaserPatternFired;
+            pattern.DamageApplied += OnLaserPatternDamageApplied;
+            if (!laserPatterns.Contains(pattern))
+            {
+                laserPatterns.Add(pattern);
+            }
+
+            pattern.ConfigurePattern(
+                ResolveLaserPatternTarget(),
+                owner.SourceTeam,
+                ResolveLaserDamagePerSecond(settings),
+                ResolveLaserDamageInterval(settings),
+                settings.ActorMoveSpeed);
+        }
+
+        private void OnLaserPatternFired(BossLaserSummonPattern pattern)
+        {
+            lastVolleyWaveCount++;
+            totalVolleyWaveCount++;
+        }
+
+        private Transform ResolveLaserPatternTarget()
+        {
+            if (owner.FrontlineTargetHealth != null && owner.FrontlineTargetHealth.IsAlive)
+            {
+                return owner.FrontlineTargetHealth.transform;
+            }
+
+            if (owner.TargetSelector != null
+                && owner.TargetSelector.TryGetCurrentTarget(out Transform target, out CombatHealth targetHealth)
+                && target != null
+                && targetHealth != null
+                && targetHealth.IsAlive)
+            {
+                return target;
+            }
+
+            return null;
+        }
+
+        private void OnLaserPatternDamageApplied(
+            BossLaserSummonPattern pattern,
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            Vector3 impactDirection)
+        {
+            owner.NotifySummonProjectileDamageApplied(null, targetHealth, impactPoint, impactDirection);
+        }
+
+        private void UnsubscribeLaserPatterns()
+        {
+            for (int i = laserPatterns.Count - 1; i >= 0; i--)
+            {
+                BossLaserSummonPattern pattern = laserPatterns[i];
+                if (pattern != null)
+                {
+                    pattern.LaserFired -= OnLaserPatternFired;
+                    pattern.DamageApplied -= OnLaserPatternDamageApplied;
+                }
+            }
+
+            laserPatterns.Clear();
+        }
+
+        private Vector3 ResolveLaserStandoffPosition(
+            Vector3 entryPosition,
+            Vector2 targetLane,
+            PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.EntryHeight);
+            Vector3 towardTarget = Vector3.ProjectOnPlane(targetPosition - entryPosition, Vector3.up);
+            if (towardTarget.sqrMagnitude <= 0.0001f)
+            {
+                towardTarget = ResolvePlanarDirection(owner.transform.forward);
+            }
+
+            Vector3 standoffPosition = entryPosition + towardTarget.normalized * Mathf.Max(0.1f, settings.ActorAdvanceDistance);
+            standoffPosition.y = entryPosition.y;
+            return standoffPosition;
+        }
+
+        private static bool IsLaserSoldier(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            return string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal);
+        }
+
+        private static float ResolveLaserDamageInterval(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            return Mathf.Clamp(settings.ActorAttackIntervalSeconds * 0.12f, 0.08f, 0.16f);
+        }
+
+        private static float ResolveLaserDamagePerSecond(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            float activeSeconds = Mathf.Clamp(settings.ActorAttackIntervalSeconds * 0.46f, 0.42f, 0.62f);
+            float shotBudget = activeSeconds > 0f ? settings.Damage / activeSeconds : settings.Damage;
+            return Mathf.Max(settings.ActorAttackDamagePerSecond, shotBudget);
         }
 
         private IEnumerator ReleaseCueAfterSeconds(GameObject instance, float seconds)

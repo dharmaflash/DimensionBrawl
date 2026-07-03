@@ -29,8 +29,8 @@ MonoBehaviour:
     ActorRoleId: LaserSoldier
     ActorMaxHealth: 170
     ActorMoveSpeed: 2.8
-    ActorAdvanceDistance: 1.35
-    ActorAdvanceSeconds: 1.3225
+    ActorAdvanceDistance: 3.6
+    ActorAdvanceSeconds: 1.22
     ActorEngageRadius: 0.72
     ActorAttackDamagePerSecond: 9
     ActorAttackIntervalSeconds: 1.15
@@ -53,12 +53,12 @@ MonoBehaviour:
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 2.32
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorMaxHealth: 205
     ActorMoveSpeed: 3.1
-    ActorAdvanceDistance: 1.6
-    ActorAdvanceSeconds: 1.41
+    ActorAdvanceDistance: 4.2
+    ActorAdvanceSeconds: 1.32
     ActorEngageRadius: 0.78
     ActorAttackDamagePerSecond: 12
     ActorAttackIntervalSeconds: 1.25
@@ -81,12 +81,12 @@ MonoBehaviour:
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 2.56
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorMaxHealth: 250
     ActorMoveSpeed: 3.4
-    ActorAdvanceDistance: 1.85
-    ActorAdvanceSeconds: 1.4975001
+    ActorAdvanceDistance: 5
+    ActorAdvanceSeconds: 1.45
     ActorEngageRadius: 0.84
     ActorAttackDamagePerSecond: 16
     ActorAttackIntervalSeconds: 1.35
@@ -102,18 +102,18 @@ MonoBehaviour:
   - TierLabel: LV1 Laser Tap
     StageRole: Low-return ranged helper that sets up cleanly but cannot block pressure.
     PlayerUse: Spend when the boss lane is open and a cheap ranged body is enough.
-    SummonRead: SciFi rifleman slides into a side lane, flashes a cyan muzzle beam,
-      and fires one clean laser line per volley.
+    SummonRead: SciFi rifleman holds a ranged standoff, paints a cyan warning line,
+      then fires one clean laser beam per volley.
   - TierLabel: LV2 Split Laser
     StageRole: Mid-tier ranged support with two visible lines and controlled sustained
       pressure.
     PlayerUse: Hold EN if the boss will stay exposed for more than one volley.
-    SummonRead: Laser soldier fires one sharper cyan line with a larger beam flash
-      while staying fragile.
+    SummonRead: Laser soldier keeps distance, locks a sharper cyan line, and fires
+      with a larger beam flash while staying fragile.
   - TierLabel: LV3 Prism Burst
     StageRole: High-tier glass-cannon support that widens the lane punish without
       becoming a turret.
     PlayerUse: Use when the player has created a long punish window and does not
       need a blocker.
-    SummonRead: Wider two-line laser burst and stronger muzzle beam, but a slower
-      cadence and low body safety.
+    SummonRead: Wider prism laser burst and stronger muzzle beam from standoff,
+      but a slower cadence and low body safety.
