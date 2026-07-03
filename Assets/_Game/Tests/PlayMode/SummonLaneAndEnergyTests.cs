@@ -4089,7 +4089,7 @@ namespace DimensionBrawl.Tests
                 new BossPressureActionDirector.BossPressureActionSlot(
                     summonPattern,
                     BossPressureActionKind.SummonPressure,
-                    3,
+                    1,
                     1,
                     0f,
                     responseId: "LaserSoldierDodgeLine",
@@ -4127,12 +4127,13 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.34f, positionController.CurrentTargetRisk01, 0.001f);
             emitter.CancelQueuedPriorityPattern(specialPattern);
 
-            bossCost.GrantCurrentTierCost(300f);
+            bossCost.GrantCurrentTierCost(100f);
             director.Tick(0.45f);
             positionController.Tick(0.1f);
 
             Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, director.LastMovementIntent);
+            Assert.AreEqual(1, summonAction.LastReleasedTier);
             Assert.AreEqual(1, summonAction.TotalReleaseCount);
             Assert.AreEqual(1, summonAction.ActiveSummonActorCount);
             Assert.AreEqual(0.18f, positionController.CurrentTargetRisk01, 0.001f);
@@ -4322,7 +4323,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void BossPressureActionDirectorCanHoldAfterOpeningActionForLevelThreeLaser()
+        public void BossPressureActionDirectorReleasesLevelOneLaserAfterOpeningAction()
         {
             GameObject laneObject = new GameObject("Lane");
             SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
@@ -4381,7 +4382,7 @@ namespace DimensionBrawl.Tests
                 new BossPressureActionDirector.BossPressureActionSlot(
                     summonPattern,
                     BossPressureActionKind.SummonPressure,
-                    3,
+                    1,
                     1,
                     0f,
                     responseId: "LaserSoldierDodgeLine",
@@ -4410,17 +4411,10 @@ namespace DimensionBrawl.Tests
             emitter.CancelQueuedPriorityPattern(specialPattern);
 
             bossCost.GrantCurrentTierCost(100f);
-            Assert.IsFalse(
-                director.TryQueueBestAvailableAction(),
-                "After the opening LV1 read, the boss should be allowed to bank cost for the authored LV3 laser soldier instead of spending another low-tier poke.");
-            Assert.AreEqual(1, bossCost.AvailableTier);
-            Assert.IsFalse(emitter.HasQueuedPriorityPattern);
-
-            bossCost.GrantCurrentTierCost(200f);
             Assert.IsTrue(director.TryQueueBestAvailableAction());
             Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
-            Assert.AreEqual(3, director.LastSpentTier);
-            Assert.AreEqual(3, summonAction.LastReleasedTier);
+            Assert.AreEqual(1, director.LastSpentTier);
+            Assert.AreEqual(1, summonAction.LastReleasedTier);
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);

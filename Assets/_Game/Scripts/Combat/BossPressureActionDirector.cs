@@ -619,9 +619,7 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            int highestHoldTier = totalActionCount > 0
-                ? 3
-                : context.AvailableTier + 1;
+            int highestHoldTier = context.AvailableTier + 1;
             int slotCount = actionSlots != null ? actionSlots.Length : 0;
             if (slotCount <= 0)
             {

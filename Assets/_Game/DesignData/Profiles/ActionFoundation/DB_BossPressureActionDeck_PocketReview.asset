@@ -39,10 +39,10 @@ MonoBehaviour:
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 3.8
-    ResponseId: EscortProbeFrontlineCheck
-    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.
-    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.
-    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.
+    ResponseId: LaserSoldierDodgeLine
+    StageLoopRole: LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.
+    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.
+    SummonAnswer: A low-tier summon can body-clash the rifleman, but the intended read is movement first.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1

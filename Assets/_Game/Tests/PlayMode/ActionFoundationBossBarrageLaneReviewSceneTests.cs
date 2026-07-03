@@ -511,13 +511,14 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
             emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
 
-            bossPressureCost.GrantCurrentTierCost(300f);
+            bossPressureCost.GrantCurrentTierCost(100f);
             bossPressureActionDirector.Tick(1.2f);
             bossPressurePosition.Tick(0.1f);
 
             Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
-            Assert.AreEqual(3, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
             Assert.AreEqual(1, bossSummonPressureAction.TotalReleaseCount);
             Assert.AreEqual(1, bossSummonPressureAction.ActiveSummonActorCount);
             Assert.AreEqual(0.18f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
@@ -553,7 +554,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator BossResponseLoopSceneBanksAfterOpeningForLaserPressure()
+        public IEnumerator BossResponseLoopSceneReleasesLevelOneLaserPressureAfterOpening()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
@@ -578,22 +579,10 @@ namespace DimensionBrawl.Tests
             bossPressureCost.GrantCurrentTierCost(100f);
             bossPressureActionDirector.Tick(1.2f);
 
-            Assert.AreEqual(1, bossPressureCost.AvailableTier);
-            Assert.IsFalse(
-                emitter.HasQueuedPriorityPattern,
-                "After the opening LV1 read, the real review boss should bank cost for the authored LV3 laser soldier instead of spending another low-tier pressure action.");
-            Assert.AreEqual(
-                BossPressureActionKind.SpecialSkill,
-                bossPressureActionDirector.LastActionKind,
-                "Holding should preserve the last completed read until the laser pressure tier is actually available.");
-
-            bossPressureCost.GrantCurrentTierCost(200f);
-            bossPressureActionDirector.Tick(0.3f);
-
             Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
-            Assert.AreEqual(3, bossPressureActionDirector.LastSpentTier);
-            Assert.AreEqual(3, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
             Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
 
             yield return null;
@@ -823,10 +812,10 @@ namespace DimensionBrawl.Tests
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
-                "LV1 Escort Probe",
-                "Low-cost boss proxy that holds the lane long enough for the player to answer with fire or a saved summon.",
-                "Strafe and keep firing; spend SummonSlot1 only if the next barrage overlaps this proxy.",
-                "A short relief answer should remove the screen and keep the lane from being locked.");
+                "LV1 Laser Soldier",
+                "Low-cost boss rifleman that creates the first readable dodge-line check without waiting for a high-tier bank.",
+                "Read the thin aim line, dodge after the lock, then punish the rifleman before the next boss action.",
+                "A cheap summon can body-clash the rifleman, but the primary read is movement first.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
@@ -899,10 +888,10 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
                 1,
-                "EscortProbeFrontlineCheck",
-                "LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.",
-                "Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.",
-                "A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.",
+                "LaserSoldierDodgeLine",
+                "LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.",
+                "Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.",
+                "A low-tier summon can body-clash the rifleman, but the intended read is movement first.",
                 false,
                 0f,
                 1f,

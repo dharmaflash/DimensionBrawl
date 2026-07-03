@@ -148,7 +148,7 @@ namespace DimensionBrawl.Tests
                 1,
                 BossPressureActionKind.SummonPressure,
                 1,
-                "EscortProbeFrontlineCheck");
+                "LaserSoldierDodgeLine");
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 2,
