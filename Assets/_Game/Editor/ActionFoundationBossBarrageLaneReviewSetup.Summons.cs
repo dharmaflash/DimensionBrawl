@@ -585,11 +585,28 @@ namespace DimensionBrawl.Editor
                 BossLaserSummonPattern laserPattern = EnsureComponent<BossLaserSummonPattern>(editableRoot);
                 SetObjectReference(laserPattern, "proxy", editableProxy);
                 SetObjectReference(laserPattern, "sourceHealth", editableProxy.Health);
+                SetObjectReference(
+                    laserPattern,
+                    "telegraphVfxPrefab",
+                    LoadAsset<GameObject>(BossLaserTelegraphVfxPrefabPath));
+                AudioSource laserAudioSource = EnsureComponent<AudioSource>(editableRoot);
+                laserAudioSource.playOnAwake = false;
+                laserAudioSource.spatialBlend = 1f;
+                laserAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                laserAudioSource.minDistance = 1.6f;
+                laserAudioSource.maxDistance = 18f;
+                SetObjectReference(laserPattern, "audioSource", laserAudioSource);
+                SetObjectReference(laserPattern, "telegraphSfx", LoadAsset<AudioClip>(BossLaserTelegraphSfxClipPath));
+                SetObjectReference(laserPattern, "laserFireSfx", LoadAsset<AudioClip>(BossLaserFireSfxClipPath));
+                SetFloat(laserPattern, "telegraphSfxVolume", 0.72f);
+                SetFloat(laserPattern, "laserFireSfxVolume", 0.9f);
                 SetFloat(laserPattern, "telegraphSeconds", 0.78f);
                 SetFloat(laserPattern, "aimLockSeconds", 0.2f);
                 SetFloat(laserPattern, "activeSeconds", 0.92f);
                 SetFloat(laserPattern, "recoverySeconds", 0.42f);
                 SetFloat(laserPattern, "repositionSeconds", 0.62f);
+                SetFloat(laserPattern, "retargetSettleSeconds", 0.18f);
+                SetFloat(laserPattern, "aimTurnSpeedDegrees", 720f);
                 SetFloat(laserPattern, "laserLength", 22f);
                 SetFloat(laserPattern, "hitRadius", 0.62f);
                 SetFloat(laserPattern, "damagePerSecond", 58f);
@@ -597,6 +614,12 @@ namespace DimensionBrawl.Editor
                 SetFloat(laserPattern, "desiredDistanceFromTarget", 4.2f);
                 SetFloat(laserPattern, "strafeDistance", 1.45f);
                 SetFloat(laserPattern, "repositionMoveSpeed", 4f);
+                SetColor(laserPattern, "telegraphStartColor", new Color(1f, 0.18f, 0.08f, 0.26f));
+                SetColor(laserPattern, "telegraphEndColor", new Color(1f, 0.28f, 0.12f, 0.96f));
+                SetFloat(laserPattern, "telegraphVfxWidthScale", 0.72f);
+                SetFloat(laserPattern, "telegraphVfxLengthScale", 1.12f);
+                SetFloat(laserPattern, "telegraphVfxPulseScale", 0.08f);
+                SetFloat(laserPattern, "telegraphVfxPulseSpeed", 18f);
 
                 SummonAttackBeamPresenter beamPresenter = EnsureComponent<SummonAttackBeamPresenter>(editableRoot);
                 SetColor(beamPresenter, "tierOneColor", new Color(1f, 0.24f, 0.12f, 0.88f));

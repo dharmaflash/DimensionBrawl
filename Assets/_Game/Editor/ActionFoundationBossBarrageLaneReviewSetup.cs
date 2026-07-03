@@ -86,6 +86,12 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         public const string BossLaserSummonActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
+        public const string BossLaserTelegraphVfxPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
+        public const string BossLaserTelegraphSfxClipPath =
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_EliteSummonSignal_02.wav";
+        public const string BossLaserFireSfxClipPath =
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav";
         public const string SummonSlot1ActionProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ChargeBruiser.asset";
         public const string SummonSlot2ActionProfilePath =
@@ -8635,6 +8641,26 @@ namespace DimensionBrawl.Editor
                 LoadPrefabComponent<SummonFrontlineProxyPresenter>(BossLaserSummonActorPrefabPath);
             ValidateBool(bossLaserSummonPresenter, "lockAdvanceDuringSpawnState", true);
             ValidateFloat(bossLaserSummonPresenter, "spawnMovementLockSeconds", 0.22f);
+            BossLaserSummonPattern bossLaserSummonPattern =
+                LoadPrefabComponent<BossLaserSummonPattern>(BossLaserSummonActorPrefabPath);
+            ValidateObjectReference(
+                bossLaserSummonPattern,
+                "telegraphVfxPrefab",
+                LoadAsset<GameObject>(BossLaserTelegraphVfxPrefabPath));
+            ValidateObjectReference(
+                bossLaserSummonPattern,
+                "telegraphSfx",
+                LoadAsset<AudioClip>(BossLaserTelegraphSfxClipPath));
+            ValidateObjectReference(
+                bossLaserSummonPattern,
+                "laserFireSfx",
+                LoadAsset<AudioClip>(BossLaserFireSfxClipPath));
+            ValidateFloat(bossLaserSummonPattern, "telegraphSfxVolume", 0.72f);
+            ValidateFloat(bossLaserSummonPattern, "laserFireSfxVolume", 0.9f);
+            ValidateFloat(bossLaserSummonPattern, "retargetSettleSeconds", 0.18f);
+            ValidateFloat(bossLaserSummonPattern, "aimTurnSpeedDegrees", 720f);
+            ValidateColor(bossLaserSummonPattern, "telegraphStartColor", new Color(1f, 0.18f, 0.08f, 0.26f));
+            ValidateColor(bossLaserSummonPattern, "telegraphEndColor", new Color(1f, 0.28f, 0.12f, 0.96f));
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);

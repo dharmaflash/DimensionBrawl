@@ -2594,6 +2594,8 @@ MonoBehaviour:
   activeSeconds: 0.92
   recoverySeconds: 0.42
   repositionSeconds: 0.62
+  retargetSettleSeconds: 0.18
+  aimTurnSpeedDegrees: 720
   laserLength: 22
   hitRadius: 0.62
   targetHeightOffset: 1.05
@@ -2604,11 +2606,21 @@ MonoBehaviour:
   strafeDistance: 1.45
   repositionMoveSpeed: 4
   telegraphLine: {fileID: 0}
-  telegraphStartColor: {r: 0.1, g: 0.95, b: 1, a: 0.2}
-  telegraphEndColor: {r: 0.1, g: 0.95, b: 1, a: 0.86}
+  telegraphVfxPrefab: {fileID: 3786243742234599021, guid: 176a9163206ca89468b1919fbd9c176f, type: 3}
+  telegraphStartColor: {r: 1, g: 0.18, b: 0.08, a: 0.26}
+  telegraphEndColor: {r: 1, g: 0.28, b: 0.12, a: 0.96}
   activeColor: {r: 0.72, g: 1, b: 1, a: 1}
   telegraphStartWidth: 0.045
   telegraphEndWidth: 0.115
+  telegraphVfxWidthScale: 0.72
+  telegraphVfxLengthScale: 1.12
+  telegraphVfxPulseScale: 0.08
+  telegraphVfxPulseSpeed: 18
+  audioSource: {fileID: 0}
+  telegraphSfx: {fileID: 8300000, guid: 0bf1a94456b09784a9b0ce4738e7b12d, type: 3}
+  laserFireSfx: {fileID: 8300000, guid: d2ed68f42cb51614bb0d2c9eb1ddcccf, type: 3}
+  telegraphSfxVolume: 0.72
+  laserFireSfxVolume: 0.9
   activeWidth: 0.26
 --- !u!135 &5055470576633908698
 SphereCollider:

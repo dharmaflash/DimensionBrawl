@@ -12,13 +12,23 @@ namespace DimensionBrawl.Combat
         Telegraph = 2,
         Active = 3,
         Recovery = 4,
-        Reposition = 5
+        Reposition = 5,
+        Retarget = 6
     }
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SummonFrontlineProxy))]
     public sealed class BossLaserSummonPattern : MonoBehaviour
     {
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int TintColorId = Shader.PropertyToID("_TintColor");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly Renderer[] EmptyRenderers = Array.Empty<Renderer>();
+        private static readonly ParticleSystem[] EmptyParticles = Array.Empty<ParticleSystem>();
+        private static readonly CombatVfxCueVisual[] EmptyCueVisuals = Array.Empty<CombatVfxCueVisual>();
+        private static readonly LineRenderer[] EmptyLineRenderers = Array.Empty<LineRenderer>();
+
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private CombatHealth sourceHealth;
         [SerializeField] private Transform target;
@@ -32,6 +42,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.05f)] private float activeSeconds = 0.92f;
         [SerializeField, Min(0f)] private float recoverySeconds = 0.42f;
         [SerializeField, Min(0.05f)] private float repositionSeconds = 0.62f;
+        [SerializeField, Min(0f)] private float retargetSettleSeconds = 0.18f;
+        [SerializeField, Min(0f)] private float aimTurnSpeedDegrees = 720f;
 
         [Header("Laser")]
         [SerializeField, Min(0.1f)] private float laserLength = 22f;
@@ -48,14 +60,36 @@ namespace DimensionBrawl.Combat
 
         [Header("Presentation")]
         [SerializeField] private LineRenderer telegraphLine;
-        [SerializeField] private Color telegraphStartColor = new Color(0.1f, 0.95f, 1f, 0.2f);
-        [SerializeField] private Color telegraphEndColor = new Color(0.1f, 0.95f, 1f, 0.86f);
+        [SerializeField] private GameObject telegraphVfxPrefab;
+        [SerializeField] private Color telegraphStartColor = new Color(1f, 0.18f, 0.08f, 0.26f);
+        [SerializeField] private Color telegraphEndColor = new Color(1f, 0.28f, 0.12f, 0.96f);
         [SerializeField, Min(0.001f)] private float telegraphStartWidth = 0.045f;
         [SerializeField, Min(0.001f)] private float telegraphEndWidth = 0.115f;
+        [SerializeField, Min(0.01f)] private float telegraphVfxWidthScale = 0.72f;
+        [SerializeField, Min(0.01f)] private float telegraphVfxLengthScale = 1.12f;
+        [SerializeField, Min(0f)] private float telegraphVfxPulseScale = 0.08f;
+        [SerializeField, Min(0f)] private float telegraphVfxPulseSpeed = 18f;
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip telegraphSfx;
+        [SerializeField] private AudioClip laserFireSfx;
+        [SerializeField, Range(0f, 1f)] private float telegraphSfxVolume = 0.72f;
+        [SerializeField, Range(0f, 1f)] private float laserFireSfxVolume = 0.9f;
 
         private readonly Collider[] hitBuffer = new Collider[32];
         private readonly List<CombatHealth> uniqueTargets = new List<CombatHealth>(8);
         private SummonAttackBeamPresenter beamPresenter;
+        private MaterialPropertyBlock telegraphPropertyBlock;
+        private GameObject telegraphVfxInstance;
+        private Transform telegraphVfxTransform;
+        private Renderer[] telegraphVfxRenderers = EmptyRenderers;
+        private ParticleSystem[] telegraphVfxParticles = EmptyParticles;
+        private CombatVfxCueVisual[] telegraphVfxCueVisuals = EmptyCueVisuals;
+        private LineRenderer[] telegraphVfxLineRenderers = EmptyLineRenderers;
+        private float[] telegraphLineBaseWidths = Array.Empty<float>();
+        private float[] telegraphLineBaseLengths = Array.Empty<float>();
+        private float[] telegraphLineUvOffsets = Array.Empty<float>();
         private BossLaserSummonPatternState state;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 lockedDirection = Vector3.back;
@@ -63,7 +97,6 @@ namespace DimensionBrawl.Combat
         private float nextDamageTime;
         private int cycleIndex;
         private int totalDamageTickCount;
-        private Material runtimeLineMaterial;
 
         public BossLaserSummonPatternState CurrentState => state;
         public bool IsLaserActive => state == BossLaserSummonPatternState.Active;
@@ -77,30 +110,36 @@ namespace DimensionBrawl.Combat
         private void Awake()
         {
             ResolveReferences();
-            EnsureTelegraphLine();
-            HideLine();
+            HideTelegraphVisual();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
-            EnsureTelegraphLine();
             EnterInactive();
         }
 
         private void OnDisable()
         {
-            HideLine();
+            HideTelegraphVisual();
             ClearBeamPresenter();
             state = BossLaserSummonPatternState.Inactive;
         }
 
         private void OnDestroy()
         {
-            if (runtimeLineMaterial != null)
+            if (telegraphVfxInstance != null)
             {
-                Destroy(runtimeLineMaterial);
-                runtimeLineMaterial = null;
+                if (Application.isPlaying)
+                {
+                    Destroy(telegraphVfxInstance);
+                }
+                else
+                {
+                    DestroyImmediate(telegraphVfxInstance);
+                }
+
+                telegraphVfxInstance = null;
             }
         }
 
@@ -139,6 +178,9 @@ namespace DimensionBrawl.Combat
                 case BossLaserSummonPatternState.Reposition:
                     UpdateReposition(deltaTime);
                     break;
+                case BossLaserSummonPatternState.Retarget:
+                    UpdateRetarget(deltaTime);
+                    break;
             }
         }
 
@@ -162,7 +204,7 @@ namespace DimensionBrawl.Combat
 
         private void UpdateWaitingForAdvance()
         {
-            HideLine();
+            HideTelegraphVisual();
             if (proxy.IsAdvancing || proxy.AdvanceProgress01 < 0.96f)
             {
                 return;
@@ -182,11 +224,9 @@ namespace DimensionBrawl.Combat
                 lockedDirection = ResolveTargetDirection();
             }
 
-            FaceLockedDirection();
+            FaceLockedDirection(deltaTime);
             float progress = Mathf.Clamp01(stateTimer / Mathf.Max(0.05f, telegraphSeconds));
-            ShowLine(
-                Color.Lerp(telegraphStartColor, telegraphEndColor, progress),
-                Mathf.Lerp(telegraphStartWidth, telegraphEndWidth, progress));
+            ShowTelegraphVisual(progress);
 
             if (stateTimer >= telegraphSeconds)
             {
@@ -198,8 +238,8 @@ namespace DimensionBrawl.Combat
         {
             stateTimer += deltaTime;
             proxy.RequestAdvanceHold(0.08f);
-            FaceLockedDirection();
-            HideLine();
+            FaceLockedDirection(deltaTime);
+            HideTelegraphVisual();
             SyncBeamPresenter();
 
             if (Time.time >= nextDamageTime)
@@ -218,7 +258,7 @@ namespace DimensionBrawl.Combat
         {
             stateTimer += deltaTime;
             proxy.RequestAdvanceHold(0.08f);
-            HideLine();
+            HideTelegraphVisual();
             if (stateTimer >= recoverySeconds)
             {
                 EnterReposition();
@@ -228,8 +268,24 @@ namespace DimensionBrawl.Combat
         private void UpdateReposition(float deltaTime)
         {
             stateTimer += deltaTime;
-            HideLine();
-            if (!proxy.IsAdvancing || stateTimer >= repositionSeconds + 0.18f)
+            HideTelegraphVisual();
+            bool hasAdvance = proxy != null && proxy.AdvanceDistance > 0.05f;
+            bool advanceComplete = !hasAdvance || proxy.AdvanceProgress01 >= 0.98f;
+            bool timedOut = stateTimer >= repositionSeconds + Mathf.Max(0.18f, retargetSettleSeconds);
+            if (advanceComplete || timedOut)
+            {
+                EnterRetarget();
+            }
+        }
+
+        private void UpdateRetarget(float deltaTime)
+        {
+            stateTimer += deltaTime;
+            proxy.RequestAdvanceHold(0.08f);
+            HideTelegraphVisual();
+            lockedDirection = ResolveTargetDirection();
+            FaceLockedDirection(deltaTime);
+            if (stateTimer >= retargetSettleSeconds)
             {
                 EnterTelegraph();
             }
@@ -239,14 +295,14 @@ namespace DimensionBrawl.Combat
         {
             if (state == BossLaserSummonPatternState.Inactive)
             {
-                HideLine();
+                HideTelegraphVisual();
                 ClearBeamPresenter();
                 return;
             }
 
             state = BossLaserSummonPatternState.Inactive;
             stateTimer = 0f;
-            HideLine();
+            HideTelegraphVisual();
             ClearBeamPresenter();
         }
 
@@ -254,7 +310,7 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.WaitingForAdvance;
             stateTimer = 0f;
-            HideLine();
+            HideTelegraphVisual();
             ClearBeamPresenter();
         }
 
@@ -264,8 +320,8 @@ namespace DimensionBrawl.Combat
             stateTimer = 0f;
             ClearBeamPresenter();
             lockedDirection = ResolveTargetDirection();
-            FaceLockedDirection();
-            ShowLine(telegraphStartColor, telegraphStartWidth);
+            ShowTelegraphVisual(0f);
+            PlaySfx(telegraphSfx, telegraphSfxVolume);
         }
 
         private void EnterActive()
@@ -275,7 +331,8 @@ namespace DimensionBrawl.Combat
             nextDamageTime = 0f;
             proxy.NotifyAttackPerformed(activeSeconds + 0.05f);
             LaserFired?.Invoke(this);
-            HideLine();
+            PlaySfx(laserFireSfx, laserFireSfxVolume);
+            HideTelegraphVisual();
             SyncBeamPresenter();
         }
 
@@ -283,7 +340,7 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.Recovery;
             stateTimer = 0f;
-            HideLine();
+            HideTelegraphVisual();
             ClearBeamPresenter();
         }
 
@@ -297,6 +354,15 @@ namespace DimensionBrawl.Combat
                 ResolveRepositionTarget(),
                 repositionSeconds,
                 repositionMoveSpeed);
+        }
+
+        private void EnterRetarget()
+        {
+            state = BossLaserSummonPatternState.Retarget;
+            stateTimer = 0f;
+            ClearBeamPresenter();
+            HideTelegraphVisual();
+            lockedDirection = ResolveTargetDirection();
         }
 
         private void ApplyLaserDamage(float interval)
@@ -418,7 +484,7 @@ namespace DimensionBrawl.Combat
             return origin.position;
         }
 
-        private void FaceLockedDirection()
+        private void FaceLockedDirection(float deltaTime)
         {
             Vector3 planarDirection = Vector3.ProjectOnPlane(lockedDirection, Vector3.up);
             if (planarDirection.sqrMagnitude <= 0.0001f)
@@ -426,34 +492,76 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            transform.rotation = Quaternion.LookRotation(planarDirection.normalized, Vector3.up);
+            Quaternion targetRotation = Quaternion.LookRotation(planarDirection.normalized, Vector3.up);
+            transform.rotation = aimTurnSpeedDegrees > 0f && deltaTime > 0f
+                ? Quaternion.RotateTowards(transform.rotation, targetRotation, aimTurnSpeedDegrees * deltaTime)
+                : targetRotation;
         }
 
-        private void ShowLine(Color color, float width)
+        private void ShowTelegraphVisual(float progress)
         {
-            EnsureTelegraphLine();
-            if (telegraphLine == null)
+            HideLegacyTelegraphLine();
+            EnsureTelegraphVfx();
+            if (telegraphVfxInstance == null || telegraphVfxTransform == null)
             {
                 return;
             }
 
             Vector3 origin = ResolveLaserOrigin();
-            Vector3 end = origin + lockedDirection * Mathf.Max(0.1f, laserLength);
-            telegraphLine.gameObject.SetActive(true);
-            telegraphLine.positionCount = 2;
-            telegraphLine.SetPosition(0, origin);
-            telegraphLine.SetPosition(1, end);
-            telegraphLine.startColor = color;
-            telegraphLine.endColor = color;
-            telegraphLine.startWidth = width;
-            telegraphLine.endWidth = width;
+            float length = Mathf.Max(0.1f, laserLength);
+            Vector3 direction = lockedDirection.sqrMagnitude > 0.0001f
+                ? lockedDirection.normalized
+                : Vector3.forward;
+
+            if (!telegraphVfxInstance.activeSelf)
+            {
+                telegraphVfxInstance.SetActive(true);
+                RestartTelegraphParticles();
+            }
+
+            progress = Mathf.Clamp01(progress);
+            telegraphVfxTransform.position = origin;
+            telegraphVfxTransform.rotation = Quaternion.LookRotation(direction, ResolveStableUp(direction));
+
+            float parentScale = ResolveParentUniformScale(telegraphVfxTransform);
+            float pulse = 1f
+                + Mathf.Sin(Time.time * Mathf.Max(0f, telegraphVfxPulseSpeed))
+                * Mathf.Max(0f, telegraphVfxPulseScale)
+                * Mathf.Lerp(0.35f, 1f, progress);
+            float legacyWidthRatio = Mathf.Clamp(
+                Mathf.Max(0.001f, telegraphStartWidth) / Mathf.Max(0.001f, telegraphEndWidth),
+                0.25f,
+                1f);
+            float width = Mathf.Max(0.01f, telegraphVfxWidthScale)
+                * Mathf.Lerp(legacyWidthRatio, 1f, Mathf.SmoothStep(0f, 1f, progress));
+
+            float worldLength = Mathf.Max(0.01f, length * telegraphVfxLengthScale);
+            if (telegraphVfxLineRenderers != null && telegraphVfxLineRenderers.Length > 0)
+            {
+                telegraphVfxTransform.localScale = new Vector3(
+                    1f / parentScale,
+                    1f / parentScale,
+                    ResolveTelegraphLineRootScale(worldLength, parentScale));
+                ApplyTelegraphLineRenderers(width, pulse, worldLength, progress);
+            }
+            else
+            {
+                telegraphVfxTransform.localScale = new Vector3(
+                    Mathf.Max(0.01f, width * pulse) / parentScale,
+                    1f / parentScale,
+                    worldLength / parentScale);
+            }
+
+            ApplyTelegraphVfxColor(progress);
         }
 
-        private void HideLine()
+        private void HideTelegraphVisual()
         {
-            if (telegraphLine != null)
+            HideLegacyTelegraphLine();
+            if (telegraphVfxInstance != null && telegraphVfxInstance.activeSelf)
             {
-                telegraphLine.gameObject.SetActive(false);
+                StopTelegraphParticles();
+                telegraphVfxInstance.SetActive(false);
             }
         }
 
@@ -476,30 +584,289 @@ namespace DimensionBrawl.Combat
             beamPresenter?.ClearWorldBeamEndpoints();
         }
 
-        private void EnsureTelegraphLine()
+        private void EnsureTelegraphVfx()
         {
-            if (telegraphLine != null)
+            if (telegraphVfxInstance != null || telegraphVfxPrefab == null)
             {
                 return;
             }
 
-            GameObject lineObject = new GameObject("BossLaserTelegraphLine");
-            lineObject.transform.SetParent(transform, worldPositionStays: false);
-            telegraphLine = lineObject.AddComponent<LineRenderer>();
-            telegraphLine.useWorldSpace = true;
-            telegraphLine.textureMode = LineTextureMode.Stretch;
-            telegraphLine.numCapVertices = 3;
-            telegraphLine.numCornerVertices = 2;
-            telegraphLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            telegraphLine.receiveShadows = false;
-            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader != null)
+            telegraphVfxInstance = Instantiate(telegraphVfxPrefab, transform);
+            telegraphVfxInstance.name = "BossLaserTelegraphVfx";
+            telegraphVfxTransform = telegraphVfxInstance.transform;
+            telegraphVfxCueVisuals = telegraphVfxInstance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
+            for (int i = 0; i < telegraphVfxCueVisuals.Length; i++)
             {
-                runtimeLineMaterial = new Material(shader)
+                CombatVfxCueVisual cueVisual = telegraphVfxCueVisuals[i];
+                if (cueVisual != null)
                 {
-                    name = "BossLaserTelegraphLine_Runtime"
-                };
-                telegraphLine.sharedMaterial = runtimeLineMaterial;
+                    cueVisual.enabled = false;
+                }
+            }
+
+            telegraphVfxRenderers = telegraphVfxInstance.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < telegraphVfxRenderers.Length; i++)
+            {
+                Renderer renderer = telegraphVfxRenderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.enabled = true;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+
+            telegraphVfxParticles = telegraphVfxInstance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            telegraphVfxLineRenderers = telegraphVfxInstance.GetComponentsInChildren<LineRenderer>(includeInactive: true);
+            CaptureTelegraphLineRendererDefaults();
+            telegraphVfxInstance.SetActive(false);
+        }
+
+        private void CaptureTelegraphLineRendererDefaults()
+        {
+            if (telegraphVfxLineRenderers == null || telegraphVfxLineRenderers.Length == 0)
+            {
+                telegraphLineBaseWidths = Array.Empty<float>();
+                telegraphLineBaseLengths = Array.Empty<float>();
+                telegraphLineUvOffsets = Array.Empty<float>();
+                return;
+            }
+
+            telegraphLineBaseWidths = new float[telegraphVfxLineRenderers.Length];
+            telegraphLineBaseLengths = new float[telegraphVfxLineRenderers.Length];
+            telegraphLineUvOffsets = new float[telegraphVfxLineRenderers.Length];
+            for (int i = 0; i < telegraphVfxLineRenderers.Length; i++)
+            {
+                LineRenderer lineRenderer = telegraphVfxLineRenderers[i];
+                if (lineRenderer == null)
+                {
+                    telegraphLineBaseWidths[i] = 1f;
+                    telegraphLineBaseLengths[i] = 10f;
+                    continue;
+                }
+
+                lineRenderer.useWorldSpace = false;
+                lineRenderer.textureMode = LineTextureMode.Tile;
+                lineRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                lineRenderer.receiveShadows = false;
+                telegraphLineBaseWidths[i] = Mathf.Max(0.01f, lineRenderer.widthMultiplier);
+                telegraphLineBaseLengths[i] = ResolveLineRendererLength(lineRenderer);
+                telegraphLineUvOffsets[i] = UnityEngine.Random.Range(0f, 5f);
+            }
+        }
+
+        private float ResolveTelegraphLineRootScale(float worldLength, float parentScale)
+        {
+            float authoredLength = 0f;
+            for (int i = 0; i < telegraphLineBaseLengths.Length; i++)
+            {
+                authoredLength = Mathf.Max(authoredLength, telegraphLineBaseLengths[i]);
+            }
+
+            return worldLength / Mathf.Max(0.01f, authoredLength * parentScale);
+        }
+
+        private void ApplyTelegraphLineRenderers(float width, float pulse, float worldLength, float progress)
+        {
+            if (telegraphVfxLineRenderers == null)
+            {
+                return;
+            }
+
+            Color color = Color.Lerp(telegraphStartColor, telegraphEndColor, Mathf.SmoothStep(0f, 1f, progress));
+            float textureScale = Mathf.Max(0.01f, worldLength * 0.12f);
+            float widthScale = Mathf.Max(0.04f, width * 0.34f * pulse);
+            for (int i = 0; i < telegraphVfxLineRenderers.Length; i++)
+            {
+                LineRenderer lineRenderer = telegraphVfxLineRenderers[i];
+                if (lineRenderer == null)
+                {
+                    continue;
+                }
+
+                float baseWidth = i < telegraphLineBaseWidths.Length ? telegraphLineBaseWidths[i] : 1f;
+                float baseLength = i < telegraphLineBaseLengths.Length ? telegraphLineBaseLengths[i] : 10f;
+                lineRenderer.enabled = true;
+                lineRenderer.startColor = color;
+                lineRenderer.endColor = new Color(color.r, color.g, color.b, color.a * 0.45f);
+                lineRenderer.widthMultiplier = baseWidth * widthScale;
+                if (lineRenderer.positionCount < 2)
+                {
+                    lineRenderer.positionCount = 2;
+                }
+
+                lineRenderer.SetPosition(0, Vector3.zero);
+                lineRenderer.SetPosition(1, new Vector3(0f, 0f, Mathf.Max(0.01f, baseLength)));
+                ApplyTelegraphLineMaterialPlayback(lineRenderer, i, textureScale);
+            }
+        }
+
+        private void ApplyTelegraphLineMaterialPlayback(LineRenderer lineRenderer, int lineIndex, float textureScale)
+        {
+            Material material = lineRenderer != null ? lineRenderer.material : null;
+            if (material == null)
+            {
+                return;
+            }
+
+            Vector2 tiling = new Vector2(textureScale, 1f);
+            SetTextureScaleIfPresent(material, "_BaseMap", tiling);
+            SetTextureScaleIfPresent(material, "_MainTex", tiling);
+            SetTextureScaleIfPresent(material, "_MainTexture", tiling);
+
+            float initialOffset = lineIndex < telegraphLineUvOffsets.Length ? telegraphLineUvOffsets[lineIndex] : 0f;
+            Vector2 offset = new Vector2(Time.time * -5.5f + initialOffset, 0f);
+            if (material.HasProperty("_Offset"))
+            {
+                material.SetVector("_Offset", offset);
+            }
+
+            SetTextureOffsetIfPresent(material, "_BaseMap", offset);
+            SetTextureOffsetIfPresent(material, "_MainTex", offset);
+            SetTextureOffsetIfPresent(material, "_MainTexture", offset);
+        }
+
+        private static float ResolveLineRendererLength(LineRenderer lineRenderer)
+        {
+            if (lineRenderer == null || lineRenderer.positionCount < 2)
+            {
+                return 10f;
+            }
+
+            Vector3 start = lineRenderer.GetPosition(0);
+            Vector3 end = lineRenderer.GetPosition(lineRenderer.positionCount - 1);
+            return Mathf.Max(0.01f, Vector3.Distance(start, end));
+        }
+
+        private void ApplyTelegraphVfxColor(float progress)
+        {
+            if (telegraphVfxRenderers == null || telegraphVfxRenderers.Length == 0)
+            {
+                return;
+            }
+
+            telegraphPropertyBlock ??= new MaterialPropertyBlock();
+            float eased = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress));
+            Color color = Color.Lerp(telegraphStartColor, telegraphEndColor, eased);
+            color.a *= Mathf.Lerp(0.78f, 1f, eased);
+            Color emission = color * Mathf.Lerp(1.15f, 2.2f, eased);
+            emission.a = color.a;
+            for (int i = 0; i < telegraphVfxRenderers.Length; i++)
+            {
+                Renderer renderer = telegraphVfxRenderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.GetPropertyBlock(telegraphPropertyBlock);
+                telegraphPropertyBlock.SetColor(BaseColorId, color);
+                telegraphPropertyBlock.SetColor(ColorId, color);
+                telegraphPropertyBlock.SetColor(TintColorId, color);
+                telegraphPropertyBlock.SetColor(EmissionColorId, emission);
+                renderer.SetPropertyBlock(telegraphPropertyBlock);
+            }
+        }
+
+        private void RestartTelegraphParticles()
+        {
+            if (telegraphVfxParticles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < telegraphVfxParticles.Length; i++)
+            {
+                ParticleSystem particle = telegraphVfxParticles[i];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                particle.Clear(withChildren: true);
+                particle.Play(withChildren: true);
+            }
+        }
+
+        private void StopTelegraphParticles()
+        {
+            if (telegraphVfxParticles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < telegraphVfxParticles.Length; i++)
+            {
+                ParticleSystem particle = telegraphVfxParticles[i];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                particle.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
+        private void HideLegacyTelegraphLine()
+        {
+            if (telegraphLine != null)
+            {
+                telegraphLine.gameObject.SetActive(false);
+            }
+        }
+
+        private void PlaySfx(AudioClip clip, float volume)
+        {
+            if (clip == null || volume <= 0f)
+            {
+                return;
+            }
+
+            if (audioSource != null)
+            {
+                audioSource.PlayOneShot(clip, Mathf.Clamp01(volume));
+                return;
+            }
+
+            AudioSource.PlayClipAtPoint(clip, ResolveLaserOrigin(), Mathf.Clamp01(volume));
+        }
+
+        private static Vector3 ResolveStableUp(Vector3 forward)
+        {
+            Vector3 normalized = forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+            return Mathf.Abs(Vector3.Dot(normalized, Vector3.up)) > 0.96f
+                ? Vector3.forward
+                : Vector3.up;
+        }
+
+        private static float ResolveParentUniformScale(Transform child)
+        {
+            if (child == null || child.parent == null)
+            {
+                return 1f;
+            }
+
+            Vector3 scale = child.parent.lossyScale;
+            return Mathf.Max(
+                0.01f,
+                (Mathf.Abs(scale.x) + Mathf.Abs(scale.y) + Mathf.Abs(scale.z)) / 3f);
+        }
+
+        private static void SetTextureScaleIfPresent(Material material, string propertyName, Vector2 scale)
+        {
+            if (material != null && material.HasProperty(propertyName))
+            {
+                material.SetTextureScale(propertyName, scale);
+            }
+        }
+
+        private static void SetTextureOffsetIfPresent(Material material, string propertyName, Vector2 offset)
+        {
+            if (material != null && material.HasProperty(propertyName))
+            {
+                material.SetTextureOffset(propertyName, offset);
             }
         }
 
@@ -523,6 +890,11 @@ namespace DimensionBrawl.Combat
             if (beamPresenter == null)
             {
                 beamPresenter = GetComponent<SummonAttackBeamPresenter>();
+            }
+
+            if (audioSource == null)
+            {
+                audioSource = GetComponent<AudioSource>();
             }
 
             if (targetHealth == null && target != null)

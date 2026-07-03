@@ -3855,6 +3855,8 @@ namespace IsekaiBrawl.Gameplay
     public sealed class PveProjectileEmitter : MonoBehaviour
     {
         private static readonly List<PveProjectileEmitter> ActiveEmitters = new();
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         [SerializeField] private Transform muzzlePoint;
         [SerializeField] private EnemyProjectile directProjectilePrefab;
@@ -3868,6 +3870,7 @@ namespace IsekaiBrawl.Gameplay
 
         private BattleStructure ownerStructure;
         private LineRenderer telegraphLine;
+        private Material runtimeTelegraphMaterial;
         private Renderer cachedRenderer;
         private PveProjectileEmitterType emitterType = PveProjectileEmitterType.Direct;
         private float interval = 4.6f;
@@ -3879,6 +3882,7 @@ namespace IsekaiBrawl.Gameplay
         private bool isDirectLocking;
         private int activeDirectProjectileCount;
         private float shotTimer;
+        private float telegraphPulseSeed;
 
         public bool IsDirectProjectileLocking => isDirectLocking;
         public bool IsDirectProjectileDangerActive => isDirectLocking || activeDirectProjectileCount > 0;
@@ -3932,6 +3936,15 @@ namespace IsekaiBrawl.Gameplay
             SetTelegraphVisible(false, default, default);
         }
 
+        private void OnDestroy()
+        {
+            if (runtimeTelegraphMaterial != null)
+            {
+                Destroy(runtimeTelegraphMaterial);
+                runtimeTelegraphMaterial = null;
+            }
+        }
+
         private void Awake()
         {
             if (muzzlePoint == null)
@@ -3945,6 +3958,7 @@ namespace IsekaiBrawl.Gameplay
                 cachedRenderer.material.color = deviceTint;
             }
 
+            telegraphPulseSeed = UnityEngine.Random.Range(0f, 10f);
             EnsureTelegraphLine();
             SetTelegraphVisible(false, default, default);
         }
@@ -4211,11 +4225,12 @@ namespace IsekaiBrawl.Gameplay
             telegraphLine.positionCount = 2;
             telegraphLine.numCapVertices = 4;
             telegraphLine.alignment = LineAlignment.View;
-            telegraphLine.startWidth = 0.12f;
-            telegraphLine.endWidth = 0.12f;
+            telegraphLine.textureMode = LineTextureMode.Tile;
+            telegraphLine.startWidth = 0.18f;
+            telegraphLine.endWidth = 0.08f;
             telegraphLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             telegraphLine.receiveShadows = false;
-            telegraphLine.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            telegraphLine.sharedMaterial = CreateTelegraphLineMaterial();
         }
 
         private void SetTelegraphVisible(bool isVisible, Vector3 start, Vector3 end)
@@ -4231,8 +4246,14 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            telegraphLine.startColor = warningTint;
-            telegraphLine.endColor = new Color(warningTint.r, warningTint.g, warningTint.b, 0.2f);
+            float pulse = 1f + Mathf.Sin(Time.time * 16f + telegraphPulseSeed) * 0.26f;
+            Color startColor = Color.Lerp(warningTint, Color.white, 0.18f + Mathf.Clamp01(pulse - 1f) * 0.22f);
+            Color endColor = new Color(warningTint.r, warningTint.g, warningTint.b, 0.16f);
+            telegraphLine.startColor = startColor;
+            telegraphLine.endColor = endColor;
+            telegraphLine.startWidth = Mathf.Lerp(0.12f, 0.22f, Mathf.Clamp01(pulse));
+            telegraphLine.endWidth = Mathf.Lerp(0.045f, 0.1f, Mathf.Clamp01(pulse));
+            ApplyTelegraphMaterialColor(startColor);
             Vector3 resolvedStart = start;
             Vector3 resolvedEnd = end;
             if (emitterType == PveProjectileEmitterType.Line)
@@ -4242,6 +4263,65 @@ namespace IsekaiBrawl.Gameplay
 
             telegraphLine.SetPosition(0, resolvedStart);
             telegraphLine.SetPosition(1, resolvedEnd);
+        }
+
+        private Material CreateTelegraphLineMaterial()
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Sprites/Default");
+            runtimeTelegraphMaterial = shader != null
+                ? new Material(shader)
+                : null;
+            if (runtimeTelegraphMaterial == null)
+            {
+                return null;
+            }
+
+            runtimeTelegraphMaterial.name = "PveEmitterTelegraph_Runtime";
+            runtimeTelegraphMaterial.renderQueue = 3000;
+            if (runtimeTelegraphMaterial.HasProperty("_Surface"))
+            {
+                runtimeTelegraphMaterial.SetFloat("_Surface", 1f);
+            }
+
+            if (runtimeTelegraphMaterial.HasProperty("_SrcBlend"))
+            {
+                runtimeTelegraphMaterial.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            }
+
+            if (runtimeTelegraphMaterial.HasProperty("_DstBlend"))
+            {
+                runtimeTelegraphMaterial.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            }
+
+            if (runtimeTelegraphMaterial.HasProperty("_ZWrite"))
+            {
+                runtimeTelegraphMaterial.SetFloat("_ZWrite", 0f);
+            }
+
+            ApplyTelegraphMaterialColor(warningTint);
+            return runtimeTelegraphMaterial;
+        }
+
+        private void ApplyTelegraphMaterialColor(Color color)
+        {
+            if (runtimeTelegraphMaterial == null)
+            {
+                return;
+            }
+
+            Color glow = color * 2.2f;
+            glow.a = color.a;
+            if (runtimeTelegraphMaterial.HasProperty(BaseColorId))
+            {
+                runtimeTelegraphMaterial.SetColor(BaseColorId, glow);
+            }
+
+            if (runtimeTelegraphMaterial.HasProperty(ColorId))
+            {
+                runtimeTelegraphMaterial.SetColor(ColorId, glow);
+            }
         }
 
         private void StopAllSequences()
