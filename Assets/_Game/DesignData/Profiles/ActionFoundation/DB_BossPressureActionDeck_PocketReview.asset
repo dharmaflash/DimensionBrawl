@@ -48,7 +48,7 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
-    SelectionPriority: 5
+    SelectionPriority: 15
     ForwardRiskPriorityBonus: 0
     SummonResponsePriorityBonus: 0
     MovementIntent: 4

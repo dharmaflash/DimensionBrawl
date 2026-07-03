@@ -4093,7 +4093,7 @@ namespace DimensionBrawl.Tests
                     1,
                     0f,
                     responseId: "LaserSoldierDodgeLine",
-                    selectionPriority: 35,
+                    selectionPriority: 15,
                     movementIntent: BossPressureMovementIntent.RetreatAndSummon),
                 new BossPressureActionDirector.BossPressureActionSlot(
                     punishPattern,
@@ -4386,7 +4386,7 @@ namespace DimensionBrawl.Tests
                     1,
                     0f,
                     responseId: "LaserSoldierDodgeLine",
-                    selectionPriority: 35,
+                    selectionPriority: 15,
                     movementIntent: BossPressureMovementIntent.RetreatAndSummon),
                 new BossPressureActionDirector.BossPressureActionSlot(
                     punishPattern,
@@ -4409,6 +4409,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
             Assert.AreEqual(1, director.LastSpentTier);
             emitter.CancelQueuedPriorityPattern(specialPattern);
+            director.Tick(8f);
 
             bossCost.GrantCurrentTierCost(100f);
             Assert.IsTrue(director.TryQueueBestAvailableAction());

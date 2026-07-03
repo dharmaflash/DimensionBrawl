@@ -8666,7 +8666,7 @@ namespace DimensionBrawl.Editor
                 1f,
                 false,
                 1,
-                5,
+                15,
                 0,
                 0,
                 BossPressureMovementIntent.RetreatAndSummon);

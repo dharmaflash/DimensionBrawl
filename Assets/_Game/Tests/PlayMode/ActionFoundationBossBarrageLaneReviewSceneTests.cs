@@ -575,6 +575,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
             emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+            bossPressureActionDirector.Tick(8f);
 
             bossPressureCost.GrantCurrentTierCost(100f);
             bossPressureActionDirector.Tick(1.2f);
@@ -897,7 +898,7 @@ namespace DimensionBrawl.Tests
                 1f,
                 false,
                 1,
-                5,
+                15,
                 0,
                 0,
                 BossPressureMovementIntent.RetreatAndSummon);
