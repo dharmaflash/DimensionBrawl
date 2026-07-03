@@ -127,6 +127,20 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetIntArray(UnityEngine.Object target, string propertyName, int[] values)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty array = RequireProperty(serializedObject, propertyName);
+            array.arraySize = values != null ? values.Length : 0;
+            for (int i = 0; i < array.arraySize; i++)
+            {
+                array.GetArrayElementAtIndex(i).intValue = values[i];
+            }
+
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetEnum(UnityEngine.Object target, string propertyName, int value)
         {
             var serializedObject = new SerializedObject(target);
@@ -400,6 +414,32 @@ namespace DimensionBrawl.Editor
             if (actual != expected)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateIntArray(UnityEngine.Object target, string propertyName, int[] expected)
+        {
+            SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
+            if (!array.isArray)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} should be an int array.");
+            }
+
+            int expectedLength = expected != null ? expected.Length : 0;
+            if (array.arraySize != expectedLength)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} expected {expectedLength} entries, found {array.arraySize}.");
+            }
+
+            for (int i = 0; i < expectedLength; i++)
+            {
+                int actual = array.GetArrayElementAtIndex(i).intValue;
+                if (actual != expected[i])
+                {
+                    throw new InvalidOperationException(
+                        $"{target.name}.{propertyName}[{i}] expected {expected[i]}, found {actual}.");
+                }
             }
         }
 

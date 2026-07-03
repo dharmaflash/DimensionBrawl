@@ -15131,6 +15131,7 @@ MonoBehaviour:
   respawnIntervalSeconds: 6.5
   retryIntervalSeconds: 0.35
   maxActiveSummonActors: 1
+  summonTierSequence: 01000000020000000100000003000000
 --- !u!114 &1477203557
 MonoBehaviour:
   m_ObjectHideFlags: 0

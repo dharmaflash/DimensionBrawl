@@ -414,6 +414,7 @@ namespace DimensionBrawl.Editor
             BossPressureActionKind.SummonPressure,
             BossPressureActionKind.PunishOverextend
         };
+        private static readonly int[] BossEnemySummonPacingTierSequence = { 1, 2, 1, 3 };
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Lane Review Scene")]
         public static void ReapplyBossBarrageLaneReviewSceneMenu()
@@ -3655,7 +3656,8 @@ namespace DimensionBrawl.Editor
                 newRespawnIntervalSeconds: 6.5f,
                 newSummonTier: 1,
                 newMaxActiveSummonActors: 1,
-                newRetryIntervalSeconds: 0.35f);
+                newRetryIntervalSeconds: 0.35f,
+                newSummonTierSequence: BossEnemySummonPacingTierSequence);
             enemySummonPacingDirector.SetPacingEnabled(true);
             SetObjectReference(enemySummonPacingDirector, "summonPressureAction", bossSummonPressureAction);
             SetBool(enemySummonPacingDirector, "pacingEnabled", true);
@@ -3664,6 +3666,7 @@ namespace DimensionBrawl.Editor
             SetFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
             SetFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
             SetInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
+            SetIntArray(enemySummonPacingDirector, "summonTierSequence", BossEnemySummonPacingTierSequence);
             return enemySummonPacingDirector;
         }
 
@@ -8542,6 +8545,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(enemySummonPacingDirector, "respawnIntervalSeconds", 6.5f);
             ValidateFloat(enemySummonPacingDirector, "retryIntervalSeconds", 0.35f);
             ValidateInt(enemySummonPacingDirector, "maxActiveSummonActors", 1);
+            ValidateIntArray(enemySummonPacingDirector, "summonTierSequence", BossEnemySummonPacingTierSequence);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 1,
