@@ -2597,12 +2597,12 @@ MonoBehaviour:
   strafeDistance: 1.45
   repositionMoveSpeed: 4
   telegraphLine: {fileID: 0}
-  telegraphStartColor: {r: 0.1, g: 0.95, b: 1, a: 0.12}
-  telegraphEndColor: {r: 0.1, g: 0.95, b: 1, a: 0.72}
-  activeColor: {r: 0.85, g: 1, b: 1, a: 0.95}
-  telegraphStartWidth: 0.025
-  telegraphEndWidth: 0.075
-  activeWidth: 0.16
+  telegraphStartColor: {r: 0.1, g: 0.95, b: 1, a: 0.2}
+  telegraphEndColor: {r: 0.1, g: 0.95, b: 1, a: 0.86}
+  activeColor: {r: 0.72, g: 1, b: 1, a: 1}
+  telegraphStartWidth: 0.045
+  telegraphEndWidth: 0.115
+  activeWidth: 0.26
 --- !u!135 &5055470576633908698
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -3348,15 +3348,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7497868724334145719, guid: 176a9163206ca89468b1919fbd9c176f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.92
+      value: 1.18
       objectReference: {fileID: 0}
     - target: {fileID: 7497868724334145719, guid: 176a9163206ca89468b1919fbd9c176f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.92
+      value: 1.18
       objectReference: {fileID: 0}
     - target: {fileID: 7497868724334145719, guid: 176a9163206ca89468b1919fbd9c176f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1.38
+      value: 2.25
       objectReference: {fileID: 0}
     - target: {fileID: 7497868724334145719, guid: 176a9163206ca89468b1919fbd9c176f, type: 3}
       propertyPath: m_LocalPosition.x

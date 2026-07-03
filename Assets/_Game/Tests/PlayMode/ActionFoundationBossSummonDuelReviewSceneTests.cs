@@ -297,18 +297,23 @@ namespace DimensionBrawl.Tests
             SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 2.8f, "S2");
             AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
             AssertSummonProxyIsMarching(slot2Proxy, 2.8f, "S2");
+            BossLaserSummonPattern slot2LaserPattern =
+                RequireComponent<BossLaserSummonPattern>(slot2Proxy.gameObject, "S2 laser pattern");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
-            yield return new WaitForSeconds(0.25f);
-            Assert.Greater(
-                summonSlot2Action.ActiveProjectileCount,
+            Assert.AreNotEqual(
+                BossLaserSummonPatternState.Inactive,
+                slot2LaserPattern.CurrentState,
+                "S2 should run the shared laser-soldier pattern after spawning, not the old projectile-only volley path.");
+            Assert.LessOrEqual(
+                slot2Proxy.AdvanceDistance,
+                3.75f,
+                "S2 should stage locally before its shared laser pattern starts instead of marching across the lane before firing.");
+            Assert.AreEqual(
                 0,
-                "S2 should read as a ranged support summon by firing visible lane projectiles after entry.");
-            Assert.GreaterOrEqual(
-                summonSlot2Action.LastVolleyWaveCount,
-                1,
-                "S2 should expose its repeated support-volley behavior for HUD and review tests.");
+                summonSlot2Action.ActiveProjectileCount,
+                "S2 should read through its BossLaserSummonPattern beam, not by reviving the old fake lane projectile.");
 
             GrantEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());

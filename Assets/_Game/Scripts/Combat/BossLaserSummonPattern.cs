@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,12 +47,12 @@ namespace DimensionBrawl.Combat
 
         [Header("Presentation")]
         [SerializeField] private LineRenderer telegraphLine;
-        [SerializeField] private Color telegraphStartColor = new Color(0.1f, 0.95f, 1f, 0.12f);
-        [SerializeField] private Color telegraphEndColor = new Color(0.1f, 0.95f, 1f, 0.72f);
-        [SerializeField] private Color activeColor = new Color(0.85f, 1f, 1f, 0.95f);
-        [SerializeField, Min(0.001f)] private float telegraphStartWidth = 0.025f;
-        [SerializeField, Min(0.001f)] private float telegraphEndWidth = 0.075f;
-        [SerializeField, Min(0.001f)] private float activeWidth = 0.16f;
+        [SerializeField] private Color telegraphStartColor = new Color(0.1f, 0.95f, 1f, 0.2f);
+        [SerializeField] private Color telegraphEndColor = new Color(0.1f, 0.95f, 1f, 0.86f);
+        [SerializeField] private Color activeColor = new Color(0.72f, 1f, 1f, 1f);
+        [SerializeField, Min(0.001f)] private float telegraphStartWidth = 0.045f;
+        [SerializeField, Min(0.001f)] private float telegraphEndWidth = 0.115f;
+        [SerializeField, Min(0.001f)] private float activeWidth = 0.26f;
 
         private readonly Collider[] hitBuffer = new Collider[32];
         private readonly List<CombatHealth> uniqueTargets = new List<CombatHealth>(8);
@@ -70,6 +71,8 @@ namespace DimensionBrawl.Combat
         public float TelegraphProgress01 => state == BossLaserSummonPatternState.Telegraph
             ? Mathf.Clamp01(stateTimer / Mathf.Max(0.05f, telegraphSeconds))
             : 0f;
+        public event Action<BossLaserSummonPattern> LaserFired;
+        public event Action<BossLaserSummonPattern, CombatHealth, Vector3, Vector3> DamageApplied;
 
         private void Awake()
         {
@@ -265,6 +268,7 @@ namespace DimensionBrawl.Combat
             stateTimer = 0f;
             nextDamageTime = 0f;
             proxy.NotifyAttackPerformed(activeSeconds + 0.05f);
+            LaserFired?.Invoke(this);
             ShowLine(activeColor, activeWidth);
         }
 
@@ -333,6 +337,7 @@ namespace DimensionBrawl.Combat
                 if (health.TryApplyDamage(damageInfo))
                 {
                     totalDamageTickCount++;
+                    DamageApplied?.Invoke(this, health, point, lockedDirection);
                 }
             }
         }
