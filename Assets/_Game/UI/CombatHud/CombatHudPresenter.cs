@@ -10,6 +10,7 @@ namespace DimensionBrawl.UI
         private static readonly Color HealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
         private static readonly Color ResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color AmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
         private static readonly Color SummonReadyFillColor = new Color(1f, 0.9f, 0.46f, 0.74f);
         private static readonly Color SummonChargingFillColor = new Color(0.35f, 0.95f, 1f, 0.72f);
@@ -201,6 +202,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text healthText;
         [SerializeField] private Text resourceText;
         [SerializeField] private Text inputModeText;
+        [SerializeField] private Text ammoText;
         [SerializeField] private Text actionFeedbackText;
         [SerializeField] private Image healthFill;
         [SerializeField] private Image resourceFill;
@@ -301,6 +303,27 @@ namespace DimensionBrawl.UI
             SetText(inputModeText, label);
         }
 
+        public void SetAmmo(string label, bool reloading)
+        {
+            ResolveOptionalRuntimeReferences();
+            if (ammoText == null)
+            {
+                return;
+            }
+
+            bool visible = !string.IsNullOrWhiteSpace(label);
+            ammoText.gameObject.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            int fontSize = reloading ? 16 : 18;
+            ApplyPlayerReadoutStyle(ammoText, fontSize, reloading ? InputModeReadoutColor : AmmoReadoutColor);
+            ammoText.fontSize = fontSize;
+            SetText(ammoText, label);
+        }
+
         public void SetSkillCooldown(CombatHudActionId actionId, float normalizedRemaining, string label)
         {
             ActionSlotBinding slot = FindActionSlot(actionId);
@@ -379,6 +402,11 @@ namespace DimensionBrawl.UI
             {
                 bossHealthText = FindText("BossHpText");
             }
+
+            if (ammoText == null)
+            {
+                ammoText = FindText("AmmoText");
+            }
         }
 
         private void ApplyPlayerReadoutStyles()
@@ -386,6 +414,7 @@ namespace DimensionBrawl.UI
             ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
             ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
             ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
+            ApplyPlayerReadoutStyle(ammoText, 18, AmmoReadoutColor);
         }
 
         private static void ApplyPlayerReadoutStyle(Text text, int fontSize, Color color)

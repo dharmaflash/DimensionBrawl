@@ -115,6 +115,8 @@ namespace DimensionBrawl.UI
                 hudPresenter.SetInputMode(ResolveEnergyInputModeLabel());
             }
 
+            hudPresenter.SetAmmo(ResolveAmmoReadout(), rangedBasicAttackAction != null && rangedBasicAttackAction.IsReloading);
+
             string feedback = tutorialGuide != null && tutorialGuide.HasReadoutOverride
                 ? tutorialGuide.CurrentPrompt
                 : ResolveCombatModeLabel();
@@ -271,6 +273,24 @@ namespace DimensionBrawl.UI
         private string ResolveBasicAttackLabel()
         {
             return combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE";
+        }
+
+        private string ResolveAmmoReadout()
+        {
+            if (combatModeController != null && combatModeController.IsMeleeMode)
+            {
+                return string.Empty;
+            }
+
+            if (rangedBasicAttackAction == null || !rangedBasicAttackAction.UsesMagazineReload)
+            {
+                return string.Empty;
+            }
+
+            string ammo = $"{rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}";
+            return rangedBasicAttackAction.IsReloading
+                ? $"{ammo} RLD {rangedBasicAttackAction.ReloadRemaining:0.0}"
+                : ammo;
         }
 
         private string ResolveCombatModeLabel()

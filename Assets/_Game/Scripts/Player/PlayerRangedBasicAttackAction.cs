@@ -56,7 +56,7 @@ namespace DimensionBrawl.Player
 
         [Header("Reload")]
         [SerializeField] private bool useMagazineReload = true;
-        [SerializeField, Min(1)] private int magazineSize = 30;
+        [SerializeField, Min(1)] private int magazineSize = 24;
         [SerializeField, Min(0.01f)] private float reloadSeconds = 2f;
         [SerializeField] private bool autoReloadWhenEmpty = true;
         [SerializeField] private bool reloadWhenAimReleased = true;

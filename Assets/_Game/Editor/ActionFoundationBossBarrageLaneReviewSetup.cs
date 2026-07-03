@@ -271,6 +271,7 @@ namespace DimensionBrawl.Editor
         private const float PlayerRangedBasicProjectileLifetimeSeconds = 1.75f;
         private const float PlayerRangedBasicProjectileRadius = 0.31f;
         private const float PlayerRangedBasicFireIntervalSeconds = 0.12f;
+        private const int PlayerRangedBasicMagazineSize = 24;
         private const float PlayerRangedBasicCameraAimFallbackDistance = 32f;
         private const float PlayerRangedBasicCameraAimRaycastDistance = 96f;
         private const float PlayerRangedBasicTargetHeight = 1.1f;
@@ -6376,6 +6377,11 @@ namespace DimensionBrawl.Editor
             SetBool(rangedBasicAttackAction, "useAimAssist", true);
             SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
+            SetBool(rangedBasicAttackAction, "useMagazineReload", true);
+            SetInt(rangedBasicAttackAction, "magazineSize", PlayerRangedBasicMagazineSize);
+            SetBool(rangedBasicAttackAction, "autoReloadWhenEmpty", true);
+            SetBool(rangedBasicAttackAction, "reloadWhenAimReleased", true);
+            SetBool(rangedBasicAttackAction, "cancelAimReleaseReloadOnAimResume", true);
             SetFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
             SetFloat(rangedBasicAttackAction, "projectileSpeed", PlayerRangedBasicProjectileSpeed);
             SetFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", PlayerRangedBasicProjectileLifetimeSeconds);
@@ -6735,6 +6741,11 @@ namespace DimensionBrawl.Editor
             ValidateBool(rangedBasicAttackAction, "useAimAssist", true);
             ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
             ValidateBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
+            ValidateBool(rangedBasicAttackAction, "useMagazineReload", true);
+            ValidateInt(rangedBasicAttackAction, "magazineSize", PlayerRangedBasicMagazineSize);
+            ValidateBool(rangedBasicAttackAction, "autoReloadWhenEmpty", true);
+            ValidateBool(rangedBasicAttackAction, "reloadWhenAimReleased", true);
+            ValidateBool(rangedBasicAttackAction, "cancelAimReleaseReloadOnAimResume", true);
             ValidateFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
             ValidateFloat(rangedBasicAttackAction, "projectileSpeed", PlayerRangedBasicProjectileSpeed);
             ValidateFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", PlayerRangedBasicProjectileLifetimeSeconds);

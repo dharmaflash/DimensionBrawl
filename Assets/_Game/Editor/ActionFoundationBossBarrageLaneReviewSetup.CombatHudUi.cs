@@ -26,6 +26,7 @@ namespace DimensionBrawl.Editor
         private static readonly Color CombatHudHealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
         private static readonly Color CombatHudResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color CombatHudInputReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color CombatHudAmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
         private static readonly Color CombatHudReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
         private static readonly Color CombatHudSummonStateColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color CombatHudSummonLabelColor = new Color(1f, 0.92f, 0.68f, 1f);
@@ -355,6 +356,7 @@ namespace DimensionBrawl.Editor
 
             SetObjectReference(presenter, "bossHealthFill", bossHpFill);
             SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
+            SetObjectReference(presenter, "ammoText", FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
             MarkComponentDirty(presenter);
         }
 
@@ -569,6 +571,13 @@ namespace DimensionBrawl.Editor
                 new Rect(1461.5f, 1327f, 147f, 26f),
                 CombatHudResourceReadoutColor,
                 20);
+            EnsureHudText(hudRoot, "AmmoText", "24/24");
+            ConfigureReadoutText(
+                hudRoot,
+                "AmmoText",
+                new Rect(1650f, 1268f, 178f, 42f),
+                CombatHudAmmoReadoutColor,
+                18);
 
             ConfigureImage(hudRoot, "PauseButton", sprites["Hud_ButtonPause"], new Rect(2396f, 47f, 100f, 95f), preserveAspect: false);
             ConfigureImage(hudRoot, "MoveJoystickRing", sprites["Hud_JoystickPanel"], new Rect(155f, 853f, 421f, 415f), preserveAspect: false);
@@ -742,6 +751,34 @@ namespace DimensionBrawl.Editor
             }
 
             EditorUtility.SetDirty(target.gameObject);
+        }
+
+        private static Text EnsureHudText(GameObject hudRoot, string objectName, string defaultText)
+        {
+            Transform target = FindHudDescendant(hudRoot.transform, objectName);
+            if (target == null)
+            {
+                GameObject textObject = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+                textObject.transform.SetParent(hudRoot.transform, worldPositionStays: false);
+                target = textObject.transform;
+                target.SetAsLastSibling();
+                EditorUtility.SetDirty(textObject);
+            }
+
+            Text text = target.GetComponent<Text>();
+            if (text == null)
+            {
+                text = target.gameObject.AddComponent<Text>();
+            }
+
+            if (text.font == null)
+            {
+                text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
+
+            text.text = defaultText;
+            MarkComponentDirty(text);
+            return text;
         }
 
         private static void HideLegacyHudLabels(GameObject hudRoot)
