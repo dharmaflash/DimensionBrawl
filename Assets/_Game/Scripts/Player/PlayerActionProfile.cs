@@ -161,8 +161,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private float dodgeInvulnerableToSeconds = 0.40f;
         [SerializeField] private float dodgeRecoverySeconds = 0.14f;
         [SerializeField, Min(0f)] private float dodgeCooldownSeconds = 1.15f;
-        [Tooltip("PGR-style armor after a successful perfect dodge, so overlapping follow-up hits do not punish the success.")]
-        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 0.65f;
+        [Tooltip("PGR-style armor after a successful perfect dodge, so overlapping follow-up hits and short continuous beams do not punish the success.")]
+        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 1.15f;
         [Tooltip("Small timing grace around the authored invulnerability window to keep perfect dodge from feeling frame-tight.")]
         [SerializeField, Min(0f)] private float perfectDodgeTimingGraceSeconds = 0.08f;
         [SerializeField] private float dodgeSpeed = 10.2f;

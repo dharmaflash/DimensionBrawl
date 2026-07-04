@@ -135,8 +135,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private float dodgeInvulnerableToSeconds = 0.40f;
         [SerializeField] private float dodgeRecoverySeconds = 0.14f;
         [SerializeField, Min(0f)] private float dodgeCooldownSeconds = 1.15f;
-        [Tooltip("Extra armor after a perfect dodge succeeds. Mirrors reference action games that protect the success state from overlapping follow-up hits.")]
-        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 0.65f;
+        [Tooltip("Extra armor after a perfect dodge succeeds. Covers continuous threats such as lasers instead of only the first tick.")]
+        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 1.15f;
         [Tooltip("Timing lenience around the authored invulnerability window, so success does not feel unfairly clipped at the first/last frame.")]
         [SerializeField, Min(0f)] private float perfectDodgeTimingGraceSeconds = 0.08f;
         [Tooltip("First-pass deviation: no collected dodge distance/speed value exists yet, so expose it.")]

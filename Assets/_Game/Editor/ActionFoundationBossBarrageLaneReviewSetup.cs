@@ -2526,7 +2526,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "dodgeInvulnerableToSeconds").floatValue = 0.40f;
             RequireProperty(serializedObject, "dodgeRecoverySeconds").floatValue = 0.14f;
             RequireProperty(serializedObject, "dodgeCooldownSeconds").floatValue = 1.15f;
-            RequireProperty(serializedObject, "perfectDodgeProtectionSeconds").floatValue = 0.65f;
+            RequireProperty(serializedObject, "perfectDodgeProtectionSeconds").floatValue = 1.15f;
             RequireProperty(serializedObject, "perfectDodgeTimingGraceSeconds").floatValue = 0.08f;
             RequireProperty(serializedObject, "dodgeSpeed").floatValue = 10.2f;
             RequireProperty(serializedObject, "dodgeTrigger").stringValue = "DodgeForward";
@@ -5938,7 +5938,7 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
-            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
+            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
             SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
@@ -6177,7 +6177,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             ValidateEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             ValidateEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
-            ValidateEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
+            ValidateEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
             ValidateFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             ValidateFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             ValidateFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);

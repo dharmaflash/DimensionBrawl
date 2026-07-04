@@ -38,7 +38,7 @@ MonoBehaviour:
   dodgeInvulnerableToSeconds: 0.4
   dodgeRecoverySeconds: 0.14
   dodgeCooldownSeconds: 1.15
-  perfectDodgeProtectionSeconds: 0.65
+  perfectDodgeProtectionSeconds: 1.15
   perfectDodgeTimingGraceSeconds: 0.08
   dodgeSpeed: 10.2
   dodgeTrigger: DodgeForward

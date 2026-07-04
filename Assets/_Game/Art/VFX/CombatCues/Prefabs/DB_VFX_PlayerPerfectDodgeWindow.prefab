@@ -19881,7 +19881,7 @@ MonoBehaviour:
   endColor: {r: 0.05, g: 0.18, b: 0.9, a: 0}
   startScale: {x: 1, y: 1, z: 1}
   endScale: {x: 1, y: 1, z: 1}
-  lifetimeSeconds: 3
+  lifetimeSeconds: 1.15
   spinDegreesPerSecond: 48.4
   verticalLift: 0
   forwardTravelDistance: 0

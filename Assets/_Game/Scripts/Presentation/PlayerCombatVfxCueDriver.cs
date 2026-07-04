@@ -7,6 +7,8 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class PlayerCombatVfxCueDriver : MonoBehaviour
     {
+        private const float PerfectDodgeBlockVfxRepeatIntervalSeconds = 0.16f;
+
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
@@ -22,7 +24,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId perfectDodgePulsewaveCueId = CombatVfxCueId.PlayerPerfectDodgePulsewave;
         [SerializeField] private CombatVfxCueId perfectDodgeHoloCubeCueId = CombatVfxCueId.PlayerPerfectDodgeHoloCube;
         [SerializeField] private CombatVfxCueId perfectDodgeWindowCueId = CombatVfxCueId.PlayerPerfectDodgeWindow;
-        [SerializeField] private CombatVfxCueId perfectDodgeProjectileBlockCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
+        [SerializeField] private CombatVfxCueId perfectDodgeProjectileBlockCueId = CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact;
         [SerializeField, Min(0f)] private float perfectDodgeTimeFieldIntensity = 1f;
         [SerializeField, Min(0f)] private float perfectDodgePulsewaveIntensity = 1.12f;
         [SerializeField, Min(0f)] private float perfectDodgeHoloCubeIntensity = 0.92f;
@@ -48,6 +50,8 @@ namespace DimensionBrawl.Presentation
         private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
         private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
         private bool lastDamageCueInterruptedAction;
+        private float lastPerfectDodgeBlockVfxTime = float.NegativeInfinity;
+        private Vector3 lastPerfectDodgeBlockVfxPoint;
 
         public CombatHealth PlayerHealth => playerHealth;
         public Transform DamageAnchor => damageAnchor != null ? damageAnchor : attackAnchor;
@@ -209,7 +213,10 @@ namespace DimensionBrawl.Presentation
             Play(perfectDodgeTimeFieldCueId, anchor, dodgeDirection, perfectDodgeTimeFieldIntensity * masterIntensity, 0f, Vector3.zero);
             Play(perfectDodgePulsewaveCueId, anchor, dodgeDirection, perfectDodgePulsewaveIntensity * masterIntensity, 0f, Vector3.zero);
             Play(perfectDodgeHoloCubeCueId, anchor, dodgeDirection, perfectDodgeHoloCubeIntensity * masterIntensity, 0f, Vector3.zero);
-            Play(perfectDodgeWindowCueId, anchor, dodgeDirection, perfectDodgeWindowIntensity, 0f, Vector3.zero);
+            if (perfectDodgeProjectileBlockCueId != perfectDodgeWindowCueId)
+            {
+                Play(perfectDodgeWindowCueId, anchor, dodgeDirection, perfectDodgeWindowIntensity, 0f, Vector3.zero);
+            }
 
             if (perfectDodgeVfxDirector != null)
             {
@@ -220,6 +227,8 @@ namespace DimensionBrawl.Presentation
                     masterIntensity,
                     perfectDodgeAudioIntensity);
             }
+
+            TryPlayPerfectDodgeBlockVfx(damageInfo, anchor, dodgeDirection);
         }
 
         private void HandleDamageBlockedByInvulnerability(DamageInfo damageInfo)
@@ -231,12 +240,42 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            Transform anchor = DamageAnchor != null ? DamageAnchor : transform;
+            if (perfectDodgeProjectileBlockCueId == perfectDodgeWindowCueId)
+            {
+                return;
+            }
+
+            Transform anchor = dodgeAnchor != null ? dodgeAnchor : DamageAnchor;
+            TryPlayPerfectDodgeBlockVfx(damageInfo, anchor != null ? anchor : transform, Vector3.zero);
+        }
+
+        private bool TryPlayPerfectDodgeBlockVfx(DamageInfo damageInfo, Transform anchor, Vector3 fallbackDirection)
+        {
+            if (!playPerfectDodgeProjectileBlockVfx
+                || damageInfo.SourceTeam != DamageTeam.Enemy
+                || cuePlayer == null)
+            {
+                return false;
+            }
+
+            anchor = anchor != null ? anchor : transform;
+            bool centeredShieldBlock = perfectDodgeProjectileBlockCueId == perfectDodgeWindowCueId;
             Vector3 blockPoint = ResolvePerfectDodgeShieldBlockPoint(damageInfo, anchor);
-            Vector3 localBlockOffset = anchor.InverseTransformPoint(blockPoint) - new Vector3(0f, 0.04f, 0f);
+            Vector3 duplicatePoint = centeredShieldBlock ? anchor.position : blockPoint;
+            if (Time.time - lastPerfectDodgeBlockVfxTime <= PerfectDodgeBlockVfxRepeatIntervalSeconds
+                && (duplicatePoint - lastPerfectDodgeBlockVfxPoint).sqrMagnitude <= 0.09f)
+            {
+                return false;
+            }
+
+            Vector3 localBlockOffset = centeredShieldBlock
+                ? Vector3.zero
+                : anchor.InverseTransformPoint(blockPoint) - new Vector3(0f, 0.04f, 0f);
             Vector3 blockDirection = damageInfo.Direction.sqrMagnitude > 0.0001f
                 ? -Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized
-                : anchor.forward;
+                : fallbackDirection.sqrMagnitude > 0.0001f
+                    ? Vector3.ProjectOnPlane(fallbackDirection, Vector3.up).normalized
+                    : anchor.forward;
 
             if (Play(
                     perfectDodgeProjectileBlockCueId,
@@ -246,8 +285,13 @@ namespace DimensionBrawl.Presentation
                     -1f,
                     localBlockOffset))
             {
+                lastPerfectDodgeBlockVfxTime = Time.time;
+                lastPerfectDodgeBlockVfxPoint = duplicatePoint;
                 perfectDodgeProjectileBlockCueRequestCount++;
+                return true;
             }
+
+            return false;
         }
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)

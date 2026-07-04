@@ -1285,7 +1285,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "dodgeInvulnerableToSeconds", 0.40f);
             ValidateFloat(profile, "dodgeRecoverySeconds", 0.14f);
             ValidateFloat(profile, "dodgeCooldownSeconds", 1.15f);
-            ValidateFloat(profile, "perfectDodgeProtectionSeconds", 0.65f);
+            ValidateFloat(profile, "perfectDodgeProtectionSeconds", 1.15f);
             ValidateFloat(profile, "perfectDodgeTimingGraceSeconds", 0.08f);
             ValidateFloat(profile, "dodgeSpeed", 10.2f);
             ValidateString(profile, "dodgeTrigger", "DodgeForward");

@@ -77,6 +77,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs";
         private const string ImportedHovlHexShieldPrefabPath =
             ImportedHovlSciFiEffectsPrefabRoot + "/Hex shield.prefab";
+        private const string ImportedHovlShieldBlockImpactPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Hit sci-fi.prefab";
         private const string HovlSciFiEffectsRoot = "Assets/_Game/Art/VFX/HovlSciFiEffects";
         private const string HovlSciFiEffectsMaterialRoot = HovlSciFiEffectsRoot + "/Materials";
         private const string HovlSciFiEffectsTextureRoot = HovlSciFiEffectsRoot + "/Textures";
@@ -336,22 +338,30 @@ namespace DimensionBrawl.Editor
                 }
 
                 string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
-                if (!prefabPath.StartsWith(PrefabRoot + "/", StringComparison.Ordinal))
+                bool allowsDemoShieldBlockImpact =
+                    cueId == CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact
+                    && prefabPath == ImportedHovlShieldBlockImpactPrefabPath;
+                if (!allowsDemoShieldBlockImpact && !prefabPath.StartsWith(PrefabRoot + "/", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"{cueId} should reference a promoted combat VFX prefab, found {prefabPath}.");
                 }
 
-                if (prefabPath.Contains("/_Imported/", StringComparison.Ordinal))
+                if (!allowsDemoShieldBlockImpact && prefabPath.Contains("/_Imported/", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"{cueId} should not reference raw imported VFX assets.");
                 }
 
-                if (cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true) == null)
+                if (!allowsDemoShieldBlockImpact
+                    && cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true) == null)
                 {
                     throw new InvalidOperationException($"{cueId} should use a stable promoted CombatVfxCueVisual prefab, found {prefabPath}.");
                 }
 
-                ValidateNoImportedAssetDependencies(cueId, prefabPath);
+                if (!allowsDemoShieldBlockImpact)
+                {
+                    ValidateNoImportedAssetDependencies(cueId, prefabPath);
+                }
+
                 if (cueId == CombatVfxCueId.PlayerPerfectDodgeWindow)
                 {
                     ValidatePerfectDodgeHovlShieldPrefab(cue.Prefab);
@@ -453,6 +463,8 @@ namespace DimensionBrawl.Editor
             Mesh shapesTorus = LoadRequiredMesh(ShapesFxTorusMeshPath);
             Mesh shapesDodeca = LoadRequiredMesh(ShapesFxDodecaMeshPath);
             Mesh shapesIcosa = LoadRequiredMesh(ShapesFxIcosaMeshPath);
+            GameObject shieldBlockImpactPrefab =
+                LoadRequiredPrefab(ImportedHovlShieldBlockImpactPrefabPath, "perfect dodge shield block impact");
 
             GameObject enemyHitFeedback = SavePromotedHitFeedbackPrefab(
                 "DB_VFX_EnemyHit",
@@ -471,7 +483,8 @@ namespace DimensionBrawl.Editor
                 PlayerPerfectDodgeTimeField = SavePerfectDodgeTimeFieldPrefab("DB_VFX_PlayerPerfectDodgeTimeField", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
                 PlayerPerfectDodgePulsewave = SavePerfectDodgePulsewavePrefab("DB_VFX_PlayerPerfectDodgePulsewave", cyan, white, shapesPortalOuter, shapesTorus),
                 PlayerPerfectDodgeHoloCube = SavePerfectDodgeHoloCubePrefab("DB_VFX_PlayerPerfectDodgeHoloCube", cyan, violet, white, shapesCyanDodeca, shapesVioletIcosa, shapesDodeca, shapesIcosa),
-                PlayerPerfectDodgeWindow = SavePerfectDodgeWindowPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 2.2f, 3.0f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
+                PlayerPerfectDodgeWindow = SavePerfectDodgeWindowPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 0.86f, 1.15f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
+                PlayerPerfectDodgeShieldBlockImpact = shieldBlockImpactPrefab,
                 PlayerSummonPreSpawnPortal = SaveSummonPreSpawnPortalPrefab("DB_VFX_PlayerSummonPreSpawnPortal", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
                 PlayerSummonLandingCrater = SaveSummonLandingCraterPrefab("DB_VFX_PlayerSummonLandingCrater", gold, smoke, shapesPortalOuter, shapesTorus),
                 PlayerSummonDragonBreathAudio = SaveAudioOnlyCuePrefab("DB_VFX_PlayerSummonDragonBreathAudio"),
@@ -580,7 +593,7 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
-            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
+            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
             SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
@@ -715,6 +728,7 @@ namespace DimensionBrawl.Editor
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgePulsewave);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeWindow);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonLandingCrater);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio);
@@ -977,7 +991,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, -0.08f, 0f), Vector3.zero, new Vector3(3.8f, 0.72f, 3.8f), 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, -0.16f, 0f), Vector3.zero, new Vector3(7.0f, 0.5f, 7.0f), 0.9f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.62f, 0.05f), Vector3.zero, new Vector3(1.1f, 1.1f, 1.1f), 1.2f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.24f), Vector3.zero, Vector3.one, 3.0f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.24f), Vector3.zero, Vector3.one, 1.15f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact, prefabs.PlayerPerfectDodgeShieldBlockImpact, Vector3.zero, Vector3.zero, new Vector3(0.55f, 0.55f, 0.55f), 1.0f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerSummonDragonBreathAudio, prefabs.PlayerSummonDragonBreathAudio, Vector3.zero, Vector3.zero, Vector3.one, 0.05f, false, true),
@@ -3960,6 +3975,17 @@ namespace DimensionBrawl.Editor
             throw new InvalidOperationException($"Missing required mesh at {assetPath}.");
         }
 
+        private static GameObject LoadRequiredPrefab(string assetPath, string label)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException($"Missing required {label} prefab at {assetPath}.");
+            }
+
+            return prefab;
+        }
+
         private static Material LoadOrCreateParticleMaterial(string name, Color color, bool additive = true)
         {
             string path = $"{MaterialRoot}/{name}.mat";
@@ -4578,6 +4604,7 @@ namespace DimensionBrawl.Editor
             public GameObject PlayerPerfectDodgePulsewave;
             public GameObject PlayerPerfectDodgeHoloCube;
             public GameObject PlayerPerfectDodgeWindow;
+            public GameObject PlayerPerfectDodgeShieldBlockImpact;
             public GameObject PlayerSummonPreSpawnPortal;
             public GameObject PlayerSummonLandingCrater;
             public GameObject PlayerSummonDragonBreathAudio;

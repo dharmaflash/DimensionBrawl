@@ -133,7 +133,7 @@ MonoBehaviour:
     localPositionOffset: {x: 0, y: 0.34, z: 0.24}
     localEulerOffset: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
-    lifetimeSeconds: 3
+    lifetimeSeconds: 1.15
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -199,6 +199,25 @@ MonoBehaviour:
     localEulerOffset: {x: 0, y: 0, z: 0}
     localScale: {x: 1, y: 1, z: 1}
     lifetimeSeconds: 0.05
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
+  - cueId: 46
+    prefab: {fileID: 8962397797242291048, guid: c2a48b27e7a046744b660f62a01da52c, type: 3}
+    localPositionOffset: {x: 0, y: 0, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 0.55, y: 0.55, z: 0.55}
+    lifetimeSeconds: 1
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1

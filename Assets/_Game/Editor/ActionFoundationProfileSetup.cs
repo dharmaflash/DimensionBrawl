@@ -831,7 +831,7 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "dodgeInvulnerableToSeconds", 0.40f);
             SetFloat(serializedObject, "dodgeRecoverySeconds", 0.14f);
             SetFloat(serializedObject, "dodgeCooldownSeconds", 1.15f);
-            SetFloat(serializedObject, "perfectDodgeProtectionSeconds", 0.65f);
+            SetFloat(serializedObject, "perfectDodgeProtectionSeconds", 1.15f);
             SetFloat(serializedObject, "perfectDodgeTimingGraceSeconds", 0.08f);
             SetFloat(serializedObject, "dodgeSpeed", 10.2f);
             SetString(serializedObject, "dodgeTrigger", "DodgeForward");

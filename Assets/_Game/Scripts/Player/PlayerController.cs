@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DimensionBrawl.Combat;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -100,6 +101,7 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private float exposedDamageMultiplier = 1.08f;
         [SerializeField] private JustDodgeDetector justDodgeDetector;
         [SerializeField] private ParticleSystem justDodgeEffect;
+        [SerializeField] private CombatHealth combatHealth;
         [SerializeField] private Animator characterAnimator;
 
         private Rigidbody cachedRigidbody;
@@ -254,6 +256,11 @@ namespace IsekaiBrawl.Gameplay
             if (justDodgeDetector == null)
             {
                 justDodgeDetector = GetComponent<JustDodgeDetector>();
+            }
+
+            if (combatHealth == null)
+            {
+                combatHealth = GetComponent<CombatHealth>();
             }
 
             if (justDodgeEffect == null)
@@ -1743,6 +1750,11 @@ namespace IsekaiBrawl.Gameplay
                 resolvedDamage *= exposedDamageMultiplier;
             }
 
+            if (!TryAcceptIncomingDamageThroughCombatHealth(resolvedDamage))
+            {
+                return;
+            }
+
             CurrentHP = Mathf.Max(0f, CurrentHP - resolvedDamage);
             OnHPChanged?.Invoke(CurrentHP, maxHP);
 
@@ -1767,6 +1779,31 @@ namespace IsekaiBrawl.Gameplay
                 4.1f,
                 0.9f);
             BeginRespawn();
+        }
+
+        private bool TryAcceptIncomingDamageThroughCombatHealth(float resolvedDamage)
+        {
+            if (combatHealth == null)
+            {
+                return true;
+            }
+
+            if (combatHealth.Team == DamageTeam.Neutral)
+            {
+                return !combatHealth.IsInvulnerable;
+            }
+
+            var damageInfo = new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                resolvedDamage,
+                transform.position + Vector3.up,
+                -transform.forward,
+                0f,
+                DamageResponsePolicy.FlashOnly,
+                CombatControlLockPolicy.None);
+
+            return combatHealth.TryApplyDamage(damageInfo);
         }
 
         private void HandleJustDodge()
@@ -2165,6 +2202,12 @@ namespace IsekaiBrawl.Gameplay
             }
 
             CurrentHP = maxHP;
+            if (combatHealth != null)
+            {
+                combatHealth.ResetHealthToFull();
+                combatHealth.SetTemporaryInvulnerability(respawnInvulnerabilityDuration);
+            }
+
             isRespawning = false;
             respawnInvulnerableUntil = Time.time + Mathf.Max(0f, respawnInvulnerabilityDuration);
             MoveToRespawnPoint();

@@ -29,24 +29,24 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Age01: 0.9948255
-    - _BandAlpha: 0.00021760019
+    - _Age01: 0.9945742
+    - _BandAlpha: 0.00023906172
     - _ChromaticStrength: 0.86
-    - _DomainAlpha: 0.00067700556
-    - _EdgeAlpha: 0.0007685086
+    - _DomainAlpha: 0.00074501894
+    - _EdgeAlpha: 0.0008464335
     - _FractureStrength: 0.74
     - _GridStrength: 0.68
     - _Intensity: 0.92
-    - _InvertAlpha: 0.0000850661
+    - _InvertAlpha: 0.000089307345
     - _Pulse: 0
     - _RadialBlurStrength: 0.54
     - _RadialWarp: 0.72
     - _ScanlineStrength: 0.34
-    - _Sustain: 0.0016336349
-    - _TimeSeconds: 52.270035
+    - _Sustain: 0.0017947576
+    - _TimeSeconds: 26.837553
     m_Colors:
     - _CueScreenSize: {r: 2496, g: 1152, b: 0, a: 0}
-    - _DomainCenter: {r: 0.4924066, g: 0.2687629, b: 0, a: 0}
+    - _DomainCenter: {r: 0.25571537, g: 0, b: 0, a: 0}
     - _DomainColor: {r: 0.035, g: 0.045, b: 0.055, a: 1}
     - _EdgeColor: {r: 0.12, g: 0.96, b: 1, a: 1}
     - _InvertColor: {r: 0.92, g: 1, b: 1, a: 1}
