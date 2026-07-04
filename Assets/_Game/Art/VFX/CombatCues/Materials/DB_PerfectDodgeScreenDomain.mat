@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: 4000
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -29,24 +29,24 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Age01: 0.9954693
-    - _BandAlpha: 0.00016715017
+    - _Age01: 0.9948255
+    - _BandAlpha: 0.00021760019
     - _ChromaticStrength: 0.86
-    - _DomainAlpha: 0.0005226137
-    - _EdgeAlpha: 0.00059473776
+    - _DomainAlpha: 0.00067700556
+    - _EdgeAlpha: 0.0007685086
     - _FractureStrength: 0.74
     - _GridStrength: 0.68
     - _Intensity: 0.92
-    - _InvertAlpha: 0.00007675603
+    - _InvertAlpha: 0.0000850661
     - _Pulse: 0
     - _RadialBlurStrength: 0.54
     - _RadialWarp: 0.72
     - _ScanlineStrength: 0.34
-    - _Sustain: 0.001254881
-    - _TimeSeconds: 15.248634
+    - _Sustain: 0.0016336349
+    - _TimeSeconds: 52.270035
     m_Colors:
     - _CueScreenSize: {r: 2496, g: 1152, b: 0, a: 0}
-    - _DomainCenter: {r: 0.25456208, g: 0, b: 0, a: 0}
+    - _DomainCenter: {r: 0.4924066, g: 0.2687629, b: 0, a: 0}
     - _DomainColor: {r: 0.035, g: 0.045, b: 0.055, a: 1}
     - _EdgeColor: {r: 0.12, g: 0.96, b: 1, a: 1}
     - _InvertColor: {r: 0.92, g: 1, b: 1, a: 1}

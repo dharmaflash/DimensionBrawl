@@ -199,6 +199,8 @@ namespace DimensionBrawl.Editor
             ImportedHovlSciFiEffectsPrefabRoot + "/Projectile bullet.prefab";
         private const string ImportedHovlLaserHitPrefabPath =
             ImportedHovlSciFiEffectsPrefabRoot + "/Laser hit.prefab";
+        private const string ImportedForge3DMissileExamplePrefabPath =
+            "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Missiles/Example/missile_example.prefab";
         private const string HovlSciFiEffectsPromotedRoot =
             "Assets/_Game/Art/VFX/HovlSciFiEffects";
         private const string HovlSciFiEffectsMaterialRoot =
@@ -211,6 +213,18 @@ namespace DimensionBrawl.Editor
             HovlSciFiEffectsPromotedRoot + "/Meshes";
         private const string BossBarrageHovlProjectileChildName =
             "BossBarrageProjectileVfx_HovlProjectileBullet";
+        private const string Forge3DMissilePromotedRoot =
+            "Assets/_Game/Art/VFX/Forge3DMissiles";
+        private const string Forge3DMissileMaterialRoot =
+            Forge3DMissilePromotedRoot + "/Materials";
+        private const string Forge3DMissileTextureRoot =
+            Forge3DMissilePromotedRoot + "/Textures";
+        private const string Forge3DMissileShaderRoot =
+            Forge3DMissilePromotedRoot + "/Shaders";
+        private const string Forge3DMissileMeshRoot =
+            Forge3DMissilePromotedRoot + "/Meshes";
+        private const string BossBarrageForge3DMissileChildName =
+            "BossBarrageProjectileVfx_Forge3DMissileExample";
         private const string MagicMissilesPromotedRoot =
             "Assets/_Game/Art/VFX/MagicMissiles";
         private const string MagicMissilesMaterialRoot =
@@ -312,6 +326,7 @@ namespace DimensionBrawl.Editor
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
+        private const string BossBasicFireMuzzleName = "BossBasicFireMuzzle";
         private const float BossProxyReviewMaxHealth = 3600f;
         private const float PlayerSummonBaseEnergyPerSecond = 8f;
         private const float PlayerSummonBackSafetyGainScale = 0.35f;
@@ -677,6 +692,14 @@ namespace DimensionBrawl.Editor
         {
             EnsureBossProjectileVfx();
             Debug.Log("Reapplied ActionFoundation boss projectile VFX assets.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Missile Projectile And Basic Fire Bindings")]
+        public static void ReapplyBossMissileProjectileAndBasicFireBindingsMenu()
+        {
+            EnsureBossProjectileVfx();
+            EnsureBossBasicFireBindings();
+            Debug.Log("Reapplied ActionFoundation boss missile projectile VFX and basic fire bindings.");
         }
 
         public static void EnsureBossProjectileVfx()
@@ -2582,15 +2605,13 @@ namespace DimensionBrawl.Editor
                 UnityEngine.Object.DestroyImmediate(oldTrail);
             }
 
-            AttachPromotedHovlSciFiVfxPrefab(
+            AttachPromotedForge3DMissilePrefab(
                 projectileRoot.transform,
-                BossBarrageHovlProjectileChildName,
-                ImportedHovlProjectileBulletPrefabPath,
+                BossBarrageForge3DMissileChildName,
+                ImportedForge3DMissileExamplePrefabPath,
                 Vector3.zero,
                 Vector3.zero,
-                Vector3.one * 2.15f,
-                loopParticles: null,
-                playOnAwake: true);
+                Vector3.one * 1.42f);
 
             EditorUtility.SetDirty(projectileRoot);
         }
@@ -3681,6 +3702,7 @@ namespace DimensionBrawl.Editor
             bossHealth.ConfigureTeam(DamageTeam.Enemy);
             SetFloat(bossHealth, "maxHealth", BossProxyReviewMaxHealth);
             ConfigureBossProxyBodyHitbox(bossProxy);
+            CreateBossProxyVisual(bossProxy.transform);
 
             BossBarrageEmitter emitter = EnsureComponent<BossBarrageEmitter>(bossProxy);
             SetObjectReference(emitter, "laneSpace", laneSpace);
@@ -3824,7 +3846,6 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(bossPressureActionDirector);
             EditorUtility.SetDirty(bossPressurePosition);
 
-            CreateBossProxyVisual(bossProxy.transform);
             ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
             return bossProxy;
         }
@@ -3886,6 +3907,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(basicFireEmitter, "laneSpace", laneSpace);
             SetObjectReference(basicFireEmitter, "trackedPlayer", playerTransform);
             SetObjectReference(basicFireEmitter, "sourceHealth", bossHealth);
+            SetObjectReference(basicFireEmitter, "fireOrigin", EnsureBossBasicFireOrigin(bossProxy));
             SetObjectReference(basicFireEmitter, "fireProfile", LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath));
             SetObjectReference(basicFireEmitter, "projectilePrefab", LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath));
             SetObjectReference(basicFireEmitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
@@ -4134,6 +4156,80 @@ namespace DimensionBrawl.Editor
             MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
             renderer.enabled = false;
+        }
+
+        private static Transform EnsureBossBasicFireOrigin(GameObject bossProxy)
+        {
+            Transform visual = bossProxy.transform.Find(BossProxyHumanoidVisualName);
+            Transform weapon = visual != null
+                ? FindDescendant(visual, BossProxyHumanoidSourceAssaultRifleName)
+                : null;
+            if (weapon != null)
+            {
+                Transform muzzle = EnsureChild(weapon, BossBasicFireMuzzleName);
+                PositionBossBasicFireMuzzle(muzzle, weapon);
+                return muzzle;
+            }
+
+            Transform fallback = bossProxy.transform.Find(BossProxyMarkerName);
+            if (fallback != null)
+            {
+                return fallback;
+            }
+
+            fallback = EnsureChild(bossProxy.transform, BossBasicFireMuzzleName);
+            fallback.localPosition = new Vector3(0f, 0.15f, -0.25f);
+            fallback.localRotation = Quaternion.identity;
+            fallback.localScale = Vector3.one;
+            EditorUtility.SetDirty(fallback.gameObject);
+            return fallback;
+        }
+
+        private static void PositionBossBasicFireMuzzle(Transform muzzle, Transform weapon)
+        {
+            if (TryCalculateWorldRenderBounds(weapon, out Bounds bounds))
+            {
+                Vector3 worldPosition = new Vector3(
+                    bounds.center.x,
+                    Mathf.Lerp(bounds.min.y, bounds.max.y, 0.55f),
+                    bounds.min.z - 0.08f);
+                muzzle.SetPositionAndRotation(worldPosition, Quaternion.LookRotation(Vector3.back, Vector3.up));
+            }
+            else
+            {
+                muzzle.localPosition = new Vector3(0f, 0f, -0.65f);
+                muzzle.localRotation = Quaternion.identity;
+            }
+
+            muzzle.localScale = Vector3.one;
+            EditorUtility.SetDirty(muzzle.gameObject);
+        }
+
+        private static bool TryCalculateWorldRenderBounds(Transform root, out Bounds bounds)
+        {
+            bounds = default;
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            bool hasBounds = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
         }
 
         private static void ConfigureBossProxyVisualCueDriver(
@@ -7658,7 +7754,7 @@ namespace DimensionBrawl.Editor
 
             if (renderer.enabled)
             {
-                throw new InvalidOperationException("Boss barrage projectile root MeshRenderer must stay hidden behind the promoted Hovl projectile VFX.");
+                throw new InvalidOperationException("Boss barrage projectile root MeshRenderer must stay hidden behind the promoted Forge3D missile VFX.");
             }
 
             MeshFilter meshFilter = projectilePrefab.GetComponent<MeshFilter>();
@@ -7686,7 +7782,7 @@ namespace DimensionBrawl.Editor
                 || visualRenderers.GetArrayElementAtIndex(0).objectReferenceValue != renderer)
             {
                 throw new InvalidOperationException(
-                    "Boss barrage projectile should runtime-tint only the hidden root renderer, not the authored Hovl particle materials.");
+                    "Boss barrage projectile should runtime-tint only the hidden root renderer, not the authored Forge3D missile materials.");
             }
 
             if (projectilePrefab.GetComponent<TrailRenderer>() != null)
@@ -7694,10 +7790,10 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Boss barrage projectile should not fall back to generated TrailRenderer visuals.");
             }
 
-            ValidatePromotedHovlSciFiParticleVfx(
-                projectilePrefab.transform.Find(BossBarrageHovlProjectileChildName),
-                "boss barrage Hovl projectile",
-                minimumParticleSystems: 6);
+            ValidatePromotedForge3DMissileVfx(
+                projectilePrefab.transform.Find(BossBarrageForge3DMissileChildName),
+                "boss barrage Forge3D missile projectile",
+                minimumParticleSystems: 2);
             ValidateNoImportedDependencies(projectilePrefab, "boss barrage projectile prefab");
         }
 
@@ -8188,6 +8284,13 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(basicFireEmitter, "laneSpace", laneSpace);
             ValidateObjectReference(basicFireEmitter, "trackedPlayer", playerTransform);
             ValidateObjectReference(basicFireEmitter, "sourceHealth", bossHealth);
+            Transform expectedFireOrigin = FindDescendant(basicFireEmitter.transform, BossBasicFireMuzzleName);
+            if (expectedFireOrigin == null)
+            {
+                throw new InvalidOperationException("Boss basic fire should expose a weapon-mounted BossBasicFireMuzzle fire origin.");
+            }
+
+            ValidateObjectReference(basicFireEmitter, "fireOrigin", expectedFireOrigin);
             ValidateObjectReference(
                 basicFireEmitter,
                 "fireProfile",

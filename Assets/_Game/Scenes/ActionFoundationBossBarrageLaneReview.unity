@@ -1399,16 +1399,20 @@ MonoBehaviour:
   perfectDodgePulsewaveCueId: 40
   perfectDodgeHoloCubeCueId: 41
   perfectDodgeWindowCueId: 42
+  perfectDodgeProjectileBlockCueId: 34
   perfectDodgeTimeFieldIntensity: 1
   perfectDodgePulsewaveIntensity: 1.12
   perfectDodgeHoloCubeIntensity: 0.92
   perfectDodgeWindowIntensity: 0.86
+  perfectDodgeProjectileBlockIntensity: 1.18
+  perfectDodgeShieldBlockRadius: 0.86
   perfectDodgeAudioIntensity: 1
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
   playDamageVfx: 1
   playCriticalVfx: 1
+  playPerfectDodgeProjectileBlockVfx: 1
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10296,7 +10300,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 3876336380767377490, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2058282133}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a000f0e5a2493904492a06a283982f07, type: 3}
 --- !u!4 &889437074 stripped
@@ -10307,6 +10314,11 @@ Transform:
 --- !u!95 &889437075 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+  m_PrefabInstance: {fileID: 889437073}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &889437076 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3876336380767377490, guid: a000f0e5a2493904492a06a283982f07, type: 3}
   m_PrefabInstance: {fileID: 889437073}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &899541874
@@ -14634,6 +14646,7 @@ MonoBehaviour:
   laneSpace: {fileID: 974607883}
   trackedPlayer: {fileID: 4001}
   sourceHealth: {fileID: 1484984129}
+  fireOrigin: {fileID: 2058282133}
   fireProfile: {fileID: 11400000, guid: 2250ad5d8f39e334ba6213f256f82a6a, type: 2}
   projectilePrefab: {fileID: 2794082157248871863, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
   projectilePrefabObject: {fileID: 2676862116300731253, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
@@ -22632,6 +22645,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2056725644}
   m_Mesh: {fileID: 2263899899176933641, guid: 8e066f4a6caa05b4cab4df80da7968ce, type: 3}
+--- !u!1 &2058282132
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2058282133}
+  m_Layer: 0
+  m_Name: BossBasicFireMuzzle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2058282133
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2058282132}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.20674478, y: 0.15479739, z: 0.55415624, w: -0.7913314}
+  m_LocalPosition: {x: 0.0123130875, y: 0.38396305, z: 0.5834162}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 889437076}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2065824586
 MonoBehaviour:
   m_ObjectHideFlags: 0

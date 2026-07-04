@@ -11,6 +11,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform trackedPlayer;
         [SerializeField] private CombatHealth sourceHealth;
+        [SerializeField] private Transform fireOrigin;
 
         [Header("Fire")]
         [SerializeField] private BossBasicFireProfile fireProfile;
@@ -253,16 +254,19 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            Vector2 sourceLanePoint = laneSpace.GetLaneCoordinates(transform.position);
+            Vector3 originPoint = fireOrigin != null ? fireOrigin.position : transform.position;
+            Vector2 sourceLanePoint = laneSpace.GetLaneCoordinates(originPoint);
             float spawnLaneZ = Mathf.Clamp(sourceLanePoint.y, laneSpace.ForwardBoundaryZ, laneSpace.BossProxyZ);
             float spawnLateralX = Mathf.Lerp(
                 Mathf.Clamp(sourceLanePoint.x, -laneSpace.HalfWidth, laneSpace.HalfWidth),
                 targetLateralX,
                 fireProfile.SpawnLateralFollowRatio);
-            Vector3 spawnPoint = laneSpace.GetLaneWorldPoint(
-                spawnLateralX,
-                spawnLaneZ,
-                fireProfile.SpawnHeight);
+            Vector3 spawnPoint = fireOrigin != null
+                ? originPoint
+                : laneSpace.GetLaneWorldPoint(
+                    spawnLateralX,
+                    spawnLaneZ,
+                    fireProfile.SpawnHeight);
             Vector3 targetPoint = laneSpace.GetLaneWorldPoint(
                 targetLateralX,
                 targetLaneZ,
