@@ -5,6 +5,7 @@ using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -50,6 +51,9 @@ namespace DimensionBrawl.LevelDesign
         [Header("Tutorial")]
         [SerializeField] private bool runTutorialAfterIntroHandoff = true;
         [SerializeField] private OlympusCorridorTutorialDirector tutorialDirector;
+        [SerializeField] private AudioSource tutorialOverlayAudioSource;
+        [SerializeField] private AudioClip tutorialOverlayOpenSfx;
+        [SerializeField, Range(0f, 1f)] private float tutorialOverlayOpenSfxVolume = 0.82f;
 
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
@@ -83,6 +87,7 @@ namespace DimensionBrawl.LevelDesign
         private float hudRevealTimer;
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
+        private AudioSource runtimeTutorialOverlayAudioSource;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -452,6 +457,10 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            director.ConfigureOverlayAudio(
+                ResolveTutorialOverlayAudioSource(),
+                ResolveTutorialOverlayOpenSfx(),
+                tutorialOverlayOpenSfxVolume);
 
             director.BindRuntimeContext(
                 player,
@@ -766,6 +775,83 @@ namespace DimensionBrawl.LevelDesign
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
             return presenters.Length > 0 ? presenters[0] : null;
+        }
+
+        private AudioSource ResolveTutorialOverlayAudioSource()
+        {
+            if (tutorialOverlayAudioSource != null)
+            {
+                return tutorialOverlayAudioSource;
+            }
+
+            if (runtimeTutorialOverlayAudioSource != null)
+            {
+                return runtimeTutorialOverlayAudioSource;
+            }
+
+            if (!Application.isPlaying)
+            {
+                return null;
+            }
+
+            runtimeTutorialOverlayAudioSource = gameObject.AddComponent<AudioSource>();
+            runtimeTutorialOverlayAudioSource.playOnAwake = false;
+            runtimeTutorialOverlayAudioSource.loop = false;
+            runtimeTutorialOverlayAudioSource.spatialBlend = 0f;
+            return runtimeTutorialOverlayAudioSource;
+        }
+
+        private AudioClip ResolveTutorialOverlayOpenSfx()
+        {
+            if (tutorialOverlayOpenSfx != null)
+            {
+                return tutorialOverlayOpenSfx;
+            }
+
+            TimelineAsset timeline = introDirector != null ? introDirector.playableAsset as TimelineAsset : null;
+            if (timeline == null)
+            {
+                return null;
+            }
+
+            AudioClip earliestVoiceClip = null;
+            double earliestVoiceStart = double.MaxValue;
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track == null)
+                {
+                    continue;
+                }
+
+                bool isVoiceTrack = IsVoiceTimelineName(track.name);
+                foreach (TimelineClip clip in track.GetClips())
+                {
+                    AudioPlayableAsset audioPlayable = clip.asset as AudioPlayableAsset;
+                    if (audioPlayable == null || audioPlayable.clip == null)
+                    {
+                        continue;
+                    }
+
+                    if (!isVoiceTrack && !IsVoiceTimelineName(clip.displayName))
+                    {
+                        continue;
+                    }
+
+                    if (clip.start < earliestVoiceStart)
+                    {
+                        earliestVoiceClip = audioPlayable.clip;
+                        earliestVoiceStart = clip.start;
+                    }
+                }
+            }
+
+            return earliestVoiceClip;
+        }
+
+        private static bool IsVoiceTimelineName(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && value.IndexOf("Voice", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void RegisterTutorialCompletedHandler()

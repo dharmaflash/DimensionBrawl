@@ -10,6 +10,8 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusCorridorTutorialDirector : MonoBehaviour
     {
+        private const string SystemGuideSpeaker = "천계관리시스템";
+
         private enum TutorialStep
         {
             Inactive,
@@ -35,6 +37,9 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0f)] private float cuePrimeSeconds = 0.45f;
         [SerializeField, Min(0f)] private float completionRecordSeconds = 0.7f;
         [SerializeField, Min(0.1f)] private float promptRepeatSeconds = 4.0f;
+        [SerializeField, Min(0f)] private float minimumCueReadSeconds = 0.85f;
+        [SerializeField, Min(0f)] private float minimumActionObserveSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float minimumCompletionReadSeconds = 1.15f;
 
         [Header("Movement Step")]
         [SerializeField, Min(0f)] private float movementCompleteDistance = 0.75f;
@@ -67,6 +72,9 @@ namespace DimensionBrawl.LevelDesign
         [Header("References")]
         [SerializeField] private CinematicTutorialPromptPresenter promptPresenter;
         [SerializeField] private OlympusTutorialOverlayPresenter overlayPresenter;
+        [SerializeField] private AudioSource overlayAudioSource;
+        [SerializeField] private AudioClip overlayOpenSfx;
+        [SerializeField, Range(0f, 1f)] private float overlayOpenSfxVolume = 0.82f;
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private PlayerMovementController player;
         [SerializeField] private PlayerCombatModeController combatModeController;
@@ -89,6 +97,7 @@ namespace DimensionBrawl.LevelDesign
         private bool meleeHitObserved;
         private bool movementObserved;
         private bool rangedModeObserved;
+        private bool rangedAimPreviewObserved;
         private bool rangedProjectileFiredObserved;
         private bool rangedTargetDamageObserved;
         private bool stepTargetDeathObserved;
@@ -105,6 +114,7 @@ namespace DimensionBrawl.LevelDesign
         private bool[] cachedBossTelegraphEnabled = Array.Empty<bool>();
         private float stepTimer;
         private float phaseTimer;
+        private float rangedAimPreviewHeldSeconds;
         private float nextPromptTime;
         private string lastCompletionRecord = string.Empty;
         private Vector3 movementStartPosition;
@@ -155,6 +165,17 @@ namespace DimensionBrawl.LevelDesign
             tutorialRouteBlockers = newTutorialRouteBlockers ?? tutorialRouteBlockers ?? Array.Empty<Collider>();
         }
 
+        public void ConfigureOverlayAudio(
+            AudioSource audioSource,
+            AudioClip openSfx,
+            float volume)
+        {
+            overlayAudioSource = audioSource != null ? audioSource : overlayAudioSource;
+            overlayOpenSfx = openSfx != null ? openSfx : overlayOpenSfx;
+            overlayOpenSfxVolume = Mathf.Clamp01(volume);
+            ApplyOverlayPresentationBindings();
+        }
+
         public void BeginTutorial()
         {
             ResolveMissingReferences();
@@ -174,10 +195,12 @@ namespace DimensionBrawl.LevelDesign
             meleeHitObserved = false;
             movementObserved = false;
             rangedModeObserved = false;
+            rangedAimPreviewObserved = false;
             rangedProjectileFiredObserved = false;
             rangedTargetDamageObserved = false;
             stepTargetDeathObserved = false;
             dodgeObserved = false;
+            rangedAimPreviewHeldSeconds = 0f;
             lastCompletionRecord = string.Empty;
             movementStartPosition = player != null ? player.transform.position : transform.position;
             runtimeBoundsCenter = tutorialBoundsCenter != null ? tutorialBoundsCenter.position : movementStartPosition;
@@ -249,7 +272,7 @@ namespace DimensionBrawl.LevelDesign
             switch (stepPhase)
             {
                 case TutorialStepPhase.Cue:
-                    if (phaseTimer >= cuePrimeSeconds)
+                    if (phaseTimer >= ResolveCueReadSeconds())
                     {
                         ActivateStepInputWindow();
                     }
@@ -258,7 +281,7 @@ namespace DimensionBrawl.LevelDesign
                     UpdateAwaitingActionStep();
                     return;
                 case TutorialStepPhase.Committed:
-                    if (phaseTimer >= completionRecordSeconds)
+                    if (phaseTimer >= ResolveCompletionReadSeconds())
                     {
                         AdvanceAfterCommittedStep();
                     }
@@ -268,6 +291,12 @@ namespace DimensionBrawl.LevelDesign
 
         private void UpdateAwaitingActionStep()
         {
+            UpdateCurrentStepObservation();
+            if (!HasActionObservationWindowElapsed())
+            {
+                return;
+            }
+
             switch (step)
             {
                 case TutorialStep.Melee:
@@ -354,6 +383,8 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.Fire:
                     rangedProjectileFiredObserved = false;
                     rangedTargetDamageObserved = false;
+                    rangedAimPreviewObserved = false;
+                    rangedAimPreviewHeldSeconds = 0f;
                     ConfigureTargetCandidates(tutorialTargets);
                     SetRangedMode();
                     SetCombatModeInputLocked(true);
@@ -467,13 +498,8 @@ namespace DimensionBrawl.LevelDesign
             ConfigureTargetCandidates(Array.Empty<CombatHealth>());
             RestoreBossTelegraphs();
             RestoreActionEnabledStates();
-            ShowGuide(
-                "\uc774\ub178\ub9ac",
-                "\uc88b\uc544. \uc544\ub798 \ud1b5\ub85c\ub85c \ub0b4\ub824\uac00. \ub2e4\uc74c \uc804\ud22c\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f \uae30\ub85d\uc73c\ub85c \ud310\uc815\ub3fc.",
-                "\uc9c4\uc785",
-                OlympusTutorialOverlayPresenter.FocusKind.Route,
-                new Vector2(0.5f, 0.76f));
-            SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState.Ready);
+            overlayPresenter?.Hide();
+            promptPresenter?.HidePrompt();
             RaiseCompletedOnce();
         }
 
@@ -503,8 +529,10 @@ namespace DimensionBrawl.LevelDesign
                     rangedModeObserved = false;
                     break;
                 case TutorialStep.Fire:
+                    rangedAimPreviewObserved = false;
                     rangedProjectileFiredObserved = false;
                     rangedTargetDamageObserved = false;
+                    rangedAimPreviewHeldSeconds = 0f;
                     stepTargetDeathObserved = false;
                     break;
                 case TutorialStep.Dodge:
@@ -547,9 +575,39 @@ namespace DimensionBrawl.LevelDesign
 
         private bool HasCompletedFireStep()
         {
-            return phaseTimer >= fireAimPreviewLeadSeconds
+            return rangedAimPreviewObserved
+                && rangedAimPreviewHeldSeconds >= fireAimPreviewLeadSeconds
                 && rangedProjectileFiredObserved
                 && (rangedTargetDamageObserved || stepTargetDeathObserved);
+        }
+
+        private void UpdateCurrentStepObservation()
+        {
+            if (step != TutorialStep.Fire || stepPhase != TutorialStepPhase.AwaitingAction)
+            {
+                return;
+            }
+
+            if (rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive)
+            {
+                rangedAimPreviewObserved = true;
+                rangedAimPreviewHeldSeconds += Time.deltaTime;
+            }
+        }
+
+        private bool HasActionObservationWindowElapsed()
+        {
+            return phaseTimer >= minimumActionObserveSeconds;
+        }
+
+        private float ResolveCueReadSeconds()
+        {
+            return Mathf.Max(cuePrimeSeconds, minimumCueReadSeconds);
+        }
+
+        private float ResolveCompletionReadSeconds()
+        {
+            return Mathf.Max(completionRecordSeconds, minimumCompletionReadSeconds);
         }
 
         private bool HasCompletedClearTargetsStep()
@@ -581,49 +639,49 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uadfc\uc811 \uc555\ubc15 \uac10\uc9c0. \uce7c\uc740 \ubd99\uc740 \uc801\uc744 \ub04a\ub294 \uc6a9\ub3c4\uc57c.",
-                        "\uadfc\uc811 \ubc29\uc5b4",
+                        SystemGuideSpeaker,
+                        "근접 공격 버튼을 사용해 가까운 적을 공격할 수 있습니다.",
+                        "근접 공격",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc67c\ucabd \uc870\uc774\uc2a4\ud2f1\uc744 \ubc00\uba74 \uc774\ub3d9\ud574. \ud30c\ub780 \uc601\uc5ed \uc548\uc5d0\uc11c \uc9e7\uac8c \uc6c0\uc9c1\uc5ec \ubd10.",
-                        "\uc774\ub3d9",
+                        SystemGuideSpeaker,
+                        "조이스틱을 사용해 파란 영역 안에서 이동할 수 있습니다.",
+                        "이동",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uac70\ub9ac \ud655\uc778. \uae30\ubcf8 \uc0ac\uaca9\uc740 \uc555\ubc15 \ub300\uc751\uc6a9\uc774\uc57c. \ubcf4\uc2a4 \ud574\ub2f5\uc740 \uc18c\ud658 \uc2ac\ub86f\uc73c\ub85c \ub9cc\ub4e0\ub2e4.",
-                        "\uc804\ud658",
+                        SystemGuideSpeaker,
+                        "전투 모드 전환 버튼을 사용해 원거리 사격 모드로 변경할 수 있습니다.",
+                        "모드 전환",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ud55c \ubc1c\ub9cc \ud655\uc778\ud574. \ubb34\uc791\uc815 \uc3d8\ub294 \uac8c \uc544\ub2c8\ub77c, \uba85\uc911 \uc0c1\ud0dc\ub97c \uc77d\uc5b4.",
-                        "\uae30\ubcf8 \uc0ac\uaca9",
+                        SystemGuideSpeaker,
+                        "사격 버튼을 길게 누르면 조준 상태에 돌입합니다. 조준 중 적을 명중시키십시오.",
+                        "조준 사격",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ubd89\uc740 \uacbd\uace0\uc120\uc740 \ub9de\uad50\ud658\ud558\uc9c0 \ub9c8. \ud68c\ud53c\ub85c \uc555\ubc15\uc744 \ub04a\uc5b4.",
-                        "\ud68c\ud53c",
+                        SystemGuideSpeaker,
+                        "적의 공격을 정확한 타이밍에 회피하면 일정 시간 동안 무적 상태에 돌입합니다.",
+                        "회피",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\ub0a8\uc740 \uadfc\uc811 \uc704\ud611\uc744 \uc815\ub9ac\ud574. \ub2e4\uc74c \ud3ec\ucf13\ubd80\ud130\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f\uc774 \uc804\uc120\uc744 \ub9e1\ub294\ub2e4.",
-                        "\ud3ec\ucf13 \uc815\ub9ac",
+                        SystemGuideSpeaker,
+                        "남은 적을 처치하면 기초 전투 검증이 완료됩니다.",
+                        "전투 완료",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
                     break;
@@ -636,48 +694,48 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uac00\uae4c\uc6b4 \uc704\ud611 \ucc98\ub9ac \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "근접 공격 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc870\uc774\uc2a4\ud2f1 \uc774\ub3d9 \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "이동 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc804\ud658 \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "원거리 사격 모드 전환이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uba85\uc911 \uc0c1\ud0dc \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "조준 및 사격 명중이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ud68c\ud53c \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "회피 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\ud3ec\ucf13 \uc815\ub9ac \ud655\uc778.",
+                        SystemGuideSpeaker,
+                        "기초 전투 검증이 완료되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
@@ -695,6 +753,10 @@ namespace DimensionBrawl.LevelDesign
             Vector2 resolvedAnchor = ResolveHudAnchor(focusKind, anchor);
             if (overlayPresenter != null)
             {
+                overlayPresenter.SetGuideProgress(
+                    ResolveTutorialStepIndex(),
+                    ResolveTutorialStepCount(),
+                    ResolveTutorialPhaseLabel());
                 overlayPresenter.Show(speaker, dialogue, inputLabel, focusKind, resolvedAnchor);
                 return;
             }
@@ -743,6 +805,48 @@ namespace DimensionBrawl.LevelDesign
                     return mobileHud.SwapButtonScreenAnchor;
                 default:
                     return fallbackAnchor;
+            }
+        }
+
+        private int ResolveTutorialStepIndex()
+        {
+            switch (step)
+            {
+                case TutorialStep.Melee:
+                    return 1;
+                case TutorialStep.Move:
+                    return 2;
+                case TutorialStep.SwapToRanged:
+                    return 3;
+                case TutorialStep.Fire:
+                    return 4;
+                case TutorialStep.Dodge:
+                    return 5;
+                case TutorialStep.ClearTargets:
+                case TutorialStep.Completed:
+                    return 6;
+                default:
+                    return 0;
+            }
+        }
+
+        private static int ResolveTutorialStepCount()
+        {
+            return 6;
+        }
+
+        private string ResolveTutorialPhaseLabel()
+        {
+            switch (stepPhase)
+            {
+                case TutorialStepPhase.Cue:
+                    return "READ";
+                case TutorialStepPhase.AwaitingAction:
+                    return "ACT";
+                case TutorialStepPhase.Committed:
+                    return "OK";
+                default:
+                    return string.Empty;
             }
         }
 
@@ -1114,10 +1218,25 @@ namespace DimensionBrawl.LevelDesign
                 overlayPresenter = gameObject.AddComponent<OlympusTutorialOverlayPresenter>();
             }
 
+            ApplyOverlayPresentationBindings();
+
             if (mobileHud == null)
             {
                 mobileHud = FindFirst<BossBarrageLaneReviewMobileHud>();
             }
+        }
+
+        private void ApplyOverlayPresentationBindings()
+        {
+            if (overlayPresenter == null)
+            {
+                return;
+            }
+
+            overlayPresenter.ConfigureCommunicatorAudio(
+                overlayAudioSource,
+                overlayOpenSfx,
+                overlayOpenSfxVolume);
         }
 
         private void CacheActionEnabledStates()

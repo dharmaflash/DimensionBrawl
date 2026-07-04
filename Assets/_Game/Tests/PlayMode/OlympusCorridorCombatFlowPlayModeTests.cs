@@ -426,11 +426,11 @@ namespace DimensionBrawl.Tests
 
             report.AppendLine();
             report.AppendLine("## Static Step Gates");
-            report.AppendLine("- Cue phase: `0.45s` focus/read window with step input muted.");
+            report.AppendLine("- Cue phase: at least `0.85s` focus/read window with step input muted.");
             report.AppendLine("- AwaitingAction phase: only live observer events can commit completion.");
-            report.AppendLine("- Committed phase: `0.70s` RECORDED confirmation before the next cue; Fire keeps held-fire aim alive during this beat.");
+            report.AppendLine("- Committed phase: at least `1.15s` RECORDED confirmation before the next cue; Fire keeps held-fire aim alive during this beat.");
             report.AppendLine("- Move gate: `0.75m` confirmed position movement inside the tutorial area.");
-            report.AppendLine("- Fire gate: `0.7s` aim preview lead after Ready + fire event + player-side target damage/death.");
+            report.AppendLine("- Fire gate: `0.7s` real aim preview hold after Ready + fire event + player-side target damage/death.");
             report.AppendLine("- Clear gate: all tutorial targets defeated.");
             Directory.CreateDirectory(Path.GetDirectoryName(TutorialTimingReportPath));
             File.WriteAllText(TutorialTimingReportPath, report.ToString());
@@ -984,7 +984,12 @@ namespace DimensionBrawl.Tests
         private static void ExpectKnownMissingSupportDragonPrefabLogs()
         {
             const string supportDragonGuid = "bffbfb5b2823ee54692bcc11c2a88512";
-            if (!string.IsNullOrWhiteSpace(UnityEditor.AssetDatabase.GUIDToAssetPath(supportDragonGuid)))
+            const string humanoidBossGuid = "a000f0e5a2493904492a06a283982f07";
+            bool missingSupportDragon = string.IsNullOrWhiteSpace(
+                UnityEditor.AssetDatabase.GUIDToAssetPath(supportDragonGuid));
+            bool missingHumanoidBoss = string.IsNullOrWhiteSpace(
+                UnityEditor.AssetDatabase.GUIDToAssetPath(humanoidBossGuid));
+            if (!missingSupportDragon && !missingHumanoidBoss)
             {
                 return;
             }
@@ -992,9 +997,19 @@ namespace DimensionBrawl.Tests
             LogAssert.Expect(
                 LogType.Error,
                 new Regex("Problem detected while opening the Scene file: 'Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity'"));
-            LogAssert.Expect(
-                LogType.Error,
-                new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_CinematicSupportDragon_Volcano"));
+            if (missingHumanoidBoss)
+            {
+                LogAssert.Expect(
+                    LogType.Error,
+                    new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando"));
+            }
+
+            if (missingSupportDragon)
+            {
+                LogAssert.Expect(
+                    LogType.Error,
+                    new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_CinematicSupportDragon_Volcano"));
+            }
         }
     }
 }
