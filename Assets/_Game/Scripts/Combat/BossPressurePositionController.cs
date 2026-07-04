@@ -1,4 +1,5 @@
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -11,6 +12,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private BossPressureCostLadder costLadder;
         [SerializeField] private BossPressureActionDirector actionDirector;
         [SerializeField] private Transform movedTransform;
+        [SerializeField] private Transform trackedPlayer;
 
         [Header("Pressure Position")]
         [SerializeField, Range(0f, 1f)] private float restRisk01 = 0.08f;
@@ -31,12 +33,28 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float lateralStrafeUnitsPerSecond = 1.25f;
         [SerializeField, Range(0f, 1f)] private float lateralStrafeHalfWidthRatio = 0.34f;
 
+        [Header("Player Response")]
+        [SerializeField] private bool playerResponseEnabled = true;
+        [SerializeField, Range(0f, 1f)] private float playerLateralFollowStrength = 0.72f;
+        [SerializeField, Range(0f, 1f)] private float playerResponseHalfWidthRatio = 0.52f;
+        [SerializeField, Min(0f)] private float playerResponseLateralUnitsPerSecond = 3.8f;
+        [SerializeField, Range(0f, 1f)] private float playerFlankOffsetRatio = 0.18f;
+        [SerializeField, Min(0.05f)] private float playerFlankSwitchSeconds = 1.1f;
+        [SerializeField, Range(0f, 1f)] private float commitPlayerFollowBoost = 0.18f;
+        [SerializeField] private bool faceTrackedPlayer = true;
+        [SerializeField, Min(0f)] private float turnDegreesPerSecond = 540f;
+
         private float currentTargetRisk01;
         private int lateralStrafeDirection = 1;
+        private int playerFlankDirection = 1;
+        private float playerFlankTimer;
+        private bool triedAutoResolvePlayer;
 
         public float CurrentTargetRisk01 => currentTargetRisk01;
         public float CurrentRisk01 => EvaluateCurrentRisk01();
         public bool MovementEnabled => movementEnabled;
+        public Transform TrackedPlayer => trackedPlayer;
+        public bool PlayerResponseEnabled => playerResponseEnabled;
 
         private Transform MovedTransform => movedTransform != null ? movedTransform : transform;
 
@@ -57,18 +75,28 @@ namespace DimensionBrawl.Combat
             punishCommitRisk01 = Mathf.Clamp01(punishCommitRisk01);
             lateralStrafeUnitsPerSecond = Mathf.Max(0f, lateralStrafeUnitsPerSecond);
             lateralStrafeHalfWidthRatio = Mathf.Clamp01(lateralStrafeHalfWidthRatio);
+            playerLateralFollowStrength = Mathf.Clamp01(playerLateralFollowStrength);
+            playerResponseHalfWidthRatio = Mathf.Clamp01(playerResponseHalfWidthRatio);
+            playerResponseLateralUnitsPerSecond = Mathf.Max(0f, playerResponseLateralUnitsPerSecond);
+            playerFlankOffsetRatio = Mathf.Clamp01(playerFlankOffsetRatio);
+            playerFlankSwitchSeconds = Mathf.Max(0.05f, playerFlankSwitchSeconds);
+            commitPlayerFollowBoost = Mathf.Clamp01(commitPlayerFollowBoost);
+            turnDegreesPerSecond = Mathf.Max(0f, turnDegreesPerSecond);
         }
 
         public void ConfigureReferences(
             SummonLaneSpace newLaneSpace,
             BossPressureCostLadder newCostLadder,
             BossPressureActionDirector newActionDirector = null,
-            Transform newMovedTransform = null)
+            Transform newMovedTransform = null,
+            Transform newTrackedPlayer = null)
         {
             laneSpace = newLaneSpace;
             costLadder = newCostLadder;
             actionDirector = newActionDirector;
             movedTransform = newMovedTransform;
+            trackedPlayer = newTrackedPlayer;
+            triedAutoResolvePlayer = trackedPlayer != null;
         }
 
         public void SetMovementEnabled(bool enabled)
@@ -78,7 +106,13 @@ namespace DimensionBrawl.Combat
 
         public void Tick(float deltaTime)
         {
-            if (!movementEnabled || deltaTime <= 0f || laneSpace == null)
+            if (!movementEnabled || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            ResolveMissingReferences();
+            if (laneSpace == null)
             {
                 return;
             }
@@ -99,6 +133,7 @@ namespace DimensionBrawl.Combat
                 currentTargetRisk01,
                 riskSpeed * deltaTime);
             ApplyRiskPosition(targetTransform, nextRisk01, deltaTime);
+            ApplyFacing(targetTransform, deltaTime);
         }
 
         private void Update()
@@ -130,25 +165,7 @@ namespace DimensionBrawl.Combat
         private bool TryResolveActionIntentRisk(out float risk01)
         {
             risk01 = 0f;
-            if (actionDirector == null
-                || !actionDirector.ActionsEnabled)
-            {
-                return false;
-            }
-
-            if (!actionDirector.HasLastQueuedActionSlot
-                || actionDirector.LastActionAgeSeconds > actionIntentHoldSeconds)
-            {
-                if (actionDirector.LastBasicShotAgeSeconds <= actionIntentHoldSeconds)
-                {
-                    risk01 = strafeFireRisk01;
-                    return true;
-                }
-
-                return false;
-            }
-
-            BossPressureMovementIntent movementIntent = ResolveMovementIntent(actionDirector.LastMovementIntent);
+            BossPressureMovementIntent movementIntent = ResolveCurrentMovementIntent();
             switch (movementIntent)
             {
                 case BossPressureMovementIntent.HoldBacklineFire:
@@ -168,6 +185,24 @@ namespace DimensionBrawl.Combat
                 default:
                     return false;
             }
+        }
+
+        private BossPressureMovementIntent ResolveCurrentMovementIntent()
+        {
+            if (actionDirector == null || !actionDirector.ActionsEnabled)
+            {
+                return BossPressureMovementIntent.CostPressure;
+            }
+
+            if (!actionDirector.HasLastQueuedActionSlot
+                || actionDirector.LastActionAgeSeconds > actionIntentHoldSeconds)
+            {
+                return actionDirector.LastBasicShotAgeSeconds <= actionIntentHoldSeconds
+                    ? BossPressureMovementIntent.StrafeFire
+                    : BossPressureMovementIntent.CostPressure;
+            }
+
+            return ResolveMovementIntent(actionDirector.LastMovementIntent);
         }
 
         private BossPressureMovementIntent ResolveMovementIntent(BossPressureMovementIntent configuredIntent)
@@ -220,20 +255,35 @@ namespace DimensionBrawl.Combat
             Vector3 currentPosition = targetTransform.position;
             Vector2 laneCoordinates = laneSpace.GetLaneCoordinates(currentPosition);
             float targetLaneZ = Mathf.Lerp(laneSpace.BossProxyZ, laneSpace.ForwardBoundaryZ, Mathf.Clamp01(risk01));
-            float targetLateralX = ResolveTargetLateralX(laneCoordinates.x, deltaTime);
+            float targetLateralX = ResolveTargetLateralX(
+                laneCoordinates.x,
+                deltaTime,
+                ResolveCurrentMovementIntent());
             targetTransform.position = laneSpace.GetBattlefieldWorldPoint(
                 targetLateralX,
                 targetLaneZ,
                 currentPosition.y);
         }
 
-        private float ResolveTargetLateralX(float currentLateralX, float deltaTime)
+        private float ResolveTargetLateralX(
+            float currentLateralX,
+            float deltaTime,
+            BossPressureMovementIntent movementIntent)
         {
             if (!lateralStrafeEnabled
-                || lateralStrafeUnitsPerSecond <= 0f
                 || lateralStrafeHalfWidthRatio <= 0f
                 || deltaTime <= 0f
                 || (actionDirector != null && !actionDirector.ActionsEnabled))
+            {
+                return currentLateralX;
+            }
+
+            if (playerResponseEnabled && trackedPlayer != null)
+            {
+                return ResolvePlayerResponsiveLateralX(currentLateralX, deltaTime, movementIntent);
+            }
+
+            if (lateralStrafeUnitsPerSecond <= 0f)
             {
                 return currentLateralX;
             }
@@ -257,6 +307,123 @@ namespace DimensionBrawl.Combat
             }
 
             return nextLateralX;
+        }
+
+        private float ResolvePlayerResponsiveLateralX(
+            float currentLateralX,
+            float deltaTime,
+            BossPressureMovementIntent movementIntent)
+        {
+            TickPlayerFlank(deltaTime);
+
+            float laneHalfWidth = Mathf.Max(0f, laneSpace.HalfWidth);
+            float limit = laneHalfWidth * Mathf.Max(playerResponseHalfWidthRatio, lateralStrafeHalfWidthRatio);
+            if (limit <= 0.001f)
+            {
+                return currentLateralX;
+            }
+
+            float playerLateralX = laneSpace.GetLaneCoordinates(trackedPlayer.position).x;
+            float flankOffset = laneHalfWidth * playerFlankOffsetRatio;
+            if (Mathf.Abs(playerLateralX) > laneHalfWidth * 0.55f)
+            {
+                playerFlankDirection = playerLateralX >= 0f ? -1 : 1;
+            }
+
+            float followStrength = playerLateralFollowStrength;
+            float resolvedFlankOffset = flankOffset;
+            switch (movementIntent)
+            {
+                case BossPressureMovementIntent.CommitForward:
+                    followStrength = Mathf.Clamp01(followStrength + commitPlayerFollowBoost);
+                    resolvedFlankOffset *= 0.35f;
+                    break;
+                case BossPressureMovementIntent.RetreatAndSummon:
+                    followStrength *= -0.58f;
+                    resolvedFlankOffset *= 0.45f;
+                    break;
+                case BossPressureMovementIntent.HoldBacklineFire:
+                    resolvedFlankOffset *= 0.55f;
+                    break;
+            }
+
+            float desiredLateralX = Mathf.Clamp(
+                playerLateralX * followStrength + playerFlankDirection * resolvedFlankOffset,
+                -limit,
+                limit);
+            float responseSpeed = Mathf.Max(lateralStrafeUnitsPerSecond, playerResponseLateralUnitsPerSecond);
+            if (movementIntent == BossPressureMovementIntent.CommitForward
+                || movementIntent == BossPressureMovementIntent.RetreatAndSummon)
+            {
+                responseSpeed *= 1.2f;
+            }
+
+            return Mathf.MoveTowards(currentLateralX, desiredLateralX, responseSpeed * deltaTime);
+        }
+
+        private void TickPlayerFlank(float deltaTime)
+        {
+            playerFlankTimer -= deltaTime;
+            if (playerFlankTimer > 0f)
+            {
+                return;
+            }
+
+            playerFlankDirection = playerFlankDirection >= 0 ? -1 : 1;
+            playerFlankTimer = playerFlankSwitchSeconds;
+        }
+
+        private void ApplyFacing(Transform targetTransform, float deltaTime)
+        {
+            if (!faceTrackedPlayer || trackedPlayer == null)
+            {
+                return;
+            }
+
+            Vector3 toPlayer = trackedPlayer.position - targetTransform.position;
+            toPlayer.y = 0f;
+            if (toPlayer.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            Quaternion targetRotation = Quaternion.LookRotation(toPlayer.normalized, Vector3.up);
+            targetTransform.rotation = turnDegreesPerSecond <= 0f
+                ? targetRotation
+                : Quaternion.RotateTowards(
+                    targetTransform.rotation,
+                    targetRotation,
+                    turnDegreesPerSecond * deltaTime);
+        }
+
+        private void ResolveMissingReferences()
+        {
+            if (laneSpace == null)
+            {
+                laneSpace = GetComponentInParent<SummonLaneSpace>();
+            }
+
+            if (costLadder == null)
+            {
+                costLadder = GetComponent<BossPressureCostLadder>();
+            }
+
+            if (actionDirector == null)
+            {
+                actionDirector = GetComponent<BossPressureActionDirector>();
+            }
+
+            if (trackedPlayer != null || triedAutoResolvePlayer)
+            {
+                return;
+            }
+
+            triedAutoResolvePlayer = true;
+            PlayerMovementController player = FindFirstObjectByType<PlayerMovementController>();
+            if (player != null)
+            {
+                trackedPlayer = player.transform;
+            }
         }
     }
 }

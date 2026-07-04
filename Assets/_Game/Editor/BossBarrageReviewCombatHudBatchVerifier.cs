@@ -53,10 +53,10 @@ namespace DimensionBrawl.Editor
             new DesignRectCheck("BossHpFill", new Rect(867f, 113f, 823f, 24f)),
             new DesignRectCheck("BossCostBackground", new Rect(854f, 142f, 849f, 34f)),
             new DesignRectCheck("BossCostFill", new Rect(870f, 144f, 819f, 25f)),
-            new DesignRectCheck("PlayerSymbol", new Rect(814f, 1195f, 85f, 142f)),
-            new DesignRectCheck("PlayerNameArea", new Rect(911f, 1212f, 215f, 43f)),
-            new DesignRectCheck("PlayerHpAmountArea", new Rect(1326f, 1220f, 201f, 32f)),
-            new DesignRectCheck("PlayerMpAmountArea", new Rect(1359f, 1327f, 147f, 26f)),
+            new DesignRectCheck("PlayerSymbol", new Rect(916.5f, 1195f, 85f, 142f)),
+            new DesignRectCheck("PlayerNameArea", new Rect(1013.5f, 1212f, 215f, 43f)),
+            new DesignRectCheck("PlayerHpAmountArea", new Rect(1428.5f, 1220f, 201f, 32f)),
+            new DesignRectCheck("PlayerMpAmountArea", new Rect(1461.5f, 1327f, 147f, 26f)),
             new DesignRectCheck("SettingsButton", new Rect(2250f, 47f, 100f, 95f)),
             new DesignRectCheck("PauseButton", new Rect(2396f, 47f, 100f, 95f)),
             new DesignRectCheck("MoveJoystickRing", new Rect(155f, 853f, 421f, 415f)),
@@ -68,10 +68,10 @@ namespace DimensionBrawl.Editor
             new DesignRectCheck("SummonSlot1Button", new Rect(2293f, 235f, 211f, 216f)),
             new DesignRectCheck("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f)),
             new DesignRectCheck("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f)),
-            new DesignRectCheck("HealthBar_Track", new Rect(901f, 1263f, 640f, 21f)),
-            new DesignRectCheck("HealthBar", new Rect(904f, 1263f, 633f, 20f)),
-            new DesignRectCheck("ResourceBar_Track", new Rect(909f, 1296f, 616f, 28f)),
-            new DesignRectCheck("ResourceBar", new Rect(915f, 1299f, 605f, 21f))
+            new DesignRectCheck("HealthBar_Track", new Rect(1003.5f, 1263f, 640f, 21f)),
+            new DesignRectCheck("HealthBar", new Rect(1006.5f, 1263f, 633f, 20f)),
+            new DesignRectCheck("ResourceBar_Track", new Rect(1011.5f, 1296f, 616f, 28f)),
+            new DesignRectCheck("ResourceBar", new Rect(1017.5f, 1299f, 605f, 21f))
         };
 
         private static readonly DesignRectCheck[] TextDesignRects =
@@ -79,9 +79,9 @@ namespace DimensionBrawl.Editor
             new DesignRectCheck("Timer", new Rect(178f, 55f, 409f, 48f)),
             new DesignRectCheck("Objective", new Rect(180f, 117f, 409f, 64f)),
             new DesignRectCheck("ActionFeedback", new Rect(916f, 51f, 759f, 48f)),
-            new DesignRectCheck("InputMode", new Rect(911f, 1212f, 215f, 43f)),
-            new DesignRectCheck("HealthText", new Rect(1326f, 1220f, 201f, 32f)),
-            new DesignRectCheck("ResourceText", new Rect(1359f, 1327f, 147f, 26f))
+            new DesignRectCheck("InputMode", new Rect(1013.5f, 1212f, 215f, 43f)),
+            new DesignRectCheck("HealthText", new Rect(1428.5f, 1220f, 201f, 32f)),
+            new DesignRectCheck("ResourceText", new Rect(1461.5f, 1327f, 147f, 26f))
         };
 
         private static readonly ButtonRouteCheck[] ButtonRouteChecks =
@@ -507,9 +507,21 @@ namespace DimensionBrawl.Editor
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot1Button", "Icon", report);
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot2Button", "Icon", report);
             ready &= HasVisibleChildImage(hudInstance, "SummonSlot3Button", "Icon", report);
-            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot1Button", "CooldownFill", report);
-            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot2Button", "CooldownFill", report);
-            ready &= HasVisibleChildRadialFill(hudInstance, "SummonSlot3Button", "CooldownFill", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot1Button", "IconDisabled", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot2Button", "IconDisabled", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot3Button", "IconDisabled", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot1Button", "ReadyGlow", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot2Button", "ReadyGlow", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot3Button", "ReadyGlow", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot1Button", "ReadyRing", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot2Button", "ReadyRing", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot3Button", "ReadyRing", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot1Button", "ReadySparkRing", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot2Button", "ReadySparkRing", report);
+            ready &= HasChildImage(hudInstance, "SummonSlot3Button", "ReadySparkRing", report);
+            ready &= HasChildRadialFill(hudInstance, "SummonSlot1Button", "CooldownFill", report);
+            ready &= HasChildRadialFill(hudInstance, "SummonSlot2Button", "CooldownFill", report);
+            ready &= HasChildRadialFill(hudInstance, "SummonSlot3Button", "CooldownFill", report);
             return ready;
         }
 
@@ -721,7 +733,8 @@ namespace DimensionBrawl.Editor
                 }
 
                 if (IsAllowedSummonSlotIcon(buttonName, image)
-                    || IsAllowedSummonSlotProgressFill(buttonName, image))
+                    || IsAllowedSummonSlotProgressFill(buttonName, image)
+                    || IsAllowedSummonSlotReadyEffect(buttonName, image))
                 {
                     continue;
                 }
@@ -735,11 +748,35 @@ namespace DimensionBrawl.Editor
 
         private static bool IsAllowedSummonSlotIcon(string buttonName, Image image)
         {
+            if (!buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
+                || image.sprite == null
+                || !image.preserveAspect
+                || image.raycastTarget)
+            {
+                return false;
+            }
+
+            if (image.gameObject.name == "Icon")
+            {
+                return image.type == Image.Type.Simple;
+            }
+
+            return image.gameObject.name == "IconDisabled"
+                && image.type == Image.Type.Filled
+                && image.fillMethod == Image.FillMethod.Radial360
+                && image.fillOrigin == (int)Image.Origin360.Top
+                && !image.fillClockwise;
+        }
+
+        private static bool IsAllowedSummonSlotReadyEffect(string buttonName, Image image)
+        {
             return buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
-                && image.gameObject.name == "Icon"
+                && (image.gameObject.name == "ReadyGlow"
+                    || image.gameObject.name == "ReadyRing"
+                    || image.gameObject.name == "ReadySparkRing")
                 && image.sprite != null
                 && image.type == Image.Type.Simple
-                && image.preserveAspect
+                && !image.preserveAspect
                 && !image.raycastTarget;
         }
 
@@ -1360,7 +1397,7 @@ namespace DimensionBrawl.Editor
             return ready;
         }
 
-        private static bool HasVisibleChildRadialFill(
+        private static bool HasChildImage(
             GameObject hudInstance,
             string rootName,
             string childName,
@@ -1370,11 +1407,32 @@ namespace DimensionBrawl.Editor
             GameObject child = root != null ? FindChild(root.transform, childName) : null;
             Image image = child != null ? child.GetComponent<Image>() : null;
             bool ready = child != null
-                && child.activeInHierarchy
+                && image != null
+                && image.enabled
+                && image.sprite != null
+                && !image.raycastTarget;
+            if (!ready)
+            {
+                report.AppendLine($"IMAGE_EXISTS_{rootName}_{childName}=FAIL");
+            }
+
+            return ready;
+        }
+
+        private static bool HasChildRadialFill(
+            GameObject hudInstance,
+            string rootName,
+            string childName,
+            StringBuilder report)
+        {
+            GameObject root = FindChild(hudInstance.transform, rootName);
+            GameObject child = root != null ? FindChild(root.transform, childName) : null;
+            Image image = child != null ? child.GetComponent<Image>() : null;
+            bool ready = child != null
                 && image != null
                 && image.enabled
                 && IsAllowedSummonSlotProgressFill(rootName, image)
-                && image.color.a > 0.001f;
+                && !image.raycastTarget;
             if (!ready)
             {
                 report.AppendLine($"RADIAL_FILL_{rootName}_{childName}=FAIL");

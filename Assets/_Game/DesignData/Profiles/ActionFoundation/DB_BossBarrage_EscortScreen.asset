@@ -28,10 +28,10 @@ MonoBehaviour:
   projectileVisualScale: {x: 1, y: 1, z: 1}
   projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.2
-  windupSeconds: 1
-  waveIntervalSeconds: 5.7
-  projectilesPerWave: 6
-  damage: 9
+  windupSeconds: 1.15
+  waveIntervalSeconds: 6.8
+  projectilesPerWave: 5
+  damage: 7.5
   projectileSpeed: 12.6
   projectileLifetimeSeconds: 5.1
   projectileRadius: 0.28

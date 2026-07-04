@@ -682,7 +682,7 @@ namespace DimensionBrawl.Tests
                 serializedProfile.ApplyModifiedPropertiesWithoutUndo();
 
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
-                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact));
+                Assert.IsFalse(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerDamaged));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerCritical));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
@@ -3295,6 +3295,49 @@ namespace DimensionBrawl.Tests
 
             Object.DestroyImmediate(fireProfile);
             Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressurePositionControllerTracksPlayerLateralPosition()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(lane.HalfWidth * 0.72f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.6f);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            BossPressurePositionController positionController =
+                bossObject.AddComponent<BossPressurePositionController>();
+            positionController.ConfigureReferences(
+                lane,
+                bossCost,
+                director,
+                bossObject.transform,
+                playerObject.transform);
+
+            positionController.Tick(0.5f);
+            float rightResponseX = lane.GetLaneCoordinates(bossObject.transform.position).x;
+
+            playerObject.transform.position = lane.GetLaneWorldPoint(-lane.HalfWidth * 0.72f, lane.BackLimitZ);
+            positionController.Tick(1f);
+            float leftResponseX = lane.GetLaneCoordinates(bossObject.transform.position).x;
+
+            Assert.Greater(
+                rightResponseX,
+                0.25f,
+                "Boss pressure movement should answer the player's lateral lane instead of idling at center.");
+            Assert.Less(
+                leftResponseX,
+                rightResponseX - 0.5f,
+                "Boss pressure movement should re-aim its strafe when the player crosses the lane.");
+
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);

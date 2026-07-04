@@ -391,10 +391,10 @@ MonoBehaviour:
     audioPriority: 0
   - cueId: 10
     prefab: {fileID: 1595223751924817789, guid: 09c25efc227ef5340ba0241f3b40b18e, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0.25}
+    localPositionOffset: {x: 0, y: 0, z: 0.18}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1, y: 1, z: 1.3}
-    lifetimeSeconds: 0.5
+    localScale: {x: 0.48, y: 0.48, z: 0.58}
+    lifetimeSeconds: 0.22
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
@@ -410,10 +410,10 @@ MonoBehaviour:
     audioPriority: 0
   - cueId: 11
     prefab: {fileID: 4129677355910100076, guid: d7206d9850d3dcc42abc7f04d58a221b, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 1.2}
+    localPositionOffset: {x: 0, y: 0, z: 0.62}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1, y: 1, z: 1.75}
-    lifetimeSeconds: 0.28
+    localScale: {x: 0.52, y: 0.52, z: 0.7}
+    lifetimeSeconds: 0.16
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1

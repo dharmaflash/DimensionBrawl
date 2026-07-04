@@ -55,6 +55,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private string summonSlot2Label = "S2 LASER";
         [SerializeField] private string summonSlot3Label = "S3 DRAGON";
         [SerializeField] private string lockedSummonLabel = "NEXT";
+        [SerializeField, Min(0f)] private float summonReadyPulseSeconds = 0.85f;
 
         [Header("Chrome")]
         [SerializeField] private Color fireAccentColor = new Color(1f, 0.74f, 0.34f, 1f);
@@ -131,6 +132,12 @@ namespace DimensionBrawl.UI
         private Vector2 lookAimRawInput;
         private Vector2 lookAimInput;
         private bool hudLookAimActive;
+        private bool previousSummonSlot1Ready;
+        private bool previousSummonSlot2Ready;
+        private bool previousSummonSlot3Ready;
+        private float summonSlot1ReadyPulseTimer;
+        private float summonSlot2ReadyPulseTimer;
+        private float summonSlot3ReadyPulseTimer;
 
         public string MoveActionName => moveActionName;
         public string BasicDefenseActionName => basicDefenseActionName;
@@ -346,6 +353,8 @@ namespace DimensionBrawl.UI
             {
                 summonSlot3Action?.QueueSummon();
             }
+
+            UpdateSummonReadinessFeedback(Time.unscaledDeltaTime);
         }
 
         private void ReleaseHudControls()
@@ -1085,6 +1094,8 @@ namespace DimensionBrawl.UI
 
         private void DrawSummonButtons()
         {
+            bool slot1Ready = IsPrimarySummonReady();
+            bool slot1Pending = summonSlot1Action == null;
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot1Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
@@ -1092,16 +1103,22 @@ namespace DimensionBrawl.UI
                     energyLadder,
                     summonSlot1Action),
                 IsHeld(summonSlot1Rect),
-                pending: summonSlot1Action == null,
+                pending: slot1Pending,
                 BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(
                     energyLadder,
                     summonSlot1Action),
-                summonSlot1AccentColor);
+                summonSlot1AccentColor,
+                ready: slot1Ready,
+                unavailable: !slot1Ready && !slot1Pending,
+                readyPulse01: ResolveSummonReadyPulse01(summonSlot1ReadyPulseTimer),
+                iconKind: 1);
             if (!AreSupportSummonButtonsVisible())
             {
                 return;
             }
 
+            bool slot2Ready = IsSupportSummonReady(summonSlot2Action);
+            bool slot2Pending = summonSlot2Action == null;
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot2Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
@@ -1110,11 +1127,17 @@ namespace DimensionBrawl.UI
                     lockedSummonLabel,
                     energyLadder),
                 IsHeld(summonSlot2Rect),
-                pending: summonSlot2Action == null,
+                pending: slot2Pending,
                 BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
                     energyLadder,
                     summonSlot2Action),
-                summonSlot2AccentColor);
+                summonSlot2AccentColor,
+                ready: slot2Ready,
+                unavailable: !slot2Ready && !slot2Pending,
+                readyPulse01: ResolveSummonReadyPulse01(summonSlot2ReadyPulseTimer),
+                iconKind: 2);
+            bool slot3Ready = IsSupportSummonReady(summonSlot3Action);
+            bool slot3Pending = summonSlot3Action == null;
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot3Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
@@ -1123,11 +1146,77 @@ namespace DimensionBrawl.UI
                     lockedSummonLabel,
                     energyLadder),
                 IsHeld(summonSlot3Rect),
-                pending: summonSlot3Action == null,
+                pending: slot3Pending,
                 BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
                     energyLadder,
                     summonSlot3Action),
-                summonSlot3AccentColor);
+                summonSlot3AccentColor,
+                ready: slot3Ready,
+                unavailable: !slot3Ready && !slot3Pending,
+                readyPulse01: ResolveSummonReadyPulse01(summonSlot3ReadyPulseTimer),
+                iconKind: 3);
+        }
+
+        private void UpdateSummonReadinessFeedback(float deltaTime)
+        {
+            UpdateSummonReadyPulse(
+                IsPrimarySummonReady(),
+                ref previousSummonSlot1Ready,
+                ref summonSlot1ReadyPulseTimer,
+                deltaTime);
+            UpdateSummonReadyPulse(
+                AreSupportSummonButtonsVisible() && IsSupportSummonReady(summonSlot2Action),
+                ref previousSummonSlot2Ready,
+                ref summonSlot2ReadyPulseTimer,
+                deltaTime);
+            UpdateSummonReadyPulse(
+                AreSupportSummonButtonsVisible() && IsSupportSummonReady(summonSlot3Action),
+                ref previousSummonSlot3Ready,
+                ref summonSlot3ReadyPulseTimer,
+                deltaTime);
+        }
+
+        private void UpdateSummonReadyPulse(
+            bool ready,
+            ref bool previousReady,
+            ref float pulseTimer,
+            float deltaTime)
+        {
+            if (ready && !previousReady)
+            {
+                pulseTimer = summonReadyPulseSeconds;
+            }
+            else if (pulseTimer > 0f)
+            {
+                pulseTimer = Mathf.Max(0f, pulseTimer - Mathf.Max(0f, deltaTime));
+            }
+
+            previousReady = ready;
+        }
+
+        private float ResolveSummonReadyPulse01(float pulseTimer)
+        {
+            return summonReadyPulseSeconds > 0.001f
+                ? Mathf.Clamp01(pulseTimer / summonReadyPulseSeconds)
+                : 0f;
+        }
+
+        private bool IsPrimarySummonReady()
+        {
+            return summonSlot1Action != null
+                && energyLadder != null
+                && !summonSlot1Action.IsSlotOnCooldown
+                && energyLadder.AvailableTier > 0
+                && energyLadder.CanSpendMana(summonSlot1Action.RequiredSummonMana);
+        }
+
+        private bool IsSupportSummonReady(PlayerSupportSummonSlotAction supportAction)
+        {
+            return supportAction != null
+                && energyLadder != null
+                && !supportAction.IsSlotOnCooldown
+                && energyLadder.AvailableTier >= supportAction.MinimumSummonTier
+                && energyLadder.CanSpendMana(supportAction.RequiredSummonMana);
         }
 
         private bool AreSupportSummonButtonsVisible()

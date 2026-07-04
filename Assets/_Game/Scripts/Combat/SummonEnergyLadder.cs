@@ -31,13 +31,13 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0f, 1f)] private float backSafetyMaxForwardRisk01 = 1f / 3f;
 
         [Header("Gain")]
-        [Tooltip("At the middle risk band this fills LV1 in about eight seconds with the default 100 energy target.")]
-        [SerializeField, Min(0f)] private float baseEnergyPerSecond = 12.5f;
+        [Tooltip("At the middle risk band this fills LV1 in about fourteen seconds with the default 100 energy target.")]
+        [SerializeField, Min(0f)] private float baseEnergyPerSecond = 8f;
         [SerializeField, Range(0f, 1f)] private float fallbackForwardRisk01 = 0.5f;
         [SerializeField] private AnimationCurve forwardRiskGainCurve = AnimationCurve.EaseInOut(0f, 0.55f, 1f, 1.65f);
-        [SerializeField, Min(0f)] private float backSafetyGainScale = 0.45f;
-        [SerializeField, Min(0f)] private float midChargeGainScale = 0.9f;
-        [SerializeField, Min(0f)] private float forwardRiskGainScale = 1.75f;
+        [SerializeField, Min(0f)] private float backSafetyGainScale = 0.35f;
+        [SerializeField, Min(0f)] private float midChargeGainScale = 0.75f;
+        [SerializeField, Min(0f)] private float forwardRiskGainScale = 1.25f;
         [SerializeField] private bool gainEnabled = true;
 
         private int chargingTier = 1;

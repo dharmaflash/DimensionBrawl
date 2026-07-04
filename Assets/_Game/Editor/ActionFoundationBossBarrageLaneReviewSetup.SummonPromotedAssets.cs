@@ -339,6 +339,16 @@ namespace DimensionBrawl.Editor
             RemoveColliders(beamRoot);
             DisableVfxAudioSources(beamRoot);
             ConfigurePromotedVfxParticles(beamRoot, loopParticles, playOnAwake: false);
+            if (beamName.IndexOf("ChargeImpact", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                TamePromotedChargeParticles(
+                    beamRoot,
+                    emissionScale: 0.42f,
+                    sizeScale: 0.55f,
+                    speedScale: 0.65f,
+                    lifetimeScale: 0.58f);
+            }
+
             ValidatePromotedParticleVfx(beamRoot.transform, beamName, minimumParticleSystems);
             beamRoot.SetActive(false);
 
@@ -384,10 +394,52 @@ namespace DimensionBrawl.Editor
             RemoveColliders(vfxRoot);
             DisableVfxAudioSources(vfxRoot);
             ConfigurePromotedVfxParticles(vfxRoot, loopParticles: true, playOnAwake: false);
+            if (vfxName.IndexOf("ChargeRush", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                TamePromotedChargeParticles(
+                    vfxRoot,
+                    emissionScale: 0.34f,
+                    sizeScale: 0.62f,
+                    speedScale: 0.72f,
+                    lifetimeScale: 0.68f);
+            }
+
             ValidatePromotedParticleVfx(vfxRoot.transform, vfxName, minimumParticleSystems);
             vfxRoot.SetActive(false);
             EditorUtility.SetDirty(vfxRoot);
             return vfxRoot.transform;
+        }
+
+        private static void TamePromotedChargeParticles(
+            GameObject vfxRoot,
+            float emissionScale,
+            float sizeScale,
+            float speedScale,
+            float lifetimeScale)
+        {
+            ParticleSystem[] particleSystems = vfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.startSizeMultiplier *= Mathf.Clamp(sizeScale, 0.05f, 1f);
+                main.startSpeedMultiplier *= Mathf.Clamp(speedScale, 0.05f, 1f);
+                main.startLifetimeMultiplier *= Mathf.Clamp(lifetimeScale, 0.05f, 1f);
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.rateOverTimeMultiplier *= Mathf.Clamp(emissionScale, 0.05f, 1f);
+                emission.rateOverDistanceMultiplier *= Mathf.Clamp(emissionScale, 0.05f, 1f);
+
+                EditorUtility.SetDirty(particleSystem);
+            }
+
+            ParticleSystemRenderer[] renderers =
+                vfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].maxParticleSize = Mathf.Min(renderers[i].maxParticleSize, 0.35f);
+                EditorUtility.SetDirty(renderers[i]);
+            }
         }
 
         private static UnityEngine.Object[] ToObjectReferences(UnityEngine.Object[] values)

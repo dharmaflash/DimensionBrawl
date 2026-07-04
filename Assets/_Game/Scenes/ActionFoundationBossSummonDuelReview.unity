@@ -259,6 +259,12 @@ MonoBehaviour:
   maxCueCameraDistanceDelta: 0.45
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
+  enableMicroShake: 1
+  maxMicroShakePosition: 0.085
+  maxMicroShakeEuler: 0.9
+  microShakeFrequency: 34
+  microShakePositionAxes: {x: 1, y: 0.58, z: 0.05}
+  microShakeEulerAxes: {x: 0.34, y: 0.28, z: 1}
   aimCameraOffset: {x: 0.45, y: 0.88, z: 2.72}
   aimFocusOffset: {x: 0.89, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
@@ -1193,6 +1199,8 @@ MonoBehaviour:
   dodgeInvulnerableToSeconds: 0.32
   dodgeRecoverySeconds: 0.14
   dodgeCooldownSeconds: 1.15
+  perfectDodgeProtectionSeconds: 0.65
+  perfectDodgeTimingGraceSeconds: 0.08
   dodgeSpeed: 10.2
   dodgeTrigger: DodgeForward
   dodgeBackTrigger: DodgeBack
@@ -1250,6 +1258,8 @@ MonoBehaviour:
   - {fileID: 2441547328787968665}
   - {fileID: 694115939430723714}
   - {fileID: 720362917547450658}
+  cameraController: {fileID: 0}
+  visualRecoilRoot: {fileID: 0}
   renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 1, g: 1, b: 1, a: 1}
@@ -1259,6 +1269,40 @@ MonoBehaviour:
   hitColorBlend: 0.72
   hitEmissionBoost: 1.35
   deathColor: {r: 0.12, g: 0.02, b: 0.025, a: 1}
+  playCameraImpulse: 1
+  cameraImpulseCooldownSeconds: 0.07
+  lightCameraPlanarKick: 0.035
+  heavyCameraPlanarKick: 0.095
+  lightCameraVerticalKick: 0.012
+  heavyCameraVerticalKick: 0.04
+  lightCameraCueSeconds: 0.075
+  heavyCameraCueSeconds: 0.125
+  lightCameraFieldOfViewDelta: -0.25
+  heavyCameraFieldOfViewDelta: -0.85
+  lightCameraDistanceDelta: 0.015
+  heavyCameraDistanceDelta: 0.075
+  heavyCameraFocusHeightDelta: 0.035
+  playCameraMicroShake: 1
+  lightCameraMicroShakeSeconds: 0.055
+  heavyCameraMicroShakeSeconds: 0.12
+  lightCameraMicroShakePosition: 0.018
+  heavyCameraMicroShakePosition: 0.065
+  lightCameraMicroShakeEuler: 0.18
+  heavyCameraMicroShakeEuler: 0.78
+  playVisualRecoil: 1
+  visualRecoilCooldownSeconds: 0.045
+  lightRecoilDistance: 0.018
+  heavyRecoilDistance: 0.06
+  lightRecoilDegrees: 1.4
+  heavyRecoilDegrees: 4.5
+  recoilReturnSeconds: 0.095
+  playHitStop: 1
+  hitStopTimeScale: 0.18
+  hitStopCooldownSeconds: 0.055
+  lightHitStopScale: 0.72
+  heavyHitStopScale: 1.1
+  heavyDamageHealthRatio: 0.12
+  criticalHealthRatio: 0.35
 --- !u!114 &4007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1339,6 +1383,7 @@ MonoBehaviour:
   actionController: {fileID: 4005}
   playerHealth: {fileID: 4003}
   cuePlayer: {fileID: 4010}
+  perfectDodgeVfxDirector: {fileID: 0}
   attackAnchor: {fileID: 85052602}
   dodgeAnchor: {fileID: 1228450371}
   damageAnchor: {fileID: 85052602}
@@ -1355,10 +1400,6 @@ MonoBehaviour:
   perfectDodgeHoloCubeIntensity: 0.92
   perfectDodgeWindowIntensity: 0.86
   perfectDodgeAudioIntensity: 1
-  perfectDodgeTimeFieldLocalOffset: {x: 0, y: -0.08, z: 0}
-  perfectDodgePulsewaveLocalOffset: {x: 0, y: -0.18, z: 0}
-  perfectDodgeHoloCubeLocalOffset: {x: 0, y: 0.62, z: 0.06}
-  perfectDodgeWindowLocalOffset: {x: 0, y: 0.24, z: 0.16}
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
@@ -1793,7 +1834,7 @@ MonoBehaviour:
   levelThreeEnergy: 100
   forwardRiskStartForwardRisk01: 0.6666667
   backSafetyMaxForwardRisk01: 0.33333334
-  baseEnergyPerSecond: 9
+  baseEnergyPerSecond: 8
   fallbackForwardRisk01: 0.5
   forwardRiskGainCurve:
     serializedVersion: 2
@@ -1819,9 +1860,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  backSafetyGainScale: 0.45
-  midChargeGainScale: 0.9
-  forwardRiskGainScale: 1.75
+  backSafetyGainScale: 0.35
+  midChargeGainScale: 0.75
+  forwardRiskGainScale: 1.25
   gainEnabled: 1
 --- !u!114 &4019
 MonoBehaviour:
@@ -1843,6 +1884,7 @@ MonoBehaviour:
   globalHitStopSeconds: 0.055
   radius: 42
   innerRadius: 18
+  receiverRefreshIntervalSeconds: 0.08
 --- !u!114 &4020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8371,7 +8413,7 @@ MonoBehaviour:
     ActionKind: 4
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
+    MinimumIntervalSeconds: 7.5
     ResponseId: DodgeBossLinePressureSpecial
     StageLoopRole: LV1 boss special shot that asks the player to read a committed
       rail before spending summon resources.
@@ -8392,7 +8434,7 @@ MonoBehaviour:
     ActionKind: 2
     MinimumTier: 3
     QueuedWaves: 1
-    MinimumIntervalSeconds: 6
+    MinimumIntervalSeconds: 10
     ResponseId: RetreatOrSpendHighTierAnswer
     StageLoopRole: LV3 overextend punish that closes gaps when the player stays near
       the forward boundary too long.
@@ -8580,6 +8622,7 @@ MonoBehaviour:
   costLadder: {fileID: 825519032}
   actionDirector: {fileID: 825519030}
   movedTransform: {fileID: 825519029}
+  trackedPlayer: {fileID: 0}
   restRisk01: 0.12
   maxCommitRisk01: 0.74
   advanceRiskPerSecond: 0.38
@@ -8595,6 +8638,15 @@ MonoBehaviour:
   lateralStrafeEnabled: 1
   lateralStrafeUnitsPerSecond: 1.25
   lateralStrafeHalfWidthRatio: 0.34
+  playerResponseEnabled: 1
+  playerLateralFollowStrength: 0.72
+  playerResponseHalfWidthRatio: 0.52
+  playerResponseLateralUnitsPerSecond: 3.8
+  playerFlankOffsetRatio: 0.18
+  playerFlankSwitchSeconds: 1.1
+  commitPlayerFollowBoost: 0.18
+  faceTrackedPlayer: 1
+  turnDegreesPerSecond: 540
 --- !u!114 &825519035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14173,7 +14225,11 @@ MonoBehaviour:
   perfectDodgeGlitchOverlayMaterial: {fileID: 2100000, guid: b32dcd3cfade93d488085177bf32365b, type: 2}
   perfectDodgeShaderIntensity: 0.92
   perfectDodgeRadialWarpStrength: 0.72
+  perfectDodgeRadialBlurStrength: 0.54
   perfectDodgeScanlineStrength: 0.34
+  perfectDodgeGridStrength: 0.68
+  perfectDodgeFractureStrength: 0.74
+  perfectDodgeChromaticStrength: 0.86
   perfectDodgeGlitchOverlayAlpha: 0.16
   perfectDodgeGlitchNoiseStrength: 1.25
   perfectDodgeGlitchJitterStrength: 0.42
@@ -14267,6 +14323,7 @@ MonoBehaviour:
   summonSlot2Label: S2 LASER
   summonSlot3Label: S3 DRAGON
   lockedSummonLabel: NEXT
+  summonReadyPulseSeconds: 0.85
   fireAccentColor: {r: 1, g: 0.74, b: 0.34, a: 1}
   dodgeAccentColor: {r: 0.38, g: 0.9, b: 1, a: 1}
   skillAccentColor: {r: 1, g: 0.86, b: 0.46, a: 1}

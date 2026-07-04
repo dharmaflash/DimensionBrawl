@@ -72,7 +72,6 @@ namespace DimensionBrawl.Presentation
             {
                 case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
-                        || cueId == CombatVfxCueId.PlayerRangedProjectileImpact
                         || cueId == CombatVfxCueId.PlayerDamaged
                         || cueId == CombatVfxCueId.PlayerCritical
                         || cueId == CombatVfxCueId.EnemyHit

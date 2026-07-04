@@ -171,24 +171,168 @@ namespace DimensionBrawl.UI
             DrawCircle(knobRect, GoldColor, ringTexture);
         }
 
-        public static void DrawSummonSlot(Rect rect, string label, bool held, bool pending, float fill01, Color accent)
+        public static void DrawSummonSlot(
+            Rect rect,
+            string label,
+            bool held,
+            bool pending,
+            float fill01,
+            Color accent,
+            bool ready = false,
+            bool unavailable = false,
+            float readyPulse01 = 0f,
+            int iconKind = 0)
         {
-            DrawPanel(rect, pending ? new Color(0.5f, 0.56f, 0.62f, 0.45f) : accent);
+            bool muted = pending || (unavailable && !ready);
+            Color inactiveAccent = new Color(0.6f, 0.65f, 0.7f, 0.56f);
+            Color resolvedAccent = muted ? inactiveAccent : accent;
+            DrawPanel(rect, resolvedAccent);
+            if (muted)
+            {
+                DrawSolid(
+                    new Rect(rect.x + 3f, rect.y + 3f, rect.width - 6f, rect.height - 6f),
+                    new Color(0.02f, 0.024f, 0.028f, 0.08f));
+            }
+
             float diskSize = Mathf.Min(rect.height * 0.78f, rect.width * 0.34f);
             Rect disk = RectFromCenter(new Vector2(rect.x + diskSize * 0.72f, rect.center.y), diskSize);
-            float readyPulse = fill01 >= 0.995f ? 0.5f + Mathf.Sin(Time.unscaledTime * 5.6f) * 0.5f : 0f;
+            float steadyReadyPulse = ready ? 0.5f + Mathf.Sin(Time.unscaledTime * 5.6f) * 0.5f : 0f;
+            float transitionPulse = Mathf.Clamp01(readyPulse01);
+            float readyPulse = Mathf.Max(steadyReadyPulse, transitionPulse);
+            float glowAlpha = held
+                ? 0.3f
+                : ready
+                    ? 0.16f + steadyReadyPulse * 0.18f + transitionPulse * 0.32f
+                    : muted
+                        ? 0.045f
+                        : 0.08f;
             DrawCircle(
-                Inflate(disk, 12f + readyPulse * 5f),
-                new Color(accent.r, accent.g, accent.b, held ? 0.3f : 0.12f + readyPulse * 0.14f),
+                Inflate(disk, 9f + readyPulse * 10f),
+                new Color(resolvedAccent.r, resolvedAccent.g, resolvedAccent.b, glowAlpha),
                 softCircleTexture);
-            DrawCircle(disk, new Color(0.02f, 0.03f, 0.045f, pending ? 0.56f : 0.82f), circleTexture);
-            DrawProgressRing(disk, pending ? 0f : fill01, accent, 4f);
-            DrawDiamond(disk.center, diskSize * 0.19f, pending ? MutedTextColor : GoldColor);
+            DrawCircle(
+                disk,
+                muted
+                    ? new Color(0.16f, 0.18f, 0.2f, 0.82f)
+                    : new Color(0.02f, 0.03f, 0.045f, 0.82f),
+                circleTexture);
+            DrawProgressRing(disk, pending ? 0f : fill01, ready ? accent : resolvedAccent, ready ? 5f : 3.5f);
+            DrawCircle(Inflate(disk, -diskSize * 0.19f), new Color(1f, 1f, 1f, ready ? 0.11f + readyPulse * 0.08f : 0.035f), ringTexture);
+            if (ready)
+            {
+                DrawSummonReadyHalo(disk, accent, readyPulse, transitionPulse);
+            }
+
+            DrawSummonIcon(disk, iconKind, ready, muted, accent, readyPulse);
+
+            if (ready)
+            {
+                DrawBorder(Inflate(rect, -2f), new Color(accent.r, accent.g, accent.b, 0.38f + transitionPulse * 0.34f), 1.5f);
+                float tickX = rect.xMax - 20f;
+                float tickY = rect.center.y;
+                Color tick = new Color(accent.r, accent.g, accent.b, 0.72f + transitionPulse * 0.22f);
+                DrawLine(new Vector2(tickX - 10f, tickY), new Vector2(tickX, tickY + 8f), tick, 2.2f);
+                DrawLine(new Vector2(tickX, tickY + 8f), new Vector2(tickX + 14f, tickY - 10f), tick, 2.2f);
+            }
 
             EnsureStyles();
             leftLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.19f, 13f, 18f));
-            leftLabelStyle.normal.textColor = pending ? MutedTextColor : TextColor;
+            leftLabelStyle.normal.textColor = ready ? TextColor : MutedTextColor;
             GUI.Label(new Rect(rect.x + diskSize + 18f, rect.y + 8f, rect.width - diskSize - 24f, rect.height - 16f), label, leftLabelStyle);
+        }
+
+        private static void DrawSummonReadyHalo(Rect disk, Color accent, float readyPulse, float transitionPulse)
+        {
+            float pulse = Mathf.Clamp01(Mathf.Max(readyPulse, transitionPulse));
+            DrawCircle(
+                Inflate(disk, 7f + pulse * 5f),
+                new Color(accent.r, accent.g, accent.b, 0.18f + pulse * 0.16f),
+                ringTexture);
+
+            Vector2 center = disk.center;
+            float radius = disk.width * (0.55f + transitionPulse * 0.08f);
+            float rotation = Time.unscaledTime * 1.95f;
+            Color spark = new Color(accent.r, accent.g, accent.b, 0.56f + pulse * 0.34f);
+            Color goldSpark = new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.5f + pulse * 0.32f);
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = rotation + i * Mathf.PI * 0.25f;
+                Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                float length = disk.width * (i % 2 == 0 ? 0.1f : 0.065f);
+                DrawLine(center + dir * (radius - length * 0.35f), center + dir * (radius + length), i % 2 == 0 ? spark : goldSpark, 1.7f);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                float angle = -rotation * 0.72f + i * Mathf.PI * 0.5f;
+                Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                DrawDiamond(center + dir * (disk.width * 0.59f), disk.width * 0.035f, goldSpark);
+            }
+        }
+
+        private static void DrawSummonIcon(Rect disk, int iconKind, bool ready, bool muted, Color accent, float readyPulse)
+        {
+            Color iconColor = ready
+                ? Color.Lerp(TextColor, accent, 0.26f)
+                : muted
+                    ? new Color(0.72f, 0.76f, 0.8f, 0.94f)
+                    : new Color(0.84f, 0.9f, 0.94f, 0.9f);
+            if (ready)
+            {
+                iconColor.a = 0.9f + Mathf.Clamp01(readyPulse) * 0.1f;
+            }
+
+            switch (iconKind)
+            {
+                case 1:
+                    DrawChargeSummonIcon(disk, iconColor);
+                    break;
+                case 2:
+                    DrawLaserSummonIcon(disk, iconColor);
+                    break;
+                case 3:
+                    DrawAssaultSummonIcon(disk, iconColor);
+                    break;
+                default:
+                    DrawDiamond(disk.center, disk.width * 0.19f, iconColor);
+                    break;
+            }
+        }
+
+        private static void DrawChargeSummonIcon(Rect disk, Color color)
+        {
+            Vector2 c = disk.center;
+            float r = disk.width * 0.23f;
+            float line = Mathf.Max(2f, disk.width * 0.04f);
+            DrawLine(c + new Vector2(-r * 1.08f, -r * 0.72f), c + new Vector2(r * 0.16f, 0f), color, line);
+            DrawLine(c + new Vector2(-r * 1.08f, r * 0.72f), c + new Vector2(r * 0.16f, 0f), color, line);
+            DrawLine(c + new Vector2(-r * 0.2f, -r * 0.92f), c + new Vector2(r * 1.08f, 0f), color, line);
+            DrawLine(c + new Vector2(-r * 0.2f, r * 0.92f), c + new Vector2(r * 1.08f, 0f), color, line);
+            DrawLine(c + new Vector2(-r * 0.9f, 0f), c + new Vector2(r * 0.78f, 0f), color, line * 0.72f);
+        }
+
+        private static void DrawLaserSummonIcon(Rect disk, Color color)
+        {
+            Vector2 c = disk.center;
+            float r = disk.width * 0.22f;
+            float line = Mathf.Max(2f, disk.width * 0.036f);
+            DrawCircle(RectFromCenter(c, r * 1.72f), color, ringTexture);
+            DrawLine(c + Vector2.left * r * 1.35f, c + Vector2.right * r * 1.35f, color, line);
+            DrawLine(c + Vector2.up * r * 1.05f, c + Vector2.down * r * 1.05f, color, line * 0.72f);
+            DrawLine(c + new Vector2(-r * 1.65f, -r * 0.48f), c + new Vector2(-r * 1.05f, -r * 0.48f), color, line * 0.66f);
+            DrawLine(c + new Vector2(r * 1.05f, r * 0.48f), c + new Vector2(r * 1.65f, r * 0.48f), color, line * 0.66f);
+        }
+
+        private static void DrawAssaultSummonIcon(Rect disk, Color color)
+        {
+            Vector2 c = disk.center;
+            float r = disk.width * 0.23f;
+            float line = Mathf.Max(2f, disk.width * 0.038f);
+            DrawLine(c + new Vector2(-r * 0.12f, -r * 1.2f), c + new Vector2(r * 0.58f, -r * 0.2f), color, line);
+            DrawLine(c + new Vector2(r * 0.58f, -r * 0.2f), c + new Vector2(r * 0.22f, r * 0.92f), color, line);
+            DrawLine(c + new Vector2(r * 0.22f, r * 0.92f), c + new Vector2(-r * 0.56f, r * 0.38f), color, line);
+            DrawLine(c + new Vector2(-r * 0.56f, r * 0.38f), c + new Vector2(-r * 0.12f, -r * 1.2f), color, line);
+            DrawLine(c + new Vector2(-r * 0.84f, r * 0.04f), c + new Vector2(r * 0.84f, r * 0.36f), color, line * 0.72f);
         }
 
         private static void DrawPanel(Rect rect, Color accent)

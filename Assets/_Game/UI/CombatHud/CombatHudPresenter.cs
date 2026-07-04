@@ -12,9 +12,12 @@ namespace DimensionBrawl.UI
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color AmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
-        private static readonly Color SummonReadyFillColor = new Color(1f, 0.9f, 0.46f, 0.74f);
         private static readonly Color SummonChargingFillColor = new Color(0.35f, 0.95f, 1f, 0.72f);
-        private static readonly Color SummonUnavailableFillColor = new Color(0f, 0.02f, 0.03f, 0.18f);
+        private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
+        private static readonly Color SummonUnavailableIconColor = new Color(0.76f, 0.79f, 0.82f, 0.96f);
+        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.82f, 0.28f, 0.42f);
+        private static readonly Color SummonReadyRingColor = new Color(1f, 0.92f, 0.44f, 0.78f);
+        private static readonly Color SummonReadySparkColor = new Color(0.44f, 0.98f, 1f, 0.64f);
 
         [Serializable]
         public sealed class ActionSlotBinding
@@ -77,12 +80,18 @@ namespace DimensionBrawl.UI
             [SerializeField] private Text labelText;
             [SerializeField] private Text stateText;
             [SerializeField] private Image cooldownFill;
+            [SerializeField] private Image iconImage;
+            [SerializeField] private Image unavailableIconImage;
+            [SerializeField] private Image readyGlowImage;
+            [SerializeField] private Image readyRingImage;
+            [SerializeField] private Image readySparkImage;
             [SerializeField] private CanvasGroup canvasGroup;
 
             public CombatHudActionId ActionId => actionId;
 
             public void SetVisible(bool visible)
             {
+                ResolveStateVisuals();
                 if (labelText != null)
                 {
                     labelText.gameObject.SetActive(visible);
@@ -97,6 +106,12 @@ namespace DimensionBrawl.UI
                 {
                     cooldownFill.gameObject.SetActive(visible);
                 }
+
+                SetImageObjectVisible(iconImage, visible);
+                SetImageObjectVisible(unavailableIconImage, visible);
+                SetImageObjectVisible(readyGlowImage, false);
+                SetImageObjectVisible(readyRingImage, false);
+                SetImageObjectVisible(readySparkImage, false);
 
                 if (canvasGroup != null)
                 {
@@ -114,6 +129,7 @@ namespace DimensionBrawl.UI
             public void SetState(string label, string state, bool enabled, float availabilityFill01)
             {
                 SetVisible(true);
+                ResolveStateVisuals();
                 if (labelText != null)
                 {
                     labelText.text = label;
@@ -143,12 +159,126 @@ namespace DimensionBrawl.UI
                     ConfigureClockwiseSummonFill(cooldownFill, enabled, availabilityFill01);
                 }
 
+                ApplyIconReadiness(enabled, availabilityFill01);
+                ApplyReadyEffect(enabled);
+
                 if (canvasGroup != null)
                 {
                     canvasGroup.alpha = enabled ? 1f : 0.88f;
                     canvasGroup.interactable = enabled;
                     canvasGroup.blocksRaycasts = enabled;
                 }
+            }
+
+            private void ResolveStateVisuals()
+            {
+                Transform root = ResolveSlotRoot();
+                if (root == null)
+                {
+                    return;
+                }
+
+                iconImage ??= FindChildImage(root, "Icon");
+                unavailableIconImage ??= FindChildImage(root, "IconDisabled");
+                readyGlowImage ??= FindChildImage(root, "ReadyGlow");
+                readyRingImage ??= FindChildImage(root, "ReadyRing");
+                readySparkImage ??= FindChildImage(root, "ReadySparkRing");
+            }
+
+            private Transform ResolveSlotRoot()
+            {
+                if (canvasGroup != null)
+                {
+                    return canvasGroup.transform;
+                }
+
+                if (labelText != null && labelText.transform.parent != null)
+                {
+                    return labelText.transform.parent;
+                }
+
+                if (stateText != null && stateText.transform.parent != null)
+                {
+                    return stateText.transform.parent;
+                }
+
+                return cooldownFill != null && cooldownFill.transform.parent != null
+                    ? cooldownFill.transform.parent
+                    : null;
+            }
+
+            private void ApplyIconReadiness(bool ready, float availabilityFill01)
+            {
+                float fill = Mathf.Clamp01(availabilityFill01);
+                if (iconImage != null)
+                {
+                    iconImage.gameObject.SetActive(true);
+                    iconImage.color = ready ? SummonReadyIconColor : new Color(1f, 1f, 1f, 0.9f);
+                }
+
+                if (unavailableIconImage != null)
+                {
+                    bool showWipe = !ready && fill < 0.999f;
+                    unavailableIconImage.gameObject.SetActive(showWipe);
+                    unavailableIconImage.raycastTarget = false;
+                    unavailableIconImage.preserveAspect = true;
+                    unavailableIconImage.type = Image.Type.Filled;
+                    unavailableIconImage.fillMethod = Image.FillMethod.Radial360;
+                    unavailableIconImage.fillOrigin = (int)Image.Origin360.Top;
+                    unavailableIconImage.fillClockwise = false;
+                    unavailableIconImage.fillAmount = showWipe ? 1f - fill : 0f;
+                    Color color = SummonUnavailableIconColor;
+                    color.a = showWipe ? 0.98f : 0f;
+                    unavailableIconImage.color = color;
+                }
+            }
+
+            private void ApplyReadyEffect(bool ready)
+            {
+                float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 5.8f) * 0.5f;
+                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.18f + pulse * 0.18f);
+                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.56f + pulse * 0.24f);
+                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.34f + pulse * 0.34f);
+
+                if (readyRingImage != null)
+                {
+                    readyRingImage.rectTransform.localScale = Vector3.one * (1f + pulse * 0.045f);
+                }
+
+                if (readySparkImage != null)
+                {
+                    readySparkImage.rectTransform.localRotation =
+                        Quaternion.Euler(0f, 0f, -Time.unscaledTime * 82f);
+                    readySparkImage.rectTransform.localScale = Vector3.one * (0.98f + pulse * 0.035f);
+                }
+            }
+
+            private static void ApplyReadyImage(Image image, bool visible, Color baseColor, float alpha)
+            {
+                if (image == null)
+                {
+                    return;
+                }
+
+                image.gameObject.SetActive(visible);
+                Color color = baseColor;
+                color.a = visible ? Mathf.Clamp01(alpha) : 0f;
+                image.color = color;
+                image.raycastTarget = false;
+            }
+
+            private static void SetImageObjectVisible(Image image, bool visible)
+            {
+                if (image != null)
+                {
+                    image.gameObject.SetActive(visible);
+                }
+            }
+
+            private static Image FindChildImage(Transform root, string objectName)
+            {
+                Transform found = FindDeepChild(root, objectName);
+                return found != null ? found.GetComponent<Image>() : null;
             }
 
             public void ApplyGuideFocus(bool focused, bool dimUnfocused)
@@ -170,18 +300,19 @@ namespace DimensionBrawl.UI
 
             private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
             {
+                float fill = Mathf.Clamp01(availabilityFill01);
+                bool showFill = !enabled && fill > 0.001f;
                 image.raycastTarget = false;
                 image.preserveAspect = false;
                 image.type = Image.Type.Filled;
                 image.fillMethod = Image.FillMethod.Radial360;
                 image.fillOrigin = (int)Image.Origin360.Top;
                 image.fillClockwise = true;
-                image.fillAmount = Mathf.Clamp01(availabilityFill01);
-                image.color = enabled
-                    ? SummonReadyFillColor
-                    : availabilityFill01 > 0.001f
-                        ? SummonChargingFillColor
-                        : SummonUnavailableFillColor;
+                image.fillAmount = showFill ? fill : 0f;
+                Color color = SummonChargingFillColor;
+                color.a = showFill ? Mathf.Lerp(0.34f, 0.72f, fill) : 0f;
+                image.color = color;
+                image.gameObject.SetActive(showFill);
             }
 
             private static void ApplySlotTextOutline(Text text)

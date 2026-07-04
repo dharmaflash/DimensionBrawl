@@ -23,6 +23,7 @@ namespace DimensionBrawl.Editor
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
         private const string TextureRoot = CombatVfxRoot + "/Textures";
         private const string ShaderRoot = CombatVfxRoot + "/Shaders";
+        private const string MeshRoot = CombatVfxRoot + "/Meshes";
         private const string PerfectDodgeWorldFxShaderPath = ShaderRoot + "/DB_PerfectDodgeWorldFx.shader";
         private const string PerfectDodgeAfterimageShaderPath = ShaderRoot + "/DB_PerfectDodgeAfterimage.shader";
         private const string CombatCueAudioRoot = "Assets/_Game/Art/Audio/SFX/CombatCues";
@@ -40,6 +41,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
         private const string ImportedMuzzleFlashShaderRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Shaders";
+        private const string ImportedRifleMuzzleFlashPrefabPath =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Once/VFX_Muzzle_Flash_Rifle.prefab";
         private const string ImportedSharedTextureRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shared/Textures";
         private const string MuzzleFlashFrontSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Front.tga";
@@ -293,6 +296,7 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder(MeshRoot);
 
             SavePromotedHitFeedbackPrefab(
                 "DB_VFX_EnemyHit",
@@ -381,6 +385,7 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder(MeshRoot);
             EnsureFolder("Assets/_Game/Art/Audio");
             EnsureFolder("Assets/_Game/Art/Audio/SFX");
             EnsureFolder("Assets/_Game/Art/Audio/SFX/Guns");
@@ -456,8 +461,8 @@ namespace DimensionBrawl.Editor
                 EnemyDeath = SaveBurstPrefab("DB_VFX_EnemyDeath", smoke, ParticleSystemShapeType.Sphere, 0.42f, 16f, 360f, 0.30f, 0.72f, 0.20f, 0.68f, 42, new Color(0.58f, 0.66f, 0.72f, 0.58f), new Color(0.08f, 0.12f, 0.16f, 0f)),
                 ClosePunishWindup = SaveBurstPrefab("DB_VFX_ClosePunishWindup", orange, ParticleSystemShapeType.Cone, 0.22f, 12f, 105f, 0.26f, 0.50f, 0.12f, 0.34f, 24, new Color(1f, 0.42f, 0.08f, 0.8f), new Color(1f, 0.06f, 0f, 0f)),
                 ClosePunishActive = SaveBurstPrefab("DB_VFX_ClosePunishActive", red, ParticleSystemShapeType.Cone, 0.34f, 42f, 95f, 0.09f, 0.22f, 0.20f, 0.52f, 38, new Color(1f, 0.24f, 0.05f, 0.92f), new Color(1f, 0.8f, 0.16f, 0f)),
-                LungeWindup = SaveBurstPrefab("DB_VFX_LungeStrikeWindup", red, ParticleSystemShapeType.Cone, 0.20f, 16f, 60f, 0.24f, 0.48f, 0.14f, 0.34f, 26, new Color(1f, 0.18f, 0.05f, 0.82f), new Color(1f, 0.65f, 0.12f, 0f)),
-                LungeActive = SaveBurstPrefab("DB_VFX_LungeStrikeActive", red, ParticleSystemShapeType.Cone, 0.26f, 62f, 45f, 0.10f, 0.26f, 0.24f, 0.62f, 46, new Color(1f, 0.38f, 0.08f, 0.95f), new Color(1f, 0.08f, 0.02f, 0f)),
+                LungeWindup = SaveBurstPrefab("DB_VFX_LungeStrikeWindup", orange, ParticleSystemShapeType.Cone, 0.10f, 7f, 22f, 0.14f, 0.26f, 0.05f, 0.14f, 8, new Color(1f, 0.44f, 0.12f, 0.36f), new Color(1f, 0.18f, 0.02f, 0f)),
+                LungeActive = SaveBurstPrefab("DB_VFX_LungeStrikeActive", red, ParticleSystemShapeType.Cone, 0.08f, 48f, 8f, 0.06f, 0.14f, 0.05f, 0.16f, 10, new Color(1f, 0.72f, 0.36f, 0.58f), new Color(1f, 0.1f, 0.02f, 0f), 1.35f),
                 HeavyWindup = SaveBurstPrefab("DB_VFX_HeavyWindupCharge", gold, ParticleSystemShapeType.Sphere, 0.34f, 10f, 360f, 0.38f, 0.70f, 0.18f, 0.44f, 42, new Color(1f, 0.74f, 0.12f, 0.86f), new Color(1f, 0.18f, 0.02f, 0f)),
                 HeavyActive = SaveBurstPrefab("DB_VFX_HeavyWindupImpact", gold, ParticleSystemShapeType.Circle, 0.65f, 34f, 360f, 0.13f, 0.34f, 0.30f, 0.78f, 56, new Color(1f, 0.9f, 0.36f, 0.96f), new Color(1f, 0.28f, 0.04f, 0f)),
                 LineWindup = SaveBurstPrefab("DB_VFX_LinePressureWindup", cyan, ParticleSystemShapeType.Cone, 0.18f, 18f, 34f, 0.30f, 0.58f, 0.10f, 0.24f, 30, new Color(0.22f, 0.94f, 1f, 0.82f), new Color(0.02f, 0.28f, 1f, 0f)),
@@ -751,8 +756,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.EliteSignal, prefabs.EliteShield, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.65f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishWindup, prefabs.ClosePunishWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.52f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishActive, prefabs.ClosePunishActive, new Vector3(0f, 0f, 0.75f), Vector3.zero, Vector3.one, 0.28f, false, true),
-                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeWindup, prefabs.LungeWindup, new Vector3(0f, 0f, 0.25f), Vector3.zero, new Vector3(1f, 1f, 1.3f), 0.50f, true, true),
-                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeActive, prefabs.LungeActive, new Vector3(0f, 0f, 1.2f), Vector3.zero, new Vector3(1f, 1f, 1.75f), 0.28f, false, true),
+                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeWindup, prefabs.LungeWindup, new Vector3(0f, 0f, 0.18f), Vector3.zero, new Vector3(0.48f, 0.48f, 0.58f), 0.22f, true, true),
+                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeActive, prefabs.LungeActive, new Vector3(0f, 0f, 0.62f), Vector3.zero, new Vector3(0.52f, 0.52f, 0.7f), 0.16f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupWindup, prefabs.HeavyWindup, new Vector3(0f, 0.12f, 0f), Vector3.zero, new Vector3(1.35f, 1.2f, 1.35f), 0.72f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupActive, prefabs.HeavyActive, new Vector3(0f, -0.15f, 0.85f), Vector3.zero, new Vector3(1.55f, 0.6f, 1.55f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyLinePressureWindup, prefabs.LineWindup, new Vector3(0f, 0f, 0.45f), Vector3.zero, new Vector3(0.8f, 1f, 2.1f), 0.58f, true, true),
@@ -795,7 +800,7 @@ namespace DimensionBrawl.Editor
             CombatPatternVfxCueOverride[] overrides =
             {
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyPatternProfilePath), CombatVfxCueId.EnemyClosePunishWindup, CombatVfxCueId.EnemyClosePunishActive, 1f, 1f),
-                new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLungePatternProfilePath), CombatVfxCueId.EnemyLungeStrikeWindup, CombatVfxCueId.EnemyLungeStrikeActive, 1.05f, 1.08f),
+                new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLungePatternProfilePath), CombatVfxCueId.EnemyLungeStrikeWindup, CombatVfxCueId.EnemyLungeStrikeActive, 0.55f, 0.48f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath), CombatVfxCueId.EnemyHeavyWindupWindup, CombatVfxCueId.EnemyHeavyWindupActive, 1.18f, 1.25f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath), CombatVfxCueId.EnemyLinePressureWindup, CombatVfxCueId.EnemyLinePressureActive, 1f, 1.05f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyFanPressurePatternProfilePath), CombatVfxCueId.EnemyFanPressureWindup, CombatVfxCueId.EnemyFanPressureActive, 1f, 1.08f),
@@ -1244,6 +1249,8 @@ namespace DimensionBrawl.Editor
                 RemoveColliders(root);
                 DisableVfxAudioSources(root);
                 ConfigurePromotedHitFeedbackParticles(root);
+                DisablePromotedParticleLightModules(root);
+                RemapPromotedHitFeedbackMeshes(root);
                 RemapPromotedHitFeedbackRenderers(root);
 
                 Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
@@ -1802,6 +1809,7 @@ namespace DimensionBrawl.Editor
                 0.025f,
                 9f,
                 new Color(1f, 0.76f, 0.28f, 0.96f));
+            AttachPromotedMuzzleFlashAsset(root.transform);
 
             AttachReviewedGunshotAudio(root);
 
@@ -1821,6 +1829,216 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static void AttachPromotedMuzzleFlashAsset(Transform parent)
+        {
+            const string ChildName = "MuzzleFlash_VefectsRifleDemo";
+            Transform existing = parent.Find(ChildName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ImportedRifleMuzzleFlashPrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Missing source rifle muzzle flash VFX prefab at {ImportedRifleMuzzleFlashPrefabPath}.");
+            }
+
+            GameObject assetRoot = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
+            if (assetRoot == null)
+            {
+                assetRoot = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(assetRoot))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    assetRoot,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            assetRoot.name = ChildName;
+            assetRoot.transform.SetParent(parent, worldPositionStays: false);
+            assetRoot.transform.localPosition = new Vector3(0f, 0f, 0.08f);
+            assetRoot.transform.localRotation = Quaternion.identity;
+            assetRoot.transform.localScale = new Vector3(0.78f, 0.78f, 0.9f);
+
+            UnpackNestedPrefabInstances(assetRoot);
+            StripNonGameMonoBehaviours(assetRoot);
+            RemoveColliders(assetRoot);
+            DisableVfxAudioSources(assetRoot);
+            ConfigurePromotedMuzzleFlashParticles(assetRoot);
+            DisablePromotedParticleLightModules(assetRoot);
+            AttachLocalMuzzleFlashLight(assetRoot.transform);
+            RemapPromotedHitFeedbackMeshes(assetRoot);
+            RemapPromotedHitFeedbackRenderers(assetRoot);
+            EditorUtility.SetDirty(assetRoot);
+        }
+
+        private static void DisablePromotedParticleLightModules(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem.LightsModule lights = particleSystems[i].lights;
+                if (!lights.enabled && lights.light == null)
+                {
+                    continue;
+                }
+
+                lights.enabled = false;
+                lights.light = null;
+                EditorUtility.SetDirty(particleSystems[i]);
+            }
+        }
+
+        private static void AttachLocalMuzzleFlashLight(Transform parent)
+        {
+            const string LightName = "MuzzleFlash_LocalBurstLight";
+            Transform existing = parent.Find(LightName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject lightObject = new GameObject(LightName);
+            lightObject.transform.SetParent(parent, worldPositionStays: false);
+            lightObject.transform.localPosition = new Vector3(0f, 0f, 0.28f);
+            Light light = lightObject.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.64f, 0.22f, 1f);
+            light.intensity = 4.2f;
+            light.range = 2.8f;
+            light.shadows = LightShadows.None;
+            light.renderMode = LightRenderMode.ForcePixel;
+            EditorUtility.SetDirty(lightObject);
+            EditorUtility.SetDirty(light);
+        }
+
+        private static void RemapPromotedHitFeedbackMeshes(GameObject root)
+        {
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                meshFilter.sharedMesh = EnsurePromotedHitFeedbackMesh(meshFilter.sharedMesh);
+                EditorUtility.SetDirty(meshFilter);
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                SkinnedMeshRenderer skinnedRenderer = skinnedRenderers[i];
+                if (skinnedRenderer.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                skinnedRenderer.sharedMesh = EnsurePromotedHitFeedbackMesh(skinnedRenderer.sharedMesh);
+                EditorUtility.SetDirty(skinnedRenderer);
+            }
+
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer particleRenderer = particleRenderers[i];
+                Mesh mesh = particleRenderer.mesh;
+                if (mesh != null)
+                {
+                    particleRenderer.mesh = EnsurePromotedHitFeedbackMesh(mesh);
+                }
+
+                int meshCount = particleRenderer.meshCount;
+                if (meshCount > 0)
+                {
+                    Mesh[] meshes = new Mesh[meshCount];
+                    int copiedCount = particleRenderer.GetMeshes(meshes);
+                    for (int meshIndex = 0; meshIndex < copiedCount; meshIndex++)
+                    {
+                        if (meshes[meshIndex] != null)
+                        {
+                            meshes[meshIndex] = EnsurePromotedHitFeedbackMesh(meshes[meshIndex]);
+                        }
+                    }
+
+                    particleRenderer.SetMeshes(meshes, copiedCount);
+                }
+
+                EditorUtility.SetDirty(particleRenderer);
+            }
+        }
+
+        private static Mesh EnsurePromotedHitFeedbackMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            string targetPath = MeshRoot + "/DB_CombatHit_"
+                + SanitizeAssetFileName(sourceMesh.name)
+                + ".asset";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            mesh = UnityEngine.Object.Instantiate(sourceMesh);
+            mesh.name = sourceMesh.name;
+            AssetDatabase.CreateAsset(mesh, targetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+
+            Mesh promotedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (promotedMesh == null)
+            {
+                throw new InvalidOperationException($"Failed to promote hit feedback mesh from {sourcePath} to {targetPath}.");
+            }
+
+            return promotedMesh;
+        }
+
+        private static void ConfigurePromotedMuzzleFlashParticles(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length == 0)
+            {
+                throw new InvalidOperationException($"{root.name} should preserve authored Vefects muzzle flash particles.");
+            }
+
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
         }
 
         private static void AttachReviewedGunshotAudio(GameObject root)

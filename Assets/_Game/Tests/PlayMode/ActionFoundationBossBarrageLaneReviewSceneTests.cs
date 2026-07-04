@@ -26,7 +26,7 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         private const string StageProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
-        private const float ReviewBossMaxHealth = 4800f;
+        private const float ReviewBossMaxHealth = 3600f;
         private const float Skill1VisibleBossHpShiftRatio = 0.008f;
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
@@ -152,6 +152,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Shoot.fbx";
         private const string RifleGirlReloadClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Reload.fbx";
+        private const string PlayerRangedReloadSfxClipPath =
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Reload_01.mp3";
         private const string RifleGirlDrawClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_DrawRangedFocus.fbx";
         private const string RifleGirlHolsterClipPath =
@@ -707,6 +709,8 @@ namespace DimensionBrawl.Tests
                 RequireObjectByTypeName("DimensionBrawl.Presentation.PerfectDodgeTimeWarp");
             PlayerRangedBasicVfxCueDriver rangedBasicVfxCueDriver =
                 RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "player ranged basic VFX cue driver");
+            PlayerRangedReloadSfxDriver rangedReloadSfxDriver =
+                RequireComponent<PlayerRangedReloadSfxDriver>(player.gameObject, "player ranged reload SFX driver");
             SummonEnergyVfxCuePresenter energyVfxCuePresenter =
                 RequireComponent<SummonEnergyVfxCuePresenter>(player.gameObject, "summon energy VFX cue presenter");
             BossBarrageLaneReviewHud reviewHud =
@@ -767,6 +771,11 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(rangedBasicVfxCueDriver.PlayImpactVfx);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "impactIntensity"), 0.001f);
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(rangedReloadSfxDriver, "rangedBasicAttackAction"));
+            Assert.AreEqual(1, rangedReloadSfxDriver.ReloadClipCount);
+            Assert.AreSame(
+                LoadAsset<AudioClip>(PlayerRangedReloadSfxClipPath),
+                GetArrayObjectReference<AudioClip>(rangedReloadSfxDriver, "reloadClips", 0));
             Assert.AreSame(energyLadder, energyVfxCuePresenter.EnergyLadder);
             Assert.AreSame(playerCuePlayer, energyVfxCuePresenter.CuePlayer);
             Assert.AreSame(
@@ -831,6 +840,16 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(bossPressurePosition, "lateralStrafeEnabled"));
             Assert.AreEqual(1.25f, GetFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond"), 0.001f);
             Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "lateralStrafeHalfWidthRatio"), 0.001f);
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressurePosition, "trackedPlayer"));
+            Assert.IsTrue(GetBool(bossPressurePosition, "playerResponseEnabled"));
+            Assert.AreEqual(0.76f, GetFloat(bossPressurePosition, "playerLateralFollowStrength"), 0.001f);
+            Assert.AreEqual(0.52f, GetFloat(bossPressurePosition, "playerResponseHalfWidthRatio"), 0.001f);
+            Assert.AreEqual(4.2f, GetFloat(bossPressurePosition, "playerResponseLateralUnitsPerSecond"), 0.001f);
+            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "playerFlankOffsetRatio"), 0.001f);
+            Assert.AreEqual(1.05f, GetFloat(bossPressurePosition, "playerFlankSwitchSeconds"), 0.001f);
+            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "commitPlayerFollowBoost"), 0.001f);
+            Assert.IsTrue(GetBool(bossPressurePosition, "faceTrackedPlayer"));
+            Assert.AreEqual(720f, GetFloat(bossPressurePosition, "turnDegreesPerSecond"), 0.001f);
             Assert.AreSame(
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
@@ -1235,10 +1254,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
-            Assert.AreEqual(9.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
-            Assert.AreEqual(0.45f, GetFloat(energyLadder, "backSafetyGainScale"), 0.001f);
-            Assert.AreEqual(0.9f, GetFloat(energyLadder, "midChargeGainScale"), 0.001f);
-            Assert.AreEqual(1.75f, GetFloat(energyLadder, "forwardRiskGainScale"), 0.001f);
+            Assert.AreEqual(8.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
+            Assert.AreEqual(0.35f, GetFloat(energyLadder, "backSafetyGainScale"), 0.001f);
+            Assert.AreEqual(0.75f, GetFloat(energyLadder, "midChargeGainScale"), 0.001f);
+            Assert.AreEqual(1.25f, GetFloat(energyLadder, "forwardRiskGainScale"), 0.001f);
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(skill1Action, "sourceHealth"));
             Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(skill1Action, "targetSelector"));
@@ -1268,10 +1287,11 @@ namespace DimensionBrawl.Tests
                 SummonSlot2ProjectilePrefabPath,
                 "LaneActionProjectileVfx_LaserBolt",
                 "SummonSlot2 laser bolt");
-            AssertPrimitiveLaneProjectile(
+            AssertPromotedLaserLaneProjectile(
                 SummonSlot3ProjectilePrefabPath,
-                "LaneActionProjectileVfx_FireBreathChunk",
-                "SummonSlot3 fire breath");
+                "LaneActionProjectileVfx_DragonFireBreath_FORGE3D",
+                "SummonSlot3 fire breath",
+                minimumParticleSystems: 1);
             GameObject summonEntryCuePrefabObject = LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
             Assert.AreSame(summonEntryCuePrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
             AssertSummonEntryCueVfx(summonEntryCuePrefabObject);
@@ -1335,56 +1355,36 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "landingSettleSeconds"), 0.001f);
             Assert.AreEqual(0f, GetFloat(summonSlot1MotionPresenter, "landingDip"), 0.001f);
             Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "ChargeReadyAura"),
+                "SummonSlot1 charge contract should remove the retired ready aura.");
+            Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "ChargeRushTrail"),
+                "SummonSlot1 charge contract should remove the retired rush trail.");
+            Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "PF_SummonChargeRushTrail_SPECIAL"),
+                "SummonSlot1 charge contract should remove the retired promoted rush trail root.");
+            Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "ChargeImpactBurst"),
+                "SummonSlot1 charge contract should remove the retired impact burst.");
+            Assert.IsNull(
+                FindDescendant(summonActorPrefabObject.transform, "PF_SummonChargeImpact_SPECIAL"),
+                "SummonSlot1 charge contract should remove the retired promoted impact root.");
+            Assert.IsNull(
                 FindDescendant(summonActorPrefabObject.transform, "JumpSlamAirTrail"),
                 "SummonSlot1 charge contract should remove the retired airborne jump trail.");
             Assert.IsNull(
                 FindDescendant(summonActorPrefabObject.transform, "SlamImpactBurst"),
                 "SummonSlot1 charge contract should remove the retired landing slam impact.");
-            Transform chargeTrailVfx = summonSlot1Visual.Find("ChargeRushTrail");
-            AssertPromotedParticleVfx(
-                chargeTrailVfx,
-                "SummonSlot1 charge rush trail",
-                2);
-            Assert.IsFalse(
-                chargeTrailVfx.gameObject.activeSelf,
-                "SummonSlot1 charge rush trail should start hidden until the proxy is actually advancing.");
-            Assert.AreSame(
-                chargeTrailVfx,
-                summonSlot1MotionPresenter.MovementVfxRoot,
-                "SummonSlot1 motion presenter should own the charge trail timing.");
-            Assert.GreaterOrEqual(
-                summonSlot1MotionPresenter.MovementVfxParticleCount,
-                2,
-                "SummonSlot1 charge trail should preserve the promoted rush particle stack.");
-            Transform chargeImpactBurst = summonActorPrefabObject.transform.Find("ChargeImpactBurst");
-            Assert.IsNotNull(chargeImpactBurst, "SummonSlot1 actor prefab should keep a visible charge impact burst.");
-            AssertPromotedParticleVfx(
-                chargeImpactBurst,
-                "SummonSlot1 charge impact",
-                3);
-            Assert.IsFalse(
-                chargeImpactBurst.gameObject.activeSelf,
-                "SummonSlot1 charge impact should start hidden until the attack/contact frame.");
             Assert.IsNull(
-                chargeImpactBurst.GetComponent<MeshRenderer>(),
-                "SummonSlot1 charge impact should not fall back to the old primitive cylinder ring.");
-            SummonAttackBeamPresenter chargeImpactPresenter =
-                RequireComponent<SummonAttackBeamPresenter>(
-                    summonActorPrefabObject,
-                    "SummonSlot1 charge impact presenter");
+                summonSlot1MotionPresenter.MovementVfxRoot,
+                "SummonSlot1 motion presenter should not own the retired charge trail timing.");
             Assert.AreEqual(
-                chargeImpactBurst,
-                chargeImpactPresenter.BeamRoot);
-            Assert.GreaterOrEqual(
-                chargeImpactPresenter.BeamParticleCount,
-                3,
-                "SummonSlot1 charge impact presenter should drive the promoted particle burst.");
-            AssertGameOwnedAsset(
-                LoadAsset<GameObject>(SummonSlot1PromotedChargeImpactPrefabPath),
-                "SummonSlot1 promoted charge impact prefab");
-            AssertGameOwnedAsset(
-                LoadAsset<GameObject>(SummonSlot1PromotedRushTrailPrefabPath),
-                "SummonSlot1 promoted rush trail prefab");
+                0,
+                summonSlot1MotionPresenter.MovementVfxParticleCount,
+                "SummonSlot1 charge trail particle stack should be retired.");
+            Assert.IsNull(
+                summonActorPrefabObject.GetComponent<SummonAttackBeamPresenter>(),
+                "SummonSlot1 actor prefab should not keep the retired charge impact presenter.");
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
                 "PlayerSummon.ChargeBruiser",
@@ -2020,8 +2020,8 @@ namespace DimensionBrawl.Tests
                 "Ignoring boss lane fire should roughly match the PressureRescue pocket budget instead of becoming random chip.");
             Assert.That(
                 summonLv1ReadySeconds,
-                Is.InRange(9f, 13.5f),
-                "LV1 summon should recover from the over-nerfed EN state without returning to constant summon spam.");
+                Is.InRange(10f, 13.5f),
+                "LV1 summon should build deliberately enough to avoid constant summon spam.");
             Assert.AreEqual(
                 1,
                 summonTiers[0].ScreenIntercepts,
@@ -2036,7 +2036,7 @@ namespace DimensionBrawl.Tests
                 "The tutorial answer path should still fit inside the pocket while leaving room for failed reads.");
             Assert.That(
                 cleanAnswerToResultSeconds,
-                Is.InRange(12f, 18f),
+                Is.InRange(10f, 16f),
                 "A clean one-round read should give the player a timely summon answer without compressing the whole fight into a demo wipe.");
             Assert.That(
                 missedFollowupRecoverySeconds,
@@ -2072,12 +2072,12 @@ namespace DimensionBrawl.Tests
 
             Assert.That(
                 basicOnlyBossClearSeconds,
-                Is.InRange(44f, 56f),
+                Is.InRange(34f, 42f),
                 "Boss HP should keep a readable response loop without stretching the review fight into a sponge check.");
             Assert.That(
                 levelOneReadySeconds,
-                Is.InRange(9f, 13.5f),
-                "LV1 summon readiness should recover from the over-nerfed EN state without returning to repeated rapid summons.");
+                Is.InRange(10f, 13.5f),
+                "LV1 summon readiness should stay deliberate enough to avoid repeated rapid summons.");
 
             yield return null;
         }
@@ -6605,15 +6605,15 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a game-owned root material for editor repair.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} hidden root material");
             AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} hidden root material shader");
-            Transform magicMissilesFireShot =
-                projectileObject.transform.Find("BossBarrageProjectileVfx_MagicMissilesFireShot");
+            Transform hovlProjectileBullet =
+                projectileObject.transform.Find("BossBarrageProjectileVfx_HovlProjectileBullet");
             AssertPromotedParticleVfx(
-                magicMissilesFireShot,
-                $"{label} MagicMissiles fire shot",
-                2);
+                hovlProjectileBullet,
+                $"{label} Hovl projectile bullet",
+                1);
             AssertProjectileVfxAudioDoesNotAutoPlay(
-                magicMissilesFireShot,
-                $"{label} MagicMissiles fire shot");
+                hovlProjectileBullet,
+                $"{label} Hovl projectile bullet");
             TrailRenderer trail = projectileObject.GetComponent<TrailRenderer>();
             Assert.IsNotNull(trail, $"{label} should include a TrailRenderer for incoming shot readability.");
             Assert.IsNotNull(trail.sharedMaterial, $"{label} trail should keep a visible material.");
@@ -7136,7 +7136,11 @@ namespace DimensionBrawl.Tests
             AssertProjectileVfxAudioDoesNotAutoPlay(projectileVfx, label);
         }
 
-        private static void AssertPromotedLaserLaneProjectile(string prefabPath, string childName, string label)
+        private static void AssertPromotedLaserLaneProjectile(
+            string prefabPath,
+            string childName,
+            string label,
+            int minimumParticleSystems = 4)
         {
             GameObject projectileObject = LoadAsset<GameObject>(prefabPath);
             Assert.IsNotNull(projectileObject, $"{label} prefab should be assigned.");
@@ -7150,7 +7154,7 @@ namespace DimensionBrawl.Tests
             AssertPromotedParticleVfx(
                 projectileVfx,
                 label,
-                4);
+                minimumParticleSystems);
             AssertProjectileVfxAudioDoesNotAutoPlay(projectileVfx, label);
         }
 

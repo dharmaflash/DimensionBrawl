@@ -393,14 +393,13 @@ namespace DimensionBrawl.Editor
                     pulseMaterial,
                     forwardSign: 1f,
                     radius: 0.48f);
-                ConfigureSummonStateVfx(
-                    editableRoot,
-                    "ChargeReadyAura",
-                    ImportedMagicMissilesHealingAuraPrefabPath,
-                    new Vector3(0f, 0.1f, 0.02f),
-                    Vector3.one * 0.52f);
                 DestroyDescendantsIfPresent(
                     editableRoot.transform,
+                    "ChargeReadyAura",
+                    "ChargeRushTrail",
+                    "ChargeImpactBurst",
+                    "PF_SummonChargeRushTrail_SPECIAL",
+                    "PF_SummonChargeImpact_SPECIAL",
                     "JumpSlamReadyAura",
                     "SlamImpactBurst",
                     "PF_SummonJumpSlamImpact_SPECIAL",
@@ -417,16 +416,17 @@ namespace DimensionBrawl.Editor
                     new Vector3(0.9f, 0.9f, 0.9f));
                 DestroyDescendantsIfPresent(
                     summonVisual,
+                    "ChargeRushTrail",
+                    "PF_SummonChargeRushTrail_SPECIAL",
                     "JumpSlamAirTrail",
                     "PF_SummonJumpSlamAirTrail_SPECIAL");
-                Transform chargeTrailVfx = ConfigureSummonMovementPromotedParticleVfx(
-                    summonVisual,
-                    "ChargeRushTrail",
-                    SummonSlot1PromotedRushTrailPrefabPath,
-                    new Vector3(0f, 0.36f, -0.5f),
-                    Vector3.zero,
-                    new Vector3(0.7f, 0.7f, 0.7f),
-                    minimumParticleSystems: 2);
+                SummonAttackBeamPresenter retiredChargeImpactPresenter =
+                    editableRoot.GetComponent<SummonAttackBeamPresenter>();
+                if (retiredChargeImpactPresenter != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(retiredChargeImpactPresenter);
+                }
+
                 EnsureSummonHealthBar(
                     editableRoot,
                     proxy,
@@ -480,23 +480,7 @@ namespace DimensionBrawl.Editor
                     landingDip: 0f,
                     arcEndProgress: 0.9f,
                     landingSettleSeconds: 0f,
-                    movementVfxRoot: chargeTrailVfx);
-                ConfigureSummonAttackPromotedParticleBeam(
-                    editableRoot,
-                    proxy,
-                    "ChargeImpactBurst",
-                    SummonSlot1PromotedChargeImpactPrefabPath,
-                    new Vector3(0f, 0.42f, 0.86f),
-                    Vector3.zero,
-                    new Vector3(0.74f, 0.74f, 0.74f),
-                    new Color(1f, 0.78f, 0.28f, 0.62f),
-                    new Color(1f, 0.92f, 0.42f, 0.72f),
-                    new Color(1f, 0.55f, 0.18f, 0.82f),
-                    tierScaleStep: 0.34f,
-                    pulseScale: 0.1f,
-                    pulseSpeed: 14f,
-                    minimumParticleSystems: 3,
-                    loopParticles: false);
+                    movementVfxRoot: null);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
