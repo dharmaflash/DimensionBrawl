@@ -1,3 +1,4 @@
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -208,6 +209,7 @@ namespace DimensionBrawl.Combat
 
             bool blockedByInvulnerability = targetHealth.IsInvulnerable;
             bool applied = targetHealth.TryApplyDamage(damageInfo);
+            RequestCameraImpactFeedback(targetHealth, impactPoint, blockedByInvulnerability, applied);
             if (applied && deactivateOnHit)
             {
                 PlayImpactSfx(impactPoint);
@@ -244,6 +246,39 @@ namespace DimensionBrawl.Combat
             lastImpactResult = result;
             lastImpactTargetHealth = targetHealth;
             lastImpactTargetProxy = targetProxy;
+        }
+
+        private void RequestCameraImpactFeedback(
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            bool blockedByInvulnerability,
+            bool applied)
+        {
+            if (targetHealth == null || !CombatTeamUtility.IsPlayerSide(targetHealth.Team))
+            {
+                return;
+            }
+
+            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            if (cameraController == null)
+            {
+                return;
+            }
+
+            if (blockedByInvulnerability && !applied)
+            {
+                cameraController.RequestShieldBlockFeedback(travelDirection, 0.85f);
+                return;
+            }
+
+            if (!applied)
+            {
+                return;
+            }
+
+            float heavyScale = DamageResponsePolicyUtility.InterruptsAction(controlLockPolicy) ? 0.85f : 0.45f;
+            cameraController.RequestDamageHitFeedback(travelDirection, heavyScale);
+            cameraController.RequestExplosionFeedback(impactPoint, 7.5f, heavyScale * 0.55f);
         }
 
         private void Update()

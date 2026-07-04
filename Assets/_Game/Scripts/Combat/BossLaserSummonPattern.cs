@@ -62,6 +62,7 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float repositionMoveSpeed = 3.8f;
 
         [Header("Presentation")]
+        [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private LineRenderer telegraphLine;
         [SerializeField] private GameObject telegraphVfxPrefab;
         [SerializeField] private Color telegraphStartColor = new Color(1f, 0.18f, 0.08f, 0.26f);
@@ -376,6 +377,7 @@ namespace DimensionBrawl.Combat
             proxy.RequestAdvanceHold(activeSeconds + recoverySeconds + 0.08f);
             proxy.NotifyAttackPerformed(activeSeconds + recoverySeconds + 0.05f);
             LaserFired?.Invoke(this);
+            ResolveCameraController()?.RequestLaserFireFeedback(lockedDirection);
             PlaySfx(laserFireSfx, laserFireSfxVolume);
             StartLaserSustainLoop();
             HideTelegraphVisual();
@@ -472,9 +474,24 @@ namespace DimensionBrawl.Combat
                 if (health.TryApplyDamage(damageInfo))
                 {
                     totalDamageTickCount++;
+                    if (CombatTeamUtility.IsPlayerSide(health.Team))
+                    {
+                        ResolveCameraController()?.RequestLaserSustainFeedback(lockedDirection, 0.75f);
+                    }
+
                     DamageApplied?.Invoke(this, health, point, lockedDirection);
                 }
             }
+        }
+
+        private ActionCameraController ResolveCameraController()
+        {
+            if (cameraController == null)
+            {
+                cameraController = FindFirstObjectByType<ActionCameraController>();
+            }
+
+            return cameraController;
         }
 
         private Vector3 ResolveRepositionTarget()

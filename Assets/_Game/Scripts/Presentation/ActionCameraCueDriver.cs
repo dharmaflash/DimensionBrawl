@@ -422,6 +422,7 @@ namespace DimensionBrawl.Presentation
         {
             Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : ResolvePlanarDirection();
             RequestCue(ActivePerfectDodgeCue, dodgeDirection, 1f);
+            cameraController?.RequestPerfectDodgeFeedback(dodgeDirection);
         }
 
         private void HandleBasicAttackStarted(int comboIndex)
@@ -465,6 +466,7 @@ namespace DimensionBrawl.Presentation
         public void RequestSummonPressureBlockCue(int tier)
         {
             ActionCameraCueProfile.CameraCue cue = ActiveSummonPressureBlockCue;
+            cameraController?.RequestShieldBlockFeedback(ResolvePlanarDirection(), Mathf.Clamp01(tier / 3f));
             if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
             {
                 summonPressureBlockCueRequestCount++;

@@ -19,6 +19,7 @@ namespace DimensionBrawl.Presentation
 
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform muzzleAnchor;
         [SerializeField] private CombatVfxCueId muzzleFlashCueId = CombatVfxCueId.PlayerRangedMuzzleFlash;
         [SerializeField, Min(0f)] private float muzzleFlashIntensity = 1f;
@@ -35,9 +36,12 @@ namespace DimensionBrawl.Presentation
 
         private readonly HashSet<LaneActionProjectile> watchedProjectiles = new HashSet<LaneActionProjectile>();
         private bool subscribed;
+        private float lastCameraFireCueTime = float.NegativeInfinity;
+        private int cameraFireCueRequestCount;
 
         public bool PlayImpactVfx => playImpactVfx;
         public bool PlayImpactAudio => playImpactAudio;
+        public int CameraFireCueRequestCount => cameraFireCueRequestCount;
 
         private void Awake()
         {
@@ -49,6 +53,11 @@ namespace DimensionBrawl.Presentation
             if (cuePlayer == null)
             {
                 cuePlayer = GetComponent<CombatVfxCuePlayer>();
+            }
+
+            if (cameraController == null)
+            {
+                cameraController = FindFirstObjectByType<ActionCameraController>();
             }
 
             if (muzzleAnchor == null && rangedBasicAttackAction != null)
@@ -116,6 +125,8 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            RequestCameraFireCue();
+
             Transform anchor = muzzleAnchor != null ? muzzleAnchor : rangedBasicAttackAction.transform;
             cuePlayer.PlayCue(
                 muzzleFlashCueId,
@@ -123,6 +134,31 @@ namespace DimensionBrawl.Presentation
                 rangedBasicAttackAction.LastResolvedFireDirection,
                 muzzleFlashIntensity,
                 muzzleFlashAudioIntensity);
+        }
+
+        private void RequestCameraFireCue()
+        {
+            if (rangedBasicAttackAction == null)
+            {
+                return;
+            }
+
+            if (cameraController == null)
+            {
+                cameraController = FindFirstObjectByType<ActionCameraController>();
+                if (cameraController == null)
+                {
+                    return;
+                }
+            }
+
+            bool sustainedFire = Time.time - lastCameraFireCueTime
+                <= Mathf.Max(0.01f, rangedBasicAttackAction.FireCooldownRemaining + 0.18f);
+            lastCameraFireCueTime = Time.time;
+            cameraFireCueRequestCount++;
+            cameraController.RequestRifleFireFeedback(
+                rangedBasicAttackAction.LastResolvedFireDirection,
+                sustainedFire);
         }
 
         private void HandleRangedProjectileFired(LaneActionProjectile projectile)

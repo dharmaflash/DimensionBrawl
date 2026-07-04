@@ -13,6 +13,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
         [SerializeField] private PerfectDodgeVfxDirector perfectDodgeVfxDirector;
+        [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform attackAnchor;
         [SerializeField] private Transform dodgeAnchor;
         [SerializeField] private Transform damageAnchor;
@@ -285,6 +286,7 @@ namespace DimensionBrawl.Presentation
                     -1f,
                     localBlockOffset))
             {
+                ResolveCameraController()?.RequestShieldBlockFeedback(blockDirection, 0.9f);
                 lastPerfectDodgeBlockVfxTime = Time.time;
                 lastPerfectDodgeBlockVfxPoint = duplicatePoint;
                 perfectDodgeProjectileBlockCueRequestCount++;
@@ -292,6 +294,16 @@ namespace DimensionBrawl.Presentation
             }
 
             return false;
+        }
+
+        private ActionCameraController ResolveCameraController()
+        {
+            if (cameraController == null)
+            {
+                cameraController = FindFirstObjectByType<ActionCameraController>();
+            }
+
+            return cameraController;
         }
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)

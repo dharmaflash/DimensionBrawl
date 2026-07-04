@@ -86,13 +86,6 @@ namespace DimensionBrawl.Player
         [SerializeField, Range(0f, 1f)] private float cameraAimAssistStrengthScale = 1f;
         [SerializeField, Range(0f, 1f)] private float cameraAimAssistMinStrength = 0.05f;
 
-        [Header("Camera Feedback")]
-        [SerializeField] private Vector3 fireCameraCueOffset = new Vector3(0.025f, 0.01f, -0.045f);
-        [SerializeField, Min(0.01f)] private float fireCameraCueSeconds = 0.10f;
-        [SerializeField] private float fireFieldOfViewDelta = -0.8f;
-        [SerializeField] private float fireCameraDistanceDelta = -0.04f;
-        [SerializeField] private float fireFocusHeightDelta;
-
         private readonly PlayerRangedProjectilePool projectilePool = new PlayerRangedProjectilePool();
         private readonly RaycastHit[] cameraAimHits = new RaycastHit[16];
         private bool actionEnabledHere;
@@ -110,6 +103,7 @@ namespace DimensionBrawl.Player
         private bool isReloading;
         private bool reloadStartedByAimRelease;
         private float reloadFinishTime;
+        private float lastCameraFireCueTime = float.NegativeInfinity;
         private PlayerRangedAimController subscribedAimController;
         private Vector2 aimInput;
         private int firePreviewFrame = -1;
@@ -394,6 +388,7 @@ namespace DimensionBrawl.Player
             queuedFire = false;
             mobileFireHeld = false;
             currentFireHeld = false;
+            lastCameraFireCueTime = float.NegativeInfinity;
             pendingFireThisFrame = false;
             suppressDeviceFallbackThisFrame = false;
             hasCachedFirePreview = false;
@@ -1294,15 +1289,16 @@ namespace DimensionBrawl.Player
         {
             if (cameraController == null)
             {
-                return;
+                cameraController = FindFirstObjectByType<ActionCameraController>();
+                if (cameraController == null)
+                {
+                    return;
+                }
             }
 
-            cameraController.RequestCue(
-                fireCameraCueOffset,
-                fireCameraCueSeconds,
-                fireFieldOfViewDelta,
-                fireCameraDistanceDelta,
-                fireFocusHeightDelta);
+            bool sustainedFire = Time.time - lastCameraFireCueTime <= fireIntervalSeconds * 1.35f;
+            lastCameraFireCueTime = Time.time;
+            cameraController.RequestRifleFireFeedback(LastResolvedFireDirection, sustainedFire);
         }
 
         private void SetBlockedHint(string blockedReason)

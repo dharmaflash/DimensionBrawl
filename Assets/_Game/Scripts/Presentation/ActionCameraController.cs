@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.Presentation
 {
+    [DefaultExecutionOrder(200)]
     [RequireComponent(typeof(Camera))]
     public sealed class ActionCameraController : MonoBehaviour
     {
@@ -57,13 +58,23 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float cueFieldOfViewSmooth = 18f;
 
         [Header("Micro Shake")]
-        [Tooltip("Short deterministic impact shake layered after the main camera cue. Tuned from PGR/ZZZ camera-shake tables as a fast non-cinematic hit accent.")]
+        [Tooltip("Short deterministic impact shake layered after the main camera cue. Rifle fire is kept modest so it reads as rhythm instead of heavy impact shake.")]
         [SerializeField] private bool enableMicroShake = true;
         [SerializeField, Min(0f)] private float maxMicroShakePosition = 0.085f;
         [SerializeField, Min(0f)] private float maxMicroShakeEuler = 0.9f;
         [SerializeField, Min(0f)] private float microShakeFrequency = 34f;
         [SerializeField] private Vector3 microShakePositionAxes = new Vector3(1f, 0.58f, 0.05f);
         [SerializeField] private Vector3 microShakeEulerAxes = new Vector3(0.34f, 0.28f, 1f);
+
+        [Header("Combat Feedback")]
+        [SerializeField, Min(0f)] private float rifleFireFeedbackCooldownSeconds = 0.035f;
+        [SerializeField, Min(0f)] private float sustainedFireFeedbackIntervalSeconds = 0.135f;
+        [SerializeField, Min(0f)] private float heavyShotFeedbackCooldownSeconds = 0.08f;
+        [SerializeField, Min(0f)] private float hitFeedbackCooldownSeconds = 0.12f;
+        [SerializeField, Min(0f)] private float explosionFeedbackCooldownSeconds = 0.14f;
+        [SerializeField, Min(0f)] private float laserSustainFeedbackIntervalSeconds = 0.14f;
+        [SerializeField, Min(0f)] private float shieldBlockFeedbackCooldownSeconds = 0.07f;
+        [SerializeField, Range(0f, 1f)] private float liveFireFeedbackScale = 1f;
 
         [Header("Aim Mode")]
         [Tooltip("Persistent ranged-aim shoulder offset. This is a mode modifier, not a short combat cue.")]
@@ -118,10 +129,19 @@ namespace DimensionBrawl.Presentation
         private float microShakePositionAmplitude;
         private float microShakeEulerAmplitude;
         private float microShakeSeed;
+        private float microShakeActiveFrequency;
         private Vector2 microShakeDirectionBias;
         private Vector3 lastMicroShakeLocalOffset;
         private Vector3 lastMicroShakeEulerOffset;
         private int microShakeRequestCount;
+        private float nextRifleFireFeedbackTime;
+        private float nextHeavyShotFeedbackTime;
+        private float nextHitFeedbackTime;
+        private float nextExplosionFeedbackTime;
+        private float nextLaserSustainFeedbackTime;
+        private float nextShieldBlockFeedbackTime;
+        private int rifleFireFeedbackRequestCount;
+        private float lastRifleFireFeedbackTime = float.NegativeInfinity;
 
         public bool HasActiveCue => cueTimer > 0f;
         public bool HasActiveMicroShake => microShakeTimer > 0f;
@@ -137,6 +157,8 @@ namespace DimensionBrawl.Presentation
         public Transform Target => target;
         public Transform Threat => threat;
         public int MicroShakeRequestCount => microShakeRequestCount;
+        public int RifleFireFeedbackRequestCount => rifleFireFeedbackRequestCount;
+        public float LastRifleFireFeedbackTime => lastRifleFireFeedbackTime;
         public Vector3 LastMicroShakeLocalOffset => lastMicroShakeLocalOffset;
         public Vector3 LastMicroShakeEulerOffset => lastMicroShakeEulerOffset;
 
@@ -262,6 +284,7 @@ namespace DimensionBrawl.Presentation
             microShakeDuration = 0f;
             microShakePositionAmplitude = 0f;
             microShakeEulerAmplitude = 0f;
+            microShakeActiveFrequency = 0f;
             microShakeDirectionBias = Vector2.zero;
             lastMicroShakeLocalOffset = Vector3.zero;
             lastMicroShakeEulerOffset = Vector3.zero;
@@ -309,6 +332,21 @@ namespace DimensionBrawl.Presentation
             float eulerAmplitude,
             Vector3 planarDirection)
         {
+            RequestMicroShake(
+                durationSeconds,
+                positionAmplitude,
+                eulerAmplitude,
+                planarDirection,
+                microShakeFrequency);
+        }
+
+        public void RequestMicroShake(
+            float durationSeconds,
+            float positionAmplitude,
+            float eulerAmplitude,
+            Vector3 planarDirection,
+            float frequency)
+        {
             if (!enableMicroShake || durationSeconds <= 0f || (positionAmplitude <= 0f && eulerAmplitude <= 0f))
             {
                 return;
@@ -322,9 +360,181 @@ namespace DimensionBrawl.Presentation
             microShakeEulerAmplitude = Mathf.Max(
                 microShakeEulerAmplitude,
                 Mathf.Clamp(eulerAmplitude, 0f, maxMicroShakeEuler));
+            microShakeActiveFrequency = Mathf.Max(1f, frequency);
             microShakeDirectionBias = ResolveMicroShakeDirectionBias(planarDirection);
             microShakeSeed = Mathf.Repeat(microShakeSeed + 0.371f, 100f);
             microShakeRequestCount++;
+        }
+
+        public void RequestRifleFireFeedback(Vector3 shotDirection, bool sustainedFire)
+        {
+            float cooldown = sustainedFire
+                ? sustainedFireFeedbackIntervalSeconds
+                : rifleFireFeedbackCooldownSeconds;
+            if (!TryReserveFeedback(ref nextRifleFireFeedbackTime, cooldown))
+            {
+                return;
+            }
+
+            float scale = Mathf.Clamp(liveFireFeedbackScale, 0.85f, 1f);
+            Vector3 direction = ResolvePlanarFeedbackDirection(shotDirection);
+            float duration = sustainedFire ? 0.1025f : 0.085f;
+            float positionAmplitude = sustainedFire ? 0.0335f : 0.0315f;
+            float eulerAmplitude = sustainedFire ? 0.49f : 0.46f;
+            float frequency = sustainedFire ? 11f : 14.5f;
+            Vector3 additiveOffset = transform.TransformDirection(new Vector3(0f, 0.012f, -0.0365f)) * scale
+                - direction * (0.017f * scale);
+
+            rifleFireFeedbackRequestCount++;
+            lastRifleFireFeedbackTime = Time.unscaledTime;
+            RequestCue(additiveOffset, duration, 0.345f * scale, -0.035f * scale, 0f);
+            RequestMicroShake(
+                duration,
+                positionAmplitude * scale,
+                eulerAmplitude * scale,
+                direction,
+                frequency);
+        }
+
+        public void RequestHeavyShotFeedback(Vector3 shotDirection, float strength01 = 1f)
+        {
+            if (!TryReserveFeedback(ref nextHeavyShotFeedbackTime, heavyShotFeedbackCooldownSeconds))
+            {
+                return;
+            }
+
+            float weight = Mathf.Clamp01(strength01) * Mathf.Clamp01(liveFireFeedbackScale + 0.25f);
+            Vector3 direction = ResolvePlanarFeedbackDirection(shotDirection);
+            float duration = Mathf.Lerp(0.08f, 0.13f, weight);
+            RequestCue(
+                -direction * (0.035f * weight) + Vector3.up * (0.016f * weight),
+                duration,
+                0.52f * weight,
+                -0.04f * weight,
+                0.01f * weight);
+            RequestMicroShake(
+                duration,
+                0.04f * weight,
+                0.24f * weight,
+                direction,
+                20f);
+        }
+
+        public void RequestDamageHitFeedback(Vector3 incomingDirection, float strength01 = 0.5f)
+        {
+            if (!TryReserveFeedback(ref nextHitFeedbackTime, hitFeedbackCooldownSeconds))
+            {
+                return;
+            }
+
+            float weight = Mathf.Clamp01(strength01);
+            Vector3 direction = ResolvePlanarFeedbackDirection(incomingDirection);
+            float duration = Mathf.Lerp(0.10f, 0.16f, weight);
+            RequestCue(
+                -direction * Mathf.Lerp(0.018f, 0.04f, weight) + Vector3.up * Mathf.Lerp(0.006f, 0.016f, weight),
+                duration,
+                -Mathf.Lerp(0.05f, 0.16f, weight),
+                Mathf.Lerp(0.01f, 0.03f, weight),
+                0f);
+            RequestMicroShake(
+                duration,
+                Mathf.Lerp(0.018f, 0.04f, weight),
+                Mathf.Lerp(0.10f, 0.20f, weight),
+                direction,
+                20f);
+        }
+
+        public void RequestExplosionFeedback(Vector3 worldPoint, float radius = 9f, float strength01 = 1f)
+        {
+            Vector3 referencePoint = target != null ? target.position : transform.position;
+            float safeRadius = Mathf.Max(0.1f, radius);
+            float distance = Vector3.Distance(referencePoint, worldPoint);
+            float falloff = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(1f - distance / safeRadius));
+            float weight = falloff * Mathf.Clamp01(strength01);
+            if (weight <= 0.05f || !TryReserveFeedback(ref nextExplosionFeedbackTime, explosionFeedbackCooldownSeconds))
+            {
+                return;
+            }
+
+            Vector3 direction = ResolvePlanarFeedbackDirection(referencePoint - worldPoint);
+            float duration = Mathf.Lerp(0.18f, 0.30f, weight);
+            RequestCue(
+                direction * Mathf.Lerp(0.025f, 0.14f, weight) + Vector3.up * Mathf.Lerp(0.004f, 0.035f, weight),
+                duration,
+                Mathf.Lerp(0.10f, 0.55f, weight),
+                -Mathf.Lerp(0.02f, 0.12f, weight),
+                Mathf.Lerp(0.005f, 0.04f, weight));
+            RequestMicroShake(
+                duration,
+                Mathf.Lerp(0.025f, 0.085f, weight),
+                Mathf.Lerp(0.10f, 0.55f, weight),
+                direction,
+                Mathf.Lerp(18f, 28f, weight));
+        }
+
+        public void RequestLaserFireFeedback(Vector3 laserDirection)
+        {
+            Vector3 direction = ResolvePlanarFeedbackDirection(laserDirection);
+            const float duration = 0.085f;
+            RequestCue(
+                -direction * 0.018f + Vector3.up * 0.006f,
+                duration,
+                0.22f,
+                -0.018f,
+                0f);
+            RequestMicroShake(duration, 0.014f, 0.09f, direction, 18f);
+        }
+
+        public void RequestLaserSustainFeedback(Vector3 laserDirection, float strength01 = 1f)
+        {
+            if (!TryReserveFeedback(ref nextLaserSustainFeedbackTime, laserSustainFeedbackIntervalSeconds))
+            {
+                return;
+            }
+
+            float weight = Mathf.Clamp01(strength01);
+            Vector3 direction = ResolvePlanarFeedbackDirection(laserDirection);
+            RequestMicroShake(
+                0.075f,
+                Mathf.Lerp(0.006f, 0.014f, weight),
+                Mathf.Lerp(0.035f, 0.075f, weight),
+                direction,
+                10f);
+        }
+
+        public void RequestPerfectDodgeFeedback(Vector3 dodgeDirection)
+        {
+            Vector3 direction = ResolvePlanarFeedbackDirection(dodgeDirection);
+            RequestCue(
+                -direction * 0.04f + Vector3.up * 0.018f,
+                0.12f,
+                0.45f,
+                -0.06f,
+                0.015f);
+            RequestMicroShake(0.07f, 0.008f, 0.045f, direction, 14f);
+        }
+
+        public void RequestShieldBlockFeedback(Vector3 incomingDirection, float strength01 = 1f)
+        {
+            if (!TryReserveFeedback(ref nextShieldBlockFeedbackTime, shieldBlockFeedbackCooldownSeconds))
+            {
+                return;
+            }
+
+            float weight = Mathf.Clamp01(strength01);
+            Vector3 direction = ResolvePlanarFeedbackDirection(incomingDirection);
+            RequestCue(
+                -direction * Mathf.Lerp(0.02f, 0.035f, weight) + Vector3.up * Mathf.Lerp(0.006f, 0.014f, weight),
+                0.08f,
+                Mathf.Lerp(0.10f, 0.18f, weight),
+                -Mathf.Lerp(0.012f, 0.025f, weight),
+                0f);
+            RequestMicroShake(
+                0.08f,
+                Mathf.Lerp(0.012f, 0.022f, weight),
+                Mathf.Lerp(0.07f, 0.12f, weight),
+                direction,
+                22f);
         }
 
         public void SetAimModifierActive(bool active)
@@ -466,6 +676,7 @@ namespace DimensionBrawl.Presentation
             microShakeDuration = 0f;
             microShakePositionAmplitude = 0f;
             microShakeEulerAmplitude = 0f;
+            microShakeActiveFrequency = 0f;
             microShakeDirectionBias = Vector2.zero;
             lastMicroShakeLocalOffset = Vector3.zero;
             lastMicroShakeEulerOffset = Vector3.zero;
@@ -822,7 +1033,8 @@ namespace DimensionBrawl.Presentation
             float duration = Mathf.Max(0.01f, microShakeDuration);
             float normalized = Mathf.Clamp01(microShakeTimer / duration);
             float envelope = normalized * normalized * (3f - 2f * normalized);
-            float phase = (Time.unscaledTime + microShakeSeed) * Mathf.Max(1f, microShakeFrequency);
+            float activeFrequency = microShakeActiveFrequency > 0f ? microShakeActiveFrequency : microShakeFrequency;
+            float phase = (Time.unscaledTime + microShakeSeed) * Mathf.Max(1f, activeFrequency);
             float x = Mathf.Sin(phase * 6.283185f);
             float y = Mathf.Sin((phase * 1.37f + 0.23f + microShakeSeed) * 6.283185f);
             float z = Mathf.Sin((phase * 1.91f + 0.41f + microShakeSeed) * 6.283185f);
@@ -847,8 +1059,42 @@ namespace DimensionBrawl.Presentation
             {
                 microShakePositionAmplitude = 0f;
                 microShakeEulerAmplitude = 0f;
+                microShakeActiveFrequency = 0f;
                 microShakeDirectionBias = Vector2.zero;
             }
+        }
+
+        private bool TryReserveFeedback(ref float nextAllowedTime, float cooldownSeconds)
+        {
+            float now = Time.unscaledTime;
+            if (now < nextAllowedTime)
+            {
+                return false;
+            }
+
+            nextAllowedTime = now + Mathf.Max(0f, cooldownSeconds);
+            return true;
+        }
+
+        private Vector3 ResolvePlanarFeedbackDirection(Vector3 direction)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planar.sqrMagnitude > 0.0001f)
+            {
+                return planar.normalized;
+            }
+
+            if (target != null)
+            {
+                planar = Vector3.ProjectOnPlane(target.forward, Vector3.up);
+                if (planar.sqrMagnitude > 0.0001f)
+                {
+                    return planar.normalized;
+                }
+            }
+
+            planar = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            return planar.sqrMagnitude > 0.0001f ? planar.normalized : Vector3.forward;
         }
 
         private Vector2 ResolveMicroShakeDirectionBias(Vector3 planarDirection)

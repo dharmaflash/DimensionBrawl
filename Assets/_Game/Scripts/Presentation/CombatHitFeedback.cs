@@ -59,12 +59,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private float heavyCameraDistanceDelta = 0.075f;
         [SerializeField] private float heavyCameraFocusHeightDelta = 0.035f;
         [SerializeField] private bool playCameraMicroShake = true;
-        [SerializeField, Min(0f)] private float lightCameraMicroShakeSeconds = 0.055f;
-        [SerializeField, Min(0f)] private float heavyCameraMicroShakeSeconds = 0.12f;
-        [SerializeField, Min(0f)] private float lightCameraMicroShakePosition = 0.018f;
-        [SerializeField, Min(0f)] private float heavyCameraMicroShakePosition = 0.065f;
-        [SerializeField, Min(0f)] private float lightCameraMicroShakeEuler = 0.18f;
-        [SerializeField, Min(0f)] private float heavyCameraMicroShakeEuler = 0.78f;
 
         [Header("Reaction")]
         [SerializeField] private bool playVisualRecoil = true;
@@ -440,24 +434,20 @@ namespace DimensionBrawl.Presentation
             }
 
             float tierWeight = ResolveTierWeight(tier);
-            Vector3 planarDirection = ResolvePlanarDirection(damageInfo.Direction);
-            float planarKick = Mathf.Lerp(lightCameraPlanarKick, heavyCameraPlanarKick, tierWeight);
-            float verticalKick = Mathf.Lerp(lightCameraVerticalKick, heavyCameraVerticalKick, tierWeight);
-            float cueSeconds = Mathf.Lerp(lightCameraCueSeconds, heavyCameraCueSeconds, tierWeight);
-            Vector3 additiveOffset = -planarDirection * planarKick + Vector3.up * verticalKick;
-            resolvedCameraController.RequestCue(
-                additiveOffset,
-                cueSeconds,
-                Mathf.Lerp(lightCameraFieldOfViewDelta, heavyCameraFieldOfViewDelta, tierWeight),
-                Mathf.Lerp(lightCameraDistanceDelta, heavyCameraDistanceDelta, tierWeight),
-                Mathf.Lerp(0f, heavyCameraFocusHeightDelta, tierWeight));
             if (playCameraMicroShake)
             {
-                resolvedCameraController.RequestMicroShake(
-                    Mathf.Lerp(lightCameraMicroShakeSeconds, heavyCameraMicroShakeSeconds, tierWeight),
-                    Mathf.Lerp(lightCameraMicroShakePosition, heavyCameraMicroShakePosition, tierWeight),
-                    Mathf.Lerp(lightCameraMicroShakeEuler, heavyCameraMicroShakeEuler, tierWeight),
-                    damageInfo.Direction);
+                resolvedCameraController.RequestDamageHitFeedback(damageInfo.Direction, tierWeight);
+            }
+            else
+            {
+                Vector3 planarDirection = ResolvePlanarDirection(damageInfo.Direction);
+                resolvedCameraController.RequestCue(
+                    -planarDirection * Mathf.Lerp(lightCameraPlanarKick, heavyCameraPlanarKick, tierWeight)
+                        + Vector3.up * Mathf.Lerp(lightCameraVerticalKick, heavyCameraVerticalKick, tierWeight),
+                    Mathf.Lerp(lightCameraCueSeconds, heavyCameraCueSeconds, tierWeight),
+                    Mathf.Lerp(lightCameraFieldOfViewDelta, heavyCameraFieldOfViewDelta, tierWeight),
+                    Mathf.Lerp(lightCameraDistanceDelta, heavyCameraDistanceDelta, tierWeight),
+                    Mathf.Lerp(0f, heavyCameraFocusHeightDelta, tierWeight));
             }
 
             cameraImpulseRequestCount++;

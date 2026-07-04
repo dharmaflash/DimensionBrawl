@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -128,8 +129,10 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
+            Vector3 incomingDirection = transform.position - projectile.transform.position;
             projectile.Deactivate();
             interceptedProjectiles++;
+            RequestScreenBlockCamera(incomingDirection);
             Intercepted?.Invoke(this, projectile);
             if (interceptedProjectiles >= maxIntercepts)
             {
@@ -149,8 +152,10 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
+            Vector3 incomingDirection = transform.position - projectile.transform.position;
             projectile.Deactivate();
             interceptedProjectiles++;
+            RequestScreenBlockCamera(incomingDirection);
             ActionProjectileIntercepted?.Invoke(this, projectile);
             if (interceptedProjectiles >= maxIntercepts)
             {
@@ -158,6 +163,17 @@ namespace DimensionBrawl.Combat
             }
 
             return true;
+        }
+
+        private void RequestScreenBlockCamera(Vector3 incomingDirection)
+        {
+            if (!CombatTeamUtility.IsPlayerSide(ownerTeam))
+            {
+                return;
+            }
+
+            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            cameraController?.RequestShieldBlockFeedback(incomingDirection, Mathf.Clamp01(activeTier / 3f + 0.35f));
         }
 
         public void Deactivate()

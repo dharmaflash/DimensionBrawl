@@ -221,6 +221,7 @@ namespace DimensionBrawl.Player
 
                 lastSummonActor = actor;
                 PlayLandingCraterCue(actor.transform, facingDirection, tier);
+                RequestSummonLandingCamera(actor.transform.position, tier);
                 if (actor.PressureScreen != null)
                 {
                     actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
@@ -236,6 +237,15 @@ namespace DimensionBrawl.Player
 
                 LastSummonActorPosition = actor.transform.position;
                 return actor;
+            }
+
+            private static void RequestSummonLandingCamera(Vector3 position, int tier)
+            {
+                ActionCameraController cameraController = UnityEngine.Object.FindFirstObjectByType<ActionCameraController>();
+                cameraController?.RequestExplosionFeedback(
+                    position,
+                    8f,
+                    Mathf.Clamp01(0.35f + Mathf.Clamp(tier, 1, 3) * 0.16f));
             }
 
             private void PlayEntryPortalCue(Vector3 position, Vector3 facingDirection, int tier)

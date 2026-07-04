@@ -247,6 +247,7 @@ namespace DimensionBrawl.Player
             if (!IsFireDragon(settings))
             {
                 PlayLandingCraterCue(actor.transform, facingDirection, tier);
+                RequestSummonLandingCamera(actor.transform.position, tier);
             }
 
             if (actor.PressureScreen != null && settings.ScreenIntercepts > 0)
@@ -264,6 +265,15 @@ namespace DimensionBrawl.Player
             }
 
             return actor;
+        }
+
+        private static void RequestSummonLandingCamera(Vector3 position, int tier)
+        {
+            ActionCameraController cameraController = Object.FindFirstObjectByType<ActionCameraController>();
+            cameraController?.RequestExplosionFeedback(
+                position,
+                8f,
+                Mathf.Clamp01(0.35f + Mathf.Clamp(tier, 1, 3) * 0.16f));
         }
 
         private void ConfigureActorVfx(SummonFrontlineProxy actor)
