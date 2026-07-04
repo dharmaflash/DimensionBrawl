@@ -34,19 +34,20 @@ namespace DimensionBrawl.Tests
             OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
                 OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
-            Assert.That(cues.Length, Is.EqualTo(12));
-            Assert.That(cues[0].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeCue));
-            Assert.That(cues[1].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveCue));
-            Assert.That(cues[2].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedCue));
-            Assert.That(cues[3].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireCue));
-            Assert.That(cues[4].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeCue));
-            Assert.That(cues[5].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsCue));
-            Assert.That(cues[6].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeConfirm));
-            Assert.That(cues[7].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveConfirm));
-            Assert.That(cues[8].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedConfirm));
-            Assert.That(cues[9].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireConfirm));
-            Assert.That(cues[10].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeConfirm));
-            Assert.That(cues[11].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsConfirm));
+            Assert.That(cues.Length, Is.EqualTo(13));
+            Assert.That(cues[0].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SoldierChallenge));
+            Assert.That(cues[1].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeCue));
+            Assert.That(cues[2].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveCue));
+            Assert.That(cues[3].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedCue));
+            Assert.That(cues[4].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireCue));
+            Assert.That(cues[5].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeCue));
+            Assert.That(cues[6].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsCue));
+            Assert.That(cues[7].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeConfirm));
+            Assert.That(cues[8].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveConfirm));
+            Assert.That(cues[9].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedConfirm));
+            Assert.That(cues[10].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireConfirm));
+            Assert.That(cues[11].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeConfirm));
+            Assert.That(cues[12].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsConfirm));
         }
 
         [Test]
@@ -233,6 +234,33 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.That(combatHudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialSceneAssignsInstructionVoiceClips()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+
+            yield return null;
+
+            OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
+                ReadPrivateField<OlympusCorridorTutorialDirector.DialogueAudioCue[]>(
+                    flowController,
+                    "tutorialOverlayDialogueAudioCues");
+
+            Assert.That(cues.Length, Is.EqualTo(13));
+            for (int i = 0; i <= 6; i++)
+            {
+                Assert.IsNotNull(cues[i].Clip, $"Tutorial instruction voice cue {cues[i].CueId} should be assigned.");
+            }
+
+            for (int i = 7; i < cues.Length; i++)
+            {
+                Assert.IsNull(cues[i].Clip, $"Fast confirmation cue {cues[i].CueId} should stay silent.");
+            }
         }
 
         [UnityTest]

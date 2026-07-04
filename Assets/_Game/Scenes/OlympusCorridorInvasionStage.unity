@@ -253238,6 +253238,59 @@ MonoBehaviour:
   tutorialOverlayAudioSource: {fileID: 0}
   tutorialOverlayOpenSfx: {fileID: 8300000, guid: 480de4e28dbc0da4e9a1bdffcbca163d, type: 3}
   tutorialOverlayOpenSfxVolume: 0.82
+  tutorialOverlayDialogueAudioCues:
+  - cueId: 1
+    clip: {fileID: 8300000, guid: 45d0ab70b510fc1429f62da5d87a018c, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 2
+    clip: {fileID: 8300000, guid: b0a3622e69d4a7146b30823ea1b54486, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 3
+    clip: {fileID: 8300000, guid: b3ef5028dd48eeb408f3987ae9f31a6b, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 4
+    clip: {fileID: 8300000, guid: d7c29acd956f308458ffeb87f9442609, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 5
+    clip: {fileID: 8300000, guid: ef8c373d013abb2459cb21dd44ed49e3, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 6
+    clip: {fileID: 8300000, guid: 6f02ae920a319ed4194a2b863a8146c6, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 7
+    clip: {fileID: 8300000, guid: ca681da2050eadc4994aa91abe8099d4, type: 3}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 8
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 9
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 10
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 11
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 12
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
+  - cueId: 13
+    clip: {fileID: 0}
+    volume: 1
+    delaySeconds: 0
   reviewHud: {fileID: 242798373}
   mobileHud: {fileID: 242798372}
   combatHudCanvasGroup: {fileID: 0}

@@ -11,10 +11,12 @@ namespace DimensionBrawl.LevelDesign
     public sealed class OlympusCorridorTutorialDirector : MonoBehaviour
     {
         private const string SystemGuideSpeaker = "천계관리시스템";
+        private const string SoldierGuideSpeaker = "병사";
 
         public enum DialogueAudioCueId
         {
             None,
+            SoldierChallenge,
             MeleeCue,
             MoveCue,
             SwapToRangedCue,
@@ -57,6 +59,7 @@ namespace DimensionBrawl.LevelDesign
 
         private static readonly DialogueAudioCueId[] DefaultDialogueAudioCueIds =
         {
+            DialogueAudioCueId.SoldierChallenge,
             DialogueAudioCueId.MeleeCue,
             DialogueAudioCueId.MoveCue,
             DialogueAudioCueId.SwapToRangedCue,
@@ -74,6 +77,7 @@ namespace DimensionBrawl.LevelDesign
         private enum TutorialStep
         {
             Inactive,
+            SoldierChallenge,
             Melee,
             Move,
             SwapToRanged,
@@ -312,7 +316,7 @@ namespace DimensionBrawl.LevelDesign
                 combatModeController.SetMeleeMode();
             }
 
-            StartStep(TutorialStep.Melee);
+            StartStep(TutorialStep.SoldierChallenge);
         }
 
         public void CancelTutorial()
@@ -365,6 +369,12 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStepPhase.Cue:
                     if (phaseTimer >= ResolveCueReadSeconds())
                     {
+                        if (step == TutorialStep.SoldierChallenge)
+                        {
+                            StartStep(TutorialStep.Melee);
+                            return;
+                        }
+
                         ActivateStepInputWindow();
                     }
                     return;
@@ -444,6 +454,14 @@ namespace DimensionBrawl.LevelDesign
 
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    ConfigureTargetCandidates(tutorialTargets);
+                    SetMeleeMode();
+                    SetCombatModeInputLocked(true);
+                    SetRangedFireEnabled(false);
+                    SetOptionalActionsEnabled(false);
+                    SetEnemyGameplayEnabled(false);
+                    break;
                 case TutorialStep.Melee:
                     meleeHitObserved = false;
                     ConfigureTargetCandidates(tutorialTargets);
@@ -728,6 +746,15 @@ namespace DimensionBrawl.LevelDesign
         {
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    ShowGuide(
+                        DialogueAudioCueId.SoldierChallenge,
+                        SoldierGuideSpeaker,
+                        "뭐하는 놈이냐!",
+                        string.Empty,
+                        OlympusTutorialOverlayPresenter.FocusKind.None,
+                        new Vector2(0.5f, 0.5f));
+                    break;
                 case TutorialStep.Melee:
                     ShowGuide(
                         DialogueAudioCueId.MeleeCue,
@@ -741,7 +768,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         DialogueAudioCueId.MoveCue,
                         SystemGuideSpeaker,
-                        "조이스틱을 사용해 파란 영역 안에서 이동할 수 있습니다.",
+                        "조이스틱 버튼을 사용해 이동할 수 있습니다.",
                         "이동",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
@@ -750,7 +777,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         DialogueAudioCueId.SwapToRangedCue,
                         SystemGuideSpeaker,
-                        "전투 모드 전환 버튼을 사용해 원거리 사격 모드로 변경할 수 있습니다.",
+                        "전환 버튼을 사용해 원거리 사격으로 변경할 수 있습니다.",
                         "모드 전환",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
@@ -777,7 +804,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         DialogueAudioCueId.ClearTargetsCue,
                         SystemGuideSpeaker,
-                        "남은 적을 처치하면 기초 전투 검증이 완료됩니다.",
+                        "남은 적을 처치하십시오.",
                         "전투 완료",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
@@ -1557,6 +1584,12 @@ namespace DimensionBrawl.LevelDesign
 
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    SetMovementInputLocked(true);
+                    SetPlayerActionInputLocked(true);
+                    SetCombatModeInputLocked(true);
+                    SetRangedBasicAttackInputLocked(true);
+                    break;
                 case TutorialStep.Melee:
                     SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(cueLocked || committed);

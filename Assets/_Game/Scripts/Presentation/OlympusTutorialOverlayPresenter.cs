@@ -157,6 +157,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            StopCommunicatorAudioPlayback();
             if (visible)
             {
                 CaptureOutgoingCue();
@@ -200,8 +201,7 @@ namespace DimensionBrawl.Presentation
             phaseLabel = string.Empty;
             hasOutgoingCue = false;
             hasPlayedOpenSfx = false;
-            pendingDialogueSfx = null;
-            pendingDialogueSfxTimer = 0f;
+            StopCommunicatorAudioPlayback();
             transitionTimer = transitionSeconds;
             dialogueRevealTimer = 0f;
             warningBootTimer = 0f;
@@ -849,6 +849,18 @@ namespace DimensionBrawl.Presentation
             }
 
             communicatorAudioSource.PlayOneShot(clip, pendingDialogueSfxVolume);
+        }
+
+        private void StopCommunicatorAudioPlayback()
+        {
+            pendingDialogueSfx = null;
+            pendingDialogueSfxTimer = 0f;
+            if (communicatorAudioSource == null)
+            {
+                return;
+            }
+
+            communicatorAudioSource.Stop();
         }
 
         private Vector2 ResolveFocusCenterGuiPoint(Vector2 anchor)
