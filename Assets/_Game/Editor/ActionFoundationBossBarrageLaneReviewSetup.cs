@@ -98,6 +98,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_End_01.mp3";
         public const string BossLaserFireSfxClipPath =
             BossLaserSustainLoopSfxClipPath;
+        private const string PlayerLockTargetRingMaterialPath =
+            "Assets/_Game/Art/VFX/HovlSciFiEffects/Materials/DB_HovlSciFi_TargetingInterface2cg.mat";
+        private const string PlayerLockTargetFresnelMaterialPath =
+            "Assets/_Game/Art/VFX/HovlSciFiEffects/Materials/DB_HovlSciFi_Fresnel8bcg.mat";
         private const string BossBasicFireSfxClipPath =
             "Assets/_Game/Art/Audio/SFX/MissileShield/DB_SFX_Missile_Launch_01.mp3";
         private const string PlayerRangedReloadSfxClipPath =
@@ -625,6 +629,61 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation boss basic fire bindings.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Player Lock Targeting")]
+        public static void ReapplyPlayerLockTargetingMenu()
+        {
+            ReapplyPlayerLockTargeting();
+            Debug.Log("Reapplied ActionFoundation player lock targeting.");
+        }
+
+        public static void ReapplyPlayerLockTargeting()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>(scene, "action camera");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerLockTargetController lockTargetController = ConfigurePlayerLockTargeting(
+                player.gameObject,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                player.transform,
+                rangedBasicAttackAction);
+            PlayerLockTargetVisualPresenter lockTargetVisualPresenter =
+                RequireComponent<PlayerLockTargetVisualPresenter>(player.gameObject, "player lock target visual presenter");
+
+            GameObject hudRoot = RequireRoot(scene, HudRootName);
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile review HUD");
+            mobileHud.SetLockTargetController(lockTargetController);
+            SetObjectReference(mobileHud, "lockTargetController", lockTargetController);
+            SetBool(mobileHud, "showLockTargetMarker", true);
+            SetFloat(mobileHud, "lockTargetMarkerSize", 52f);
+            SetFloat(mobileHud, "lockTargetMarkerGap", 12f);
+            SetFloat(mobileHud, "lockTargetMarkerThickness", 3f);
+            EditorUtility.SetDirty(mobileHud);
+
+            ValidatePlayerLockTargeting(
+                lockTargetController,
+                lockTargetVisualPresenter,
+                rangedBasicAttackAction,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                player.transform);
+            ValidateObjectReference(mobileHud, "lockTargetController", lockTargetController);
+
+            if (!EditorSceneManager.SaveScene(scene))
+            {
+                throw new InvalidOperationException($"Failed to save player lock targeting into {ReviewScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
         [MenuItem("DimensionBrawl/Validate Action Foundation Boss Barrage Lane Review Scene")]
         public static void ValidateBossBarrageLaneReviewSceneMenu()
         {
@@ -1115,6 +1174,13 @@ namespace DimensionBrawl.Editor
                 rangedBasicProjectilePrefab,
                 projectileRoot.transform,
                 combatModeVisuals.RangedFireOrigin);
+            PlayerLockTargetController lockTargetController = ConfigurePlayerLockTargeting(
+                player.gameObject,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                player.transform,
+                rangedBasicAttackAction);
             CombatVfxCuePlayer playerCuePlayer =
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
             ConfigurePlayerRangedBasicVfxCueDriver(
@@ -1162,6 +1228,7 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction,
+                lockTargetController,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,
@@ -1254,6 +1321,10 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerLockTargetController lockTargetController =
+                RequireComponent<PlayerLockTargetController>(player.gameObject, "player lock target controller");
+            PlayerLockTargetVisualPresenter lockTargetVisualPresenter =
+                RequireComponent<PlayerLockTargetVisualPresenter>(player.gameObject, "player lock target visual presenter");
             ValidatePlayerDamageShaderFeedback(scene, player.gameObject, playerHealth, closeThreat, closeThreatHealth);
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
@@ -1315,6 +1386,14 @@ namespace DimensionBrawl.Editor
                 rangedAnimator,
                 RequireRoot(scene, ProjectilePoolRootName).transform,
                 rangedFireOrigin);
+            ValidatePlayerLockTargeting(
+                lockTargetController,
+                lockTargetVisualPresenter,
+                rangedBasicAttackAction,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                player.transform);
             ValidateRangedBasicProjectilePrefab();
             ValidateBossBarrageCombatCueAssetOverlays();
             ValidatePromotedLaserLaneProjectilePrefab(
@@ -1562,6 +1641,7 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction,
+                lockTargetController,
                 skill1Action,
                 summonSlot1Action,
                 emitter,
@@ -1581,6 +1661,7 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction,
+                lockTargetController,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,
@@ -6526,6 +6607,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatModeController combatModeController,
             PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerLockTargetController lockTargetController,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
@@ -6585,6 +6667,8 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 summonSlot2Action,
                 summonSlot3Action);
+            mobileHud.SetLockTargetController(lockTargetController);
+            SetObjectReference(mobileHud, "lockTargetController", lockTargetController);
             SetObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
             SetString(mobileHud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
@@ -6618,6 +6702,12 @@ namespace DimensionBrawl.Editor
             SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
             SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
             SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
+            SetBool(mobileHud, "showLockTargetMarker", true);
+            SetFloat(mobileHud, "lockTargetMarkerSize", 52f);
+            SetFloat(mobileHud, "lockTargetMarkerGap", 12f);
+            SetFloat(mobileHud, "lockTargetMarkerThickness", 3f);
+            SetFloat(mobileHud, "lockTargetCoreDotSize", 15f);
+            SetFloat(mobileHud, "lockTargetCoreHaloSize", 40f);
 
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
             screenCuePresenter.Configure(
@@ -7115,6 +7205,69 @@ namespace DimensionBrawl.Editor
             return rangedBasicAttackAction;
         }
 
+        private static PlayerLockTargetController ConfigurePlayerLockTargeting(
+            GameObject player,
+            PlayerCombatTargetSelector targetSelector,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            Transform selectionOrigin,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction)
+        {
+            PlayerLockTargetController lockTargetController = EnsureComponent<PlayerLockTargetController>(player);
+            lockTargetController.ConfigureReferences(targetSelector, playerHealth, cameraController, selectionOrigin);
+            SetObjectReference(lockTargetController, "targetSelector", targetSelector);
+            SetObjectReference(lockTargetController, "sourceHealth", playerHealth);
+            SetObjectReference(lockTargetController, "selectionOrigin", selectionOrigin);
+            SetObjectReference(lockTargetController, "cameraController", cameraController);
+            SetBool(lockTargetController, "autoAcquire", true);
+            SetFloat(lockTargetController, "softLockDistance", 34f);
+            SetFloat(lockTargetController, "lockBreakDistance", 40f);
+            SetFloat(lockTargetController, "softLockAngleDegrees", 58f);
+            SetFloat(lockTargetController, "retainedLockAngleDegrees", 86f);
+            SetFloat(lockTargetController, "currentTargetStickiness", 0.62f);
+            SetFloat(lockTargetController, "retargetIntervalSeconds", 0.08f);
+            SetFloat(lockTargetController, "lostTargetGraceSeconds", 0.25f);
+            SetFloat(lockTargetController, "fallbackAimHeight", PlayerRangedBasicTargetHeight);
+            SetBool(lockTargetController, "clearWhenPlayerDown", true);
+            SetFloat(lockTargetController, "cameraIntentStrongSeconds", 0.55f);
+            SetFloat(lockTargetController, "cameraIntentFadeSeconds", 1.35f);
+            SetFloat(lockTargetController, "cameraIntentAngleDegrees", 64f);
+            SetFloat(lockTargetController, "cameraIntentTargetStickiness", 1.05f);
+            SetFloat(lockTargetController, "attackStickySeconds", 0.38f);
+            SetFloat(lockTargetController, "attackStickyTargetStickiness", 0.42f);
+
+            rangedBasicAttackAction.SetLockTargetController(lockTargetController);
+            SetObjectReference(rangedBasicAttackAction, "lockTargetController", lockTargetController);
+
+            PlayerLockTargetVisualPresenter visualPresenter = EnsureComponent<PlayerLockTargetVisualPresenter>(player);
+            visualPresenter.Configure(
+                lockTargetController,
+                LoadAsset<Material>(PlayerLockTargetRingMaterialPath),
+                LoadAsset<Material>(PlayerLockTargetFresnelMaterialPath));
+            SetObjectReference(visualPresenter, "lockTargetController", lockTargetController);
+            SetObjectReference(visualPresenter, "ringMaterial", LoadAsset<Material>(PlayerLockTargetRingMaterialPath));
+            SetObjectReference(visualPresenter, "fresnelMaterial", LoadAsset<Material>(PlayerLockTargetFresnelMaterialPath));
+            SetBool(visualPresenter, "showTargetCage", true);
+            SetBool(visualPresenter, "showTopRing", false);
+            SetBool(visualPresenter, "showVerticalCage", false);
+            SetFloat(visualPresenter, "minimumRadius", 0.72f);
+            SetFloat(visualPresenter, "radiusPadding", 0.28f);
+            SetFloat(visualPresenter, "minimumHeight", 1.35f);
+            SetFloat(visualPresenter, "groundLift", 0.045f);
+            SetFloat(visualPresenter, "verticalRibbonWidth", 0.035f);
+            SetFloat(visualPresenter, "pulseScale", 0.08f);
+            SetFloat(visualPresenter, "spinDegreesPerSecond", 72f);
+            SetBool(visualPresenter, "showTargetOutline", true);
+            SetFloat(visualPresenter, "outlineWidth", 0.012f);
+            SetFloat(visualPresenter, "outlinePulseWidth", 0.003f);
+            SetFloat(visualPresenter, "outlineEmissionBoost", 1.12f);
+
+            EditorUtility.SetDirty(lockTargetController);
+            EditorUtility.SetDirty(visualPresenter);
+            EditorUtility.SetDirty(rangedBasicAttackAction);
+            return lockTargetController;
+        }
+
         private static void ConfigureActionCameraCueDriver(
             ActionCameraController cameraController,
             PlayerActionController actionController,
@@ -7474,6 +7627,56 @@ namespace DimensionBrawl.Editor
             ValidateFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale", 1f);
             ValidateFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength", 0.05f);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
+        }
+
+        private static void ValidatePlayerLockTargeting(
+            PlayerLockTargetController lockTargetController,
+            PlayerLockTargetVisualPresenter visualPresenter,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerCombatTargetSelector targetSelector,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            Transform selectionOrigin)
+        {
+            ValidateObjectReference(lockTargetController, "targetSelector", targetSelector);
+            ValidateObjectReference(lockTargetController, "sourceHealth", playerHealth);
+            ValidateObjectReference(lockTargetController, "selectionOrigin", selectionOrigin);
+            ValidateObjectReference(lockTargetController, "cameraController", cameraController);
+            ValidateBool(lockTargetController, "autoAcquire", true);
+            ValidateFloat(lockTargetController, "softLockDistance", 34f);
+            ValidateFloat(lockTargetController, "lockBreakDistance", 40f);
+            ValidateFloat(lockTargetController, "softLockAngleDegrees", 58f);
+            ValidateFloat(lockTargetController, "retainedLockAngleDegrees", 86f);
+            ValidateFloat(lockTargetController, "currentTargetStickiness", 0.62f);
+            ValidateFloat(lockTargetController, "retargetIntervalSeconds", 0.08f);
+            ValidateFloat(lockTargetController, "lostTargetGraceSeconds", 0.25f);
+            ValidateFloat(lockTargetController, "fallbackAimHeight", PlayerRangedBasicTargetHeight);
+            ValidateBool(lockTargetController, "clearWhenPlayerDown", true);
+            ValidateFloat(lockTargetController, "cameraIntentStrongSeconds", 0.55f);
+            ValidateFloat(lockTargetController, "cameraIntentFadeSeconds", 1.35f);
+            ValidateFloat(lockTargetController, "cameraIntentAngleDegrees", 64f);
+            ValidateFloat(lockTargetController, "cameraIntentTargetStickiness", 1.05f);
+            ValidateFloat(lockTargetController, "attackStickySeconds", 0.38f);
+            ValidateFloat(lockTargetController, "attackStickyTargetStickiness", 0.42f);
+            ValidateObjectReference(rangedBasicAttackAction, "lockTargetController", lockTargetController);
+
+            ValidateObjectReference(visualPresenter, "lockTargetController", lockTargetController);
+            ValidateObjectReference(visualPresenter, "ringMaterial", LoadAsset<Material>(PlayerLockTargetRingMaterialPath));
+            ValidateObjectReference(visualPresenter, "fresnelMaterial", LoadAsset<Material>(PlayerLockTargetFresnelMaterialPath));
+            ValidateBool(visualPresenter, "showTargetCage", true);
+            ValidateBool(visualPresenter, "showTopRing", false);
+            ValidateBool(visualPresenter, "showVerticalCage", false);
+            ValidateFloat(visualPresenter, "minimumRadius", 0.72f);
+            ValidateFloat(visualPresenter, "radiusPadding", 0.28f);
+            ValidateFloat(visualPresenter, "minimumHeight", 1.35f);
+            ValidateFloat(visualPresenter, "groundLift", 0.045f);
+            ValidateFloat(visualPresenter, "verticalRibbonWidth", 0.035f);
+            ValidateFloat(visualPresenter, "pulseScale", 0.08f);
+            ValidateFloat(visualPresenter, "spinDegreesPerSecond", 72f);
+            ValidateBool(visualPresenter, "showTargetOutline", true);
+            ValidateFloat(visualPresenter, "outlineWidth", 0.012f);
+            ValidateFloat(visualPresenter, "outlinePulseWidth", 0.003f);
+            ValidateFloat(visualPresenter, "outlineEmissionBoost", 1.12f);
         }
 
         private static void ValidateActionCameraCueDriver(
@@ -11473,6 +11676,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatModeController combatModeController,
             PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerLockTargetController lockTargetController,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
@@ -11529,6 +11733,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatModeController combatModeController,
             PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerLockTargetController lockTargetController,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
@@ -11540,6 +11745,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "combatModeController", combatModeController);
             ValidateObjectReference(hud, "aimController", rangedAimController);
             ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
+            ValidateObjectReference(hud, "lockTargetController", lockTargetController);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
@@ -11584,6 +11790,12 @@ namespace DimensionBrawl.Editor
             ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
             ValidateBool(hud, "fireAimReticleFollowsAssist", true);
             ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
+            ValidateBool(hud, "showLockTargetMarker", true);
+            ValidateFloat(hud, "lockTargetMarkerSize", 52f);
+            ValidateFloat(hud, "lockTargetMarkerGap", 12f);
+            ValidateFloat(hud, "lockTargetMarkerThickness", 3f);
+            ValidateFloat(hud, "lockTargetCoreDotSize", 15f);
+            ValidateFloat(hud, "lockTargetCoreHaloSize", 40f);
         }
 
         private static void ValidateActionScreenCuePresenter(

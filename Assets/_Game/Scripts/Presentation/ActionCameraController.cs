@@ -142,6 +142,7 @@ namespace DimensionBrawl.Presentation
         private float nextShieldBlockFeedbackTime;
         private int rifleFireFeedbackRequestCount;
         private float lastRifleFireFeedbackTime = float.NegativeInfinity;
+        private float lastManualViewIntentTime = float.NegativeInfinity;
 
         public bool HasActiveCue => cueTimer > 0f;
         public bool HasActiveMicroShake => microShakeTimer > 0f;
@@ -161,6 +162,7 @@ namespace DimensionBrawl.Presentation
         public float LastRifleFireFeedbackTime => lastRifleFireFeedbackTime;
         public Vector3 LastMicroShakeLocalOffset => lastMicroShakeLocalOffset;
         public Vector3 LastMicroShakeEulerOffset => lastMicroShakeEulerOffset;
+        public float LastManualViewIntentTime => lastManualViewIntentTime;
 
         public Vector3 GetAimPlanarForward()
         {
@@ -200,11 +202,36 @@ namespace DimensionBrawl.Presentation
         public void SetOrbitInput(Vector2 input)
         {
             mobileOrbitInput = Vector2.ClampMagnitude(input, 1f);
+            RecordManualViewIntentIfNeeded(mobileOrbitInput);
         }
 
         public void SetAimOrbitInput(Vector2 input)
         {
             aimOrbitInput = Vector2.ClampMagnitude(input, 1f);
+            RecordManualViewIntentIfNeeded(aimOrbitInput);
+        }
+
+        public float ResolveManualViewIntentStrength(float strongSeconds, float fadeSeconds)
+        {
+            if (float.IsNegativeInfinity(lastManualViewIntentTime))
+            {
+                return 0f;
+            }
+
+            float age = Time.time - lastManualViewIntentTime;
+            if (age < 0f)
+            {
+                return 1f;
+            }
+
+            float strongDuration = Mathf.Max(0f, strongSeconds);
+            if (age <= strongDuration)
+            {
+                return 1f;
+            }
+
+            float fadeDuration = Mathf.Max(0.001f, fadeSeconds);
+            return 1f - Mathf.Clamp01((age - strongDuration) / fadeDuration);
         }
 
         public void RequestAimAssistYawTarget(float targetYawOffsetDegrees, float strength01)
@@ -760,6 +787,10 @@ namespace DimensionBrawl.Presentation
             {
                 ApplyTargetYawAssist(deltaTime);
             }
+            else
+            {
+                lastManualViewIntentTime = Time.time;
+            }
 
             orbitYawDegrees = NormalizeYaw(orbitYawDegrees);
         }
@@ -816,6 +847,14 @@ namespace DimensionBrawl.Presentation
             }
 
             return Vector2.ClampMagnitude(input, 1f);
+        }
+
+        private void RecordManualViewIntentIfNeeded(Vector2 input)
+        {
+            if (input.sqrMagnitude >= orbitInputDeadZone * orbitInputDeadZone)
+            {
+                lastManualViewIntentTime = Time.time;
+            }
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)
@@ -922,6 +961,11 @@ namespace DimensionBrawl.Presentation
             float targetPitchOffset = 0f;
             Vector2 aimInput = ApplyDeadZone(aimOrbitInput);
             bool holdsCurrentOffset = false;
+            if (aimInput.sqrMagnitude > 0f)
+            {
+                lastManualViewIntentTime = Time.time;
+            }
+
             if (aimOrbitUsesInput && aimTargetWeight > 0f && aimOrbitYawLimitDegrees > 0f)
             {
                 holdsCurrentOffset = aimOrbitHoldsYawUntilAimEnds && aimInput.sqrMagnitude <= 0f;

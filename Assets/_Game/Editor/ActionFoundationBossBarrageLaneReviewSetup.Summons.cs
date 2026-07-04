@@ -13,7 +13,7 @@ namespace DimensionBrawl.Editor
     {
         private const string SummonSlot2LaserMuzzleOriginName = "LaserMuzzleOrigin";
         private const string SummonSlot2LaserMuzzleBeamName = "LaserMuzzleBeam";
-        private static readonly Vector3 SummonSlot2LaserMuzzleFallbackLocalPosition = new Vector3(0f, 0.92f, 1.58f);
+        private static readonly Vector3 SummonSlot2LaserMuzzleFallbackLocalPosition = new Vector3(0f, 0.92f, 1.42f);
         private static readonly Vector3 SummonSlot2LaserBeamLocalScale = new Vector3(0.54f, 0.54f, 1.05f);
         private const float SummonSlot2LaserPresentationRecoverySeconds = 0.38f;
 
@@ -740,7 +740,7 @@ namespace DimensionBrawl.Editor
                 SetBool(beamPresenter, "overrideBeamColor", false);
                 SetFloat(beamPresenter, "beamUvScrollSpeed", -6f);
                 SetFloat(beamPresenter, "beamTextureScalePerMeter", 0.1f);
-                SetFloat(beamPresenter, "beamMuzzleOffset", 0.04f);
+                SetFloat(beamPresenter, "beamMuzzleOffset", 0f);
                 SetFloat(beamPresenter, "beamImpactBackOffset", 0.5f);
                 SetFloat(beamPresenter, "beamWidthMultiplier", 1.18f);
                 SetFloat(beamPresenter, "authoredBeamLength", 10f);
@@ -1003,7 +1003,7 @@ namespace DimensionBrawl.Editor
                         pulseSpeed: 22f,
                         minimumParticleSystems: 8,
                         beamWidthMultiplier: 1.18f,
-                        beamMuzzleOffset: 0.04f,
+                        beamMuzzleOffset: 0f,
                         loopParticles: false,
                         overrideBeamColor: false);
                 }
@@ -1694,7 +1694,7 @@ namespace DimensionBrawl.Editor
                 float frontProjection = ResolveBoundsFrontProjection(actorOrigin, forward, weaponBounds);
                 Vector3 centerProjection = Vector3.Project(weaponBounds.center - actorOrigin, forward);
                 Vector3 lateralCenter = weaponBounds.center - actorOrigin - centerProjection;
-                Vector3 muzzleWorld = actorOrigin + lateralCenter + forward * (frontProjection + 0.14f);
+                Vector3 muzzleWorld = actorOrigin + lateralCenter + forward * (frontProjection + 0.02f);
                 Vector3 resolved = actorRoot.InverseTransformPoint(muzzleWorld);
                 resolved.y = Mathf.Clamp(resolved.y, 0.72f, 1.48f);
                 resolved.z = Mathf.Max(resolved.z, SummonSlot2LaserMuzzleFallbackLocalPosition.z);
@@ -1712,7 +1712,7 @@ namespace DimensionBrawl.Editor
                 return false;
             }
 
-            Vector3 socketWorld = weaponSocket.position + actorRoot.forward * 0.86f;
+            Vector3 socketWorld = weaponSocket.position + actorRoot.forward * 0.72f;
             Vector3 socketLocal = actorRoot.InverseTransformPoint(socketWorld);
             socketLocal.y = Mathf.Clamp(socketLocal.y, 0.72f, 1.48f);
             socketLocal.z = Mathf.Max(socketLocal.z, SummonSlot2LaserMuzzleFallbackLocalPosition.z);

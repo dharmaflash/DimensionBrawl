@@ -16,6 +16,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerRangedAimController aimController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
+        [SerializeField] private PlayerLockTargetController lockTargetController;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
@@ -99,6 +100,19 @@ namespace DimensionBrawl.UI
         [SerializeField, Range(0f, 1f)] private float fireAimAssistThicknessBoost = 0.45f;
         [SerializeField] private bool fireAimReticleFollowsAssist = true;
         [SerializeField, Min(0f)] private float fireAimAssistReticleMaxOffset = 96f;
+
+        [Header("Lock Target")]
+        [SerializeField] private bool showLockTargetMarker = true;
+        [SerializeField, Min(8f)] private float lockTargetMarkerSize = 52f;
+        [SerializeField, Min(0f)] private float lockTargetMarkerGap = 12f;
+        [SerializeField, Min(1f)] private float lockTargetMarkerThickness = 3f;
+        [SerializeField] private Color lockTargetMarkerColor = new Color(0.62f, 0.98f, 1f, 0.96f);
+        [SerializeField] private Color hardLockTargetMarkerColor = new Color(1f, 0.86f, 0.32f, 1f);
+        [SerializeField, Range(0f, 1f)] private float lockTargetMarkerPulseBoost = 0.18f;
+        [SerializeField, Min(4f)] private float lockTargetCoreDotSize = 13f;
+        [SerializeField, Min(6f)] private float lockTargetCoreHaloSize = 34f;
+        [SerializeField] private Color lockTargetCoreColor = new Color(1f, 0.08f, 0.04f, 1f);
+        [SerializeField] private Color hardLockTargetCoreColor = new Color(1f, 0.20f, 0.06f, 1f);
 
         private Rect moveJoystickRect;
         private Rect moveJoystickTouchRect;
@@ -201,6 +215,11 @@ namespace DimensionBrawl.UI
             summonSlot3Action = newSummonSlot3Action;
         }
 
+        public void SetLockTargetController(PlayerLockTargetController newLockTargetController)
+        {
+            lockTargetController = newLockTargetController;
+        }
+
         private void Awake()
         {
             if (movement == null)
@@ -226,6 +245,11 @@ namespace DimensionBrawl.UI
             if (rangedBasicAttackAction == null && movement != null)
             {
                 rangedBasicAttackAction = movement.GetComponent<PlayerRangedBasicAttackAction>();
+            }
+
+            if (lockTargetController == null && movement != null)
+            {
+                lockTargetController = movement.GetComponent<PlayerLockTargetController>();
             }
 
             if (skill1Action == null && movement != null)
@@ -400,6 +424,7 @@ namespace DimensionBrawl.UI
             DrawMoveJoystick();
             DrawButton(basicRect, combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE", firePointerHeld);
             DrawFireAimReticle();
+            DrawLockTargetMarker();
             DrawButton(dodgeRect, "DODGE", IsHeld(dodgeRect));
             DrawButton(swapRect, "SWAP", false);
             DrawButton(skillRect, "SKILL", false);
@@ -1241,19 +1266,35 @@ namespace DimensionBrawl.UI
             float resolvedScale = ResolveScale();
             float assistStrength = ResolveFireAimAssistStrength();
             Vector2 assistCenter = rawCenter;
+            bool hasLockAssistPoint = false;
             bool hasAssistPoint = fireAimReticleFollowsAssist
-                && TryResolveFireAimAssistGuiPoint(rawCenter, resolvedScale, out assistCenter);
+                && TryResolveFireAimAssistGuiPoint(rawCenter, resolvedScale, out assistCenter, out hasLockAssistPoint);
             float size = fireAimReticleSize * resolvedScale * (1f + fireAimAssistSizeBoost * assistStrength);
             float gap = fireAimReticleGap * resolvedScale * (1f - fireAimAssistGapTighten * assistStrength);
             float thickness = fireAimReticleThickness * resolvedScale * (1f + fireAimAssistThicknessBoost * assistStrength);
 
             Color previousColor = GUI.color;
-            DrawFireAimReticleAt(
-                rawCenter,
-                fireAimReticleSize * resolvedScale,
-                fireAimReticleGap * resolvedScale,
-                fireAimReticleThickness * resolvedScale,
-                fireAimReticleColor);
+            if (!hasAssistPoint)
+            {
+                DrawFireAimReticleAt(
+                    rawCenter,
+                    fireAimReticleSize * resolvedScale,
+                    fireAimReticleGap * resolvedScale,
+                    fireAimReticleThickness * resolvedScale,
+                    fireAimReticleColor);
+            }
+            else if (!hasLockAssistPoint)
+            {
+                Color rawColor = fireAimReticleColor;
+                rawColor.a *= 0.38f;
+                DrawFireAimReticleAt(
+                    rawCenter,
+                    fireAimReticleSize * resolvedScale,
+                    fireAimReticleGap * resolvedScale,
+                    fireAimReticleThickness * resolvedScale,
+                    rawColor);
+            }
+
             if (hasAssistPoint)
             {
                 DrawFireAimReticleAt(assistCenter, size, gap, thickness, fireAimAssistReticleColor);
@@ -1275,6 +1316,66 @@ namespace DimensionBrawl.UI
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y + gap, thickness, size));
         }
 
+        private void DrawLockTargetMarker()
+        {
+            if (!showLockTargetMarker
+                || lockTargetController == null
+                || !lockTargetController.HasLockTarget
+                || !lockTargetController.TryGetLockViewportPoint(out Vector2 viewportPoint))
+            {
+                return;
+            }
+
+            EnsureReticleTexture();
+            if (reticleTexture == null)
+            {
+                return;
+            }
+
+            float resolvedScale = ResolveScale();
+            float pulse01 = 0.5f + Mathf.Sin(Time.time * 9f) * 0.5f;
+            float size = lockTargetMarkerSize * resolvedScale * (1f + lockTargetMarkerPulseBoost * pulse01);
+            float gap = lockTargetMarkerGap * resolvedScale;
+            float thickness = lockTargetMarkerThickness * resolvedScale;
+            Vector2 center = new Vector2(viewportPoint.x * Screen.width, (1f - viewportPoint.y) * Screen.height);
+            Color color = lockTargetController.CurrentLockType == PlayerLockTargetController.LockTargetType.HardLock
+                ? hardLockTargetMarkerColor
+                : lockTargetMarkerColor;
+            color = Color.Lerp(color, Color.white, 0.18f * pulse01);
+
+            Color previousColor = GUI.color;
+            DrawFireAimReticleAt(center, size, gap, thickness, color);
+            DrawLockTargetCore(
+                center,
+                resolvedScale,
+                pulse01,
+                lockTargetController.CurrentLockType == PlayerLockTargetController.LockTargetType.HardLock
+                    ? hardLockTargetCoreColor
+                    : lockTargetCoreColor);
+            GUI.color = previousColor;
+        }
+
+        private void DrawLockTargetCore(Vector2 center, float resolvedScale, float pulse01, Color coreColor)
+        {
+            float haloSize = lockTargetCoreHaloSize * resolvedScale * (1f + 0.14f * pulse01);
+            for (int i = 0; i < 4; i++)
+            {
+                float step01 = i / 3f;
+                float size = Mathf.Lerp(haloSize, lockTargetCoreDotSize * resolvedScale * 1.8f, step01);
+                Color haloColor = Color.Lerp(coreColor, Color.white, step01 * 0.35f);
+                haloColor.a *= Mathf.Lerp(0.12f, 0.34f, step01) * (0.72f + 0.28f * pulse01);
+                GUI.color = WithHudOpacity(haloColor);
+                DrawReticleSegment(RectFromCenter(center, size));
+            }
+
+            float dotSize = lockTargetCoreDotSize * resolvedScale * (1f + 0.12f * pulse01);
+            float glintSize = Mathf.Max(2f, dotSize * 0.28f);
+            GUI.color = WithHudOpacity(coreColor);
+            DrawReticleSegment(RectFromCenter(center, dotSize));
+            GUI.color = WithHudOpacity(Color.white);
+            DrawReticleSegment(RectFromCenter(center + new Vector2(-dotSize * 0.16f, -dotSize * 0.16f), glintSize));
+        }
+
         private Color WithHudOpacity(Color color)
         {
             color.a *= hudOpacity;
@@ -1293,6 +1394,11 @@ namespace DimensionBrawl.UI
 
         private float ResolveFireAimAssistStrength()
         {
+            if (lockTargetController != null && lockTargetController.HasLockTarget)
+            {
+                return Mathf.Clamp01(lockTargetController.LockStrength01);
+            }
+
             if (rangedBasicAttackAction == null
                 || !rangedBasicAttackAction.TryGetAimPreviewDirection(out _)
                 || !rangedBasicAttackAction.HasAimAssistTarget)
@@ -1303,9 +1409,24 @@ namespace DimensionBrawl.UI
             return Mathf.Clamp01(rangedBasicAttackAction.AimAssistStrength01);
         }
 
-        private bool TryResolveFireAimAssistGuiPoint(Vector2 rawCenter, float resolvedScale, out Vector2 assistCenter)
+        private bool TryResolveFireAimAssistGuiPoint(
+            Vector2 rawCenter,
+            float resolvedScale,
+            out Vector2 assistCenter,
+            out bool isLockAssistPoint)
         {
             assistCenter = rawCenter;
+            isLockAssistPoint = false;
+            if (lockTargetController != null
+                && lockTargetController.TryGetLockViewportPoint(out Vector2 lockViewportPoint))
+            {
+                assistCenter = new Vector2(
+                    lockViewportPoint.x * Screen.width,
+                    (1f - lockViewportPoint.y) * Screen.height);
+                isLockAssistPoint = true;
+                return ClampAssistReticlePoint(rawCenter, resolvedScale, ref assistCenter, clampToMaxOffset: false);
+            }
+
             if (rangedBasicAttackAction == null
                 || !rangedBasicAttackAction.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewportPoint))
             {
@@ -1315,9 +1436,18 @@ namespace DimensionBrawl.UI
             assistCenter = new Vector2(
                 assistViewportPoint.x * Screen.width,
                 (1f - assistViewportPoint.y) * Screen.height);
+            return ClampAssistReticlePoint(rawCenter, resolvedScale, ref assistCenter, clampToMaxOffset: true);
+        }
+
+        private bool ClampAssistReticlePoint(
+            Vector2 rawCenter,
+            float resolvedScale,
+            ref Vector2 assistCenter,
+            bool clampToMaxOffset)
+        {
             Vector2 offset = assistCenter - rawCenter;
             float maxOffset = fireAimAssistReticleMaxOffset * resolvedScale;
-            if (maxOffset > 0f)
+            if (clampToMaxOffset && maxOffset > 0f)
             {
                 offset = Vector2.ClampMagnitude(offset, maxOffset);
                 assistCenter = rawCenter + offset;

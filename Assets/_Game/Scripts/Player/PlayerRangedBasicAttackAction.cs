@@ -23,6 +23,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private PlayerRangedAimController aimController;
         [SerializeField] private PlayerMovementController movement;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
+        [SerializeField] private PlayerLockTargetController lockTargetController;
         [SerializeField] private CombatHealth sourceHealth;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Animator animator;
@@ -163,6 +164,8 @@ namespace DimensionBrawl.Player
         public Transform FireOrigin => fireOrigin;
         public Transform ProjectileRoot => projectileRoot;
         public Vector3 LastResolvedFireDirection { get; private set; } = Vector3.forward;
+        public bool HasLockTarget => lockTargetController != null && lockTargetController.HasLockTarget;
+        public CombatHealth LockTargetHealth => lockTargetController != null ? lockTargetController.CurrentTargetHealth : null;
         public bool HasAimAssistTarget { get; private set; }
         public float AimAssistStrength01 { get; private set; }
         public CombatHealth AimAssistTargetHealth { get; private set; }
@@ -267,6 +270,7 @@ namespace DimensionBrawl.Player
             InvalidateFirePreviewCache();
             ResolveFirePreview(out Vector3 direction, out Vector3 spawnPosition, out _);
             LastResolvedFireDirection = direction;
+            lockTargetController?.NotifyAttackTarget(AimAssistTargetHealth);
             projectile.transform.SetParent(projectileRoot, worldPositionStays: true);
             projectile.transform.position = spawnPosition;
             DamageTeam resolvedSourceTeam = sourceHealth != null && sourceHealth.Team != DamageTeam.Neutral
@@ -340,6 +344,12 @@ namespace DimensionBrawl.Player
             fireOrigin = newFireOrigin;
         }
 
+        public void SetLockTargetController(PlayerLockTargetController newLockTargetController)
+        {
+            lockTargetController = newLockTargetController;
+            InvalidateFirePreviewCache();
+        }
+
         private void Awake()
         {
             if (combatModeController == null)
@@ -360,6 +370,11 @@ namespace DimensionBrawl.Player
             if (targetSelector == null)
             {
                 targetSelector = GetComponent<PlayerCombatTargetSelector>();
+            }
+
+            if (lockTargetController == null)
+            {
+                lockTargetController = GetComponent<PlayerLockTargetController>();
             }
 
             if (sourceHealth == null)
@@ -1174,6 +1189,24 @@ namespace DimensionBrawl.Player
                 return LastRawAimDirection;
             }
 
+            if (TryResolveLockTargetAimDirection(
+                projectileSpawnPosition,
+                rawAimDirection,
+                out Vector3 lockTargetDirection,
+                out Vector3 lockTargetAimPoint,
+                out CombatHealth lockTargetHealth,
+                out float lockStrength))
+            {
+                SetAimAssistState(
+                    lockTargetHealth,
+                    lockStrength,
+                    lockTargetDirection,
+                    allowCameraAimAssist: false,
+                    suppressViewportReprojection: true);
+                SetAimAssistPreviewPoint(lockTargetHealth, lockTargetAimPoint);
+                return lockTargetDirection;
+            }
+
             bool canUseSoftAimAssist = useAimAssist
                 && targetSelector != null
                 && (!disableAimAssistWithManualInput || !HasManualAimInput());
@@ -1201,6 +1234,40 @@ namespace DimensionBrawl.Player
 
             SetAimAssistState(null, 0f, LastRawAimDirection);
             return rawAimDirection;
+        }
+
+        private bool TryResolveLockTargetAimDirection(
+            Vector3 projectileSpawnPosition,
+            Vector3 rawAimDirection,
+            out Vector3 resolvedDirection,
+            out Vector3 aimPoint,
+            out CombatHealth targetHealth,
+            out float strength01)
+        {
+            resolvedDirection = rawAimDirection;
+            aimPoint = default;
+            targetHealth = null;
+            strength01 = 0f;
+            if (lockTargetController == null
+                || !lockTargetController.TryGetLockDirection(
+                    projectileSpawnPosition,
+                    rawAimDirection,
+                    out Vector3 lockDirection,
+                    out aimPoint,
+                    out targetHealth,
+                    out strength01))
+            {
+                return false;
+            }
+
+            if (targetHealth == null || !targetHealth.IsAlive)
+            {
+                return false;
+            }
+
+            resolvedDirection = ResolveFireTravelDirection(lockDirection, rawAimDirection);
+            strength01 = Mathf.Clamp01(strength01);
+            return strength01 > 0f;
         }
 
         private bool HasManualAimInput()

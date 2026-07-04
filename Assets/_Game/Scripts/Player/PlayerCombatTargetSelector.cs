@@ -153,6 +153,77 @@ namespace DimensionBrawl.Player
             return true;
         }
 
+        public bool TryGetBestLockTarget(
+            Vector3 originPosition,
+            Vector3 viewDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            CombatHealth preferredTarget,
+            float preferredTargetBonus,
+            out CombatHealth targetHealth,
+            out Vector3 lockPoint,
+            out float strength01)
+        {
+            targetHealth = null;
+            lockPoint = default;
+            strength01 = 0f;
+            if (maxDistance <= 0f || maxAngleDegrees <= 0f)
+            {
+                return false;
+            }
+
+            Vector3 planarViewDirection = ResolvePlanarDirection(viewDirection, ResolvePlanarForward(SelectionOrigin));
+            CombatHealth bestTarget = null;
+            float bestScore = float.NegativeInfinity;
+            if (targetCandidates != null)
+            {
+                for (int i = 0; i < targetCandidates.Length; i++)
+                {
+                    ConsiderTargetCandidate(
+                        targetCandidates[i],
+                        candidate => ScoreLockTargetCandidate(
+                            candidate,
+                            originPosition,
+                            planarViewDirection,
+                            maxDistance,
+                            maxAngleDegrees,
+                            candidate == preferredTarget ? preferredTargetBonus : 0f),
+                        0f,
+                        ref bestTarget,
+                        ref bestScore);
+                }
+            }
+
+            ConsiderActiveSummonTargets(
+                candidate => ScoreLockTargetCandidate(
+                    candidate,
+                    originPosition,
+                    planarViewDirection,
+                    maxDistance,
+                    maxAngleDegrees,
+                    candidate == preferredTarget ? preferredTargetBonus : 0f),
+                activeSummonTargetBonus,
+                ref bestTarget,
+                ref bestScore);
+
+            if (bestTarget == null
+                || !TryResolveAimAssistPoint(bestTarget, originPosition, planarViewDirection, out lockPoint, out _))
+            {
+                return false;
+            }
+
+            Vector3 offset = Vector3.ProjectOnPlane(lockPoint - originPosition, Vector3.up);
+            float distance = offset.magnitude;
+            Vector3 direction = distance > 0.0001f ? offset / distance : planarViewDirection;
+            float angle = Vector3.Angle(planarViewDirection, direction);
+            float angleScore = 1f - Mathf.Clamp01(angle / Mathf.Max(0.01f, maxAngleDegrees));
+            float distanceScore = 1f - Mathf.Clamp01(distance / Mathf.Max(0.01f, maxDistance));
+
+            targetHealth = bestTarget;
+            strength01 = Mathf.Clamp01(angleScore * 0.72f + distanceScore * 0.28f);
+            return true;
+        }
+
         public bool RefreshTarget()
         {
             if (IsValidTarget(currentTargetHealth) && Time.time < nextRetargetTime)
@@ -461,6 +532,46 @@ namespace DimensionBrawl.Player
                 + nearBodyScore * 1.5f
                 + bodyRayScore * 0.15f
                 + threatScore * 0.2f;
+        }
+
+        private float ScoreLockTargetCandidate(
+            CombatHealth candidate,
+            Vector3 originPosition,
+            Vector3 viewDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            float preferredBonus)
+        {
+            if (!TryResolveAimAssistPoint(candidate, originPosition, viewDirection, out Vector3 aimPoint, out Bounds bounds))
+            {
+                return float.NegativeInfinity;
+            }
+
+            Vector3 offset = Vector3.ProjectOnPlane(aimPoint - originPosition, Vector3.up);
+            float distance = offset.magnitude;
+            if (distance > maxDistance)
+            {
+                return float.NegativeInfinity;
+            }
+
+            Vector3 direction = distance > 0.0001f ? offset / distance : viewDirection;
+            float angle = Vector3.Angle(viewDirection.normalized, direction.normalized);
+            if (angle > maxAngleDegrees)
+            {
+                return float.NegativeInfinity;
+            }
+
+            float angleScore = 1f - Mathf.Clamp01(angle / maxAngleDegrees);
+            float distanceScore = 1f - Mathf.Clamp01(distance / maxDistance);
+            float bodyMissDistance = DistanceFromRayToBounds(originPosition, viewDirection, bounds);
+            float bodyRadius = Mathf.Max(0.05f, Mathf.Max(bounds.extents.x, bounds.extents.z));
+            float bodyRayScore = 1f - Mathf.Clamp01(bodyMissDistance / Mathf.Max(0.05f, bodyRadius * 1.75f));
+            float threatScore = ResolveThreatScore(candidate);
+            return angleScore * 1.35f
+                + distanceScore * 0.45f
+                + bodyRayScore * 0.35f
+                + threatScore * 0.25f
+                + Mathf.Max(0f, preferredBonus);
         }
 
         private static bool TryResolveAimAssistPoint(

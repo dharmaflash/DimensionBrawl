@@ -114,7 +114,8 @@ namespace DimensionBrawl.Combat
         public BossLaserSummonPatternState CurrentState => state;
         public bool IsLaserActive => state == BossLaserSummonPatternState.Active;
         public bool IsLaserPresentationActive =>
-            state == BossLaserSummonPatternState.Active
+            state == BossLaserSummonPatternState.Telegraph
+            || state == BossLaserSummonPatternState.Active
             || (state == BossLaserSummonPatternState.Recovery
                 && stateTimer <= laserPresentationRecoverySeconds);
         public int TotalDamageTickCount => totalDamageTickCount;
@@ -260,6 +261,7 @@ namespace DimensionBrawl.Combat
             FaceLockedDirection(deltaTime);
             float progress = Mathf.Clamp01(stateTimer / Mathf.Max(0.05f, telegraphSeconds));
             ShowTelegraphVisual(progress);
+            SyncBeamPresenter();
 
             if (stateTimer >= telegraphSeconds)
             {
@@ -364,6 +366,7 @@ namespace DimensionBrawl.Combat
             StopLaserSustainLoop(playEndSfx: false);
             lockedDirection = ResolveTargetDirection();
             ShowTelegraphVisual(0f);
+            SyncBeamPresenter();
             PlaySfx(telegraphSfx, telegraphSfxVolume);
         }
 
