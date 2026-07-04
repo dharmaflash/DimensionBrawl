@@ -285,6 +285,7 @@ namespace DimensionBrawl.Editor
                 SetBool(proxyHealth, "startAtFullHealth", true);
                 SetObjectReference(proxy, "health", proxyHealth);
                 SetBool(proxy, "resetHealthOnActivate", true);
+                SetFloat(proxy, "defeatedLingerSeconds", 1.18f);
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(34f, 0.35f, 0.16f, 0.24f);
@@ -553,6 +554,7 @@ namespace DimensionBrawl.Editor
             try
             {
                 SummonFrontlineProxy editableProxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                SetFloat(editableProxy, "defeatedLingerSeconds", 1.18f);
                 SetFloat(editableProxy, "advanceStartDelaySeconds", 0.16f);
                 SetFloat(editableProxy, "advanceAcceleration", 9.5f);
                 SetFloat(editableProxy, "advanceDeceleration", 12f);
@@ -575,15 +577,41 @@ namespace DimensionBrawl.Editor
                     LoadAsset<GameObject>(BossLaserTelegraphVfxPrefabPath));
                 AudioSource laserAudioSource = EnsureComponent<AudioSource>(editableRoot);
                 laserAudioSource.playOnAwake = false;
+                laserAudioSource.loop = false;
+                laserAudioSource.volume = 0.72f;
                 laserAudioSource.spatialBlend = 1f;
+                laserAudioSource.dopplerLevel = 0f;
                 laserAudioSource.rolloffMode = AudioRolloffMode.Linear;
                 laserAudioSource.minDistance = 1.6f;
                 laserAudioSource.maxDistance = 18f;
+
+                Transform laserSustainAudioRoot = EnsureChild(editableRoot.transform, "BossLaserSustainLoopAudio");
+                laserSustainAudioRoot.localPosition = Vector3.zero;
+                laserSustainAudioRoot.localRotation = Quaternion.identity;
+                laserSustainAudioRoot.localScale = Vector3.one;
+                AudioSource laserSustainLoopAudioSource = EnsureComponent<AudioSource>(laserSustainAudioRoot.gameObject);
+                laserSustainLoopAudioSource.clip = LoadAsset<AudioClip>(BossLaserSustainLoopSfxClipPath);
+                laserSustainLoopAudioSource.playOnAwake = false;
+                laserSustainLoopAudioSource.loop = true;
+                laserSustainLoopAudioSource.volume = 0.56f;
+                laserSustainLoopAudioSource.pitch = 1f;
+                laserSustainLoopAudioSource.spatialBlend = 1f;
+                laserSustainLoopAudioSource.dopplerLevel = 0f;
+                laserSustainLoopAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                laserSustainLoopAudioSource.minDistance = 1.6f;
+                laserSustainLoopAudioSource.maxDistance = 20f;
+                laserSustainLoopAudioSource.priority = 132;
+
                 SetObjectReference(laserPattern, "audioSource", laserAudioSource);
+                SetObjectReference(laserPattern, "laserSustainLoopAudioSource", laserSustainLoopAudioSource);
                 SetObjectReference(laserPattern, "telegraphSfx", LoadAsset<AudioClip>(BossLaserTelegraphSfxClipPath));
                 SetObjectReference(laserPattern, "laserFireSfx", LoadAsset<AudioClip>(BossLaserFireSfxClipPath));
+                SetObjectReference(laserPattern, "laserSustainLoopSfx", LoadAsset<AudioClip>(BossLaserSustainLoopSfxClipPath));
+                SetObjectReference(laserPattern, "laserEndSfx", LoadAsset<AudioClip>(BossLaserEndSfxClipPath));
                 SetFloat(laserPattern, "telegraphSfxVolume", 0.72f);
-                SetFloat(laserPattern, "laserFireSfxVolume", 0.9f);
+                SetFloat(laserPattern, "laserFireSfxVolume", 0f);
+                SetFloat(laserPattern, "laserSustainLoopSfxVolume", 0.56f);
+                SetFloat(laserPattern, "laserEndSfxVolume", 0.52f);
                 SetFloat(laserPattern, "telegraphSeconds", 0.78f);
                 SetFloat(laserPattern, "aimLockSeconds", 0.2f);
                 SetFloat(laserPattern, "activeSeconds", 0.92f);
@@ -710,6 +738,7 @@ namespace DimensionBrawl.Editor
                 SetBool(proxyHealth, "startAtFullHealth", true);
                 SetObjectReference(proxy, "health", proxyHealth);
                 SetBool(proxy, "resetHealthOnActivate", true);
+                SetFloat(proxy, "defeatedLingerSeconds", roleId == SummonSlot3ActorVisualRoleId ? 1.35f : 1.18f);
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(clashDamagePerSecond, 0.35f, clashTierDamageBonus, clashHoldSeconds);
@@ -1039,6 +1068,7 @@ namespace DimensionBrawl.Editor
                 SetBool(proxyHealth, "startAtFullHealth", true);
                 SetObjectReference(proxy, "health", proxyHealth);
                 SetBool(proxy, "resetHealthOnActivate", true);
+                SetFloat(proxy, "defeatedLingerSeconds", 1.18f);
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(36f, 0.35f, 0.16f, 0.24f);

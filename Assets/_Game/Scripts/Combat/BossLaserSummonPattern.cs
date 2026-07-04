@@ -28,6 +28,7 @@ namespace DimensionBrawl.Combat
         private static readonly ParticleSystem[] EmptyParticles = Array.Empty<ParticleSystem>();
         private static readonly CombatVfxCueVisual[] EmptyCueVisuals = Array.Empty<CombatVfxCueVisual>();
         private static readonly LineRenderer[] EmptyLineRenderers = Array.Empty<LineRenderer>();
+        private const string LaserSustainLoopAudioName = "BossLaserSustainLoopAudio";
 
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private CombatHealth sourceHealth;
@@ -72,10 +73,15 @@ namespace DimensionBrawl.Combat
 
         [Header("Audio")]
         [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioSource laserSustainLoopAudioSource;
         [SerializeField] private AudioClip telegraphSfx;
         [SerializeField] private AudioClip laserFireSfx;
+        [SerializeField] private AudioClip laserSustainLoopSfx;
+        [SerializeField] private AudioClip laserEndSfx;
         [SerializeField, Range(0f, 1f)] private float telegraphSfxVolume = 0.72f;
         [SerializeField, Range(0f, 1f)] private float laserFireSfxVolume = 0.9f;
+        [SerializeField, Range(0f, 1f)] private float laserSustainLoopSfxVolume = 0.56f;
+        [SerializeField, Range(0f, 1f)] private float laserEndSfxVolume = 0.52f;
 
         private readonly Collider[] hitBuffer = new Collider[32];
         private readonly List<CombatHealth> uniqueTargets = new List<CombatHealth>(8);
@@ -97,6 +103,7 @@ namespace DimensionBrawl.Combat
         private float nextDamageTime;
         private int cycleIndex;
         private int totalDamageTickCount;
+        private bool laserSustainLoopPlaying;
 
         public BossLaserSummonPatternState CurrentState => state;
         public bool IsLaserActive => state == BossLaserSummonPatternState.Active;
@@ -123,6 +130,7 @@ namespace DimensionBrawl.Combat
         {
             HideTelegraphVisual();
             ClearBeamPresenter();
+            StopLaserSustainLoop(playEndSfx: false);
             state = BossLaserSummonPatternState.Inactive;
         }
 
@@ -304,6 +312,7 @@ namespace DimensionBrawl.Combat
             stateTimer = 0f;
             HideTelegraphVisual();
             ClearBeamPresenter();
+            StopLaserSustainLoop(playEndSfx: false);
         }
 
         private void EnterWaitingForAdvance()
@@ -312,6 +321,7 @@ namespace DimensionBrawl.Combat
             stateTimer = 0f;
             HideTelegraphVisual();
             ClearBeamPresenter();
+            StopLaserSustainLoop(playEndSfx: false);
         }
 
         private void EnterTelegraph()
@@ -319,6 +329,7 @@ namespace DimensionBrawl.Combat
             state = BossLaserSummonPatternState.Telegraph;
             stateTimer = 0f;
             ClearBeamPresenter();
+            StopLaserSustainLoop(playEndSfx: false);
             lockedDirection = ResolveTargetDirection();
             ShowTelegraphVisual(0f);
             PlaySfx(telegraphSfx, telegraphSfxVolume);
@@ -332,6 +343,7 @@ namespace DimensionBrawl.Combat
             proxy.NotifyAttackPerformed(activeSeconds + 0.05f);
             LaserFired?.Invoke(this);
             PlaySfx(laserFireSfx, laserFireSfxVolume);
+            StartLaserSustainLoop();
             HideTelegraphVisual();
             SyncBeamPresenter();
         }
@@ -340,6 +352,7 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.Recovery;
             stateTimer = 0f;
+            StopLaserSustainLoop(playEndSfx: true);
             HideTelegraphVisual();
             ClearBeamPresenter();
         }
@@ -349,6 +362,7 @@ namespace DimensionBrawl.Combat
             state = BossLaserSummonPatternState.Reposition;
             stateTimer = 0f;
             ClearBeamPresenter();
+            StopLaserSustainLoop(playEndSfx: false);
             cycleIndex++;
             proxy.BeginAdvanceTo(
                 ResolveRepositionTarget(),
@@ -362,6 +376,7 @@ namespace DimensionBrawl.Combat
             stateTimer = 0f;
             ClearBeamPresenter();
             HideTelegraphVisual();
+            StopLaserSustainLoop(playEndSfx: false);
             lockedDirection = ResolveTargetDirection();
         }
 
@@ -817,6 +832,81 @@ namespace DimensionBrawl.Combat
             }
         }
 
+        private void StartLaserSustainLoop()
+        {
+            if (laserSustainLoopSfx == null || laserSustainLoopSfxVolume <= 0f)
+            {
+                laserSustainLoopPlaying = false;
+                return;
+            }
+
+            AudioSource source = ResolveLaserSustainLoopAudioSource();
+            if (source == null)
+            {
+                laserSustainLoopPlaying = false;
+                return;
+            }
+
+            source.clip = laserSustainLoopSfx;
+            source.playOnAwake = false;
+            source.loop = true;
+            source.volume = Mathf.Clamp01(laserSustainLoopSfxVolume);
+            source.pitch = 1f;
+            source.spatialBlend = 1f;
+            source.dopplerLevel = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 1.6f;
+            source.maxDistance = 20f;
+            source.priority = 132;
+            source.Stop();
+            source.Play();
+            laserSustainLoopPlaying = true;
+        }
+
+        private void StopLaserSustainLoop(bool playEndSfx)
+        {
+            bool shouldPlayEnd = playEndSfx && laserSustainLoopPlaying;
+            laserSustainLoopPlaying = false;
+            if (laserSustainLoopAudioSource != null)
+            {
+                laserSustainLoopAudioSource.Stop();
+            }
+
+            if (shouldPlayEnd)
+            {
+                PlaySfx(laserEndSfx, laserEndSfxVolume);
+            }
+        }
+
+        private AudioSource ResolveLaserSustainLoopAudioSource()
+        {
+            if (laserSustainLoopAudioSource != null)
+            {
+                return laserSustainLoopAudioSource;
+            }
+
+            Transform child = transform.Find(LaserSustainLoopAudioName);
+            if (child != null)
+            {
+                laserSustainLoopAudioSource = child.GetComponent<AudioSource>();
+                if (laserSustainLoopAudioSource != null)
+                {
+                    return laserSustainLoopAudioSource;
+                }
+            }
+
+            if (!Application.isPlaying)
+            {
+                return null;
+            }
+
+            GameObject audioObject = new GameObject(LaserSustainLoopAudioName);
+            audioObject.transform.SetParent(transform, worldPositionStays: false);
+            audioObject.transform.localPosition = Vector3.zero;
+            laserSustainLoopAudioSource = audioObject.AddComponent<AudioSource>();
+            return laserSustainLoopAudioSource;
+        }
+
         private void PlaySfx(AudioClip clip, float volume)
         {
             if (clip == null || volume <= 0f)
@@ -895,6 +985,15 @@ namespace DimensionBrawl.Combat
             if (audioSource == null)
             {
                 audioSource = GetComponent<AudioSource>();
+            }
+
+            if (laserSustainLoopAudioSource == null)
+            {
+                Transform loopAudio = transform.Find(LaserSustainLoopAudioName);
+                if (loopAudio != null)
+                {
+                    laserSustainLoopAudioSource = loopAudio.GetComponent<AudioSource>();
+                }
             }
 
             if (targetHealth == null && target != null)

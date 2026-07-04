@@ -112,6 +112,7 @@ namespace DimensionBrawl.Editor
         private const string PlayerDodgeStartAudioName = "ReviewedSfx_PlayerDodgeStart";
         private const string PlayerPerfectDodgeTimeWarpAudioName = "ReviewedSfx_PlayerPerfectDodgeTimeWarp";
         private const string PlayerPerfectDodgeSuccessAudioName = "ReviewedSfx_PlayerPerfectDodgeSuccess";
+        private const string MissileShieldAudioRoot = "Assets/_Game/Art/Audio/SFX/MissileShield";
         private const string EliteSummonSignalAudioName = "ReviewedSfx_EliteSummonSignal";
         private const string SummonBlockOpportunityAudioName = "ReviewedSfx_SummonBlockOpportunity";
         private const string SummonFollowupWindowAudioName = "ReviewedSfx_SummonFollowupWindow";
@@ -158,6 +159,17 @@ namespace DimensionBrawl.Editor
             CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_01.wav",
             CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_02.wav",
             CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeShieldActivateClipPaths =
+        {
+            MissileShieldAudioRoot + "/DB_SFX_Shield_Activate_01.mp3"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeShieldBlockClipPaths =
+        {
+            MissileShieldAudioRoot + "/DB_SFX_Shield_Block_Projectile_01.mp3",
+            MissileShieldAudioRoot + "/DB_SFX_Missile_Impact_Shield_01.mp3"
         };
 
         private static readonly string[] EliteSummonSignalSourceClipPaths =
@@ -293,6 +305,12 @@ namespace DimensionBrawl.Editor
         {
             EnsureReviewedCombatCueAudioBanks();
             ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            if (profile != null)
+            {
+                ApplyMissileShieldCueProfileAudio(profile);
+            }
+
             AssetDatabase.SaveAssets();
             Debug.Log("Refreshed reviewed combat cue audio banks on promoted cue prefabs.");
         }
@@ -489,7 +507,10 @@ namespace DimensionBrawl.Editor
                 PlayerSummonLandingCrater = SaveSummonLandingCraterPrefab("DB_VFX_PlayerSummonLandingCrater", gold, smoke, shapesPortalOuter, shapesTorus),
                 PlayerSummonDragonBreathAudio = SaveAudioOnlyCuePrefab("DB_VFX_PlayerSummonDragonBreathAudio"),
                 PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
-                PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
+                PlayerRangedProjectileImpact = SavePromotedHitFeedbackPrefab(
+                    "DB_VFX_PlayerRangedProjectileImpact",
+                    ImportedVefectsHit06DirectionalPrefabPath,
+                    0.38f),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
                 EnemyAttackActive = SaveBurstPrefab("DB_VFX_EnemyAttackActive_Generic", white, ParticleSystemShapeType.Cone, 0.36f, 42f, 120f, 0.10f, 0.24f, 0.22f, 0.55f, 36, new Color(1f, 0.9f, 0.55f, 0.95f), new Color(1f, 0.2f, 0.02f, 0f)),
                 EnemyHit = enemyHitFeedback,
@@ -522,6 +543,7 @@ namespace DimensionBrawl.Editor
             EnsureReviewedCombatCueAudioBanks();
             CombatVfxCueProfile profile = LoadOrCreate<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             ConfigureCombatVfxCueProfile(profile, prefabs);
+            ApplyMissileShieldCueProfileAudio(profile);
             ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
             return profile;
         }
@@ -615,7 +637,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
             director.ConfigureAudio(
                 LoadReviewedAudioClips(PlayerPerfectDodgeTimeWarpClipPaths),
-                LoadReviewedAudioClips(PlayerPerfectDodgeSuccessClipPaths));
+                Array.Empty<AudioClip>());
             EditorUtility.SetDirty(director);
         }
 
@@ -745,6 +767,7 @@ namespace DimensionBrawl.Editor
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonFollowupWindow, SummonFollowupWindowAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField, PlayerPerfectDodgeTimeWarpAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeWindow, PlayerPerfectDodgeSuccessAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal, PlayerSummonPreSpawnPortalAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonLandingCrater, PlayerSummonLandingCraterAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio, PlayerSummonDragonBreathAudioName);
@@ -1044,6 +1067,80 @@ namespace DimensionBrawl.Editor
 
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
+        }
+
+        private static void ApplyMissileShieldCueProfileAudio(CombatVfxCueProfile profile)
+        {
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = RequireProperty(serializedObject, "cues");
+            SerializedProperty cue = FindCueProperty(cues, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
+            if (cue == null)
+            {
+                throw new InvalidOperationException(
+                    $"{CombatVfxCueProfilePath} is missing {CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact}.");
+            }
+
+            SetCueProfileAudio(
+                cue,
+                PlayerPerfectDodgeShieldBlockClipPaths,
+                0.5f,
+                0.96f,
+                1.04f,
+                0.88f,
+                1.04f,
+                0.10f,
+                3f,
+                28f,
+                126);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static SerializedProperty FindCueProperty(SerializedProperty cues, CombatVfxCueId cueId)
+        {
+            int cueIdValue = (int)cueId;
+            for (int i = 0; i < cues.arraySize; i++)
+            {
+                SerializedProperty cue = cues.GetArrayElementAtIndex(i);
+                if (cue.FindPropertyRelative("cueId").intValue == cueIdValue)
+                {
+                    return cue;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SetCueProfileAudio(
+            SerializedProperty cue,
+            string[] clipPaths,
+            float baseVolume,
+            float minimumPitch,
+            float maximumPitch,
+            float minimumVolumeMultiplier,
+            float maximumVolumeMultiplier,
+            float spatialBlend,
+            float minDistance,
+            float maxDistance,
+            int priority)
+        {
+            AudioClip[] clips = LoadReviewedAudioClips(clipPaths);
+            SerializedProperty audioClips = cue.FindPropertyRelative("audioClips");
+            audioClips.arraySize = clips.Length;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                audioClips.GetArrayElementAtIndex(i).objectReferenceValue = clips[i];
+            }
+
+            cue.FindPropertyRelative("audioBaseVolume").floatValue = baseVolume;
+            cue.FindPropertyRelative("audioMinimumPitch").floatValue = minimumPitch;
+            cue.FindPropertyRelative("audioMaximumPitch").floatValue = maximumPitch;
+            cue.FindPropertyRelative("audioMinimumVolumeMultiplier").floatValue = minimumVolumeMultiplier;
+            cue.FindPropertyRelative("audioMaximumVolumeMultiplier").floatValue = maximumVolumeMultiplier;
+            cue.FindPropertyRelative("audioSpatialBlend").floatValue = spatialBlend;
+            cue.FindPropertyRelative("audioMinDistance").floatValue = minDistance;
+            cue.FindPropertyRelative("audioMaxDistance").floatValue = maxDistance;
+            cue.FindPropertyRelative("audioPriority").intValue = priority;
         }
 
         private static void SetPatternCueOverrides(EnemyCombatVfxCueDriver driver)
@@ -3137,6 +3234,8 @@ namespace DimensionBrawl.Editor
             PromoteReviewedAudioClips(PlayerDodgeStartSourceClipPaths, PlayerDodgeStartClipPaths);
             PromoteReviewedAudioClips(PlayerPerfectDodgeTimeWarpSourceClipPaths, PlayerPerfectDodgeTimeWarpClipPaths);
             PromoteReviewedAudioClips(PlayerPerfectDodgeSuccessSourceClipPaths, PlayerPerfectDodgeSuccessClipPaths);
+            ImportReviewedAudioClips(PlayerPerfectDodgeShieldActivateClipPaths);
+            ImportReviewedAudioClips(PlayerPerfectDodgeShieldBlockClipPaths);
             PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
             PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
             PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
@@ -3180,12 +3279,12 @@ namespace DimensionBrawl.Editor
             AttachReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerPerfectDodgeWindow.prefab",
                 PlayerPerfectDodgeSuccessAudioName,
-                PlayerPerfectDodgeSuccessClipPaths,
-                0.46f,
+                PlayerPerfectDodgeShieldActivateClipPaths,
+                0.34f,
+                0.98f,
                 1.04f,
-                1.1f,
                 0.9f,
-                1.05f,
+                1.02f,
                 0.10f,
                 132);
 

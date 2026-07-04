@@ -91,11 +91,15 @@ namespace DimensionBrawl.Editor
         public const string BossLaserTelegraphVfxPrefabPath =
             "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
         public const string BossLaserTelegraphSfxClipPath =
-            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Enemy_Telegraph_01.mp3";
+            "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_Charge_01.mp3";
+        public const string BossLaserSustainLoopSfxClipPath =
+            "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_Sustain_Loop_01.mp3";
+        public const string BossLaserEndSfxClipPath =
+            "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_End_01.mp3";
         public const string BossLaserFireSfxClipPath =
-            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav";
+            BossLaserSustainLoopSfxClipPath;
         private const string BossBasicFireSfxClipPath =
-            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Boss_Bullet_F_01.mp3";
+            "Assets/_Game/Art/Audio/SFX/MissileShield/DB_SFX_Missile_Launch_01.mp3";
         private const string PlayerRangedReloadSfxClipPath =
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Reload_02.mp3";
         public const string SummonSlot1ActionProfilePath =
@@ -139,6 +143,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
         private const string ImportedRifleShotLoopedVfxPrefabPath =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Looped/VFX_Muzzle_Flash_Rifle_Looped.prefab";
+        private const string ImportedForge3DShotGunFragmentPrefabPath =
+            "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Shot Gun/shot_gun_fragment.prefab";
         private const string PerfectDodgeScreenDomainShaderPath =
             "Assets/_Game/Art/VFX/CombatCues/Shaders/DB_PerfectDodgeScreenDomain.shader";
         private const string PerfectDodgeWorldFxShaderPath =
@@ -241,6 +247,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Meshes/ActionFoundation";
         private const string CombatVfxPrefabRoot =
             "Assets/_Game/Art/VFX/CombatCues/Prefabs";
+        private const string PlayerRangedPhysicalImpactPrefabPath =
+            CombatVfxPrefabRoot + "/PF_PlayerRangedProjectileImpact_PhysicalBits_FORGE3D.prefab";
         private const string MuzzleFlashFrontMaterialPath =
             CombatVfxMaterialRoot + "/DB_CombatVfx_MuzzleFlashFront.mat";
         private const string MuzzleFlashSideMaterialPath =
@@ -1645,6 +1653,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(AmbientArenaEnergyWaveClipPath);
             ValidateNoImportedAssetReference(BossBasicFireSfxClipPath);
             ValidateNoImportedAssetReference(BossLaserTelegraphSfxClipPath);
+            ValidateNoImportedAssetReference(BossLaserSustainLoopSfxClipPath);
+            ValidateNoImportedAssetReference(BossLaserEndSfxClipPath);
             ValidateNoImportedAssetReference(PlayerRangedReloadSfxClipPath);
             ValidateNoImportedAssetReferences(PlayerFootstepClipPaths);
             ValidateNoImportedAssetReferences(ArmoredFootstepClipPaths);
@@ -5280,13 +5290,42 @@ namespace DimensionBrawl.Editor
 
             SetObjectReference(feedback, "health", playerHealth);
             SetObjectReferenceArray(feedback, "flashRenderers", ToObjectArray(renderers));
+            Transform recoilRoot = combatModeVisuals.RangedAnimator != null
+                ? combatModeVisuals.RangedAnimator.transform
+                : player.transform;
+            SetObjectReference(feedback, "visualRecoilRoot", recoilRoot);
             SetBool(feedback, "renderHitFeedback", true);
             SetBool(feedback, "applyIdleColorOnEnable", false);
             SetFloat(feedback, "flashSeconds", 0.12f);
+            SetBool(feedback, "playVisualRecoil", true);
+            SetFloat(feedback, "lightRecoilDistance", 0.03f);
+            SetFloat(feedback, "heavyRecoilDistance", 0.075f);
+            SetFloat(feedback, "lightRecoilDegrees", 2.2f);
+            SetFloat(feedback, "heavyRecoilDegrees", 5.8f);
+            SetFloat(feedback, "recoilReturnSeconds", 0.105f);
             SetColor(feedback, "hitColor", new Color(1f, 0.46f, 0.38f, 1f));
             SetColor(feedback, "deathColor", new Color(0.12f, 0.02f, 0.025f, 1f));
+
+            PlayerDamageReactionAnimator damageAnimator = EnsureComponent<PlayerDamageReactionAnimator>(player);
+            damageAnimator.Configure(playerHealth, combatModeVisuals.RangedAnimator, recoilRoot);
+            SetObjectReference(damageAnimator, "health", playerHealth);
+            SetObjectReference(damageAnimator, "animator", combatModeVisuals.RangedAnimator);
+            SetObjectReference(damageAnimator, "recoilRoot", recoilRoot);
+            SetString(damageAnimator, "hitUpperTrigger", "HIT UPPER");
+            SetString(damageAnimator, "hitLowTrigger", "HIT LOW");
+            SetString(damageAnimator, "deathFrontTrigger", "DIE F");
+            SetString(damageAnimator, "deathBackTrigger", "DIE B");
+            SetFloat(damageAnimator, "hitReactionCooldownSeconds", 0.16f);
+            SetBool(damageAnimator, "heavyHitBypassesCooldown", true);
+            SetBool(damageAnimator, "playLocalRecoil", true);
+            SetFloat(damageAnimator, "lightRecoilDistance", 0.035f);
+            SetFloat(damageAnimator, "heavyRecoilDistance", 0.08f);
+            SetFloat(damageAnimator, "lightRecoilDegrees", 2.4f);
+            SetFloat(damageAnimator, "heavyRecoilDegrees", 6f);
+            SetFloat(damageAnimator, "recoilReturnSeconds", 0.11f);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(feedback);
+            EditorUtility.SetDirty(damageAnimator);
         }
 
         private static Renderer[] CollectPlayerDamageFeedbackRenderers(PlayerCombatModeVisualBinding combatModeVisuals)
@@ -5851,6 +5890,7 @@ namespace DimensionBrawl.Editor
             CombatVfxCuePlayer cuePlayer,
             Transform muzzleAnchor)
         {
+            GameObject physicalImpactVfxPrefab = EnsurePlayerRangedPhysicalImpactPrefab();
             PlayerRangedBasicVfxCueDriver driver = EnsureComponent<PlayerRangedBasicVfxCueDriver>(player);
             driver.Configure(rangedBasicAttackAction, cuePlayer, muzzleAnchor);
             SetObjectReference(driver, "rangedBasicAttackAction", rangedBasicAttackAction);
@@ -5864,9 +5904,76 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "impactCueId", (int)PlayerRangedBasicVfxCueDriver.DefaultImpactCueId);
             SetFloat(driver, "impactIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactIntensity);
             SetFloat(driver, "impactAudioIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactAudioIntensity);
+            SetBool(driver, "playPhysicalImpactVfx", PlayerRangedBasicVfxCueDriver.DefaultPlayPhysicalImpactVfx);
+            SetObjectReference(driver, "physicalImpactVfxPrefab", physicalImpactVfxPrefab);
+            SetFloat(driver, "physicalImpactVfxScale", PlayerRangedBasicVfxCueDriver.DefaultPhysicalImpactVfxScale);
+            SetFloat(
+                driver,
+                "physicalImpactVfxLifetimeSeconds",
+                PlayerRangedBasicVfxCueDriver.DefaultPhysicalImpactVfxLifetimeSeconds);
             ConfigurePlayerRangedReloadSfxDriver(player, rangedBasicAttackAction);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
+        }
+
+        private static GameObject EnsurePlayerRangedPhysicalImpactPrefab()
+        {
+            EnsureFolderForAsset(PlayerRangedPhysicalImpactPrefabPath);
+            bool prefabExists =
+                AssetDatabase.LoadAssetAtPath<GameObject>(PlayerRangedPhysicalImpactPrefabPath) != null;
+            GameObject editableRoot = prefabExists
+                ? PrefabUtility.LoadPrefabContents(PlayerRangedPhysicalImpactPrefabPath)
+                : new GameObject("PF_PlayerRangedProjectileImpact_PhysicalBits_FORGE3D");
+            try
+            {
+                editableRoot.name = "PF_PlayerRangedProjectileImpact_PhysicalBits_FORGE3D";
+                GameObject impactVfx = AttachPromotedVfxPrefab(
+                    editableRoot.transform,
+                    "PhysicalImpactVfx_ShotGunFragment_FORGE3D",
+                    ImportedForge3DShotGunFragmentPrefabPath,
+                    Vector3.zero,
+                    Vector3.zero,
+                    Vector3.one,
+                    loopParticles: false,
+                    playOnAwake: true);
+                RemoveDescendantsContainingName(impactVfx.transform, "flare");
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, PlayerRangedPhysicalImpactPrefabPath);
+            }
+            finally
+            {
+                if (prefabExists)
+                {
+                    PrefabUtility.UnloadPrefabContents(editableRoot);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(editableRoot);
+                }
+            }
+
+            return LoadAsset<GameObject>(PlayerRangedPhysicalImpactPrefabPath);
+        }
+
+        private static void RemoveDescendantsContainingName(Transform root, string nameFragment)
+        {
+            if (root == null || string.IsNullOrEmpty(nameFragment))
+            {
+                return;
+            }
+
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = transforms.Length - 1; i >= 0; i--)
+            {
+                Transform child = transforms[i];
+                if (child == null
+                    || child == root
+                    || !child.name.Contains(nameFragment, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
         }
 
         private static void ConfigurePlayerRangedReloadSfxDriver(
@@ -6131,6 +6238,16 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "impactCueId", (int)PlayerRangedBasicVfxCueDriver.DefaultImpactCueId);
             ValidateFloat(driver, "impactIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactIntensity);
             ValidateFloat(driver, "impactAudioIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactAudioIntensity);
+            ValidateBool(driver, "playPhysicalImpactVfx", PlayerRangedBasicVfxCueDriver.DefaultPlayPhysicalImpactVfx);
+            ValidateObjectReference(
+                driver,
+                "physicalImpactVfxPrefab",
+                LoadAsset<GameObject>(PlayerRangedPhysicalImpactPrefabPath));
+            ValidateFloat(driver, "physicalImpactVfxScale", PlayerRangedBasicVfxCueDriver.DefaultPhysicalImpactVfxScale);
+            ValidateFloat(
+                driver,
+                "physicalImpactVfxLifetimeSeconds",
+                PlayerRangedBasicVfxCueDriver.DefaultPhysicalImpactVfxLifetimeSeconds);
         }
 
         private static void ValidatePlayerRangedReloadSfxDriver(
@@ -9467,8 +9584,18 @@ namespace DimensionBrawl.Editor
                 bossLaserSummonPattern,
                 "laserFireSfx",
                 LoadAsset<AudioClip>(BossLaserFireSfxClipPath));
+            ValidateObjectReference(
+                bossLaserSummonPattern,
+                "laserSustainLoopSfx",
+                LoadAsset<AudioClip>(BossLaserSustainLoopSfxClipPath));
+            ValidateObjectReference(
+                bossLaserSummonPattern,
+                "laserEndSfx",
+                LoadAsset<AudioClip>(BossLaserEndSfxClipPath));
             ValidateFloat(bossLaserSummonPattern, "telegraphSfxVolume", 0.72f);
-            ValidateFloat(bossLaserSummonPattern, "laserFireSfxVolume", 0.9f);
+            ValidateFloat(bossLaserSummonPattern, "laserFireSfxVolume", 0f);
+            ValidateFloat(bossLaserSummonPattern, "laserSustainLoopSfxVolume", 0.56f);
+            ValidateFloat(bossLaserSummonPattern, "laserEndSfxVolume", 0.52f);
             ValidateFloat(bossLaserSummonPattern, "retargetSettleSeconds", 0.18f);
             ValidateFloat(bossLaserSummonPattern, "aimTurnSpeedDegrees", 720f);
             ValidateColor(bossLaserSummonPattern, "telegraphStartColor", new Color(1f, 0.18f, 0.08f, 0.26f));
@@ -10373,7 +10500,7 @@ namespace DimensionBrawl.Editor
             SetString(actorPresenter, "moveSpeedParameter", SummonActorMoveSpeedParameter);
             SetString(actorPresenter, "spawnTrigger", SummonActorSpawnTrigger);
             SetString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
-            SetString(actorPresenter, "hitTrigger", string.Empty);
+            SetString(actorPresenter, "hitTrigger", ResolveOptionalSummonActorHitTrigger(animator));
             SetString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             SetFloat(actorPresenter, "animatorMoveSpeedScale", animatorMoveSpeedScale);
             SetBool(actorPresenter, "playDamageVfx", true);
@@ -10384,6 +10511,40 @@ namespace DimensionBrawl.Editor
             SetFloat(actorPresenter, "damageFlashScale", 0.22f);
             SetFloat(actorPresenter, "damageFlashColorBlend", 0.98f);
             SetFloat(actorPresenter, "damageFlashEmissionBoost", 3.4f);
+        }
+
+        private static string ResolveOptionalSummonActorHitTrigger(Animator animator)
+        {
+            return HasAnimatorParameter(
+                animator,
+                SummonActorHitTrigger,
+                AnimatorControllerParameterType.Trigger)
+                ? SummonActorHitTrigger
+                : string.Empty;
+        }
+
+        private static bool HasAnimatorParameter(
+            Animator animator,
+            string parameterName,
+            AnimatorControllerParameterType type)
+        {
+            if (animator == null || string.IsNullOrEmpty(parameterName))
+            {
+                return false;
+            }
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == type
+                    && string.Equals(parameter.name, parameterName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidatePulseOnlyActorRenderers(
@@ -10482,7 +10643,8 @@ namespace DimensionBrawl.Editor
             ValidateString(actorPresenter, "moveSpeedParameter", SummonActorMoveSpeedParameter);
             ValidateString(actorPresenter, "spawnTrigger", SummonActorSpawnTrigger);
             ValidateString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
-            ValidateString(actorPresenter, "hitTrigger", string.Empty);
+            string expectedHitTrigger = ResolveOptionalSummonActorHitTrigger(animator);
+            ValidateString(actorPresenter, "hitTrigger", expectedHitTrigger);
             ValidateString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             ValidateFloat(actorPresenter, "animatorMoveSpeedScale", expectedAnimatorMoveSpeedScale);
             ValidateEnum(actorPresenter, "entryCueId", (int)CombatVfxCueId.EliteSummonSignal);
@@ -10514,6 +10676,15 @@ namespace DimensionBrawl.Editor
                 SummonActorAttackTrigger,
                 AnimatorControllerParameterType.Trigger,
                 $"{label} attack read");
+            if (!string.IsNullOrEmpty(expectedHitTrigger))
+            {
+                ValidateAnimatorParameter(
+                    animator,
+                    expectedHitTrigger,
+                    AnimatorControllerParameterType.Trigger,
+                    $"{label} hit read");
+            }
+
             ValidateAnimatorParameter(
                 animator,
                 SummonActorDeathTrigger,

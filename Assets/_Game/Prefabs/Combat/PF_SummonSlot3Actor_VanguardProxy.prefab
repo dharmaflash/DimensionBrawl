@@ -140,7 +140,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
   source: {fileID: 1121142431918144004}
   trackedTransform: {fileID: 182847696619729040}
@@ -177,7 +177,7 @@ GameObject:
   - component: {fileID: 7454227791480244498}
   - component: {fileID: 58138535566929426}
   - component: {fileID: 2096792085562837884}
-  - component: {fileID: 611312127514913171}
+  - component: {fileID: 4793126326093691916}
   m_Layer: 0
   m_Name: PF_SummonSlot3Actor_VanguardProxy
   m_TagString: Untagged
@@ -203,8 +203,8 @@ Transform:
   - {fileID: 8661031640170341737}
   - {fileID: 4209069213335448784}
   - {fileID: 2004240103681195067}
-  - {fileID: 6001258478469037761}
-  - {fileID: 1287068747722806649}
+  - {fileID: 1147890922333568083}
+  - {fileID: 8265954198458441816}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6077013978877618007
@@ -274,7 +274,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6aac67f59f569014494be0476679f301, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineProxy
   projectileOrigin: {fileID: 3036512398782185568}
   pressureScreen: {fileID: 0}
@@ -283,7 +283,7 @@ MonoBehaviour:
   faceTargetOnActivate: 1
   defaultAdvanceDistance: 0
   defaultAdvanceSeconds: 0.25
-  defeatedLingerSeconds: 0.22
+  defeatedLingerSeconds: 1.35
   advanceStartDelaySeconds: 0
   advanceAcceleration: 0
   advanceDeceleration: 0
@@ -301,26 +301,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 293a97ae51b245cdb6a1cc62b37c45b0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineProxyPresenter
   proxy: {fileID: 4738458561690245700}
   clash: {fileID: 5647496645834492196}
   health: {fileID: 0}
-  animator: {fileID: 3142687799273335318}
+  animator: {fileID: 8591726362551707780}
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   lockAdvanceDuringSpawnState: 0
   spawnStateName: EliteSummonPackage
   spawnMovementLockSeconds: 0
   attackTrigger: Attack
-  hitTrigger:
+  hitTrigger: 
   deathTrigger: Death
   animatorMoveSpeedScale: 0.46
   pulseRoot: {fileID: 6763829464389042324}
   actorRenderers:
   - {fileID: 2407125159355713868}
   damageFlashRenderers:
-  - {fileID: 6666925975798964884}
+  - {fileID: 9937000345280518}
   cuePlayer: {fileID: 0}
   vfxAnchor: {fileID: 0}
   damageVfxAnchor: {fileID: 2004240103681195067}
@@ -378,7 +378,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 3
   maxHealth: 520
@@ -426,7 +426,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0f8e54a6c924c4a91a87f5df2698a67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineClash
   proxy: {fileID: 4738458561690245700}
   health: {fileID: 2168765931106797276}
@@ -455,7 +455,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 957864eb97e83ad448073486f7d84e2f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineHealthBarPresenter
   proxy: {fileID: 4738458561690245700}
   health: {fileID: 2168765931106797276}
@@ -476,10 +476,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a46575487f0c5b04fae4acbe03da3b39, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonProxyVisualMotionPresenter
   proxy: {fileID: 4738458561690245700}
-  motionRoot: {fileID: 6001258478469037761}
+  motionRoot: {fileID: 1147890922333568083}
   airborneHeight: 0.34
   jumpArcHeight: 0
   tierArcHeightStep: 0
@@ -499,16 +499,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b3e06b0ca94b7439a6e21da0747c50, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonAttackBeamPresenter
   proxy: {fileID: 4738458561690245700}
-  beamRoot: {fileID: 1287068747722806649}
+  beamRoot: {fileID: 8265954198458441816}
   beamRenderers:
-  - {fileID: 2582780984928408330}
-  - {fileID: 3145718944947581031}
+  - {fileID: 4665137846989841963}
+  - {fileID: 5246078999848076614}
   beamParticles:
-  - {fileID: 5753683935319585464}
-  - {fileID: 8142247643122030937}
+  - {fileID: 3220978316225644441}
+  - {fileID: 1411056800316861560}
   tierOneColor: {r: 1, g: 0.38, b: 0.08, a: 0.72}
   tierTwoColor: {r: 1, g: 0.62, b: 0.14, a: 0.82}
   tierThreeColor: {r: 1, g: 0.86, b: 0.32, a: 0.9}
@@ -522,7 +522,7 @@ MonoBehaviour:
   beamImpactBackOffset: 0.5
   beamWidthMultiplier: 1
   authoredBeamLength: 10
---- !u!135 &611312127514913171
+--- !u!135 &4793126326093691916
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -908,7 +908,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 182847696619729040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &7163538138286298401
+--- !u!1001 &1117391958401024
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -981,32 +981,32 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
---- !u!4 &1287068747722806649 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8265629030599016536, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 7163538138286298401}
-  m_PrefabAsset: {fileID: 0}
---- !u!199 &2582780984928408330 stripped
-ParticleSystemRenderer:
-  m_CorrespondingSourceObject: {fileID: 4665199681814267435, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 7163538138286298401}
-  m_PrefabAsset: {fileID: 0}
---- !u!199 &3145718944947581031 stripped
-ParticleSystemRenderer:
-  m_CorrespondingSourceObject: {fileID: 5246176027282351430, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 7163538138286298401}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &5753683935319585464 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 3220301287801022361, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 7163538138286298401}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &8142247643122030937 stripped
+--- !u!198 &1411056800316861560 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 1411576032020417656, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 7163538138286298401}
+  m_PrefabInstance: {fileID: 1117391958401024}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &8748218299395839333
+--- !u!198 &3220978316225644441 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 3220301287801022361, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
+  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabAsset: {fileID: 0}
+--- !u!199 &4665137846989841963 stripped
+ParticleSystemRenderer:
+  m_CorrespondingSourceObject: {fileID: 4665199681814267435, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
+  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabAsset: {fileID: 0}
+--- !u!199 &5246078999848076614 stripped
+ParticleSystemRenderer:
+  m_CorrespondingSourceObject: {fileID: 5246176027282351430, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
+  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8265954198458441816 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8265629030599016536, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
+  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2720466977715607543
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -1075,18 +1075,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: be945306497800449bbfdd5c2cc97600, type: 3}
---- !u!95 &3142687799273335318 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5979368353484750707, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 8748218299395839333}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &6001258478469037761 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3039695532088699812, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 8748218299395839333}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &6666925975798964884 stripped
+--- !u!137 &9937000345280518 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 2729823400298936305, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 8748218299395839333}
+  m_PrefabInstance: {fileID: 2720466977715607543}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1147890922333568083 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3039695532088699812, guid: be945306497800449bbfdd5c2cc97600, type: 3}
+  m_PrefabInstance: {fileID: 2720466977715607543}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &8591726362551707780 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5979368353484750707, guid: be945306497800449bbfdd5c2cc97600, type: 3}
+  m_PrefabInstance: {fileID: 2720466977715607543}
   m_PrefabAsset: {fileID: 0}

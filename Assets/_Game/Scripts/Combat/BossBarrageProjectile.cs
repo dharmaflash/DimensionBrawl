@@ -14,6 +14,9 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool deactivateOnHit = true;
         [SerializeField] private Renderer[] visualRenderers = new Renderer[0];
         [SerializeField] private TrailRenderer[] trailRenderers = new TrailRenderer[0];
+        [SerializeField] private AudioClip impactSfx;
+        [SerializeField, Range(0f, 1f)] private float impactSfxVolume = 0.42f;
+        [SerializeField] private Vector2 impactSfxPitchRange = new Vector2(0.96f, 1.04f);
 
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
@@ -207,6 +210,7 @@ namespace DimensionBrawl.Combat
             bool applied = targetHealth.TryApplyDamage(damageInfo);
             if (applied && deactivateOnHit)
             {
+                PlayImpactSfx(impactPoint);
                 Deactivate();
             }
             else if (blockedByInvulnerability && deactivateOnHit)
@@ -547,6 +551,33 @@ namespace DimensionBrawl.Combat
                     audioSources[i].Stop();
                 }
             }
+        }
+
+        private void PlayImpactSfx(Vector3 impactPoint)
+        {
+            if (impactSfx == null || impactSfxVolume <= 0f)
+            {
+                return;
+            }
+
+            GameObject audioObject = new GameObject("BossBarrageProjectileImpactAudio");
+            audioObject.transform.position = impactPoint;
+            AudioSource source = audioObject.AddComponent<AudioSource>();
+            source.clip = impactSfx;
+            source.playOnAwake = false;
+            source.loop = false;
+            source.volume = Mathf.Clamp01(impactSfxVolume);
+            source.pitch = Random.Range(
+                Mathf.Min(impactSfxPitchRange.x, impactSfxPitchRange.y),
+                Mathf.Max(impactSfxPitchRange.x, impactSfxPitchRange.y));
+            source.spatialBlend = 0.62f;
+            source.dopplerLevel = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 3f;
+            source.maxDistance = 28f;
+            source.priority = 136;
+            source.Play();
+            Destroy(audioObject, impactSfx.length / Mathf.Max(0.01f, Mathf.Abs(source.pitch)) + 0.1f);
         }
 
         private void ClearColorOverrides()

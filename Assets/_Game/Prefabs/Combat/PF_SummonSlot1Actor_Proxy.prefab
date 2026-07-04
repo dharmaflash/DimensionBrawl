@@ -158,7 +158,7 @@ MonoBehaviour:
   faceTargetOnActivate: 1
   defaultAdvanceDistance: 0
   defaultAdvanceSeconds: 0.25
-  defeatedLingerSeconds: 0.22
+  defeatedLingerSeconds: 1.18
   advanceStartDelaySeconds: 0
   advanceAcceleration: 0
   advanceDeceleration: 0
@@ -274,7 +274,7 @@ MonoBehaviour:
   spawnStateName: EliteSummonPackage
   spawnMovementLockSeconds: 0
   attackTrigger: Attack
-  hitTrigger: 
+  hitTrigger: Hit
   deathTrigger: Death
   animatorMoveSpeedScale: 0.42
   pulseRoot: {fileID: 505624062231468394}
