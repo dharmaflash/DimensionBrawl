@@ -20,7 +20,6 @@ namespace DimensionBrawl.Editor
         private const string SourceModelPath = SourceRoot + "/FBX/Inori_Unity.fbx";
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Player/Inori/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Player/Inori/Textures";
-        private const string CharacterToonShaderName = "Toon";
 
         private static readonly MaterialSpec[] MaterialSpecs =
         {
@@ -205,14 +204,14 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Promoted Inori material missing at {targetPath}.");
             }
 
-            ApplyPromotedCharacterMaterialShader(sourceMaterial, targetMaterial);
+            targetMaterial.shader = sourceMaterial.shader;
+            targetMaterial.CopyPropertiesFromMaterial(sourceMaterial);
             string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
             for (int i = 0; i < textureProperties.Length; i++)
             {
                 CopyTextureProperty(sourceMaterial, targetMaterial, textureProperties[i]);
             }
 
-            ApplyPromotedCharacterMainTexture(sourceMaterial, targetMaterial);
             EditorUtility.SetDirty(targetMaterial);
         }
 
@@ -244,67 +243,6 @@ namespace DimensionBrawl.Editor
             targetMaterial.SetTexture(
                 propertyName,
                 sourceTexture != null ? PromoteTexture(sourceTexture) : null);
-        }
-
-        private static void ApplyPromotedCharacterMaterialShader(Material sourceMaterial, Material targetMaterial)
-        {
-            Shader toonShader = Shader.Find(CharacterToonShaderName);
-            Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
-            targetMaterial.shader = toonShader != null ? toonShader : litShader ?? sourceMaterial.shader;
-
-            Color baseColor = Color.white;
-            if (sourceMaterial.HasProperty("_BaseColor"))
-            {
-                baseColor = sourceMaterial.GetColor("_BaseColor");
-            }
-            else if (sourceMaterial.HasProperty("_Color"))
-            {
-                baseColor = sourceMaterial.GetColor("_Color");
-            }
-
-            SetColorIfPresent(targetMaterial, "_BaseColor", baseColor);
-            SetColorIfPresent(targetMaterial, "_Color", baseColor);
-        }
-
-        private static void ApplyPromotedCharacterMainTexture(Material sourceMaterial, Material targetMaterial)
-        {
-            Texture mainTexture = PromoteTextureProperty(sourceMaterial, "_MainTex")
-                ?? PromoteTextureProperty(sourceMaterial, "_BaseMap");
-            if (mainTexture == null)
-            {
-                return;
-            }
-
-            SetTextureIfPresent(targetMaterial, "_BaseMap", mainTexture);
-            SetTextureIfPresent(targetMaterial, "_MainTex", mainTexture);
-            SetTextureIfPresent(targetMaterial, "_1st_ShadeMap", mainTexture);
-        }
-
-        private static Texture PromoteTextureProperty(Material sourceMaterial, string propertyName)
-        {
-            if (!sourceMaterial.HasProperty(propertyName))
-            {
-                return null;
-            }
-
-            Texture sourceTexture = sourceMaterial.GetTexture(propertyName);
-            return sourceTexture != null ? PromoteTexture(sourceTexture) : null;
-        }
-
-        private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
-        {
-            if (material.HasProperty(propertyName))
-            {
-                material.SetTexture(propertyName, texture);
-            }
-        }
-
-        private static void SetColorIfPresent(Material material, string propertyName, Color color)
-        {
-            if (material.HasProperty(propertyName))
-            {
-                material.SetColor(propertyName, color);
-            }
         }
 
         private static Texture PromoteTexture(Texture sourceTexture)
