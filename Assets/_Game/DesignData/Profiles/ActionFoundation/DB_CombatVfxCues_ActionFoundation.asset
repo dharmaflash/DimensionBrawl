@@ -262,8 +262,8 @@ MonoBehaviour:
     prefab: {fileID: 8980601270831269164, guid: f9fc85eada6840147a96d36d88284e79, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0.08}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.72, y: 0.72, z: 0.72}
-    lifetimeSeconds: 0.42
+    localScale: {x: 0.82, y: 0.82, z: 0.82}
+    lifetimeSeconds: 0.58
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1

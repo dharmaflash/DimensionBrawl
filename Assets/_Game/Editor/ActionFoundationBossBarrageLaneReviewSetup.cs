@@ -2631,24 +2631,14 @@ namespace DimensionBrawl.Editor
                 Vector3.zero,
                 Vector3.one * 0.6f,
                 loopParticles: true);
-            EnsureCombatCueAssetOverlay(
+            RemoveCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                "CueAssetVfx_MagicMissilesPressureStorm",
-                ImportedMagicMissilesPressureAuraPrefabPath,
-                new Vector3(0f, 0.1f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.78f,
-                loopParticles: true);
-            EnsureCombatCueAssetOverlay(
+                "CueAssetVfx_MagicMissilesPressureStorm");
+            RemoveCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                "CueAssetVfx_MagicMissilesFollowupCircle",
-                ImportedMagicMissilesArcaneCirclePrefabPath,
-                new Vector3(0f, 0.06f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.74f,
-                loopParticles: true);
+                "CueAssetVfx_MagicMissilesFollowupCircle");
         }
 
         private static void SetCombatVfxCuePlaybackMode(
@@ -2695,6 +2685,38 @@ namespace DimensionBrawl.Editor
                     loopParticles,
                     playOnAwake: true);
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(editableRoot);
+            }
+        }
+
+        private static void RemoveCombatCueAssetOverlay(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(prefabPath))
+            {
+                throw new InvalidOperationException($"{cueId} should reference a saved combat VFX prefab.");
+            }
+
+            GameObject editableRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                Transform existing = editableRoot.transform.Find(childName);
+                if (existing != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(existing.gameObject);
+                    PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
+                }
             }
             finally
             {
@@ -7945,12 +7967,12 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.EliteSummonSignal,
                 "CueAssetVfx_MagicMissilesSummonState",
                 "elite summon MagicMissiles overlay");
-            ValidateCombatCueAssetOverlay(
+            ValidateCombatCueHasNoAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
                 "CueAssetVfx_MagicMissilesPressureStorm",
                 "summon block opportunity MagicMissiles pressure storm overlay");
-            ValidateCombatCueAssetOverlay(
+            ValidateCombatCueHasNoAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
@@ -7985,6 +8007,26 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            ValidateNoImportedAssetReference(prefabPath);
+        }
+
+        private static void ValidateCombatCueHasNoAssetOverlay(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            if (cue.Prefab.transform.Find(childName) != null)
+            {
+                throw new InvalidOperationException($"{cueId} should not keep ambiguous {label}.");
+            }
+
             string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
             ValidateNoImportedAssetReference(prefabPath);
         }

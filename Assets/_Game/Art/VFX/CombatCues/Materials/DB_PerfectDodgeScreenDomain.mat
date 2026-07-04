@@ -29,25 +29,25 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Age01: 0
-    - _BandAlpha: 0.13
+    - _Age01: 0.9952801
+    - _BandAlpha: 0.00018129902
     - _ChromaticStrength: 0.86
-    - _DomainAlpha: 0.42
-    - _EdgeAlpha: 0.48
+    - _DomainAlpha: 0.0005473795
+    - _EdgeAlpha: 0.00061169994
     - _FractureStrength: 0.74
     - _GridStrength: 0.68
     - _Intensity: 0.92
-    - _InvertAlpha: 0.18
+    - _InvertAlpha: 0.000058766364
     - _Pulse: 0
     - _RadialBlurStrength: 0.54
     - _RadialWarp: 0.72
     - _ScanlineStrength: 0.34
-    - _Sustain: 1
-    - _TimeSeconds: 126.65837
+    - _Sustain: 0.0013611037
+    - _TimeSeconds: 51.639786
     m_Colors:
     - _CueScreenSize: {r: 2496, g: 1152, b: 0, a: 0}
-    - _DomainCenter: {r: 0.26970816, g: 0, b: 0, a: 0}
-    - _DomainColor: {r: 0.025, g: 0.035, b: 0.045, a: 1}
+    - _DomainCenter: {r: 0.49261686, g: 0.14650154, b: 0, a: 0}
+    - _DomainColor: {r: 0.035, g: 0.045, b: 0.055, a: 1}
     - _EdgeColor: {r: 0.12, g: 0.96, b: 1, a: 1}
     - _InvertColor: {r: 0.92, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

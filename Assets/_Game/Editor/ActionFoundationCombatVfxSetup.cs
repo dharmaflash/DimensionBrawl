@@ -482,8 +482,8 @@ namespace DimensionBrawl.Editor
                 EliteArmorBreak = SaveBurstPrefab("DB_VFX_EliteArmorBreakSignal", gold, ParticleSystemShapeType.Sphere, 0.48f, 24f, 360f, 0.18f, 0.48f, 0.18f, 0.58f, 42, new Color(1f, 0.86f, 0.18f, 0.9f), new Color(1f, 0.18f, 0.02f, 0f)),
                 EliteAura = SaveBurstPrefab("DB_VFX_EliteAuraSignal", cyan, ParticleSystemShapeType.Circle, 0.70f, 18f, 360f, 0.42f, 0.84f, 0.16f, 0.52f, 58, new Color(0.18f, 1f, 0.78f, 0.76f), new Color(0.04f, 0.36f, 0.86f, 0f)),
                 EliteSummon = SaveBurstPrefab("DB_VFX_EliteSummonSignal", violet, ParticleSystemShapeType.Sphere, 0.58f, 24f, 360f, 0.24f, 0.48f, 0.14f, 0.26f, 64, new Color(0.74f, 0.38f, 1f, 0.64f), new Color(0.12f, 0.04f, 0.7f, 0f)),
-                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", violet, ParticleSystemShapeType.Circle, 0.68f, 28f, 360f, 0.16f, 0.48f, 0.10f, 0.18f, 66, new Color(0.88f, 0.52f, 1f, 0.50f), new Color(0.18f, 0.06f, 0.78f, 0f)),
-                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", violet, ParticleSystemShapeType.Circle, 0.74f, 25f, 360f, 0.18f, 0.44f, 0.12f, 0.20f, 76, new Color(0.98f, 0.7f, 1f, 0.54f), new Color(0.28f, 0.06f, 0.72f, 0f)),
+                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", cyan, ParticleSystemShapeType.Cone, 0.20f, 24f, 62f, 0.10f, 0.24f, 0.06f, 0.14f, 24, new Color(0.42f, 0.95f, 1f, 0.50f), new Color(0.04f, 0.28f, 0.88f, 0f), 0.34f),
+                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", gold, ParticleSystemShapeType.Cone, 0.22f, 22f, 70f, 0.12f, 0.26f, 0.07f, 0.15f, 28, new Color(1f, 0.82f, 0.28f, 0.52f), new Color(0.86f, 0.24f, 0.02f, 0f), 0.30f),
                 ElitePhaseSwap = SaveBurstPrefab("DB_VFX_ElitePhaseSwapSignal", white, ParticleSystemShapeType.Circle, 0.82f, 44f, 360f, 0.18f, 0.48f, 0.26f, 0.82f, 84, new Color(0.9f, 0.98f, 1f, 0.96f), new Color(0.26f, 0.46f, 1f, 0f))
             };
 
@@ -712,6 +712,9 @@ namespace DimensionBrawl.Editor
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonLandingCrater, PlayerSummonLandingCraterAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio, PlayerSummonDragonBreathAudioName);
             ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerDamaged);
+            ValidatePlayerRangedMuzzleFlashPrefab(profile);
+            ValidateCueDoesNotHaveChild(profile, CombatVfxCueId.SummonBlockOpportunity, "CueAssetVfx_MagicMissilesPressureStorm");
+            ValidateCueDoesNotHaveChild(profile, CombatVfxCueId.SummonFollowupWindow, "CueAssetVfx_MagicMissilesFollowupCircle");
         }
 
         private static void ValidateReviewedPlaybackCue(CombatVfxCueProfile profile, CombatVfxCueId cueId)
@@ -748,6 +751,98 @@ namespace DimensionBrawl.Editor
             if (!source.enabled || randomizer.ClipCount <= 0 || randomizer.BaseVolume <= 0f)
             {
                 throw new InvalidOperationException($"{cueId} reviewed audio child {audioObjectName} should be enabled and contain audible clips.");
+            }
+        }
+
+        private static void ValidatePlayerRangedMuzzleFlashPrefab(CombatVfxCueProfile profile)
+        {
+            if (!profile.TryGetCue(CombatVfxCueId.PlayerRangedMuzzleFlash, out CombatVfxCue cue)
+                || cue.Prefab == null)
+            {
+                throw new InvalidOperationException("PlayerRangedMuzzleFlash should reference a cue prefab.");
+            }
+
+            if (cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo") == null)
+            {
+                throw new InvalidOperationException("PlayerRangedMuzzleFlash should preserve the promoted Vefects rifle muzzle prefab.");
+            }
+
+            ValidatePromotedMuzzleSmokeParticle(
+                cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo/Smoke Front"),
+                "Smoke Front",
+                0.12f,
+                0.42f);
+            ValidatePromotedMuzzleSmokeParticle(
+                cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo/Smoke Side"),
+                "Smoke Side",
+                0.10f,
+                0.34f);
+
+            string[] blockedChildren =
+            {
+                "RifleFlash_FrontBurst",
+                "RifleFlash_SideTongues",
+                "RifleFlash_SmokePuff",
+                "RifleFlash_LightSpark"
+            };
+
+            for (int i = 0; i < blockedChildren.Length; i++)
+            {
+                if (cue.Prefab.transform.Find(blockedChildren[i]) != null)
+                {
+                    throw new InvalidOperationException(
+                        $"PlayerRangedMuzzleFlash should use the promoted rifle muzzle asset, not handcrafted smoke layer {blockedChildren[i]}.");
+                }
+            }
+        }
+
+        private static void ValidatePromotedMuzzleSmokeParticle(
+            Transform smokeRoot,
+            string label,
+            float minimumAlpha,
+            float minimumSize)
+        {
+            if (smokeRoot == null)
+            {
+                throw new InvalidOperationException($"PlayerRangedMuzzleFlash should keep promoted Vefects {label}.");
+            }
+
+            ParticleSystem particleSystem = smokeRoot.GetComponent<ParticleSystem>();
+            ParticleSystemRenderer renderer = smokeRoot.GetComponent<ParticleSystemRenderer>();
+            if (particleSystem == null || renderer == null || !renderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} should keep an enabled promoted muzzle smoke particle renderer.");
+            }
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            ParticleSystem.MinMaxGradient startColor = main.startColor;
+            float alpha = Mathf.Max(startColor.color.a, startColor.colorMax.a, startColor.colorMin.a);
+            if (alpha < minimumAlpha)
+            {
+                throw new InvalidOperationException($"{label} muzzle smoke alpha is too subtle for gameplay readability.");
+            }
+
+            ParticleSystem.MinMaxCurve startSize = main.startSize;
+            float size = Mathf.Max(startSize.constant, startSize.constantMax, startSize.constantMin);
+            if (size < minimumSize)
+            {
+                throw new InvalidOperationException($"{label} muzzle smoke size is too small for gameplay readability.");
+            }
+        }
+
+        private static void ValidateCueDoesNotHaveChild(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab.");
+            }
+
+            if (cue.Prefab.transform.Find(childName) != null)
+            {
+                throw new InvalidOperationException($"{cueId} should not include ambiguous magic-circle overlay {childName}.");
             }
         }
 
@@ -865,7 +960,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerSummonDragonBreathAudio, prefabs.PlayerSummonDragonBreathAudio, Vector3.zero, Vector3.zero, Vector3.one, 0.05f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.72f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.14f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyHit, new Vector3(0f, 0.82f, 0f), Vector3.zero, new Vector3(0.1f, 0.09f, 0.1f), 0.22f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.42f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.82f, 0.82f, 0.82f), 0.58f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
@@ -2067,117 +2162,68 @@ namespace DimensionBrawl.Editor
         {
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
-            var renderers = new System.Collections.Generic.List<Renderer>
-            {
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_Front",
-                    PrimitiveType.Quad,
-                    frontMaterial,
-                    new Vector3(0f, 0f, 0.18f),
-                    Vector3.zero,
-                    new Vector3(0.62f, 0.62f, 1f)),
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_ForwardTongue",
-                    PrimitiveType.Quad,
-                    sideMaterial,
-                    new Vector3(0f, 0f, 0.42f),
-                    new Vector3(90f, 0f, 0f),
-                    new Vector3(0.34f, 0.92f, 1f)),
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_VerticalTongue",
-                    PrimitiveType.Quad,
-                    sideMaterial,
-                    new Vector3(0f, 0f, 0.38f),
-                    Vector3.zero,
-                    new Vector3(0.28f, 0.82f, 1f))
-            };
+            _ = frontMaterial;
+            _ = sideMaterial;
+            _ = smokeMaterial;
 
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_FrontBurst",
-                frontMaterial,
-                new Vector3(0f, 0f, 0.24f),
-                Vector3.zero,
-                0.12f,
-                0.045f,
-                0.2f,
-                0.72f,
-                4,
-                ParticleSystemShapeType.Cone,
-                0.03f,
-                12f,
-                new Color(1f, 0.92f, 0.56f, 1f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_SideTongues",
-                sideMaterial,
-                new Vector3(0f, 0f, 0.2f),
-                new Vector3(0f, 90f, 0f),
-                0.12f,
-                0.05f,
-                0.15f,
-                0.58f,
-                5,
-                ParticleSystemShapeType.Cone,
-                0.02f,
-                18f,
-                new Color(1f, 0.62f, 0.22f, 0.96f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_SmokePuff",
-                smokeMaterial,
-                new Vector3(0f, 0f, 0.02f),
-                Vector3.zero,
-                0.32f,
-                0.24f,
-                0.42f,
-                0.28f,
-                8,
-                ParticleSystemShapeType.Cone,
-                0.06f,
-                24f,
-                new Color(0.62f, 0.66f, 0.68f, 0.38f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_LightSpark",
-                sideMaterial,
-                new Vector3(0f, 0f, 0.34f),
-                Vector3.zero,
-                0.10f,
-                0.08f,
-                1.4f,
-                0.08f,
-                9,
-                ParticleSystemShapeType.Cone,
-                0.025f,
-                9f,
-                new Color(1f, 0.76f, 0.28f, 0.96f));
-            AttachPromotedMuzzleFlashAsset(root.transform);
+            GameObject promotedMuzzleFlash = AttachPromotedMuzzleFlashAsset(root.transform);
 
             AttachReviewedGunshotAudio(root);
 
             CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
             ConfigureCueVisual(
                 visual,
-                renderers.ToArray(),
-                0.16f,
-                new Color(1f, 0.88f, 0.44f, 0.98f),
+                CollectMuzzleFlashCueVisualRenderers(promotedMuzzleFlash),
+                0.20f,
+                new Color(1f, 0.88f, 0.44f, 0.82f),
                 new Color(1f, 0.12f, 0.02f, 0f),
-                new Vector3(0.66f, 0.66f, 0.66f),
-                new Vector3(1.45f, 1.15f, 1.65f),
+                new Vector3(0.9f, 0.9f, 0.9f),
+                new Vector3(1.08f, 1.08f, 1.08f),
                 0f,
-                0.015f,
-                0.14f);
+                0f,
+                0.04f);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
         }
 
-        private static void AttachPromotedMuzzleFlashAsset(Transform parent)
+        private static Renderer[] CollectMuzzleFlashCueVisualRenderers(GameObject promotedMuzzleFlash)
+        {
+            Renderer[] renderers = promotedMuzzleFlash.GetComponentsInChildren<Renderer>(includeInactive: true);
+            var flashRenderers = new System.Collections.Generic.List<Renderer>(renderers.Length);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsMuzzleSmokeRenderer(renderer))
+                {
+                    continue;
+                }
+
+                flashRenderers.Add(renderer);
+            }
+
+            return flashRenderers.ToArray();
+        }
+
+        private static bool IsMuzzleSmokeRenderer(Renderer renderer)
+        {
+            Transform current = renderer.transform;
+            while (current != null)
+            {
+                if (string.Equals(current.name, "Smoke Front", StringComparison.Ordinal)
+                    || string.Equals(current.name, "Smoke Side", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static GameObject AttachPromotedMuzzleFlashAsset(Transform parent)
         {
             const string ChildName = "MuzzleFlash_VefectsRifleDemo";
             Transform existing = parent.Find(ChildName);
@@ -2217,11 +2263,13 @@ namespace DimensionBrawl.Editor
             RemoveColliders(assetRoot);
             DisableVfxAudioSources(assetRoot);
             ConfigurePromotedMuzzleFlashParticles(assetRoot);
+            ConfigurePromotedMuzzleSmokeParticles(assetRoot);
             DisablePromotedParticleLightModules(assetRoot);
             AttachLocalMuzzleFlashLight(assetRoot.transform);
             RemapPromotedHitFeedbackMeshes(assetRoot);
             RemapPromotedHitFeedbackRenderers(assetRoot);
             EditorUtility.SetDirty(assetRoot);
+            return assetRoot;
         }
 
         private static void DisablePromotedParticleLightModules(GameObject root)
@@ -2385,6 +2433,95 @@ namespace DimensionBrawl.Editor
                 particleSystem.Clear(withChildren: true);
                 EditorUtility.SetDirty(particleSystem);
             }
+        }
+
+        private static void ConfigurePromotedMuzzleSmokeParticles(GameObject root)
+        {
+            ConfigurePromotedMuzzleSmokeParticle(
+                root.transform.Find("Smoke Front"),
+                "Smoke Front",
+                new Vector3(1.55f, 1.55f, 1.2f),
+                0.34f,
+                0.62f,
+                0.42f,
+                0.72f,
+                new Color(0.72f, 0.76f, 0.78f, 0.18f),
+                new Color(0.95f, 0.98f, 1f, 0.28f),
+                7,
+                12);
+            ConfigurePromotedMuzzleSmokeParticle(
+                root.transform.Find("Smoke Side"),
+                "Smoke Side",
+                new Vector3(1.8f, 1.8f, 1.3f),
+                0.30f,
+                0.56f,
+                0.34f,
+                0.62f,
+                new Color(0.70f, 0.74f, 0.78f, 0.14f),
+                new Color(0.92f, 0.96f, 1f, 0.24f),
+                6,
+                10);
+        }
+
+        private static void ConfigurePromotedMuzzleSmokeParticle(
+            Transform smokeRoot,
+            string label,
+            Vector3 localScale,
+            float lifetimeMin,
+            float lifetimeMax,
+            float sizeMin,
+            float sizeMax,
+            Color colorMin,
+            Color colorMax,
+            short burstMin,
+            short burstMax)
+        {
+            if (smokeRoot == null)
+            {
+                throw new InvalidOperationException($"{ImportedRifleMuzzleFlashPrefabPath} is missing {label}.");
+            }
+
+            smokeRoot.localScale = localScale;
+
+            ParticleSystem particleSystem = smokeRoot.GetComponent<ParticleSystem>();
+            if (particleSystem == null)
+            {
+                throw new InvalidOperationException($"{label} should be a ParticleSystem.");
+            }
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.startLifetime = CreateTwoConstantCurve(lifetimeMin, lifetimeMax);
+            main.startSize = CreateTwoConstantCurve(sizeMin, sizeMax);
+            main.startSpeed = CreateTwoConstantCurve(0.04f, 0.16f);
+            main.startColor = new ParticleSystem.MinMaxGradient(colorMin, colorMax);
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, burstMin, burstMax) });
+
+            ParticleSystemRenderer renderer = smokeRoot.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.enabled = true;
+                renderer.sortingFudge = 0.25f;
+                renderer.minParticleSize = 0.02f;
+                renderer.maxParticleSize = 1f;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            particleSystem.Clear(withChildren: true);
+            EditorUtility.SetDirty(smokeRoot);
+            EditorUtility.SetDirty(particleSystem);
+        }
+
+        private static ParticleSystem.MinMaxCurve CreateTwoConstantCurve(float min, float max)
+        {
+            ParticleSystem.MinMaxCurve curve = new ParticleSystem.MinMaxCurve();
+            curve.mode = ParticleSystemCurveMode.TwoConstants;
+            curve.constantMin = min;
+            curve.constantMax = max;
+            return curve;
         }
 
         private static void AttachReviewedGunshotAudio(GameObject root)
