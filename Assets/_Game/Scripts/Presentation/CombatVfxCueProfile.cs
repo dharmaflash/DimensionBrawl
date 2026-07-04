@@ -44,7 +44,15 @@ namespace DimensionBrawl.Presentation
         PocketCleared,
         PocketFailed,
         PlayerDamaged,
-        PlayerCritical
+        PlayerCritical,
+        PlayerPerfectDodgeTimeField,
+        PlayerPerfectDodgePulsewave,
+        PlayerPerfectDodgeHoloCube,
+        PlayerPerfectDodgeWindow,
+        PlayerSummonPreSpawnPortal,
+        PlayerSummonLandingCrater,
+        PlayerSummonDragonBreathAudio,
+        PlayerPerfectDodgeShieldBlockImpact
     }
 
     public enum CombatVfxCuePlaybackMode
@@ -67,8 +75,24 @@ namespace DimensionBrawl.Presentation
             switch (playbackMode)
             {
                 case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
-                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
-                        || cueId == CombatVfxCueId.EnemyHit;
+                    return cueId == CombatVfxCueId.PlayerDodgeStart
+                        || cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                        || cueId == CombatVfxCueId.PlayerRangedProjectileImpact
+                        || cueId == CombatVfxCueId.PlayerDamaged
+                        || cueId == CombatVfxCueId.PlayerCritical
+                        || cueId == CombatVfxCueId.EnemyHit
+                        || cueId == CombatVfxCueId.EliteSummonSignal
+                        || cueId == CombatVfxCueId.SummonBlockOpportunity
+                        || cueId == CombatVfxCueId.SummonFollowupWindow
+                        || cueId == CombatVfxCueId.SummonFollowupHit
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeTimeField
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgePulsewave
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeHoloCube
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeWindow
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact
+                        || cueId == CombatVfxCueId.PlayerSummonPreSpawnPortal
+                        || cueId == CombatVfxCueId.PlayerSummonLandingCrater
+                        || cueId == CombatVfxCueId.PlayerSummonDragonBreathAudio;
                 case CombatVfxCuePlaybackMode.PlayerRangedOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
                 default:
@@ -107,6 +131,16 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0)] private int prewarmCount;
         [SerializeField] private bool parentToAnchor;
         [SerializeField] private bool alignForwardToDirection;
+        [SerializeField] private AudioClip[] audioClips;
+        [SerializeField, Min(0f)] private float audioBaseVolume;
+        [SerializeField, Min(0f)] private float audioMinimumPitch;
+        [SerializeField, Min(0f)] private float audioMaximumPitch;
+        [SerializeField, Min(0f)] private float audioMinimumVolumeMultiplier;
+        [SerializeField, Min(0f)] private float audioMaximumVolumeMultiplier;
+        [SerializeField, Range(0f, 1f)] private float audioSpatialBlend;
+        [SerializeField, Min(0f)] private float audioMinDistance;
+        [SerializeField, Min(0f)] private float audioMaxDistance;
+        [SerializeField, Range(0, 256)] private int audioPriority;
 
         public CombatVfxCueId CueId => cueId;
         public GameObject Prefab => prefab;
@@ -117,6 +151,21 @@ namespace DimensionBrawl.Presentation
         public int PrewarmCount => prewarmCount;
         public bool ParentToAnchor => parentToAnchor;
         public bool AlignForwardToDirection => alignForwardToDirection;
+        public int AudioClipCount => audioClips != null ? audioClips.Length : 0;
+        public float AudioBaseVolume => Mathf.Max(0f, audioBaseVolume);
+        public float AudioMinimumPitch => audioMinimumPitch > 0f ? Mathf.Min(audioMinimumPitch, AudioMaximumPitch) : 1f;
+        public float AudioMaximumPitch => audioMaximumPitch > 0f ? Mathf.Max(audioMinimumPitch, audioMaximumPitch) : 1f;
+        public float AudioMinimumVolumeMultiplier => audioMinimumVolumeMultiplier > 0f ? Mathf.Min(audioMinimumVolumeMultiplier, AudioMaximumVolumeMultiplier) : 1f;
+        public float AudioMaximumVolumeMultiplier => audioMaximumVolumeMultiplier > 0f ? Mathf.Max(audioMinimumVolumeMultiplier, audioMaximumVolumeMultiplier) : 1f;
+        public float AudioSpatialBlend => Mathf.Clamp01(audioSpatialBlend);
+        public float AudioMinDistance => Mathf.Max(0f, audioMinDistance);
+        public float AudioMaxDistance => Mathf.Max(AudioMinDistance + 0.01f, audioMaxDistance);
+        public int AudioPriority => Mathf.Clamp(audioPriority, 0, 256);
+
+        public AudioClip GetAudioClip(int index)
+        {
+            return audioClips[index];
+        }
     }
 
     [Serializable]

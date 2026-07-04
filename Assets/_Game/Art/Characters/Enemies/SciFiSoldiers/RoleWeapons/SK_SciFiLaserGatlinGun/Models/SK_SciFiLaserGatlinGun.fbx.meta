@@ -86,7 +86,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_LaserGatlinGun
-    second: {fileID: 2100000, guid: 9e36edb88ec19fd4f92a317b2595ef4d, type: 2}
+    second: {fileID: 2100000, guid: ee8cc0207e70bd842906b29c5e801bb6, type: 2}
   materials:
     materialImportMode: 0
     materialName: 1

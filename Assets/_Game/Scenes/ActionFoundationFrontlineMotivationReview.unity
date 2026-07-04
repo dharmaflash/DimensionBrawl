@@ -259,6 +259,12 @@ MonoBehaviour:
   maxCueCameraDistanceDelta: 0.45
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
+  enableMicroShake: 1
+  maxMicroShakePosition: 0.085
+  maxMicroShakeEuler: 0.9
+  microShakeFrequency: 34
+  microShakePositionAxes: {x: 1, y: 0.58, z: 0.05}
+  microShakeEulerAxes: {x: 0.34, y: 0.28, z: 1}
   aimCameraOffset: {x: 0.45, y: 0.88, z: 2.72}
   aimFocusOffset: {x: 0.89, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
@@ -332,6 +338,15 @@ MonoBehaviour:
     cameraDistanceDelta: -0.2
     focusHeightDelta: 0.03
     durationSeconds: 0.28
+    finisherScale: 1
+  perfectDodgeCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.12, z: -0.32}
+    planarDirectionOffset: -0.3
+    fieldOfViewDelta: 3.6
+    cameraDistanceDelta: -0.34
+    focusHeightDelta: 0.08
+    durationSeconds: 0.34
     finisherScale: 1
   attackStartCue:
     enabled: 1
@@ -1182,6 +1197,9 @@ MonoBehaviour:
   dodgeInvulnerableFromSeconds: 0.05
   dodgeInvulnerableToSeconds: 0.32
   dodgeRecoverySeconds: 0.14
+  dodgeCooldownSeconds: 1.15
+  perfectDodgeProtectionSeconds: 1.15
+  perfectDodgeTimingGraceSeconds: 0.08
   dodgeSpeed: 10.2
   dodgeTrigger: DodgeForward
   dodgeBackTrigger: DodgeBack
@@ -1220,6 +1238,8 @@ MonoBehaviour:
   - {fileID: 9157468826393851034}
   - {fileID: 6514434415308070}
   - {fileID: 5938638756418942863}
+  cameraController: {fileID: 0}
+  visualRecoilRoot: {fileID: 0}
   renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 1, g: 1, b: 1, a: 1}
@@ -1229,6 +1249,40 @@ MonoBehaviour:
   hitColorBlend: 0.72
   hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
+  playCameraImpulse: 1
+  cameraImpulseCooldownSeconds: 0.07
+  lightCameraPlanarKick: 0.035
+  heavyCameraPlanarKick: 0.095
+  lightCameraVerticalKick: 0.012
+  heavyCameraVerticalKick: 0.04
+  lightCameraCueSeconds: 0.075
+  heavyCameraCueSeconds: 0.125
+  lightCameraFieldOfViewDelta: -0.25
+  heavyCameraFieldOfViewDelta: -0.85
+  lightCameraDistanceDelta: 0.015
+  heavyCameraDistanceDelta: 0.075
+  heavyCameraFocusHeightDelta: 0.035
+  playCameraMicroShake: 1
+  lightCameraMicroShakeSeconds: 0.055
+  heavyCameraMicroShakeSeconds: 0.12
+  lightCameraMicroShakePosition: 0.018
+  heavyCameraMicroShakePosition: 0.065
+  lightCameraMicroShakeEuler: 0.18
+  heavyCameraMicroShakeEuler: 0.78
+  playVisualRecoil: 1
+  visualRecoilCooldownSeconds: 0.045
+  lightRecoilDistance: 0.018
+  heavyRecoilDistance: 0.06
+  lightRecoilDegrees: 1.4
+  heavyRecoilDegrees: 4.5
+  recoilReturnSeconds: 0.095
+  playHitStop: 1
+  hitStopTimeScale: 0.18
+  hitStopCooldownSeconds: 0.055
+  lightHitStopScale: 0.72
+  heavyHitStopScale: 1.1
+  heavyDamageHealthRatio: 0.12
+  criticalHealthRatio: 0.35
 --- !u!114 &4007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1310,17 +1364,32 @@ MonoBehaviour:
   actionController: {fileID: 4005}
   playerHealth: {fileID: 4003}
   cuePlayer: {fileID: 4010}
+  perfectDodgeVfxDirector: {fileID: 0}
   attackAnchor: {fileID: 85052602}
   dodgeAnchor: {fileID: 1228450371}
   damageAnchor: {fileID: 85052602}
   damagedCueId: 37
   criticalCueId: 38
   damagedCueIntensity: 1
+  perfectDodgeCueIntensity: 1.55
+  perfectDodgeTimeFieldCueId: 39
+  perfectDodgePulsewaveCueId: 40
+  perfectDodgeHoloCubeCueId: 41
+  perfectDodgeWindowCueId: 42
+  perfectDodgeProjectileBlockCueId: 46
+  perfectDodgeTimeFieldIntensity: 1
+  perfectDodgePulsewaveIntensity: 1.12
+  perfectDodgeHoloCubeIntensity: 0.92
+  perfectDodgeWindowIntensity: 0.86
+  perfectDodgeProjectileBlockIntensity: 1.18
+  perfectDodgeShieldBlockRadius: 0.86
+  perfectDodgeAudioIntensity: 1
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
   playDamageVfx: 0
   playCriticalVfx: 0
+  playPerfectDodgeProjectileBlockVfx: 1
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1383,6 +1452,12 @@ MonoBehaviour:
   movingFacingSuppressSpeed: 0.08
   requireAimToFire: 0
   fireTrigger: 
+  useMagazineReload: 1
+  magazineSize: 24
+  reloadSeconds: 2
+  autoReloadWhenEmpty: 1
+  reloadWhenAimReleased: 1
+  cancelAimReleaseReloadOnAimResume: 1
   aimInputDeadZone: 0.18
   aimInputYawDegrees: 34
   aimFromCameraViewport: 1
@@ -1817,6 +1892,7 @@ MonoBehaviour:
   muzzleFlashIntensity: 1
   muzzleFlashAudioIntensity: 1
   playImpactVfx: 0
+  playImpactAudio: 1
   impactCueId: 34
   impactIntensity: 1
   impactAudioIntensity: 0.56
@@ -4349,105 +4425,6 @@ Transform:
   - {fileID: 519214829}
   m_Father: {fileID: 128484515}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &459816355
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1426401972}
-    m_Modifications:
-    - target: {fileID: 1555887499901681993, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.00029907015
-      objectReference: {fileID: 0}
-    - target: {fileID: 1555887499901681993, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.00026284225
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -1.58
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2917254188157416145, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_Name
-      value: BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando
-      objectReference: {fileID: 0}
-    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 8af592b4e53c1154d8dc59d699963e68, type: 2}
-    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_CullingMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-      propertyPath: m_ApplyRootMotion
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: a000f0e5a2493904492a06a283982f07, type: 3}
---- !u!4 &459816356 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-  m_PrefabInstance: {fileID: 459816355}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &459816357 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
-  m_PrefabInstance: {fileID: 459816355}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &462611310
 GameObject:
   m_ObjectHideFlags: 0
@@ -8412,9 +8389,28 @@ MonoBehaviour:
   pocketReviewOwner: {fileID: 132563471}
   duelReviewOwner: {fileID: 0}
   showScreenCues: 1
+  showEventColorCues: 0
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
+  maxPerfectDodgeDomainAlpha: 0.42
+  maxPerfectDodgeInvertAlpha: 0.18
+  maxPerfectDodgeEdgeAlpha: 0.48
+  perfectDodgeDomainSeconds: 3
+  perfectDodgePulseSeconds: 0.22
+  perfectDodgeBandThickness: 26
+  perfectDodgeDomainMaterial: {fileID: 0}
+  perfectDodgeGlitchOverlayMaterial: {fileID: 0}
+  perfectDodgeShaderIntensity: 0.92
+  perfectDodgeRadialWarpStrength: 0.72
+  perfectDodgeRadialBlurStrength: 0.54
+  perfectDodgeScanlineStrength: 0.34
+  perfectDodgeGridStrength: 0.68
+  perfectDodgeFractureStrength: 0.74
+  perfectDodgeChromaticStrength: 0.86
+  perfectDodgeGlitchOverlayAlpha: 0.16
+  perfectDodgeGlitchNoiseStrength: 1.25
+  perfectDodgeGlitchJitterStrength: 0.42
   useDamageScreenFeedback: 1
   maxDamageVignetteAlpha: 0.42
   maxDamageFlashAlpha: 0.11
@@ -8430,6 +8426,9 @@ MonoBehaviour:
   damageDirectionAccentAlpha: 0.24
   damageDirectionAccentThickness: 178
   dodgeColor: {r: 0.18, g: 0.92, b: 1, a: 1}
+  perfectDodgeDomainColor: {r: 0.035, g: 0.045, b: 0.055, a: 1}
+  perfectDodgeInvertColor: {r: 0.92, g: 1, b: 1, a: 1}
+  perfectDodgeEdgeColor: {r: 0.12, g: 0.96, b: 1, a: 1}
   hitColor: {r: 1, g: 0.92, b: 0.46, a: 1}
   damagedColor: {r: 1, g: 0.18, b: 0.12, a: 1}
   skillColor: {r: 0.46, g: 1, b: 0.78, a: 1}
@@ -8502,6 +8501,7 @@ MonoBehaviour:
   summonSlot2Label: S2 LASER
   summonSlot3Label: S3 DRAGON
   lockedSummonLabel: NEXT
+  summonReadyPulseSeconds: 0.85
   fireAccentColor: {r: 1, g: 0.74, b: 0.34, a: 1}
   dodgeAccentColor: {r: 0.38, g: 0.9, b: 1, a: 1}
   skillAccentColor: {r: 1, g: 0.86, b: 0.46, a: 1}
@@ -9176,6 +9176,105 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1046986686}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1083802362
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1426401972}
+    m_Modifications:
+    - target: {fileID: 1555887499901681993, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00029907015
+      objectReference: {fileID: 0}
+    - target: {fileID: 1555887499901681993, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.00026284225
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917254188157416145, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_Name
+      value: BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8af592b4e53c1154d8dc59d699963e68, type: 2}
+    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+--- !u!4 &1083802363 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2537773540167706731, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+  m_PrefabInstance: {fileID: 1083802362}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &1083802364 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8491492302163358225, guid: a000f0e5a2493904492a06a283982f07, type: 3}
+  m_PrefabInstance: {fileID: 1083802362}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1092524170
 GameObject:
   m_ObjectHideFlags: 0
@@ -11420,7 +11519,7 @@ Transform:
   m_Children:
   - {fileID: 1112302974}
   - {fileID: 50832064}
-  - {fileID: 459816356}
+  - {fileID: 1083802363}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1426401973
@@ -11447,13 +11546,14 @@ MonoBehaviour:
     ActionKind: 4
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
+    MinimumIntervalSeconds: 7.5
     ResponseId: DodgeBossLinePressureSpecial
     StageLoopRole: LV1 boss special shot that asks the player to read a committed
       rail before spending summon resources.
     PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when
       the lane is clear.
-    SummonAnswer: No summon is required; save SummonSlot1 for boss-side summon pressure.
+    SummonAnswer: No summon is required; enemy summon pressure now runs on its own
+      pacing lane.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
@@ -11463,74 +11563,11 @@ MonoBehaviour:
     ForwardRiskPriorityBonus: 0
     SummonResponsePriorityBonus: 0
     MovementIntent: 2
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 1
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 3.8
-    ResponseId: EscortProbeFrontlineCheck
-    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the
-      frontline before the player reaches a full support stack.
-    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns
-      the lane into a screen trade.
-    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting
-      for a perfect LV2 answer.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 5
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 2
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 4.2
-    ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON
-      with an immediate boss-side body screen.
-    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible
-      pressure body before the punish window opens.
-    SummonAnswer: The player summon should clash with the boss screen, break the
-      curtain, and reopen ranged punish time.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 2
-    SelectionPriority: 30
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 140
-    MovementIntent: 4
-  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
-    ActionKind: 1
-    MinimumTier: 3
-    QueuedWaves: 1
-    MinimumIntervalSeconds: 7.5
-    ResponseId: LaserSoldierDodgeLine
-    StageLoopRole: LV3 laser-soldier summon pressure that turns stored boss cost
-      into a readable dodge line instead of another body block.
-    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while
-      the laser soldier recovers.
-    SummonAnswer: A prepared summon can body-screen the lane, but the intended read
-      is movement first and summon only as a backup.
-    UsePlayerForwardRiskGate: 0
-    MinimumPlayerForwardRisk01: 0
-    MaximumPlayerForwardRisk01: 1
-    UsePlayerSummonResponseGate: 0
-    MinimumPlayerSummonTier: 1
-    SelectionPriority: 35
-    ForwardRiskPriorityBonus: 0
-    SummonResponsePriorityBonus: 0
-    MovementIntent: 4
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
     QueuedWaves: 1
-    MinimumIntervalSeconds: 6
+    MinimumIntervalSeconds: 10
     ResponseId: RetreatOrSpendHighTierAnswer
     StageLoopRole: LV3 overextend punish that closes gaps when the player stays near
       the forward boundary too long.
@@ -11547,8 +11584,11 @@ MonoBehaviour:
     ForwardRiskPriorityBonus: 80
     SummonResponsePriorityBonus: 0
     MovementIntent: 3
-  globalRecoverySeconds: 1.1
-  basicFireSuppressionSecondsAfterPressureAction: 0.65
+  globalRecoverySeconds: 1.65
+  decisionThinkIntervalSeconds: 0.25
+  basicFireSuppressionSecondsAfterPressureAction: 0.2
+  minimumBasicFireVolleysBeforePressureAction: 4
+  minimumBasicFireAgeBeforePressureActionSeconds: 0.08
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
   playerSummonResponseWindowSeconds: 4
@@ -11583,24 +11623,24 @@ MonoBehaviour:
     LateralOffset: 0.9
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.07
-    ActorRoleId: EscortProbe
-    ActorPrefabOverride: {fileID: 0}
-    ActorMaxHealth: 520
-    ActorMoveSpeed: 3.2
-    ActorAdvanceDistance: 2.4
-    ActorAdvanceSeconds: 1.4
-    ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 42
-    ActorAttackIntervalSeconds: 0.78
-    ScreenIntercepts: 3
-    ScreenRadius: 1.2
-    ScreenLifetimeSeconds: 3.2
+    ActorScale: 2.08
+    ActorRoleId: LaserSoldier
+    ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
+    ActorMaxHealth: 460
+    ActorMoveSpeed: 3.5
+    ActorAdvanceDistance: 2.8
+    ActorAdvanceSeconds: 1.55
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 2.5
+    ActorAttackIntervalSeconds: 0.18
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
   - EntryForwardBlend01: 0.38
     LateralOffset: 1.4
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.52
+    ActorScale: 2.12
     ActorRoleId: PressureScreen
     ActorPrefabOverride: {fileID: 0}
     ActorMaxHealth: 700
@@ -11617,7 +11657,7 @@ MonoBehaviour:
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 2.48
+    ActorScale: 2.08
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 760
@@ -11625,7 +11665,7 @@ MonoBehaviour:
     ActorAdvanceDistance: 4.4
     ActorAdvanceSeconds: 2.05
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 58
+    ActorAttackDamagePerSecond: 2.5
     ActorAttackIntervalSeconds: 0.12
     ScreenIntercepts: 0
     ScreenRadius: 1.15
@@ -11691,6 +11731,7 @@ MonoBehaviour:
   laneSpace: {fileID: 2269699}
   trackedPlayer: {fileID: 4001}
   sourceHealth: {fileID: 1426401971}
+  fireOrigin: {fileID: 0}
   fireProfile: {fileID: 11400000, guid: 2250ad5d8f39e334ba6213f256f82a6a, type: 2}
   projectilePrefab: {fileID: 2794082157248871863, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
   projectilePrefabObject: {fileID: 2676862116300731253, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
@@ -11699,6 +11740,11 @@ MonoBehaviour:
   resumeCooldownAfterSuppressionSeconds: 0.25
   prewarmCount: 10
   projectileRoot: {fileID: 188710811}
+  volleyAudioSource: {fileID: 0}
+  volleySfxClips:
+  - {fileID: 8300000, guid: 61beefb9d75f65b4e960d4be3357306d, type: 3}
+  volleySfxVolume: 0.4
+  volleySfxPitchRange: {x: 0.96, y: 1.04}
 --- !u!114 &1426401977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11715,6 +11761,7 @@ MonoBehaviour:
   costLadder: {fileID: 1426401975}
   actionDirector: {fileID: 1426401973}
   movedTransform: {fileID: 1426401972}
+  trackedPlayer: {fileID: 0}
   restRisk01: 0.12
   maxCommitRisk01: 0.74
   advanceRiskPerSecond: 0.38
@@ -11730,6 +11777,31 @@ MonoBehaviour:
   lateralStrafeEnabled: 1
   lateralStrafeUnitsPerSecond: 1.25
   lateralStrafeHalfWidthRatio: 0.34
+  playerResponseEnabled: 1
+  playerLateralFollowStrength: 0.82
+  playerResponseHalfWidthRatio: 0.52
+  playerResponseLateralUnitsPerSecond: 2.6
+  playerFlankOffsetRatio: 0.18
+  playerFlankSwitchSeconds: 0.9
+  commitPlayerFollowBoost: 0.24
+  faceTrackedPlayer: 1
+  turnDegreesPerSecond: 780
+  forwardPressureOscillationEnabled: 1
+  idleForwardRiskAmplitude: 0.025
+  actionForwardRiskAmplitude: 0.05
+  forwardOscillationSeconds: 2.35
+  commitRiskBoost: 0.04
+  retreatRiskDip: 0.035
+  movementAnimator: {fileID: 0}
+  movementSpeedParameter: MoveSpeed
+  alternateMovementSpeedParameter: Speed
+  basicFireTrigger: Attack
+  retreatStepTrigger: RetreatBackstep
+  animatorMoveSpeedScale: 0.28
+  animatorDampSeconds: 0.1
+  basicFireMovementLockSeconds: 0.34
+  retreatAnimationRiskDelta: 0.025
+  retreatTriggerCooldownSeconds: 1.05
 --- !u!114 &1426401978
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11744,7 +11816,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageVisualCueDriver
   bossBarrageEmitter: {fileID: 1426401970}
   bossPressureActionDirector: {fileID: 1426401973}
-  animator: {fileID: 459816357}
+  animator: {fileID: 1083802364}
   pulseRoot: {fileID: 1112302974}
   pulseRenderers:
   - {fileID: 1112302975}
@@ -33563,6 +33635,7 @@ MonoBehaviour:
   idleTrigger: IDLE 0
   shootTrigger: SHOOT
   autoShootTrigger: AUTO SHOOT
+  reloadTrigger: RELOAD
   jogTrigger: JOG
   walkForwardTrigger: WALK F
   walkBackTrigger: WALK B
@@ -33585,6 +33658,7 @@ MonoBehaviour:
   useNativeAutoShootLoop: 0
   triggerAutoShootOncePerHold: 1
   stationaryFirePoseHoldSeconds: 0.36
+  reloadPoseHoldSeconds: 0.62
   keepMovingLocomotionDuringFire: 1
   locomotionTriggerHoldSeconds: 0.18
   dodgePoseSuppressSeconds: 0.42

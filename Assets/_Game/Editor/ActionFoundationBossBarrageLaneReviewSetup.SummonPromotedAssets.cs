@@ -19,6 +19,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_39_WindBlast/Effect_39_WindBlast.prefab";
         private const string ImportedSpecialSkillRushTrailPrefabPath =
             "Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_13_DangerClose/Effect_13_Base/Effect_13_Trails.prefab";
+        private const string ImportedHovlSphereLightningPivotPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Sphere lightning pivot.prefab";
         private const string ImportedVolcanoDragonModelPath =
             "Assets/_Imported/AssetStore/HEROIC FANTASY CREATURES FULL PACK VOL3/Elemental Dragons Pack/Volcano Dragon/FBX Files/SK_VolcanoDragon.FBX";
         private const string ImportedVolcanoDragonFlyStationaryClipPath =
@@ -38,6 +40,8 @@ namespace DimensionBrawl.Editor
             SummonPromotedVfxRoot + "/Textures";
         private const string SummonPromotedVfxMeshRoot =
             SummonPromotedVfxRoot + "/Meshes";
+        private const string SummonRoleVisualTextureRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVisualTextures";
         private const string SummonSlot2PromotedLaserBeamPrefabPath =
             SummonPromotedVfxPrefabRoot + "/PF_SummonLaserBeam_FORGE3D.prefab";
         private const string SummonSlot3PromotedFireBreathPrefabPath =
@@ -46,6 +50,8 @@ namespace DimensionBrawl.Editor
             SummonPromotedVfxPrefabRoot + "/PF_SummonChargeImpact_SPECIAL.prefab";
         private const string SummonSlot1PromotedRushTrailPrefabPath =
             SummonPromotedVfxPrefabRoot + "/PF_SummonChargeRushTrail_SPECIAL.prefab";
+        public const string SummonContactDamageLightningVfxPrefabPath =
+            SummonPromotedVfxPrefabRoot + "/PF_ContactDamageSphereLightning_HOVL.prefab";
 
         private const string SummonDragonPromotedRoot =
             "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon";
@@ -85,7 +91,25 @@ namespace DimensionBrawl.Editor
             EnsureSummonSlot1PromotedRushTrailPrefab();
             EnsureSummonSlot2PromotedLaserBeamPrefab();
             EnsureSummonSlot3PromotedFireBreathPrefab();
+            EnsureContactDamageSphereLightningVfxPrefab();
             EnsureSummonSlot3PromotedDragonVisualPrefab();
+        }
+
+        public static GameObject EnsureContactDamageSphereLightningVfxPrefab()
+        {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(SummonContactDamageLightningVfxPrefabPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            return EnsureSummonPromotedHovlParticlePrefab(
+                ImportedHovlSphereLightningPivotPrefabPath,
+                SummonContactDamageLightningVfxPrefabPath,
+                "PF_ContactDamageSphereLightning_HOVL",
+                loopParticles: false,
+                playOnAwake: true,
+                minimumParticleSystems: 4);
         }
 
         private static GameObject EnsureSummonSlot1PromotedChargeImpactPrefab()
@@ -112,13 +136,13 @@ namespace DimensionBrawl.Editor
 
         private static GameObject EnsureSummonSlot2PromotedLaserBeamPrefab()
         {
-            return EnsureSummonPromotedParticlePrefab(
-                ImportedForge3DPlasmaBeamBluePrefabPath,
+            return EnsureSummonPromotedHovlParticlePrefab(
+                ImportedHovlLaserHudPrefabPath,
                 SummonSlot2PromotedLaserBeamPrefabPath,
-                "PF_SummonLaserBeam_FORGE3D",
-                loopParticles: true,
+                "PF_SummonLaserBeam_HOVL_LaserHUD",
+                loopParticles: false,
                 playOnAwake: false,
-                minimumParticleSystems: 4);
+                minimumParticleSystems: 8);
         }
 
         private static GameObject EnsureSummonSlot3PromotedFireBreathPrefab()
@@ -174,6 +198,64 @@ namespace DimensionBrawl.Editor
                 if (savedPrefab == null)
                 {
                     throw new InvalidOperationException($"Failed to save promoted summon VFX prefab at {targetPrefabPath}.");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+
+            ValidateNoImportedAssetReference(targetPrefabPath);
+            return LoadAsset<GameObject>(targetPrefabPath);
+        }
+
+        private static GameObject EnsureSummonPromotedHovlParticlePrefab(
+            string sourcePrefabPath,
+            string targetPrefabPath,
+            string rootName,
+            bool loopParticles,
+            bool playOnAwake,
+            int minimumParticleSystems)
+        {
+            EnsureFolderForAsset(targetPrefabPath);
+            GameObject sourcePrefab = LoadAsset<GameObject>(sourcePrefabPath);
+            GameObject instance = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            try
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        instance,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                }
+
+                instance.name = rootName;
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                instance.transform.localScale = Vector3.one;
+                UnpackNestedPrefabInstances(instance);
+                StripNonGameMonoBehaviours(instance);
+                RemoveHovlRuntimePhysics(instance);
+                RemoveHovlRuntimeAudio(instance);
+                ConfigurePromotedHovlSciFiParticles(instance, loopParticles, playOnAwake);
+                if (string.Equals(rootName, "PF_SummonLaserBeam_HOVL_LaserHUD", StringComparison.Ordinal))
+                {
+                    StabilizeSummonSlot2LaserHudTiming(instance);
+                }
+
+                RemapPromotedHovlSciFiRendererDependencies(instance);
+                ValidatePromotedParticleVfx(instance.transform, rootName, minimumParticleSystems);
+
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(instance, targetPrefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save promoted summon Hovl VFX prefab at {targetPrefabPath}.");
                 }
             }
             finally
@@ -319,7 +401,9 @@ namespace DimensionBrawl.Editor
             float pulseSpeed,
             int minimumParticleSystems,
             float beamWidthMultiplier = 1f,
-            bool loopParticles = true)
+            float beamMuzzleOffset = 0.1f,
+            bool loopParticles = true,
+            bool overrideBeamColor = true)
         {
             DestroyChildIfPresent(actorRoot.transform, beamName);
             GameObject sourcePrefab = LoadAsset<GameObject>(promotedPrefabPath);
@@ -337,6 +421,21 @@ namespace DimensionBrawl.Editor
             RemoveColliders(beamRoot);
             DisableVfxAudioSources(beamRoot);
             ConfigurePromotedVfxParticles(beamRoot, loopParticles, playOnAwake: false);
+            if (string.Equals(beamName, SummonSlot2LaserMuzzleBeamName, StringComparison.Ordinal))
+            {
+                StabilizeSummonSlot2LaserHudTiming(beamRoot);
+            }
+
+            if (beamName.IndexOf("ChargeImpact", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                TamePromotedChargeParticles(
+                    beamRoot,
+                    emissionScale: 0.42f,
+                    sizeScale: 0.55f,
+                    speedScale: 0.65f,
+                    lifetimeScale: 0.58f);
+            }
+
             ValidatePromotedParticleVfx(beamRoot.transform, beamName, minimumParticleSystems);
             beamRoot.SetActive(false);
 
@@ -354,7 +453,48 @@ namespace DimensionBrawl.Editor
             SetFloat(beamPresenter, "pulseScale", pulseScale);
             SetFloat(beamPresenter, "pulseSpeed", pulseSpeed);
             SetFloat(beamPresenter, "beamWidthMultiplier", beamWidthMultiplier);
+            SetFloat(beamPresenter, "beamMuzzleOffset", beamMuzzleOffset);
+            SetBool(beamPresenter, "overrideBeamColor", overrideBeamColor);
             EditorUtility.SetDirty(actorRoot);
+        }
+
+        private static void StabilizeSummonSlot2LaserHudTiming(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.stopAction = ParticleSystemStopAction.None;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                main.simulationSpeed = Mathf.Min(Mathf.Max(main.simulationSpeed, 0.01f), 0.72f);
+                if (main.duration < 1.45f)
+                {
+                    main.duration = 1.45f;
+                }
+
+                if (IsSummonSlot2LaserSustainParticle(particleSystem.name))
+                {
+                    main.startLifetimeMultiplier = Mathf.Max(main.startLifetimeMultiplier, 1.15f);
+                }
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static bool IsSummonSlot2LaserSustainParticle(string particleName)
+        {
+            return particleName.IndexOf("Laser", StringComparison.OrdinalIgnoreCase) >= 0
+                || particleName.IndexOf("Core", StringComparison.OrdinalIgnoreCase) >= 0
+                || particleName.IndexOf("Lightning", StringComparison.OrdinalIgnoreCase) >= 0
+                || particleName.IndexOf("Spark", StringComparison.OrdinalIgnoreCase) >= 0
+                || particleName.IndexOf("Ray", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static Transform ConfigureSummonMovementPromotedParticleVfx(
@@ -382,10 +522,52 @@ namespace DimensionBrawl.Editor
             RemoveColliders(vfxRoot);
             DisableVfxAudioSources(vfxRoot);
             ConfigurePromotedVfxParticles(vfxRoot, loopParticles: true, playOnAwake: false);
+            if (vfxName.IndexOf("ChargeRush", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                TamePromotedChargeParticles(
+                    vfxRoot,
+                    emissionScale: 0.34f,
+                    sizeScale: 0.62f,
+                    speedScale: 0.72f,
+                    lifetimeScale: 0.68f);
+            }
+
             ValidatePromotedParticleVfx(vfxRoot.transform, vfxName, minimumParticleSystems);
             vfxRoot.SetActive(false);
             EditorUtility.SetDirty(vfxRoot);
             return vfxRoot.transform;
+        }
+
+        private static void TamePromotedChargeParticles(
+            GameObject vfxRoot,
+            float emissionScale,
+            float sizeScale,
+            float speedScale,
+            float lifetimeScale)
+        {
+            ParticleSystem[] particleSystems = vfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.startSizeMultiplier *= Mathf.Clamp(sizeScale, 0.05f, 1f);
+                main.startSpeedMultiplier *= Mathf.Clamp(speedScale, 0.05f, 1f);
+                main.startLifetimeMultiplier *= Mathf.Clamp(lifetimeScale, 0.05f, 1f);
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.rateOverTimeMultiplier *= Mathf.Clamp(emissionScale, 0.05f, 1f);
+                emission.rateOverDistanceMultiplier *= Mathf.Clamp(emissionScale, 0.05f, 1f);
+
+                EditorUtility.SetDirty(particleSystem);
+            }
+
+            ParticleSystemRenderer[] renderers =
+                vfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].maxParticleSize = Mathf.Min(renderers[i].maxParticleSize, 0.35f);
+                EditorUtility.SetDirty(renderers[i]);
+            }
         }
 
         private static UnityEngine.Object[] ToObjectReferences(UnityEngine.Object[] values)

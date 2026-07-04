@@ -189,6 +189,7 @@ namespace DimensionBrawl.Editor
             {
                 SanitizeSoldierCandidate(candidate, source.transform, startingProfile, patternDeck);
                 ConfigureEliteProfiles(candidate, eliteProfiles);
+                ConfigureSoldierContactDamagePresentation(candidate, visualCandidate);
 
                 if (visualCandidate == SoldierVisualCandidate.GeneralDeckRifle)
                 {
@@ -263,6 +264,13 @@ namespace DimensionBrawl.Editor
             SetObjectReference(soldier, "telegraphIndicator", telegraphObject);
             SetObjectReference(soldier, "telegraphPresenter", telegraphPresenter);
             SetObjectReference(soldier, "bodyRenderer", bodyRenderer);
+            SetObjectReference(
+                soldier,
+                "contactDamageVfxPrefab",
+                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+            SetFloat(soldier, "contactDamageVfxScale", 0.46f);
+            SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
+            SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
 
             SetObjectReference(targetSensor, "selfHealth", health);
             SetObjectReferenceArray(targetSensor, "targetCandidates", Array.Empty<UnityEngine.Object>());
@@ -409,6 +417,27 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ConfigureSoldierContactDamagePresentation(
+            GameObject root,
+            SoldierVisualCandidate visualCandidate)
+        {
+            BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, root.name);
+            SetObjectReference(
+                soldier,
+                "contactDamageVfxPrefab",
+                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+            SetFloat(soldier, "contactDamageVfxScale", 0.46f);
+            SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
+            SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
+
+            if (visualCandidate == SoldierVisualCandidate.GeneralDeckRifle
+                || visualCandidate == SoldierVisualCandidate.EliteHeavyArmor)
+            {
+                SetFloat(soldier, "attackRangeSlowdownDistance", 1.05f);
+                SetFloat(soldier, "attackRange", 2.25f);
+            }
+        }
+
         private static void ValidateSoldierPrefab(
             GameObject root,
             string expectedName,
@@ -442,6 +471,14 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(soldier, "characterController", controller);
             ValidateObjectReference(soldier, "animator", animator);
             ValidateObjectReference(soldier, "telegraphPresenter", telegraphPresenter);
+            ValidateObjectReference(
+                soldier,
+                "contactDamageVfxPrefab",
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    ActionFoundationBossBarrageLaneReviewSetup.SummonContactDamageLightningVfxPrefabPath));
+            ValidateFloat(soldier, "contactDamageVfxScale", 0.46f);
+            ValidateFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
+            ValidateFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
 
             if (targetSensor.TargetCandidateCount != 0)
             {

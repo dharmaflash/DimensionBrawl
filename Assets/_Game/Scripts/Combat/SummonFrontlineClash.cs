@@ -29,6 +29,12 @@ namespace DimensionBrawl.Combat
         [SerializeField] private LayerMask contactLayers = Physics.DefaultRaycastLayers;
         [SerializeField] private bool prioritizeHostileSummons = true;
 
+        [Header("Contact Damage VFX")]
+        [SerializeField] private GameObject contactDamageVfxPrefab;
+        [SerializeField, Min(0.01f)] private float contactDamageVfxScale = 0.52f;
+        [SerializeField, Min(0f)] private float contactDamageVfxHeightOffset = 0.55f;
+        [SerializeField, Min(0.05f)] private float contactDamageVfxLifetimeSeconds = 0.72f;
+
         private readonly Collider[] contactBuffer = new Collider[12];
         private float nextDamageTime;
         private float clashFeedbackTimer;
@@ -71,7 +77,7 @@ namespace DimensionBrawl.Combat
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         public void ConfigureReferences(SummonFrontlineProxy newProxy, CombatHealth newHealth)
@@ -174,11 +180,12 @@ namespace DimensionBrawl.Combat
 
             float interval = Mathf.Max(0.05f, contactDamageIntervalSeconds);
             float damageAmount = ResolveDamageAmount(interval, targetKind, otherHealth);
+            Vector3 hitPoint = other.ClosestPoint(transform.position);
             var damageInfo = new DamageInfo(
                 health,
                 health.Team,
                 damageAmount,
-                other.ClosestPoint(transform.position),
+                hitPoint,
                 ResolveHitDirection(otherHealth, otherProxy),
                 0f,
                 ResolveResponsePolicy(targetKind, otherHealth),
@@ -193,6 +200,7 @@ namespace DimensionBrawl.Combat
                 lastTargetKind = targetKind;
                 proxy.NotifyAttackPerformed(clashFeedbackSeconds);
                 otherProxy?.NotifyAttackPerformed(clashFeedbackSeconds);
+                SpawnContactDamageVfx(hitPoint, damageInfo.Direction);
             }
 
             nextDamageTime = Time.time + interval;
@@ -309,6 +317,31 @@ namespace DimensionBrawl.Combat
             return targetHealth != null
                 && (targetHealth.GetComponentInParent<DimensionBrawl.Player.PlayerMovementController>() != null
                     || targetHealth.GetComponentInParent<IsekaiBrawl.Gameplay.PlayerController>() != null);
+        }
+
+        private void SpawnContactDamageVfx(Vector3 hitPoint, Vector3 direction)
+        {
+            if (contactDamageVfxPrefab == null)
+            {
+                return;
+            }
+
+            Vector3 spawnPoint = hitPoint + Vector3.up * contactDamageVfxHeightOffset;
+            Quaternion rotation = ResolveContactDamageVfxRotation(direction);
+            GameObject instance = Instantiate(contactDamageVfxPrefab, spawnPoint, rotation);
+            instance.transform.localScale *= Mathf.Max(0.01f, contactDamageVfxScale);
+            Destroy(instance, Mathf.Max(0.05f, contactDamageVfxLifetimeSeconds));
+        }
+
+        private Quaternion ResolveContactDamageVfxRotation(Vector3 direction)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planarDirection.sqrMagnitude <= 0.0001f)
+            {
+                planarDirection = transform.forward;
+            }
+
+            return Quaternion.LookRotation(planarDirection.normalized, Vector3.up);
         }
 
         private Vector3 ResolveHitDirection(CombatHealth otherHealth, SummonFrontlineProxy otherProxy)

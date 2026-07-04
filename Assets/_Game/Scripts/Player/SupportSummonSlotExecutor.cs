@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Player
@@ -99,6 +100,12 @@ namespace DimensionBrawl.Player
                 Vector3.ProjectOnPlane(actorTargetPosition - entryPosition, Vector3.up),
                 Vector3.zero);
             float actorAdvanceSeconds = owner.ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
+
+            bool playGroundEntryFeedback = !IsFireDragon(settings);
+            if (playGroundEntryFeedback)
+            {
+                PlayEntryPortalCue(entryPosition, facingDirection, tier);
+            }
 
             SpawnEntryCue(entryPosition, settings);
             SummonFrontlineProxy actor = SpawnSummonActor(
@@ -237,6 +244,11 @@ namespace DimensionBrawl.Player
                 settings.ActorMaxHealth,
                 settings.ActorMoveSpeed);
             lastSummonActor = actor;
+            if (!IsFireDragon(settings))
+            {
+                PlayLandingCraterCue(actor.transform, facingDirection, tier);
+                RequestSummonLandingCamera(actor.transform.position, tier);
+            }
 
             if (actor.PressureScreen != null && settings.ScreenIntercepts > 0)
             {
@@ -253,6 +265,15 @@ namespace DimensionBrawl.Player
             }
 
             return actor;
+        }
+
+        private static void RequestSummonLandingCamera(Vector3 position, int tier)
+        {
+            ActionCameraController cameraController = Object.FindFirstObjectByType<ActionCameraController>();
+            cameraController?.RequestExplosionFeedback(
+                position,
+                8f,
+                Mathf.Clamp01(0.35f + Mathf.Clamp(tier, 1, 3) * 0.16f));
         }
 
         private void ConfigureActorVfx(SummonFrontlineProxy actor)
@@ -420,6 +441,12 @@ namespace DimensionBrawl.Player
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
                 actor.FaceTowards(targetPosition);
                 actor.NotifyAttackPerformed(ResolveAttackFeedbackSeconds(settings));
+                if (IsFireDragon(settings))
+                {
+                    Transform breathAnchor = actor.ProjectileOrigin != null ? actor.ProjectileOrigin : actor.transform;
+                    PlayDragonBreathAudioCue(breathAnchor, facingDirection, actor.ActiveTier);
+                }
+
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;
@@ -440,6 +467,62 @@ namespace DimensionBrawl.Player
             return string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
                 ? Mathf.Clamp(owner.VolleyIntervalSeconds * 0.82f, 0.55f, 0.95f)
                 : defaultSeconds;
+        }
+
+        private void PlayEntryPortalCue(Vector3 position, Vector3 facingDirection, int tier)
+        {
+            CombatVfxCuePlayer cuePlayer = owner.CombatVfxCuePlayer;
+            if (cuePlayer == null)
+            {
+                return;
+            }
+
+            Transform anchor = owner.transform;
+            Vector3 localOffset = anchor.InverseTransformPoint(position);
+            cuePlayer.PlayCue(
+                CombatVfxCueId.PlayerSummonPreSpawnPortal,
+                anchor,
+                facingDirection,
+                ResolveSummonCueIntensity(tier),
+                0.82f,
+                localOffset);
+        }
+
+        private void PlayLandingCraterCue(Transform anchor, Vector3 facingDirection, int tier)
+        {
+            CombatVfxCuePlayer cuePlayer = owner.CombatVfxCuePlayer;
+            if (cuePlayer == null || anchor == null)
+            {
+                return;
+            }
+
+            cuePlayer.PlayCue(
+                CombatVfxCueId.PlayerSummonLandingCrater,
+                anchor,
+                facingDirection,
+                ResolveSummonCueIntensity(tier),
+                0.88f);
+        }
+
+        private void PlayDragonBreathAudioCue(Transform anchor, Vector3 facingDirection, int tier)
+        {
+            CombatVfxCuePlayer cuePlayer = owner.CombatVfxCuePlayer;
+            if (cuePlayer == null || anchor == null)
+            {
+                return;
+            }
+
+            cuePlayer.PlayCue(
+                CombatVfxCueId.PlayerSummonDragonBreathAudio,
+                anchor,
+                facingDirection,
+                1f,
+                0.72f + Mathf.Clamp(tier - 1, 0, 2) * 0.08f);
+        }
+
+        private static float ResolveSummonCueIntensity(int tier)
+        {
+            return 0.86f + Mathf.Clamp(tier - 1, 0, 2) * 0.13f;
         }
 
         private void ConfigureLaserPattern(
@@ -543,6 +626,11 @@ namespace DimensionBrawl.Player
         private static bool IsLaserSoldier(PlayerSummonSlot1Action.SummonTierSettings settings)
         {
             return string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal);
+        }
+
+        private static bool IsFireDragon(PlayerSummonSlot1Action.SummonTierSettings settings)
+        {
+            return string.Equals(settings.ActorRoleId, "FireDragon", System.StringComparison.Ordinal);
         }
 
         private static float ResolveLaserDamageInterval(PlayerSummonSlot1Action.SummonTierSettings settings)

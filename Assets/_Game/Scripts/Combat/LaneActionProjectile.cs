@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -251,6 +252,7 @@ namespace DimensionBrawl.Combat
 
             if (applied)
             {
+                RequestPlayerSideHeavyShotCamera(targetHealth, impactPoint);
                 DamageApplied?.Invoke(this, targetHealth, impactPoint, travelDirection);
                 if (deactivateOnHit)
                 {
@@ -259,6 +261,27 @@ namespace DimensionBrawl.Combat
             }
 
             return applied;
+        }
+
+        private void RequestPlayerSideHeavyShotCamera(CombatHealth targetHealth, Vector3 impactPoint)
+        {
+            if (!CombatTeamUtility.IsPlayerSide(sourceTeam)
+                || targetHealth == null
+                || CombatTeamUtility.IsPlayerSide(targetHealth.Team)
+                || (!DamageResponsePolicyUtility.InterruptsAction(controlLockPolicy)
+                    && responsePolicy != DamageResponsePolicy.Stagger))
+            {
+                return;
+            }
+
+            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            if (cameraController == null)
+            {
+                return;
+            }
+
+            cameraController.RequestHeavyShotFeedback(travelDirection, 0.9f);
+            cameraController.RequestExplosionFeedback(impactPoint, 8f, 0.35f);
         }
 
         public void Deactivate()
@@ -281,7 +304,7 @@ namespace DimensionBrawl.Combat
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private void OnTriggerEnter(Collider other)

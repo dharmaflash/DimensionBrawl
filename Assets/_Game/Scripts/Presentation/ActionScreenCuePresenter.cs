@@ -15,6 +15,7 @@ namespace DimensionBrawl.Presentation
             Boss,
             Frontline,
             Followup,
+            PerfectDodge,
             Result
         }
 
@@ -34,9 +35,31 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
+        [SerializeField] private bool showEventColorCues;
         [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.10f;
         [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.26f;
         [SerializeField, Min(0f)] private float edgeThickness = 104f;
+
+        [Header("Perfect Dodge Domain")]
+        [SerializeField] private bool playPerfectDodgeScreenDomain = true;
+        [SerializeField, Range(0f, 0.65f)] private float maxPerfectDodgeDomainAlpha = 0.42f;
+        [SerializeField, Range(0f, 0.45f)] private float maxPerfectDodgeInvertAlpha = 0.18f;
+        [SerializeField, Range(0f, 0.75f)] private float maxPerfectDodgeEdgeAlpha = 0.48f;
+        [SerializeField, Min(0.01f)] private float perfectDodgeDomainSeconds = 3f;
+        [SerializeField, Min(0.01f)] private float perfectDodgePulseSeconds = 0.22f;
+        [SerializeField, Min(0f)] private float perfectDodgeBandThickness = 26f;
+        [SerializeField] private Material perfectDodgeDomainMaterial;
+        [SerializeField] private Material perfectDodgeGlitchOverlayMaterial;
+        [SerializeField, Range(0f, 2f)] private float perfectDodgeShaderIntensity = 0.92f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeRadialWarpStrength = 0.72f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeRadialBlurStrength = 0.54f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeScanlineStrength = 0.34f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeGridStrength = 0.68f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeFractureStrength = 0.74f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeChromaticStrength = 0.86f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeGlitchOverlayAlpha = 0.16f;
+        [SerializeField, Range(0f, 2f)] private float perfectDodgeGlitchNoiseStrength = 1.25f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeGlitchJitterStrength = 0.42f;
 
         [Header("Damage Screen Feedback")]
         [SerializeField] private bool useDamageScreenFeedback = true;
@@ -56,6 +79,9 @@ namespace DimensionBrawl.Presentation
 
         [Header("Player Colors")]
         [SerializeField] private Color dodgeColor = new Color(0.18f, 0.92f, 1f, 1f);
+        [SerializeField] private Color perfectDodgeDomainColor = new Color(0.035f, 0.045f, 0.055f, 1f);
+        [SerializeField] private Color perfectDodgeInvertColor = new Color(0.92f, 1f, 1f, 1f);
+        [SerializeField] private Color perfectDodgeEdgeColor = new Color(0.12f, 0.96f, 1f, 1f);
         [SerializeField] private Color hitColor = new Color(1f, 0.92f, 0.46f, 1f);
         [SerializeField] private Color damagedColor = new Color(1f, 0.18f, 0.12f, 1f);
         [SerializeField] private Color skillColor = new Color(0.46f, 1f, 0.78f, 1f);
@@ -92,6 +118,9 @@ namespace DimensionBrawl.Presentation
         private float flashDuration;
         private float vignetteTimer;
         private float vignetteDuration;
+        private float perfectDodgeDomainTimer;
+        private float perfectDodgeDomainDuration;
+        private float perfectDodgeDomainIntensity;
         private float damageFeedbackTimer;
         private float damageFeedbackDuration;
         private float damageFeedbackIntensity;
@@ -144,11 +173,31 @@ namespace DimensionBrawl.Presentation
         private BossSummonDuelReviewOwner.DuelPhase lastDuelPhase = BossSummonDuelReviewOwner.DuelPhase.BuildPressure;
 
         public bool ShowScreenCues => showScreenCues;
-        public bool HasActiveCue => flashTimer > 0f || vignetteTimer > 0f;
+        public bool ShowEventColorCues => showEventColorCues;
+        public bool HasActiveCue => flashTimer > 0f || vignetteTimer > 0f || perfectDodgeDomainTimer > 0f;
+        private bool HasActiveGuiCue => flashTimer > 0f || vignetteTimer > 0f;
         public bool HasActiveDamageFeedback => damageFeedbackTimer > 0f || criticalHealthPulseTimer > 0f;
         public float EdgeThickness => edgeThickness;
         public float MaxFullScreenAlpha => maxFullScreenAlpha;
         public float MaxEdgeAlpha => maxEdgeAlpha;
+        public bool PlayPerfectDodgeScreenDomain => playPerfectDodgeScreenDomain;
+        public float MaxPerfectDodgeDomainAlpha => maxPerfectDodgeDomainAlpha;
+        public float MaxPerfectDodgeInvertAlpha => maxPerfectDodgeInvertAlpha;
+        public float MaxPerfectDodgeEdgeAlpha => maxPerfectDodgeEdgeAlpha;
+        public float PerfectDodgeDomainSeconds => perfectDodgeDomainSeconds;
+        public float PerfectDodgePulseSeconds => perfectDodgePulseSeconds;
+        public Material PerfectDodgeDomainMaterial => perfectDodgeDomainMaterial;
+        public Material PerfectDodgeGlitchOverlayMaterial => perfectDodgeGlitchOverlayMaterial;
+        public float PerfectDodgeShaderIntensity => perfectDodgeShaderIntensity;
+        public float PerfectDodgeRadialWarpStrength => perfectDodgeRadialWarpStrength;
+        public float PerfectDodgeRadialBlurStrength => perfectDodgeRadialBlurStrength;
+        public float PerfectDodgeScanlineStrength => perfectDodgeScanlineStrength;
+        public float PerfectDodgeGridStrength => perfectDodgeGridStrength;
+        public float PerfectDodgeFractureStrength => perfectDodgeFractureStrength;
+        public float PerfectDodgeChromaticStrength => perfectDodgeChromaticStrength;
+        public float PerfectDodgeGlitchOverlayAlpha => perfectDodgeGlitchOverlayAlpha;
+        public float PerfectDodgeGlitchNoiseStrength => perfectDodgeGlitchNoiseStrength;
+        public float PerfectDodgeGlitchJitterStrength => perfectDodgeGlitchJitterStrength;
         public bool UseDamageScreenFeedback => useDamageScreenFeedback;
         public float MaxDamageVignetteAlpha => maxDamageVignetteAlpha;
         public float MaxDamageFlashAlpha => maxDamageFlashAlpha;
@@ -207,6 +256,31 @@ namespace DimensionBrawl.Presentation
             showScreenCues = visible;
         }
 
+        public void SetEventColorCuesVisible(bool visible)
+        {
+            showEventColorCues = visible;
+        }
+
+        public void SetPerfectDodgeDomainMaterial(Material material)
+        {
+            if (perfectDodgeDomainMaterial == material)
+            {
+                return;
+            }
+
+            perfectDodgeDomainMaterial = material;
+        }
+
+        public void SetPerfectDodgeGlitchOverlayMaterial(Material material)
+        {
+            if (perfectDodgeGlitchOverlayMaterial == material)
+            {
+                return;
+            }
+
+            perfectDodgeGlitchOverlayMaterial = material;
+        }
+
         public void Configure(
             PlayerActionController newActionController,
             CombatHealth newPlayerHealth,
@@ -245,24 +319,13 @@ namespace DimensionBrawl.Presentation
         private void OnDisable()
         {
             Unsubscribe();
+            PerfectDodgeScreenDomainRuntime.Clear();
         }
 
         private void OnDestroy()
         {
-            if (damageVignetteTexture == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Destroy(damageVignetteTexture);
-            }
-            else
-            {
-                DestroyImmediate(damageVignetteTexture);
-            }
-
+            PerfectDodgeScreenDomainRuntime.Clear();
+            DestroyUnityObject(damageVignetteTexture);
             damageVignetteTexture = null;
         }
 
@@ -271,13 +334,16 @@ namespace DimensionBrawl.Presentation
             float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
             flashTimer = Mathf.Max(0f, flashTimer - deltaTime);
             vignetteTimer = Mathf.Max(0f, vignetteTimer - deltaTime);
+            perfectDodgeDomainTimer = Mathf.Max(0f, perfectDodgeDomainTimer - deltaTime);
             damageFeedbackTimer = Mathf.Max(0f, damageFeedbackTimer - deltaTime);
             criticalHealthPulseTimer = Mathf.Max(0f, criticalHealthPulseTimer - deltaTime);
+            PublishPerfectDodgeDomainState();
         }
 
         private void OnGUI()
         {
-            if (!showScreenCues || (!HasActiveCue && !HasActiveDamageFeedback))
+            bool drawEventColorCue = showEventColorCues && HasActiveGuiCue;
+            if (!showScreenCues || (!drawEventColorCue && !HasActiveDamageFeedback))
             {
                 return;
             }
@@ -285,13 +351,14 @@ namespace DimensionBrawl.Presentation
             int previousDepth = GUI.depth;
             Color previousColor = GUI.color;
             GUI.depth = 1000;
-            if (flashTimer > 0f)
+
+            if (drawEventColorCue && flashTimer > 0f)
             {
                 float alpha = maxFullScreenAlpha * activeIntensity * ResolveFade01(flashTimer, flashDuration);
                 DrawRect(new Rect(0f, 0f, Screen.width, Screen.height), WithAlpha(activeFlashColor, alpha));
             }
 
-            if (vignetteTimer > 0f)
+            if (drawEventColorCue && vignetteTimer > 0f)
             {
                 float alpha = maxEdgeAlpha * activeIntensity * ResolveFade01(vignetteTimer, vignetteDuration);
                 DrawVignette(WithAlpha(activeVignetteColor, alpha));
@@ -317,6 +384,11 @@ namespace DimensionBrawl.Presentation
         private void HandleDodgeStarted()
         {
             RequestScreenCue("Player.Dodge", dodgeColor, 0.18f, 0.78f, ScreenCueCategory.Player);
+        }
+
+        private void HandlePerfectDodgeTriggered(DamageInfo damageInfo)
+        {
+            RequestPerfectDodgeDomainCue();
         }
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)
@@ -628,6 +700,95 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        private void RequestPerfectDodgeDomainCue()
+        {
+            if (!playPerfectDodgeScreenDomain)
+            {
+                perfectDodgeDomainTimer = 0f;
+                perfectDodgeDomainDuration = 0f;
+                perfectDodgeDomainIntensity = 0f;
+                PerfectDodgeScreenDomainRuntime.Clear();
+                return;
+            }
+
+            perfectDodgeDomainDuration = Mathf.Max(0.01f, perfectDodgeDomainSeconds);
+            perfectDodgeDomainTimer = Mathf.Max(perfectDodgeDomainTimer, perfectDodgeDomainDuration);
+            perfectDodgeDomainIntensity = 1f;
+            PublishPerfectDodgeDomainState();
+        }
+
+        private void PublishPerfectDodgeDomainState()
+        {
+            if (!showScreenCues
+                || !playPerfectDodgeScreenDomain
+                || perfectDodgeDomainTimer <= 0f
+                || perfectDodgeDomainDuration <= 0f)
+            {
+                PerfectDodgeScreenDomainRuntime.Clear();
+                return;
+            }
+
+            float age01 = 1f - Mathf.Clamp01(perfectDodgeDomainTimer / perfectDodgeDomainDuration);
+            float entry = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(age01 / 0.12f));
+            float exit = Mathf.SmoothStep(
+                0f,
+                1f,
+                Mathf.Clamp01(perfectDodgeDomainTimer / (perfectDodgeDomainDuration * 0.22f)));
+            float sustain = Mathf.Min(entry, exit) * Mathf.Max(0f, perfectDodgeDomainIntensity);
+            if (sustain <= 0.001f)
+            {
+                PerfectDodgeScreenDomainRuntime.Clear();
+                return;
+            }
+
+            float elapsed = perfectDodgeDomainDuration - perfectDodgeDomainTimer;
+            float openingPulse = Mathf.Clamp01(1f - elapsed / Mathf.Max(0.01f, perfectDodgePulseSeconds));
+            float inversionWave = 0.58f + Mathf.Sin((age01 * 8.5f + Time.unscaledTime * 2.1f) * Mathf.PI) * 0.42f;
+            float sliceNoise = 0.72f + Mathf.Sin((age01 * 23f + Time.unscaledTime * 7.6f) * Mathf.PI) * 0.28f;
+            float domainAlpha = maxPerfectDodgeDomainAlpha * sustain * (0.92f + sliceNoise * 0.08f);
+            float invertAlpha = maxPerfectDodgeInvertAlpha * sustain * Mathf.Clamp01(openingPulse * 0.82f + inversionWave * 0.34f);
+            float edgeAlpha = maxPerfectDodgeEdgeAlpha * sustain * (0.88f + sliceNoise * 0.12f);
+            float bandAlpha = maxPerfectDodgeInvertAlpha * sustain * 0.74f;
+            Vector2 domainCenter = ResolvePerfectDodgeScreenCenter();
+
+            PerfectDodgeScreenDomainRuntime.Publish(
+                perfectDodgeDomainColor,
+                perfectDodgeEdgeColor,
+                perfectDodgeInvertColor,
+                domainAlpha,
+                invertAlpha,
+                edgeAlpha,
+                bandAlpha,
+                perfectDodgeShaderIntensity,
+                sustain,
+                age01,
+                openingPulse,
+                perfectDodgeRadialWarpStrength,
+                perfectDodgeRadialBlurStrength,
+                perfectDodgeScanlineStrength,
+                perfectDodgeGridStrength,
+                perfectDodgeFractureStrength,
+                perfectDodgeChromaticStrength,
+                domainCenter,
+                Time.unscaledTime);
+        }
+
+        private Vector2 ResolvePerfectDodgeScreenCenter()
+        {
+            if (actionController == null || Camera.main == null)
+            {
+                return new Vector2(0.5f, 0.5f);
+            }
+
+            Vector3 viewportPoint = Camera.main.WorldToViewportPoint(actionController.transform.position + Vector3.up * 0.72f);
+            if (viewportPoint.z <= 0f)
+            {
+                return new Vector2(0.5f, 0.5f);
+            }
+
+            return new Vector2(Mathf.Clamp01(viewportPoint.x), Mathf.Clamp01(viewportPoint.y));
+        }
+
         private void RequestDamageFeedback(DamageInfo damageInfo, float healthScale)
         {
             if (!useDamageScreenFeedback)
@@ -688,6 +849,8 @@ namespace DimensionBrawl.Presentation
             switch (category)
             {
                 case ScreenCueCategory.Result:
+                    return 6;
+                case ScreenCueCategory.PerfectDodge:
                     return 5;
                 case ScreenCueCategory.Followup:
                     return 4;
@@ -802,6 +965,7 @@ namespace DimensionBrawl.Presentation
                 actionController.BasicAttackStarted += HandleBasicAttackStarted;
                 actionController.BasicAttackHit += HandleBasicAttackHit;
                 actionController.DodgeStarted += HandleDodgeStarted;
+                actionController.PerfectDodgeTriggered += HandlePerfectDodgeTriggered;
             }
 
             if (playerHealth != null)
@@ -876,6 +1040,7 @@ namespace DimensionBrawl.Presentation
                 actionController.BasicAttackStarted -= HandleBasicAttackStarted;
                 actionController.BasicAttackHit -= HandleBasicAttackHit;
                 actionController.DodgeStarted -= HandleDodgeStarted;
+                actionController.PerfectDodgeTriggered -= HandlePerfectDodgeTriggered;
             }
 
             if (playerHealth != null)
@@ -1050,6 +1215,23 @@ namespace DimensionBrawl.Presentation
             GUI.color = color;
             GUI.DrawTexture(rect, texture);
             GUI.color = previousColor;
+        }
+
+        private static void DestroyUnityObject(UnityEngine.Object target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(target);
+            }
+            else
+            {
+                DestroyImmediate(target);
+            }
         }
 
         private static Color WithAlpha(Color color, float alpha)

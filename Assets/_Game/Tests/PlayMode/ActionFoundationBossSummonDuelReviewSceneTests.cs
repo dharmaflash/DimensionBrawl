@@ -84,7 +84,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(150f, GetFloat(duelOwner, "startingPlayerEnergy"), 0.001f);
             Assert.AreEqual(150f, GetFloat(duelOwner, "startingBossCost"), 0.001f);
             Assert.AreEqual(220f, duelOwner.RequiredBossDamage, 0.001f);
-            Assert.AreEqual(9.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
+            Assert.AreEqual(8.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
             StringAssert.Contains("bossSP", duelOwner.ProgressLine);
             StringAssert.Contains("support", duelOwner.ProgressLine);
             StringAssert.Contains("bossReply", duelOwner.ProgressLine);

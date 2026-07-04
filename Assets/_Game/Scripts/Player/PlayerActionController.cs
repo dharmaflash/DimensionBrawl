@@ -131,9 +131,14 @@ namespace DimensionBrawl.Player
         [Header("Dodge")]
         [Tooltip("Uses player_dodge_default totalDuration from collected combat feel data.")]
         [SerializeField] private float dodgeDurationSeconds = 0.56f;
-        [SerializeField] private float dodgeInvulnerableFromSeconds = 0.05f;
-        [SerializeField] private float dodgeInvulnerableToSeconds = 0.32f;
+        [SerializeField] private float dodgeInvulnerableFromSeconds = 0.02f;
+        [SerializeField] private float dodgeInvulnerableToSeconds = 0.40f;
         [SerializeField] private float dodgeRecoverySeconds = 0.14f;
+        [SerializeField, Min(0f)] private float dodgeCooldownSeconds = 1.15f;
+        [Tooltip("Extra armor after a perfect dodge succeeds. Covers continuous threats such as lasers instead of only the first tick.")]
+        [SerializeField, Min(0f)] private float perfectDodgeProtectionSeconds = 1.15f;
+        [Tooltip("Timing lenience around the authored invulnerability window, so success does not feel unfairly clipped at the first/last frame.")]
+        [SerializeField, Min(0f)] private float perfectDodgeTimingGraceSeconds = 0.08f;
         [Tooltip("First-pass deviation: no collected dodge distance/speed value exists yet, so expose it.")]
         [SerializeField] private float dodgeSpeed = 10.2f;
         [SerializeField] private string dodgeTrigger = "DodgeForward";
@@ -155,12 +160,22 @@ namespace DimensionBrawl.Player
         private bool enabledAttackAction;
         private bool enabledDodgeAction;
         private bool dodgeFeedbackActive;
+        private bool perfectDodgeTriggeredThisDodge;
         private bool nextAttackQueued;
         private bool cinematicInputLocked;
+        private bool healthSubscribed;
+        private float nextDodgeAllowedTime;
         private Vector3 currentAttackDirection = Vector3.forward;
 
         public PlayerActionProfile ActionProfile => actionProfile;
         public bool IsDodging => state == PlayerActionState.Dodging && actionTimer < ActiveDodgeDurationSeconds;
+        public bool IsDodgeReady => DodgeCooldownRemaining <= 0.001f;
+        public float DodgeCooldownSeconds => ActiveDodgeCooldownSeconds;
+        public float DodgeCooldownRemaining => Mathf.Max(0f, nextDodgeAllowedTime - Time.time);
+        public float DodgeCooldownProgress01 =>
+            ActiveDodgeCooldownSeconds <= 0f
+                ? 1f
+                : Mathf.Clamp01(1f - DodgeCooldownRemaining / ActiveDodgeCooldownSeconds);
         public Vector3 LastDodgeDirection { get; private set; } = Vector3.forward;
         public Vector3 LastAttackDirection { get; private set; } = Vector3.forward;
 
@@ -168,6 +183,7 @@ namespace DimensionBrawl.Player
         public event Action<int> BasicAttackHit;
         public event Action DodgeStarted;
         public event Action DodgeEnded;
+        public event Action<DamageInfo> PerfectDodgeTriggered;
 
         private PlayerActionProfile.AttackStep[] ActiveBasicCombo =>
             actionProfile != null && actionProfile.BasicCombo != null && actionProfile.BasicCombo.Length > 0
@@ -185,6 +201,9 @@ namespace DimensionBrawl.Player
         private float ActiveDodgeInvulnerableFromSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableFromSeconds : dodgeInvulnerableFromSeconds;
         private float ActiveDodgeInvulnerableToSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableToSeconds : dodgeInvulnerableToSeconds;
         private float ActiveDodgeRecoverySeconds => actionProfile != null ? actionProfile.DodgeRecoverySeconds : dodgeRecoverySeconds;
+        private float ActiveDodgeCooldownSeconds => actionProfile != null ? actionProfile.DodgeCooldownSeconds : dodgeCooldownSeconds;
+        private float ActivePerfectDodgeProtectionSeconds => actionProfile != null ? actionProfile.PerfectDodgeProtectionSeconds : perfectDodgeProtectionSeconds;
+        private float ActivePerfectDodgeTimingGraceSeconds => actionProfile != null ? actionProfile.PerfectDodgeTimingGraceSeconds : perfectDodgeTimingGraceSeconds;
         private float ActiveDodgeSpeed => actionProfile != null ? actionProfile.DodgeSpeed : dodgeSpeed;
         private string ActiveDodgeTrigger => actionProfile != null ? actionProfile.DodgeTrigger : dodgeTrigger;
         private string ActiveDodgeBackTrigger => actionProfile != null ? actionProfile.DodgeBackTrigger : dodgeBackTrigger;
@@ -278,10 +297,12 @@ namespace DimensionBrawl.Player
         {
             enabledAttackAction = EnableActionIfNeeded(basicAttackAction);
             enabledDodgeAction = EnableActionIfNeeded(dodgeAction);
+            SubscribeHealth();
         }
 
         private void OnDisable()
         {
+            UnsubscribeHealth();
             EndDodgeFeedbackIfNeeded();
             movement?.ClearActionMoveInputSpeedScale();
             ClearQueuedInput();
@@ -371,7 +392,7 @@ namespace DimensionBrawl.Player
 
             TryQueueNextAttack();
 
-            if (dodgePressed && actionTimer >= step.dodgeCancelAfterSeconds)
+            if (dodgePressed && CanStartDodge())
             {
                 StartDodge();
                 return;
@@ -484,6 +505,11 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
+            if (!IsDodgeReady)
+            {
+                return false;
+            }
+
             if (state != PlayerActionState.Attacking)
             {
                 return true;
@@ -507,6 +533,8 @@ namespace DimensionBrawl.Player
             comboResetTimer = 0f;
             comboIndex = 0;
             nextAttackQueued = false;
+            perfectDodgeTriggeredThisDodge = false;
+            nextDodgeAllowedTime = Time.time + ActiveDodgeCooldownSeconds;
             movement?.ClearActionMoveInputSpeedScale();
 
             Vector3 dodgeDirection = ResolveDodgeDirection();
@@ -520,6 +548,87 @@ namespace DimensionBrawl.Player
             SetAnimatorBool(ActiveDodgingParameter, true);
             dodgeFeedbackActive = true;
             DodgeStarted?.Invoke();
+        }
+
+        private void SubscribeHealth()
+        {
+            if (healthSubscribed || health == null)
+            {
+                return;
+            }
+
+            health.DamageBlockedByInvulnerability += HandleDamageBlockedByInvulnerability;
+            health.DamageModifying += HandleDamageModifying;
+            healthSubscribed = true;
+        }
+
+        private void UnsubscribeHealth()
+        {
+            if (!healthSubscribed || health == null)
+            {
+                healthSubscribed = false;
+                return;
+            }
+
+            health.DamageBlockedByInvulnerability -= HandleDamageBlockedByInvulnerability;
+            health.DamageModifying -= HandleDamageModifying;
+            healthSubscribed = false;
+        }
+
+        private void HandleDamageModifying(DamageModificationContext context)
+        {
+            if (context == null || context.ModifiedAmount <= 0f)
+            {
+                return;
+            }
+
+            if (!CanPerfectDodgeDamage(context.DamageInfo, includeTimingGrace: true))
+            {
+                return;
+            }
+
+            context.SetAmount(0f);
+            TriggerPerfectDodgeProtection(context.DamageInfo);
+        }
+
+        private void HandleDamageBlockedByInvulnerability(DamageInfo damageInfo)
+        {
+            if (!CanPerfectDodgeDamage(damageInfo, includeTimingGrace: false))
+            {
+                return;
+            }
+
+            TriggerPerfectDodgeProtection(damageInfo);
+        }
+
+        private bool CanPerfectDodgeDamage(DamageInfo damageInfo, bool includeTimingGrace)
+        {
+            if (perfectDodgeTriggeredThisDodge || !IsDodging)
+            {
+                return false;
+            }
+
+            if (health != null && !CombatTeamUtility.AreHostile(damageInfo.SourceTeam, health.Team))
+            {
+                return false;
+            }
+
+            float graceSeconds = includeTimingGrace ? ActivePerfectDodgeTimingGraceSeconds : 0f;
+            float windowStart = Mathf.Max(0f, ActiveDodgeInvulnerableFromSeconds - graceSeconds);
+            float windowEnd = Mathf.Min(ActiveDodgeDurationSeconds, ActiveDodgeInvulnerableToSeconds + graceSeconds);
+            return actionTimer >= windowStart && actionTimer <= windowEnd;
+        }
+
+        private void TriggerPerfectDodgeProtection(DamageInfo damageInfo)
+        {
+            if (perfectDodgeTriggeredThisDodge)
+            {
+                return;
+            }
+
+            perfectDodgeTriggeredThisDodge = true;
+            health?.SetTemporaryInvulnerability(ActivePerfectDodgeProtectionSeconds);
+            PerfectDodgeTriggered?.Invoke(damageInfo);
         }
 
         private void TryQueueNextAttack()

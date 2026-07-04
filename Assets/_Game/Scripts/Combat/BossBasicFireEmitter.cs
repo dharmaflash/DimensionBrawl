@@ -11,6 +11,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform trackedPlayer;
         [SerializeField] private CombatHealth sourceHealth;
+        [SerializeField] private Transform fireOrigin;
 
         [Header("Fire")]
         [SerializeField] private BossBasicFireProfile fireProfile;
@@ -23,6 +24,12 @@ namespace DimensionBrawl.Combat
         [Header("Pooling")]
         [SerializeField, Min(0)] private int prewarmCount = 10;
         [SerializeField] private Transform projectileRoot;
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource volleyAudioSource;
+        [SerializeField] private AudioClip[] volleySfxClips = System.Array.Empty<AudioClip>();
+        [SerializeField, Range(0f, 1f)] private float volleySfxVolume = 0.34f;
+        [SerializeField] private Vector2 volleySfxPitchRange = new Vector2(0.96f, 1.04f);
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(12);
         private float cooldownTimer;
@@ -41,6 +48,7 @@ namespace DimensionBrawl.Combat
         public float LastForwardRisk01 => lastForwardRisk01;
         public int TotalVolleysFired => totalVolleysFired;
         public int LastVolleyProjectileCount => lastVolleyProjectileCount;
+        public int VolleySfxClipCount => volleySfxClips != null ? volleySfxClips.Length : 0;
         public Vector2 LastTargetLanePoint => lastTargetLanePoint;
         public float CooldownRemaining => cooldownTimer;
         public int ActiveProjectileCount
@@ -90,9 +98,27 @@ namespace DimensionBrawl.Combat
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
         }
 
+        public void ConfigureVolleyAudio(
+            AudioSource newVolleyAudioSource,
+            AudioClip[] newVolleySfxClips,
+            float newVolleySfxVolume,
+            Vector2 newVolleySfxPitchRange)
+        {
+            volleyAudioSource = newVolleyAudioSource;
+            volleySfxClips = newVolleySfxClips ?? System.Array.Empty<AudioClip>();
+            volleySfxVolume = Mathf.Clamp01(newVolleySfxVolume);
+            volleySfxPitchRange = new Vector2(
+                Mathf.Max(0.01f, Mathf.Min(newVolleySfxPitchRange.x, newVolleySfxPitchRange.y)),
+                Mathf.Max(0.01f, Mathf.Max(newVolleySfxPitchRange.x, newVolleySfxPitchRange.y)));
+        }
+
         private void OnValidate()
         {
             resumeCooldownAfterSuppressionSeconds = Mathf.Max(0f, resumeCooldownAfterSuppressionSeconds);
+            volleySfxVolume = Mathf.Clamp01(volleySfxVolume);
+            volleySfxPitchRange = new Vector2(
+                Mathf.Max(0.01f, Mathf.Min(volleySfxPitchRange.x, volleySfxPitchRange.y)),
+                Mathf.Max(0.01f, Mathf.Max(volleySfxPitchRange.x, volleySfxPitchRange.y)));
         }
 
         public void SetFiringEnabled(bool enabled)
@@ -190,6 +216,11 @@ namespace DimensionBrawl.Combat
 
             totalVolleysFired++;
             lastVolleyProjectileCount = spawnedCount;
+            if (spawnedCount > 0)
+            {
+                PlayVolleySfx();
+            }
+
             VolleyFired?.Invoke(this, spawnedCount);
             return spawnedCount;
         }
@@ -201,13 +232,18 @@ namespace DimensionBrawl.Combat
                 projectileRoot = transform;
             }
 
+            if (volleyAudioSource == null)
+            {
+                volleyAudioSource = GetComponent<AudioSource>();
+            }
+
             PrewarmPool();
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
         }
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private bool TryFireProjectile(float targetLateralX, float targetLaneZ)
@@ -218,16 +254,19 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            Vector2 sourceLanePoint = laneSpace.GetLaneCoordinates(transform.position);
+            Vector3 originPoint = fireOrigin != null ? fireOrigin.position : transform.position;
+            Vector2 sourceLanePoint = laneSpace.GetLaneCoordinates(originPoint);
             float spawnLaneZ = Mathf.Clamp(sourceLanePoint.y, laneSpace.ForwardBoundaryZ, laneSpace.BossProxyZ);
             float spawnLateralX = Mathf.Lerp(
                 Mathf.Clamp(sourceLanePoint.x, -laneSpace.HalfWidth, laneSpace.HalfWidth),
                 targetLateralX,
                 fireProfile.SpawnLateralFollowRatio);
-            Vector3 spawnPoint = laneSpace.GetLaneWorldPoint(
-                spawnLateralX,
-                spawnLaneZ,
-                fireProfile.SpawnHeight);
+            Vector3 spawnPoint = fireOrigin != null
+                ? originPoint
+                : laneSpace.GetLaneWorldPoint(
+                    spawnLateralX,
+                    spawnLaneZ,
+                    fireProfile.SpawnHeight);
             Vector3 targetPoint = laneSpace.GetLaneWorldPoint(
                 targetLateralX,
                 targetLaneZ,
@@ -254,6 +293,51 @@ namespace DimensionBrawl.Combat
                 fireProfile.DamageResponsePolicy,
                 fireProfile.ControlLockPolicy);
             return true;
+        }
+
+        private void PlayVolleySfx()
+        {
+            if (volleySfxClips == null || volleySfxClips.Length == 0 || volleySfxVolume <= 0f)
+            {
+                return;
+            }
+
+            AudioClip clip = PickVolleySfxClip();
+            if (clip == null)
+            {
+                return;
+            }
+
+            if (volleyAudioSource == null)
+            {
+                volleyAudioSource = gameObject.AddComponent<AudioSource>();
+                volleyAudioSource.playOnAwake = false;
+                volleyAudioSource.loop = false;
+                volleyAudioSource.spatialBlend = 0.25f;
+                volleyAudioSource.dopplerLevel = 0f;
+                volleyAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                volleyAudioSource.minDistance = 4f;
+                volleyAudioSource.maxDistance = 32f;
+                volleyAudioSource.priority = 138;
+            }
+
+            volleyAudioSource.pitch = Random.Range(volleySfxPitchRange.x, volleySfxPitchRange.y);
+            volleyAudioSource.PlayOneShot(clip, volleySfxVolume);
+        }
+
+        private AudioClip PickVolleySfxClip()
+        {
+            int startIndex = Random.Range(0, volleySfxClips.Length);
+            for (int i = 0; i < volleySfxClips.Length; i++)
+            {
+                AudioClip clip = volleySfxClips[(startIndex + i) % volleySfxClips.Length];
+                if (clip != null)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
         }
 
         private void PrewarmPool()

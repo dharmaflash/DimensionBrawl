@@ -170,6 +170,7 @@ namespace DimensionBrawl.Combat
 
         public event Action<DamageInfo> Damaged;
         public event Action<DamageModificationContext> DamageModifying;
+        public event Action<DamageInfo> DamageBlockedByInvulnerability;
         public event Action Died;
 
         public DamageTeam Team => team;
@@ -221,13 +222,19 @@ namespace DimensionBrawl.Combat
 
         public bool TryApplyDamage(DamageInfo damageInfo)
         {
-            if (!IsAlive || IsInvulnerable || damageInfo.Amount <= 0f)
+            if (!IsAlive || damageInfo.Amount <= 0f)
             {
                 return false;
             }
 
             if (CombatTeamUtility.AreAllied(damageInfo.SourceTeam, team))
             {
+                return false;
+            }
+
+            if (IsInvulnerable)
+            {
+                DamageBlockedByInvulnerability?.Invoke(damageInfo);
                 return false;
             }
 

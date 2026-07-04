@@ -26,7 +26,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private bool overrideBeamColor = true;
         [SerializeField] private float beamUvScrollSpeed = -6f;
         [SerializeField, Min(0f)] private float beamTextureScalePerMeter = 0.05f;
-        [SerializeField, Min(0f)] private float beamMuzzleOffset = 0.1f;
+        [SerializeField, Min(0f)] private float beamMuzzleOffset;
         [SerializeField, Min(0f)] private float beamImpactBackOffset = 0.5f;
         [SerializeField, Min(0.01f)] private float beamWidthMultiplier = 1f;
         [SerializeField, Min(0.01f)] private float authoredBeamLength = 10f;
@@ -98,7 +98,7 @@ namespace DimensionBrawl.Presentation
             bool active = proxy != null
                 && proxy.IsActive
                 && (laserPattern != null
-                    ? laserPattern.IsLaserActive
+                    ? laserPattern.IsLaserPresentationActive
                     : proxy.CurrentState == SummonFrontlineProxyState.Attacking);
             SetBeamVisible(active);
             if (!active)

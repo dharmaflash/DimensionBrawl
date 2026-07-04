@@ -8,6 +8,8 @@ namespace DimensionBrawl.Combat
     [DisallowMultipleComponent]
     public sealed class BossSummonPressureAction : MonoBehaviour
     {
+        private const float BossLaserDamagePerSecondCap = 2.5f;
+
         [Serializable]
         public struct BossSummonTierSettings
         {
@@ -507,9 +509,12 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            float damagePerSecond = settings.ActorAttackDamagePerSecond > 0f
+            float requestedDamagePerSecond = settings.ActorAttackDamagePerSecond > 0f
                 ? settings.ActorAttackDamagePerSecond
-                : 58f;
+                : BossLaserDamagePerSecondCap;
+            float damagePerSecond = IsLaserSoldier(settings)
+                ? Mathf.Min(requestedDamagePerSecond, BossLaserDamagePerSecondCap)
+                : requestedDamagePerSecond;
             DamageTeam resolvedTeam = actorHealth != null && actorHealth.Team != DamageTeam.Neutral
                 ? actorHealth.Team
                 : ownerTeam;
@@ -708,7 +713,7 @@ namespace DimensionBrawl.Combat
                     ActorAdvanceDistance = 2.8f,
                     ActorAdvanceSeconds = 1.55f,
                     ActorEngageRadius = 1.05f,
-                    ActorAttackDamagePerSecond = 34f,
+                    ActorAttackDamagePerSecond = BossLaserDamagePerSecondCap,
                     ActorAttackIntervalSeconds = 0.18f,
                     ScreenIntercepts = 0,
                     ScreenRadius = 1.15f,
@@ -746,7 +751,7 @@ namespace DimensionBrawl.Combat
                     ActorAdvanceDistance = 4.4f,
                     ActorAdvanceSeconds = 2.05f,
                     ActorEngageRadius = 1.15f,
-                    ActorAttackDamagePerSecond = 58f,
+                    ActorAttackDamagePerSecond = BossLaserDamagePerSecondCap,
                     ActorAttackIntervalSeconds = 0.12f,
                     ScreenIntercepts = 0,
                     ScreenRadius = 1.15f,

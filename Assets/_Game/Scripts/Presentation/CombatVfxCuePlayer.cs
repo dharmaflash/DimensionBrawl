@@ -86,9 +86,10 @@ namespace DimensionBrawl.Presentation
             float resolvedAudioScale = audioIntensity >= 0f ? Mathf.Max(0f, audioIntensity) : scale;
             instanceTransform.localScale = cue.LocalScale * Mathf.Max(0.001f, scale);
             instance.SetActive(true);
-            float audioTailSeconds = PlayEffects(instance, resolvedAudioScale);
+            float embeddedAudioTailSeconds = PlayEffects(instance, resolvedAudioScale);
+            PlayCueAudio(cue, anchor, instanceTransform.position, resolvedAudioScale);
 
-            float releaseSeconds = Mathf.Max(cue.LifetimeSeconds, audioTailSeconds);
+            float releaseSeconds = Mathf.Max(cue.LifetimeSeconds, embeddedAudioTailSeconds);
             if (releaseSeconds > 0f)
             {
                 StartCoroutine(ReleaseAfterSeconds(instance, releaseSeconds));
@@ -267,6 +268,68 @@ namespace DimensionBrawl.Presentation
             }
 
             return audioTailSeconds;
+        }
+
+        private static void PlayCueAudio(CombatVfxCue cue, Transform anchor, Vector3 fallbackPosition, float audioScale)
+        {
+            if (cue.AudioClipCount <= 0 || cue.AudioBaseVolume <= 0f)
+            {
+                return;
+            }
+
+            AudioClip clip = PickCueAudioClip(cue);
+            if (clip == null)
+            {
+                return;
+            }
+
+            float pitch = Random.Range(cue.AudioMinimumPitch, cue.AudioMaximumPitch);
+            if (pitch <= 0.001f)
+            {
+                pitch = 1f;
+            }
+
+            GameObject audioObject = new GameObject("CombatVfxCueAudio");
+            audioObject.transform.position = anchor != null ? anchor.position : fallbackPosition;
+
+            AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+            audioSource.clip = clip;
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+            audioSource.volume = cue.AudioBaseVolume
+                * Mathf.Max(0f, audioScale)
+                * Random.Range(cue.AudioMinimumVolumeMultiplier, cue.AudioMaximumVolumeMultiplier);
+            audioSource.pitch = pitch;
+            audioSource.spatialBlend = cue.AudioSpatialBlend;
+            audioSource.dopplerLevel = 0f;
+            audioSource.rolloffMode = AudioRolloffMode.Linear;
+            audioSource.minDistance = cue.AudioMinDistance;
+            audioSource.maxDistance = cue.AudioMaxDistance;
+            audioSource.priority = cue.AudioPriority;
+            audioSource.Play();
+
+            Destroy(audioObject, clip.length / pitch + 0.1f);
+        }
+
+        private static AudioClip PickCueAudioClip(CombatVfxCue cue)
+        {
+            int clipCount = cue.AudioClipCount;
+            if (clipCount <= 0)
+            {
+                return null;
+            }
+
+            int startIndex = Random.Range(0, clipCount);
+            for (int i = 0; i < clipCount; i++)
+            {
+                AudioClip clip = cue.GetAudioClip((startIndex + i) % clipCount);
+                if (clip != null)
+                {
+                    return clip;
+                }
+            }
+
+            return null;
         }
 
         private static void StopEffects(GameObject instance)

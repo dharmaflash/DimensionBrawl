@@ -14,6 +14,11 @@ namespace DimensionBrawl.Combat
         [Header("Recovery")]
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
         [SerializeField, Min(0f)] private float decisionThinkIntervalSeconds = 0.25f;
+        [SerializeField, Min(0f)] private float basicFireSuppressionSecondsAfterPressureAction = 0.65f;
+
+        [Header("Basic Fire Rhythm")]
+        [SerializeField, Min(0)] private int minimumBasicFireVolleysBeforePressureAction;
+        [SerializeField, Min(0f)] private float minimumBasicFireAgeBeforePressureActionSeconds;
 
         [Header("Slots")]
         [SerializeField] private BossPressureActionDirector.BossPressureActionSlot[] actionSlots =
@@ -22,11 +27,21 @@ namespace DimensionBrawl.Combat
         public string DeckId => deckId;
         public float GlobalRecoverySeconds => globalRecoverySeconds;
         public float DecisionThinkIntervalSeconds => decisionThinkIntervalSeconds;
+        public float BasicFireSuppressionSecondsAfterPressureAction => basicFireSuppressionSecondsAfterPressureAction;
+        public int MinimumBasicFireVolleysBeforePressureAction => minimumBasicFireVolleysBeforePressureAction;
+        public float MinimumBasicFireAgeBeforePressureActionSeconds => minimumBasicFireAgeBeforePressureActionSeconds;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
 
         private void OnValidate()
         {
+            globalRecoverySeconds = Mathf.Max(0f, globalRecoverySeconds);
             decisionThinkIntervalSeconds = Mathf.Max(0f, decisionThinkIntervalSeconds);
+            basicFireSuppressionSecondsAfterPressureAction =
+                Mathf.Max(0f, basicFireSuppressionSecondsAfterPressureAction);
+            minimumBasicFireVolleysBeforePressureAction =
+                Mathf.Max(0, minimumBasicFireVolleysBeforePressureAction);
+            minimumBasicFireAgeBeforePressureActionSeconds =
+                Mathf.Max(0f, minimumBasicFireAgeBeforePressureActionSeconds);
             if (actionSlots == null)
             {
                 return;

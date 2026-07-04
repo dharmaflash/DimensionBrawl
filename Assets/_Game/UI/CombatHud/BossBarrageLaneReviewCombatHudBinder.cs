@@ -20,6 +20,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private SummonEnergyLadder energyLadder;
+        [SerializeField] private BossPressureCostLadder bossCostLadder;
 
         [Header("Player Actions")]
         [SerializeField] private PlayerActionController actionController;
@@ -45,6 +46,11 @@ namespace DimensionBrawl.UI
             if (tutorialGuide == null)
             {
                 tutorialGuide = GetComponent<BossBarrageLaneReviewTutorialGuide>();
+            }
+
+            if (bossCostLadder == null)
+            {
+                bossCostLadder = FindFirstObjectByType<BossPressureCostLadder>();
             }
 
             BindTutorialGuide();
@@ -105,6 +111,13 @@ namespace DimensionBrawl.UI
                 hudPresenter.SetBossHealth(bossHealth.CurrentHealth, bossHealth.MaxHealth);
             }
 
+            if (bossCostLadder != null)
+            {
+                hudPresenter.SetBossResource(
+                    bossCostLadder.CurrentTierCost,
+                    Mathf.Max(1f, bossCostLadder.CurrentTierTarget));
+            }
+
             bool rangedMode = combatModeController == null || combatModeController.IsRangedMode;
             bool aimActive = rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive;
             hudPresenter.SetAimReticleVisible(rangedMode, aimActive);
@@ -114,6 +127,8 @@ namespace DimensionBrawl.UI
                 hudPresenter.SetResource(energyLadder.CurrentMana, Mathf.Max(1f, energyLadder.MaxMana));
                 hudPresenter.SetInputMode(ResolveEnergyInputModeLabel());
             }
+
+            hudPresenter.SetAmmo(ResolveAmmoReadout(), rangedBasicAttackAction != null && rangedBasicAttackAction.IsReloading);
 
             string feedback = tutorialGuide != null && tutorialGuide.HasReadoutOverride
                 ? tutorialGuide.CurrentPrompt
@@ -126,7 +141,11 @@ namespace DimensionBrawl.UI
             bool canSpend = energyLadder != null && energyLadder.CanSpend;
             int tier = canSpend ? energyLadder.AvailableTier : energyLadder != null ? energyLadder.ChargingTier : 0;
             hudPresenter.SetSkillCooldown(CombatHudActionId.BasicAttack, 0f, ResolveBasicAttackLabel());
-            hudPresenter.SetSkillCooldown(CombatHudActionId.Dodge, 0f, "DODGE");
+            hudPresenter.SetSkillCooldown(
+                CombatHudActionId.Dodge,
+                ResolveDodgeCooldownFill01(),
+                ResolveDodgeLabel(),
+                actionController != null ? actionController.DodgeCooldownRemaining : -1f);
             hudPresenter.SetSkillCooldown(CombatHudActionId.Skill1, canSpend ? 0f : 1f, tier > 0 ? $"SKILL LV{tier}" : "SKILL");
             hudPresenter.SetSkillCooldown(CombatHudActionId.Ultimate, 0f, "SWAP");
         }
@@ -271,6 +290,44 @@ namespace DimensionBrawl.UI
         private string ResolveBasicAttackLabel()
         {
             return combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE";
+        }
+
+        private string ResolveDodgeLabel()
+        {
+            if (actionController == null || actionController.IsDodgeReady)
+            {
+                return "DODGE";
+            }
+
+            return $"DODGE\n{actionController.DodgeCooldownRemaining:0.0}s";
+        }
+
+        private float ResolveDodgeCooldownFill01()
+        {
+            if (actionController == null || actionController.DodgeCooldownSeconds <= 0f)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(actionController.DodgeCooldownRemaining / actionController.DodgeCooldownSeconds);
+        }
+
+        private string ResolveAmmoReadout()
+        {
+            if (combatModeController != null && combatModeController.IsMeleeMode)
+            {
+                return string.Empty;
+            }
+
+            if (rangedBasicAttackAction == null || !rangedBasicAttackAction.UsesMagazineReload)
+            {
+                return string.Empty;
+            }
+
+            string ammo = $"{rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}";
+            return rangedBasicAttackAction.IsReloading
+                ? $"{ammo} RLD {rangedBasicAttackAction.ReloadRemaining:0.0}"
+                : ammo;
         }
 
         private string ResolveCombatModeLabel()

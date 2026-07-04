@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &120357852264106
 GameObject:
@@ -884,8 +884,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
   startAtFullHealth: 1
@@ -905,8 +905,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: ClosePunish
   patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
@@ -943,10 +943,14 @@ MonoBehaviour:
   attackHalfWidth: 0.65
   attackHalfAngleDegrees: 28
   lockAttackDirectionOnWindup: 0
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.46
+  contactDamageVfxHeightOffset: 0.58
+  contactDamageVfxLifetimeSeconds: 0.72
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed
-  prepareTrigger:
+  prepareTrigger: 
   attackTrigger: Attack
   hitTrigger: Hit
   deathTrigger: Death
@@ -966,8 +970,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   health: {fileID: 7977794529452437881}
   flashRenderers:
   - {fileID: 5021009831468980178}
@@ -986,6 +990,8 @@ MonoBehaviour:
   - {fileID: 347176310937955706}
   - {fileID: 1396976821505878528}
   - {fileID: 7145386169842424839}
+  cameraController: {fileID: 0}
+  visualRecoilRoot: {fileID: 0}
   renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
@@ -995,6 +1001,40 @@ MonoBehaviour:
   hitColorBlend: 0.72
   hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
+  playCameraImpulse: 1
+  cameraImpulseCooldownSeconds: 0.07
+  lightCameraPlanarKick: 0.035
+  heavyCameraPlanarKick: 0.095
+  lightCameraVerticalKick: 0.012
+  heavyCameraVerticalKick: 0.04
+  lightCameraCueSeconds: 0.075
+  heavyCameraCueSeconds: 0.125
+  lightCameraFieldOfViewDelta: -0.25
+  heavyCameraFieldOfViewDelta: -0.85
+  lightCameraDistanceDelta: 0.015
+  heavyCameraDistanceDelta: 0.075
+  heavyCameraFocusHeightDelta: 0.035
+  playCameraMicroShake: 1
+  lightCameraMicroShakeSeconds: 0.055
+  heavyCameraMicroShakeSeconds: 0.12
+  lightCameraMicroShakePosition: 0.018
+  heavyCameraMicroShakePosition: 0.065
+  lightCameraMicroShakeEuler: 0.18
+  heavyCameraMicroShakeEuler: 0.78
+  playVisualRecoil: 1
+  visualRecoilCooldownSeconds: 0.045
+  lightRecoilDistance: 0.018
+  heavyRecoilDistance: 0.06
+  lightRecoilDegrees: 1.4
+  heavyRecoilDegrees: 4.5
+  recoilReturnSeconds: 0.095
+  playHitStop: 1
+  hitStopTimeScale: 0.18
+  hitStopCooldownSeconds: 0.055
+  lightHitStopScale: 0.72
+  heavyHitStopScale: 1.1
+  heavyDamageHealthRatio: 0.12
+  criticalHealthRatio: 0.35
 --- !u!114 &396118273611275809
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1005,7 +1045,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 7977794529452437881}
   searchRadius: 12
@@ -1021,7 +1061,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 3955577306872378770}
   telegraphTransform: {fileID: 6164861598717738194}
@@ -1045,7 +1085,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 2003955919364432102}
   cameraController: {fileID: 0}
@@ -1060,7 +1100,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 4509711021267372791}
@@ -1074,7 +1114,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
   agentSource: {fileID: 2003955919364432102}
   health: {fileID: 7977794529452437881}
@@ -1096,8 +1136,8 @@ MonoBehaviour:
   - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
     windupCueId: 10
     attackActiveCueId: 11
-    windupIntensity: 1.05
-    attackActiveIntensity: 1.08
+    windupIntensity: 0.55
+    attackActiveIntensity: 0.48
   - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
     windupCueId: 12
     attackActiveCueId: 13
@@ -1154,7 +1194,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b7d0a6e6c70a42eab404e4b7d463a8d4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.BasicSoldierProjectileAttackDriver
   soldier: {fileID: 2003955919364432102}
   sourceHealth: {fileID: 7977794529452437881}
@@ -6241,7 +6281,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0

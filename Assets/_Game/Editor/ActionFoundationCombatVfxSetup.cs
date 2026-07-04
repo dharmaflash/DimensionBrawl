@@ -23,6 +23,9 @@ namespace DimensionBrawl.Editor
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
         private const string TextureRoot = CombatVfxRoot + "/Textures";
         private const string ShaderRoot = CombatVfxRoot + "/Shaders";
+        private const string MeshRoot = CombatVfxRoot + "/Meshes";
+        private const string PerfectDodgeWorldFxShaderPath = ShaderRoot + "/DB_PerfectDodgeWorldFx.shader";
+        private const string PerfectDodgeAfterimageShaderPath = ShaderRoot + "/DB_PerfectDodgeAfterimage.shader";
         private const string CombatCueAudioRoot = "Assets/_Game/Art/Audio/SFX/CombatCues";
         private const string ImportedGunshotAudioRoot =
             "Assets/_Imported/AssetStore/Gun Sounds Pack Vol 1/Gun Shot";
@@ -30,10 +33,16 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/Action RPG SFX V2/Combat";
         private const string ImportedActionRpgSfxDesignedSkillRoot =
             "Assets/_Imported/AssetStore/Action RPG SFX V2/Designed Skill";
+        private const string ImportedActionRpgSfxMovementRoot =
+            "Assets/_Imported/AssetStore/Action RPG SFX V2/Movement";
+        private const string ImportedRpgMagicDarkMagicRoot =
+            "Assets/_Imported/AssetStore/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Dark Magic";
         private const string ImportedMuzzleFlashRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
         private const string ImportedMuzzleFlashShaderRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Shaders";
+        private const string ImportedRifleMuzzleFlashPrefabPath =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Once/VFX_Muzzle_Flash_Rifle.prefab";
         private const string ImportedSharedTextureRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shared/Textures";
         private const string MuzzleFlashFrontSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Front.tga";
@@ -52,6 +61,36 @@ namespace DimensionBrawl.Editor
             ImportedVefectsHitOnceRoot + "/VFX_Hit_05_Directional_Bunch_01.prefab";
         private const string ImportedVefectsHit06DirectionalPrefabPath =
             ImportedVefectsHitOnceRoot + "/VFX_Hit_06_Directional_Bunch_01.prefab";
+        private const string ShapesFxRoot = "Assets/_Game/Art/VFX/ShapesFXArena";
+        private const string ShapesFxGeometryRoot = ShapesFxRoot + "/Geometry";
+        private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
+        private const string ShapesFxTextureRoot = ShapesFxRoot + "/Textures";
+        private const string ImportedShapesFxTextureRoot = "Assets/_Imported/AssetStore/VFX/ShapesFX_Pack";
+        private const string ShapesFxTorusMeshPath = ShapesFxGeometryRoot + "/Geo_Torus_Hex_Hi.fbx";
+        private const string ShapesFxDodecaMeshPath = ShapesFxGeometryRoot + "/Geo_Dodecahedron.fbx";
+        private const string ShapesFxIcosaMeshPath = ShapesFxGeometryRoot + "/Geo_Icosahedron_Hex.fbx";
+        private const string ShapesFxPortalOuterMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_PortalOuter.mat";
+        private const string ShapesFxPortalInnerMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_PortalInner.mat";
+        private const string ShapesFxCyanDodecaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_CyanDodeca.mat";
+        private const string ShapesFxVioletIcosaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_VioletIcosa.mat";
+        private const string ImportedHovlSciFiEffectsPrefabRoot =
+            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs";
+        private const string ImportedHovlHexShieldPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Hex shield.prefab";
+        private const string ImportedHovlShieldBlockImpactPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Hit sci-fi.prefab";
+        private const string ImportedHovlSciFiBuffPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Sci-fi buff.prefab";
+        private const string ImportedHovlSciFiBuffSpherePrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Sci-fi buff sphere.prefab";
+        private const string ImportedHovlLaserTeleportPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Laser teleport.prefab";
+        private const string HovlSciFiEffectsRoot = "Assets/_Game/Art/VFX/HovlSciFiEffects";
+        private const string HovlSciFiEffectsMaterialRoot = HovlSciFiEffectsRoot + "/Materials";
+        private const string HovlSciFiEffectsTextureRoot = HovlSciFiEffectsRoot + "/Textures";
+        private const string HovlSciFiEffectsShaderRoot = HovlSciFiEffectsRoot + "/Shaders";
+        private const string HovlSciFiEffectsMeshRoot = HovlSciFiEffectsRoot + "/Meshes";
+        private const string PerfectDodgeHovlHexShieldChildName = "PerfectDodgeVfx_HovlHexShield";
         private static readonly string[] PlayerRangedGunshotClipPaths =
         {
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
@@ -76,21 +115,67 @@ namespace DimensionBrawl.Editor
         private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.98f;
         private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.06f;
         private const string PlayerRangedProjectileImpactAudioName = "ReviewedSfx_PlayerRangedProjectileImpact";
+        private const string PlayerDodgeStartAudioName = "ReviewedSfx_PlayerDodgeStart";
+        private const string PlayerPerfectDodgeTimeWarpAudioName = "ReviewedSfx_PlayerPerfectDodgeTimeWarp";
+        private const string PlayerPerfectDodgeSuccessAudioName = "ReviewedSfx_PlayerPerfectDodgeSuccess";
+        private const string MissileShieldAudioRoot = "Assets/_Game/Art/Audio/SFX/MissileShield";
         private const string EliteSummonSignalAudioName = "ReviewedSfx_EliteSummonSignal";
         private const string SummonBlockOpportunityAudioName = "ReviewedSfx_SummonBlockOpportunity";
         private const string SummonFollowupWindowAudioName = "ReviewedSfx_SummonFollowupWindow";
-        private static readonly string[] PlayerRangedProjectileImpactSourceClipPaths =
+        private const string PlayerSummonPreSpawnPortalAudioName = "ReviewedSfx_PlayerSummonPreSpawnPortal";
+        private const string PlayerSummonLandingCraterAudioName = "ReviewedSfx_PlayerSummonLandingCrater";
+        private const string PlayerSummonDragonBreathAudioName = "ReviewedSfx_PlayerSummonDragonBreath";
+        private static readonly string[] PlayerDodgeStartSourceClipPaths =
         {
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_01.wav",
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_02.wav",
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_03.wav"
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_01.wav",
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_02.wav",
+            ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_03.wav"
         };
 
-        private static readonly string[] PlayerRangedProjectileImpactClipPaths =
+        private static readonly string[] PlayerDodgeStartClipPaths =
         {
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_01.wav",
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_02.wav",
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_03.wav"
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerDodgeStart_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeTimeWarpSourceClipPaths =
+        {
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast01.wav",
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast02.wav",
+            ImportedRpgMagicDarkMagicRoot + "/RPG3_DarkMagicEpic_SlowMo_Cast03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeTimeWarpClipPaths =
+        {
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeTimeWarp_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeSuccessSourceClipPaths =
+        {
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_01.wav",
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_02.wav",
+            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Swing_Shimmer_Ring_01_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeSuccessClipPaths =
+        {
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_01.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_02.wav",
+            CombatCueAudioRoot + "/DB_SFX_PlayerPerfectDodgeSuccess_03.wav"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeShieldActivateClipPaths =
+        {
+            MissileShieldAudioRoot + "/DB_SFX_Shield_Activate_01.mp3"
+        };
+
+        private static readonly string[] PlayerPerfectDodgeShieldBlockClipPaths =
+        {
+            MissileShieldAudioRoot + "/DB_SFX_Shield_Block_Projectile_01.mp3",
+            MissileShieldAudioRoot + "/DB_SFX_Missile_Impact_Shield_01.mp3"
         };
 
         private static readonly string[] EliteSummonSignalSourceClipPaths =
@@ -134,6 +219,19 @@ namespace DimensionBrawl.Editor
             CombatCueAudioRoot + "/DB_SFX_SummonFollowupWindow_02.wav",
             CombatCueAudioRoot + "/DB_SFX_SummonFollowupWindow_03.wav"
         };
+        private static readonly string[] PlayerSummonPreSpawnPortalClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_EnemySummon_Spawn_01.mp3"
+        };
+        private static readonly string[] PlayerSummonLandingCraterClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Summon_Land_Heavy_01.mp3",
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Summon_Land_Heavy_02.mp3"
+        };
+        private static readonly string[] PlayerSummonDragonBreathClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Dragon_Breath_01.mp3"
+        };
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
 
         public static string[] GetPlayerRangedGunshotClipPaths()
@@ -141,9 +239,19 @@ namespace DimensionBrawl.Editor
             return (string[])PlayerRangedGunshotClipPaths.Clone();
         }
 
-        public static string[] GetPlayerRangedProjectileImpactClipPaths()
+        public static string[] GetPlayerDodgeStartClipPaths()
         {
-            return (string[])PlayerRangedProjectileImpactClipPaths.Clone();
+            return (string[])PlayerDodgeStartClipPaths.Clone();
+        }
+
+        public static string[] GetPlayerPerfectDodgeTimeWarpClipPaths()
+        {
+            return (string[])PlayerPerfectDodgeTimeWarpClipPaths.Clone();
+        }
+
+        public static string[] GetPlayerPerfectDodgeSuccessClipPaths()
+        {
+            return (string[])PlayerPerfectDodgeSuccessClipPaths.Clone();
         }
 
         public static string[] GetEliteSummonSignalClipPaths()
@@ -202,6 +310,13 @@ namespace DimensionBrawl.Editor
         public static void RefreshReviewedCombatCueAudioBanksMenu()
         {
             EnsureReviewedCombatCueAudioBanks();
+            ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            if (profile != null)
+            {
+                ApplyMissileShieldCueProfileAudio(profile);
+            }
+
             AssetDatabase.SaveAssets();
             Debug.Log("Refreshed reviewed combat cue audio banks on promoted cue prefabs.");
         }
@@ -215,6 +330,7 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder(MeshRoot);
 
             SavePromotedHitFeedbackPrefab(
                 "DB_VFX_EnemyHit",
@@ -246,23 +362,37 @@ namespace DimensionBrawl.Editor
                 }
 
                 string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
-                if (!prefabPath.StartsWith(PrefabRoot + "/", StringComparison.Ordinal))
+                bool allowsDemoShieldBlockImpact =
+                    cueId == CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact
+                    && prefabPath == ImportedHovlShieldBlockImpactPrefabPath;
+                if (!allowsDemoShieldBlockImpact && !prefabPath.StartsWith(PrefabRoot + "/", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"{cueId} should reference a promoted combat VFX prefab, found {prefabPath}.");
                 }
 
-                if (prefabPath.Contains("/_Imported/", StringComparison.Ordinal))
+                if (!allowsDemoShieldBlockImpact && prefabPath.Contains("/_Imported/", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"{cueId} should not reference raw imported VFX assets.");
                 }
 
-                if (cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true) == null)
+                if (!allowsDemoShieldBlockImpact
+                    && cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true) == null)
                 {
                     throw new InvalidOperationException($"{cueId} should use a stable promoted CombatVfxCueVisual prefab, found {prefabPath}.");
                 }
 
-                ValidateNoImportedAssetDependencies(cueId, prefabPath);
+                if (!allowsDemoShieldBlockImpact)
+                {
+                    ValidateNoImportedAssetDependencies(cueId, prefabPath);
+                }
+
+                if (cueId == CombatVfxCueId.PlayerPerfectDodgeWindow)
+                {
+                    ValidatePerfectDodgeHovlShieldPrefab(cue.Prefab);
+                }
             }
+
+            ValidateReviewedCombatFeedbackPlayback(profile);
 
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != ScenePath)
@@ -303,6 +433,12 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder(MeshRoot);
+            EnsureFolder(HovlSciFiEffectsRoot);
+            EnsureFolder(HovlSciFiEffectsMaterialRoot);
+            EnsureFolder(HovlSciFiEffectsTextureRoot);
+            EnsureFolder(HovlSciFiEffectsShaderRoot);
+            EnsureFolder(HovlSciFiEffectsMeshRoot);
             EnsureFolder("Assets/_Game/Art/Audio");
             EnsureFolder("Assets/_Game/Art/Audio/SFX");
             EnsureFolder("Assets/_Game/Art/Audio/SFX/Guns");
@@ -344,6 +480,15 @@ namespace DimensionBrawl.Editor
                 (float)BlendMode.OneMinusSrcAlpha,
                 0.02f,
                 0f);
+            Material shapesPortalOuter = LoadReviewedShapesFxMaterial(ShapesFxPortalOuterMaterialPath);
+            Material shapesPortalInner = LoadReviewedShapesFxMaterial(ShapesFxPortalInnerMaterialPath);
+            Material shapesCyanDodeca = LoadReviewedShapesFxMaterial(ShapesFxCyanDodecaMaterialPath);
+            Material shapesVioletIcosa = LoadReviewedShapesFxMaterial(ShapesFxVioletIcosaMaterialPath);
+            Mesh shapesTorus = LoadRequiredMesh(ShapesFxTorusMeshPath);
+            Mesh shapesDodeca = LoadRequiredMesh(ShapesFxDodecaMeshPath);
+            Mesh shapesIcosa = LoadRequiredMesh(ShapesFxIcosaMeshPath);
+            GameObject shieldBlockImpactPrefab =
+                LoadRequiredPrefab(ImportedHovlShieldBlockImpactPrefabPath, "perfect dodge shield block impact");
 
             GameObject enemyHitFeedback = SavePromotedHitFeedbackPrefab(
                 "DB_VFX_EnemyHit",
@@ -359,16 +504,27 @@ namespace DimensionBrawl.Editor
                 PlayerAttackStart = SaveBurstPrefab("DB_VFX_PlayerAttackStart", cyan, ParticleSystemShapeType.Cone, 0.16f, 24f, 115f, 0.16f, 0.36f, 0.12f, 0.32f, 18, new Color(0.26f, 0.95f, 1f, 0.86f), new Color(0.14f, 0.42f, 1f, 0f)),
                 PlayerAttackHit = SaveBurstPrefab("DB_VFX_PlayerAttackHit", white, ParticleSystemShapeType.Sphere, 0.32f, 35f, 360f, 0.12f, 0.28f, 0.16f, 0.42f, 34, new Color(1f, 0.95f, 0.75f, 0.95f), new Color(0.18f, 0.74f, 1f, 0f)),
                 PlayerDodgeStart = SaveBurstPrefab("DB_VFX_PlayerDodgeStart", blue, ParticleSystemShapeType.Cone, 0.22f, 18f, 75f, 0.18f, 0.40f, 0.18f, 0.46f, 28, new Color(0.18f, 0.58f, 1f, 0.75f), new Color(0.1f, 0.2f, 0.7f, 0f)),
+                PlayerPerfectDodgeTimeField = SavePromotedHovlSciFiCuePrefab("DB_VFX_PlayerPerfectDodgeTimeField", ImportedHovlSciFiBuffPrefabPath, Vector3.zero, Vector3.zero, Vector3.one, loopParticles: true, playOnAwake: true, minimumParticleSystems: 8),
+                PlayerPerfectDodgePulsewave = SavePromotedHovlSciFiCuePrefab("DB_VFX_PlayerPerfectDodgePulsewave", ImportedHovlSciFiBuffSpherePrefabPath, Vector3.zero, Vector3.zero, Vector3.one, loopParticles: false, playOnAwake: true, minimumParticleSystems: 4),
+                PlayerPerfectDodgeHoloCube = SavePromotedHovlSciFiCuePrefab("DB_VFX_PlayerPerfectDodgeHoloCube", ImportedHovlSciFiBuffPrefabPath, Vector3.zero, Vector3.zero, new Vector3(0.82f, 0.82f, 0.82f), loopParticles: true, playOnAwake: true, minimumParticleSystems: 8),
+                PlayerPerfectDodgeWindow = SavePerfectDodgeWindowPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 0.86f, 1.15f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
+                PlayerPerfectDodgeShieldBlockImpact = shieldBlockImpactPrefab,
+                PlayerSummonPreSpawnPortal = SaveSummonPreSpawnPortalPrefab("DB_VFX_PlayerSummonPreSpawnPortal", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
+                PlayerSummonLandingCrater = SaveSummonLandingCraterPrefab("DB_VFX_PlayerSummonLandingCrater", gold, smoke, shapesPortalOuter, shapesTorus),
+                PlayerSummonDragonBreathAudio = SaveAudioOnlyCuePrefab("DB_VFX_PlayerSummonDragonBreathAudio"),
                 PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
-                PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
+                PlayerRangedProjectileImpact = SavePromotedHitFeedbackPrefab(
+                    "DB_VFX_PlayerRangedProjectileImpact",
+                    ImportedVefectsHit06DirectionalPrefabPath,
+                    0.38f),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
                 EnemyAttackActive = SaveBurstPrefab("DB_VFX_EnemyAttackActive_Generic", white, ParticleSystemShapeType.Cone, 0.36f, 42f, 120f, 0.10f, 0.24f, 0.22f, 0.55f, 36, new Color(1f, 0.9f, 0.55f, 0.95f), new Color(1f, 0.2f, 0.02f, 0f)),
                 EnemyHit = enemyHitFeedback,
                 EnemyDeath = SaveBurstPrefab("DB_VFX_EnemyDeath", smoke, ParticleSystemShapeType.Sphere, 0.42f, 16f, 360f, 0.30f, 0.72f, 0.20f, 0.68f, 42, new Color(0.58f, 0.66f, 0.72f, 0.58f), new Color(0.08f, 0.12f, 0.16f, 0f)),
                 ClosePunishWindup = SaveBurstPrefab("DB_VFX_ClosePunishWindup", orange, ParticleSystemShapeType.Cone, 0.22f, 12f, 105f, 0.26f, 0.50f, 0.12f, 0.34f, 24, new Color(1f, 0.42f, 0.08f, 0.8f), new Color(1f, 0.06f, 0f, 0f)),
                 ClosePunishActive = SaveBurstPrefab("DB_VFX_ClosePunishActive", red, ParticleSystemShapeType.Cone, 0.34f, 42f, 95f, 0.09f, 0.22f, 0.20f, 0.52f, 38, new Color(1f, 0.24f, 0.05f, 0.92f), new Color(1f, 0.8f, 0.16f, 0f)),
-                LungeWindup = SaveBurstPrefab("DB_VFX_LungeStrikeWindup", red, ParticleSystemShapeType.Cone, 0.20f, 16f, 60f, 0.24f, 0.48f, 0.14f, 0.34f, 26, new Color(1f, 0.18f, 0.05f, 0.82f), new Color(1f, 0.65f, 0.12f, 0f)),
-                LungeActive = SaveBurstPrefab("DB_VFX_LungeStrikeActive", red, ParticleSystemShapeType.Cone, 0.26f, 62f, 45f, 0.10f, 0.26f, 0.24f, 0.62f, 46, new Color(1f, 0.38f, 0.08f, 0.95f), new Color(1f, 0.08f, 0.02f, 0f)),
+                LungeWindup = SaveBurstPrefab("DB_VFX_LungeStrikeWindup", orange, ParticleSystemShapeType.Cone, 0.10f, 7f, 22f, 0.14f, 0.26f, 0.05f, 0.14f, 8, new Color(1f, 0.44f, 0.12f, 0.36f), new Color(1f, 0.18f, 0.02f, 0f)),
+                LungeActive = SaveBurstPrefab("DB_VFX_LungeStrikeActive", red, ParticleSystemShapeType.Cone, 0.08f, 48f, 8f, 0.06f, 0.14f, 0.05f, 0.16f, 10, new Color(1f, 0.72f, 0.36f, 0.58f), new Color(1f, 0.1f, 0.02f, 0f), 1.35f),
                 HeavyWindup = SaveBurstPrefab("DB_VFX_HeavyWindupCharge", gold, ParticleSystemShapeType.Sphere, 0.34f, 10f, 360f, 0.38f, 0.70f, 0.18f, 0.44f, 42, new Color(1f, 0.74f, 0.12f, 0.86f), new Color(1f, 0.18f, 0.02f, 0f)),
                 HeavyActive = SaveBurstPrefab("DB_VFX_HeavyWindupImpact", gold, ParticleSystemShapeType.Circle, 0.65f, 34f, 360f, 0.13f, 0.34f, 0.30f, 0.78f, 56, new Color(1f, 0.9f, 0.36f, 0.96f), new Color(1f, 0.28f, 0.04f, 0f)),
                 LineWindup = SaveBurstPrefab("DB_VFX_LinePressureWindup", cyan, ParticleSystemShapeType.Cone, 0.18f, 18f, 34f, 0.30f, 0.58f, 0.10f, 0.24f, 30, new Color(0.22f, 0.94f, 1f, 0.82f), new Color(0.02f, 0.28f, 1f, 0f)),
@@ -385,14 +541,16 @@ namespace DimensionBrawl.Editor
                 EliteArmorBreak = SaveBurstPrefab("DB_VFX_EliteArmorBreakSignal", gold, ParticleSystemShapeType.Sphere, 0.48f, 24f, 360f, 0.18f, 0.48f, 0.18f, 0.58f, 42, new Color(1f, 0.86f, 0.18f, 0.9f), new Color(1f, 0.18f, 0.02f, 0f)),
                 EliteAura = SaveBurstPrefab("DB_VFX_EliteAuraSignal", cyan, ParticleSystemShapeType.Circle, 0.70f, 18f, 360f, 0.42f, 0.84f, 0.16f, 0.52f, 58, new Color(0.18f, 1f, 0.78f, 0.76f), new Color(0.04f, 0.36f, 0.86f, 0f)),
                 EliteSummon = SaveBurstPrefab("DB_VFX_EliteSummonSignal", violet, ParticleSystemShapeType.Sphere, 0.58f, 24f, 360f, 0.24f, 0.48f, 0.14f, 0.26f, 64, new Color(0.74f, 0.38f, 1f, 0.64f), new Color(0.12f, 0.04f, 0.7f, 0f)),
-                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", violet, ParticleSystemShapeType.Circle, 0.68f, 28f, 360f, 0.16f, 0.48f, 0.10f, 0.18f, 66, new Color(0.88f, 0.52f, 1f, 0.50f), new Color(0.18f, 0.06f, 0.78f, 0f)),
-                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", violet, ParticleSystemShapeType.Circle, 0.74f, 25f, 360f, 0.18f, 0.44f, 0.12f, 0.20f, 76, new Color(0.98f, 0.7f, 1f, 0.54f), new Color(0.28f, 0.06f, 0.72f, 0f)),
+                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", cyan, ParticleSystemShapeType.Cone, 0.20f, 24f, 62f, 0.10f, 0.24f, 0.06f, 0.14f, 24, new Color(0.42f, 0.95f, 1f, 0.50f), new Color(0.04f, 0.28f, 0.88f, 0f), 0.34f),
+                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", gold, ParticleSystemShapeType.Cone, 0.22f, 22f, 70f, 0.12f, 0.26f, 0.07f, 0.15f, 28, new Color(1f, 0.82f, 0.28f, 0.52f), new Color(0.86f, 0.24f, 0.02f, 0f), 0.30f),
                 ElitePhaseSwap = SaveBurstPrefab("DB_VFX_ElitePhaseSwapSignal", white, ParticleSystemShapeType.Circle, 0.82f, 44f, 360f, 0.18f, 0.48f, 0.26f, 0.82f, 84, new Color(0.9f, 0.98f, 1f, 0.96f), new Color(0.26f, 0.46f, 1f, 0f))
             };
 
             EnsureReviewedCombatCueAudioBanks();
             CombatVfxCueProfile profile = LoadOrCreate<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             ConfigureCombatVfxCueProfile(profile, prefabs);
+            ApplyMissileShieldCueProfileAudio(profile);
+            ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
             return profile;
         }
 
@@ -414,6 +572,8 @@ namespace DimensionBrawl.Editor
         {
             CombatVfxCuePlayer cuePlayer = EnsureComponent<CombatVfxCuePlayer>(player.gameObject);
             PlayerCombatVfxCueDriver driver = EnsureComponent<PlayerCombatVfxCueDriver>(player.gameObject);
+            PerfectDodgeVfxDirector perfectDodgeDirector = EnsureComponent<PerfectDodgeVfxDirector>(player.gameObject);
+            CombatHealth playerHealth = player.GetComponent<CombatHealth>();
             PlayerRangedBasicAttackAction rangedBasicAttackAction = player.GetComponent<PlayerRangedBasicAttackAction>();
             Transform attackAnchor = EnsureChild(player.transform, "Player_CombatVfx_AttackAnchor", new Vector3(0f, 1.05f, 0.65f));
             Transform dodgeAnchor = EnsureChild(player.transform, "Player_CombatVfx_DodgeAnchor", new Vector3(0f, 0.18f, -0.22f));
@@ -421,13 +581,16 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cuePlayer, "profile", profile);
             SetObjectReference(cuePlayer, "pooledRoot", poolRoot);
             SetObjectReference(driver, "actionController", player);
-            SetObjectReference(driver, "playerHealth", player.GetComponent<CombatHealth>());
+            SetObjectReference(driver, "playerHealth", playerHealth);
+            SetObjectReference(driver, "perfectDodgeVfxDirector", perfectDodgeDirector);
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "attackAnchor", attackAnchor);
             SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
             SetObjectReference(driver, "damageAnchor", attackAnchor);
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            ConfigurePerfectDodgeCueDriverDefaults(driver);
+            ConfigurePerfectDodgeVfxDirector(perfectDodgeDirector, player, playerHealth);
             SetFloat(driver, "pressureDamageCueScale", 0.62f);
             if (rangedBasicAttackAction != null)
             {
@@ -442,13 +605,47 @@ namespace DimensionBrawl.Editor
                 SetEnum(rangedDriver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
                 SetFloat(rangedDriver, "muzzleFlashIntensity", 1f);
                 SetFloat(rangedDriver, "muzzleFlashAudioIntensity", 1f);
-                SetBool(rangedDriver, "playImpactVfx", false);
-                SetEnum(rangedDriver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
-                SetFloat(rangedDriver, "impactIntensity", 1f);
-                SetFloat(rangedDriver, "impactAudioIntensity", 0.56f);
+                SetBool(rangedDriver, "playImpactVfx", PlayerRangedBasicVfxCueDriver.DefaultPlayImpactVfx);
+                SetBool(rangedDriver, "playImpactAudio", PlayerRangedBasicVfxCueDriver.DefaultPlayImpactAudio);
+                SetEnum(rangedDriver, "impactCueId", (int)PlayerRangedBasicVfxCueDriver.DefaultImpactCueId);
+                SetFloat(rangedDriver, "impactIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactIntensity);
+                SetFloat(rangedDriver, "impactAudioIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactAudioIntensity);
             }
 
             EditorUtility.SetDirty(player.gameObject);
+        }
+
+        private static void ConfigurePerfectDodgeCueDriverDefaults(PlayerCombatVfxCueDriver driver)
+        {
+            SetEnum(driver, "perfectDodgeTimeFieldCueId", (int)CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
+            SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
+            SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
+            SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
+            SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
+            SetFloat(driver, "perfectDodgeWindowIntensity", 1f);
+            SetFloat(driver, "perfectDodgeProjectileBlockIntensity", 1.18f);
+            SetFloat(driver, "perfectDodgeShieldBlockRadius", 0.86f);
+            SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
+            SetBool(driver, "playPerfectDodgeProjectileBlockVfx", true);
+        }
+
+        private static void ConfigurePerfectDodgeVfxDirector(
+            PerfectDodgeVfxDirector director,
+            PlayerActionController actionController,
+            CombatHealth playerHealth)
+        {
+            director.Configure(actionController, playerHealth);
+            SetObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
+            SetObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            SetBool(director, "playProceduralVisuals", false);
+            director.ConfigureAudio(
+                LoadReviewedAudioClips(PlayerPerfectDodgeTimeWarpClipPaths),
+                Array.Empty<AudioClip>());
+            EditorUtility.SetDirty(director);
         }
 
         private static void ConfigureEnemyCombatVfx(BasicSoldierEnemy soldier, CombatVfxCueProfile profile, Transform poolRoot)
@@ -539,6 +736,213 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateReviewedCombatFeedbackPlayback(CombatVfxCueProfile profile)
+        {
+            if (profile.PlaybackMode != CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly)
+            {
+                return;
+            }
+
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerDodgeStart);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerRangedMuzzleFlash);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerDamaged);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerCritical);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.EnemyHit);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.EliteSummonSignal);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonBlockOpportunity);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupWindow);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupHit);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeWindow);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonLandingCrater);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio);
+
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerDodgeStart, PlayerDodgeStartAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, PlayerRangedGunshotAudioName);
+            ValidateCueDoesNotHaveEmbeddedAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                PlayerRangedProjectileImpactAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.EliteSummonSignal, EliteSummonSignalAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonBlockOpportunity, SummonBlockOpportunityAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonFollowupWindow, SummonFollowupWindowAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField, PlayerPerfectDodgeTimeWarpAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeWindow, PlayerPerfectDodgeSuccessAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal, PlayerSummonPreSpawnPortalAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonLandingCrater, PlayerSummonLandingCraterAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio, PlayerSummonDragonBreathAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerDamaged);
+            ValidatePlayerRangedMuzzleFlashPrefab(profile);
+            ValidateCueDoesNotHaveChild(profile, CombatVfxCueId.SummonBlockOpportunity, "CueAssetVfx_MagicMissilesPressureStorm");
+            ValidateCueDoesNotHaveChild(profile, CombatVfxCueId.SummonFollowupWindow, "CueAssetVfx_MagicMissilesFollowupCircle");
+        }
+
+        private static void ValidateReviewedPlaybackCue(CombatVfxCueProfile profile, CombatVfxCueId cueId)
+        {
+            if (!profile.AllowsPlayback(cueId))
+            {
+                throw new InvalidOperationException($"{cueId} is part of reviewed combat feedback but is blocked by {profile.PlaybackMode}.");
+            }
+        }
+
+        private static void ValidateCueEmbeddedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string audioObjectName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab before validating reviewed audio.");
+            }
+
+            Transform audioRoot = cue.Prefab.transform.Find(audioObjectName);
+            if (audioRoot == null)
+            {
+                throw new InvalidOperationException($"{cueId} should include reviewed audio child {audioObjectName}.");
+            }
+
+            AudioSource source = audioRoot.GetComponent<AudioSource>();
+            CombatVfxCueAudioRandomizer randomizer = audioRoot.GetComponent<CombatVfxCueAudioRandomizer>();
+            if (source == null || randomizer == null || randomizer.Source != source)
+            {
+                throw new InvalidOperationException($"{cueId} reviewed audio child {audioObjectName} should have a linked AudioSource and CombatVfxCueAudioRandomizer.");
+            }
+
+            if (!source.enabled || randomizer.ClipCount <= 0 || randomizer.BaseVolume <= 0f)
+            {
+                throw new InvalidOperationException($"{cueId} reviewed audio child {audioObjectName} should be enabled and contain audible clips.");
+            }
+        }
+
+        private static void ValidatePlayerRangedMuzzleFlashPrefab(CombatVfxCueProfile profile)
+        {
+            if (!profile.TryGetCue(CombatVfxCueId.PlayerRangedMuzzleFlash, out CombatVfxCue cue)
+                || cue.Prefab == null)
+            {
+                throw new InvalidOperationException("PlayerRangedMuzzleFlash should reference a cue prefab.");
+            }
+
+            if (cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo") == null)
+            {
+                throw new InvalidOperationException("PlayerRangedMuzzleFlash should preserve the promoted Vefects rifle muzzle prefab.");
+            }
+
+            ValidatePromotedMuzzleSmokeParticle(
+                cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo/Smoke Front"),
+                "Smoke Front",
+                0.12f,
+                0.42f);
+            ValidatePromotedMuzzleSmokeParticle(
+                cue.Prefab.transform.Find("MuzzleFlash_VefectsRifleDemo/Smoke Side"),
+                "Smoke Side",
+                0.10f,
+                0.34f);
+
+            string[] blockedChildren =
+            {
+                "RifleFlash_FrontBurst",
+                "RifleFlash_SideTongues",
+                "RifleFlash_SmokePuff",
+                "RifleFlash_LightSpark"
+            };
+
+            for (int i = 0; i < blockedChildren.Length; i++)
+            {
+                if (cue.Prefab.transform.Find(blockedChildren[i]) != null)
+                {
+                    throw new InvalidOperationException(
+                        $"PlayerRangedMuzzleFlash should use the promoted rifle muzzle asset, not handcrafted smoke layer {blockedChildren[i]}.");
+                }
+            }
+        }
+
+        private static void ValidatePromotedMuzzleSmokeParticle(
+            Transform smokeRoot,
+            string label,
+            float minimumAlpha,
+            float minimumSize)
+        {
+            if (smokeRoot == null)
+            {
+                throw new InvalidOperationException($"PlayerRangedMuzzleFlash should keep promoted Vefects {label}.");
+            }
+
+            ParticleSystem particleSystem = smokeRoot.GetComponent<ParticleSystem>();
+            ParticleSystemRenderer renderer = smokeRoot.GetComponent<ParticleSystemRenderer>();
+            if (particleSystem == null || renderer == null || !renderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} should keep an enabled promoted muzzle smoke particle renderer.");
+            }
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            ParticleSystem.MinMaxGradient startColor = main.startColor;
+            float alpha = Mathf.Max(startColor.color.a, startColor.colorMax.a, startColor.colorMin.a);
+            if (alpha < minimumAlpha)
+            {
+                throw new InvalidOperationException($"{label} muzzle smoke alpha is too subtle for gameplay readability.");
+            }
+
+            ParticleSystem.MinMaxCurve startSize = main.startSize;
+            float size = Mathf.Max(startSize.constant, startSize.constantMax, startSize.constantMin);
+            if (size < minimumSize)
+            {
+                throw new InvalidOperationException($"{label} muzzle smoke size is too small for gameplay readability.");
+            }
+        }
+
+        private static void ValidateCueDoesNotHaveChild(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab.");
+            }
+
+            if (cue.Prefab.transform.Find(childName) != null)
+            {
+                throw new InvalidOperationException($"{cueId} should not include ambiguous magic-circle overlay {childName}.");
+            }
+        }
+
+        private static void ValidateCueDoesNotHaveEmbeddedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string audioObjectName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab before validating reviewed audio.");
+            }
+
+            if (cue.Prefab.transform.Find(audioObjectName) != null)
+            {
+                throw new InvalidOperationException(
+                    $"{cueId} should use profile-owned hit SFX only; remove duplicate embedded audio child {audioObjectName}.");
+            }
+        }
+
+        private static void ValidateCueProfileAudioBank(CombatVfxCueProfile profile, CombatVfxCueId cueId)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue))
+            {
+                throw new InvalidOperationException($"{cueId} should exist before validating profile audio.");
+            }
+
+            if (cue.AudioClipCount <= 0 || cue.AudioBaseVolume <= 0f)
+            {
+                throw new InvalidOperationException($"{cueId} should keep its reviewed profile audio bank.");
+            }
+        }
+
         private static void ValidateEnemyCombatVfx(BasicSoldierEnemy soldier, CombatVfxCueProfile profile)
         {
             ValidateCuePlayer(soldier.gameObject, profile, soldier.name);
@@ -614,9 +1018,17 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackStart, prefabs.PlayerAttackStart, new Vector3(0f, 0f, 0.35f), Vector3.zero, new Vector3(1f, 1f, 1.25f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackHit, prefabs.PlayerAttackHit, new Vector3(0f, 0f, 0.82f), Vector3.zero, Vector3.one, 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDodgeStart, prefabs.PlayerDodgeStart, new Vector3(0f, 0f, -0.15f), Vector3.zero, new Vector3(1.1f, 0.8f, 1.5f), 0.46f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, 0.52f, 0f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 3.0f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, 0.58f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.9f, false, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.74f, 0.05f), Vector3.zero, new Vector3(0.58f, 0.58f, 0.58f), 1.2f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.24f), Vector3.zero, Vector3.one, 1.15f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact, prefabs.PlayerPerfectDodgeShieldBlockImpact, Vector3.zero, Vector3.zero, new Vector3(0.55f, 0.55f, 0.55f), 1.0f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),
+                new CueDefinition(CombatVfxCueId.PlayerSummonDragonBreathAudio, prefabs.PlayerSummonDragonBreathAudio, Vector3.zero, Vector3.zero, Vector3.one, 0.05f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.72f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.14f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyHit, new Vector3(0f, 0.82f, 0f), Vector3.zero, new Vector3(0.1f, 0.09f, 0.1f), 0.22f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.42f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.82f, 0.82f, 0.82f), 0.58f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
@@ -625,8 +1037,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.EliteSignal, prefabs.EliteShield, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.65f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishWindup, prefabs.ClosePunishWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.52f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishActive, prefabs.ClosePunishActive, new Vector3(0f, 0f, 0.75f), Vector3.zero, Vector3.one, 0.28f, false, true),
-                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeWindup, prefabs.LungeWindup, new Vector3(0f, 0f, 0.25f), Vector3.zero, new Vector3(1f, 1f, 1.3f), 0.50f, true, true),
-                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeActive, prefabs.LungeActive, new Vector3(0f, 0f, 1.2f), Vector3.zero, new Vector3(1f, 1f, 1.75f), 0.28f, false, true),
+                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeWindup, prefabs.LungeWindup, new Vector3(0f, 0f, 0.18f), Vector3.zero, new Vector3(0.48f, 0.48f, 0.58f), 0.22f, true, true),
+                new CueDefinition(CombatVfxCueId.EnemyLungeStrikeActive, prefabs.LungeActive, new Vector3(0f, 0f, 0.62f), Vector3.zero, new Vector3(0.52f, 0.52f, 0.7f), 0.16f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupWindup, prefabs.HeavyWindup, new Vector3(0f, 0.12f, 0f), Vector3.zero, new Vector3(1.35f, 1.2f, 1.35f), 0.72f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupActive, prefabs.HeavyActive, new Vector3(0f, -0.15f, 0.85f), Vector3.zero, new Vector3(1.55f, 0.6f, 1.55f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyLinePressureWindup, prefabs.LineWindup, new Vector3(0f, 0f, 0.45f), Vector3.zero, new Vector3(0.8f, 1f, 2.1f), 0.58f, true, true),
@@ -664,12 +1076,86 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(profile);
         }
 
+        private static void ApplyMissileShieldCueProfileAudio(CombatVfxCueProfile profile)
+        {
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = RequireProperty(serializedObject, "cues");
+            SerializedProperty cue = FindCueProperty(cues, CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
+            if (cue == null)
+            {
+                throw new InvalidOperationException(
+                    $"{CombatVfxCueProfilePath} is missing {CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact}.");
+            }
+
+            SetCueProfileAudio(
+                cue,
+                PlayerPerfectDodgeShieldBlockClipPaths,
+                0.5f,
+                0.96f,
+                1.04f,
+                0.88f,
+                1.04f,
+                0.10f,
+                3f,
+                28f,
+                126);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static SerializedProperty FindCueProperty(SerializedProperty cues, CombatVfxCueId cueId)
+        {
+            int cueIdValue = (int)cueId;
+            for (int i = 0; i < cues.arraySize; i++)
+            {
+                SerializedProperty cue = cues.GetArrayElementAtIndex(i);
+                if (cue.FindPropertyRelative("cueId").intValue == cueIdValue)
+                {
+                    return cue;
+                }
+            }
+
+            return null;
+        }
+
+        private static void SetCueProfileAudio(
+            SerializedProperty cue,
+            string[] clipPaths,
+            float baseVolume,
+            float minimumPitch,
+            float maximumPitch,
+            float minimumVolumeMultiplier,
+            float maximumVolumeMultiplier,
+            float spatialBlend,
+            float minDistance,
+            float maxDistance,
+            int priority)
+        {
+            AudioClip[] clips = LoadReviewedAudioClips(clipPaths);
+            SerializedProperty audioClips = cue.FindPropertyRelative("audioClips");
+            audioClips.arraySize = clips.Length;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                audioClips.GetArrayElementAtIndex(i).objectReferenceValue = clips[i];
+            }
+
+            cue.FindPropertyRelative("audioBaseVolume").floatValue = baseVolume;
+            cue.FindPropertyRelative("audioMinimumPitch").floatValue = minimumPitch;
+            cue.FindPropertyRelative("audioMaximumPitch").floatValue = maximumPitch;
+            cue.FindPropertyRelative("audioMinimumVolumeMultiplier").floatValue = minimumVolumeMultiplier;
+            cue.FindPropertyRelative("audioMaximumVolumeMultiplier").floatValue = maximumVolumeMultiplier;
+            cue.FindPropertyRelative("audioSpatialBlend").floatValue = spatialBlend;
+            cue.FindPropertyRelative("audioMinDistance").floatValue = minDistance;
+            cue.FindPropertyRelative("audioMaxDistance").floatValue = maxDistance;
+            cue.FindPropertyRelative("audioPriority").intValue = priority;
+        }
+
         private static void SetPatternCueOverrides(EnemyCombatVfxCueDriver driver)
         {
             CombatPatternVfxCueOverride[] overrides =
             {
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyPatternProfilePath), CombatVfxCueId.EnemyClosePunishWindup, CombatVfxCueId.EnemyClosePunishActive, 1f, 1f),
-                new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLungePatternProfilePath), CombatVfxCueId.EnemyLungeStrikeWindup, CombatVfxCueId.EnemyLungeStrikeActive, 1.05f, 1.08f),
+                new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLungePatternProfilePath), CombatVfxCueId.EnemyLungeStrikeWindup, CombatVfxCueId.EnemyLungeStrikeActive, 0.55f, 0.48f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath), CombatVfxCueId.EnemyHeavyWindupWindup, CombatVfxCueId.EnemyHeavyWindupActive, 1.18f, 1.25f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath), CombatVfxCueId.EnemyLinePressureWindup, CombatVfxCueId.EnemyLinePressureActive, 1f, 1.05f),
                 new CombatPatternVfxCueOverride(LoadPattern(ActionFoundationProfileSetup.EnemyFanPressurePatternProfilePath), CombatVfxCueId.EnemyFanPressureWindup, CombatVfxCueId.EnemyFanPressureActive, 1f, 1.08f),
@@ -752,6 +1238,1073 @@ namespace DimensionBrawl.Editor
             return savedPrefab;
         }
 
+        private static GameObject SavePerfectDodgeWindowPrefab(
+            string name,
+            Material material,
+            ParticleSystemShapeType shapeType,
+            float radius,
+            float speed,
+            float arcDegrees,
+            float minLifetime,
+            float maxLifetime,
+            float minSize,
+            float maxSize,
+            int burstCount,
+            Color startColor,
+            Color endColor)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            GameObject savedPrefab;
+            try
+            {
+                AttachPromotedHovlSciFiVfxPrefab(
+                    root.transform,
+                    PerfectDodgeHovlHexShieldChildName,
+                    ImportedHovlHexShieldPrefabPath,
+                    new Vector3(0f, 0.48f, 0.52f),
+                    Vector3.zero,
+                    Vector3.one * 0.92f,
+                    loopParticles: true,
+                    playOnAwake: true);
+
+                savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save perfect dodge Hovl shield prefab at {prefabPath}.");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
+            ValidatePerfectDodgeHovlShieldPrefab(savedPrefab);
+            ValidateNoImportedAssetDependencies(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabPath);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePromotedHovlSciFiCuePrefab(
+            string name,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale,
+            bool? loopParticles,
+            bool playOnAwake,
+            int minimumParticleSystems)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            GameObject savedPrefab;
+            try
+            {
+                AttachPromotedHovlSciFiVfxPrefab(
+                    root.transform,
+                    name + "_Hovl",
+                    sourcePrefabPath,
+                    localPosition,
+                    localEuler,
+                    localScale,
+                    loopParticles,
+                    playOnAwake);
+
+                savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save promoted Hovl cue prefab at {prefabPath}.");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
+            savedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            ValidatePromotedHovlSciFiCuePrefab(savedPrefab, name, minimumParticleSystems);
+            ValidateNoImportedAssetDependencies(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabPath);
+            return savedPrefab;
+        }
+
+        private static void ValidatePromotedHovlSciFiCuePrefab(
+            GameObject prefab,
+            string name,
+            int minimumParticleSystems)
+        {
+            if (prefab == null)
+            {
+                throw new InvalidOperationException($"{name} promoted Hovl cue prefab should be assigned.");
+            }
+
+            ParticleSystem[] particleSystems =
+                prefab.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length < minimumParticleSystems)
+            {
+                throw new InvalidOperationException(
+                    $"{name} should preserve its authored Hovl particle stack.");
+            }
+
+            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{name} should expose promoted Hovl renderers.");
+            }
+
+            if (prefab.GetComponentInChildren<Collider>(includeInactive: true) != null
+                || prefab.GetComponentInChildren<Rigidbody>(includeInactive: true) != null)
+            {
+                throw new InvalidOperationException($"{name} promoted Hovl cue must remain visual-only.");
+            }
+        }
+
+        private static void FreezeCueVisualScale(GameObject root)
+        {
+            CombatVfxCueVisual visual = root.GetComponent<CombatVfxCueVisual>();
+            if (visual == null)
+            {
+                return;
+            }
+
+            SerializedObject serializedObject = new SerializedObject(visual);
+            RequireProperty(serializedObject, "startScale").vector3Value = Vector3.one;
+            RequireProperty(serializedObject, "endScale").vector3Value = Vector3.one;
+            RequireProperty(serializedObject, "verticalLift").floatValue = 0f;
+            RequireProperty(serializedObject, "forwardTravelDistance").floatValue = 0f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(visual);
+        }
+
+        private static GameObject AttachPromotedHovlSciFiVfxPrefab(
+            Transform parent,
+            string childName,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale,
+            bool? loopParticles,
+            bool playOnAwake)
+        {
+            DestroyChildIfPresent(parent, childName);
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Missing source Hovl Sci-fi VFX prefab at {sourcePrefabPath}.");
+            }
+
+            GameObject vfxInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (vfxInstance == null)
+            {
+                vfxInstance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(vfxInstance))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    vfxInstance,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            vfxInstance.name = childName;
+            vfxInstance.transform.SetParent(parent, worldPositionStays: false);
+            vfxInstance.transform.localPosition = localPosition;
+            vfxInstance.transform.localRotation = Quaternion.Euler(localEuler);
+            vfxInstance.transform.localScale = localScale;
+
+            UnpackNestedPrefabInstances(vfxInstance);
+            StripNonGameMonoBehaviours(vfxInstance);
+            RemoveRigidbodies(vfxInstance);
+            RemoveColliders(vfxInstance);
+            DisableVfxAudioSources(vfxInstance);
+            ConfigurePromotedHovlSciFiParticles(vfxInstance, loopParticles, playOnAwake);
+            RemapPromotedHovlSciFiRendererDependencies(vfxInstance);
+            EditorUtility.SetDirty(vfxInstance);
+            return vfxInstance;
+        }
+
+        private static void ConfigurePromotedHovlSciFiParticles(
+            GameObject root,
+            bool? loopParticles,
+            bool playOnAwake)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                if (loopParticles.HasValue)
+                {
+                    main.loop = loopParticles.Value;
+                }
+
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                main.playOnAwake = playOnAwake;
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                if (playOnAwake)
+                {
+                    particleSystem.Play(withChildren: true);
+                }
+
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void RemoveRigidbodies(GameObject root)
+        {
+            Rigidbody[] rigidbodies = root.GetComponentsInChildren<Rigidbody>(includeInactive: true);
+            for (int i = rigidbodies.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(rigidbodies[i]);
+            }
+        }
+
+        private static void DestroyChildIfPresent(Transform parent, string childName)
+        {
+            Transform existing = parent.Find(childName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+        }
+
+        private static void RemapPromotedHovlSciFiRendererDependencies(GameObject root)
+        {
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                if (meshFilters[i].sharedMesh != null)
+                {
+                    meshFilters[i].sharedMesh = EnsurePromotedHovlSciFiMesh(meshFilters[i].sharedMesh);
+                    EditorUtility.SetDirty(meshFilters[i]);
+                }
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                if (skinnedRenderers[i].sharedMesh != null)
+                {
+                    skinnedRenderers[i].sharedMesh = EnsurePromotedHovlSciFiMesh(skinnedRenderers[i].sharedMesh);
+                    EditorUtility.SetDirty(skinnedRenderers[i]);
+                }
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        materials[materialIndex] = EnsurePromotedHovlSciFiMaterial(materials[materialIndex]);
+                    }
+                }
+
+                renderer.sharedMaterials = materials;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer particleRenderer = particleRenderers[i];
+                Mesh mesh = particleRenderer.mesh;
+                if (mesh != null)
+                {
+                    particleRenderer.mesh = EnsurePromotedHovlSciFiMesh(mesh);
+                }
+
+                int meshCount = particleRenderer.meshCount;
+                if (meshCount > 0)
+                {
+                    Mesh[] meshes = new Mesh[meshCount];
+                    int copiedCount = particleRenderer.GetMeshes(meshes);
+                    for (int meshIndex = 0; meshIndex < copiedCount; meshIndex++)
+                    {
+                        if (meshes[meshIndex] != null)
+                        {
+                            meshes[meshIndex] = EnsurePromotedHovlSciFiMesh(meshes[meshIndex]);
+                        }
+                    }
+
+                    particleRenderer.SetMeshes(meshes, copiedCount);
+                }
+
+                EditorUtility.SetDirty(particleRenderer);
+            }
+        }
+
+        private static Material EnsurePromotedHovlSciFiMaterial(Material sourceMaterial)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMaterial;
+            }
+
+            string targetPath = HovlSciFiEffectsMaterialRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(sourceMaterial.name)
+                + ".mat";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+            if (material == null)
+            {
+                material = new Material(EnsurePromotedHovlSciFiShader(sourceMaterial.shader));
+                AssetDatabase.CreateAsset(material, targetPath);
+            }
+
+            Shader promotedShader = EnsurePromotedHovlSciFiShader(sourceMaterial.shader);
+            material.shader = promotedShader;
+            material.CopyPropertiesFromMaterial(sourceMaterial);
+            material.shader = promotedShader;
+            material.renderQueue = sourceMaterial.renderQueue;
+
+            string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
+            for (int i = 0; i < textureProperties.Length; i++)
+            {
+                Texture texture = sourceMaterial.GetTexture(textureProperties[i]);
+                if (texture != null)
+                {
+                    SetMaterialTextureIfPresent(
+                        material,
+                        textureProperties[i],
+                        EnsurePromotedHovlSciFiTexture(texture));
+                }
+            }
+
+            RemapSerializedHovlSciFiTextures(material);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            return material;
+        }
+
+        private static Shader EnsurePromotedHovlSciFiShader(Shader sourceShader)
+        {
+            if (sourceShader == null)
+            {
+                return FindParticleShader();
+            }
+
+            string sourcePath = AssetDatabase.GetAssetPath(sourceShader).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceShader;
+            }
+
+            string targetPath = HovlSciFiEffectsShaderRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Shader>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Hovl Sci-fi shader from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            RemapPromotedHovlSciFiShaderDependencies(sourcePath, targetPath);
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(targetPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi shader at {targetPath}.");
+            }
+
+            return shader;
+        }
+
+        private static void RemapPromotedHovlSciFiShaderDependencies(
+            string sourceShaderPath,
+            string targetShaderPath)
+        {
+            string targetAbsolutePath = ToProjectAbsolutePath(targetShaderPath);
+            if (!File.Exists(targetAbsolutePath))
+            {
+                return;
+            }
+
+            string contents = File.ReadAllText(targetAbsolutePath);
+            string[] dependencies = AssetDatabase.GetDependencies(sourceShaderPath, recursive: true);
+            bool changed = false;
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependency = dependencies[i].Replace('\\', '/');
+                if (dependency == sourceShaderPath
+                    || !dependency.StartsWith("Assets/_Imported/", StringComparison.Ordinal)
+                    || !IsPromotableHovlShaderDependency(dependency))
+                {
+                    continue;
+                }
+
+                string promotedDependency = EnsurePromotedHovlSciFiShaderFile(dependency);
+                string sourceGuid = AssetDatabase.AssetPathToGUID(dependency);
+                string promotedGuid = AssetDatabase.AssetPathToGUID(promotedDependency);
+                if (string.IsNullOrWhiteSpace(sourceGuid)
+                    || string.IsNullOrWhiteSpace(promotedGuid)
+                    || sourceGuid == promotedGuid)
+                {
+                    continue;
+                }
+
+                string rewritten = contents.Replace(sourceGuid, promotedGuid);
+                if (!string.Equals(rewritten, contents, StringComparison.Ordinal))
+                {
+                    contents = rewritten;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                File.WriteAllText(targetAbsolutePath, contents);
+            }
+        }
+
+        private static bool IsPromotableHovlShaderDependency(string assetPath)
+        {
+            string extension = Path.GetExtension(assetPath).ToLowerInvariant();
+            return extension == ".hlsl"
+                || extension == ".cginc"
+                || extension == ".shader"
+                || extension == ".shadergraph"
+                || extension == ".compute";
+        }
+
+        private static string EnsurePromotedHovlSciFiShaderFile(string sourcePath)
+        {
+            string targetPath = HovlSciFiEffectsShaderRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to promote Hovl Sci-fi shader dependency from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            return targetPath;
+        }
+
+        private static Texture EnsurePromotedHovlSciFiTexture(Texture sourceTexture)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceTexture;
+            }
+
+            string targetPath = HovlSciFiEffectsTextureRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Texture>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Hovl Sci-fi texture from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi texture at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static Mesh EnsurePromotedHovlSciFiMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            string sourceName = string.IsNullOrWhiteSpace(sourceMesh.name) ? "BuiltinParticleMesh" : sourceMesh.name;
+            string targetPath = HovlSciFiEffectsMeshRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(sourceName)
+                + ".asset";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            mesh = UnityEngine.Object.Instantiate(sourceMesh);
+            mesh.name = sourceMesh.name;
+            AssetDatabase.CreateAsset(mesh, targetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+
+            Mesh promotedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (promotedMesh == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi mesh at {targetPath}.");
+            }
+
+            return promotedMesh;
+        }
+
+        private static void RemapSerializedHovlSciFiTextures(Material material)
+        {
+            SerializedObject serializedMaterial = new SerializedObject(material);
+            SerializedProperty texEnvs = serializedMaterial.FindProperty("m_SavedProperties.m_TexEnvs");
+            if (texEnvs == null || !texEnvs.isArray)
+            {
+                return;
+            }
+
+            for (int i = 0; i < texEnvs.arraySize; i++)
+            {
+                SerializedProperty entry = texEnvs.GetArrayElementAtIndex(i);
+                SerializedProperty textureRef = entry.FindPropertyRelative("second.m_Texture");
+                if (textureRef == null || textureRef.objectReferenceValue is not Texture texture)
+                {
+                    continue;
+                }
+
+                string texturePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                if (texturePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    textureRef.objectReferenceValue = EnsurePromotedHovlSciFiTexture(texture);
+                }
+            }
+
+            serializedMaterial.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(material);
+        }
+
+        private static void ValidatePerfectDodgeHovlShieldPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                throw new InvalidOperationException("Perfect dodge window prefab should be assigned.");
+            }
+
+            Transform shieldRoot = prefab.transform.Find(PerfectDodgeHovlHexShieldChildName);
+            if (shieldRoot == null)
+            {
+                throw new InvalidOperationException("Perfect dodge window should include the promoted Hovl Hex shield overlay.");
+            }
+
+            if (shieldRoot.GetComponentInChildren<Collider>(includeInactive: true) != null
+                || shieldRoot.GetComponentInChildren<Rigidbody>(includeInactive: true) != null
+                || shieldRoot.GetComponentInChildren<AudioSource>(includeInactive: true) != null)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield must remain visual-only.");
+            }
+
+            ParticleSystem[] particleSystems =
+                shieldRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length < 4)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield should preserve its authored particle stack.");
+            }
+
+            Renderer[] renderers = shieldRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield should expose promoted renderers.");
+            }
+        }
+
+        private static GameObject SavePerfectDodgeTimeFieldPrefab(
+            string name,
+            Material cyanMaterial,
+            Material blueMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Material shapesPortalInnerMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_TimeField_ShapesFxOuterTorus",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.052f, 0f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.82f, 0.82f, 0.82f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_TimeField_ShapesFxInnerTorus",
+                    shapesTorusMesh,
+                    shapesPortalInnerMaterial,
+                    new Vector3(0f, 0.074f, 0f),
+                    new Vector3(90f, 35f, 0f),
+                    new Vector3(0.48f, 0.48f, 0.48f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_OuterDisc",
+                    PrimitiveType.Cylinder,
+                    cyanMaterial,
+                    Vector3.zero,
+                    Vector3.zero,
+                    new Vector3(1.08f, 0.014f, 1.08f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_InnerDisc",
+                    PrimitiveType.Cylinder,
+                    blueMaterial,
+                    new Vector3(0f, 0.018f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.62f, 0.012f, 0.62f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_CrossA",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.036f, 0f),
+                    Vector3.zero,
+                    new Vector3(1.35f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_CrossB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, 90f, 0f),
+                    new Vector3(1.35f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_VerticalGlintA",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.46f, 0.38f, 0.08f),
+                    new Vector3(0f, 14f, 0f),
+                    new Vector3(0.028f, 0.58f, 0.028f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_TimeField_VerticalGlintB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(-0.38f, 0.3f, -0.16f),
+                    new Vector3(0f, -21f, 0f),
+                    new Vector3(0.024f, 0.46f, 0.024f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_TimeField_SparkShell",
+                cyanMaterial,
+                new Vector3(0f, 0.22f, 0f),
+                Vector3.zero,
+                3.0f,
+                1.85f,
+                0.28f,
+                0.08f,
+                84,
+                ParticleSystemShapeType.Sphere,
+                0.72f,
+                360f,
+                new Color(0.34f, 0.96f, 1f, 0.62f));
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_TimeField_MicroTicks",
+                whiteMaterial,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                2.8f,
+                1.6f,
+                0.32f,
+                0.05f,
+                72,
+                ParticleSystemShapeType.Circle,
+                0.86f,
+                360f,
+                new Color(0.9f, 1f, 1f, 0.74f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                3.0f,
+                new Color(0.36f, 0.98f, 1f, 0.78f),
+                new Color(0.08f, 0.18f, 0.86f, 0f),
+                new Vector3(0.92f, 0.72f, 0.92f),
+                new Vector3(3.25f, 0.92f, 3.25f),
+                86f,
+                0.02f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgePulsewavePrefab(
+            string name,
+            Material cyanMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_ShapesFxShockTorus",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.03f, 0f),
+                    new Vector3(90f, 18f, 0f),
+                    new Vector3(0.72f, 0.72f, 0.72f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_Outer",
+                    PrimitiveType.Cylinder,
+                    cyanMaterial,
+                    Vector3.zero,
+                    Vector3.zero,
+                    new Vector3(0.84f, 0.012f, 0.84f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_Inner",
+                    PrimitiveType.Cylinder,
+                    whiteMaterial,
+                    new Vector3(0f, 0.018f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.38f, 0.01f, 0.38f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_SlashA",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.035f, 0f),
+                    new Vector3(0f, 28f, 0f),
+                    new Vector3(1.18f, 0.016f, 0.04f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_Pulsewave_SlashB",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, -34f, 0f),
+                    new Vector3(1.05f, 0.014f, 0.032f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_Pulsewave_EdgeSparks",
+                whiteMaterial,
+                new Vector3(0f, 0.05f, 0f),
+                Vector3.zero,
+                0.72f,
+                0.18f,
+                2.4f,
+                0.04f,
+                96,
+                ParticleSystemShapeType.Circle,
+                1.15f,
+                360f,
+                new Color(0.88f, 1f, 1f, 0.78f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.9f,
+                new Color(0.56f, 1f, 1f, 0.72f),
+                new Color(0.04f, 0.18f, 0.95f, 0f),
+                new Vector3(0.64f, 0.58f, 0.64f),
+                new Vector3(4.2f, 0.8f, 4.2f),
+                240f,
+                0f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgeHoloCubePrefab(
+            string name,
+            Material cyanMaterial,
+            Material violetMaterial,
+            Material whiteMaterial,
+            Material shapesCyanDodecaMaterial,
+            Material shapesVioletIcosaMaterial,
+            Mesh shapesDodecaMesh,
+            Mesh shapesIcosaMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxCoreDodeca",
+                    shapesDodecaMesh,
+                    shapesCyanDodecaMaterial,
+                    new Vector3(0f, 0.5f, 0f),
+                    new Vector3(18f, 36f, 12f),
+                    new Vector3(0.2f, 0.2f, 0.2f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxLeftIcosa",
+                    shapesIcosaMesh,
+                    shapesVioletIcosaMaterial,
+                    new Vector3(-0.32f, 0.58f, -0.1f),
+                    new Vector3(-24f, 28f, -18f),
+                    new Vector3(0.12f, 0.12f, 0.12f)),
+                AddMesh(
+                    root.transform,
+                    "PerfectDodge_HoloCube_ShapesFxRightIcosa",
+                    shapesIcosaMesh,
+                    shapesVioletIcosaMaterial,
+                    new Vector3(0.34f, 0.72f, 0.08f),
+                    new Vector3(22f, -34f, 26f),
+                    new Vector3(0.105f, 0.105f, 0.105f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_Core",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0f, 0.42f, 0f),
+                    new Vector3(21f, 34f, 12f),
+                    new Vector3(0.24f, 0.24f, 0.24f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentA",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.34f, 0.68f, 0.04f),
+                    new Vector3(12f, -22f, 38f),
+                    new Vector3(0.12f, 0.12f, 0.12f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentB",
+                    PrimitiveType.Cube,
+                    violetMaterial,
+                    new Vector3(-0.28f, 0.55f, -0.08f),
+                    new Vector3(-18f, 35f, -24f),
+                    new Vector3(0.10f, 0.10f, 0.10f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentC",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(0.06f, 0.78f, -0.28f),
+                    new Vector3(36f, 12f, -18f),
+                    new Vector3(0.08f, 0.08f, 0.08f)),
+                AddPrimitive(
+                    root.transform,
+                    "PerfectDodge_HoloCube_FragmentD",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(-0.1f, 0.34f, 0.26f),
+                    new Vector3(-34f, -12f, 27f),
+                    new Vector3(0.09f, 0.09f, 0.09f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "PerfectDodge_HoloCube_Glints",
+                whiteMaterial,
+                new Vector3(0f, 0.54f, 0f),
+                Vector3.zero,
+                0.38f,
+                0.22f,
+                0.62f,
+                0.045f,
+                34,
+                ParticleSystemShapeType.Sphere,
+                0.34f,
+                360f,
+                new Color(0.88f, 1f, 1f, 0.8f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                1.2f,
+                new Color(0.58f, 1f, 1f, 0.86f),
+                new Color(0.62f, 0.28f, 1f, 0f),
+                new Vector3(0.62f, 0.62f, 0.62f),
+                new Vector3(1.85f, 1.85f, 1.85f),
+                180f,
+                0.12f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveSummonPreSpawnPortalPrefab(
+            string name,
+            Material cyanMaterial,
+            Material blueMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Material shapesPortalInnerMaterial,
+            Mesh shapesTorusMesh)
+        {
+            return SavePromotedHovlSciFiCuePrefab(
+                name,
+                ImportedHovlLaserTeleportPrefabPath,
+                Vector3.zero,
+                Vector3.zero,
+                Vector3.one,
+                loopParticles: false,
+                playOnAwake: true,
+                minimumParticleSystems: 4);
+        }
+
+        private static GameObject SaveSummonLandingCraterPrefab(
+            string name,
+            Material impactMaterial,
+            Material smokeMaterial,
+            Material shapesPortalOuterMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "SummonLanding_ShapesFxShockRing",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.045f, 0f),
+                    new Vector3(90f, 18f, 0f),
+                    new Vector3(0.74f, 0.74f, 0.74f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CraterDisc",
+                    PrimitiveType.Cylinder,
+                    smokeMaterial,
+                    new Vector3(0f, 0.015f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.72f, 0.01f, 0.72f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CrackA",
+                    PrimitiveType.Cube,
+                    impactMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, 18f, 0f),
+                    new Vector3(1.18f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CrackB",
+                    PrimitiveType.Cube,
+                    impactMaterial,
+                    new Vector3(0f, 0.045f, 0f),
+                    new Vector3(0f, -34f, 0f),
+                    new Vector3(0.92f, 0.016f, 0.03f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CoreKick",
+                    PrimitiveType.Sphere,
+                    impactMaterial,
+                    new Vector3(0f, 0.12f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.24f, 0.08f, 0.24f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "SummonLanding_DustBurst",
+                smokeMaterial,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                0.72f,
+                0.42f,
+                1.05f,
+                0.22f,
+                42,
+                ParticleSystemShapeType.Circle,
+                0.52f,
+                360f,
+                new Color(0.62f, 0.66f, 0.68f, 0.44f));
+            AddParticleBurst(
+                root.transform,
+                "SummonLanding_StoneSparks",
+                impactMaterial,
+                new Vector3(0f, 0.1f, 0f),
+                Vector3.zero,
+                0.48f,
+                0.32f,
+                1.9f,
+                0.06f,
+                28,
+                ParticleSystemShapeType.Circle,
+                0.38f,
+                360f,
+                new Color(1f, 0.82f, 0.36f, 0.76f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.84f,
+                new Color(1f, 0.82f, 0.36f, 0.78f),
+                new Color(0.28f, 0.24f, 0.20f, 0f),
+                new Vector3(0.72f, 0.42f, 0.72f),
+                new Vector3(2.25f, 0.65f, 2.25f),
+                96f,
+                0.02f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveAudioOnlyCuePrefab(string name)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                Array.Empty<Renderer>(),
+                0.05f,
+                Color.clear,
+                Color.clear,
+                Vector3.one,
+                Vector3.one,
+                0f,
+                0f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
         private static GameObject SavePromotedHitFeedbackPrefab(
             string name,
             string sourcePrefabPath,
@@ -789,6 +2342,8 @@ namespace DimensionBrawl.Editor
                 RemoveColliders(root);
                 DisableVfxAudioSources(root);
                 ConfigurePromotedHitFeedbackParticles(root);
+                DisablePromotedParticleLightModules(root);
+                RemapPromotedHitFeedbackMeshes(root);
                 RemapPromotedHitFeedbackRenderers(root);
 
                 Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
@@ -1259,113 +2814,366 @@ namespace DimensionBrawl.Editor
         {
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
-            var renderers = new System.Collections.Generic.List<Renderer>
-            {
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_Front",
-                    PrimitiveType.Quad,
-                    frontMaterial,
-                    new Vector3(0f, 0f, 0.18f),
-                    Vector3.zero,
-                    new Vector3(0.62f, 0.62f, 1f)),
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_ForwardTongue",
-                    PrimitiveType.Quad,
-                    sideMaterial,
-                    new Vector3(0f, 0f, 0.42f),
-                    new Vector3(90f, 0f, 0f),
-                    new Vector3(0.34f, 0.92f, 1f)),
-                AddPrimitive(
-                    root.transform,
-                    "MuzzleFlash_VerticalTongue",
-                    PrimitiveType.Quad,
-                    sideMaterial,
-                    new Vector3(0f, 0f, 0.38f),
-                    Vector3.zero,
-                    new Vector3(0.28f, 0.82f, 1f))
-            };
+            _ = frontMaterial;
+            _ = sideMaterial;
+            _ = smokeMaterial;
 
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_FrontBurst",
-                frontMaterial,
-                new Vector3(0f, 0f, 0.24f),
-                Vector3.zero,
-                0.12f,
-                0.045f,
-                0.2f,
-                0.72f,
-                4,
-                ParticleSystemShapeType.Cone,
-                0.03f,
-                12f,
-                new Color(1f, 0.92f, 0.56f, 1f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_SideTongues",
-                sideMaterial,
-                new Vector3(0f, 0f, 0.2f),
-                new Vector3(0f, 90f, 0f),
-                0.12f,
-                0.05f,
-                0.15f,
-                0.58f,
-                5,
-                ParticleSystemShapeType.Cone,
-                0.02f,
-                18f,
-                new Color(1f, 0.62f, 0.22f, 0.96f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_SmokePuff",
-                smokeMaterial,
-                new Vector3(0f, 0f, 0.02f),
-                Vector3.zero,
-                0.32f,
-                0.24f,
-                0.42f,
-                0.28f,
-                8,
-                ParticleSystemShapeType.Cone,
-                0.06f,
-                24f,
-                new Color(0.62f, 0.66f, 0.68f, 0.38f));
-            AddParticleBurst(
-                root.transform,
-                "RifleFlash_LightSpark",
-                sideMaterial,
-                new Vector3(0f, 0f, 0.34f),
-                Vector3.zero,
-                0.10f,
-                0.08f,
-                1.4f,
-                0.08f,
-                9,
-                ParticleSystemShapeType.Cone,
-                0.025f,
-                9f,
-                new Color(1f, 0.76f, 0.28f, 0.96f));
+            GameObject promotedMuzzleFlash = AttachPromotedMuzzleFlashAsset(root.transform);
 
             AttachReviewedGunshotAudio(root);
 
             CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
             ConfigureCueVisual(
                 visual,
-                renderers.ToArray(),
-                0.16f,
-                new Color(1f, 0.88f, 0.44f, 0.98f),
+                CollectMuzzleFlashCueVisualRenderers(promotedMuzzleFlash),
+                0.20f,
+                new Color(1f, 0.88f, 0.44f, 0.82f),
                 new Color(1f, 0.12f, 0.02f, 0f),
-                new Vector3(0.66f, 0.66f, 0.66f),
-                new Vector3(1.45f, 1.15f, 1.65f),
+                new Vector3(0.9f, 0.9f, 0.9f),
+                new Vector3(1.08f, 1.08f, 1.08f),
                 0f,
-                0.015f,
-                0.14f);
+                0f,
+                0.04f);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static Renderer[] CollectMuzzleFlashCueVisualRenderers(GameObject promotedMuzzleFlash)
+        {
+            Renderer[] renderers = promotedMuzzleFlash.GetComponentsInChildren<Renderer>(includeInactive: true);
+            var flashRenderers = new System.Collections.Generic.List<Renderer>(renderers.Length);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsMuzzleSmokeRenderer(renderer))
+                {
+                    continue;
+                }
+
+                flashRenderers.Add(renderer);
+            }
+
+            return flashRenderers.ToArray();
+        }
+
+        private static bool IsMuzzleSmokeRenderer(Renderer renderer)
+        {
+            Transform current = renderer.transform;
+            while (current != null)
+            {
+                if (string.Equals(current.name, "Smoke Front", StringComparison.Ordinal)
+                    || string.Equals(current.name, "Smoke Side", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static GameObject AttachPromotedMuzzleFlashAsset(Transform parent)
+        {
+            const string ChildName = "MuzzleFlash_VefectsRifleDemo";
+            Transform existing = parent.Find(ChildName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ImportedRifleMuzzleFlashPrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Missing source rifle muzzle flash VFX prefab at {ImportedRifleMuzzleFlashPrefabPath}.");
+            }
+
+            GameObject assetRoot = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
+            if (assetRoot == null)
+            {
+                assetRoot = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(assetRoot))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    assetRoot,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            assetRoot.name = ChildName;
+            assetRoot.transform.SetParent(parent, worldPositionStays: false);
+            assetRoot.transform.localPosition = new Vector3(0f, 0f, 0.08f);
+            assetRoot.transform.localRotation = Quaternion.identity;
+            assetRoot.transform.localScale = new Vector3(0.78f, 0.78f, 0.9f);
+
+            UnpackNestedPrefabInstances(assetRoot);
+            StripNonGameMonoBehaviours(assetRoot);
+            RemoveColliders(assetRoot);
+            DisableVfxAudioSources(assetRoot);
+            ConfigurePromotedMuzzleFlashParticles(assetRoot);
+            ConfigurePromotedMuzzleSmokeParticles(assetRoot);
+            DisablePromotedParticleLightModules(assetRoot);
+            AttachLocalMuzzleFlashLight(assetRoot.transform);
+            RemapPromotedHitFeedbackMeshes(assetRoot);
+            RemapPromotedHitFeedbackRenderers(assetRoot);
+            EditorUtility.SetDirty(assetRoot);
+            return assetRoot;
+        }
+
+        private static void DisablePromotedParticleLightModules(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem.LightsModule lights = particleSystems[i].lights;
+                if (!lights.enabled && lights.light == null)
+                {
+                    continue;
+                }
+
+                lights.enabled = false;
+                lights.light = null;
+                EditorUtility.SetDirty(particleSystems[i]);
+            }
+        }
+
+        private static void AttachLocalMuzzleFlashLight(Transform parent)
+        {
+            const string LightName = "MuzzleFlash_LocalBurstLight";
+            Transform existing = parent.Find(LightName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject lightObject = new GameObject(LightName);
+            lightObject.transform.SetParent(parent, worldPositionStays: false);
+            lightObject.transform.localPosition = new Vector3(0f, 0f, 0.28f);
+            Light light = lightObject.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.64f, 0.22f, 1f);
+            light.intensity = 4.2f;
+            light.range = 2.8f;
+            light.shadows = LightShadows.None;
+            light.renderMode = LightRenderMode.ForcePixel;
+            EditorUtility.SetDirty(lightObject);
+            EditorUtility.SetDirty(light);
+        }
+
+        private static void RemapPromotedHitFeedbackMeshes(GameObject root)
+        {
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                meshFilter.sharedMesh = EnsurePromotedHitFeedbackMesh(meshFilter.sharedMesh);
+                EditorUtility.SetDirty(meshFilter);
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                SkinnedMeshRenderer skinnedRenderer = skinnedRenderers[i];
+                if (skinnedRenderer.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                skinnedRenderer.sharedMesh = EnsurePromotedHitFeedbackMesh(skinnedRenderer.sharedMesh);
+                EditorUtility.SetDirty(skinnedRenderer);
+            }
+
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer particleRenderer = particleRenderers[i];
+                Mesh mesh = particleRenderer.mesh;
+                if (mesh != null)
+                {
+                    particleRenderer.mesh = EnsurePromotedHitFeedbackMesh(mesh);
+                }
+
+                int meshCount = particleRenderer.meshCount;
+                if (meshCount > 0)
+                {
+                    Mesh[] meshes = new Mesh[meshCount];
+                    int copiedCount = particleRenderer.GetMeshes(meshes);
+                    for (int meshIndex = 0; meshIndex < copiedCount; meshIndex++)
+                    {
+                        if (meshes[meshIndex] != null)
+                        {
+                            meshes[meshIndex] = EnsurePromotedHitFeedbackMesh(meshes[meshIndex]);
+                        }
+                    }
+
+                    particleRenderer.SetMeshes(meshes, copiedCount);
+                }
+
+                EditorUtility.SetDirty(particleRenderer);
+            }
+        }
+
+        private static Mesh EnsurePromotedHitFeedbackMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath) || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            string targetPath = MeshRoot + "/DB_CombatHit_"
+                + SanitizeAssetFileName(sourceMesh.name)
+                + ".asset";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            mesh = UnityEngine.Object.Instantiate(sourceMesh);
+            mesh.name = sourceMesh.name;
+            AssetDatabase.CreateAsset(mesh, targetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+
+            Mesh promotedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (promotedMesh == null)
+            {
+                throw new InvalidOperationException($"Failed to promote hit feedback mesh from {sourcePath} to {targetPath}.");
+            }
+
+            return promotedMesh;
+        }
+
+        private static void ConfigurePromotedMuzzleFlashParticles(GameObject root)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length == 0)
+            {
+                throw new InvalidOperationException($"{root.name} should preserve authored Vefects muzzle flash particles.");
+            }
+
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = false;
+                main.playOnAwake = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void ConfigurePromotedMuzzleSmokeParticles(GameObject root)
+        {
+            ConfigurePromotedMuzzleSmokeParticle(
+                root.transform.Find("Smoke Front"),
+                "Smoke Front",
+                new Vector3(1.55f, 1.55f, 1.2f),
+                0.34f,
+                0.62f,
+                0.42f,
+                0.72f,
+                new Color(0.72f, 0.76f, 0.78f, 0.18f),
+                new Color(0.95f, 0.98f, 1f, 0.28f),
+                7,
+                12);
+            ConfigurePromotedMuzzleSmokeParticle(
+                root.transform.Find("Smoke Side"),
+                "Smoke Side",
+                new Vector3(1.8f, 1.8f, 1.3f),
+                0.30f,
+                0.56f,
+                0.34f,
+                0.62f,
+                new Color(0.70f, 0.74f, 0.78f, 0.14f),
+                new Color(0.92f, 0.96f, 1f, 0.24f),
+                6,
+                10);
+        }
+
+        private static void ConfigurePromotedMuzzleSmokeParticle(
+            Transform smokeRoot,
+            string label,
+            Vector3 localScale,
+            float lifetimeMin,
+            float lifetimeMax,
+            float sizeMin,
+            float sizeMax,
+            Color colorMin,
+            Color colorMax,
+            short burstMin,
+            short burstMax)
+        {
+            if (smokeRoot == null)
+            {
+                throw new InvalidOperationException($"{ImportedRifleMuzzleFlashPrefabPath} is missing {label}.");
+            }
+
+            smokeRoot.localScale = localScale;
+
+            ParticleSystem particleSystem = smokeRoot.GetComponent<ParticleSystem>();
+            if (particleSystem == null)
+            {
+                throw new InvalidOperationException($"{label} should be a ParticleSystem.");
+            }
+
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.startLifetime = CreateTwoConstantCurve(lifetimeMin, lifetimeMax);
+            main.startSize = CreateTwoConstantCurve(sizeMin, sizeMax);
+            main.startSpeed = CreateTwoConstantCurve(0.04f, 0.16f);
+            main.startColor = new ParticleSystem.MinMaxGradient(colorMin, colorMax);
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, burstMin, burstMax) });
+
+            ParticleSystemRenderer renderer = smokeRoot.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.enabled = true;
+                renderer.sortingFudge = 0.25f;
+                renderer.minParticleSize = 0.02f;
+                renderer.maxParticleSize = 1f;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            particleSystem.Clear(withChildren: true);
+            EditorUtility.SetDirty(smokeRoot);
+            EditorUtility.SetDirty(particleSystem);
+        }
+
+        private static ParticleSystem.MinMaxCurve CreateTwoConstantCurve(float min, float max)
+        {
+            ParticleSystem.MinMaxCurve curve = new ParticleSystem.MinMaxCurve();
+            curve.mode = ParticleSystemCurveMode.TwoConstants;
+            curve.constantMin = min;
+            curve.constantMax = max;
+            return curve;
         }
 
         private static void AttachReviewedGunshotAudio(GameObject root)
@@ -1405,25 +3213,66 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureReviewedCombatCueAudioBanks()
         {
-            PromoteReviewedAudioClips(PlayerRangedProjectileImpactSourceClipPaths, PlayerRangedProjectileImpactClipPaths);
+            PromoteReviewedAudioClips(PlayerDodgeStartSourceClipPaths, PlayerDodgeStartClipPaths);
+            PromoteReviewedAudioClips(PlayerPerfectDodgeTimeWarpSourceClipPaths, PlayerPerfectDodgeTimeWarpClipPaths);
+            PromoteReviewedAudioClips(PlayerPerfectDodgeSuccessSourceClipPaths, PlayerPerfectDodgeSuccessClipPaths);
+            ImportReviewedAudioClips(PlayerPerfectDodgeShieldActivateClipPaths);
+            ImportReviewedAudioClips(PlayerPerfectDodgeShieldBlockClipPaths);
             PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
             PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
             PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
+            ImportReviewedAudioClips(PlayerSummonPreSpawnPortalClipPaths);
+            ImportReviewedAudioClips(PlayerSummonLandingCraterClipPaths);
+            ImportReviewedAudioClips(PlayerSummonDragonBreathClipPaths);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerDodgeStart.prefab",
+                PlayerDodgeStartAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerDodgeStart.prefab",
+                PlayerDodgeStartAudioName,
+                PlayerDodgeStartClipPaths,
+                0.34f,
+                1.02f,
+                1.08f,
+                0.9f,
+                1.04f,
+                0.08f,
+                142);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeTimeField.prefab",
+                PlayerPerfectDodgeTimeWarpAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeTimeField.prefab",
+                PlayerPerfectDodgeTimeWarpAudioName,
+                PlayerPerfectDodgeTimeWarpClipPaths,
+                0.38f,
+                1.02f,
+                1.06f,
+                0.86f,
+                0.98f,
+                0.04f,
+                130);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeWindow.prefab",
+                PlayerPerfectDodgeSuccessAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerPerfectDodgeWindow.prefab",
+                PlayerPerfectDodgeSuccessAudioName,
+                PlayerPerfectDodgeShieldActivateClipPaths,
+                0.34f,
+                0.98f,
+                1.04f,
+                0.9f,
+                1.02f,
+                0.10f,
+                132);
 
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
                 PlayerRangedProjectileImpactAudioName);
-            AttachReviewedCueAudio(
-                PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
-                PlayerRangedProjectileImpactAudioName,
-                PlayerRangedProjectileImpactClipPaths,
-                0.52f,
-                0.98f,
-                1.05f,
-                0.92f,
-                1.04f,
-                0.18f,
-                132);
 
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_EliteSummonSignal.prefab",
@@ -1469,6 +3318,51 @@ namespace DimensionBrawl.Editor
                 1.04f,
                 0.16f,
                 136);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonPreSpawnPortal.prefab",
+                PlayerSummonPreSpawnPortalAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonPreSpawnPortal.prefab",
+                PlayerSummonPreSpawnPortalAudioName,
+                PlayerSummonPreSpawnPortalClipPaths,
+                0.42f,
+                0.98f,
+                1.04f,
+                0.88f,
+                1.02f,
+                0.16f,
+                136);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonLandingCrater.prefab",
+                PlayerSummonLandingCraterAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonLandingCrater.prefab",
+                PlayerSummonLandingCraterAudioName,
+                PlayerSummonLandingCraterClipPaths,
+                0.56f,
+                0.94f,
+                1.05f,
+                0.88f,
+                1.04f,
+                0.28f,
+                128);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonDragonBreathAudio.prefab",
+                PlayerSummonDragonBreathAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonDragonBreathAudio.prefab",
+                PlayerSummonDragonBreathAudioName,
+                PlayerSummonDragonBreathClipPaths,
+                0.48f,
+                0.96f,
+                1.03f,
+                0.9f,
+                1.02f,
+                0.35f,
+                126);
         }
 
         private static void StripReviewedCueAudio(string prefabPath, string childName)
@@ -1526,6 +3420,20 @@ namespace DimensionBrawl.Editor
                 EnsureFolder(Path.GetDirectoryName(targetClipPaths[i]).Replace('\\', '/'));
                 File.Copy(sourceClipPaths[i], targetClipPaths[i], overwrite: true);
                 AssetDatabase.ImportAsset(targetClipPaths[i], ImportAssetOptions.ForceUpdate);
+            }
+        }
+
+        private static void ImportReviewedAudioClips(string[] clipPaths)
+        {
+            for (int i = 0; i < clipPaths.Length; i++)
+            {
+                string absolutePath = ToProjectAbsolutePath(clipPaths[i]);
+                if (!File.Exists(absolutePath))
+                {
+                    throw new FileNotFoundException($"Missing reviewed audio clip at {clipPaths[i]}.");
+                }
+
+                AssetDatabase.ImportAsset(clipPaths[i], ImportAssetOptions.ForceUpdate);
             }
         }
 
@@ -1954,6 +3862,40 @@ namespace DimensionBrawl.Editor
             return primitive.GetComponent<Renderer>();
         }
 
+        private static Renderer AddMesh(
+            Transform parent,
+            string name,
+            Mesh mesh,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale)
+        {
+            if (mesh == null)
+            {
+                throw new InvalidOperationException($"{name} requires a mesh.");
+            }
+
+            if (material == null)
+            {
+                throw new InvalidOperationException($"{name} requires a material.");
+            }
+
+            GameObject meshObject = new GameObject(name);
+            meshObject.transform.SetParent(parent, worldPositionStays: false);
+
+            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+            MeshRenderer renderer = meshObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            ConfigureRendererForCue(renderer);
+
+            meshObject.transform.localPosition = localPosition;
+            meshObject.transform.localRotation = Quaternion.Euler(localEuler);
+            meshObject.transform.localScale = localScale;
+            return renderer;
+        }
+
         private static Renderer EnsurePrimitiveChild(
             Transform parent,
             string name,
@@ -2022,6 +3964,109 @@ namespace DimensionBrawl.Editor
             return mesh;
         }
 
+        private static Material LoadRequiredMaterial(string assetPath)
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(assetPath);
+            if (material == null)
+            {
+                throw new InvalidOperationException($"Missing required material at {assetPath}.");
+            }
+
+            return material;
+        }
+
+        private static Material LoadReviewedShapesFxMaterial(string assetPath)
+        {
+            Material material = LoadRequiredMaterial(assetPath);
+            RemapShapesFxImportedTextures(material);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void RemapShapesFxImportedTextures(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            string[] propertyNames = material.GetTexturePropertyNames();
+            for (int i = 0; i < propertyNames.Length; i++)
+            {
+                Texture texture = material.GetTexture(propertyNames[i]);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                string sourcePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                if (!sourcePath.StartsWith(ImportedShapesFxTextureRoot + "/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Texture promotedTexture = ResolveReviewedShapesFxTexture(sourcePath);
+                material.SetTexture(propertyNames[i], promotedTexture);
+            }
+        }
+
+        private static Texture ResolveReviewedShapesFxTexture(string sourcePath)
+        {
+            string relativePath = sourcePath.Substring(ImportedShapesFxTextureRoot.Length + 1);
+            string targetPath = ShapesFxTextureRoot + "/" + relativePath;
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture != null)
+            {
+                return texture;
+            }
+
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+            {
+                throw new InvalidOperationException($"Failed to promote Shapes FX texture from {sourcePath} to {targetPath}.");
+            }
+
+            AssetDatabase.ImportAsset(targetPath);
+            texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Promoted Shapes FX texture did not import at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static Mesh LoadRequiredMesh(string assetPath)
+        {
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Mesh embeddedMesh && !embeddedMesh.name.Contains("__preview"))
+                {
+                    return embeddedMesh;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing required mesh at {assetPath}.");
+        }
+
+        private static GameObject LoadRequiredPrefab(string assetPath, string label)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException($"Missing required {label} prefab at {assetPath}.");
+            }
+
+            return prefab;
+        }
+
         private static Material LoadOrCreateParticleMaterial(string name, Color color, bool additive = true)
         {
             string path = $"{MaterialRoot}/{name}.mat";
@@ -2055,6 +4100,58 @@ namespace DimensionBrawl.Editor
                 material.renderQueue = (int)RenderQueue.Transparent;
             }
 
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeWorldFxMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                "DB_PerfectDodgeWorldFx",
+                PerfectDodgeWorldFxShaderPath);
+            SetMaterialColorIfPresent(material, "_ColorA", new Color(0.12f, 0.96f, 1f, 0.82f));
+            SetMaterialColorIfPresent(material, "_ColorB", new Color(0.58f, 0.24f, 1f, 0.72f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.7f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1.35f);
+            SetMaterialFloatIfPresent(material, "_RimPower", 2.8f);
+            SetMaterialFloatIfPresent(material, "_NoiseScale", 7f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeAfterimageMaterial()
+        {
+            Material material = LoadOrCreatePerfectDodgeMaterial(
+                "DB_PerfectDodgeAfterimage",
+                PerfectDodgeAfterimageShaderPath);
+            SetMaterialColorIfPresent(material, "_BaseColor", new Color(0.34f, 0.98f, 1f, 0.42f));
+            SetMaterialColorIfPresent(material, "_RimColor", new Color(0.72f, 0.36f, 1f, 0.9f));
+            SetMaterialFloatIfPresent(material, "_Alpha", 0.42f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 1f);
+            SetMaterialFloatIfPresent(material, "_FresnelPower", 2.2f);
+            SetMaterialFloatIfPresent(material, "_ScanStrength", 0.48f);
+            return material;
+        }
+
+        private static Material LoadOrCreatePerfectDodgeMaterial(string materialName, string shaderPath)
+        {
+            EnsureFolder(MaterialRoot);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Missing perfect dodge shader at {shaderPath}.");
+            }
+
+            string materialPath = $"{MaterialRoot}/{materialName}.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+
+            material.shader = shader;
+            material.enableInstancing = true;
+            material.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -2584,6 +4681,14 @@ namespace DimensionBrawl.Editor
             public GameObject PlayerAttackStart;
             public GameObject PlayerAttackHit;
             public GameObject PlayerDodgeStart;
+            public GameObject PlayerPerfectDodgeTimeField;
+            public GameObject PlayerPerfectDodgePulsewave;
+            public GameObject PlayerPerfectDodgeHoloCube;
+            public GameObject PlayerPerfectDodgeWindow;
+            public GameObject PlayerPerfectDodgeShieldBlockImpact;
+            public GameObject PlayerSummonPreSpawnPortal;
+            public GameObject PlayerSummonLandingCrater;
+            public GameObject PlayerSummonDragonBreathAudio;
             public GameObject PlayerRangedMuzzleFlash;
             public GameObject PlayerRangedProjectileImpact;
             public GameObject EnemyWindup;

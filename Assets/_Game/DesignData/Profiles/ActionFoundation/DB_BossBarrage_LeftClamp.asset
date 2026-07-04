@@ -25,12 +25,12 @@ MonoBehaviour:
   telegraphPulseScale: 1
   projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
   projectileVisualScale: {x: 1, y: 1, z: 1}
-  projectileMaterial: {fileID: 0}
+  projectileMaterial: {fileID: 2100000, guid: 1edb3a42b2a100e48b17985cec0c3da5, type: 2}
   initialDelaySeconds: 0.2
-  windupSeconds: 1.05
-  waveIntervalSeconds: 5.4
-  projectilesPerWave: 5
-  damage: 10
+  windupSeconds: 1.2
+  waveIntervalSeconds: 6.6
+  projectilesPerWave: 4
+  damage: 8
   projectileSpeed: 12.8
   projectileLifetimeSeconds: 5
   projectileRadius: 0.3

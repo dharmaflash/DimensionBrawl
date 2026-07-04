@@ -165,6 +165,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetVector2(UnityEngine.Object target, string propertyName, Vector2 value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).vector2Value = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetColor(UnityEngine.Object target, string propertyName, Color value)
         {
             var serializedObject = new SerializedObject(target);
@@ -463,6 +471,15 @@ namespace DimensionBrawl.Editor
         private static void ValidateVector3(UnityEngine.Object target, string propertyName, Vector3 expected)
         {
             Vector3 actual = RequireProperty(new SerializedObject(target), propertyName).vector3Value;
+            if ((actual - expected).sqrMagnitude > 0.000001f)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateVector2(UnityEngine.Object target, string propertyName, Vector2 expected)
+        {
+            Vector2 actual = RequireProperty(new SerializedObject(target), propertyName).vector2Value;
             if ((actual - expected).sqrMagnitude > 0.000001f)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");

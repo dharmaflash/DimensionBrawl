@@ -422,10 +422,11 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  attackRangeSlowdownDistance: 1.05
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
-  attackRange: 1.65
+  attackRange: 2.25
   telegraphSeconds: 0.65
   activeSeconds: 0.14
   recoverySeconds: 0.45
@@ -437,6 +438,10 @@ MonoBehaviour:
   attackHalfWidth: 0.65
   attackHalfAngleDegrees: 28
   lockAttackDirectionOnWindup: 0
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.46
+  contactDamageVfxHeightOffset: 0.58
+  contactDamageVfxLifetimeSeconds: 0.72
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed

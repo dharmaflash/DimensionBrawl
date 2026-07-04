@@ -3643,7 +3643,7 @@ MonoBehaviour:
   faceTargetOnActivate: 1
   defaultAdvanceDistance: 0
   defaultAdvanceSeconds: 0.25
-  defeatedLingerSeconds: 0.22
+  defeatedLingerSeconds: 1.18
   advanceStartDelaySeconds: 0.18
   advanceAcceleration: 8.5
   advanceDeceleration: 15
@@ -3759,7 +3759,7 @@ MonoBehaviour:
   spawnStateName: EliteSummonPackage
   spawnMovementLockSeconds: 0.25
   attackTrigger: Attack
-  hitTrigger: 
+  hitTrigger: Hit
   deathTrigger: Death
   animatorMoveSpeedScale: 0.52
   pulseRoot: {fileID: 3753305637982622612}
@@ -3865,6 +3865,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 51
   prioritizeHostileSummons: 1
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.52
+  contactDamageVfxHeightOffset: 0.55
+  contactDamageVfxLifetimeSeconds: 0.72
 --- !u!114 &4219546254231689212
 MonoBehaviour:
   m_ObjectHideFlags: 0

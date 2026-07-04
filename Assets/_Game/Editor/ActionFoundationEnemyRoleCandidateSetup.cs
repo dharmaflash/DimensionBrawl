@@ -165,6 +165,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(soldier, "selfHealth", health);
             SetObjectReference(soldier, "targetSensor", targetSensor);
             SetObjectReferenceArray(targetSensor, "targetCandidates", Array.Empty<UnityEngine.Object>());
+            ConfigureSoldierContactDamagePresentation(soldier, role);
 
             SetObjectReference(cuePlayer, "profile", vfxCueProfile);
             SetObjectReference(cuePlayer, "pooledRoot", EnsureLocalChild(root.transform, VfxPoolChildName));
@@ -211,6 +212,41 @@ namespace DimensionBrawl.Editor
 
             ActionFoundationEnemyRoleVisualSetup.Apply(root, spec.Visual);
             ValidateNoRawImportedOrExternalSceneReferences(root);
+        }
+
+        private static void ConfigureSoldierContactDamagePresentation(
+            BasicSoldierEnemy soldier,
+            CombatEnemyRoleProfile role)
+        {
+            SetObjectReference(
+                soldier,
+                "contactDamageVfxPrefab",
+                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+            SetFloat(soldier, "contactDamageVfxScale", 0.46f);
+            SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
+            SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
+
+            if (IsRangedSoldierRole(role))
+            {
+                SetFloat(soldier, "attackRangeSlowdownDistance", 1.05f);
+                SetFloat(soldier, "attackRange", 2.25f);
+            }
+        }
+
+        private static bool IsRangedSoldierRole(CombatEnemyRoleProfile role)
+        {
+            if (role == null || string.IsNullOrWhiteSpace(role.RoleId))
+            {
+                return false;
+            }
+
+            string roleId = role.RoleId;
+            return roleId.IndexOf("LineCaster", StringComparison.Ordinal) >= 0
+                || roleId.IndexOf("FanSuppressor", StringComparison.Ordinal) >= 0
+                || roleId.IndexOf("BacklineShooter", StringComparison.Ordinal) >= 0
+                || roleId.IndexOf("AuraCaptain", StringComparison.Ordinal) >= 0
+                || roleId.IndexOf("PhaseDuelist", StringComparison.Ordinal) >= 0
+                || roleId.IndexOf("FinalStandCommander", StringComparison.Ordinal) >= 0;
         }
 
         private static void ConfigureRoleCandidateProfile(
@@ -478,6 +514,15 @@ namespace DimensionBrawl.Editor
                 {
                     throw new InvalidOperationException($"{candidate.Role.RoleId} soldier should use its local target sensor.");
                 }
+
+                ValidateObjectReference(
+                    soldier,
+                    "contactDamageVfxPrefab",
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        ActionFoundationBossBarrageLaneReviewSetup.SummonContactDamageLightningVfxPrefabPath));
+                ValidateFloat(soldier, "contactDamageVfxScale", 0.46f);
+                ValidateFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
+                ValidateFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
 
                 if (targetSensor.TargetCandidateCount != 0)
                 {

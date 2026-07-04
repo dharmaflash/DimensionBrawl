@@ -77,6 +77,12 @@ namespace DimensionBrawl.Enemies
         [SerializeField, Range(0f, 90f)] private float attackHalfAngleDegrees = 28f;
         [SerializeField] private bool lockAttackDirectionOnWindup;
 
+        [Header("Contact Damage VFX")]
+        [SerializeField] private GameObject contactDamageVfxPrefab;
+        [SerializeField, Min(0.01f)] private float contactDamageVfxScale = 0.46f;
+        [SerializeField, Min(0f)] private float contactDamageVfxHeightOffset = 0.58f;
+        [SerializeField, Min(0.05f)] private float contactDamageVfxLifetimeSeconds = 0.72f;
+
         [Header("Hit Reaction")]
         [Tooltip("Uses the collected light enemy stagger range of 0.18-0.35 seconds.")]
         [SerializeField, Min(0f)] private float hitReactionSeconds = 0.24f;
@@ -259,7 +265,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
+            float deltaTime = Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this);
 
             switch (state)
             {
@@ -480,7 +486,35 @@ namespace DimensionBrawl.Enemies
                 ActiveDamageResponsePolicy,
                 ActiveControlLockPolicy);
 
-            targetHealth.TryApplyDamage(damageInfo);
+            if (targetHealth.TryApplyDamage(damageInfo))
+            {
+                SpawnContactDamageVfx(damageInfo.Point, direction);
+            }
+        }
+
+        private void SpawnContactDamageVfx(Vector3 hitPoint, Vector3 direction)
+        {
+            if (contactDamageVfxPrefab == null)
+            {
+                return;
+            }
+
+            Vector3 spawnPoint = hitPoint + Vector3.up * contactDamageVfxHeightOffset;
+            Quaternion rotation = ResolveContactDamageVfxRotation(direction);
+            GameObject instance = Instantiate(contactDamageVfxPrefab, spawnPoint, rotation);
+            instance.transform.localScale *= Mathf.Max(0.01f, contactDamageVfxScale);
+            Destroy(instance, Mathf.Max(0.05f, contactDamageVfxLifetimeSeconds));
+        }
+
+        private Quaternion ResolveContactDamageVfxRotation(Vector3 direction)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planarDirection.sqrMagnitude <= 0.0001f)
+            {
+                planarDirection = transform.forward;
+            }
+
+            return Quaternion.LookRotation(planarDirection.normalized, Vector3.up);
         }
 
         private DamageResponsePolicy ResolveLocalDamageResponsePolicy()

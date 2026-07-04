@@ -1,3 +1,4 @@
+using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using UnityEngine;
 
@@ -67,6 +68,19 @@ namespace DimensionBrawl.Presentation
             cameraDistanceDelta = -0.20f,
             focusHeightDelta = 0.03f,
             durationSeconds = 0.28f,
+            finisherScale = 1f
+        };
+
+        [Tooltip("Perfect-dodge domain cue. Wider and slightly pulled back so the slowed threat field reads without stealing control.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue perfectDodgeCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.12f, -0.32f),
+            planarDirectionOffset = -0.30f,
+            fieldOfViewDelta = 3.6f,
+            cameraDistanceDelta = -0.34f,
+            focusHeightDelta = 0.08f,
+            durationSeconds = 0.34f,
             finisherScale = 1f
         };
 
@@ -285,6 +299,8 @@ namespace DimensionBrawl.Presentation
         private ActionCameraCueProfile.CameraCue ActiveStopSettleCue => cueProfile != null ? cueProfile.StopSettleCue : stopSettleCue;
         private ActionCameraCueProfile.CameraCue ActiveSharpTurnCue => cueProfile != null ? cueProfile.SharpTurnCue : sharpTurnCue;
         private ActionCameraCueProfile.CameraCue ActiveDodgeCue => cueProfile != null ? cueProfile.DodgeCue : dodgeCue;
+        private ActionCameraCueProfile.CameraCue ActivePerfectDodgeCue =>
+            cueProfile != null ? cueProfile.PerfectDodgeCue : perfectDodgeCue;
         private ActionCameraCueProfile.CameraCue ActiveAttackStartCue => cueProfile != null ? cueProfile.AttackStartCue : attackStartCue;
         private ActionCameraCueProfile.CameraCue ActiveAttackHitCue => cueProfile != null ? cueProfile.AttackHitCue : attackHitCue;
         private ActionCameraCueProfile.CameraCue ActiveSkill1Cue => cueProfile != null ? cueProfile.Skill1Cue : skill1Cue;
@@ -333,6 +349,7 @@ namespace DimensionBrawl.Presentation
             if (actionController != null)
             {
                 actionController.DodgeStarted += HandleDodgeStarted;
+                actionController.PerfectDodgeTriggered += HandlePerfectDodgeTriggered;
                 actionController.BasicAttackStarted += HandleBasicAttackStarted;
                 actionController.BasicAttackHit += HandleBasicAttackHit;
             }
@@ -361,6 +378,7 @@ namespace DimensionBrawl.Presentation
             if (actionController != null)
             {
                 actionController.DodgeStarted -= HandleDodgeStarted;
+                actionController.PerfectDodgeTriggered -= HandlePerfectDodgeTriggered;
                 actionController.BasicAttackStarted -= HandleBasicAttackStarted;
                 actionController.BasicAttackHit -= HandleBasicAttackHit;
             }
@@ -398,6 +416,13 @@ namespace DimensionBrawl.Presentation
         {
             Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : ResolvePlanarDirection();
             RequestCue(ActiveDodgeCue, dodgeDirection, 1f);
+        }
+
+        private void HandlePerfectDodgeTriggered(DamageInfo damageInfo)
+        {
+            Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : ResolvePlanarDirection();
+            RequestCue(ActivePerfectDodgeCue, dodgeDirection, 1f);
+            cameraController?.RequestPerfectDodgeFeedback(dodgeDirection);
         }
 
         private void HandleBasicAttackStarted(int comboIndex)
@@ -441,6 +466,7 @@ namespace DimensionBrawl.Presentation
         public void RequestSummonPressureBlockCue(int tier)
         {
             ActionCameraCueProfile.CameraCue cue = ActiveSummonPressureBlockCue;
+            cameraController?.RequestShieldBlockFeedback(ResolvePlanarDirection(), Mathf.Clamp01(tier / 3f));
             if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
             {
                 summonPressureBlockCueRequestCount++;

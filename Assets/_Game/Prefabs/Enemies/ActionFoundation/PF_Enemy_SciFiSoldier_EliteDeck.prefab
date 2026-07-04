@@ -454,10 +454,15 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
+  approachAcceleration: 10
+  approachDeceleration: 16
+  attackRangeSlowdownDistance: 1.05
+  minimumAttackRangeSpeedScale: 0.38
+  turnAlignmentSpeedFloor: 0.42
   prepareSeconds: 0
   prepareRetreatSpeed: 0
   lockAttackDirectionAfterPrepare: 1
-  attackRange: 1.65
+  attackRange: 2.25
   telegraphSeconds: 0.65
   activeSeconds: 0.14
   recoverySeconds: 0.45
@@ -469,6 +474,10 @@ MonoBehaviour:
   attackHalfWidth: 0.65
   attackHalfAngleDegrees: 28
   lockAttackDirectionOnWindup: 0
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.46
+  contactDamageVfxHeightOffset: 0.58
+  contactDamageVfxLifetimeSeconds: 0.72
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed
@@ -497,6 +506,8 @@ MonoBehaviour:
   health: {fileID: 588362265856980382}
   flashRenderers:
   - {fileID: 4547807648821404836}
+  cameraController: {fileID: 0}
+  visualRecoilRoot: {fileID: 0}
   renderHitFeedback: 1
   applyIdleColorOnEnable: 0
   idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
@@ -506,6 +517,40 @@ MonoBehaviour:
   hitColorBlend: 0.72
   hitEmissionBoost: 1.35
   deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
+  playCameraImpulse: 1
+  cameraImpulseCooldownSeconds: 0.07
+  lightCameraPlanarKick: 0.035
+  heavyCameraPlanarKick: 0.095
+  lightCameraVerticalKick: 0.012
+  heavyCameraVerticalKick: 0.04
+  lightCameraCueSeconds: 0.075
+  heavyCameraCueSeconds: 0.125
+  lightCameraFieldOfViewDelta: -0.25
+  heavyCameraFieldOfViewDelta: -0.85
+  lightCameraDistanceDelta: 0.015
+  heavyCameraDistanceDelta: 0.075
+  heavyCameraFocusHeightDelta: 0.035
+  playCameraMicroShake: 1
+  lightCameraMicroShakeSeconds: 0.055
+  heavyCameraMicroShakeSeconds: 0.12
+  lightCameraMicroShakePosition: 0.018
+  heavyCameraMicroShakePosition: 0.065
+  lightCameraMicroShakeEuler: 0.18
+  heavyCameraMicroShakeEuler: 0.78
+  playVisualRecoil: 1
+  visualRecoilCooldownSeconds: 0.045
+  lightRecoilDistance: 0.018
+  heavyRecoilDistance: 0.06
+  lightRecoilDegrees: 1.4
+  heavyRecoilDegrees: 4.5
+  recoilReturnSeconds: 0.095
+  playHitStop: 1
+  hitStopTimeScale: 0.18
+  hitStopCooldownSeconds: 0.055
+  lightHitStopScale: 0.72
+  heavyHitStopScale: 1.1
+  heavyDamageHealthRatio: 0.12
+  criticalHealthRatio: 0.35
 --- !u!114 &1723507719883532315
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -592,6 +637,12 @@ MonoBehaviour:
   cuePlayer: {fileID: 3696014270878751804}
   cueAnchor: {fileID: 5481267910237388593}
   elitePatternController: {fileID: 6191798458457565209}
+  damageCueIntensity: 1
+  pressureDamageCueScale: 0.66
+  playDamageVfx: 1
+  offsetDamageVfxToHitPoint: 1
+  maxHitPointLocalOffset: 1.35
+  playDeathVfx: 0
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -601,8 +652,8 @@ MonoBehaviour:
   - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
     windupCueId: 10
     attackActiveCueId: 11
-    windupIntensity: 1.05
-    attackActiveIntensity: 1.08
+    windupIntensity: 0.55
+    attackActiveIntensity: 0.48
   - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
     windupCueId: 12
     attackActiveCueId: 13
@@ -649,12 +700,6 @@ MonoBehaviour:
   - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
     signalCueId: 28
     intensity: 1.18
-  damageCueIntensity: 1
-  pressureDamageCueScale: 0.66
-  playDamageVfx: 1
-  offsetDamageVfxToHitPoint: 1
-  maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
 --- !u!114 &6191798458457565209
 MonoBehaviour:
   m_ObjectHideFlags: 0

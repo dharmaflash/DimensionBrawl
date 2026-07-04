@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Player;
@@ -19,6 +20,17 @@ namespace DimensionBrawl.Editor
     {
         private const string CombatHudPrefabPath = "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab";
         private const string DimensionHudArtRoot = "Assets/_Game/UI/CombatHud/Art/DimensionHud";
+        private const string CombatHudMaterialRoot = "Assets/_Game/UI/CombatHud/Materials";
+        private const string CombatHudGeneratedArtRoot = "Assets/_Game/UI/CombatHud/Generated";
+        private const string CombatHudDisabledSummonIconMaterialPath =
+            CombatHudMaterialRoot + "/DB_UI_SummonIconDisabledGrayscale.mat";
+        private const string CombatHudDisabledSummonIconShaderName = "DimensionBrawl/UI/GrayscaleTint";
+        private const string CombatHudSummonProgressRingSpritePath =
+            CombatHudGeneratedArtRoot + "/DB_UI_SummonProgressRing.png";
+        private const string CombatHudSummonReadyGlowSpritePath =
+            CombatHudGeneratedArtRoot + "/DB_UI_SummonReadyGlow.png";
+        private const string CombatHudSummonReadySparkSpritePath =
+            CombatHudGeneratedArtRoot + "/DB_UI_SummonReadySparkRing.png";
         private const string CombatHudCanvasRootName = ReviewRootPrefix + "CombatHudCanvas";
         private const string CombatHudEventSystemRootName = ReviewRootPrefix + "CombatHudEventSystem";
         private const string DimensionHudSkinRootName = "DimensionHudSkinRoot";
@@ -26,6 +38,7 @@ namespace DimensionBrawl.Editor
         private static readonly Color CombatHudHealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
         private static readonly Color CombatHudResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color CombatHudInputReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color CombatHudAmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
         private static readonly Color CombatHudReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
         private static readonly Color CombatHudSummonStateColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color CombatHudSummonLabelColor = new Color(1f, 0.92f, 0.68f, 1f);
@@ -36,6 +49,8 @@ namespace DimensionBrawl.Editor
         public static void ReapplyBossBarrageCombatHudUiMenu()
         {
             EnsureDimensionHudSpriteImporters();
+            EnsureCombatHudUiMaterials();
+            EnsureCombatHudUiGeneratedSprites();
             Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
             EnsureExistingReviewHudVisualPolicy(scene);
             EnsureCombatHudCanvasForOpenScene(scene);
@@ -63,6 +78,8 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewOverlayHud overlayHud)
         {
             EnsureDimensionHudSpriteImporters();
+            EnsureCombatHudUiMaterials();
+            EnsureCombatHudUiGeneratedSprites();
             EnsureExistingReviewHudVisualPolicy(scene);
             GameObject canvasRoot = EnsureCombatHudCanvasForOpenScene(scene);
             ConfigureCombatHudBinder(
@@ -250,6 +267,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(binder, "playerHealth", playerHealth);
             SetObjectReference(binder, "bossHealth", bossHealth);
             SetObjectReference(binder, "energyLadder", energyLadder);
+            SetObjectReference(binder, "bossCostLadder", UnityEngine.Object.FindFirstObjectByType<BossPressureCostLadder>());
             SetObjectReference(binder, "actionController", actionController);
             SetObjectReference(binder, "combatModeController", combatModeController);
             SetObjectReference(binder, "rangedBasicAttackAction", rangedBasicAttackAction);
@@ -344,6 +362,7 @@ namespace DimensionBrawl.Editor
             }
 
             Image bossHpFill = FindHudDescendant(canvasRoot.transform, "BossHpFill")?.GetComponent<Image>();
+            Image bossCostFill = FindHudDescendant(canvasRoot.transform, "BossCostFill")?.GetComponent<Image>();
             if (bossHpFill != null)
             {
                 bossHpFill.type = Image.Type.Filled;
@@ -353,8 +372,19 @@ namespace DimensionBrawl.Editor
                 MarkComponentDirty(bossHpFill);
             }
 
+            if (bossCostFill != null)
+            {
+                bossCostFill.type = Image.Type.Filled;
+                bossCostFill.fillMethod = Image.FillMethod.Horizontal;
+                bossCostFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+                bossCostFill.fillAmount = 0f;
+                MarkComponentDirty(bossCostFill);
+            }
+
             SetObjectReference(presenter, "bossHealthFill", bossHpFill);
+            SetObjectReference(presenter, "bossResourceFill", bossCostFill);
             SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
+            SetObjectReference(presenter, "ammoText", FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
             MarkComponentDirty(presenter);
         }
 
@@ -527,6 +557,10 @@ namespace DimensionBrawl.Editor
         private static void ApplyDimensionHudSkin(GameObject hudRoot)
         {
             Dictionary<string, Sprite> sprites = LoadDimensionHudSprites();
+            Material disabledIconMaterial = LoadAsset<Material>(CombatHudDisabledSummonIconMaterialPath);
+            Sprite progressRingSprite = LoadAsset<Sprite>(CombatHudSummonProgressRingSpritePath);
+            Sprite readyGlowSprite = LoadAsset<Sprite>(CombatHudSummonReadyGlowSpritePath);
+            Sprite readySparkSprite = LoadAsset<Sprite>(CombatHudSummonReadySparkSpritePath);
             Image rootImage = hudRoot.GetComponent<Image>();
             if (rootImage != null)
             {
@@ -569,6 +603,13 @@ namespace DimensionBrawl.Editor
                 new Rect(1461.5f, 1327f, 147f, 26f),
                 CombatHudResourceReadoutColor,
                 20);
+            EnsureHudText(hudRoot, "AmmoText", "24/24");
+            ConfigureReadoutText(
+                hudRoot,
+                "AmmoText",
+                new Rect(1650f, 1268f, 178f, 42f),
+                CombatHudAmmoReadoutColor,
+                18);
 
             ConfigureImage(hudRoot, "PauseButton", sprites["Hud_ButtonPause"], new Rect(2396f, 47f, 100f, 95f), preserveAspect: false);
             ConfigureImage(hudRoot, "MoveJoystickRing", sprites["Hud_JoystickPanel"], new Rect(155f, 853f, 421f, 415f), preserveAspect: false);
@@ -591,19 +632,31 @@ namespace DimensionBrawl.Editor
                 "SummonSlot1Button",
                 new Vector2(211f, 216f),
                 16,
-                sprites["Hud_SummonSlot1Icon"]);
+                sprites["Hud_SummonSlot1Icon"],
+                disabledIconMaterial,
+                progressRingSprite,
+                readyGlowSprite,
+                readySparkSprite);
             ConfigureSummonSlotPresentation(
                 hudRoot,
                 "SummonSlot2Button",
                 new Vector2(182f, 186f),
                 15,
-                sprites["Hud_SummonSlot2Icon"]);
+                sprites["Hud_SummonSlot2Icon"],
+                disabledIconMaterial,
+                progressRingSprite,
+                readyGlowSprite,
+                readySparkSprite);
             ConfigureSummonSlotPresentation(
                 hudRoot,
                 "SummonSlot3Button",
                 new Vector2(179f, 183f),
                 15,
-                sprites["Hud_SummonSlot3Icon"]);
+                sprites["Hud_SummonSlot3Icon"],
+                disabledIconMaterial,
+                progressRingSprite,
+                readyGlowSprite,
+                readySparkSprite);
             EditorUtility.SetDirty(hudRoot);
         }
 
@@ -744,6 +797,34 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target.gameObject);
         }
 
+        private static Text EnsureHudText(GameObject hudRoot, string objectName, string defaultText)
+        {
+            Transform target = FindHudDescendant(hudRoot.transform, objectName);
+            if (target == null)
+            {
+                GameObject textObject = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+                textObject.transform.SetParent(hudRoot.transform, worldPositionStays: false);
+                target = textObject.transform;
+                target.SetAsLastSibling();
+                EditorUtility.SetDirty(textObject);
+            }
+
+            Text text = target.GetComponent<Text>();
+            if (text == null)
+            {
+                text = target.gameObject.AddComponent<Text>();
+            }
+
+            if (text.font == null)
+            {
+                text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
+
+            text.text = defaultText;
+            MarkComponentDirty(text);
+            return text;
+        }
+
         private static void HideLegacyHudLabels(GameObject hudRoot)
         {
             string[] hiddenNames =
@@ -804,7 +885,11 @@ namespace DimensionBrawl.Editor
             string buttonName,
             Vector2 buttonSize,
             int fontSize,
-            Sprite iconSprite)
+            Sprite iconSprite,
+            Material disabledIconMaterial,
+            Sprite progressRingSprite,
+            Sprite readyGlowSprite,
+            Sprite readySparkSprite)
         {
             Transform button = FindHudDescendant(hudRoot.transform, buttonName);
             if (button == null)
@@ -817,12 +902,45 @@ namespace DimensionBrawl.Editor
 
             ConfigureLocalImage(
                 button,
+                "ReadyGlow",
+                ResolveSummonReadyEffectRect(buttonSize, 1.18f),
+                buttonSize,
+                readyGlowSprite,
+                new Color(1f, 0.78f, 0.2f, 0f),
+                preserveAspect: false);
+            ConfigureSummonSlotProgressFill(button, buttonSize, progressRingSprite);
+            ConfigureLocalImage(
+                button,
+                "IconDisabled",
+                ResolveSummonIconRect(buttonSize),
+                buttonSize,
+                iconSprite,
+                new Color(0.26f, 0.28f, 0.31f, 0f),
+                disabledIconMaterial);
+            ConfigureSummonSlotDisabledIcon(button);
+            ConfigureLocalImage(
+                button,
                 "Icon",
                 ResolveSummonIconRect(buttonSize),
                 buttonSize,
                 iconSprite,
                 CombatHudSummonIconColor);
-            ConfigureSummonSlotProgressFill(button, buttonSize);
+            ConfigureLocalImage(
+                button,
+                "ReadyRing",
+                ResolveSummonReadyEffectRect(buttonSize, 1.05f),
+                buttonSize,
+                progressRingSprite,
+                new Color(1f, 0.92f, 0.38f, 0f),
+                preserveAspect: false);
+            ConfigureLocalImage(
+                button,
+                "ReadySparkRing",
+                ResolveSummonReadyEffectRect(buttonSize, 0.94f),
+                buttonSize,
+                readySparkSprite,
+                new Color(0.42f, 0.98f, 1f, 0f),
+                preserveAspect: false);
             ConfigureLocalText(
                 button,
                 "Label",
@@ -837,6 +955,7 @@ namespace DimensionBrawl.Editor
                 buttonSize,
                 CombatHudSummonStateColor,
                 Mathf.Max(20, fontSize + 5));
+            ApplySummonSlotVisualOrder(button);
         }
 
         private static Rect ResolveSummonLabelRect(Vector2 buttonSize)
@@ -866,13 +985,24 @@ namespace DimensionBrawl.Editor
             return new Rect(x, y, width, height);
         }
 
+        private static Rect ResolveSummonReadyEffectRect(Vector2 buttonSize, float scale)
+        {
+            float width = buttonSize.x * scale;
+            float height = buttonSize.y * scale;
+            float x = (buttonSize.x - width) * 0.5f;
+            float y = (buttonSize.y - height) * 0.5f;
+            return new Rect(x, y, width, height);
+        }
+
         private static void ConfigureLocalImage(
             Transform root,
             string objectName,
             Rect localRect,
             Vector2 parentSize,
             Sprite sprite,
-            Color color)
+            Color color,
+            Material material = null,
+            bool preserveAspect = true)
         {
             Transform target = root.Find(objectName);
             if (target == null)
@@ -887,14 +1017,60 @@ namespace DimensionBrawl.Editor
             Image image = target.GetComponent<Image>();
             image.sprite = sprite;
             image.color = sprite != null ? color : Color.clear;
+            image.material = material;
             image.raycastTarget = false;
-            image.preserveAspect = true;
+            image.preserveAspect = preserveAspect;
             image.type = Image.Type.Simple;
             MarkComponentDirty(image);
             EditorUtility.SetDirty(target.gameObject);
         }
 
-        private static void ConfigureSummonSlotProgressFill(Transform button, Vector2 buttonSize)
+        private static void ApplySummonSlotVisualOrder(Transform button)
+        {
+            string[] orderedChildren =
+            {
+                "ReadyGlow",
+                "Icon",
+                "IconDisabled",
+                "CooldownFill",
+                "ReadyRing",
+                "ReadySparkRing",
+                "Label",
+                "State"
+            };
+
+            for (int i = 0; i < orderedChildren.Length; i++)
+            {
+                Transform child = button.Find(orderedChildren[i]);
+                if (child != null)
+                {
+                    child.SetAsLastSibling();
+                    EditorUtility.SetDirty(child.gameObject);
+                }
+            }
+        }
+
+        private static void ConfigureSummonSlotDisabledIcon(Transform button)
+        {
+            Transform target = button.Find("IconDisabled");
+            Image image = target != null ? target.GetComponent<Image>() : null;
+            if (image == null)
+            {
+                return;
+            }
+
+            image.raycastTarget = false;
+            image.preserveAspect = true;
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Radial360;
+            image.fillOrigin = (int)Image.Origin360.Top;
+            image.fillClockwise = false;
+            image.fillAmount = 1f;
+            MarkComponentDirty(image);
+            EditorUtility.SetDirty(image.gameObject);
+        }
+
+        private static void ConfigureSummonSlotProgressFill(Transform button, Vector2 buttonSize, Sprite progressRingSprite)
         {
             Transform fill = FindHudDescendant(button, "CooldownFill");
             if (fill == null)
@@ -911,9 +1087,8 @@ namespace DimensionBrawl.Editor
 
             ApplyLocalRect(fill.GetComponent<RectTransform>(), new Rect(Vector2.zero, buttonSize), buttonSize);
             Image image = fill.GetComponent<Image>();
-            Image buttonImage = button.GetComponent<Image>();
-            image.sprite = buttonImage != null ? buttonImage.sprite : null;
-            image.color = image.sprite != null ? CombatHudSummonProgressColor : Color.clear;
+            image.sprite = progressRingSprite;
+            image.color = Color.clear;
             image.raycastTarget = false;
             image.preserveAspect = false;
             image.type = Image.Type.Filled;
@@ -1113,6 +1288,160 @@ namespace DimensionBrawl.Editor
             return sprites;
         }
 
+        private static void EnsureCombatHudUiMaterials()
+        {
+            EnsureAssetFolder("Assets/_Game/UI/CombatHud", "Materials");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(CombatHudDisabledSummonIconMaterialPath);
+            Shader shader = Shader.Find(CombatHudDisabledSummonIconShaderName);
+            if (shader == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing summon HUD grayscale shader '{CombatHudDisabledSummonIconShaderName}'.");
+            }
+
+            if (material == null)
+            {
+                material = new Material(shader)
+                {
+                    name = "DB_UI_SummonIconDisabledGrayscale"
+                };
+                AssetDatabase.CreateAsset(material, CombatHudDisabledSummonIconMaterialPath);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+            }
+
+            material.color = new Color(0.88f, 0.9f, 0.92f, 1f);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureCombatHudUiGeneratedSprites()
+        {
+            EnsureAssetFolder("Assets/_Game/UI/CombatHud", "Generated");
+            EnsureGeneratedSpriteTexture(CombatHudSummonProgressRingSpritePath, CreateSummonProgressRingPixel);
+            EnsureGeneratedSpriteTexture(CombatHudSummonReadyGlowSpritePath, CreateSummonReadyGlowPixel);
+            EnsureGeneratedSpriteTexture(CombatHudSummonReadySparkSpritePath, CreateSummonReadySparkPixel);
+        }
+
+        private delegate Color32 GeneratedUiPixel(int x, int y, int size);
+
+        private static void EnsureGeneratedSpriteTexture(string assetPath, GeneratedUiPixel pixel)
+        {
+            string absolutePath = AssetPathToAbsolutePath(assetPath);
+            if (!File.Exists(absolutePath))
+            {
+                const int size = 192;
+                Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                {
+                    filterMode = FilterMode.Bilinear,
+                    wrapMode = TextureWrapMode.Clamp
+                };
+
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        texture.SetPixel(x, y, pixel(x, y, size));
+                    }
+                }
+
+                texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+                File.WriteAllBytes(absolutePath, texture.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(texture);
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            }
+
+            ConfigureGeneratedSpriteImporter(assetPath);
+        }
+
+        private static string AssetPathToAbsolutePath(string assetPath)
+        {
+            if (!assetPath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Expected project asset path, got {assetPath}.");
+            }
+
+            string relativeToAssets = assetPath.Substring("Assets/".Length).Replace('/', Path.DirectorySeparatorChar);
+            return Path.Combine(Application.dataPath, relativeToAssets);
+        }
+
+        private static void ConfigureGeneratedSpriteImporter(string assetPath)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                return;
+            }
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = true;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
+
+        private static Color32 CreateSummonProgressRingPixel(int x, int y, int size)
+        {
+            float distance = DistanceFromCenter01(x, y, size);
+            float outer = 1f - Mathf.SmoothStep(0.88f, 0.98f, distance);
+            float inner = Mathf.SmoothStep(0.58f, 0.7f, distance);
+            float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.78f) / 0.052f);
+            byte alpha = (byte)Mathf.RoundToInt(255f * outer * inner * ring);
+            return new Color32(255, 255, 255, alpha);
+        }
+
+        private static Color32 CreateSummonReadyGlowPixel(int x, int y, int size)
+        {
+            float distance = DistanceFromCenter01(x, y, size);
+            float glow = 1f - Mathf.SmoothStep(0.18f, 0.98f, distance);
+            float halo = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.72f) / 0.24f) * 0.42f;
+            float alpha01 = Mathf.Clamp01(glow * glow * 0.72f + halo);
+            byte alpha = (byte)Mathf.RoundToInt(255f * alpha01);
+            return new Color32(255, 255, 255, alpha);
+        }
+
+        private static Color32 CreateSummonReadySparkPixel(int x, int y, int size)
+        {
+            float nx = ((x + 0.5f) / size - 0.5f) * 2f;
+            float ny = ((y + 0.5f) / size - 0.5f) * 2f;
+            float distance = Mathf.Sqrt(nx * nx + ny * ny);
+            float degrees = Mathf.Atan2(ny, nx) * Mathf.Rad2Deg;
+            float nearestSpark = Mathf.Round(degrees / 30f) * 30f;
+            float angular = Mathf.Clamp01(1f - Mathf.Abs(Mathf.DeltaAngle(degrees, nearestSpark)) / 4.8f);
+            float radial = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.78f) / 0.075f);
+            float outer = 1f - Mathf.SmoothStep(0.91f, 1f, distance);
+            byte alpha = (byte)Mathf.RoundToInt(255f * angular * radial * outer);
+            return new Color32(255, 255, 255, alpha);
+        }
+
+        private static float DistanceFromCenter01(int x, int y, int size)
+        {
+            float nx = ((x + 0.5f) / size - 0.5f) * 2f;
+            float ny = ((y + 0.5f) / size - 0.5f) * 2f;
+            return Mathf.Sqrt(nx * nx + ny * ny);
+        }
+
+        private static void EnsureAssetFolder(string parentPath, string folderName)
+        {
+            string childPath = $"{parentPath}/{folderName}";
+            if (AssetDatabase.IsValidFolder(childPath))
+            {
+                return;
+            }
+
+            if (!AssetDatabase.IsValidFolder(parentPath))
+            {
+                throw new InvalidOperationException($"Missing asset folder {parentPath}.");
+            }
+
+            AssetDatabase.CreateFolder(parentPath, folderName);
+        }
+
         private static void EnsureDimensionHudSpriteImporters()
         {
             string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { DimensionHudArtRoot });
@@ -1143,6 +1472,11 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
+            if (TryApplyResponsiveSideDesignRect(rectTransform, designRect))
+            {
+                return;
+            }
+
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rectTransform.anchoredPosition = new Vector2(
@@ -1152,6 +1486,53 @@ namespace DimensionBrawl.Editor
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.localScale = Vector3.one;
             MarkComponentDirty(rectTransform);
+        }
+
+        private static bool TryApplyResponsiveSideDesignRect(RectTransform rectTransform, Rect designRect)
+        {
+            bool pinLeft = designRect.xMax <= 700f;
+            bool pinRight = designRect.xMin >= 1800f;
+            if (!pinLeft && !pinRight)
+            {
+                return false;
+            }
+
+            bool pinTop = designRect.yMin < DimensionHudDesignResolution.y * 0.5f;
+            float rightInset = DimensionHudDesignResolution.x - designRect.xMax;
+            float bottomInset = DimensionHudDesignResolution.y - designRect.yMax;
+            if (pinLeft && pinTop)
+            {
+                rectTransform.anchorMin = new Vector2(0f, 1f);
+                rectTransform.anchorMax = new Vector2(0f, 1f);
+                rectTransform.pivot = new Vector2(0f, 1f);
+                rectTransform.anchoredPosition = new Vector2(designRect.xMin, -designRect.yMin);
+            }
+            else if (pinLeft)
+            {
+                rectTransform.anchorMin = new Vector2(0f, 0f);
+                rectTransform.anchorMax = new Vector2(0f, 0f);
+                rectTransform.pivot = new Vector2(0f, 0f);
+                rectTransform.anchoredPosition = new Vector2(designRect.xMin, bottomInset);
+            }
+            else if (pinTop)
+            {
+                rectTransform.anchorMin = new Vector2(1f, 1f);
+                rectTransform.anchorMax = new Vector2(1f, 1f);
+                rectTransform.pivot = new Vector2(1f, 1f);
+                rectTransform.anchoredPosition = new Vector2(-rightInset, -designRect.yMin);
+            }
+            else
+            {
+                rectTransform.anchorMin = new Vector2(1f, 0f);
+                rectTransform.anchorMax = new Vector2(1f, 0f);
+                rectTransform.pivot = new Vector2(1f, 0f);
+                rectTransform.anchoredPosition = new Vector2(-rightInset, bottomInset);
+            }
+
+            rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
+            rectTransform.localScale = Vector3.one;
+            MarkComponentDirty(rectTransform);
+            return true;
         }
 
         private static void Stretch(RectTransform rectTransform)

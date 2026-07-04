@@ -143,6 +143,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
         [SerializeField, Min(0f)] private float decisionThinkIntervalSeconds = 0.25f;
         [SerializeField, Min(0f)] private float basicFireSuppressionSecondsAfterPressureAction = 0.65f;
+        [SerializeField, Min(0)] private int minimumBasicFireVolleysBeforePressureAction;
+        [SerializeField, Min(0f)] private float minimumBasicFireAgeBeforePressureActionSeconds;
         [SerializeField] private bool holdForNextTierActionWhenGateAllows;
         [SerializeField] private bool actionsEnabled = true;
 
@@ -171,6 +173,7 @@ namespace DimensionBrawl.Combat
         private int lastSelectionScore;
         private float lastActionAgeSeconds = float.PositiveInfinity;
         private int totalBasicShotVolleys;
+        private int basicShotVolleysAtLastPressureAction;
         private int lastBasicShotProjectileCount;
         private float lastBasicShotAgeSeconds = float.PositiveInfinity;
         private bool basicFireSubscribed;
@@ -195,6 +198,12 @@ namespace DimensionBrawl.Combat
         public float DecisionThinkIntervalSeconds => decisionThinkIntervalSeconds;
         public float DecisionThinkRemainingSeconds => decisionThinkTimer;
         public float BasicFireSuppressionSecondsAfterPressureAction => basicFireSuppressionSecondsAfterPressureAction;
+        public int MinimumBasicFireVolleysBeforePressureAction => minimumBasicFireVolleysBeforePressureAction;
+        public float MinimumBasicFireAgeBeforePressureActionSeconds =>
+            minimumBasicFireAgeBeforePressureActionSeconds;
+        public int BasicFireVolleysSinceLastPressureAction =>
+            Mathf.Max(0, totalBasicShotVolleys - basicShotVolleysAtLastPressureAction);
+        public bool IsBasicFireRhythmGateOpen => HasRequiredBasicFireRhythmBeforePressureAction();
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
         public bool IsPlayerSummonResponseWindowActive => playerSummonResponseTimer > 0f;
@@ -263,8 +272,13 @@ namespace DimensionBrawl.Combat
             playerSummonResponseWindowSeconds = Mathf.Max(0f, playerSummonResponseWindowSeconds);
             heldResponseWindowFloorSeconds = Mathf.Max(0f, heldResponseWindowFloorSeconds);
             maxHeldResponseWindowExtensionSeconds = Mathf.Max(0f, maxHeldResponseWindowExtensionSeconds);
+            globalRecoverySeconds = Mathf.Max(0f, globalRecoverySeconds);
             decisionThinkIntervalSeconds = Mathf.Max(0f, decisionThinkIntervalSeconds);
             basicFireSuppressionSecondsAfterPressureAction = Mathf.Max(0f, basicFireSuppressionSecondsAfterPressureAction);
+            minimumBasicFireVolleysBeforePressureAction =
+                Mathf.Max(0, minimumBasicFireVolleysBeforePressureAction);
+            minimumBasicFireAgeBeforePressureActionSeconds =
+                Mathf.Max(0f, minimumBasicFireAgeBeforePressureActionSeconds);
         }
 
         public void ConfigureReferences(
@@ -321,6 +335,16 @@ namespace DimensionBrawl.Combat
         public void SetHoldForNextTierActionWhenGateAllows(bool enabled)
         {
             holdForNextTierActionWhenGateAllows = enabled;
+        }
+
+        public void ConfigureBasicFireRhythmGate(
+            int minimumVolleysBeforePressureAction,
+            float minimumBasicShotAgeSeconds)
+        {
+            minimumBasicFireVolleysBeforePressureAction =
+                Mathf.Max(0, minimumVolleysBeforePressureAction);
+            minimumBasicFireAgeBeforePressureActionSeconds =
+                Mathf.Max(0f, minimumBasicShotAgeSeconds);
         }
 
         public void NotifyPlayerSummonFrontlineCreated(int summonTier)
@@ -416,6 +440,7 @@ namespace DimensionBrawl.Combat
             SuppressBasicFireForPressureAction(slot);
 
             totalActionCount++;
+            basicShotVolleysAtLastPressureAction = totalBasicShotVolleys;
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             lastActionKind = slot.ActionKind;
             lastQueuedPattern = slot.Pattern;
@@ -443,7 +468,7 @@ namespace DimensionBrawl.Combat
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private void ApplyActionDeckProfile()
@@ -456,6 +481,12 @@ namespace DimensionBrawl.Combat
             actionSlots = actionDeckProfile.CopyActionSlots();
             globalRecoverySeconds = actionDeckProfile.GlobalRecoverySeconds;
             decisionThinkIntervalSeconds = actionDeckProfile.DecisionThinkIntervalSeconds;
+            basicFireSuppressionSecondsAfterPressureAction =
+                actionDeckProfile.BasicFireSuppressionSecondsAfterPressureAction;
+            minimumBasicFireVolleysBeforePressureAction =
+                actionDeckProfile.MinimumBasicFireVolleysBeforePressureAction;
+            minimumBasicFireAgeBeforePressureActionSeconds =
+                actionDeckProfile.MinimumBasicFireAgeBeforePressureActionSeconds;
             EnsurePerSlotTimers(reset: true);
         }
 
@@ -469,8 +500,29 @@ namespace DimensionBrawl.Combat
                 && !bossBarrageEmitter.IsWindupActive
                 && !bossBarrageEmitter.HasQueuedPriorityPattern
                 && globalRecoveryTimer <= 0f
+                && HasRequiredBasicFireRhythmBeforePressureAction()
                 && actionSlots != null
                 && actionSlots.Length > 0;
+        }
+
+        private bool HasRequiredBasicFireRhythmBeforePressureAction()
+        {
+            if (minimumBasicFireVolleysBeforePressureAction <= 0 || basicFireEmitter == null)
+            {
+                return true;
+            }
+
+            if (!basicFireEmitter.IsFiringEnabled)
+            {
+                return true;
+            }
+
+            if (BasicFireVolleysSinceLastPressureAction < minimumBasicFireVolleysBeforePressureAction)
+            {
+                return false;
+            }
+
+            return lastBasicShotAgeSeconds >= minimumBasicFireAgeBeforePressureActionSeconds;
         }
 
         private BossPressureDecisionContext BuildDecisionContext(int availableTier)

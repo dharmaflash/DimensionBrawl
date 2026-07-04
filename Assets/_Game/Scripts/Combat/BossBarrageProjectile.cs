@@ -1,3 +1,4 @@
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -14,11 +15,15 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool deactivateOnHit = true;
         [SerializeField] private Renderer[] visualRenderers = new Renderer[0];
         [SerializeField] private TrailRenderer[] trailRenderers = new TrailRenderer[0];
+        [SerializeField] private AudioClip impactSfx;
+        [SerializeField, Range(0f, 1f)] private float impactSfxVolume = 0.42f;
+        [SerializeField] private Vector2 impactSfxPitchRange = new Vector2(0.96f, 1.04f);
 
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
         private MaterialPropertyBlock materialPropertyBlock;
         private Material[][] baseSharedMaterials = new Material[0][];
+        private ParticleSystem[] visualParticleSystems = System.Array.Empty<ParticleSystem>();
         private AudioSource[] audioSources = System.Array.Empty<AudioSource>();
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
@@ -84,6 +89,11 @@ namespace DimensionBrawl.Combat
             ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
             travelDirection = ResolveDirection(newTravelDirection);
+            if (travelDirection.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(travelDirection, Vector3.up);
+            }
+
             speed = Mathf.Max(0f, newSpeed);
             remainingLifetime = Mathf.Max(0.01f, lifetimeSeconds);
             active = true;
@@ -96,6 +106,7 @@ namespace DimensionBrawl.Combat
 
             gameObject.SetActive(true);
             ResetTrailRenderers();
+            RestartVisualParticleSystems();
             RestartAudioSources();
         }
 
@@ -196,8 +207,15 @@ namespace DimensionBrawl.Combat
                 responsePolicy,
                 controlLockPolicy);
 
+            bool blockedByInvulnerability = targetHealth.IsInvulnerable;
             bool applied = targetHealth.TryApplyDamage(damageInfo);
+            RequestCameraImpactFeedback(targetHealth, impactPoint, blockedByInvulnerability, applied);
             if (applied && deactivateOnHit)
+            {
+                PlayImpactSfx(impactPoint);
+                Deactivate();
+            }
+            else if (blockedByInvulnerability && deactivateOnHit)
             {
                 Deactivate();
             }
@@ -206,13 +224,14 @@ namespace DimensionBrawl.Combat
                 applied ? ProjectileImpactResult.AppliedDamage : ProjectileImpactResult.IgnoredDamageRejected,
                 targetHealth,
                 targetProxy);
-            return applied;
+            return applied || blockedByInvulnerability;
         }
 
         public void Deactivate()
         {
             ResetPresentation();
             StopTrailRenderers();
+            StopVisualParticleSystems();
             StopAudioSources();
             active = false;
             remainingLifetime = 0f;
@@ -229,9 +248,42 @@ namespace DimensionBrawl.Combat
             lastImpactTargetProxy = targetProxy;
         }
 
+        private void RequestCameraImpactFeedback(
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            bool blockedByInvulnerability,
+            bool applied)
+        {
+            if (targetHealth == null || !CombatTeamUtility.IsPlayerSide(targetHealth.Team))
+            {
+                return;
+            }
+
+            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            if (cameraController == null)
+            {
+                return;
+            }
+
+            if (blockedByInvulnerability && !applied)
+            {
+                cameraController.RequestShieldBlockFeedback(travelDirection, 0.85f);
+                return;
+            }
+
+            if (!applied)
+            {
+                return;
+            }
+
+            float heavyScale = DamageResponsePolicyUtility.InterruptsAction(controlLockPolicy) ? 0.85f : 0.45f;
+            cameraController.RequestDamageHitFeedback(travelDirection, heavyScale);
+            cameraController.RequestExplosionFeedback(impactPoint, 7.5f, heavyScale * 0.55f);
+        }
+
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private void OnTriggerEnter(Collider other)
@@ -294,6 +346,7 @@ namespace DimensionBrawl.Combat
                 trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
             }
 
+            visualParticleSystems = GetComponentsInChildren<ParticleSystem>(true);
             audioSources = GetComponentsInChildren<AudioSource>(true);
 
             materialPropertyBlock = new MaterialPropertyBlock();
@@ -465,6 +518,48 @@ namespace DimensionBrawl.Combat
             }
         }
 
+        private void RestartVisualParticleSystems()
+        {
+            EnsurePresentationComponents();
+            if (visualParticleSystems == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualParticleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = visualParticleSystems[i];
+                if (particleSystem == null)
+                {
+                    continue;
+                }
+
+                particleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particleSystem.Clear(withChildren: true);
+                particleSystem.Play(withChildren: true);
+            }
+        }
+
+        private void StopVisualParticleSystems()
+        {
+            EnsurePresentationComponents();
+            if (visualParticleSystems == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualParticleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = visualParticleSystems[i];
+                if (particleSystem == null)
+                {
+                    continue;
+                }
+
+                particleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            }
+        }
+
         private void RestartAudioSources()
         {
             EnsurePresentationComponents();
@@ -491,6 +586,33 @@ namespace DimensionBrawl.Combat
                     audioSources[i].Stop();
                 }
             }
+        }
+
+        private void PlayImpactSfx(Vector3 impactPoint)
+        {
+            if (impactSfx == null || impactSfxVolume <= 0f)
+            {
+                return;
+            }
+
+            GameObject audioObject = new GameObject("BossBarrageProjectileImpactAudio");
+            audioObject.transform.position = impactPoint;
+            AudioSource source = audioObject.AddComponent<AudioSource>();
+            source.clip = impactSfx;
+            source.playOnAwake = false;
+            source.loop = false;
+            source.volume = Mathf.Clamp01(impactSfxVolume);
+            source.pitch = Random.Range(
+                Mathf.Min(impactSfxPitchRange.x, impactSfxPitchRange.y),
+                Mathf.Max(impactSfxPitchRange.x, impactSfxPitchRange.y));
+            source.spatialBlend = 0.62f;
+            source.dopplerLevel = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 3f;
+            source.maxDistance = 28f;
+            source.priority = 136;
+            source.Play();
+            Destroy(audioObject, impactSfx.length / Mathf.Max(0.01f, Mathf.Abs(source.pitch)) + 0.1f);
         }
 
         private void ClearColorOverrides()
