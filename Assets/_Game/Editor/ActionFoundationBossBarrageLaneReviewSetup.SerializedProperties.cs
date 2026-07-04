@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using UnityEditor;
@@ -53,13 +54,20 @@ namespace DimensionBrawl.Editor
             }
 
             string[] dependencies = AssetDatabase.GetDependencies(assetPath, recursive: true);
+            var importedDependencies = new List<string>();
             for (int i = 0; i < dependencies.Length; i++)
             {
                 string dependency = dependencies[i].Replace('\\', '/');
                 if (dependency.Contains("/_Imported/", StringComparison.Ordinal))
                 {
-                    throw new InvalidOperationException($"{label} must not depend on raw imported asset {dependency}.");
+                    importedDependencies.Add(dependency);
                 }
+            }
+
+            if (importedDependencies.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"{label} must not depend on raw imported assets: {string.Join(", ", importedDependencies)}.");
             }
         }
 

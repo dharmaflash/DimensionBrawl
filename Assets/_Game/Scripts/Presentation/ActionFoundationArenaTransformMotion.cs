@@ -10,17 +10,30 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float bobAmplitude = 0.15f;
         [SerializeField, Min(0f)] private float bobFrequency = 0.2f;
         [SerializeField] private float phaseOffset;
+        [SerializeField] private bool lockAuthoredLocalRotation;
+        [SerializeField] private bool lockAuthoredLocalScale;
 
         private Vector3 authoredLocalPosition;
+        private Quaternion authoredLocalRotation;
+        private Vector3 authoredLocalScale = Vector3.one;
         private Vector3 normalizedBobAxis = Vector3.up;
 
-        public void Configure(Vector3 rotationSpeed, Vector3 axis, float amplitude, float frequency, float phase)
+        public void Configure(
+            Vector3 rotationSpeed,
+            Vector3 axis,
+            float amplitude,
+            float frequency,
+            float phase,
+            bool lockLocalRotation = false,
+            bool lockLocalScale = false)
         {
             localRotationDegreesPerSecond = rotationSpeed;
             bobAxis = axis;
             bobAmplitude = Mathf.Max(0f, amplitude);
             bobFrequency = Mathf.Max(0f, frequency);
             phaseOffset = phase;
+            lockAuthoredLocalRotation = lockLocalRotation;
+            lockAuthoredLocalScale = lockLocalScale;
             CacheAuthoredState();
         }
 
@@ -36,6 +49,16 @@ namespace DimensionBrawl.Presentation
 
         private void LateUpdate()
         {
+            if (lockAuthoredLocalRotation)
+            {
+                transform.localRotation = authoredLocalRotation;
+            }
+
+            if (lockAuthoredLocalScale)
+            {
+                transform.localScale = authoredLocalScale;
+            }
+
             if (localRotationDegreesPerSecond.sqrMagnitude > 0f)
             {
                 transform.Rotate(localRotationDegreesPerSecond * Time.deltaTime, Space.Self);
@@ -54,6 +77,8 @@ namespace DimensionBrawl.Presentation
         private void CacheAuthoredState()
         {
             authoredLocalPosition = transform.localPosition;
+            authoredLocalRotation = transform.localRotation;
+            authoredLocalScale = transform.localScale;
             normalizedBobAxis = bobAxis.sqrMagnitude > 0.0001f ? bobAxis.normalized : Vector3.up;
         }
     }

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
+  m_Name: DB_BossBarrage_Phase2_AkazaSpiralVolley
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
+  patternId: AkazaSpiralVolley
+  skillPatternFamily: 4
+  skillTransferMode: 2
+  playerSkillTranslationNote: A crossed phase-two volley that keeps its windup and
+    answer window as a skill verb.
+  counterplayNote: Bait the first cross, then dodge through the late inner gap instead
+    of holding one lane.
+  telegraphWindupColor: {r: 0.58, g: 0.32, b: 1, a: 0.72}
+  telegraphReleaseColor: {r: 0.95, g: 0.78, b: 1, a: 0.96}
+  telegraphMarkerWidthScale: 1.18
+  telegraphMarkerDepthScale: 0.82
+  telegraphPulseScale: 1.22
+  projectileColor: {r: 0.75, g: 0.48, b: 1, a: 1}
+  projectileVisualScale: {x: 1.22, y: 0.72, z: 1.18}
+  projectileMaterial: {fileID: 2100000, guid: a6c8fa06a6f9a2744b15636aa56b2e58, type: 2}
+  initialDelaySeconds: 0.2
+  windupSeconds: 1
+  waveIntervalSeconds: 5.2
+  projectilesPerWave: 8
+  damage: 9.5
+  projectileSpeed: 12.8
+  projectileLifetimeSeconds: 5.8
+  projectileRadius: 0.34
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
+  targetingRule: 1
+  laneCenterLateralRatio: 0
+  lateralShape: 7
+  backlineHalfSpread: 4.55
+  forwardHalfSpread: 1.64
+  twinColumnInnerSpreadRatio: 0.38
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
+  punishNetInnerSpreadRatio: 0.34
+  escortScreenInnerGapRatio: 0.28
+  layeredSalvoRowCount: 3
+  crossfireInnerGapRatio: 0.26
+  linePressureDirection: 1
+  linePressureCenterRatio: 0.72
+  linePressureHalfSpreadRatio: 0.08
+  backlineDepthSpread: 3.1
+  forwardDepthSpread: 0.9
+  spawnHeight: 2.42
+  targetHeight: 1.08

@@ -1,0 +1,144 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_AkazaPhase2BossIntro_1412_1562
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: akaza_phase2_boss_intro_1412_1562
+  displayName: Akaza Phase2 Boss Intro 1412-1562
+  category: 6
+  reviewerIntent: Boss entry intro sourced from ThePhantomKnowledge GeneralTimeline_nD
+    2.playable frames 1412-1562 at 60fps (23.53-26.03s). Uses promoted original source
+    camera and actor bindings for the 1412-1562 frame window; append later intro
+    shots as additional CinematicSequencePlaylistRunner profiles after this source
+    entry.
+  authoredDurationSeconds: 3.12
+  priority: 92
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  requiresStageDefinition: 0
+  stageDefinition: {fileID: 0}
+  stageHandoffId: 
+  stageAnchorId: 
+  stageRuntimeStateId: 
+  stageContextNote: Phase2 Akaza local review intro; append later shots through CinematicSequencePlaylistRunner.
+  sourceCameraAnimation:
+    enabled: 1
+    cueId: akaza_intro_timeline_camera_C08_cam
+    clip: {fileID: 1827226128182048838, guid: c907a03b371443e40a0b3e97d58354b0, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.5
+  sourceActorAnimation:
+    enabled: 1
+    cueId: akaza_intro_timeline_actor_C08_akaza
+    clip: {fileID: 1827226128182048838, guid: 30b09dc35cd609f4bbbdf4c6381489d0, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.5
+  sourceCameraAnimations:
+  - enabled: 1
+    cueId: akaza_intro_timeline_camera_C08_cam
+    clip: {fileID: 1827226128182048838, guid: c907a03b371443e40a0b3e97d58354b0, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.5
+  sourceActorAnimations:
+  - enabled: 1
+    cueId: akaza_intro_timeline_actor_C08_akaza
+    clip: {fileID: 1827226128182048838, guid: 30b09dc35cd609f4bbbdf4c6381489d0, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.5
+  sourceActorGrades: []
+  screenFadeCues: []
+  cameraCues: []
+  actorCues:
+  - enabled: 1
+    cueId: akaza_intro_c08_reveal_body
+    role: 5
+    cueKind: 0
+    startSeconds: 2.5
+    durationSeconds: 0.46
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: IntroReveal1412_1562
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: akaza_intro_pressure_handoff_body
+    role: 5
+    cueKind: 0
+    startSeconds: 2.92
+    durationSeconds: 1.24
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: IntroPressureHandoff
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: akaza_intro_phase_swap_signal
+    startSeconds: 2.52
+    durationSeconds: 0.28
+    useCombatVfxCue: 1
+    combatVfxCueId: 28
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.1, z: 0}
+    intensity: 1.08
+  - enabled: 1
+    cueId: akaza_intro_aura_hold
+    startSeconds: 2.88
+    durationSeconds: 0.84
+    useCombatVfxCue: 1
+    combatVfxCueId: 26
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.12, z: 0}
+    intensity: 1.12
+  - enabled: 1
+    cueId: akaza_intro_lane_pressure_windup
+    startSeconds: 1.36
+    durationSeconds: 0.62
+    useCombatVfxCue: 1
+    combatVfxCueId: 14
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.08, z: 0.35}
+    intensity: 1.06
+  - enabled: 1
+    cueId: akaza_intro_lane_pressure_active
+    startSeconds: 1.98
+    durationSeconds: 0.42
+    useCombatVfxCue: 1
+    combatVfxCueId: 15
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.08, z: 0.48}
+    intensity: 1.14
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 3.02
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.18
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

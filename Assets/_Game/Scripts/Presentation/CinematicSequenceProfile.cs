@@ -97,6 +97,178 @@ namespace DimensionBrawl.Presentation
         }
 
         [Serializable]
+        public struct SourceCameraAnimationCue
+        {
+            [SerializeField] private bool enabled;
+            [SerializeField] private string cueId;
+            [SerializeField] private AnimationClip clip;
+            [SerializeField, Min(0f)] private float startSeconds;
+            [SerializeField, Min(0f)] private float clipInSeconds;
+            [SerializeField, Min(0.01f)] private float durationSeconds;
+
+            public SourceCameraAnimationCue(
+                string cueId,
+                AnimationClip clip,
+                float startSeconds,
+                float clipInSeconds,
+                float durationSeconds)
+            {
+                enabled = clip != null;
+                this.cueId = cueId;
+                this.clip = clip;
+                this.startSeconds = Mathf.Max(0f, startSeconds);
+                this.clipInSeconds = Mathf.Max(0f, clipInSeconds);
+                this.durationSeconds = Mathf.Max(0.01f, durationSeconds);
+            }
+
+            public bool Enabled => enabled && clip != null;
+            public string CueId => cueId;
+            public AnimationClip Clip => clip;
+            public float StartSeconds => Mathf.Max(0f, startSeconds);
+            public float ClipInSeconds => Mathf.Max(0f, clipInSeconds);
+            public float DurationSeconds => Mathf.Max(0.01f, durationSeconds);
+            public float EndSeconds => StartSeconds + DurationSeconds;
+        }
+
+        [Serializable]
+        public struct SourceActorAnimationCue
+        {
+            [SerializeField] private bool enabled;
+            [SerializeField] private string cueId;
+            [SerializeField] private AnimationClip clip;
+            [SerializeField, Min(0f)] private float startSeconds;
+            [SerializeField, Min(0f)] private float clipInSeconds;
+            [SerializeField, Min(0.01f)] private float durationSeconds;
+
+            public SourceActorAnimationCue(
+                string cueId,
+                AnimationClip clip,
+                float startSeconds,
+                float clipInSeconds,
+                float durationSeconds)
+            {
+                enabled = clip != null;
+                this.cueId = cueId;
+                this.clip = clip;
+                this.startSeconds = Mathf.Max(0f, startSeconds);
+                this.clipInSeconds = Mathf.Max(0f, clipInSeconds);
+                this.durationSeconds = Mathf.Max(0.01f, durationSeconds);
+            }
+
+            public bool Enabled => enabled && clip != null;
+            public string CueId => cueId;
+            public AnimationClip Clip => clip;
+            public float StartSeconds => Mathf.Max(0f, startSeconds);
+            public float ClipInSeconds => Mathf.Max(0f, clipInSeconds);
+            public float DurationSeconds => Mathf.Max(0.01f, durationSeconds);
+            public float EndSeconds => StartSeconds + DurationSeconds;
+        }
+
+        [Serializable]
+        public struct SourceActorGradeCue
+        {
+            [SerializeField] private bool enabled;
+            [SerializeField] private string cueId;
+            [SerializeField, Min(0f)] private float startSeconds;
+            [SerializeField, Min(0.01f)] private float durationSeconds;
+            [SerializeField] private Color startColor;
+            [SerializeField] private Color endColor;
+
+            public SourceActorGradeCue(
+                string cueId,
+                float startSeconds,
+                float durationSeconds,
+                Color startColor,
+                Color endColor)
+            {
+                enabled = true;
+                this.cueId = cueId;
+                this.startSeconds = Mathf.Max(0f, startSeconds);
+                this.durationSeconds = Mathf.Max(0.01f, durationSeconds);
+                this.startColor = startColor;
+                this.endColor = endColor;
+            }
+
+            public bool Enabled => enabled;
+            public string CueId => cueId;
+            public float StartSeconds => Mathf.Max(0f, startSeconds);
+            public float DurationSeconds => Mathf.Max(0.01f, durationSeconds);
+            public float EndSeconds => StartSeconds + DurationSeconds;
+            public Color StartColor => startColor;
+            public Color EndColor => endColor;
+
+            public Color Evaluate(float elapsedSeconds)
+            {
+                if (elapsedSeconds <= StartSeconds)
+                {
+                    return StartColor;
+                }
+
+                if (elapsedSeconds >= EndSeconds)
+                {
+                    return EndColor;
+                }
+
+                float t = Mathf.Clamp01((elapsedSeconds - StartSeconds) / DurationSeconds);
+                return Color.Lerp(StartColor, EndColor, t);
+            }
+        }
+
+        [Serializable]
+        public struct ScreenFadeCue
+        {
+            [SerializeField] private bool enabled;
+            [SerializeField] private string cueId;
+            [SerializeField, Min(0f)] private float startSeconds;
+            [SerializeField, Min(0.01f)] private float durationSeconds;
+            [SerializeField] private Color color;
+            [SerializeField, Range(0f, 1f)] private float startAlpha;
+            [SerializeField, Range(0f, 1f)] private float endAlpha;
+
+            public ScreenFadeCue(
+                string cueId,
+                float startSeconds,
+                float durationSeconds,
+                Color color,
+                float startAlpha,
+                float endAlpha)
+            {
+                enabled = true;
+                this.cueId = cueId;
+                this.startSeconds = Mathf.Max(0f, startSeconds);
+                this.durationSeconds = Mathf.Max(0.01f, durationSeconds);
+                this.color = color;
+                this.startAlpha = Mathf.Clamp01(startAlpha);
+                this.endAlpha = Mathf.Clamp01(endAlpha);
+            }
+
+            public bool Enabled => enabled;
+            public string CueId => cueId;
+            public float StartSeconds => Mathf.Max(0f, startSeconds);
+            public float DurationSeconds => Mathf.Max(0.01f, durationSeconds);
+            public float EndSeconds => StartSeconds + DurationSeconds;
+            public Color Color => color;
+            public float StartAlpha => Mathf.Clamp01(startAlpha);
+            public float EndAlpha => Mathf.Clamp01(endAlpha);
+
+            public float EvaluateAlpha(float elapsedSeconds)
+            {
+                if (elapsedSeconds <= StartSeconds)
+                {
+                    return StartAlpha;
+                }
+
+                if (elapsedSeconds >= EndSeconds)
+                {
+                    return EndAlpha;
+                }
+
+                float t = Mathf.Clamp01((elapsedSeconds - StartSeconds) / DurationSeconds);
+                return Mathf.Lerp(StartAlpha, EndAlpha, t);
+            }
+        }
+
+        [Serializable]
         public struct CameraCue
         {
             [SerializeField] private bool enabled;
@@ -435,6 +607,16 @@ namespace DimensionBrawl.Presentation
         [TextArea, SerializeField] private string stageContextNote;
 
         [Header("Cues")]
+        [SerializeField] private SourceCameraAnimationCue sourceCameraAnimation;
+        [SerializeField] private SourceActorAnimationCue sourceActorAnimation;
+        [SerializeField] private SourceCameraAnimationCue[] sourceCameraAnimations =
+            Array.Empty<SourceCameraAnimationCue>();
+        [SerializeField] private SourceActorAnimationCue[] sourceActorAnimations =
+            Array.Empty<SourceActorAnimationCue>();
+        [SerializeField] private SourceActorGradeCue[] sourceActorGrades =
+            Array.Empty<SourceActorGradeCue>();
+        [SerializeField] private ScreenFadeCue[] screenFadeCues =
+            Array.Empty<ScreenFadeCue>();
         [SerializeField] private CameraCue[] cameraCues = Array.Empty<CameraCue>();
         [SerializeField] private ActorCue[] actorCues = Array.Empty<ActorCue>();
         [SerializeField] private VfxCue[] vfxCues = Array.Empty<VfxCue>();
@@ -462,6 +644,12 @@ namespace DimensionBrawl.Presentation
             stageDefinition != null
             && !string.IsNullOrWhiteSpace(stageHandoffId)
             && !string.IsNullOrWhiteSpace(stageAnchorId);
+        public SourceCameraAnimationCue SourceCameraAnimation => ResolveFirstSourceCameraAnimation();
+        public SourceActorAnimationCue SourceActorAnimation => ResolveFirstSourceActorAnimation();
+        public SourceCameraAnimationCue[] SourceCameraAnimations => ResolveSourceCameraAnimations();
+        public SourceActorAnimationCue[] SourceActorAnimations => ResolveSourceActorAnimations();
+        public SourceActorGradeCue[] SourceActorGrades => ResolveSourceActorGrades();
+        public ScreenFadeCue[] ScreenFadeCues => ResolveScreenFadeCues();
         public CameraCue[] CameraCues => cameraCues ?? Array.Empty<CameraCue>();
         public ActorCue[] ActorCues => actorCues ?? Array.Empty<ActorCue>();
         public VfxCue[] VfxCues => vfxCues ?? Array.Empty<VfxCue>();
@@ -473,6 +661,30 @@ namespace DimensionBrawl.Presentation
             get
             {
                 float duration = authoredDurationSeconds;
+                SourceCameraAnimationCue[] resolvedSourceCameraAnimations = SourceCameraAnimations;
+                for (int i = 0; i < resolvedSourceCameraAnimations.Length; i++)
+                {
+                    duration = Mathf.Max(duration, resolvedSourceCameraAnimations[i].EndSeconds);
+                }
+
+                SourceActorAnimationCue[] resolvedSourceActorAnimations = SourceActorAnimations;
+                for (int i = 0; i < resolvedSourceActorAnimations.Length; i++)
+                {
+                    duration = Mathf.Max(duration, resolvedSourceActorAnimations[i].EndSeconds);
+                }
+
+                SourceActorGradeCue[] resolvedSourceActorGrades = SourceActorGrades;
+                for (int i = 0; i < resolvedSourceActorGrades.Length; i++)
+                {
+                    duration = Mathf.Max(duration, resolvedSourceActorGrades[i].EndSeconds);
+                }
+
+                ScreenFadeCue[] resolvedScreenFadeCues = ScreenFadeCues;
+                for (int i = 0; i < resolvedScreenFadeCues.Length; i++)
+                {
+                    duration = Mathf.Max(duration, resolvedScreenFadeCues[i].EndSeconds);
+                }
+
                 CameraCue[] resolvedCameraCues = CameraCues;
                 for (int i = 0; i < resolvedCameraCues.Length; i++)
                 {
@@ -542,6 +754,48 @@ namespace DimensionBrawl.Presentation
             gameplayHandoff = newGameplayHandoff;
         }
 
+        public void ConfigureSourceCameraAnimation(SourceCameraAnimationCue newSourceCameraAnimation)
+        {
+            sourceCameraAnimation = newSourceCameraAnimation;
+            sourceCameraAnimations = newSourceCameraAnimation.Enabled
+                ? new[] { newSourceCameraAnimation }
+                : Array.Empty<SourceCameraAnimationCue>();
+        }
+
+        public void ConfigureSourceActorAnimation(SourceActorAnimationCue newSourceActorAnimation)
+        {
+            sourceActorAnimation = newSourceActorAnimation;
+            sourceActorAnimations = newSourceActorAnimation.Enabled
+                ? new[] { newSourceActorAnimation }
+                : Array.Empty<SourceActorAnimationCue>();
+        }
+
+        public void ConfigureSourceCameraAnimations(SourceCameraAnimationCue[] newSourceCameraAnimations)
+        {
+            sourceCameraAnimations = SanitizeSourceCameraAnimations(newSourceCameraAnimations);
+            sourceCameraAnimation = sourceCameraAnimations.Length > 0
+                ? sourceCameraAnimations[0]
+                : default;
+        }
+
+        public void ConfigureSourceActorAnimations(SourceActorAnimationCue[] newSourceActorAnimations)
+        {
+            sourceActorAnimations = SanitizeSourceActorAnimations(newSourceActorAnimations);
+            sourceActorAnimation = sourceActorAnimations.Length > 0
+                ? sourceActorAnimations[0]
+                : default;
+        }
+
+        public void ConfigureSourceActorGrades(SourceActorGradeCue[] newSourceActorGrades)
+        {
+            sourceActorGrades = SanitizeSourceActorGrades(newSourceActorGrades);
+        }
+
+        public void ConfigureScreenFades(ScreenFadeCue[] newScreenFadeCues)
+        {
+            screenFadeCues = SanitizeScreenFadeCues(newScreenFadeCues);
+        }
+
         public void ConfigureStageContext(
             StageDefinitionProfile newStageDefinition,
             string newStageHandoffId,
@@ -570,9 +824,37 @@ namespace DimensionBrawl.Presentation
                 issues.Add($"{name}: sequence id is empty.");
             }
 
-            if (CameraCues.Length == 0)
+            SourceCameraAnimationCue[] resolvedSourceCameraAnimations = SourceCameraAnimations;
+            SourceActorAnimationCue[] resolvedSourceActorAnimations = SourceActorAnimations;
+            if (CameraCues.Length == 0 && resolvedSourceCameraAnimations.Length == 0)
             {
                 issues.Add($"{name}: no camera cues are authored.");
+            }
+
+            for (int i = 0; i < resolvedSourceCameraAnimations.Length; i++)
+            {
+                if (resolvedSourceCameraAnimations[i].DurationSeconds <= 0f)
+                {
+                    issues.Add($"{name}: source camera animation {i} has no duration.");
+                }
+
+                if (string.IsNullOrWhiteSpace(resolvedSourceCameraAnimations[i].CueId))
+                {
+                    issues.Add($"{name}: source camera animation {i} has no cue id.");
+                }
+            }
+
+            for (int i = 0; i < resolvedSourceActorAnimations.Length; i++)
+            {
+                if (resolvedSourceActorAnimations[i].DurationSeconds <= 0f)
+                {
+                    issues.Add($"{name}: source actor animation {i} has no duration.");
+                }
+
+                if (string.IsNullOrWhiteSpace(resolvedSourceActorAnimations[i].CueId))
+                {
+                    issues.Add($"{name}: source actor animation {i} has no cue id.");
+                }
             }
 
             if (Category != SequenceCategory.CombatTutorialOverlay && ActorCues.Length == 0)
@@ -669,6 +951,122 @@ namespace DimensionBrawl.Presentation
                     issues.Add($"{name}: actor cue {cue.CueId} changes weapon visibility but has no object path.");
                 }
             }
+        }
+
+        private SourceCameraAnimationCue ResolveFirstSourceCameraAnimation() =>
+            SourceCameraAnimations.Length > 0 ? SourceCameraAnimations[0] : default;
+
+        private SourceActorAnimationCue ResolveFirstSourceActorAnimation() =>
+            SourceActorAnimations.Length > 0 ? SourceActorAnimations[0] : default;
+
+        private SourceCameraAnimationCue[] ResolveSourceCameraAnimations()
+        {
+            if (sourceCameraAnimations != null && sourceCameraAnimations.Length > 0)
+            {
+                return sourceCameraAnimations;
+            }
+
+            return sourceCameraAnimation.Enabled
+                ? new[] { sourceCameraAnimation }
+                : Array.Empty<SourceCameraAnimationCue>();
+        }
+
+        private SourceActorAnimationCue[] ResolveSourceActorAnimations()
+        {
+            if (sourceActorAnimations != null && sourceActorAnimations.Length > 0)
+            {
+                return sourceActorAnimations;
+            }
+
+            return sourceActorAnimation.Enabled
+                ? new[] { sourceActorAnimation }
+                : Array.Empty<SourceActorAnimationCue>();
+        }
+
+        private SourceActorGradeCue[] ResolveSourceActorGrades()
+        {
+            return sourceActorGrades ?? Array.Empty<SourceActorGradeCue>();
+        }
+
+        private ScreenFadeCue[] ResolveScreenFadeCues()
+        {
+            return screenFadeCues ?? Array.Empty<ScreenFadeCue>();
+        }
+
+        private static SourceCameraAnimationCue[] SanitizeSourceCameraAnimations(SourceCameraAnimationCue[] cues)
+        {
+            if (cues == null || cues.Length == 0)
+            {
+                return Array.Empty<SourceCameraAnimationCue>();
+            }
+
+            List<SourceCameraAnimationCue> results = new List<SourceCameraAnimationCue>(cues.Length);
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].Enabled)
+                {
+                    results.Add(cues[i]);
+                }
+            }
+
+            return results.ToArray();
+        }
+
+        private static SourceActorAnimationCue[] SanitizeSourceActorAnimations(SourceActorAnimationCue[] cues)
+        {
+            if (cues == null || cues.Length == 0)
+            {
+                return Array.Empty<SourceActorAnimationCue>();
+            }
+
+            List<SourceActorAnimationCue> results = new List<SourceActorAnimationCue>(cues.Length);
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].Enabled)
+                {
+                    results.Add(cues[i]);
+                }
+            }
+
+            return results.ToArray();
+        }
+
+        private static SourceActorGradeCue[] SanitizeSourceActorGrades(SourceActorGradeCue[] cues)
+        {
+            if (cues == null || cues.Length == 0)
+            {
+                return Array.Empty<SourceActorGradeCue>();
+            }
+
+            List<SourceActorGradeCue> results = new List<SourceActorGradeCue>(cues.Length);
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].Enabled)
+                {
+                    results.Add(cues[i]);
+                }
+            }
+
+            return results.ToArray();
+        }
+
+        private static ScreenFadeCue[] SanitizeScreenFadeCues(ScreenFadeCue[] cues)
+        {
+            if (cues == null || cues.Length == 0)
+            {
+                return Array.Empty<ScreenFadeCue>();
+            }
+
+            List<ScreenFadeCue> results = new List<ScreenFadeCue>(cues.Length);
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].Enabled)
+                {
+                    results.Add(cues[i]);
+                }
+            }
+
+            return results.ToArray();
         }
     }
 }

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
+  m_Name: DB_BossBarrage_Phase2_AkazaSummonCurtain
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
+  patternId: AkazaSummonCurtain
+  skillPatternFamily: 2
+  skillTransferMode: 2
+  playerSkillTranslationNote: A summon-backed curtain pattern that preserves the
+    3-slot frontline answer grammar.
+  counterplayNote: Spend a summon slot into the pressure screen or sidestep around
+    the escorted center gap.
+  telegraphWindupColor: {r: 0.16, g: 1, b: 0.66, a: 0.72}
+  telegraphReleaseColor: {r: 0.75, g: 1, b: 0.9, a: 0.96}
+  telegraphMarkerWidthScale: 1.1
+  telegraphMarkerDepthScale: 1.08
+  telegraphPulseScale: 1.18
+  projectileColor: {r: 0.24, g: 1, b: 0.72, a: 1}
+  projectileVisualScale: {x: 1.04, y: 0.64, z: 1.45}
+  projectileMaterial: {fileID: 2100000, guid: a6c8fa06a6f9a2744b15636aa56b2e58, type: 2}
+  initialDelaySeconds: 0.18
+  windupSeconds: 0.96
+  waveIntervalSeconds: 5
+  projectilesPerWave: 7
+  damage: 8.5
+  projectileSpeed: 12.2
+  projectileLifetimeSeconds: 5.5
+  projectileRadius: 0.3
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
+  targetingRule: 1
+  laneCenterLateralRatio: 0
+  lateralShape: 5
+  backlineHalfSpread: 4.45
+  forwardHalfSpread: 1.52
+  twinColumnInnerSpreadRatio: 0.38
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
+  punishNetInnerSpreadRatio: 0.34
+  escortScreenInnerGapRatio: 0.32
+  layeredSalvoRowCount: 3
+  crossfireInnerGapRatio: 0.32
+  linePressureDirection: 1
+  linePressureCenterRatio: 0.72
+  linePressureHalfSpreadRatio: 0.08
+  backlineDepthSpread: 2.8
+  forwardDepthSpread: 0.84
+  spawnHeight: 2.32
+  targetHeight: 1.08
