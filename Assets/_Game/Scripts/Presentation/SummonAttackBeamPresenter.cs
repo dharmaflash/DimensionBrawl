@@ -98,7 +98,7 @@ namespace DimensionBrawl.Presentation
             bool active = proxy != null
                 && proxy.IsActive
                 && (laserPattern != null
-                    ? laserPattern.IsLaserActive
+                    ? laserPattern.IsLaserPresentationActive
                     : proxy.CurrentState == SummonFrontlineProxyState.Attacking);
             SetBeamVisible(active);
             if (!active)

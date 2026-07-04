@@ -89,7 +89,7 @@ namespace DimensionBrawl.Editor
         public const string BossLaserSummonActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
         public const string BossLaserTelegraphVfxPrefabPath =
-            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
+            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs/Laser teleport.prefab";
         public const string BossLaserTelegraphSfxClipPath =
             "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_Charge_01.mp3";
         public const string BossLaserSustainLoopSfxClipPath =
@@ -205,6 +205,8 @@ namespace DimensionBrawl.Editor
             ImportedHovlSciFiEffectsPrefabRoot + "/Projectile bullet.prefab";
         private const string ImportedHovlLaserHitPrefabPath =
             ImportedHovlSciFiEffectsPrefabRoot + "/Laser hit.prefab";
+        private const string ImportedHovlLaserHudPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Laser HUD.prefab";
         private const string ImportedForge3DMissileExamplePrefabPath =
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Missiles/Example/missile_example.prefab";
         private const string HovlSciFiEffectsPromotedRoot =
@@ -5298,11 +5300,11 @@ namespace DimensionBrawl.Editor
             SetBool(feedback, "applyIdleColorOnEnable", false);
             SetFloat(feedback, "flashSeconds", 0.12f);
             SetBool(feedback, "playVisualRecoil", true);
-            SetFloat(feedback, "lightRecoilDistance", 0.03f);
-            SetFloat(feedback, "heavyRecoilDistance", 0.075f);
-            SetFloat(feedback, "lightRecoilDegrees", 2.2f);
-            SetFloat(feedback, "heavyRecoilDegrees", 5.8f);
-            SetFloat(feedback, "recoilReturnSeconds", 0.105f);
+            SetFloat(feedback, "lightRecoilDistance", 0.055f);
+            SetFloat(feedback, "heavyRecoilDistance", 0.12f);
+            SetFloat(feedback, "lightRecoilDegrees", 3.8f);
+            SetFloat(feedback, "heavyRecoilDegrees", 8.0f);
+            SetFloat(feedback, "recoilReturnSeconds", 0.135f);
             SetColor(feedback, "hitColor", new Color(1f, 0.46f, 0.38f, 1f));
             SetColor(feedback, "deathColor", new Color(0.12f, 0.02f, 0.025f, 1f));
 
@@ -5313,16 +5315,21 @@ namespace DimensionBrawl.Editor
             SetObjectReference(damageAnimator, "recoilRoot", recoilRoot);
             SetString(damageAnimator, "hitUpperTrigger", "HIT UPPER");
             SetString(damageAnimator, "hitLowTrigger", "HIT LOW");
+            SetBool(damageAnimator, "crossFadeHitStates", true);
+            SetString(damageAnimator, "hitUpperStateName", "R_Hit_Upper");
+            SetString(damageAnimator, "hitLowStateName", "R_Hit_Low");
+            SetFloat(damageAnimator, "hitCrossFadeSeconds", 0.035f);
+            SetInt(damageAnimator, "hitAnimationLayer", 0);
             SetString(damageAnimator, "deathFrontTrigger", "DIE F");
             SetString(damageAnimator, "deathBackTrigger", "DIE B");
-            SetFloat(damageAnimator, "hitReactionCooldownSeconds", 0.16f);
+            SetFloat(damageAnimator, "hitReactionCooldownSeconds", 0.12f);
             SetBool(damageAnimator, "heavyHitBypassesCooldown", true);
             SetBool(damageAnimator, "playLocalRecoil", true);
-            SetFloat(damageAnimator, "lightRecoilDistance", 0.035f);
-            SetFloat(damageAnimator, "heavyRecoilDistance", 0.08f);
-            SetFloat(damageAnimator, "lightRecoilDegrees", 2.4f);
-            SetFloat(damageAnimator, "heavyRecoilDegrees", 6f);
-            SetFloat(damageAnimator, "recoilReturnSeconds", 0.11f);
+            SetFloat(damageAnimator, "lightRecoilDistance", 0.07f);
+            SetFloat(damageAnimator, "heavyRecoilDistance", 0.13f);
+            SetFloat(damageAnimator, "lightRecoilDegrees", 4.2f);
+            SetFloat(damageAnimator, "heavyRecoilDegrees", 8.4f);
+            SetFloat(damageAnimator, "recoilReturnSeconds", 0.14f);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(feedback);
             EditorUtility.SetDirty(damageAnimator);
@@ -6067,6 +6074,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(director, "playerHealth", playerHealth);
             SetObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
             SetObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            SetBool(director, "playProceduralVisuals", false);
             SetObjectReferenceArray(
                 director,
                 "timeWarpClips",
@@ -6318,6 +6326,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(director, "playerHealth", playerHealth);
             ValidateObjectReference(director, "worldFxMaterial", LoadOrCreatePerfectDodgeWorldFxMaterial());
             ValidateObjectReference(director, "afterimageMaterial", LoadOrCreatePerfectDodgeAfterimageMaterial());
+            ValidateBool(director, "playProceduralVisuals", false);
             ValidateAudioClipArray(
                 director,
                 "timeWarpClips",
@@ -6629,9 +6638,10 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
-            SetFloat(screenCuePresenter, "maxPerfectDodgeDomainAlpha", 0.42f);
-            SetFloat(screenCuePresenter, "maxPerfectDodgeInvertAlpha", 0.18f);
-            SetFloat(screenCuePresenter, "maxPerfectDodgeEdgeAlpha", 0.48f);
+            SetBool(screenCuePresenter, "playPerfectDodgeScreenDomain", false);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeDomainAlpha", 0f);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeInvertAlpha", 0f);
+            SetFloat(screenCuePresenter, "maxPerfectDodgeEdgeAlpha", 0f);
             SetFloat(screenCuePresenter, "perfectDodgeDomainSeconds", 3f);
             SetFloat(screenCuePresenter, "perfectDodgePulseSeconds", 0.22f);
             SetFloat(screenCuePresenter, "perfectDodgeBandThickness", 26f);
@@ -6716,7 +6726,7 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "perfectDodgeGridStrength", PerfectDodgeScreenGridStrength);
             SetFloat(screenCuePresenter, "perfectDodgeFractureStrength", PerfectDodgeScreenFractureStrength);
             SetFloat(screenCuePresenter, "perfectDodgeChromaticStrength", PerfectDodgeScreenChromaticStrength);
-            SetFloat(screenCuePresenter, "perfectDodgeGlitchOverlayAlpha", PerfectDodgeGlitchOverlayAlpha);
+            SetFloat(screenCuePresenter, "perfectDodgeGlitchOverlayAlpha", 0f);
             SetFloat(screenCuePresenter, "perfectDodgeGlitchNoiseStrength", PerfectDodgeGlitchNoiseStrength);
             SetFloat(screenCuePresenter, "perfectDodgeGlitchJitterStrength", PerfectDodgeGlitchJitterStrength);
             EditorUtility.SetDirty(screenCuePresenter);
@@ -9178,6 +9188,23 @@ namespace DimensionBrawl.Editor
                 actorVisual,
                 $"{slotActionName} actor prefab",
                 expectedAnimatorMoveSpeedScale: 0.46f);
+            if (string.Equals(slotActionName, "SummonSlot2", StringComparison.Ordinal))
+            {
+                BossLaserSummonPattern summonLaserPattern =
+                    LoadPrefabComponent<BossLaserSummonPattern>(actorPrefabPath);
+                ValidateObjectReference(summonLaserPattern, "proxy", actorPrefab);
+                ValidateObjectReference(summonLaserPattern, "sourceHealth", actorHealth);
+                ValidateObjectReference(summonLaserPattern, "laserOrigin", actorPrefab.ProjectileOrigin);
+                ValidateObjectReference(
+                    summonLaserPattern,
+                    "telegraphVfxPrefab",
+                    LoadAsset<GameObject>(BossLaserTelegraphVfxPrefabPath));
+                ValidateColor(summonLaserPattern, "telegraphStartColor", new Color(0.08f, 0.72f, 1f, 0.22f));
+                ValidateColor(summonLaserPattern, "telegraphEndColor", new Color(0.22f, 1f, 1f, 0.78f));
+                ValidateBool(summonLaserPattern, "telegraphVfxUsesVerticalAxis", true);
+                ValidateFloat(summonLaserPattern, "telegraphVfxAuthoredLength", 5f);
+            }
+
             ValidateFloat(actorPresenter, "clashFlashSeconds", 0.14f);
             ValidateFloat(actorPresenter, "clashFlashScale", 0.14f);
             ValidateNoImportedAssetReference(projectilePrefabPath);
@@ -9499,7 +9526,7 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 460f,
                 expectedActorMoveSpeed: 3.5f,
                 expectedActorEngageRadius: 1.05f,
-                expectedActorAttackDamagePerSecond: 34f,
+                expectedActorAttackDamagePerSecond: 2.5f,
                 expectedActorAttackIntervalSeconds: 0.18f,
                 expectedScreenIntercepts: 0,
                 expectedScreenLifetimeSeconds: 0.2f);
@@ -9543,7 +9570,7 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 760f,
                 expectedActorMoveSpeed: 4.0f,
                 expectedActorEngageRadius: 1.15f,
-                expectedActorAttackDamagePerSecond: 58f,
+                expectedActorAttackDamagePerSecond: 2.5f,
                 expectedActorAttackIntervalSeconds: 0.12f,
                 expectedScreenIntercepts: 0,
                 expectedScreenLifetimeSeconds: 0.2f);
@@ -9596,10 +9623,20 @@ namespace DimensionBrawl.Editor
             ValidateFloat(bossLaserSummonPattern, "laserFireSfxVolume", 0f);
             ValidateFloat(bossLaserSummonPattern, "laserSustainLoopSfxVolume", 0.56f);
             ValidateFloat(bossLaserSummonPattern, "laserEndSfxVolume", 0.52f);
+            ValidateFloat(bossLaserSummonPattern, "activeSeconds", 1.35f);
+            ValidateFloat(
+                bossLaserSummonPattern,
+                "laserPresentationRecoverySeconds",
+                SummonSlot2LaserPresentationRecoverySeconds);
+            ValidateFloat(bossLaserSummonPattern, "damagePerSecond", 2.5f);
+            ValidateFloat(bossLaserSummonPattern, "damageIntervalSeconds", 0.12f);
+            ValidateFloat(bossLaserSummonPattern, "tierDamageBonus", 0.03f);
             ValidateFloat(bossLaserSummonPattern, "retargetSettleSeconds", 0.18f);
             ValidateFloat(bossLaserSummonPattern, "aimTurnSpeedDegrees", 720f);
             ValidateColor(bossLaserSummonPattern, "telegraphStartColor", new Color(1f, 0.18f, 0.08f, 0.26f));
             ValidateColor(bossLaserSummonPattern, "telegraphEndColor", new Color(1f, 0.28f, 0.12f, 0.96f));
+            ValidateBool(bossLaserSummonPattern, "telegraphVfxUsesVerticalAxis", true);
+            ValidateFloat(bossLaserSummonPattern, "telegraphVfxAuthoredLength", 5f);
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
@@ -11580,9 +11617,10 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
-            ValidateFloat(presenter, "maxPerfectDodgeDomainAlpha", 0.42f);
-            ValidateFloat(presenter, "maxPerfectDodgeInvertAlpha", 0.18f);
-            ValidateFloat(presenter, "maxPerfectDodgeEdgeAlpha", 0.48f);
+            ValidateBool(presenter, "playPerfectDodgeScreenDomain", false);
+            ValidateFloat(presenter, "maxPerfectDodgeDomainAlpha", 0f);
+            ValidateFloat(presenter, "maxPerfectDodgeInvertAlpha", 0f);
+            ValidateFloat(presenter, "maxPerfectDodgeEdgeAlpha", 0f);
             ValidateFloat(presenter, "perfectDodgeDomainSeconds", 3f);
             ValidateFloat(presenter, "perfectDodgePulseSeconds", 0.22f);
             ValidateFloat(presenter, "perfectDodgeBandThickness", 26f);
@@ -11598,7 +11636,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "perfectDodgeGridStrength", PerfectDodgeScreenGridStrength);
             ValidateFloat(presenter, "perfectDodgeFractureStrength", PerfectDodgeScreenFractureStrength);
             ValidateFloat(presenter, "perfectDodgeChromaticStrength", PerfectDodgeScreenChromaticStrength);
-            ValidateFloat(presenter, "perfectDodgeGlitchOverlayAlpha", PerfectDodgeGlitchOverlayAlpha);
+            ValidateFloat(presenter, "perfectDodgeGlitchOverlayAlpha", 0f);
             ValidateFloat(presenter, "perfectDodgeGlitchNoiseStrength", PerfectDodgeGlitchNoiseStrength);
             ValidateFloat(presenter, "perfectDodgeGlitchJitterStrength", PerfectDodgeGlitchJitterStrength);
             ValidateBool(presenter, "useDamageScreenFeedback", false);
@@ -12405,12 +12443,12 @@ namespace DimensionBrawl.Editor
             SetMaterialColorIfPresent(material, "_DomainColor", new Color(0.025f, 0.035f, 0.045f, 1f));
             SetMaterialColorIfPresent(material, "_EdgeColor", new Color(0.12f, 0.96f, 1f, 1f));
             SetMaterialColorIfPresent(material, "_InvertColor", new Color(0.92f, 1f, 1f, 1f));
-            SetMaterialFloatIfPresent(material, "_DomainAlpha", 0.42f);
-            SetMaterialFloatIfPresent(material, "_InvertAlpha", 0.18f);
-            SetMaterialFloatIfPresent(material, "_EdgeAlpha", 0.48f);
-            SetMaterialFloatIfPresent(material, "_BandAlpha", 0.13f);
-            SetMaterialFloatIfPresent(material, "_Intensity", PerfectDodgeScreenShaderIntensity);
-            SetMaterialFloatIfPresent(material, "_Sustain", 1f);
+            SetMaterialFloatIfPresent(material, "_DomainAlpha", 0f);
+            SetMaterialFloatIfPresent(material, "_InvertAlpha", 0f);
+            SetMaterialFloatIfPresent(material, "_EdgeAlpha", 0f);
+            SetMaterialFloatIfPresent(material, "_BandAlpha", 0f);
+            SetMaterialFloatIfPresent(material, "_Intensity", 0f);
+            SetMaterialFloatIfPresent(material, "_Sustain", 0f);
             SetMaterialFloatIfPresent(material, "_Age01", 0f);
             SetMaterialFloatIfPresent(material, "_Pulse", 0f);
             SetMaterialFloatIfPresent(material, "_RadialWarp", PerfectDodgeScreenRadialWarpStrength);

@@ -1295,11 +1295,11 @@ MonoBehaviour:
   heavyCameraMicroShakeEuler: 0.78
   playVisualRecoil: 1
   visualRecoilCooldownSeconds: 0.045
-  lightRecoilDistance: 0.03
-  heavyRecoilDistance: 0.075
-  lightRecoilDegrees: 2.2
-  heavyRecoilDegrees: 5.8
-  recoilReturnSeconds: 0.105
+  lightRecoilDistance: 0.055
+  heavyRecoilDistance: 0.12
+  lightRecoilDegrees: 3.8
+  heavyRecoilDegrees: 8
+  recoilReturnSeconds: 0.135
   playHitStop: 1
   hitStopTimeScale: 0.18
   hitStopCooldownSeconds: 0.055
@@ -1444,6 +1444,7 @@ MonoBehaviour:
   playerHealth: {fileID: 4003}
   worldFxMaterial: {fileID: 2100000, guid: 6b21a7dd53227e04e8fb5e851d2629d9, type: 2}
   afterimageMaterial: {fileID: 2100000, guid: 4f717ec946a97ff4e9dea460ac55af2d, type: 2}
+  playProceduralVisuals: 0
   timeWarpClips:
   - {fileID: 8300000, guid: 862bc0486f7bcc947ac7b52f86071056, type: 3}
   - {fileID: 8300000, guid: a35eeaa3351d1104bbd0048f4e702a68, type: 3}
@@ -2027,16 +2028,21 @@ MonoBehaviour:
   recoilRoot: {fileID: 6765803308491781314}
   hitUpperTrigger: HIT UPPER
   hitLowTrigger: HIT LOW
+  crossFadeHitStates: 1
+  hitUpperStateName: R_Hit_Upper
+  hitLowStateName: R_Hit_Low
+  hitCrossFadeSeconds: 0.035
+  hitAnimationLayer: 0
   deathFrontTrigger: DIE F
   deathBackTrigger: DIE B
-  hitReactionCooldownSeconds: 0.16
+  hitReactionCooldownSeconds: 0.12
   heavyHitBypassesCooldown: 1
   playLocalRecoil: 1
-  lightRecoilDistance: 0.035
-  heavyRecoilDistance: 0.08
-  lightRecoilDegrees: 2.4
-  heavyRecoilDegrees: 6
-  recoilReturnSeconds: 0.11
+  lightRecoilDistance: 0.07
+  heavyRecoilDistance: 0.13
+  lightRecoilDegrees: 4.2
+  heavyRecoilDegrees: 8.4
+  recoilReturnSeconds: 0.14
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
@@ -19574,9 +19580,10 @@ MonoBehaviour:
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
-  maxPerfectDodgeDomainAlpha: 0.42
-  maxPerfectDodgeInvertAlpha: 0.18
-  maxPerfectDodgeEdgeAlpha: 0.48
+  playPerfectDodgeScreenDomain: 0
+  maxPerfectDodgeDomainAlpha: 0
+  maxPerfectDodgeInvertAlpha: 0
+  maxPerfectDodgeEdgeAlpha: 0
   perfectDodgeDomainSeconds: 3
   perfectDodgePulseSeconds: 0.22
   perfectDodgeBandThickness: 26
@@ -19589,7 +19596,7 @@ MonoBehaviour:
   perfectDodgeGridStrength: 0.68
   perfectDodgeFractureStrength: 0.74
   perfectDodgeChromaticStrength: 0.86
-  perfectDodgeGlitchOverlayAlpha: 0.16
+  perfectDodgeGlitchOverlayAlpha: 0
   perfectDodgeGlitchNoiseStrength: 1.25
   perfectDodgeGlitchJitterStrength: 0.42
   useDamageScreenFeedback: 0
@@ -21062,7 +21069,7 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.8
     ActorAdvanceSeconds: 1.55
     ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 34
+    ActorAttackDamagePerSecond: 2.5
     ActorAttackIntervalSeconds: 0.18
     ScreenIntercepts: 0
     ScreenRadius: 1.15
@@ -21096,7 +21103,7 @@ MonoBehaviour:
     ActorAdvanceDistance: 4.4
     ActorAdvanceSeconds: 2.05
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 58
+    ActorAttackDamagePerSecond: 2.5
     ActorAttackIntervalSeconds: 0.12
     ScreenIntercepts: 0
     ScreenRadius: 1.15

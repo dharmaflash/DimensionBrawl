@@ -29,6 +29,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private Material worldFxMaterial;
         [SerializeField] private Material afterimageMaterial;
+        [SerializeField] private bool playProceduralVisuals;
         [SerializeField] private AudioClip[] timeWarpClips;
         [SerializeField] private AudioClip[] successClips;
 
@@ -77,6 +78,7 @@ namespace DimensionBrawl.Presentation
         public int LastThreatMarkerCount => lastThreatMarkerCount;
         public float DomainSeconds => domainSeconds;
         public float MatrixDomainRadius => matrixDomainRadius;
+        public bool PlayProceduralVisuals => playProceduralVisuals;
         public bool HasWorldMaterial => ResolveWorldMaterial() != null;
         public bool HasAfterimageMaterial => ResolveAfterimageMaterial() != null;
 
@@ -113,6 +115,17 @@ namespace DimensionBrawl.Presentation
 
         public void Play(DamageInfo damageInfo, Transform anchor, Vector3 dodgeDirection, float intensity, float audioIntensity)
         {
+            playRequestCount++;
+            PlayRandomAudio(timeWarpClips, timeWarpVolume * audioIntensity, timeWarpPitchRange);
+            PlayRandomAudio(successClips, successVolume * audioIntensity, successPitchRange);
+
+            if (!playProceduralVisuals)
+            {
+                lastAfterimageRendererCount = 0;
+                lastThreatMarkerCount = 0;
+                return;
+            }
+
             Material worldMaterial = ResolveWorldMaterial();
             Material ghostMaterial = ResolveAfterimageMaterial();
             if (worldMaterial == null || ghostMaterial == null)
@@ -120,7 +133,6 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            playRequestCount++;
             Transform resolvedAnchor = anchor != null ? anchor : transform;
             Vector3 origin = resolvedAnchor.position;
             Vector3 planarDirection = ResolvePlanarDirection(dodgeDirection, resolvedAnchor);
@@ -130,8 +142,6 @@ namespace DimensionBrawl.Presentation
             SpawnCounterWindow(resolvedAnchor, planarDirection, resolvedIntensity, worldMaterial);
             lastAfterimageRendererCount = SpawnAfterimages(planarDirection, resolvedIntensity, ghostMaterial);
             lastThreatMarkerCount = SpawnThreatMarkers(damageInfo, origin, resolvedIntensity, worldMaterial);
-            PlayRandomAudio(timeWarpClips, timeWarpVolume * audioIntensity, timeWarpPitchRange);
-            PlayRandomAudio(successClips, successVolume * audioIntensity, successPitchRange);
         }
 
         private void SpawnMatrixDomain(Vector3 origin, Vector3 direction, float intensity, Material material)

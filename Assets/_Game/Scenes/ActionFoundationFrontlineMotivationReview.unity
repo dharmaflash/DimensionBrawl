@@ -11631,7 +11631,7 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.8
     ActorAdvanceSeconds: 1.55
     ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 34
+    ActorAttackDamagePerSecond: 2.5
     ActorAttackIntervalSeconds: 0.18
     ScreenIntercepts: 0
     ScreenRadius: 1.15
@@ -11665,7 +11665,7 @@ MonoBehaviour:
     ActorAdvanceDistance: 4.4
     ActorAdvanceSeconds: 2.05
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 58
+    ActorAttackDamagePerSecond: 2.5
     ActorAttackIntervalSeconds: 0.12
     ScreenIntercepts: 0
     ScreenRadius: 1.15

@@ -379,6 +379,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 51
   prioritizeHostileSummons: 1
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.52
+  contactDamageVfxHeightOffset: 0.55
+  contactDamageVfxLifetimeSeconds: 0.72
 --- !u!114 &191494895522243731
 MonoBehaviour:
   m_ObjectHideFlags: 0

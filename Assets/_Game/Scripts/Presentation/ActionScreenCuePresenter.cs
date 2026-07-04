@@ -41,6 +41,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float edgeThickness = 104f;
 
         [Header("Perfect Dodge Domain")]
+        [SerializeField] private bool playPerfectDodgeScreenDomain = true;
         [SerializeField, Range(0f, 0.65f)] private float maxPerfectDodgeDomainAlpha = 0.42f;
         [SerializeField, Range(0f, 0.45f)] private float maxPerfectDodgeInvertAlpha = 0.18f;
         [SerializeField, Range(0f, 0.75f)] private float maxPerfectDodgeEdgeAlpha = 0.48f;
@@ -179,6 +180,7 @@ namespace DimensionBrawl.Presentation
         public float EdgeThickness => edgeThickness;
         public float MaxFullScreenAlpha => maxFullScreenAlpha;
         public float MaxEdgeAlpha => maxEdgeAlpha;
+        public bool PlayPerfectDodgeScreenDomain => playPerfectDodgeScreenDomain;
         public float MaxPerfectDodgeDomainAlpha => maxPerfectDodgeDomainAlpha;
         public float MaxPerfectDodgeInvertAlpha => maxPerfectDodgeInvertAlpha;
         public float MaxPerfectDodgeEdgeAlpha => maxPerfectDodgeEdgeAlpha;
@@ -700,6 +702,15 @@ namespace DimensionBrawl.Presentation
 
         private void RequestPerfectDodgeDomainCue()
         {
+            if (!playPerfectDodgeScreenDomain)
+            {
+                perfectDodgeDomainTimer = 0f;
+                perfectDodgeDomainDuration = 0f;
+                perfectDodgeDomainIntensity = 0f;
+                PerfectDodgeScreenDomainRuntime.Clear();
+                return;
+            }
+
             perfectDodgeDomainDuration = Mathf.Max(0.01f, perfectDodgeDomainSeconds);
             perfectDodgeDomainTimer = Mathf.Max(perfectDodgeDomainTimer, perfectDodgeDomainDuration);
             perfectDodgeDomainIntensity = 1f;
@@ -708,7 +719,10 @@ namespace DimensionBrawl.Presentation
 
         private void PublishPerfectDodgeDomainState()
         {
-            if (!showScreenCues || perfectDodgeDomainTimer <= 0f || perfectDodgeDomainDuration <= 0f)
+            if (!showScreenCues
+                || !playPerfectDodgeScreenDomain
+                || perfectDodgeDomainTimer <= 0f
+                || perfectDodgeDomainDuration <= 0f)
             {
                 PerfectDodgeScreenDomainRuntime.Clear();
                 return;

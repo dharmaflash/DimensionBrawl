@@ -29,6 +29,7 @@ namespace DimensionBrawl.Combat
         private static readonly CombatVfxCueVisual[] EmptyCueVisuals = Array.Empty<CombatVfxCueVisual>();
         private static readonly LineRenderer[] EmptyLineRenderers = Array.Empty<LineRenderer>();
         private const string LaserSustainLoopAudioName = "BossLaserSustainLoopAudio";
+        private const float MaxDamagePerSecond = 2.5f;
 
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private CombatHealth sourceHealth;
@@ -40,7 +41,8 @@ namespace DimensionBrawl.Combat
         [Header("Cadence")]
         [SerializeField, Min(0.05f)] private float telegraphSeconds = 0.78f;
         [SerializeField, Min(0f)] private float aimLockSeconds = 0.2f;
-        [SerializeField, Min(0.05f)] private float activeSeconds = 0.92f;
+        [SerializeField, Min(0.05f)] private float activeSeconds = 1.35f;
+        [SerializeField, Min(0f)] private float laserPresentationRecoverySeconds = 0.38f;
         [SerializeField, Min(0f)] private float recoverySeconds = 0.42f;
         [SerializeField, Min(0.05f)] private float repositionSeconds = 0.62f;
         [SerializeField, Min(0f)] private float retargetSettleSeconds = 0.18f;
@@ -50,9 +52,9 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.1f)] private float laserLength = 22f;
         [SerializeField, Min(0.01f)] private float hitRadius = 0.62f;
         [SerializeField, Min(0f)] private float targetHeightOffset = 1.05f;
-        [SerializeField, Min(0f)] private float damagePerSecond = 58f;
+        [SerializeField, Min(0f)] private float damagePerSecond = 2.5f;
         [SerializeField, Min(0.05f)] private float damageIntervalSeconds = 0.12f;
-        [SerializeField, Min(0f)] private float tierDamageBonus = 0.12f;
+        [SerializeField, Min(0f)] private float tierDamageBonus = 0.03f;
 
         [Header("Movement")]
         [SerializeField, Min(0f)] private float desiredDistanceFromTarget = 4.2f;
@@ -70,6 +72,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.01f)] private float telegraphVfxLengthScale = 1.12f;
         [SerializeField, Min(0f)] private float telegraphVfxPulseScale = 0.08f;
         [SerializeField, Min(0f)] private float telegraphVfxPulseSpeed = 18f;
+        [SerializeField] private bool telegraphVfxUsesVerticalAxis;
+        [SerializeField, Min(0.01f)] private float telegraphVfxAuthoredLength = 1f;
 
         [Header("Audio")]
         [SerializeField] private AudioSource audioSource;
@@ -87,6 +91,7 @@ namespace DimensionBrawl.Combat
         private readonly List<CombatHealth> uniqueTargets = new List<CombatHealth>(8);
         private SummonAttackBeamPresenter beamPresenter;
         private MaterialPropertyBlock telegraphPropertyBlock;
+        private Material telegraphLineRuntimeMaterial;
         private GameObject telegraphVfxInstance;
         private Transform telegraphVfxTransform;
         private Renderer[] telegraphVfxRenderers = EmptyRenderers;
@@ -107,6 +112,10 @@ namespace DimensionBrawl.Combat
 
         public BossLaserSummonPatternState CurrentState => state;
         public bool IsLaserActive => state == BossLaserSummonPatternState.Active;
+        public bool IsLaserPresentationActive =>
+            state == BossLaserSummonPatternState.Active
+            || (state == BossLaserSummonPatternState.Recovery
+                && stateTimer <= laserPresentationRecoverySeconds);
         public int TotalDamageTickCount => totalDamageTickCount;
         public float TelegraphProgress01 => state == BossLaserSummonPatternState.Telegraph
             ? Mathf.Clamp01(stateTimer / Mathf.Max(0.05f, telegraphSeconds))
@@ -128,6 +137,7 @@ namespace DimensionBrawl.Combat
 
         private void OnDisable()
         {
+            SetLaserPresentationLocked(false);
             HideTelegraphVisual();
             ClearBeamPresenter();
             StopLaserSustainLoop(playEndSfx: false);
@@ -148,6 +158,20 @@ namespace DimensionBrawl.Combat
                 }
 
                 telegraphVfxInstance = null;
+            }
+
+            if (telegraphLineRuntimeMaterial != null)
+            {
+                if (Application.isPlaying)
+                {
+                    Destroy(telegraphLineRuntimeMaterial);
+                }
+                else
+                {
+                    DestroyImmediate(telegraphLineRuntimeMaterial);
+                }
+
+                telegraphLineRuntimeMaterial = null;
             }
         }
 
@@ -202,7 +226,7 @@ namespace DimensionBrawl.Combat
             target = newTarget;
             targetHealth = target != null ? target.GetComponentInParent<CombatHealth>() : null;
             sourceTeam = newSourceTeam;
-            damagePerSecond = Mathf.Max(0f, newDamagePerSecond);
+            damagePerSecond = Mathf.Min(Mathf.Max(0f, newDamagePerSecond), MaxDamagePerSecond);
             damageIntervalSeconds = Mathf.Max(0.05f, newDamageIntervalSeconds);
             if (newMoveSpeed > 0f)
             {
@@ -245,8 +269,7 @@ namespace DimensionBrawl.Combat
         private void UpdateActive(float deltaTime)
         {
             stateTimer += deltaTime;
-            proxy.RequestAdvanceHold(0.08f);
-            FaceLockedDirection(deltaTime);
+            proxy.RequestAdvanceHold(Mathf.Max(0.1f, activeSeconds - stateTimer + recoverySeconds + 0.08f));
             HideTelegraphVisual();
             SyncBeamPresenter();
 
@@ -267,6 +290,11 @@ namespace DimensionBrawl.Combat
             stateTimer += deltaTime;
             proxy.RequestAdvanceHold(0.08f);
             HideTelegraphVisual();
+            if (IsLaserPresentationActive)
+            {
+                SyncBeamPresenter();
+            }
+
             if (stateTimer >= recoverySeconds)
             {
                 EnterReposition();
@@ -303,6 +331,7 @@ namespace DimensionBrawl.Combat
         {
             if (state == BossLaserSummonPatternState.Inactive)
             {
+                SetLaserPresentationLocked(false);
                 HideTelegraphVisual();
                 ClearBeamPresenter();
                 return;
@@ -310,6 +339,7 @@ namespace DimensionBrawl.Combat
 
             state = BossLaserSummonPatternState.Inactive;
             stateTimer = 0f;
+            SetLaserPresentationLocked(false);
             HideTelegraphVisual();
             ClearBeamPresenter();
             StopLaserSustainLoop(playEndSfx: false);
@@ -319,6 +349,7 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.WaitingForAdvance;
             stateTimer = 0f;
+            SetLaserPresentationLocked(false);
             HideTelegraphVisual();
             ClearBeamPresenter();
             StopLaserSustainLoop(playEndSfx: false);
@@ -340,7 +371,10 @@ namespace DimensionBrawl.Combat
             state = BossLaserSummonPatternState.Active;
             stateTimer = 0f;
             nextDamageTime = 0f;
-            proxy.NotifyAttackPerformed(activeSeconds + 0.05f);
+            FaceLockedDirection(0f);
+            SetLaserPresentationLocked(true);
+            proxy.RequestAdvanceHold(activeSeconds + recoverySeconds + 0.08f);
+            proxy.NotifyAttackPerformed(activeSeconds + recoverySeconds + 0.05f);
             LaserFired?.Invoke(this);
             PlaySfx(laserFireSfx, laserFireSfxVolume);
             StartLaserSustainLoop();
@@ -352,15 +386,17 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.Recovery;
             stateTimer = 0f;
+            SetLaserPresentationLocked(true);
             StopLaserSustainLoop(playEndSfx: true);
             HideTelegraphVisual();
-            ClearBeamPresenter();
+            SyncBeamPresenter();
         }
 
         private void EnterReposition()
         {
             state = BossLaserSummonPatternState.Reposition;
             stateTimer = 0f;
+            SetLaserPresentationLocked(false);
             ClearBeamPresenter();
             StopLaserSustainLoop(playEndSfx: false);
             cycleIndex++;
@@ -374,10 +410,19 @@ namespace DimensionBrawl.Combat
         {
             state = BossLaserSummonPatternState.Retarget;
             stateTimer = 0f;
+            SetLaserPresentationLocked(false);
             ClearBeamPresenter();
             HideTelegraphVisual();
             StopLaserSustainLoop(playEndSfx: false);
             lockedDirection = ResolveTargetDirection();
+        }
+
+        private void SetLaserPresentationLocked(bool locked)
+        {
+            if (proxy != null)
+            {
+                proxy.SetAdvancePresentationLocked(locked);
+            }
         }
 
         private void ApplyLaserDamage(float interval)
@@ -515,12 +560,14 @@ namespace DimensionBrawl.Combat
 
         private void ShowTelegraphVisual(float progress)
         {
-            HideLegacyTelegraphLine();
             EnsureTelegraphVfx();
             if (telegraphVfxInstance == null || telegraphVfxTransform == null)
             {
+                ShowLegacyTelegraphLine(progress);
                 return;
             }
+
+            HideLegacyTelegraphLine();
 
             Vector3 origin = ResolveLaserOrigin();
             float length = Mathf.Max(0.1f, laserLength);
@@ -536,7 +583,7 @@ namespace DimensionBrawl.Combat
 
             progress = Mathf.Clamp01(progress);
             telegraphVfxTransform.position = origin;
-            telegraphVfxTransform.rotation = Quaternion.LookRotation(direction, ResolveStableUp(direction));
+            telegraphVfxTransform.rotation = ResolveTelegraphVfxRotation(direction);
 
             float parentScale = ResolveParentUniformScale(telegraphVfxTransform);
             float pulse = 1f
@@ -551,7 +598,9 @@ namespace DimensionBrawl.Combat
                 * Mathf.Lerp(legacyWidthRatio, 1f, Mathf.SmoothStep(0f, 1f, progress));
 
             float worldLength = Mathf.Max(0.01f, length * telegraphVfxLengthScale);
-            if (telegraphVfxLineRenderers != null && telegraphVfxLineRenderers.Length > 0)
+            if (!telegraphVfxUsesVerticalAxis
+                && telegraphVfxLineRenderers != null
+                && telegraphVfxLineRenderers.Length > 0)
             {
                 telegraphVfxTransform.localScale = new Vector3(
                     1f / parentScale,
@@ -561,13 +610,32 @@ namespace DimensionBrawl.Combat
             }
             else
             {
-                telegraphVfxTransform.localScale = new Vector3(
-                    Mathf.Max(0.01f, width * pulse) / parentScale,
-                    1f / parentScale,
-                    worldLength / parentScale);
+                telegraphVfxTransform.localScale = ResolveTelegraphVfxScale(width, pulse, worldLength, parentScale);
             }
 
             ApplyTelegraphVfxColor(progress);
+        }
+
+        private Quaternion ResolveTelegraphVfxRotation(Vector3 direction)
+        {
+            Quaternion forwardRotation = Quaternion.LookRotation(direction, ResolveStableUp(direction));
+            return telegraphVfxUsesVerticalAxis
+                ? forwardRotation * Quaternion.Euler(90f, 0f, 0f)
+                : forwardRotation;
+        }
+
+        private Vector3 ResolveTelegraphVfxScale(float width, float pulse, float worldLength, float parentScale)
+        {
+            float safeParentScale = Mathf.Max(0.001f, parentScale);
+            float widthScale = Mathf.Max(0.01f, width * pulse) / safeParentScale;
+            if (telegraphVfxUsesVerticalAxis)
+            {
+                float lengthScale = worldLength
+                    / Mathf.Max(0.01f, telegraphVfxAuthoredLength * safeParentScale);
+                return new Vector3(widthScale, lengthScale, widthScale);
+            }
+
+            return new Vector3(widthScale, 1f / safeParentScale, worldLength / safeParentScale);
         }
 
         private void HideTelegraphVisual()
@@ -828,8 +896,103 @@ namespace DimensionBrawl.Combat
         {
             if (telegraphLine != null)
             {
+                telegraphLine.enabled = false;
                 telegraphLine.gameObject.SetActive(false);
             }
+        }
+
+        private void ShowLegacyTelegraphLine(float progress)
+        {
+            EnsureLegacyTelegraphLine();
+            if (telegraphLine == null)
+            {
+                return;
+            }
+
+            Vector3 origin = ResolveLaserOrigin();
+            Vector3 direction = lockedDirection.sqrMagnitude > 0.0001f
+                ? lockedDirection.normalized
+                : Vector3.forward;
+            float length = Mathf.Max(0.1f, laserLength);
+            float eased = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(progress));
+            Color color = Color.Lerp(telegraphStartColor, telegraphEndColor, eased);
+            color.a = Mathf.Max(color.a, Mathf.Lerp(0.52f, 0.92f, eased));
+            float width = Mathf.Lerp(
+                Mathf.Max(0.001f, telegraphStartWidth),
+                Mathf.Max(0.001f, telegraphEndWidth),
+                eased);
+
+            telegraphLine.gameObject.SetActive(true);
+            telegraphLine.enabled = true;
+            telegraphLine.useWorldSpace = true;
+            telegraphLine.positionCount = 2;
+            telegraphLine.widthMultiplier = 1f;
+            telegraphLine.startWidth = width;
+            telegraphLine.endWidth = width * 0.72f;
+            telegraphLine.startColor = color;
+            telegraphLine.endColor = new Color(color.r, color.g, color.b, color.a * 0.82f);
+            telegraphLine.SetPosition(0, origin);
+            telegraphLine.SetPosition(1, origin + direction * length);
+        }
+
+        private void EnsureLegacyTelegraphLine()
+        {
+            if (telegraphLine != null)
+            {
+                return;
+            }
+
+            GameObject lineObject = new GameObject("BossLaserWarningLine");
+            lineObject.transform.SetParent(transform, worldPositionStays: false);
+            telegraphLine = lineObject.AddComponent<LineRenderer>();
+            telegraphLine.sharedMaterial = ResolveTelegraphLineMaterial();
+            telegraphLine.textureMode = LineTextureMode.Stretch;
+            telegraphLine.alignment = LineAlignment.View;
+            telegraphLine.numCapVertices = 4;
+            telegraphLine.numCornerVertices = 2;
+            telegraphLine.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            telegraphLine.receiveShadows = false;
+            telegraphLine.gameObject.SetActive(false);
+        }
+
+        private Material ResolveTelegraphLineMaterial()
+        {
+            if (telegraphLineRuntimeMaterial != null)
+            {
+                return telegraphLineRuntimeMaterial;
+            }
+
+            Shader shader =
+                Shader.Find("Universal Render Pipeline/Particles/Unlit")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Color");
+            if (shader == null)
+            {
+                return null;
+            }
+
+            telegraphLineRuntimeMaterial = new Material(shader)
+            {
+                name = "BossLaserWarningLine_Runtime"
+            };
+            Color color = telegraphEndColor;
+            if (telegraphLineRuntimeMaterial.HasProperty(BaseColorId))
+            {
+                telegraphLineRuntimeMaterial.SetColor(BaseColorId, color);
+            }
+
+            if (telegraphLineRuntimeMaterial.HasProperty(ColorId))
+            {
+                telegraphLineRuntimeMaterial.SetColor(ColorId, color);
+            }
+
+            if (telegraphLineRuntimeMaterial.HasProperty(TintColorId))
+            {
+                telegraphLineRuntimeMaterial.SetColor(TintColorId, color);
+            }
+
+            return telegraphLineRuntimeMaterial;
         }
 
         private void StartLaserSustainLoop()

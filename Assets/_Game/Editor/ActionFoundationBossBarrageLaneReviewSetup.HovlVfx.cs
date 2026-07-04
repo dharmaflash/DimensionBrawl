@@ -70,6 +70,8 @@ namespace DimensionBrawl.Editor
                     main.loop = loopParticles.Value;
                 }
 
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 main.playOnAwake = playOnAwake;
                 ParticleSystem.EmissionModule emission = particleSystem.emission;
                 emission.enabled = true;
@@ -181,6 +183,72 @@ namespace DimensionBrawl.Editor
 
                 EditorUtility.SetDirty(particleRenderer);
             }
+
+            AssignMissingHovlParticleRendererMaterials(root);
+        }
+
+        private static void AssignMissingHovlParticleRendererMaterials(GameObject root)
+        {
+            Material fallbackMaterial = ResolveFirstAssignedHovlParticleMaterial(root)
+                ?? LoadOrCreateTransparentMaterial(
+                    HovlSciFiEffectsMaterialRoot + "/DB_HovlSciFi_DefaultParticleFallback.mat",
+                    new Color(0.38f, 0.92f, 1f, 0.72f));
+
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer particleRenderer = particleRenderers[i];
+                Material[] materials = particleRenderer.sharedMaterials;
+                if (materials == null || materials.Length == 0)
+                {
+                    particleRenderer.sharedMaterial = fallbackMaterial;
+                    EditorUtility.SetDirty(particleRenderer);
+                    continue;
+                }
+
+                bool changed = false;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        continue;
+                    }
+
+                    materials[materialIndex] = fallbackMaterial;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    particleRenderer.sharedMaterials = materials;
+                    EditorUtility.SetDirty(particleRenderer);
+                }
+            }
+        }
+
+        private static Material ResolveFirstAssignedHovlParticleMaterial(GameObject root)
+        {
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                Material[] materials = particleRenderers[i].sharedMaterials;
+                if (materials == null)
+                {
+                    continue;
+                }
+
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        return materials[materialIndex];
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static Material EnsurePromotedHovlSciFiMaterial(Material sourceMaterial)
@@ -382,15 +450,14 @@ namespace DimensionBrawl.Editor
         private static Mesh EnsurePromotedHovlSciFiMesh(Mesh sourceMesh)
         {
             string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
-            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
-                || string.IsNullOrWhiteSpace(sourcePath)
-                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
             {
                 return sourceMesh;
             }
 
+            string sourceName = string.IsNullOrWhiteSpace(sourceMesh.name) ? "BuiltinParticleMesh" : sourceMesh.name;
             string targetPath = HovlSciFiEffectsMeshRoot + "/DB_HovlSciFi_"
-                + SanitizeAssetFileName(sourceMesh.name)
+                + SanitizeAssetFileName(sourceName)
                 + ".asset";
             EnsureFolderForAsset(targetPath);
 

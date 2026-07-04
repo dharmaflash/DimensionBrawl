@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &161171308110130967
+--- !u!1 &2768249301067811328
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1219107582986441930}
-  - component: {fileID: 6664673123773459306}
-  - component: {fileID: 8043957120837335899}
+  - component: {fileID: 6729356910532830973}
+  - component: {fileID: 3124209341208214134}
+  - component: {fileID: 1502595398456217637}
   m_Layer: 0
   m_Name: ReviewedSfx_PlayerSummonDragonBreath
   m_TagString: Untagged
@@ -18,13 +18,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1219107582986441930
+--- !u!4 &6729356910532830973
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 161171308110130967}
+  m_GameObject: {fileID: 2768249301067811328}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -33,13 +33,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5247407235694545320}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!82 &6664673123773459306
+--- !u!82 &3124209341208214134
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 161171308110130967}
+  m_GameObject: {fileID: 2768249301067811328}
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
@@ -130,19 +130,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &8043957120837335899
+--- !u!114 &1502595398456217637
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 161171308110130967}
+  m_GameObject: {fileID: 2768249301067811328}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fd957b750eeac1e43a824bb53013b64e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueAudioRandomizer
-  source: {fileID: 6664673123773459306}
+  source: {fileID: 3124209341208214134}
   clips:
   - {fileID: 8300000, guid: 5b07ad560d4c64d488cb38889969badc, type: 3}
   baseVolume: 0.48
@@ -180,7 +180,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1219107582986441930}
+  - {fileID: 6729356910532830973}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8431968055605679846

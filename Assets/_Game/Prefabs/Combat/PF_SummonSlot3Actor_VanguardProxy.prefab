@@ -177,7 +177,7 @@ GameObject:
   - component: {fileID: 7454227791480244498}
   - component: {fileID: 58138535566929426}
   - component: {fileID: 2096792085562837884}
-  - component: {fileID: 4793126326093691916}
+  - component: {fileID: 1671120375481681563}
   m_Layer: 0
   m_Name: PF_SummonSlot3Actor_VanguardProxy
   m_TagString: Untagged
@@ -203,8 +203,8 @@ Transform:
   - {fileID: 8661031640170341737}
   - {fileID: 4209069213335448784}
   - {fileID: 2004240103681195067}
-  - {fileID: 1147890922333568083}
-  - {fileID: 8265954198458441816}
+  - {fileID: 605713284936762604}
+  - {fileID: 7332143209869201336}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6077013978877618007
@@ -306,7 +306,7 @@ MonoBehaviour:
   proxy: {fileID: 4738458561690245700}
   clash: {fileID: 5647496645834492196}
   health: {fileID: 0}
-  animator: {fileID: 8591726362551707780}
+  animator: {fileID: 8120619235055669307}
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   lockAdvanceDuringSpawnState: 0
@@ -320,7 +320,7 @@ MonoBehaviour:
   actorRenderers:
   - {fileID: 2407125159355713868}
   damageFlashRenderers:
-  - {fileID: 9937000345280518}
+  - {fileID: 552394737982953657}
   cuePlayer: {fileID: 0}
   vfxAnchor: {fileID: 0}
   damageVfxAnchor: {fileID: 2004240103681195067}
@@ -445,6 +445,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 51
   prioritizeHostileSummons: 1
+  contactDamageVfxPrefab: {fileID: 3769107108948952353, guid: 3cc01800e4712d047a945c9b1b42941d, type: 3}
+  contactDamageVfxScale: 0.52
+  contactDamageVfxHeightOffset: 0.55
+  contactDamageVfxLifetimeSeconds: 0.72
 --- !u!114 &7454227791480244498
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -479,7 +483,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonProxyVisualMotionPresenter
   proxy: {fileID: 4738458561690245700}
-  motionRoot: {fileID: 1147890922333568083}
+  motionRoot: {fileID: 605713284936762604}
   airborneHeight: 0.34
   jumpArcHeight: 0
   tierArcHeightStep: 0
@@ -502,13 +506,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonAttackBeamPresenter
   proxy: {fileID: 4738458561690245700}
-  beamRoot: {fileID: 8265954198458441816}
+  beamRoot: {fileID: 7332143209869201336}
   beamRenderers:
-  - {fileID: 4665137846989841963}
-  - {fileID: 5246078999848076614}
+  - {fileID: 6325999250446944715}
+  - {fileID: 6897898229663050406}
   beamParticles:
-  - {fileID: 3220978316225644441}
-  - {fileID: 1411056800316861560}
+  - {fileID: 4306750058102384761}
+  - {fileID: 351989155300983704}
   tierOneColor: {r: 1, g: 0.38, b: 0.08, a: 0.72}
   tierTwoColor: {r: 1, g: 0.62, b: 0.14, a: 0.82}
   tierThreeColor: {r: 1, g: 0.86, b: 0.32, a: 0.9}
@@ -522,7 +526,7 @@ MonoBehaviour:
   beamImpactBackOffset: 0.5
   beamWidthMultiplier: 1
   authoredBeamLength: 10
---- !u!135 &4793126326093691916
+--- !u!135 &1671120375481681563
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -908,7 +912,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 182847696619729040}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1117391958401024
+--- !u!1001 &1690090837587333088
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -981,32 +985,32 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
---- !u!198 &1411056800316861560 stripped
+--- !u!198 &351989155300983704 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 1411576032020417656, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabInstance: {fileID: 1690090837587333088}
   m_PrefabAsset: {fileID: 0}
---- !u!198 &3220978316225644441 stripped
+--- !u!198 &4306750058102384761 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 3220301287801022361, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabInstance: {fileID: 1690090837587333088}
   m_PrefabAsset: {fileID: 0}
---- !u!199 &4665137846989841963 stripped
+--- !u!199 &6325999250446944715 stripped
 ParticleSystemRenderer:
   m_CorrespondingSourceObject: {fileID: 4665199681814267435, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabInstance: {fileID: 1690090837587333088}
   m_PrefabAsset: {fileID: 0}
---- !u!199 &5246078999848076614 stripped
+--- !u!199 &6897898229663050406 stripped
 ParticleSystemRenderer:
   m_CorrespondingSourceObject: {fileID: 5246176027282351430, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabInstance: {fileID: 1690090837587333088}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &8265954198458441816 stripped
+--- !u!4 &7332143209869201336 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8265629030599016536, guid: 16df3a5048f759c45aadacc3ced00c1f, type: 3}
-  m_PrefabInstance: {fileID: 1117391958401024}
+  m_PrefabInstance: {fileID: 1690090837587333088}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &2720466977715607543
+--- !u!1001 &2470444286111985480
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -1075,18 +1079,18 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: be945306497800449bbfdd5c2cc97600, type: 3}
---- !u!137 &9937000345280518 stripped
+--- !u!137 &552394737982953657 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 2729823400298936305, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 2720466977715607543}
+  m_PrefabInstance: {fileID: 2470444286111985480}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &1147890922333568083 stripped
+--- !u!4 &605713284936762604 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3039695532088699812, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 2720466977715607543}
+  m_PrefabInstance: {fileID: 2470444286111985480}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &8591726362551707780 stripped
+--- !u!95 &8120619235055669307 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5979368353484750707, guid: be945306497800449bbfdd5c2cc97600, type: 3}
-  m_PrefabInstance: {fileID: 2720466977715607543}
+  m_PrefabInstance: {fileID: 2470444286111985480}
   m_PrefabAsset: {fileID: 0}

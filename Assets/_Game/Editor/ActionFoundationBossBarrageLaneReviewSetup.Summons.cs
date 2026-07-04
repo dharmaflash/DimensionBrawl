@@ -11,6 +11,12 @@ namespace DimensionBrawl.Editor
 {
     public static partial class ActionFoundationBossBarrageLaneReviewSetup
     {
+        private const string SummonSlot2LaserMuzzleOriginName = "LaserMuzzleOrigin";
+        private const string SummonSlot2LaserMuzzleBeamName = "LaserMuzzleBeam";
+        private static readonly Vector3 SummonSlot2LaserMuzzleFallbackLocalPosition = new Vector3(0f, 0.92f, 1.58f);
+        private static readonly Vector3 SummonSlot2LaserBeamLocalScale = new Vector3(0.54f, 0.54f, 1.05f);
+        private const float SummonSlot2LaserPresentationRecoverySeconds = 0.38f;
+
         [MenuItem("DimensionBrawl/Reapply Action Foundation Summon Actor Health Bars")]
         public static void ReapplySummonActorHealthBarsMenu()
         {
@@ -45,6 +51,21 @@ namespace DimensionBrawl.Editor
             EnsureBossSummonPressureProfile();
             AssetDatabase.SaveAssets();
             Debug.Log("Reapplied ActionFoundation boss laser summon assets.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Contact Damage VFX")]
+        public static void ReapplyContactDamageVfxMenu()
+        {
+            EnsureSummonPromotedPresentationAssets();
+            EnsureSummonActorPrefab();
+            EnsureSummonSlot2ActorPrefab();
+            EnsureSummonSlot3ActorPrefab();
+            EnsureBossSummonPressureActorPrefab();
+            EnsureBossLaserSummonActorPrefab();
+            EnsureBossSummonPressureProfile();
+            ActionFoundationEnemyRoleCandidateSetup.EnsureEnemyRoleCandidates();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation contact damage VFX assets and bindings.");
         }
 
         private static void EnsureSummonPresentationCandidateProfiles()
@@ -289,6 +310,7 @@ namespace DimensionBrawl.Editor
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(34f, 0.35f, 0.16f, 0.24f);
+                ConfigureContactDamageLightningVfx(clash);
 
                 SphereCollider bodyCollider = EnsureComponent<SphereCollider>(editableRoot);
                 bodyCollider.isTrigger = true;
@@ -500,10 +522,23 @@ namespace DimensionBrawl.Editor
             return LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
         }
 
+        private static void ConfigureContactDamageLightningVfx(SummonFrontlineClash clash)
+        {
+            if (clash == null)
+            {
+                return;
+            }
+
+            SetObjectReference(clash, "contactDamageVfxPrefab", EnsureContactDamageSphereLightningVfxPrefab());
+            SetFloat(clash, "contactDamageVfxScale", 0.52f);
+            SetFloat(clash, "contactDamageVfxHeightOffset", 0.55f);
+            SetFloat(clash, "contactDamageVfxLifetimeSeconds", 0.72f);
+        }
+
         private static SummonFrontlineProxy EnsureSummonSlot2ActorPrefab()
         {
             EnsureSummonSlot2PromotedLaserBeamPrefab();
-            return EnsureSupportSummonActorPrefab(
+            SummonFrontlineProxy proxy = EnsureSupportSummonActorPrefab(
                 SummonSlot2ActorPrefabPath,
                 "PF_SummonSlot2Actor_LaserSoldierProxy",
                 SummonSlot2ActorMaterialPath,
@@ -523,6 +558,61 @@ namespace DimensionBrawl.Editor
                 includePressureScreen: false,
                 pressureScreenMaterialPath: null,
                 pressureScreenColor: Color.clear);
+
+            ConfigureSummonSlot2LaserTelegraphPrefab();
+            return proxy;
+        }
+
+        private static void ConfigureSummonSlot2LaserTelegraphPrefab()
+        {
+            GameObject editableRoot = PrefabUtility.LoadPrefabContents(SummonSlot2ActorPrefabPath);
+            try
+            {
+                SummonFrontlineProxy editableProxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                Transform summonVisual = FindDescendant(editableRoot.transform, SummonSlot2ActorVisualName);
+                BossLaserSummonPattern laserPattern = EnsureComponent<BossLaserSummonPattern>(editableRoot);
+                Transform laserMuzzleOrigin = EnsureSummonSlot2LaserMuzzleOrigin(
+                    editableRoot,
+                    editableProxy,
+                    summonVisual);
+
+                SetObjectReference(laserPattern, "proxy", editableProxy);
+                SetObjectReference(laserPattern, "sourceHealth", editableProxy.Health);
+                SetObjectReference(laserPattern, "laserOrigin", laserMuzzleOrigin);
+                SetObjectReference(
+                    laserPattern,
+                    "telegraphVfxPrefab",
+                    LoadAsset<GameObject>(BossLaserTelegraphVfxPrefabPath));
+                SetFloat(laserPattern, "telegraphSeconds", 0.78f);
+                SetFloat(laserPattern, "aimLockSeconds", 0.2f);
+                SetFloat(laserPattern, "activeSeconds", 1.35f);
+                SetFloat(laserPattern, "laserPresentationRecoverySeconds", SummonSlot2LaserPresentationRecoverySeconds);
+                SetFloat(laserPattern, "recoverySeconds", 0.42f);
+                SetFloat(laserPattern, "repositionSeconds", 0.62f);
+                SetFloat(laserPattern, "retargetSettleSeconds", 0.18f);
+                SetFloat(laserPattern, "aimTurnSpeedDegrees", 720f);
+                SetFloat(laserPattern, "laserLength", 22f);
+                SetFloat(laserPattern, "hitRadius", 0.62f);
+                SetFloat(laserPattern, "damageIntervalSeconds", 0.12f);
+                SetFloat(laserPattern, "tierDamageBonus", 0.03f);
+                SetFloat(laserPattern, "desiredDistanceFromTarget", 4.2f);
+                SetFloat(laserPattern, "strafeDistance", 1.45f);
+                SetFloat(laserPattern, "repositionMoveSpeed", 4f);
+                SetColor(laserPattern, "telegraphStartColor", new Color(0.08f, 0.72f, 1f, 0.22f));
+                SetColor(laserPattern, "telegraphEndColor", new Color(0.22f, 1f, 1f, 0.78f));
+                SetFloat(laserPattern, "telegraphVfxWidthScale", 0.72f);
+                SetFloat(laserPattern, "telegraphVfxLengthScale", 1.12f);
+                SetFloat(laserPattern, "telegraphVfxPulseScale", 0.08f);
+                SetFloat(laserPattern, "telegraphVfxPulseSpeed", 18f);
+                SetBool(laserPattern, "telegraphVfxUsesVerticalAxis", true);
+                SetFloat(laserPattern, "telegraphVfxAuthoredLength", 5f);
+
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot2ActorPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(editableRoot);
+            }
         }
 
         private static SummonFrontlineProxy EnsureBossLaserSummonActorPrefab()
@@ -554,6 +644,7 @@ namespace DimensionBrawl.Editor
             try
             {
                 SummonFrontlineProxy editableProxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                Transform summonVisual = FindDescendant(editableRoot.transform, SummonSlot2ActorVisualName);
                 SetFloat(editableProxy, "defeatedLingerSeconds", 1.18f);
                 SetFloat(editableProxy, "advanceStartDelaySeconds", 0.16f);
                 SetFloat(editableProxy, "advanceAcceleration", 9.5f);
@@ -569,8 +660,13 @@ namespace DimensionBrawl.Editor
                 SetFloat(presenter, "spawnMovementLockSeconds", 0.22f);
 
                 BossLaserSummonPattern laserPattern = EnsureComponent<BossLaserSummonPattern>(editableRoot);
+                Transform laserMuzzleOrigin = EnsureSummonSlot2LaserMuzzleOrigin(
+                    editableRoot,
+                    editableProxy,
+                    summonVisual);
                 SetObjectReference(laserPattern, "proxy", editableProxy);
                 SetObjectReference(laserPattern, "sourceHealth", editableProxy.Health);
+                SetObjectReference(laserPattern, "laserOrigin", laserMuzzleOrigin);
                 SetObjectReference(
                     laserPattern,
                     "telegraphVfxPrefab",
@@ -614,15 +710,17 @@ namespace DimensionBrawl.Editor
                 SetFloat(laserPattern, "laserEndSfxVolume", 0.52f);
                 SetFloat(laserPattern, "telegraphSeconds", 0.78f);
                 SetFloat(laserPattern, "aimLockSeconds", 0.2f);
-                SetFloat(laserPattern, "activeSeconds", 0.92f);
+                SetFloat(laserPattern, "activeSeconds", 1.35f);
+                SetFloat(laserPattern, "laserPresentationRecoverySeconds", SummonSlot2LaserPresentationRecoverySeconds);
                 SetFloat(laserPattern, "recoverySeconds", 0.42f);
                 SetFloat(laserPattern, "repositionSeconds", 0.62f);
                 SetFloat(laserPattern, "retargetSettleSeconds", 0.18f);
                 SetFloat(laserPattern, "aimTurnSpeedDegrees", 720f);
                 SetFloat(laserPattern, "laserLength", 22f);
                 SetFloat(laserPattern, "hitRadius", 0.62f);
-                SetFloat(laserPattern, "damagePerSecond", 58f);
+                SetFloat(laserPattern, "damagePerSecond", 2.5f);
                 SetFloat(laserPattern, "damageIntervalSeconds", 0.12f);
+                SetFloat(laserPattern, "tierDamageBonus", 0.03f);
                 SetFloat(laserPattern, "desiredDistanceFromTarget", 4.2f);
                 SetFloat(laserPattern, "strafeDistance", 1.45f);
                 SetFloat(laserPattern, "repositionMoveSpeed", 4f);
@@ -632,6 +730,8 @@ namespace DimensionBrawl.Editor
                 SetFloat(laserPattern, "telegraphVfxLengthScale", 1.12f);
                 SetFloat(laserPattern, "telegraphVfxPulseScale", 0.08f);
                 SetFloat(laserPattern, "telegraphVfxPulseSpeed", 18f);
+                SetBool(laserPattern, "telegraphVfxUsesVerticalAxis", true);
+                SetFloat(laserPattern, "telegraphVfxAuthoredLength", 5f);
 
                 SummonAttackBeamPresenter beamPresenter = EnsureComponent<SummonAttackBeamPresenter>(editableRoot);
                 SetColor(beamPresenter, "tierOneColor", new Color(1f, 0.24f, 0.12f, 0.88f));
@@ -640,9 +740,9 @@ namespace DimensionBrawl.Editor
                 SetBool(beamPresenter, "overrideBeamColor", false);
                 SetFloat(beamPresenter, "beamUvScrollSpeed", -6f);
                 SetFloat(beamPresenter, "beamTextureScalePerMeter", 0.1f);
-                SetFloat(beamPresenter, "beamMuzzleOffset", 0.1f);
+                SetFloat(beamPresenter, "beamMuzzleOffset", 0.04f);
                 SetFloat(beamPresenter, "beamImpactBackOffset", 0.5f);
-                SetFloat(beamPresenter, "beamWidthMultiplier", 2.2f);
+                SetFloat(beamPresenter, "beamWidthMultiplier", 1.18f);
                 SetFloat(beamPresenter, "authoredBeamLength", 10f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, BossLaserSummonActorPrefabPath);
@@ -742,6 +842,7 @@ namespace DimensionBrawl.Editor
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(clashDamagePerSecond, 0.35f, clashTierDamageBonus, clashHoldSeconds);
+                ConfigureContactDamageLightningVfx(clash);
 
                 SphereCollider bodyCollider = EnsureComponent<SphereCollider>(editableRoot);
                 bodyCollider.isTrigger = true;
@@ -882,21 +983,29 @@ namespace DimensionBrawl.Editor
                     animatorMoveSpeedScale: 0.46f);
                 if (roleId == SummonSlot2ActorVisualRoleId)
                 {
+                    Transform laserMuzzleOrigin = EnsureSummonSlot2LaserMuzzleOrigin(
+                        editableRoot,
+                        proxy,
+                        summonVisual);
                     ConfigureSummonAttackPromotedParticleBeam(
                         editableRoot,
                         proxy,
-                        "LaserMuzzleBeam",
+                        SummonSlot2LaserMuzzleBeamName,
                         SummonSlot2PromotedLaserBeamPrefabPath,
-                        new Vector3(0f, 1.08f, 1.32f),
+                        laserMuzzleOrigin.localPosition,
                         Vector3.zero,
-                        new Vector3(0.92f, 0.92f, 1.38f),
+                        SummonSlot2LaserBeamLocalScale,
                         new Color(0.18f, 0.92f, 1f, 0.72f),
                         new Color(0.62f, 0.86f, 1f, 0.82f),
                         new Color(1f, 0.86f, 0.34f, 0.9f),
-                        tierScaleStep: 0.18f,
-                        pulseScale: 0.1f,
+                        tierScaleStep: 0.12f,
+                        pulseScale: 0.055f,
                         pulseSpeed: 22f,
-                        minimumParticleSystems: 4);
+                        minimumParticleSystems: 8,
+                        beamWidthMultiplier: 1.18f,
+                        beamMuzzleOffset: 0.04f,
+                        loopParticles: false,
+                        overrideBeamColor: false);
                 }
                 else if (roleId == SummonSlot3ActorVisualRoleId)
                 {
@@ -1072,6 +1181,7 @@ namespace DimensionBrawl.Editor
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(36f, 0.35f, 0.16f, 0.24f);
+                ConfigureContactDamageLightningVfx(clash);
                 clash.ConfigurePlayerBodyDamage(0.32f, 7.5f);
 
                 SphereCollider bodyCollider = EnsureComponent<SphereCollider>(editableRoot);
@@ -1533,6 +1643,153 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(actorRoot);
         }
 
+        private static Transform EnsureSummonSlot2LaserMuzzleOrigin(
+            GameObject actorRoot,
+            SummonFrontlineProxy proxy,
+            Transform visualRoot = null)
+        {
+            Transform laserMuzzleOrigin = EnsureChild(actorRoot.transform, SummonSlot2LaserMuzzleOriginName);
+            laserMuzzleOrigin.localPosition = TryResolveSummonSlot2LaserMuzzleLocalPosition(
+                actorRoot.transform,
+                visualRoot,
+                out Vector3 resolvedLocalPosition)
+                ? resolvedLocalPosition
+                : SummonSlot2LaserMuzzleFallbackLocalPosition;
+            laserMuzzleOrigin.localRotation = Quaternion.identity;
+            laserMuzzleOrigin.localScale = Vector3.one;
+            SetObjectReference(proxy, "projectileOrigin", laserMuzzleOrigin);
+            EditorUtility.SetDirty(actorRoot);
+            EditorUtility.SetDirty(laserMuzzleOrigin);
+            EditorUtility.SetDirty(proxy);
+            return laserMuzzleOrigin;
+        }
+
+        private static bool TryResolveSummonSlot2LaserMuzzleLocalPosition(
+            Transform actorRoot,
+            Transform visualRoot,
+            out Vector3 localPosition)
+        {
+            localPosition = SummonSlot2LaserMuzzleFallbackLocalPosition;
+            if (actorRoot == null)
+            {
+                return false;
+            }
+
+            if (visualRoot == null)
+            {
+                visualRoot = FindDescendant(actorRoot, SummonSlot2ActorVisualName);
+            }
+
+            if (visualRoot == null)
+            {
+                return false;
+            }
+
+            if (TryResolveWeaponRendererBounds(visualRoot, out Bounds weaponBounds))
+            {
+                Vector3 forward = actorRoot.forward.sqrMagnitude > 0.0001f
+                    ? actorRoot.forward.normalized
+                    : Vector3.forward;
+                Vector3 actorOrigin = actorRoot.position;
+                float frontProjection = ResolveBoundsFrontProjection(actorOrigin, forward, weaponBounds);
+                Vector3 centerProjection = Vector3.Project(weaponBounds.center - actorOrigin, forward);
+                Vector3 lateralCenter = weaponBounds.center - actorOrigin - centerProjection;
+                Vector3 muzzleWorld = actorOrigin + lateralCenter + forward * (frontProjection + 0.14f);
+                Vector3 resolved = actorRoot.InverseTransformPoint(muzzleWorld);
+                resolved.y = Mathf.Clamp(resolved.y, 0.72f, 1.48f);
+                resolved.z = Mathf.Max(resolved.z, SummonSlot2LaserMuzzleFallbackLocalPosition.z);
+                localPosition = resolved;
+                return true;
+            }
+
+            Transform weaponSocket =
+                FindDescendant(visualRoot, "RefPosLaserGatlinGun_Action")
+                ?? FindDescendant(visualRoot, "RefPosLaserAssaultRifle_Idle")
+                ?? FindDescendant(visualRoot, "RefPosAssaultRifle_Action")
+                ?? FindDescendant(visualRoot, "RefPos2HandedGun_Action");
+            if (weaponSocket == null)
+            {
+                return false;
+            }
+
+            Vector3 socketWorld = weaponSocket.position + actorRoot.forward * 0.86f;
+            Vector3 socketLocal = actorRoot.InverseTransformPoint(socketWorld);
+            socketLocal.y = Mathf.Clamp(socketLocal.y, 0.72f, 1.48f);
+            socketLocal.z = Mathf.Max(socketLocal.z, SummonSlot2LaserMuzzleFallbackLocalPosition.z);
+            localPosition = socketLocal;
+            return true;
+        }
+
+        private static bool TryResolveWeaponRendererBounds(Transform visualRoot, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !IsLikelySummonSlot2LaserWeaponRenderer(renderer.transform))
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private static bool IsLikelySummonSlot2LaserWeaponRenderer(Transform transform)
+        {
+            for (Transform current = transform; current != null; current = current.parent)
+            {
+                string name = current.name;
+                if (name.IndexOf("RoleWeapon", StringComparison.OrdinalIgnoreCase) >= 0
+                    || name.IndexOf("LaserGatlin", StringComparison.OrdinalIgnoreCase) >= 0
+                    || name.IndexOf("LaserAssault", StringComparison.OrdinalIgnoreCase) >= 0
+                    || name.IndexOf("Rifle", StringComparison.OrdinalIgnoreCase) >= 0
+                    || name.IndexOf("Gun", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static float ResolveBoundsFrontProjection(Vector3 origin, Vector3 forward, Bounds bounds)
+        {
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            float front = float.NegativeInfinity;
+            for (int x = 0; x < 2; x++)
+            {
+                for (int y = 0; y < 2; y++)
+                {
+                    for (int z = 0; z < 2; z++)
+                    {
+                        Vector3 corner = new Vector3(
+                            x == 0 ? min.x : max.x,
+                            y == 0 ? min.y : max.y,
+                            z == 0 ? min.z : max.z);
+                        front = Mathf.Max(front, Vector3.Dot(corner - origin, forward));
+                    }
+                }
+            }
+
+            return float.IsNegativeInfinity(front)
+                ? Vector3.Dot(bounds.center - origin, forward)
+                : front;
+        }
+
         private static SummonFrontlineHealthBarPresenter EnsureSummonHealthBar(
             GameObject editableRoot,
             SummonFrontlineProxy proxy,
@@ -1767,7 +2024,7 @@ namespace DimensionBrawl.Editor
                         actorMaxHealth: 460f,
                         actorMoveSpeed: 3.5f,
                         actorEngageRadius: 1.05f,
-                        actorAttackDamagePerSecond: 34f,
+                        actorAttackDamagePerSecond: 2.5f,
                         actorAttackIntervalSeconds: 0.18f,
                         screenIntercepts: 0,
                         screenRadius: 1.15f,
@@ -1800,7 +2057,7 @@ namespace DimensionBrawl.Editor
                         actorMaxHealth: 760f,
                         actorMoveSpeed: 4.0f,
                         actorEngageRadius: 1.15f,
-                        actorAttackDamagePerSecond: 58f,
+                        actorAttackDamagePerSecond: 2.5f,
                         actorAttackIntervalSeconds: 0.12f,
                         screenIntercepts: 0,
                         screenRadius: 1.15f,

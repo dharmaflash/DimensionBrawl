@@ -17,18 +17,23 @@ namespace DimensionBrawl.Presentation
         [Header("Animator")]
         [SerializeField] private string hitUpperTrigger = "HIT UPPER";
         [SerializeField] private string hitLowTrigger = "HIT LOW";
+        [SerializeField] private bool crossFadeHitStates = true;
+        [SerializeField] private string hitUpperStateName = "R_Hit_Upper";
+        [SerializeField] private string hitLowStateName = "R_Hit_Low";
+        [SerializeField, Min(0f)] private float hitCrossFadeSeconds = 0.035f;
+        [SerializeField, Min(0)] private int hitAnimationLayer = 0;
         [SerializeField] private string deathFrontTrigger = "DIE F";
         [SerializeField] private string deathBackTrigger = "DIE B";
-        [SerializeField, Min(0f)] private float hitReactionCooldownSeconds = 0.16f;
+        [SerializeField, Min(0f)] private float hitReactionCooldownSeconds = 0.12f;
         [SerializeField] private bool heavyHitBypassesCooldown = true;
 
         [Header("Recoil")]
         [SerializeField] private bool playLocalRecoil = true;
-        [SerializeField, Min(0f)] private float lightRecoilDistance = 0.035f;
-        [SerializeField, Min(0f)] private float heavyRecoilDistance = 0.08f;
-        [SerializeField, Min(0f)] private float lightRecoilDegrees = 2.4f;
-        [SerializeField, Min(0f)] private float heavyRecoilDegrees = 6f;
-        [SerializeField, Min(0f)] private float recoilReturnSeconds = 0.11f;
+        [SerializeField, Min(0f)] private float lightRecoilDistance = 0.07f;
+        [SerializeField, Min(0f)] private float heavyRecoilDistance = 0.13f;
+        [SerializeField, Min(0f)] private float lightRecoilDegrees = 4.2f;
+        [SerializeField, Min(0f)] private float heavyRecoilDegrees = 8.4f;
+        [SerializeField, Min(0f)] private float recoilReturnSeconds = 0.14f;
 
         private bool subscribed;
         private float nextHitReactionTime;
@@ -124,7 +129,7 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
-            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            if (!ShouldPlayDamageReaction(damageInfo))
             {
                 return;
             }
@@ -155,7 +160,9 @@ namespace DimensionBrawl.Presentation
             }
 
             string trigger = ResolveHitTrigger(damageInfo, heavyReaction);
-            if (!TriggerAnimator(trigger))
+            bool triggered = TriggerAnimator(trigger);
+            bool playedState = TryCrossFadeHitState(trigger);
+            if (!triggered && !playedState)
             {
                 return;
             }
@@ -198,6 +205,32 @@ namespace DimensionBrawl.Presentation
 
             animator.ResetTrigger(trigger);
             animator.SetTrigger(trigger);
+            return true;
+        }
+
+        private bool TryCrossFadeHitState(string trigger)
+        {
+            if (!crossFadeHitStates || animator == null)
+            {
+                return false;
+            }
+
+            string stateName = string.Equals(trigger, hitLowTrigger, System.StringComparison.Ordinal)
+                ? hitLowStateName
+                : hitUpperStateName;
+            if (string.IsNullOrEmpty(stateName) || animator.layerCount <= 0)
+            {
+                return false;
+            }
+
+            int layer = Mathf.Clamp(hitAnimationLayer, 0, animator.layerCount - 1);
+            int stateHash = Animator.StringToHash(stateName);
+            if (!animator.HasState(layer, stateHash))
+            {
+                return false;
+            }
+
+            animator.CrossFadeInFixedTime(stateHash, Mathf.Max(0f, hitCrossFadeSeconds), layer, 0f);
             return true;
         }
 
@@ -322,6 +355,12 @@ namespace DimensionBrawl.Presentation
                 || damageInfo.ResponsePolicy == DamageResponsePolicy.Break
                 || damageInfo.ResponsePolicy == DamageResponsePolicy.Knockdown
                 || DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo);
+        }
+
+        private static bool ShouldPlayDamageReaction(DamageInfo damageInfo)
+        {
+            return damageInfo.Amount > 0f
+                && DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy);
         }
     }
 }
