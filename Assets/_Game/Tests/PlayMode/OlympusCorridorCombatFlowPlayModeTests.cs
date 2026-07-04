@@ -28,6 +28,92 @@ namespace DimensionBrawl.Tests
         private const string TutorialAimFovReportPath = "C:/tmp/DimensionBrawl-OlympusAimFovReport.md";
         private const float ExpectedMinimumTutorialStepSeconds = 0.85f;
 
+        [Test]
+        public void TutorialDialogueAudioCueDefaultsCoverEveryGuideLine()
+        {
+            OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
+                OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
+
+            Assert.That(cues.Length, Is.EqualTo(12));
+            Assert.That(cues[0].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeCue));
+            Assert.That(cues[1].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveCue));
+            Assert.That(cues[2].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedCue));
+            Assert.That(cues[3].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireCue));
+            Assert.That(cues[4].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeCue));
+            Assert.That(cues[5].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsCue));
+            Assert.That(cues[6].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeConfirm));
+            Assert.That(cues[7].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveConfirm));
+            Assert.That(cues[8].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SwapToRangedConfirm));
+            Assert.That(cues[9].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireConfirm));
+            Assert.That(cues[10].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeConfirm));
+            Assert.That(cues[11].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsConfirm));
+        }
+
+        [Test]
+        public void TutorialOverlayBackdropOnlyHighlightsActionPrompts()
+        {
+            var presenterObject = new GameObject("Tutorial Overlay Backdrop Test");
+            try
+            {
+                OlympusTutorialOverlayPresenter presenter =
+                    presenterObject.AddComponent<OlympusTutorialOverlayPresenter>();
+
+                presenter.Show(
+                    "천계관리시스템",
+                    "조이스틱을 사용해 파란 영역 안에서 이동할 수 있습니다.",
+                    "이동",
+                    OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
+                    new Vector2(0.16f, 0.16f));
+
+                Assert.IsTrue(presenter.CurrentFocusBackdropActive);
+
+                presenter.SetGuideState(OlympusTutorialOverlayPresenter.GuideState.Ready);
+                Assert.IsTrue(presenter.CurrentFocusBackdropActive);
+
+                presenter.SetGuideState(OlympusTutorialOverlayPresenter.GuideState.Confirmed);
+                Assert.IsFalse(presenter.CurrentFocusBackdropActive);
+
+                presenter.Show(
+                    "천계관리시스템",
+                    "남은 적을 처치하면 기초 전투 검증이 완료됩니다.",
+                    "전투 완료",
+                    OlympusTutorialOverlayPresenter.FocusKind.Route,
+                    new Vector2(0.5f, 0.76f));
+
+                Assert.IsFalse(presenter.CurrentFocusBackdropActive);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(presenterObject);
+            }
+        }
+
+        [Test]
+        public void TutorialOverlayDialoguePanelSitsAboveScreenCenter()
+        {
+            var presenterObject = new GameObject("Tutorial Overlay Panel Position Test");
+            try
+            {
+                OlympusTutorialOverlayPresenter presenter =
+                    presenterObject.AddComponent<OlympusTutorialOverlayPresenter>();
+
+                presenter.Show(
+                    "천계관리시스템",
+                    "근접 공격 버튼을 사용해 가까운 적을 공격할 수 있습니다.",
+                    "근접 공격",
+                    OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
+                    new Vector2(0.92f, 0.10f));
+
+                Rect panelRect = presenter.CurrentDialoguePanelGuiRect;
+                Assert.Less(panelRect.center.y, Screen.height * 0.5f);
+                Assert.GreaterOrEqual(panelRect.yMin, 0f);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(presenterObject);
+            }
+        }
+
         [UnitySetUp]
         public IEnumerator LoadOlympusCorridorScene()
         {

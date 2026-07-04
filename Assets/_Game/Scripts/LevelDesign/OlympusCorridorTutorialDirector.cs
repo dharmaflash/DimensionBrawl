@@ -12,6 +12,65 @@ namespace DimensionBrawl.LevelDesign
     {
         private const string SystemGuideSpeaker = "천계관리시스템";
 
+        public enum DialogueAudioCueId
+        {
+            None,
+            MeleeCue,
+            MoveCue,
+            SwapToRangedCue,
+            FireCue,
+            DodgeCue,
+            ClearTargetsCue,
+            MeleeConfirm,
+            MoveConfirm,
+            SwapToRangedConfirm,
+            FireConfirm,
+            DodgeConfirm,
+            ClearTargetsConfirm
+        }
+
+        [Serializable]
+        public struct DialogueAudioCue
+        {
+            [SerializeField] private DialogueAudioCueId cueId;
+            [SerializeField] private AudioClip clip;
+            [SerializeField, Range(0f, 1f)] private float volume;
+            [SerializeField, Min(0f)] private float delaySeconds;
+
+            public DialogueAudioCue(
+                DialogueAudioCueId cueId,
+                AudioClip clip,
+                float volume,
+                float delaySeconds)
+            {
+                this.cueId = cueId;
+                this.clip = clip;
+                this.volume = volume;
+                this.delaySeconds = delaySeconds;
+            }
+
+            public DialogueAudioCueId CueId => cueId;
+            public AudioClip Clip => clip;
+            public float Volume => Mathf.Clamp01(volume);
+            public float DelaySeconds => Mathf.Max(0f, delaySeconds);
+        }
+
+        private static readonly DialogueAudioCueId[] DefaultDialogueAudioCueIds =
+        {
+            DialogueAudioCueId.MeleeCue,
+            DialogueAudioCueId.MoveCue,
+            DialogueAudioCueId.SwapToRangedCue,
+            DialogueAudioCueId.FireCue,
+            DialogueAudioCueId.DodgeCue,
+            DialogueAudioCueId.ClearTargetsCue,
+            DialogueAudioCueId.MeleeConfirm,
+            DialogueAudioCueId.MoveConfirm,
+            DialogueAudioCueId.SwapToRangedConfirm,
+            DialogueAudioCueId.FireConfirm,
+            DialogueAudioCueId.DodgeConfirm,
+            DialogueAudioCueId.ClearTargetsConfirm
+        };
+
         private enum TutorialStep
         {
             Inactive,
@@ -75,6 +134,8 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private AudioSource overlayAudioSource;
         [SerializeField] private AudioClip overlayOpenSfx;
         [SerializeField, Range(0f, 1f)] private float overlayOpenSfxVolume = 0.82f;
+        [SerializeField] private DialogueAudioCue[] overlayDialogueAudioCues =
+            CreateDefaultDialogueAudioCueSlots();
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private PlayerMovementController player;
         [SerializeField] private PlayerCombatModeController combatModeController;
@@ -129,6 +190,31 @@ namespace DimensionBrawl.LevelDesign
         public string CurrentPhaseId => stepPhase.ToString();
         public string LastCompletionRecord => lastCompletionRecord;
 
+        public static DialogueAudioCue[] CreateDefaultDialogueAudioCueSlots()
+        {
+            var cues = new DialogueAudioCue[DefaultDialogueAudioCueIds.Length];
+            for (int i = 0; i < cues.Length; i++)
+            {
+                cues[i] = new DialogueAudioCue(DefaultDialogueAudioCueIds[i], null, 1f, 0f);
+            }
+
+            return cues;
+        }
+
+        public static DialogueAudioCue[] NormalizeDialogueAudioCueSlots(DialogueAudioCue[] cues)
+        {
+            var results = new DialogueAudioCue[DefaultDialogueAudioCueIds.Length];
+            for (int i = 0; i < DefaultDialogueAudioCueIds.Length; i++)
+            {
+                DialogueAudioCueId cueId = DefaultDialogueAudioCueIds[i];
+                results[i] = FindDialogueAudioCue(cues, cueId, out DialogueAudioCue cue)
+                    ? cue
+                    : new DialogueAudioCue(cueId, null, 1f, 0f);
+            }
+
+            return results;
+        }
+
         public void BindRuntimeContext(
             PlayerMovementController newPlayer,
             PlayerCombatModeController newCombatModeController,
@@ -174,6 +260,11 @@ namespace DimensionBrawl.LevelDesign
             overlayOpenSfx = openSfx != null ? openSfx : overlayOpenSfx;
             overlayOpenSfxVolume = Mathf.Clamp01(volume);
             ApplyOverlayPresentationBindings();
+        }
+
+        public void ConfigureOverlayDialogueAudio(DialogueAudioCue[] dialogueAudioCues)
+        {
+            overlayDialogueAudioCues = NormalizeDialogueAudioCueSlots(dialogueAudioCues);
         }
 
         public void BeginTutorial()
@@ -639,6 +730,7 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
+                        DialogueAudioCueId.MeleeCue,
                         SystemGuideSpeaker,
                         "근접 공격 버튼을 사용해 가까운 적을 공격할 수 있습니다.",
                         "근접 공격",
@@ -647,6 +739,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
+                        DialogueAudioCueId.MoveCue,
                         SystemGuideSpeaker,
                         "조이스틱을 사용해 파란 영역 안에서 이동할 수 있습니다.",
                         "이동",
@@ -655,6 +748,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
+                        DialogueAudioCueId.SwapToRangedCue,
                         SystemGuideSpeaker,
                         "전투 모드 전환 버튼을 사용해 원거리 사격 모드로 변경할 수 있습니다.",
                         "모드 전환",
@@ -663,6 +757,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
+                        DialogueAudioCueId.FireCue,
                         SystemGuideSpeaker,
                         "사격 버튼을 길게 누르면 조준 상태에 돌입합니다. 조준 중 적을 명중시키십시오.",
                         "조준 사격",
@@ -671,6 +766,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
+                        DialogueAudioCueId.DodgeCue,
                         SystemGuideSpeaker,
                         "적의 공격을 정확한 타이밍에 회피하면 일정 시간 동안 무적 상태에 돌입합니다.",
                         "회피",
@@ -679,6 +775,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
+                        DialogueAudioCueId.ClearTargetsCue,
                         SystemGuideSpeaker,
                         "남은 적을 처치하면 기초 전투 검증이 완료됩니다.",
                         "전투 완료",
@@ -694,6 +791,7 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
+                        DialogueAudioCueId.MeleeConfirm,
                         SystemGuideSpeaker,
                         "근접 공격 입력이 확인되었습니다.",
                         "\ud655\uc778",
@@ -702,6 +800,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
+                        DialogueAudioCueId.MoveConfirm,
                         SystemGuideSpeaker,
                         "이동 입력이 확인되었습니다.",
                         "\ud655\uc778",
@@ -710,6 +809,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
+                        DialogueAudioCueId.SwapToRangedConfirm,
                         SystemGuideSpeaker,
                         "원거리 사격 모드 전환이 확인되었습니다.",
                         "\ud655\uc778",
@@ -718,6 +818,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
+                        DialogueAudioCueId.FireConfirm,
                         SystemGuideSpeaker,
                         "조준 및 사격 명중이 확인되었습니다.",
                         "\ud655\uc778",
@@ -726,6 +827,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
+                        DialogueAudioCueId.DodgeConfirm,
                         SystemGuideSpeaker,
                         "회피 입력이 확인되었습니다.",
                         "\ud655\uc778",
@@ -734,6 +836,7 @@ namespace DimensionBrawl.LevelDesign
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
+                        DialogueAudioCueId.ClearTargetsConfirm,
                         SystemGuideSpeaker,
                         "기초 전투 검증이 완료되었습니다.",
                         "\ud655\uc778",
@@ -744,6 +847,7 @@ namespace DimensionBrawl.LevelDesign
         }
 
         private void ShowGuide(
+            DialogueAudioCueId dialogueAudioCueId,
             string speaker,
             string dialogue,
             string inputLabel,
@@ -757,7 +861,16 @@ namespace DimensionBrawl.LevelDesign
                     ResolveTutorialStepIndex(),
                     ResolveTutorialStepCount(),
                     ResolveTutorialPhaseLabel());
-                overlayPresenter.Show(speaker, dialogue, inputLabel, focusKind, resolvedAnchor);
+                DialogueAudioCue audioCue = ResolveDialogueAudioCue(dialogueAudioCueId);
+                overlayPresenter.Show(
+                    speaker,
+                    dialogue,
+                    inputLabel,
+                    focusKind,
+                    resolvedAnchor,
+                    audioCue.Clip,
+                    audioCue.Volume,
+                    audioCue.DelaySeconds);
                 return;
             }
 
@@ -776,6 +889,37 @@ namespace DimensionBrawl.LevelDesign
                 true,
                 resolvedAnchor);
             promptPresenter.ShowCue(cue);
+        }
+
+        private DialogueAudioCue ResolveDialogueAudioCue(DialogueAudioCueId cueId)
+        {
+            return FindDialogueAudioCue(overlayDialogueAudioCues, cueId, out DialogueAudioCue cue)
+                ? cue
+                : default;
+        }
+
+        private static bool FindDialogueAudioCue(
+            DialogueAudioCue[] cues,
+            DialogueAudioCueId cueId,
+            out DialogueAudioCue cue)
+        {
+            if (cueId == DialogueAudioCueId.None || cues == null)
+            {
+                cue = default;
+                return false;
+            }
+
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].CueId == cueId)
+                {
+                    cue = cues[i];
+                    return true;
+                }
+            }
+
+            cue = default;
+            return false;
         }
 
         private Vector2 ResolveHudAnchor(

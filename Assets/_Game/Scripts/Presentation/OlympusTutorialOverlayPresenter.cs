@@ -36,6 +36,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0.01f)] private float transitionSeconds = 0.36f;
         [SerializeField, Min(1f)] private float dialogueCharactersPerSecond = 22f;
         [Header("Communicator Panel")]
+        [SerializeField, Range(0.25f, 0.6f)] private float dialoguePanelVerticalAnchor = 0.43f;
         [SerializeField] private bool useCommunicatorPanel = true;
         [SerializeField, Range(0f, 1f)] private float communicatorScanlineAlpha = 0.18f;
         [SerializeField, Range(0f, 1f)] private float communicatorGlitchAlpha = 0.20f;
@@ -45,6 +46,10 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 1f)] private float warningBootMaxAlpha = 0.82f;
         [SerializeField] private string warningBootTitle = "- WARNING -";
         [SerializeField] private string warningBootSubtitle = "CELESTIAL SYSTEM LINK";
+        [Header("Focus Backdrop")]
+        [SerializeField] private bool useFocusBackdrop = true;
+        [SerializeField, Range(0f, 0.95f)] private float focusBackdropMaxAlpha = 0.66f;
+        [SerializeField, Min(0f)] private float focusBackdropPadding = 34f;
         [Header("Communicator Audio")]
         [SerializeField] private AudioSource communicatorAudioSource;
         [SerializeField] private AudioClip communicatorOpenSfx;
@@ -93,6 +98,9 @@ namespace DimensionBrawl.Presentation
         private float warningBootTimer;
         private bool hasOutgoingCue;
         private bool hasPlayedOpenSfx;
+        private AudioClip pendingDialogueSfx;
+        private float pendingDialogueSfxVolume = 1f;
+        private float pendingDialogueSfxTimer;
         private int progressStepIndex;
         private int progressStepCount;
         private string phaseLabel = string.Empty;
@@ -103,6 +111,10 @@ namespace DimensionBrawl.Presentation
         public Vector2 CurrentFocusAnchor => ResolveAnimatedFocusAnchor();
         public Vector2 CurrentFocusCenterGuiPoint => ResolveFocusCenterGuiPoint(ResolveAnimatedFocusAnchor());
         public Rect CurrentFocusMarkerGuiRect => ResolveFocusMarkerRect(ResolveScale());
+        public bool CurrentFocusBackdropActive => visible && ShouldDrawFocusBackdrop(focusKind, guideState);
+        public Rect CurrentFocusSpotlightGuiRect => CurrentFocusBackdropActive
+            ? ResolveFocusSpotlightRect(ResolveScale(), focusKind, ResolveAnimatedFocusAnchor())
+            : Rect.zero;
         public Rect CurrentDialoguePanelGuiRect => ResolveDialoguePanelRect(ResolveScale());
 
         public void Show(
@@ -112,10 +124,32 @@ namespace DimensionBrawl.Presentation
             FocusKind newFocusKind,
             Vector2 newFocusAnchor)
         {
+            Show(
+                newSpeaker,
+                newDialogue,
+                newInputLabel,
+                newFocusKind,
+                newFocusAnchor,
+                null,
+                1f,
+                0f);
+        }
+
+        public void Show(
+            string newSpeaker,
+            string newDialogue,
+            string newInputLabel,
+            FocusKind newFocusKind,
+            Vector2 newFocusAnchor,
+            AudioClip dialogueSfx,
+            float dialogueSfxVolume,
+            float dialogueSfxDelaySeconds)
+        {
             string resolvedSpeaker = string.IsNullOrWhiteSpace(newSpeaker) ? "OPERATOR" : newSpeaker;
             string resolvedDialogue = newDialogue ?? string.Empty;
             string resolvedInputLabel = newInputLabel ?? string.Empty;
             Vector2 resolvedFocusAnchor = new Vector2(Mathf.Clamp01(newFocusAnchor.x), Mathf.Clamp01(newFocusAnchor.y));
+            bool isOpeningPanel = !visible;
 
             if (IsSameGuide(resolvedSpeaker, resolvedDialogue, resolvedInputLabel, newFocusKind))
             {
@@ -147,6 +181,11 @@ namespace DimensionBrawl.Presentation
             dialogueRevealTimer = 0f;
             visible = true;
             TryPlayCommunicatorOpenSfx();
+            QueueDialogueSfx(
+                dialogueSfx,
+                dialogueSfxVolume,
+                dialogueSfxDelaySeconds,
+                isOpeningPanel);
         }
 
         public void Hide()
@@ -161,6 +200,8 @@ namespace DimensionBrawl.Presentation
             phaseLabel = string.Empty;
             hasOutgoingCue = false;
             hasPlayedOpenSfx = false;
+            pendingDialogueSfx = null;
+            pendingDialogueSfxTimer = 0f;
             transitionTimer = transitionSeconds;
             dialogueRevealTimer = 0f;
             warningBootTimer = 0f;
@@ -198,6 +239,7 @@ namespace DimensionBrawl.Presentation
             transitionTimer = Mathf.Min(transitionTimer + Time.unscaledDeltaTime, transitionSeconds);
             dialogueRevealTimer += Time.unscaledDeltaTime;
             warningBootTimer += Time.unscaledDeltaTime;
+            UpdatePendingDialogueSfx();
             if (hasOutgoingCue && transitionTimer >= transitionSeconds)
             {
                 hasOutgoingCue = false;
@@ -213,9 +255,32 @@ namespace DimensionBrawl.Presentation
 
             EnsureStyles();
             float scale = ResolveScale();
+            DrawFocusBackdrop(scale);
             DrawWarningBootOverlay(scale);
             DrawDialoguePanel(scale);
             DrawFocusMarker(scale);
+        }
+
+        private void DrawFocusBackdrop(float scale)
+        {
+            if (!ShouldDrawFocusBackdrop(focusKind, guideState))
+            {
+                return;
+            }
+
+            float alpha = focusBackdropMaxAlpha * ResolveIncomingAlpha() * ResolveBootRevealAlpha();
+            if (alpha <= 0.001f)
+            {
+                return;
+            }
+
+            Rect spotlightRect = ResolveFocusSpotlightRect(scale, focusKind, ResolveAnimatedFocusAnchor());
+            DrawBackdropAroundRect(spotlightRect, new Color(0f, 0f, 0f, alpha));
+            DrawBorder(
+                spotlightRect,
+                Mathf.Max(1f, 2f * scale),
+                ResolveFocusColor(focusKind, guideState),
+                0.48f * alpha);
         }
 
         private void DrawDialoguePanel(float scale)
@@ -443,9 +508,10 @@ namespace DimensionBrawl.Presentation
         {
             float width = Mathf.Min(Screen.width - 56f * scale, 940f * scale);
             float height = 214f * scale;
+            float centerY = Screen.height * Mathf.Clamp(dialoguePanelVerticalAnchor, 0.25f, 0.6f);
             return new Rect(
                 38f * scale,
-                Mathf.Max(24f * scale, Screen.height * 0.5f - height * 0.5f),
+                Mathf.Max(24f * scale, centerY - height * 0.5f),
                 width,
                 height);
         }
@@ -730,6 +796,61 @@ namespace DimensionBrawl.Presentation
             communicatorAudioSource.PlayOneShot(communicatorOpenSfx, communicatorOpenSfxVolume);
         }
 
+        private void QueueDialogueSfx(
+            AudioClip clip,
+            float volume,
+            float delaySeconds,
+            bool isOpeningPanel)
+        {
+            pendingDialogueSfx = null;
+            pendingDialogueSfxTimer = 0f;
+            if (clip == null)
+            {
+                return;
+            }
+
+            float resolvedDelay = Mathf.Max(0f, delaySeconds);
+            if (isOpeningPanel && useCommunicatorPanel && warningBootSeconds > 0.001f)
+            {
+                resolvedDelay = Mathf.Max(resolvedDelay, warningBootSeconds * 0.58f);
+            }
+
+            pendingDialogueSfx = clip;
+            pendingDialogueSfxVolume = Mathf.Clamp01(volume);
+            pendingDialogueSfxTimer = resolvedDelay;
+            if (pendingDialogueSfxTimer <= 0f)
+            {
+                PlayPendingDialogueSfx();
+            }
+        }
+
+        private void UpdatePendingDialogueSfx()
+        {
+            if (pendingDialogueSfx == null)
+            {
+                return;
+            }
+
+            pendingDialogueSfxTimer -= Time.unscaledDeltaTime;
+            if (pendingDialogueSfxTimer <= 0f)
+            {
+                PlayPendingDialogueSfx();
+            }
+        }
+
+        private void PlayPendingDialogueSfx()
+        {
+            AudioClip clip = pendingDialogueSfx;
+            pendingDialogueSfx = null;
+            pendingDialogueSfxTimer = 0f;
+            if (communicatorAudioSource == null || clip == null)
+            {
+                return;
+            }
+
+            communicatorAudioSource.PlayOneShot(clip, pendingDialogueSfxVolume);
+        }
+
         private Vector2 ResolveFocusCenterGuiPoint(Vector2 anchor)
         {
             return new Vector2(anchor.x * Screen.width, (1f - anchor.y) * Screen.height);
@@ -746,6 +867,74 @@ namespace DimensionBrawl.Presentation
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 7f);
             float size = (92f + pulse * 20f) * scale;
             return new Rect(center.x - size * 0.5f, center.y - size * 0.5f, size, size);
+        }
+
+        private Rect ResolveFocusSpotlightRect(
+            float scale,
+            FocusKind targetFocusKind,
+            Vector2 markerFocusAnchor)
+        {
+            Rect markerRect = ResolveFocusMarkerRect(scale, markerFocusAnchor);
+            float padding = ResolveFocusSpotlightPadding(targetFocusKind) * scale;
+            Rect spotlightRect = new Rect(
+                markerRect.x - padding,
+                markerRect.y - padding,
+                markerRect.width + padding * 2f,
+                markerRect.height + padding * 2f);
+
+            return ClampRectToScreen(spotlightRect);
+        }
+
+        private float ResolveFocusSpotlightPadding(FocusKind targetFocusKind)
+        {
+            float resolvedPadding = Mathf.Max(0f, focusBackdropPadding);
+            switch (targetFocusKind)
+            {
+                case FocusKind.MoveStick:
+                    return resolvedPadding + 34f;
+                case FocusKind.SwapMode:
+                    return resolvedPadding + 22f;
+                case FocusKind.MeleeAttack:
+                case FocusKind.RangedAttack:
+                case FocusKind.Dodge:
+                    return resolvedPadding + 12f;
+                default:
+                    return resolvedPadding;
+            }
+        }
+
+        private static Rect ClampRectToScreen(Rect rect)
+        {
+            float xMin = Mathf.Clamp(rect.xMin, 0f, Screen.width);
+            float yMin = Mathf.Clamp(rect.yMin, 0f, Screen.height);
+            float xMax = Mathf.Clamp(rect.xMax, 0f, Screen.width);
+            float yMax = Mathf.Clamp(rect.yMax, 0f, Screen.height);
+            return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+        }
+
+        private void DrawBackdropAroundRect(Rect clearRect, Color color)
+        {
+            if (clearRect.yMin > 0f)
+            {
+                DrawSolidRect(new Rect(0f, 0f, Screen.width, clearRect.yMin), color);
+            }
+
+            if (clearRect.xMin > 0f)
+            {
+                DrawSolidRect(new Rect(0f, clearRect.yMin, clearRect.xMin, clearRect.height), color);
+            }
+
+            if (clearRect.xMax < Screen.width)
+            {
+                DrawSolidRect(
+                    new Rect(clearRect.xMax, clearRect.yMin, Screen.width - clearRect.xMax, clearRect.height),
+                    color);
+            }
+
+            if (clearRect.yMax < Screen.height)
+            {
+                DrawSolidRect(new Rect(0f, clearRect.yMax, Screen.width, Screen.height - clearRect.yMax), color);
+            }
         }
 
         private void DrawBorder(Rect rect, float thickness, Color color, float alpha)
@@ -1002,6 +1191,26 @@ namespace DimensionBrawl.Presentation
                     return targetGuideState == GuideState.Ready
                         ? new Color(0.38f, 0.94f, 1f, 0.96f)
                         : new Color(0.56f, 0.96f, 1f, 0.62f);
+            }
+        }
+
+        private bool ShouldDrawFocusBackdrop(FocusKind targetFocusKind, GuideState targetGuideState)
+        {
+            if (!useFocusBackdrop || targetGuideState == GuideState.Confirmed)
+            {
+                return false;
+            }
+
+            switch (targetFocusKind)
+            {
+                case FocusKind.MeleeAttack:
+                case FocusKind.MoveStick:
+                case FocusKind.SwapMode:
+                case FocusKind.RangedAttack:
+                case FocusKind.Dodge:
+                    return true;
+                default:
+                    return false;
             }
         }
 

@@ -54,6 +54,8 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private AudioSource tutorialOverlayAudioSource;
         [SerializeField] private AudioClip tutorialOverlayOpenSfx;
         [SerializeField, Range(0f, 1f)] private float tutorialOverlayOpenSfxVolume = 0.82f;
+        [SerializeField] private OlympusCorridorTutorialDirector.DialogueAudioCue[] tutorialOverlayDialogueAudioCues =
+            OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
@@ -274,6 +276,22 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void Reset()
+        {
+            EnsureTutorialDialogueAudioCueSlots();
+        }
+
+        private void OnValidate()
+        {
+            EnsureTutorialDialogueAudioCueSlots();
+        }
+
+        private void EnsureTutorialDialogueAudioCueSlots()
+        {
+            tutorialOverlayDialogueAudioCues =
+                OlympusCorridorTutorialDirector.NormalizeDialogueAudioCueSlots(tutorialOverlayDialogueAudioCues);
+        }
+
         private void PrepareInitialState()
         {
             if (phase != FlowPhase.WaitingForIntroHandoff)
@@ -457,10 +475,12 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            EnsureTutorialDialogueAudioCueSlots();
             director.ConfigureOverlayAudio(
                 ResolveTutorialOverlayAudioSource(),
                 ResolveTutorialOverlayOpenSfx(),
                 tutorialOverlayOpenSfxVolume);
+            director.ConfigureOverlayDialogueAudio(tutorialOverlayDialogueAudioCues);
 
             director.BindRuntimeContext(
                 player,
