@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a80e6e9179c47d3a80512a3e5cfe5a4, type: 3}
+  m_Name: DB_BossPressureActionDeck_AkazaPhase2
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
+  deckId: AkazaPhase2Boss
+  globalRecoverySeconds: 0.78
+  actionSlots:
+  - Pattern: {fileID: 11400000, guid: d6ddf85506fc3a64593c1f3627179c8d, type: 2}
+    ActionKind: 0
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 2.8
+    ResponseId: AkazaDodgeRailOrSpendSlot1
+    StageLoopRole: The boss floats forward and marks a narrow rail after the player
+      farms EN.
+    PlayerAnswer: Sidestep off the marked rail before release.
+    SummonAnswer: A low-tier summon screen can buy space but does not replace dodging.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1
+  - Pattern: {fileID: 11400000, guid: 031a4022a43b0d94da2839f6c10ba846, type: 2}
+    ActionKind: 1
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 3.4
+    ResponseId: AkazaSummonCurtainSlotRead
+    StageLoopRole: The boss calls a frontline actor and fires a curtain that preserves
+      a readable gap.
+    PlayerAnswer: Do not cross the forward boundary; reposition behind it.
+    SummonAnswer: Slot 1 or 2 should meet the screen before the boss pattern lands.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1
+  - Pattern: {fileID: 11400000, guid: 21ca0c54e9135304699fbfe0e36cf004, type: 2}
+    ActionKind: 0
+    MinimumTier: 2
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 4.2
+    ResponseId: AkazaCrossfireAfterPlayerSummon
+    StageLoopRole: The boss answers a visible player summon with a crossed projectile
+      burst.
+    PlayerAnswer: Bait the first crossing pair and dodge through the late inner gap.
+    SummonAnswer: Slot 2 should absorb the summon screen while the player moves.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 1
+    MinimumPlayerSummonTier: 2
+  - Pattern: {fileID: 11400000, guid: 031a4022a43b0d94da2839f6c10ba846, type: 2}
+    ActionKind: 1
+    MinimumTier: 2
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 4.6
+    ResponseId: AkazaDoubleFrontlineAnswer
+    StageLoopRole: A stronger summon-pressure beat tests whether the player kept
+      EN for the frontline.
+    PlayerAnswer: Retreat into the safer backline if EN is not ready.
+    SummonAnswer: Slot 2 or 3 should contest the boss actor instead of pure player
+      DPS.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 1
+    MinimumPlayerSummonTier: 2
+  - Pattern: {fileID: 11400000, guid: 340d759e54a15d240a7627e789023965, type: 2}
+    ActionKind: 2
+    MinimumTier: 3
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 6
+    ResponseId: AkazaOverextendCrushNet
+    StageLoopRole: The boss spends a high tier only when the player stays forward
+      too long.
+    PlayerAnswer: Back out of forward risk before the net closes.
+    SummonAnswer: A tier-3 summon can hold the front while the player retreats.
+    UsePlayerForwardRiskGate: 1
+    MinimumPlayerForwardRisk01: 0.62
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1

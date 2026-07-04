@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
+  m_Name: DB_BossBarrage_Phase2_AkazaCrushNet
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
+  patternId: AkazaCrushNet
+  skillPatternFamily: 7
+  skillTransferMode: 1
+  playerSkillTranslationNote: A high-tier overextend punish that remains a committed
+    skill, never boss basic fire.
+  counterplayNote: Retreat from forward risk or answer with a high-tier summon before
+    the net collapses.
+  telegraphWindupColor: {r: 1, g: 0.18, b: 0.38, a: 0.78}
+  telegraphReleaseColor: {r: 1, g: 0.68, b: 0.72, a: 0.96}
+  telegraphMarkerWidthScale: 1.32
+  telegraphMarkerDepthScale: 0.92
+  telegraphPulseScale: 1.36
+  projectileColor: {r: 1, g: 0.28, b: 0.46, a: 1}
+  projectileVisualScale: {x: 1.28, y: 0.78, z: 1.28}
+  projectileMaterial: {fileID: 2100000, guid: a6c8fa06a6f9a2744b15636aa56b2e58, type: 2}
+  initialDelaySeconds: 0.12
+  windupSeconds: 1.16
+  waveIntervalSeconds: 6
+  projectilesPerWave: 7
+  damage: 12
+  projectileSpeed: 13.4
+  projectileLifetimeSeconds: 5.8
+  projectileRadius: 0.36
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
+  targetingRule: 0
+  laneCenterLateralRatio: 0
+  lateralShape: 3
+  backlineHalfSpread: 3.85
+  forwardHalfSpread: 0.88
+  twinColumnInnerSpreadRatio: 0.38
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
+  punishNetInnerSpreadRatio: 0.3
+  escortScreenInnerGapRatio: 0.28
+  layeredSalvoRowCount: 3
+  crossfireInnerGapRatio: 0.32
+  linePressureDirection: 1
+  linePressureCenterRatio: 0.72
+  linePressureHalfSpreadRatio: 0.08
+  backlineDepthSpread: 2.2
+  forwardDepthSpread: 0.85
+  spawnHeight: 2.48
+  targetHeight: 1.08

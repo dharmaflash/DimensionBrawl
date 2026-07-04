@@ -237,6 +237,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            queued = false;
             executionRuntime?.Detach();
             DisableActionIfOwned(summonAction, actionEnabledHere);
             actionEnabledHere = false;
@@ -334,6 +335,12 @@ namespace DimensionBrawl.Player
 
         public void QueueSummonSlot1()
         {
+            if (!CanAcceptQueuedInput())
+            {
+                queued = false;
+                return;
+            }
+
             queued = true;
         }
 
@@ -608,6 +615,11 @@ namespace DimensionBrawl.Player
             return Keyboard.current != null
                 && Keyboard.current[keyboardTestKey] != null
                 && Keyboard.current[keyboardTestKey].wasPressedThisFrame;
+        }
+
+        private bool CanAcceptQueuedInput()
+        {
+            return isActiveAndEnabled && !cinematicInputLocked;
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)

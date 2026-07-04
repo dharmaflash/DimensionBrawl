@@ -8,10 +8,9 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class BossBarrageLaneReviewTutorialGuide : MonoBehaviour
     {
-        private const int BufferedConditionCapacity = 8;
-
         [SerializeField] private BossBarrageLaneReviewTutorialProfile profile;
         [SerializeField] private bool startOnEnable = true;
+        [SerializeField, Min(0f)] private float cueReadSeconds = 0.45f;
         [SerializeField, Min(0f)] private float minimumStepReadSeconds = 0.85f;
         [SerializeField, Min(0f)] private float completionHoldSeconds = 0.85f;
 
@@ -43,9 +42,6 @@ namespace DimensionBrawl.UI
         private bool summonSlot1ReadyObserved;
         private bool pocketClearedObserved;
         private float sustainedConditionTimer;
-        private readonly BossBarrageLaneReviewTutorialCondition[] bufferedConditions =
-            new BossBarrageLaneReviewTutorialCondition[BufferedConditionCapacity];
-        private int bufferedConditionCount;
 
         public bool HasReadoutOverride => IsTutorialEnabled && IsPocketReadyForGuide && (HasActiveStep || completed || failed);
         public bool HasActiveStep => IsTutorialEnabled && IsPocketReadyForGuide && !completed && !failed && CurrentStep != null;
@@ -63,12 +59,12 @@ namespace DimensionBrawl.UI
 
                 if (failed)
                 {
-                    return profile.FailObjective;
+                    return ResolveFailedObjective();
                 }
 
                 if (completed)
                 {
-                    return profile.ClearObjective;
+                    return ResolveCompletedObjective();
                 }
 
                 return CurrentStep != null ? CurrentStep.ObjectiveText : null;
@@ -81,7 +77,17 @@ namespace DimensionBrawl.UI
             {
                 if (!HasActiveStep)
                 {
-                    return completed || failed ? CurrentObjective : null;
+                    if (failed)
+                    {
+                        return ResolveFailedPrompt();
+                    }
+
+                    if (completed)
+                    {
+                        return ResolveCompletedPrompt();
+                    }
+
+                    return null;
                 }
 
                 if (stepCompletionPending)
@@ -89,7 +95,7 @@ namespace DimensionBrawl.UI
                     return completionPrompt;
                 }
 
-                return CurrentStep.PromptText;
+                return ResolveActivePrompt(CurrentStep);
             }
         }
 
@@ -139,7 +145,6 @@ namespace DimensionBrawl.UI
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             CaptureTerminalState();
-            ClearBufferedObservations();
             ArmCurrentStep();
             Subscribe();
         }
@@ -213,7 +218,6 @@ namespace DimensionBrawl.UI
             summonSlot1ReadyObserved = false;
             pocketClearedObserved = false;
             sustainedConditionTimer = 0f;
-            ClearBufferedObservations();
             CaptureTerminalState();
             ArmCurrentStep();
         }
@@ -328,8 +332,6 @@ namespace DimensionBrawl.UI
             completionPrompt = string.Empty;
             sustainedConditionTimer = 0f;
             ResetStepObservations();
-            ApplyBufferedObservation(CurrentStep);
-            ClearBufferedObservations();
         }
 
         private void ResetStepObservations()
@@ -358,24 +360,66 @@ namespace DimensionBrawl.UI
 
             switch (step.CompletionCondition)
             {
+                case BossBarrageLaneReviewTutorialCondition.CloseThreatDefeated:
+                case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
+                    ObserveSustainedCondition(
+                        HasStepPassedCueRead
+                            && pocketReviewOwner != null
+                            && pocketReviewOwner.CloseThreatDefeated,
+                        deltaTime,
+                        ref summonBlockOpportunityObserved);
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.ForwardRiskEntered:
                     ObserveSustainedCondition(
-                        energyLadder != null && energyLadder.CurrentRiskBand == SummonEnergyRiskBand.ForwardRisk,
+                        HasStepPassedCueRead
+                            && energyLadder != null
+                            && energyLadder.CurrentRiskBand == SummonEnergyRiskBand.ForwardRisk,
                         deltaTime,
                         ref forwardRiskObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.EnergyTierAvailable:
                     ObserveSustainedCondition(
-                        energyLadder != null && energyLadder.AvailableTier >= Mathf.Max(1, step.RequiredTier),
+                        HasStepPassedCueRead
+                            && energyLadder != null
+                            && energyLadder.AvailableTier >= Mathf.Max(1, step.RequiredTier),
                         deltaTime,
                         ref energyTierAvailableObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.SummonSlot1Ready:
-                    ObserveSustainedCondition(IsSummonSlot1Ready(step), deltaTime, ref summonSlot1ReadyObserved);
+                    ObserveSustainedCondition(
+                        HasStepPassedCueRead && IsSummonSlot1Ready(step),
+                        deltaTime,
+                        ref summonSlot1ReadyObserved);
+                    break;
+                case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
+                    ObserveSustainedCondition(
+                        HasStepPassedCueRead
+                            && pocketReviewOwner != null
+                            && pocketReviewOwner.BlockedBossPressureWithSummon,
+                        deltaTime,
+                        ref summonSlot1PressureBlockedObserved);
+                    break;
+                case BossBarrageLaneReviewTutorialCondition.SummonFollowupWindowOpened:
+                    ObserveSustainedCondition(
+                        HasStepPassedCueRead
+                            && pocketReviewOwner != null
+                            && pocketReviewOwner.IsSummonFollowupWindowActive,
+                        deltaTime,
+                        ref summonFollowupWindowObserved);
+                    break;
+                case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
+                    ObserveSustainedCondition(
+                        HasStepPassedCueRead
+                            && pocketReviewOwner != null
+                            && pocketReviewOwner.Skill1FollowupHitConfirmed,
+                        deltaTime,
+                        ref skill1FollowupHitObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.PocketCleared:
                     ObserveSustainedCondition(
-                        pocketReviewOwner != null && pocketReviewOwner.IsCleared,
+                        HasStepPassedCueRead
+                            && pocketReviewOwner != null
+                            && pocketReviewOwner.IsCleared,
                         deltaTime,
                         ref pocketClearedObserved);
                     break;
@@ -405,6 +449,8 @@ namespace DimensionBrawl.UI
             return step != null && step.CompletionCondition == condition;
         }
 
+        private bool HasStepPassedCueRead => stepTimer >= Mathf.Max(0f, cueReadSeconds);
+
         private bool CanRecordTutorialEvent(BossBarrageLaneReviewTutorialCondition condition)
         {
             if (!IsTutorialEnabled || !IsPocketReadyForGuide || completed || failed)
@@ -415,11 +461,10 @@ namespace DimensionBrawl.UI
             EnsureGuideStartedForPocket();
             if (stepCompletionPending)
             {
-                BufferTutorialEvent(condition);
                 return false;
             }
 
-            return IsCurrentStepCondition(condition);
+            return HasStepPassedCueRead && IsCurrentStepCondition(condition);
         }
 
         private bool CanRecordTutorialEvent(params BossBarrageLaneReviewTutorialCondition[] conditions)
@@ -432,11 +477,11 @@ namespace DimensionBrawl.UI
             EnsureGuideStartedForPocket();
             if (stepCompletionPending)
             {
-                for (int i = 0; i < conditions.Length; i++)
-                {
-                    BufferTutorialEvent(conditions[i]);
-                }
+                return false;
+            }
 
+            if (!HasStepPassedCueRead)
+            {
                 return false;
             }
 
@@ -449,59 +494,6 @@ namespace DimensionBrawl.UI
             }
 
             return false;
-        }
-
-        private void BufferTutorialEvent(BossBarrageLaneReviewTutorialCondition condition)
-        {
-            if (!CanBufferCondition(condition))
-            {
-                return;
-            }
-
-            for (int i = 0; i < bufferedConditionCount; i++)
-            {
-                if (bufferedConditions[i] == condition)
-                {
-                    return;
-                }
-            }
-
-            if (bufferedConditionCount >= bufferedConditions.Length)
-            {
-                return;
-            }
-
-            bufferedConditions[bufferedConditionCount] = condition;
-            bufferedConditionCount++;
-        }
-
-        private void ApplyBufferedObservation(BossBarrageLaneReviewTutorialProfile.Step step)
-        {
-            if (step == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < bufferedConditionCount; i++)
-            {
-                if (bufferedConditions[i] != step.CompletionCondition)
-                {
-                    continue;
-                }
-
-                RecordDiscreteObservation(step.CompletionCondition);
-                return;
-            }
-        }
-
-        private void ClearBufferedObservations()
-        {
-            for (int i = 0; i < bufferedConditionCount; i++)
-            {
-                bufferedConditions[i] = BossBarrageLaneReviewTutorialCondition.None;
-            }
-
-            bufferedConditionCount = 0;
         }
 
         private void RecordDiscreteObservation(BossBarrageLaneReviewTutorialCondition condition)
@@ -533,25 +525,6 @@ namespace DimensionBrawl.UI
                 case BossBarrageLaneReviewTutorialCondition.PocketCleared:
                     pocketClearedObserved = true;
                     break;
-            }
-        }
-
-        private static bool CanBufferCondition(BossBarrageLaneReviewTutorialCondition condition)
-        {
-            switch (condition)
-            {
-                case BossBarrageLaneReviewTutorialCondition.DodgeStarted:
-                case BossBarrageLaneReviewTutorialCondition.BasicDefenseFireUsed:
-                case BossBarrageLaneReviewTutorialCondition.CloseThreatDefeated:
-                case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
-                case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
-                case BossBarrageLaneReviewTutorialCondition.SummonFollowupWindowOpened:
-                case BossBarrageLaneReviewTutorialCondition.Skill1Used:
-                case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
-                case BossBarrageLaneReviewTutorialCondition.PocketCleared:
-                    return true;
-                default:
-                    return false;
             }
         }
 
@@ -630,34 +603,203 @@ namespace DimensionBrawl.UI
             ArmCurrentStep();
         }
 
-        private static string ResolveCompletionPrompt(BossBarrageLaneReviewTutorialProfile.Step step)
+        private string ResolveActivePrompt(BossBarrageLaneReviewTutorialProfile.Step step)
+        {
+            if (step == null)
+            {
+                return null;
+            }
+
+            return CombineReadouts(step.PromptText, ResolveStepLiveReadout(step));
+        }
+
+        private string ResolveCompletedObjective()
+        {
+            if (pocketReviewOwner != null && pocketReviewOwner.HasCommittedResultRecord)
+            {
+                return pocketReviewOwner.LastResultRecord.Title;
+            }
+
+            if (pocketReviewOwner != null && pocketReviewOwner.IsCleared)
+            {
+                return pocketReviewOwner.ObjectiveCue;
+            }
+
+            return profile.ClearObjective;
+        }
+
+        private string ResolveCompletedPrompt()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return profile.ClearObjective;
+            }
+
+            if (pocketReviewOwner.HasCommittedResultRecord)
+            {
+                BossBarragePocketReviewOwner.RouteResultRecord record = pocketReviewOwner.LastResultRecord;
+                return CombineReadouts(
+                    record.Summary,
+                    ResolveShortPocketRecordReadout());
+            }
+
+            return ResolvePocketRecordReadout();
+        }
+
+        private string ResolveFailedObjective()
+        {
+            if (pocketReviewOwner != null)
+            {
+                return pocketReviewOwner.ObjectiveCue;
+            }
+
+            return profile.FailObjective;
+        }
+
+        private string ResolveFailedPrompt()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return profile.FailObjective;
+            }
+
+            if (pocketReviewOwner.HasCommittedResultRecord)
+            {
+                BossBarragePocketReviewOwner.RouteResultRecord record = pocketReviewOwner.LastResultRecord;
+                return CombineReadouts(
+                    record.Summary,
+                    ResolveShortPocketRecordReadout());
+            }
+
+            return ResolvePocketRecordReadout();
+        }
+
+        private string ResolveCompletionPrompt(BossBarrageLaneReviewTutorialProfile.Step step)
         {
             if (step == null)
             {
                 return "\ud655\uc778\ub428.";
             }
 
+            string prompt;
             switch (step.CompletionCondition)
             {
                 case BossBarrageLaneReviewTutorialCondition.DodgeStarted:
-                    return "\ud68c\ud53c \ud655\uc778. \ub2e4\uc74c \uc555\ubc15\uc744 \uc77d\uc5b4.";
+                    prompt = "\ud68c\ud53c \ud655\uc778. \ub2e4\uc74c \uc555\ubc15\uc744 \uc77d\uc5b4.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.ForwardRiskEntered:
-                    return "EN \ucda9\uc804 \uc704\uce58 \ud655\uc778.";
+                    prompt = "EN \ucda9\uc804 \uc704\uce58 \ud655\uc778.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.SummonSlot1Ready:
                 case BossBarrageLaneReviewTutorialCondition.EnergyTierAvailable:
-                    return "EN \ub2e8\uacc4\uc640 \uc2ac\ub86f \uc900\ube44 \ud655\uc778.";
+                    prompt = "EN \ub2e8\uacc4\uc640 \uc2ac\ub86f \uc900\ube44 \ud655\uc778.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.CloseThreatDefeated:
                 case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
-                    return "\uadfc\uc811 \uc555\ubc15 \ucc98\ub9ac \ud655\uc778.";
+                    prompt = "\uadfc\uc811 \uc555\ubc15 \ucc98\ub9ac \uae30\ub85d.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
-                    return "S1 \ucc28\ub2e8 \ud655\uc778. \uc5f4\ub9b0 \ud2c8\uc744 \uc77d\uc5b4.";
+                    prompt = "S1 \ucc28\ub2e8 \uae30\ub85d. \uc5f4\ub9b0 \ud2c8\uc744 \uc77d\uc5b4.";
+                    break;
+                case BossBarrageLaneReviewTutorialCondition.SummonFollowupWindowOpened:
+                    prompt = "Skill1 \ud655\uc778 \ucc3d \uc5f4\ub9bc.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
-                    return "Skill1 \ud655\uc778 \uc644\ub8cc. \uc555\ubc15 \uae30\ub85d \uac31\uc2e0.";
+                    prompt = "Skill1 \ud788\ud2b8 \uae30\ub85d. \uc555\ubc15 \ud574\ub2f5 \uc644\ub8cc.";
+                    break;
                 case BossBarrageLaneReviewTutorialCondition.PocketCleared:
-                    return "\ud3ec\ucf13 \uae30\ub85d \uc644\ub8cc.";
+                    prompt = "\ud3ec\ucf13 \uae30\ub85d \uc644\ub8cc.";
+                    break;
                 default:
-                    return "\ud655\uc778\ub428.";
+                    prompt = "\ud655\uc778\ub428.";
+                    break;
             }
+
+            return CombineReadouts(prompt, ResolveStepLiveReadout(step));
+        }
+
+        private string ResolveStepLiveReadout(BossBarrageLaneReviewTutorialProfile.Step step)
+        {
+            if (step == null)
+            {
+                return string.Empty;
+            }
+
+            switch (step.CompletionCondition)
+            {
+                case BossBarrageLaneReviewTutorialCondition.ForwardRiskEntered:
+                case BossBarrageLaneReviewTutorialCondition.EnergyTierAvailable:
+                case BossBarrageLaneReviewTutorialCondition.SummonSlot1Ready:
+                    return ResolveEnergyReadout();
+                case BossBarrageLaneReviewTutorialCondition.CloseThreatDefeated:
+                case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
+                case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
+                case BossBarrageLaneReviewTutorialCondition.SummonFollowupWindowOpened:
+                case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
+                case BossBarrageLaneReviewTutorialCondition.PocketCleared:
+                    return ResolvePocketRecordReadout();
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private string ResolveEnergyReadout()
+        {
+            if (energyLadder == null)
+            {
+                return string.Empty;
+            }
+
+            string band = energyLadder.CurrentRiskBand switch
+            {
+                SummonEnergyRiskBand.ForwardRisk => "FRONT",
+                SummonEnergyRiskBand.MidCharge => "MID",
+                _ => "BACK"
+            };
+            int tier = energyLadder.CanSpend ? energyLadder.AvailableTier : energyLadder.ChargingTier;
+            return $"EN {Mathf.CeilToInt(energyLadder.CurrentMana)}/{Mathf.CeilToInt(energyLadder.MaxMana)} {band} LV{tier} x{energyLadder.CurrentGainMultiplier:0.0}";
+        }
+
+        private string ResolvePocketRecordReadout()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            return CombineReadouts(pocketReviewOwner.ObjectiveCue, ResolveShortPocketRecordReadout());
+        }
+
+        private string ResolveShortPocketRecordReadout()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            return $"RECORD close:{ResolveRecordMark(pocketReviewOwner.IsCloseProbeCompletionRecorded)} "
+                + $"summon:{ResolveRecordMark(pocketReviewOwner.IsSummonRouteCompletionRecorded)} "
+                + $"followup:{ResolveRecordMark(pocketReviewOwner.IsFollowupCompletionRecorded)}";
+        }
+
+        private static string ResolveRecordMark(bool recorded)
+        {
+            return recorded ? "OK" : "--";
+        }
+
+        private static string CombineReadouts(string primary, string secondary)
+        {
+            if (string.IsNullOrWhiteSpace(primary))
+            {
+                return secondary;
+            }
+
+            if (string.IsNullOrWhiteSpace(secondary))
+            {
+                return primary;
+            }
+
+            return $"{primary}\n{secondary}";
         }
 
         private void EnsureGuideStartedForPocket()

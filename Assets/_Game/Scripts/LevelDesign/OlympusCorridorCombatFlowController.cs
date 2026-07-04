@@ -1,4 +1,3 @@
-using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -6,12 +5,15 @@ using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 namespace DimensionBrawl.LevelDesign
 {
     [DisallowMultipleComponent]
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
+        private const string CombatHudInstanceName = "PF_UI_CombatHud";
+
         private enum FlowPhase
         {
             WaitingForIntroHandoff,
@@ -49,10 +51,16 @@ namespace DimensionBrawl.LevelDesign
         [Header("Tutorial")]
         [SerializeField] private bool runTutorialAfterIntroHandoff = true;
         [SerializeField] private OlympusCorridorTutorialDirector tutorialDirector;
+        [SerializeField] private AudioSource tutorialOverlayAudioSource;
+        [SerializeField] private AudioClip tutorialOverlayOpenSfx;
+        [SerializeField, Range(0f, 1f)] private float tutorialOverlayOpenSfxVolume = 0.82f;
+        [SerializeField] private OlympusCorridorTutorialDirector.DialogueAudioCue[] tutorialOverlayDialogueAudioCues =
+            OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
+        [SerializeField] private CanvasGroup combatHudCanvasGroup;
         [SerializeField, Min(0f)] private float hudRevealDelaySeconds = 0.08f;
         [SerializeField, Min(0.01f)] private float hudRevealDurationSeconds = 0.18f;
 
@@ -81,6 +89,7 @@ namespace DimensionBrawl.LevelDesign
         private float hudRevealTimer;
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
+        private AudioSource runtimeTutorialOverlayAudioSource;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -267,6 +276,22 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void Reset()
+        {
+            EnsureTutorialDialogueAudioCueSlots();
+        }
+
+        private void OnValidate()
+        {
+            EnsureTutorialDialogueAudioCueSlots();
+        }
+
+        private void EnsureTutorialDialogueAudioCueSlots()
+        {
+            tutorialOverlayDialogueAudioCues =
+                OlympusCorridorTutorialDirector.NormalizeDialogueAudioCueSlots(tutorialOverlayDialogueAudioCues);
+        }
+
         private void PrepareInitialState()
         {
             if (phase != FlowPhase.WaitingForIntroHandoff)
@@ -395,6 +420,7 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetHudOpacity(0f);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
@@ -433,6 +459,7 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetHudOpacity(0f);
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
@@ -448,6 +475,12 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            EnsureTutorialDialogueAudioCueSlots();
+            director.ConfigureOverlayAudio(
+                ResolveTutorialOverlayAudioSource(),
+                ResolveTutorialOverlayOpenSfx(),
+                tutorialOverlayOpenSfxVolume);
+            director.ConfigureOverlayDialogueAudio(tutorialOverlayDialogueAudioCues);
 
             director.BindRuntimeContext(
                 player,
@@ -764,6 +797,83 @@ namespace DimensionBrawl.LevelDesign
             return presenters.Length > 0 ? presenters[0] : null;
         }
 
+        private AudioSource ResolveTutorialOverlayAudioSource()
+        {
+            if (tutorialOverlayAudioSource != null)
+            {
+                return tutorialOverlayAudioSource;
+            }
+
+            if (runtimeTutorialOverlayAudioSource != null)
+            {
+                return runtimeTutorialOverlayAudioSource;
+            }
+
+            if (!Application.isPlaying)
+            {
+                return null;
+            }
+
+            runtimeTutorialOverlayAudioSource = gameObject.AddComponent<AudioSource>();
+            runtimeTutorialOverlayAudioSource.playOnAwake = false;
+            runtimeTutorialOverlayAudioSource.loop = false;
+            runtimeTutorialOverlayAudioSource.spatialBlend = 0f;
+            return runtimeTutorialOverlayAudioSource;
+        }
+
+        private AudioClip ResolveTutorialOverlayOpenSfx()
+        {
+            if (tutorialOverlayOpenSfx != null)
+            {
+                return tutorialOverlayOpenSfx;
+            }
+
+            TimelineAsset timeline = introDirector != null ? introDirector.playableAsset as TimelineAsset : null;
+            if (timeline == null)
+            {
+                return null;
+            }
+
+            AudioClip earliestVoiceClip = null;
+            double earliestVoiceStart = double.MaxValue;
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track == null)
+                {
+                    continue;
+                }
+
+                bool isVoiceTrack = IsVoiceTimelineName(track.name);
+                foreach (TimelineClip clip in track.GetClips())
+                {
+                    AudioPlayableAsset audioPlayable = clip.asset as AudioPlayableAsset;
+                    if (audioPlayable == null || audioPlayable.clip == null)
+                    {
+                        continue;
+                    }
+
+                    if (!isVoiceTrack && !IsVoiceTimelineName(clip.displayName))
+                    {
+                        continue;
+                    }
+
+                    if (clip.start < earliestVoiceStart)
+                    {
+                        earliestVoiceClip = audioPlayable.clip;
+                        earliestVoiceStart = clip.start;
+                    }
+                }
+            }
+
+            return earliestVoiceClip;
+        }
+
+        private static bool IsVoiceTimelineName(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && value.IndexOf("Voice", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private void RegisterTutorialCompletedHandler()
         {
             if (tutorialDirector == null)
@@ -852,6 +962,78 @@ namespace DimensionBrawl.LevelDesign
             float resolvedOpacity = Mathf.Clamp01(opacity);
             reviewHud?.SetHudOpacity(resolvedOpacity);
             mobileHud?.SetHudOpacity(resolvedOpacity);
+            SetCombatHudCanvasGroupOpacity(resolvedOpacity);
+        }
+
+        private void SetCombatHudCanvasGroupOpacity(float opacity)
+        {
+            CanvasGroup canvasGroup = ResolveCombatHudCanvasGroup();
+            if (canvasGroup == null)
+            {
+                return;
+            }
+
+            bool acceptsInput = opacity > 0.999f;
+            canvasGroup.alpha = opacity;
+            canvasGroup.interactable = acceptsInput;
+            canvasGroup.blocksRaycasts = acceptsInput;
+        }
+
+        private CanvasGroup ResolveCombatHudCanvasGroup()
+        {
+            if (combatHudCanvasGroup != null)
+            {
+                return combatHudCanvasGroup;
+            }
+
+            if (handoffRoots == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < handoffRoots.Length; i++)
+            {
+                GameObject root = handoffRoots[i];
+                if (root == null)
+                {
+                    continue;
+                }
+
+                CanvasGroup canvasGroup = FindNamedCanvasGroup(root.transform, CombatHudInstanceName);
+                if (canvasGroup == null)
+                {
+                    continue;
+                }
+
+                combatHudCanvasGroup = canvasGroup;
+                return combatHudCanvasGroup;
+            }
+
+            return null;
+        }
+
+        private static CanvasGroup FindNamedCanvasGroup(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            if (string.Equals(root.name, objectName, System.StringComparison.Ordinal))
+            {
+                return root.GetComponent<CanvasGroup>();
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                CanvasGroup canvasGroup = FindNamedCanvasGroup(root.GetChild(i), objectName);
+                if (canvasGroup != null)
+                {
+                    return canvasGroup;
+                }
+            }
+
+            return null;
         }
 
         private void SnapPlayerToHandoffGround()
@@ -1040,6 +1222,7 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
+            combatCameraController.CaptureBaseFieldOfViewFromControlledCamera();
             Camera activeIntroCamera = ResolveActiveIntroCamera();
             if (activeIntroCamera != null)
             {
@@ -1052,89 +1235,10 @@ namespace DimensionBrawl.LevelDesign
                     combatCameraController.PrimeFromHandoffCamera(activeIntroCamera);
                 }
 
-                CopyCameraPresentationSettings(activeIntroCamera);
                 return;
             }
 
             combatCameraController.PrimeFromHandoffPose(combatCameraHandoffPose);
-        }
-
-        private void CopyCameraPresentationSettings(Camera sourceCamera)
-        {
-            Camera combatCamera = combatCameraController != null
-                ? combatCameraController.GetComponent<Camera>()
-                : null;
-            if (sourceCamera == null || combatCamera == null)
-            {
-                return;
-            }
-
-            combatCamera.fieldOfView = sourceCamera.fieldOfView;
-            combatCamera.orthographic = sourceCamera.orthographic;
-            combatCamera.orthographicSize = sourceCamera.orthographicSize;
-            combatCamera.clearFlags = sourceCamera.clearFlags;
-            combatCamera.backgroundColor = sourceCamera.backgroundColor;
-            combatCamera.allowHDR = sourceCamera.allowHDR;
-            combatCamera.allowMSAA = sourceCamera.allowMSAA;
-            combatCamera.nearClipPlane = sourceCamera.nearClipPlane;
-            combatCamera.farClipPlane = sourceCamera.farClipPlane;
-
-            CopyUniversalCameraData(sourceCamera, combatCamera);
-        }
-
-        private static void CopyUniversalCameraData(Camera sourceCamera, Camera targetCamera)
-        {
-            Component sourceData = FindComponentByTypeName(
-                sourceCamera != null ? sourceCamera.gameObject : null,
-                "UniversalAdditionalCameraData");
-            Component targetData = FindComponentByTypeName(
-                targetCamera != null ? targetCamera.gameObject : null,
-                "UniversalAdditionalCameraData");
-            if (sourceData == null || targetData == null)
-            {
-                return;
-            }
-
-            CopyPropertyValue(sourceData, targetData, "renderPostProcessing");
-            CopyPropertyValue(sourceData, targetData, "antialiasing");
-            CopyPropertyValue(sourceData, targetData, "antialiasingQuality");
-        }
-
-        private static Component FindComponentByTypeName(GameObject root, string typeName)
-        {
-            if (root == null)
-            {
-                return null;
-            }
-
-            Component[] components = root.GetComponents<Component>();
-            for (int i = 0; i < components.Length; i++)
-            {
-                Component component = components[i];
-                if (component != null
-                    && string.Equals(component.GetType().Name, typeName, System.StringComparison.Ordinal))
-                {
-                    return component;
-                }
-            }
-
-            return null;
-        }
-
-        private static void CopyPropertyValue(Component source, Component target, string propertyName)
-        {
-            const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            PropertyInfo sourceProperty = source.GetType().GetProperty(propertyName, Flags);
-            PropertyInfo targetProperty = target.GetType().GetProperty(propertyName, Flags);
-            if (sourceProperty == null
-                || targetProperty == null
-                || !sourceProperty.CanRead
-                || !targetProperty.CanWrite)
-            {
-                return;
-            }
-
-            targetProperty.SetValue(target, sourceProperty.GetValue(source));
         }
 
         private Camera ResolveActiveIntroCamera()

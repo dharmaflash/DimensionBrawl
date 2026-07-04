@@ -10,9 +10,75 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusCorridorTutorialDirector : MonoBehaviour
     {
+        private const string SystemGuideSpeaker = "천계관리시스템";
+        private const string SoldierGuideSpeaker = "병사";
+        private const float SoldierChallengeOpeningVoicePaddingSeconds = 0.4f;
+
+        public enum DialogueAudioCueId
+        {
+            None,
+            SoldierChallenge,
+            MeleeCue,
+            MoveCue,
+            SwapToRangedCue,
+            FireCue,
+            DodgeCue,
+            ClearTargetsCue,
+            MeleeConfirm,
+            MoveConfirm,
+            SwapToRangedConfirm,
+            FireConfirm,
+            DodgeConfirm,
+            ClearTargetsConfirm
+        }
+
+        [Serializable]
+        public struct DialogueAudioCue
+        {
+            [SerializeField] private DialogueAudioCueId cueId;
+            [SerializeField] private AudioClip clip;
+            [SerializeField, Range(0f, 1f)] private float volume;
+            [SerializeField, Min(0f)] private float delaySeconds;
+
+            public DialogueAudioCue(
+                DialogueAudioCueId cueId,
+                AudioClip clip,
+                float volume,
+                float delaySeconds)
+            {
+                this.cueId = cueId;
+                this.clip = clip;
+                this.volume = volume;
+                this.delaySeconds = delaySeconds;
+            }
+
+            public DialogueAudioCueId CueId => cueId;
+            public AudioClip Clip => clip;
+            public float Volume => Mathf.Clamp01(volume);
+            public float DelaySeconds => Mathf.Max(0f, delaySeconds);
+        }
+
+        private static readonly DialogueAudioCueId[] DefaultDialogueAudioCueIds =
+        {
+            DialogueAudioCueId.SoldierChallenge,
+            DialogueAudioCueId.MeleeCue,
+            DialogueAudioCueId.MoveCue,
+            DialogueAudioCueId.SwapToRangedCue,
+            DialogueAudioCueId.FireCue,
+            DialogueAudioCueId.DodgeCue,
+            DialogueAudioCueId.ClearTargetsCue,
+            DialogueAudioCueId.MeleeConfirm,
+            DialogueAudioCueId.MoveConfirm,
+            DialogueAudioCueId.SwapToRangedConfirm,
+            DialogueAudioCueId.FireConfirm,
+            DialogueAudioCueId.DodgeConfirm,
+            DialogueAudioCueId.ClearTargetsConfirm
+        };
+
         private enum TutorialStep
         {
             Inactive,
+            SoldierChallenge,
             Melee,
             Move,
             SwapToRanged,
@@ -33,11 +99,15 @@ namespace DimensionBrawl.LevelDesign
         [Header("Flow")]
         [SerializeField] private bool tutorialEnabled = true;
         [SerializeField, Min(0f)] private float cuePrimeSeconds = 0.45f;
-        [SerializeField, Min(0f)] private float completionRecordSeconds = 0.55f;
+        [SerializeField, Min(0f)] private float soldierChallengeReadSeconds = 1.8f;
+        [SerializeField, Min(0f)] private float completionRecordSeconds = 0.7f;
         [SerializeField, Min(0.1f)] private float promptRepeatSeconds = 4.0f;
+        [SerializeField, Min(0f)] private float minimumCueReadSeconds = 0.85f;
+        [SerializeField, Min(0f)] private float minimumActionObserveSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float minimumCompletionReadSeconds = 1.15f;
 
         [Header("Movement Step")]
-        [SerializeField, Min(0f)] private float movementCompleteDistance = 1.25f;
+        [SerializeField, Min(0f)] private float movementCompleteDistance = 0.75f;
 
         [Header("Melee Step")]
         [SerializeField] private bool positionFirstTargetForMeleeStep = true;
@@ -67,6 +137,11 @@ namespace DimensionBrawl.LevelDesign
         [Header("References")]
         [SerializeField] private CinematicTutorialPromptPresenter promptPresenter;
         [SerializeField] private OlympusTutorialOverlayPresenter overlayPresenter;
+        [SerializeField] private AudioSource overlayAudioSource;
+        [SerializeField] private AudioClip overlayOpenSfx;
+        [SerializeField, Range(0f, 1f)] private float overlayOpenSfxVolume = 0.82f;
+        [SerializeField] private DialogueAudioCue[] overlayDialogueAudioCues =
+            CreateDefaultDialogueAudioCueSlots();
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private PlayerMovementController player;
         [SerializeField] private PlayerCombatModeController combatModeController;
@@ -89,18 +164,24 @@ namespace DimensionBrawl.LevelDesign
         private bool meleeHitObserved;
         private bool movementObserved;
         private bool rangedModeObserved;
+        private bool rangedAimPreviewObserved;
         private bool rangedProjectileFiredObserved;
         private bool rangedTargetDamageObserved;
         private bool stepTargetDeathObserved;
         private bool dodgeObserved;
         private bool hasRuntimeBoundsCenter;
         private bool hasCachedActionEnabledStates;
+        private bool hasCachedBossTelegraphStates;
         private bool cachedRangedBasicEnabled;
         private bool cachedSkill1Enabled;
         private bool cachedSummonSlot1Enabled;
         private bool[] cachedSupportEnabled = Array.Empty<bool>();
+        private BossBarrageLaneTelegraphPresenter[] cachedBossTelegraphPresenters =
+            Array.Empty<BossBarrageLaneTelegraphPresenter>();
+        private bool[] cachedBossTelegraphEnabled = Array.Empty<bool>();
         private float stepTimer;
         private float phaseTimer;
+        private float rangedAimPreviewHeldSeconds;
         private float nextPromptTime;
         private string lastCompletionRecord = string.Empty;
         private Vector3 movementStartPosition;
@@ -114,6 +195,31 @@ namespace DimensionBrawl.LevelDesign
         public string CurrentStepId => step.ToString();
         public string CurrentPhaseId => stepPhase.ToString();
         public string LastCompletionRecord => lastCompletionRecord;
+
+        public static DialogueAudioCue[] CreateDefaultDialogueAudioCueSlots()
+        {
+            var cues = new DialogueAudioCue[DefaultDialogueAudioCueIds.Length];
+            for (int i = 0; i < cues.Length; i++)
+            {
+                cues[i] = new DialogueAudioCue(DefaultDialogueAudioCueIds[i], null, 1f, 0f);
+            }
+
+            return cues;
+        }
+
+        public static DialogueAudioCue[] NormalizeDialogueAudioCueSlots(DialogueAudioCue[] cues)
+        {
+            var results = new DialogueAudioCue[DefaultDialogueAudioCueIds.Length];
+            for (int i = 0; i < DefaultDialogueAudioCueIds.Length; i++)
+            {
+                DialogueAudioCueId cueId = DefaultDialogueAudioCueIds[i];
+                results[i] = FindDialogueAudioCue(cues, cueId, out DialogueAudioCue cue)
+                    ? cue
+                    : new DialogueAudioCue(cueId, null, 1f, 0f);
+            }
+
+            return results;
+        }
 
         public void BindRuntimeContext(
             PlayerMovementController newPlayer,
@@ -151,6 +257,22 @@ namespace DimensionBrawl.LevelDesign
             tutorialRouteBlockers = newTutorialRouteBlockers ?? tutorialRouteBlockers ?? Array.Empty<Collider>();
         }
 
+        public void ConfigureOverlayAudio(
+            AudioSource audioSource,
+            AudioClip openSfx,
+            float volume)
+        {
+            overlayAudioSource = audioSource != null ? audioSource : overlayAudioSource;
+            overlayOpenSfx = openSfx != null ? openSfx : overlayOpenSfx;
+            overlayOpenSfxVolume = Mathf.Clamp01(volume);
+            ApplyOverlayPresentationBindings();
+        }
+
+        public void ConfigureOverlayDialogueAudio(DialogueAudioCue[] dialogueAudioCues)
+        {
+            overlayDialogueAudioCues = NormalizeDialogueAudioCueSlots(dialogueAudioCues);
+        }
+
         public void BeginTutorial()
         {
             ResolveMissingReferences();
@@ -166,13 +288,16 @@ namespace DimensionBrawl.LevelDesign
             }
 
             CacheActionEnabledStates();
+            CacheAndDisableBossTelegraphs();
             meleeHitObserved = false;
             movementObserved = false;
             rangedModeObserved = false;
+            rangedAimPreviewObserved = false;
             rangedProjectileFiredObserved = false;
             rangedTargetDamageObserved = false;
             stepTargetDeathObserved = false;
             dodgeObserved = false;
+            rangedAimPreviewHeldSeconds = 0f;
             lastCompletionRecord = string.Empty;
             movementStartPosition = player != null ? player.transform.position : transform.position;
             runtimeBoundsCenter = tutorialBoundsCenter != null ? tutorialBoundsCenter.position : movementStartPosition;
@@ -193,7 +318,7 @@ namespace DimensionBrawl.LevelDesign
                 combatModeController.SetMeleeMode();
             }
 
-            StartStep(TutorialStep.Melee);
+            StartStep(TutorialStep.SoldierChallenge);
         }
 
         public void CancelTutorial()
@@ -211,6 +336,7 @@ namespace DimensionBrawl.LevelDesign
             promptPresenter?.HidePrompt();
             overlayPresenter?.Hide();
             SetEnemyGameplayEnabled(false);
+            RestoreBossTelegraphs();
             RestoreActionEnabledStates();
             step = TutorialStep.Inactive;
             stepPhase = TutorialStepPhase.Inactive;
@@ -238,14 +364,19 @@ namespace DimensionBrawl.LevelDesign
             phaseTimer += Time.deltaTime;
             EnforcePlayerTutorialBounds();
             ApplyStepInputLocks();
-            UpdateTutorialAimPreviewHold();
             RepeatPromptIfNeeded();
 
             switch (stepPhase)
             {
                 case TutorialStepPhase.Cue:
-                    if (phaseTimer >= cuePrimeSeconds)
+                    if (phaseTimer >= ResolveCueReadSeconds())
                     {
+                        if (step == TutorialStep.SoldierChallenge)
+                        {
+                            StartStep(TutorialStep.Melee);
+                            return;
+                        }
+
                         ActivateStepInputWindow();
                     }
                     return;
@@ -253,7 +384,7 @@ namespace DimensionBrawl.LevelDesign
                     UpdateAwaitingActionStep();
                     return;
                 case TutorialStepPhase.Committed:
-                    if (phaseTimer >= completionRecordSeconds)
+                    if (phaseTimer >= ResolveCompletionReadSeconds())
                     {
                         AdvanceAfterCommittedStep();
                     }
@@ -263,6 +394,12 @@ namespace DimensionBrawl.LevelDesign
 
         private void UpdateAwaitingActionStep()
         {
+            UpdateCurrentStepObservation();
+            if (!HasActionObservationWindowElapsed())
+            {
+                return;
+            }
+
             switch (step)
             {
                 case TutorialStep.Melee:
@@ -319,6 +456,14 @@ namespace DimensionBrawl.LevelDesign
 
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    ConfigureTargetCandidates(tutorialTargets);
+                    SetMeleeMode();
+                    SetCombatModeInputLocked(true);
+                    SetRangedFireEnabled(false);
+                    SetOptionalActionsEnabled(false);
+                    SetEnemyGameplayEnabled(false);
+                    break;
                 case TutorialStep.Melee:
                     meleeHitObserved = false;
                     ConfigureTargetCandidates(tutorialTargets);
@@ -349,11 +494,13 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.Fire:
                     rangedProjectileFiredObserved = false;
                     rangedTargetDamageObserved = false;
+                    rangedAimPreviewObserved = false;
+                    rangedAimPreviewHeldSeconds = 0f;
                     ConfigureTargetCandidates(tutorialTargets);
                     SetRangedMode();
                     SetCombatModeInputLocked(true);
                     SetRangedFireEnabled(true);
-                    SetTutorialAimPreviewHeld(true);
+                    SetTutorialAimPreviewHeld(false);
                     PositionFirstTargetForRangedStep();
                     SetOptionalActionsEnabled(false);
                     SetEnemyGameplayEnabled(false);
@@ -457,17 +604,14 @@ namespace DimensionBrawl.LevelDesign
             UnsubscribeObservers();
             SetEnemyGameplayEnabled(false);
             SetCombatHealthRootCollidersEnabled(tutorialTargets, false);
+            SetCombatHealthRootsActive(tutorialTargets, false);
             SetCollidersEnabled(tutorialRouteBlockers, false);
             SetObjectsActive(tutorialBoundsRoots, false);
             ConfigureTargetCandidates(Array.Empty<CombatHealth>());
+            RestoreBossTelegraphs();
             RestoreActionEnabledStates();
-            ShowGuide(
-                "\uc774\ub178\ub9ac",
-                "\uc88b\uc544. \uc544\ub798 \ud1b5\ub85c\ub85c \ub0b4\ub824\uac00. \ub2e4\uc74c \uc804\ud22c\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f \uae30\ub85d\uc73c\ub85c \ud310\uc815\ub3fc.",
-                "\uc9c4\uc785",
-                OlympusTutorialOverlayPresenter.FocusKind.Route,
-                new Vector2(0.5f, 0.76f));
-            SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState.Ready);
+            overlayPresenter?.Hide();
+            promptPresenter?.HidePrompt();
             RaiseCompletedOnce();
         }
 
@@ -497,8 +641,10 @@ namespace DimensionBrawl.LevelDesign
                     rangedModeObserved = false;
                     break;
                 case TutorialStep.Fire:
+                    rangedAimPreviewObserved = false;
                     rangedProjectileFiredObserved = false;
                     rangedTargetDamageObserved = false;
+                    rangedAimPreviewHeldSeconds = 0f;
                     stepTargetDeathObserved = false;
                     break;
                 case TutorialStep.Dodge:
@@ -517,19 +663,19 @@ namespace DimensionBrawl.LevelDesign
 
         private bool HasCompletedMovementStep()
         {
-            if (movementObserved)
+            if (player == null)
             {
-                return true;
-            }
-
-            if (player == null || movementCompleteDistance <= 0f)
-            {
-                return false;
+                return movementCompleteDistance <= 0f && movementObserved;
             }
 
             Vector3 offset = Vector3.ProjectOnPlane(
                 player.transform.position - movementStartPosition,
                 Vector3.up);
+            if (movementCompleteDistance <= 0f)
+            {
+                return movementObserved && offset.magnitude > 0.05f;
+            }
+
             return offset.magnitude >= movementCompleteDistance;
         }
 
@@ -541,9 +687,54 @@ namespace DimensionBrawl.LevelDesign
 
         private bool HasCompletedFireStep()
         {
-            return phaseTimer >= fireAimPreviewLeadSeconds
+            return rangedAimPreviewObserved
+                && rangedAimPreviewHeldSeconds >= fireAimPreviewLeadSeconds
                 && rangedProjectileFiredObserved
                 && (rangedTargetDamageObserved || stepTargetDeathObserved);
+        }
+
+        private void UpdateCurrentStepObservation()
+        {
+            if (step != TutorialStep.Fire || stepPhase != TutorialStepPhase.AwaitingAction)
+            {
+                return;
+            }
+
+            if (rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive)
+            {
+                rangedAimPreviewObserved = true;
+                rangedAimPreviewHeldSeconds += Time.deltaTime;
+            }
+        }
+
+        private bool HasActionObservationWindowElapsed()
+        {
+            return phaseTimer >= minimumActionObserveSeconds;
+        }
+
+        private float ResolveCueReadSeconds()
+        {
+            float readSeconds = Mathf.Max(cuePrimeSeconds, minimumCueReadSeconds);
+            if (step != TutorialStep.SoldierChallenge)
+            {
+                return readSeconds;
+            }
+
+            readSeconds = Mathf.Max(readSeconds, soldierChallengeReadSeconds);
+            DialogueAudioCue cue = ResolveDialogueAudioCue(DialogueAudioCueId.SoldierChallenge);
+            if (cue.Clip != null)
+            {
+                readSeconds = Mathf.Max(
+                    readSeconds,
+                    cue.DelaySeconds + cue.Clip.length + SoldierChallengeOpeningVoicePaddingSeconds);
+            }
+
+            return readSeconds;
+        }
+
+        private float ResolveCompletionReadSeconds()
+        {
+            return Mathf.Max(completionRecordSeconds, minimumCompletionReadSeconds);
         }
 
         private bool HasCompletedClearTargetsStep()
@@ -573,51 +764,66 @@ namespace DimensionBrawl.LevelDesign
         {
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    ShowGuide(
+                        DialogueAudioCueId.SoldierChallenge,
+                        SoldierGuideSpeaker,
+                        "뭐하는 놈이냐!",
+                        string.Empty,
+                        OlympusTutorialOverlayPresenter.FocusKind.None,
+                        new Vector2(0.5f, 0.5f));
+                    break;
                 case TutorialStep.Melee:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uadfc\uc811 \uc555\ubc15 \uac10\uc9c0. \uce7c\uc740 \ubd99\uc740 \uc801\uc744 \ub04a\ub294 \uc6a9\ub3c4\uc57c.",
-                        "\uadfc\uc811 \ubc29\uc5b4",
+                        DialogueAudioCueId.MeleeCue,
+                        SystemGuideSpeaker,
+                        "근접 공격 버튼을 사용해 가까운 적을 공격할 수 있습니다.",
+                        "근접 공격",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ubcf4\uc2a4 \uacbd\uace0\uc120\uc740 \ub9c9\uc9c0 \ub9d0\uace0 \ube44\ucf1c. \uc606\uc73c\ub85c \ube60\uc838 \uc548\uc804 \uce78\uc744 \ub9cc\ub4e4\uc5b4.",
-                        "\uc774\ub3d9",
+                        DialogueAudioCueId.MoveCue,
+                        SystemGuideSpeaker,
+                        "조이스틱 버튼을 사용해 이동할 수 있습니다.",
+                        "이동",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uac70\ub9ac \ud655\uc778. \uae30\ubcf8 \uc0ac\uaca9\uc740 \uc555\ubc15 \ub300\uc751\uc6a9\uc774\uc57c. \ubcf4\uc2a4 \ud574\ub2f5\uc740 \uc18c\ud658 \uc2ac\ub86f\uc73c\ub85c \ub9cc\ub4e0\ub2e4.",
-                        "\uc804\ud658",
+                        DialogueAudioCueId.SwapToRangedCue,
+                        SystemGuideSpeaker,
+                        "전환 버튼을 사용해 원거리 사격으로 변경할 수 있습니다.",
+                        "모드 전환",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ud55c \ubc1c\ub9cc \ud655\uc778\ud574. \ubb34\uc791\uc815 \uc3d8\ub294 \uac8c \uc544\ub2c8\ub77c, \uba85\uc911 \uc0c1\ud0dc\ub97c \uc77d\uc5b4.",
-                        "\uae30\ubcf8 \uc0ac\uaca9",
+                        DialogueAudioCueId.FireCue,
+                        SystemGuideSpeaker,
+                        "사격 버튼을 길게 누르면 조준 상태에 돌입합니다. 조준 중 적을 명중시키십시오.",
+                        "조준 사격",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ubd89\uc740 \uacbd\uace0\uc120\uc740 \ub9de\uad50\ud658\ud558\uc9c0 \ub9c8. \ud68c\ud53c\ub85c \uc555\ubc15\uc744 \ub04a\uc5b4.",
-                        "\ud68c\ud53c",
+                        DialogueAudioCueId.DodgeCue,
+                        SystemGuideSpeaker,
+                        "적의 공격을 정확한 타이밍에 회피하면 일정 시간 동안 무적 상태에 돌입합니다.",
+                        "회피",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\ub0a8\uc740 \uadfc\uc811 \uc704\ud611\uc744 \uc815\ub9ac\ud574. \ub2e4\uc74c \ud3ec\ucf13\ubd80\ud130\ub294 EN\uacfc \uc18c\ud658 \uc2ac\ub86f\uc774 \uc804\uc120\uc744 \ub9e1\ub294\ub2e4.",
-                        "\ud3ec\ucf13 \uc815\ub9ac",
+                        DialogueAudioCueId.ClearTargetsCue,
+                        SystemGuideSpeaker,
+                        "남은 적을 처치하십시오.",
+                        "전투 완료",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
                     break;
@@ -630,48 +836,54 @@ namespace DimensionBrawl.LevelDesign
             {
                 case TutorialStep.Melee:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uac00\uae4c\uc6b4 \uc704\ud611 \ucc98\ub9ac \ud655\uc778.",
+                        DialogueAudioCueId.MeleeConfirm,
+                        SystemGuideSpeaker,
+                        "근접 공격 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Move:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc548\uc804 \uce78 \ud655\ubcf4 \ud655\uc778.",
+                        DialogueAudioCueId.MoveConfirm,
+                        SystemGuideSpeaker,
+                        "이동 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
                         new Vector2(0.16f, 0.16f));
                     break;
                 case TutorialStep.SwapToRanged:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\uc804\ud658 \ud655\uc778.",
+                        DialogueAudioCueId.SwapToRangedConfirm,
+                        SystemGuideSpeaker,
+                        "원거리 사격 모드 전환이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.SwapMode,
                         new Vector2(0.82f, 0.24f));
                     break;
                 case TutorialStep.Fire:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\uba85\uc911 \uc0c1\ud0dc \ud655\uc778.",
+                        DialogueAudioCueId.FireConfirm,
+                        SystemGuideSpeaker,
+                        "조준 및 사격 명중이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
                         new Vector2(0.92f, 0.10f));
                     break;
                 case TutorialStep.Dodge:
                     ShowGuide(
-                        "\uc624\ud37c\ub808\uc774\ud130",
-                        "\ud68c\ud53c \ud655\uc778.",
+                        DialogueAudioCueId.DodgeConfirm,
+                        SystemGuideSpeaker,
+                        "회피 입력이 확인되었습니다.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Dodge,
                         new Vector2(0.92f, 0.24f));
                     break;
                 case TutorialStep.ClearTargets:
                     ShowGuide(
-                        "\uc774\ub178\ub9ac",
-                        "\ud3ec\ucf13 \uc815\ub9ac \ud655\uc778.",
+                        DialogueAudioCueId.ClearTargetsConfirm,
+                        SystemGuideSpeaker,
+                        "긴급 무장 프로토콜 종료.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
@@ -680,6 +892,7 @@ namespace DimensionBrawl.LevelDesign
         }
 
         private void ShowGuide(
+            DialogueAudioCueId dialogueAudioCueId,
             string speaker,
             string dialogue,
             string inputLabel,
@@ -689,7 +902,20 @@ namespace DimensionBrawl.LevelDesign
             Vector2 resolvedAnchor = ResolveHudAnchor(focusKind, anchor);
             if (overlayPresenter != null)
             {
-                overlayPresenter.Show(speaker, dialogue, inputLabel, focusKind, resolvedAnchor);
+                overlayPresenter.SetGuideProgress(
+                    ResolveTutorialStepIndex(),
+                    ResolveTutorialStepCount(),
+                    ResolveTutorialPhaseLabel());
+                DialogueAudioCue audioCue = ResolveDialogueAudioCue(dialogueAudioCueId);
+                overlayPresenter.Show(
+                    speaker,
+                    dialogue,
+                    inputLabel,
+                    focusKind,
+                    resolvedAnchor,
+                    audioCue.Clip,
+                    audioCue.Volume,
+                    audioCue.DelaySeconds);
                 return;
             }
 
@@ -708,6 +934,37 @@ namespace DimensionBrawl.LevelDesign
                 true,
                 resolvedAnchor);
             promptPresenter.ShowCue(cue);
+        }
+
+        private DialogueAudioCue ResolveDialogueAudioCue(DialogueAudioCueId cueId)
+        {
+            return FindDialogueAudioCue(overlayDialogueAudioCues, cueId, out DialogueAudioCue cue)
+                ? cue
+                : default;
+        }
+
+        private static bool FindDialogueAudioCue(
+            DialogueAudioCue[] cues,
+            DialogueAudioCueId cueId,
+            out DialogueAudioCue cue)
+        {
+            if (cueId == DialogueAudioCueId.None || cues == null)
+            {
+                cue = default;
+                return false;
+            }
+
+            for (int i = 0; i < cues.Length; i++)
+            {
+                if (cues[i].CueId == cueId)
+                {
+                    cue = cues[i];
+                    return true;
+                }
+            }
+
+            cue = default;
+            return false;
         }
 
         private Vector2 ResolveHudAnchor(
@@ -737,6 +994,48 @@ namespace DimensionBrawl.LevelDesign
                     return mobileHud.SwapButtonScreenAnchor;
                 default:
                     return fallbackAnchor;
+            }
+        }
+
+        private int ResolveTutorialStepIndex()
+        {
+            switch (step)
+            {
+                case TutorialStep.Melee:
+                    return 1;
+                case TutorialStep.Move:
+                    return 2;
+                case TutorialStep.SwapToRanged:
+                    return 3;
+                case TutorialStep.Fire:
+                    return 4;
+                case TutorialStep.Dodge:
+                    return 5;
+                case TutorialStep.ClearTargets:
+                case TutorialStep.Completed:
+                    return 6;
+                default:
+                    return 0;
+            }
+        }
+
+        private static int ResolveTutorialStepCount()
+        {
+            return 6;
+        }
+
+        private string ResolveTutorialPhaseLabel()
+        {
+            switch (stepPhase)
+            {
+                case TutorialStepPhase.Cue:
+                    return "READ";
+                case TutorialStepPhase.AwaitingAction:
+                    return "ACT";
+                case TutorialStepPhase.Committed:
+                    return "OK";
+                default:
+                    return string.Empty;
             }
         }
 
@@ -1108,10 +1407,25 @@ namespace DimensionBrawl.LevelDesign
                 overlayPresenter = gameObject.AddComponent<OlympusTutorialOverlayPresenter>();
             }
 
+            ApplyOverlayPresentationBindings();
+
             if (mobileHud == null)
             {
                 mobileHud = FindFirst<BossBarrageLaneReviewMobileHud>();
             }
+        }
+
+        private void ApplyOverlayPresentationBindings()
+        {
+            if (overlayPresenter == null)
+            {
+                return;
+            }
+
+            overlayPresenter.ConfigureCommunicatorAudio(
+                overlayAudioSource,
+                overlayOpenSfx,
+                overlayOpenSfxVolume);
         }
 
         private void CacheActionEnabledStates()
@@ -1162,6 +1476,62 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void CacheAndDisableBossTelegraphs()
+        {
+            if (hasCachedBossTelegraphStates)
+            {
+                return;
+            }
+
+            cachedBossTelegraphPresenters =
+                UnityEngine.Object.FindObjectsByType<BossBarrageLaneTelegraphPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            int presenterCount = cachedBossTelegraphPresenters != null
+                ? cachedBossTelegraphPresenters.Length
+                : 0;
+            cachedBossTelegraphEnabled = new bool[presenterCount];
+
+            for (int i = 0; i < presenterCount; i++)
+            {
+                BossBarrageLaneTelegraphPresenter presenter = cachedBossTelegraphPresenters[i];
+                if (presenter == null)
+                {
+                    continue;
+                }
+
+                cachedBossTelegraphEnabled[i] = presenter.enabled;
+                presenter.enabled = false;
+            }
+
+            hasCachedBossTelegraphStates = true;
+        }
+
+        private void RestoreBossTelegraphs()
+        {
+            if (!hasCachedBossTelegraphStates)
+            {
+                return;
+            }
+
+            int presenterCount = cachedBossTelegraphPresenters != null
+                ? cachedBossTelegraphPresenters.Length
+                : 0;
+            for (int i = 0; i < presenterCount; i++)
+            {
+                BossBarrageLaneTelegraphPresenter presenter = cachedBossTelegraphPresenters[i];
+                if (presenter != null)
+                {
+                    presenter.enabled = i < cachedBossTelegraphEnabled.Length
+                        && cachedBossTelegraphEnabled[i];
+                }
+            }
+
+            cachedBossTelegraphPresenters = Array.Empty<BossBarrageLaneTelegraphPresenter>();
+            cachedBossTelegraphEnabled = Array.Empty<bool>();
+            hasCachedBossTelegraphStates = false;
+        }
+
         private void SetMeleeMode()
         {
             if (combatModeController == null)
@@ -1196,7 +1566,28 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetRangedBasicAttackInputLocked(bool locked)
         {
-            rangedBasicAttackAction?.SetCinematicInputLocked(locked);
+            SetRangedBasicAttackInputLocked(locked, false);
+        }
+
+        private void SetRangedBasicAttackInputLocked(bool locked, bool preserveHeldAim)
+        {
+            rangedBasicAttackAction?.SetCinematicInputLocked(locked, preserveHeldAim);
+        }
+
+        private void SetMovementInputLocked(bool locked)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            if (locked)
+            {
+                player.SetCinematicMoveInputSpeedScale(0f);
+                return;
+            }
+
+            player.ClearCinematicMoveInputSpeedScale();
         }
 
         private void SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState guideState)
@@ -1211,38 +1602,51 @@ namespace DimensionBrawl.LevelDesign
 
             switch (step)
             {
+                case TutorialStep.SoldierChallenge:
+                    SetMovementInputLocked(true);
+                    SetPlayerActionInputLocked(true);
+                    SetCombatModeInputLocked(true);
+                    SetRangedBasicAttackInputLocked(true);
+                    break;
                 case TutorialStep.Melee:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.Move:
+                    SetMovementInputLocked(cueLocked || committed);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.SwapToRanged:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(cueLocked || committed);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.Fire:
+                    SetMovementInputLocked(true);
                     SetPlayerActionInputLocked(true);
                     SetCombatModeInputLocked(true);
-                    SetRangedBasicAttackInputLocked(cueLocked || committed);
+                    SetRangedBasicAttackInputLocked(cueLocked || committed, committed);
                     break;
                 case TutorialStep.Dodge:
+                    SetMovementInputLocked(cueLocked);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(true);
                     SetRangedBasicAttackInputLocked(true);
                     break;
                 case TutorialStep.ClearTargets:
+                    SetMovementInputLocked(cueLocked || committed);
                     SetPlayerActionInputLocked(cueLocked || committed);
                     SetCombatModeInputLocked(false);
                     SetRangedBasicAttackInputLocked(cueLocked || committed);
                     break;
                 case TutorialStep.Completed:
                 case TutorialStep.Inactive:
+                    SetMovementInputLocked(false);
                     SetPlayerActionInputLocked(false);
                     SetCombatModeInputLocked(false);
                     SetRangedBasicAttackInputLocked(false);
@@ -1434,14 +1838,6 @@ namespace DimensionBrawl.LevelDesign
         {
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             return right.sqrMagnitude > 0.0001f ? right.normalized : Vector3.right;
-        }
-
-        private void UpdateTutorialAimPreviewHold()
-        {
-            if (step == TutorialStep.Fire)
-            {
-                SetTutorialAimPreviewHeld(true);
-            }
         }
 
         private void SetTutorialAimPreviewHeld(bool active)

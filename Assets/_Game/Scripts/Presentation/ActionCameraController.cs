@@ -91,6 +91,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private bool aimOrbitHoldsYawUntilAimEnds = true;
         [Tooltip("Moves the shoulder camera position with aim peek so the player stays anchored like a linked TPS rig.")]
         [SerializeField] private bool aimOrbitRotatesCameraPosition;
+        [Tooltip("Preserves the authored world-space look offset when a rotated scene root uses the linked aim rig.")]
+        [SerializeField] private bool aimRigUsesWorldLookOffset;
         [SerializeField, Range(0f, 90f)] private float aimOrbitYawLimitDegrees = 45f;
         [SerializeField] private bool aimOrbitUsesPitchInput = true;
         [SerializeField, Range(0f, 45f)] private float aimOrbitPitchLimitDegrees = 16f;
@@ -143,6 +145,7 @@ namespace DimensionBrawl.Presentation
         private int rifleFireFeedbackRequestCount;
         private float lastRifleFireFeedbackTime = float.NegativeInfinity;
         private float lastManualViewIntentTime = float.NegativeInfinity;
+        private bool hasBaseFieldOfView;
 
         public bool HasActiveCue => cueTimer > 0f;
         public bool HasActiveMicroShake => microShakeTimer > 0f;
@@ -261,6 +264,23 @@ namespace DimensionBrawl.Presentation
             threat = newThreat;
         }
 
+        public void CaptureBaseFieldOfViewFromControlledCamera()
+        {
+            if (hasBaseFieldOfView)
+            {
+                return;
+            }
+
+            Camera camera = ResolveControlledCamera();
+            if (camera == null)
+            {
+                return;
+            }
+
+            baseFieldOfView = camera.fieldOfView;
+            hasBaseFieldOfView = true;
+        }
+
         public void PrimeFromHandoffPose(Transform handoffPose)
         {
             if (handoffPose == null)
@@ -296,7 +316,11 @@ namespace DimensionBrawl.Presentation
                 if (camera != null)
                 {
                     camera.fieldOfView = handoffFieldOfView.Value;
-                    baseFieldOfView = handoffFieldOfView.Value;
+                    if (!hasBaseFieldOfView)
+                    {
+                        baseFieldOfView = handoffFieldOfView.Value;
+                        hasBaseFieldOfView = true;
+                    }
                 }
             }
 
@@ -618,6 +642,7 @@ namespace DimensionBrawl.Presentation
                     cueCameraOffset,
                     cueWeight,
                     cueFocusHeightDelta,
+                    baseFocus,
                     out Vector3 aimRigPosition,
                     out Vector3 aimRigFocus);
                 desiredPosition = Vector3.Lerp(basePosition, aimRigPosition, aimWeight);
@@ -671,7 +696,12 @@ namespace DimensionBrawl.Presentation
         private void Awake()
         {
             controlledCamera = ResolveControlledCamera();
-            baseFieldOfView = controlledCamera != null ? controlledCamera.fieldOfView : 50f;
+            CaptureBaseFieldOfViewFromControlledCamera();
+            if (!hasBaseFieldOfView)
+            {
+                baseFieldOfView = 50f;
+                hasBaseFieldOfView = true;
+            }
         }
 
         private Camera ResolveControlledCamera()
@@ -728,6 +758,7 @@ namespace DimensionBrawl.Presentation
             Vector3 cueCameraOffset,
             float cueWeight,
             float activeCueFocusHeightDelta,
+            Vector3 baseFocus,
             out Vector3 position,
             out Vector3 focus)
         {
@@ -735,6 +766,12 @@ namespace DimensionBrawl.Presentation
             position = rigOrigin
                 + aimRotation * (cameraOffset + cueCameraOffset + aimCameraOffset)
                 + cueOffset * cueWeight;
+            if (aimRigUsesWorldLookOffset)
+            {
+                focus = baseFocus + aimRotation * aimFocusOffset;
+                return;
+            }
+
             focus = rigOrigin
                 + aimRotation * (lookOffset + aimFocusOffset)
                 + Vector3.up * (activeCueFocusHeightDelta * cueWeight);

@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
+  m_Name: DB_BossBarrage_Phase2_AkazaHoverLance
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
+  patternId: AkazaHoverLance
+  skillPatternFamily: 8
+  skillTransferMode: 2
+  playerSkillTranslationNote: A phase-two rail lance that can become a costed committed
+    lane skill, never basic fire.
+  counterplayNote: Read the rail windup, leave the marked side, or spend a summon
+    screen before release.
+  telegraphWindupColor: {r: 0.2, g: 0.9, b: 1, a: 0.76}
+  telegraphReleaseColor: {r: 0.72, g: 1, b: 1, a: 0.96}
+  telegraphMarkerWidthScale: 0.42
+  telegraphMarkerDepthScale: 2.15
+  telegraphPulseScale: 1.45
+  projectileColor: {r: 0.32, g: 0.95, b: 1, a: 1}
+  projectileVisualScale: {x: 0.82, y: 0.82, z: 2.75}
+  projectileMaterial: {fileID: 2100000, guid: a6c8fa06a6f9a2744b15636aa56b2e58, type: 2}
+  initialDelaySeconds: 0.35
+  windupSeconds: 0.82
+  waveIntervalSeconds: 4.6
+  projectilesPerWave: 4
+  damage: 11
+  projectileSpeed: 15.2
+  projectileLifetimeSeconds: 5.4
+  projectileRadius: 0.31
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
+  targetingRule: 0
+  laneCenterLateralRatio: 0
+  lateralShape: 4
+  backlineHalfSpread: 4.15
+  forwardHalfSpread: 0
+  twinColumnInnerSpreadRatio: 0.38
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
+  punishNetInnerSpreadRatio: 0.34
+  escortScreenInnerGapRatio: 0.28
+  layeredSalvoRowCount: 3
+  crossfireInnerGapRatio: 0.32
+  linePressureDirection: -1
+  linePressureCenterRatio: 0.78
+  linePressureHalfSpreadRatio: 0.07
+  backlineDepthSpread: 2.6
+  forwardDepthSpread: 0.72
+  spawnHeight: 2.35
+  targetHeight: 1.08

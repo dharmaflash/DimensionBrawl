@@ -8,47 +8,47 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Body
-    second: {fileID: 2100000, guid: d10ea4806ad08c147bd08a540a40421a, type: 2}
+    second: {fileID: 2100000, guid: c22c9078ef4f3ef4eb74dbb48e9c8181, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_CostumeExtra
-    second: {fileID: 2100000, guid: d89e98ecc61527f40bcb319ceb534c7a, type: 2}
+    second: {fileID: 2100000, guid: 1b7990133bfc0a04f924c346d5c94c48, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Costume_A
-    second: {fileID: 2100000, guid: 8d1118e5f6433c147a35df36f1751147, type: 2}
+    second: {fileID: 2100000, guid: 9a120304e7cc53243853748871c5c44b, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Costume_B
-    second: {fileID: 2100000, guid: 44adf94533d9e7e4b8f99c32b9aa62e9, type: 2}
+    second: {fileID: 2100000, guid: d96744a1e9e550748bc20c76d062f451, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Expressions
-    second: {fileID: 2100000, guid: e5759ff009ea92649b96dc49cbbcd5c1, type: 2}
+    second: {fileID: 2100000, guid: fbf8b37d495c9cd499e7559f06d35a94, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_EyeAlpha
-    second: {fileID: 2100000, guid: f3285395b2e57ce44ac77fbfd5232e11, type: 2}
+    second: {fileID: 2100000, guid: 02a180e3141ccd24392301b7613a4992, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Glasses
-    second: {fileID: 2100000, guid: 0781ddd4f00c48d4dbb6b90884ea7e27, type: 2}
+    second: {fileID: 2100000, guid: 5c007fbe7caa9554e8eefa19a8d8bf0b, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Hair
-    second: {fileID: 2100000, guid: fd1ac0e07aca1fe44892e7d11faebbc3, type: 2}
+    second: {fileID: 2100000, guid: 746915271c53be64e875b6ada6a2a8d0, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Inori_Head
-    second: {fileID: 2100000, guid: 4013b954a720acc49bbbc34cb4e44e21, type: 2}
+    second: {fileID: 2100000, guid: a765bf6a9e542284cabc805f81256f9d, type: 2}
   materials:
     materialImportMode: 0
     materialName: 0
