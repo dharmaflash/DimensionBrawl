@@ -31,6 +31,10 @@ namespace DimensionBrawl.Editor
             CombatHudGeneratedArtRoot + "/DB_UI_SummonReadyGlow.png";
         private const string CombatHudSummonReadySparkSpritePath =
             CombatHudGeneratedArtRoot + "/DB_UI_SummonReadySparkRing.png";
+        private const string CombatHudActionCooldownRingSpritePath =
+            CombatHudGeneratedArtRoot + "/DB_UI_ActionCooldownRing.png";
+        private const string CombatHudActionReadyGlowSpritePath =
+            CombatHudGeneratedArtRoot + "/DB_UI_ActionReadyGlow.png";
         private const string CombatHudCanvasRootName = ReviewRootPrefix + "CombatHudCanvas";
         private const string CombatHudEventSystemRootName = ReviewRootPrefix + "CombatHudEventSystem";
         private const string DimensionHudSkinRootName = "DimensionHudSkinRoot";
@@ -51,6 +55,7 @@ namespace DimensionBrawl.Editor
             EnsureDimensionHudSpriteImporters();
             EnsureCombatHudUiMaterials();
             EnsureCombatHudUiGeneratedSprites();
+            ApplyDimensionHudSkinToPrefabAsset();
             Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
             EnsureExistingReviewHudVisualPolicy(scene);
             EnsureCombatHudCanvasForOpenScene(scene);
@@ -80,6 +85,7 @@ namespace DimensionBrawl.Editor
             EnsureDimensionHudSpriteImporters();
             EnsureCombatHudUiMaterials();
             EnsureCombatHudUiGeneratedSprites();
+            ApplyDimensionHudSkinToPrefabAsset();
             EnsureExistingReviewHudVisualPolicy(scene);
             GameObject canvasRoot = EnsureCombatHudCanvasForOpenScene(scene);
             ConfigureCombatHudBinder(
@@ -385,6 +391,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(presenter, "bossResourceFill", bossCostFill);
             SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
             SetObjectReference(presenter, "ammoText", FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
+            BindExistingActionSlotEffectImages(canvasRoot, presenter);
             MarkComponentDirty(presenter);
         }
 
@@ -554,6 +561,20 @@ namespace DimensionBrawl.Editor
             return instance;
         }
 
+        private static void ApplyDimensionHudSkinToPrefabAsset()
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(CombatHudPrefabPath);
+            try
+            {
+                ApplyDimensionHudSkin(prefabRoot);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, CombatHudPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
         private static void ApplyDimensionHudSkin(GameObject hudRoot)
         {
             Dictionary<string, Sprite> sprites = LoadDimensionHudSprites();
@@ -561,6 +582,8 @@ namespace DimensionBrawl.Editor
             Sprite progressRingSprite = LoadAsset<Sprite>(CombatHudSummonProgressRingSpritePath);
             Sprite readyGlowSprite = LoadAsset<Sprite>(CombatHudSummonReadyGlowSpritePath);
             Sprite readySparkSprite = LoadAsset<Sprite>(CombatHudSummonReadySparkSpritePath);
+            Sprite actionCooldownRingSprite = LoadAsset<Sprite>(CombatHudActionCooldownRingSpritePath);
+            Sprite actionReadyGlowSprite = LoadAsset<Sprite>(CombatHudActionReadyGlowSpritePath);
             Image rootImage = hudRoot.GetComponent<Image>();
             if (rootImage != null)
             {
@@ -627,6 +650,20 @@ namespace DimensionBrawl.Editor
             ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(1017.5f, 1299f, 605f, 21f));
             HideLegacyHudLabels(hudRoot);
             HideActionButtonTexts(hudRoot);
+            ConfigureActionButtonAvailabilityEffects(
+                hudRoot,
+                "DodgeButton",
+                new Vector2(256f, 218f),
+                CombatHudActionId.Dodge,
+                actionCooldownRingSprite,
+                actionReadyGlowSprite);
+            ConfigureActionButtonAvailabilityEffects(
+                hudRoot,
+                "Skill1Button",
+                new Vector2(236f, 286f),
+                CombatHudActionId.Skill1,
+                null,
+                actionReadyGlowSprite);
             ConfigureSummonSlotPresentation(
                 hudRoot,
                 "SummonSlot1Button",
@@ -878,6 +915,234 @@ namespace DimensionBrawl.Editor
                     SetTextVisible(texts[j], false, Color.black, texts[j].fontSize);
                 }
             }
+        }
+
+        private static void ConfigureActionButtonAvailabilityEffects(
+            GameObject hudRoot,
+            string buttonName,
+            Vector2 buttonSize,
+            CombatHudActionId actionId,
+            Sprite progressRingSprite,
+            Sprite readyGlowSprite)
+        {
+            Transform button = FindHudDescendant(hudRoot.transform, buttonName);
+            if (button == null)
+            {
+                return;
+            }
+
+            Vector2 effectCenterOffset = ResolveActionEffectCenterOffset(actionId);
+            Image readyGlowImage = ConfigureActionEffectImage(
+                button,
+                "ActionReadyGlow",
+                ResolveActionEffectRect(buttonSize, 1.12f, effectCenterOffset),
+                buttonSize,
+                readyGlowSprite,
+                Image.Type.Simple);
+            Image progressFill = null;
+            if (progressRingSprite != null)
+            {
+                progressFill = ConfigureActionEffectImage(
+                    button,
+                    "DodgeCooldownRing",
+                    ResolveActionEffectRect(buttonSize, 1.08f, effectCenterOffset),
+                    buttonSize,
+                    progressRingSprite,
+                    Image.Type.Filled);
+                progressFill.fillMethod = Image.FillMethod.Radial360;
+                progressFill.fillOrigin = (int)Image.Origin360.Top;
+                progressFill.fillClockwise = true;
+                progressFill.fillAmount = 0f;
+                MarkComponentDirty(progressFill);
+                progressFill.transform.SetAsLastSibling();
+            }
+
+            readyGlowImage.transform.SetAsFirstSibling();
+            BindActionSlotEffectImages(
+                hudRoot.GetComponentInChildren<CombatHudPresenter>(includeInactive: true),
+                actionId,
+                readyGlowImage,
+                progressFill);
+            EditorUtility.SetDirty(button.gameObject);
+        }
+
+        private static Image ConfigureActionEffectImage(
+            Transform button,
+            string objectName,
+            Rect localRect,
+            Vector2 parentSize,
+            Sprite sprite,
+            Image.Type imageType)
+        {
+            Transform target = FindOrCreateUniqueActionEffectChild(button, objectName);
+            ApplyLocalRect(target.GetComponent<RectTransform>(), localRect, parentSize);
+            Image image = target.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = Color.clear;
+            image.raycastTarget = false;
+            image.preserveAspect = false;
+            image.type = imageType;
+            MarkComponentDirty(image);
+            EditorUtility.SetDirty(target.gameObject);
+            target.gameObject.SetActive(false);
+            return image;
+        }
+
+        private static Transform FindOrCreateUniqueActionEffectChild(Transform button, string objectName)
+        {
+            Transform target = null;
+            List<Transform> duplicates = null;
+            for (int i = 0; i < button.childCount; i++)
+            {
+                Transform child = button.GetChild(i);
+                if (!string.Equals(child.name, objectName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                bool childComesFromPrefabSource =
+                    PrefabUtility.GetCorrespondingObjectFromSource(child.gameObject) != null;
+                if (target == null || childComesFromPrefabSource)
+                {
+                    if (target != null)
+                    {
+                        duplicates ??= new List<Transform>();
+                        duplicates.Add(target);
+                    }
+
+                    target = child;
+                }
+                else
+                {
+                    duplicates ??= new List<Transform>();
+                    duplicates.Add(child);
+                }
+            }
+
+            if (target == null)
+            {
+                target = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).transform;
+                target.SetParent(button, worldPositionStays: false);
+            }
+            else
+            {
+                target.gameObject.SetActive(true);
+            }
+
+            if (duplicates != null)
+            {
+                for (int i = 0; i < duplicates.Count; i++)
+                {
+                    if (duplicates[i] != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(duplicates[i].gameObject);
+                    }
+                }
+
+                EditorUtility.SetDirty(button.gameObject);
+            }
+
+            return target;
+        }
+
+        private static Rect ResolveActionEffectRect(Vector2 buttonSize, float scale)
+        {
+            return ResolveActionEffectRect(buttonSize, scale, Vector2.zero);
+        }
+
+        private static Rect ResolveActionEffectRect(Vector2 buttonSize, float scale, Vector2 centerOffset)
+        {
+            float side = Mathf.Min(buttonSize.x, buttonSize.y) * scale;
+            float x = (buttonSize.x - side) * 0.5f + centerOffset.x;
+            float y = (buttonSize.y - side) * 0.5f - centerOffset.y;
+            return new Rect(x, y, side, side);
+        }
+
+        private static Vector2 ResolveActionEffectCenterOffset(CombatHudActionId actionId)
+        {
+            return actionId switch
+            {
+                CombatHudActionId.Dodge => new Vector2(-9f, 8f),
+                CombatHudActionId.Skill1 => new Vector2(8f, -2.5f),
+                _ => Vector2.zero
+            };
+        }
+
+        private static void BindActionSlotEffectImages(
+            CombatHudPresenter presenter,
+            CombatHudActionId actionId,
+            Image readyGlowImage,
+            Image readyProgressFill)
+        {
+            if (presenter == null)
+            {
+                return;
+            }
+
+            var serializedObject = new SerializedObject(presenter);
+            SerializedProperty actionSlots = serializedObject.FindProperty("actionSlots");
+            if (actionSlots == null || !actionSlots.isArray)
+            {
+                return;
+            }
+
+            for (int i = 0; i < actionSlots.arraySize; i++)
+            {
+                SerializedProperty element = actionSlots.GetArrayElementAtIndex(i);
+                SerializedProperty actionIdProperty = element.FindPropertyRelative("actionId");
+                if (actionIdProperty == null || (CombatHudActionId)actionIdProperty.intValue != actionId)
+                {
+                    continue;
+                }
+
+                SerializedProperty glowProperty = element.FindPropertyRelative("readyGlowImage");
+                if (glowProperty != null)
+                {
+                    glowProperty.objectReferenceValue = readyGlowImage;
+                }
+
+                SerializedProperty progressProperty = element.FindPropertyRelative("readyProgressFill");
+                if (progressProperty != null)
+                {
+                    progressProperty.objectReferenceValue = readyProgressFill;
+                }
+
+                serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                MarkComponentDirty(presenter);
+                return;
+            }
+        }
+
+        private static void BindExistingActionSlotEffectImages(GameObject canvasRoot, CombatHudPresenter presenter)
+        {
+            Transform dodgeButton = FindHudDescendant(canvasRoot.transform, "DodgeButton");
+            Image dodgeGlow = FindDirectChildImage(dodgeButton, "ActionReadyGlow");
+            Image dodgeProgress = FindDirectChildImage(dodgeButton, "DodgeCooldownRing");
+            if (dodgeGlow != null || dodgeProgress != null)
+            {
+                BindActionSlotEffectImages(
+                    presenter,
+                    CombatHudActionId.Dodge,
+                    dodgeGlow,
+                    dodgeProgress);
+            }
+
+            Transform skill1Button = FindHudDescendant(canvasRoot.transform, "Skill1Button");
+            Image skill1Glow = FindDirectChildImage(skill1Button, "ActionReadyGlow");
+            if (skill1Glow != null)
+            {
+                BindActionSlotEffectImages(
+                    presenter,
+                    CombatHudActionId.Skill1,
+                    skill1Glow,
+                    null);
+            }
+        }
+
+        private static Image FindDirectChildImage(Transform root, string objectName)
+        {
+            Transform target = root != null ? root.Find(objectName) : null;
+            return target != null ? target.GetComponent<Image>() : null;
         }
 
         private static void ConfigureSummonSlotPresentation(
@@ -1323,14 +1588,19 @@ namespace DimensionBrawl.Editor
             EnsureGeneratedSpriteTexture(CombatHudSummonProgressRingSpritePath, CreateSummonProgressRingPixel);
             EnsureGeneratedSpriteTexture(CombatHudSummonReadyGlowSpritePath, CreateSummonReadyGlowPixel);
             EnsureGeneratedSpriteTexture(CombatHudSummonReadySparkSpritePath, CreateSummonReadySparkPixel);
+            EnsureGeneratedSpriteTexture(CombatHudActionCooldownRingSpritePath, CreateActionCooldownRingPixel, forceRegenerate: true);
+            EnsureGeneratedSpriteTexture(CombatHudActionReadyGlowSpritePath, CreateActionReadyGlowPixel, forceRegenerate: true);
         }
 
         private delegate Color32 GeneratedUiPixel(int x, int y, int size);
 
-        private static void EnsureGeneratedSpriteTexture(string assetPath, GeneratedUiPixel pixel)
+        private static void EnsureGeneratedSpriteTexture(
+            string assetPath,
+            GeneratedUiPixel pixel,
+            bool forceRegenerate = false)
         {
             string absolutePath = AssetPathToAbsolutePath(assetPath);
-            if (!File.Exists(absolutePath))
+            if (forceRegenerate || !File.Exists(absolutePath))
             {
                 const int size = 192;
                 Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
@@ -1339,14 +1609,16 @@ namespace DimensionBrawl.Editor
                     wrapMode = TextureWrapMode.Clamp
                 };
 
+                Color32[] pixels = new Color32[size * size];
                 for (int y = 0; y < size; y++)
                 {
                     for (int x = 0; x < size; x++)
                     {
-                        texture.SetPixel(x, y, pixel(x, y, size));
+                        pixels[y * size + x] = pixel(x, y, size);
                     }
                 }
 
+                texture.SetPixels32(pixels);
                 texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
                 File.WriteAllBytes(absolutePath, texture.EncodeToPNG());
                 UnityEngine.Object.DestroyImmediate(texture);
@@ -1417,6 +1689,34 @@ namespace DimensionBrawl.Editor
             float outer = 1f - Mathf.SmoothStep(0.91f, 1f, distance);
             byte alpha = (byte)Mathf.RoundToInt(255f * angular * radial * outer);
             return new Color32(255, 255, 255, alpha);
+        }
+
+        private static Color32 CreateActionCooldownRingPixel(int x, int y, int size)
+        {
+            float distance = DistanceFromCenter01(x, y, size);
+            float outerFade = 1f - SmoothStep01(0.985f, 1f, distance);
+            float innerFade = SmoothStep01(0.84f, 0.90f, distance);
+            float core = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.94f) / 0.026f);
+            float softEdge = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.94f) / 0.074f) * 0.34f;
+            byte alpha = (byte)Mathf.RoundToInt(215f * outerFade * innerFade * Mathf.Clamp01(core + softEdge));
+            return new Color32(255, 255, 255, alpha);
+        }
+
+        private static Color32 CreateActionReadyGlowPixel(int x, int y, int size)
+        {
+            float distance = DistanceFromCenter01(x, y, size);
+            float outerFade = 1f - SmoothStep01(0.965f, 1f, distance);
+            float innerFade = SmoothStep01(0.72f, 0.84f, distance);
+            float broadHalo = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.89f) / 0.12f);
+            float rim = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.92f) / 0.044f);
+            float alpha01 = Mathf.Clamp01((rim * 0.54f + broadHalo * 0.26f) * outerFade * innerFade);
+            byte alpha = (byte)Mathf.RoundToInt(185f * alpha01);
+            return new Color32(255, 255, 255, alpha);
+        }
+
+        private static float SmoothStep01(float edge0, float edge1, float value)
+        {
+            return Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(edge0, edge1, value));
         }
 
         private static float DistanceFromCenter01(int x, int y, int size)

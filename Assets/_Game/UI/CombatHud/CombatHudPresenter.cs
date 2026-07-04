@@ -36,7 +36,10 @@ namespace DimensionBrawl.UI
             [SerializeField] private Text labelText;
             [SerializeField] private Text cooldownText;
             [SerializeField] private Image cooldownFill;
+            [SerializeField] private Image readyProgressFill;
+            [SerializeField] private Image readyGlowImage;
             [SerializeField] private CanvasGroup canvasGroup;
+            [NonSerialized] private float readyGlowVisibility;
 
             public CombatHudActionId ActionId => actionId;
 
@@ -53,6 +56,9 @@ namespace DimensionBrawl.UI
                     cooldownFill.fillAmount = clamped;
                 }
 
+                ApplyReadyProgress(clamped);
+                ApplyReadyGlow(clamped);
+
                 if (cooldownText != null)
                 {
                     float displaySeconds = secondsRemaining >= 0f ? secondsRemaining : Mathf.CeilToInt(clamped * 10f) / 10f;
@@ -63,6 +69,80 @@ namespace DimensionBrawl.UI
                 {
                     canvasGroup.alpha = clamped > 0f ? 0.65f : 1f;
                 }
+            }
+
+            private void ApplyReadyProgress(float normalizedRemaining)
+            {
+                if (readyProgressFill == null)
+                {
+                    return;
+                }
+
+                float readyProgress = Mathf.Clamp01(1f - normalizedRemaining);
+                readyProgressFill.raycastTarget = false;
+                readyProgressFill.type = Image.Type.Filled;
+                readyProgressFill.fillMethod = Image.FillMethod.Radial360;
+                readyProgressFill.fillOrigin = (int)Image.Origin360.Top;
+                readyProgressFill.fillClockwise = true;
+                readyProgressFill.fillAmount = readyProgress;
+
+                bool ready = normalizedRemaining <= 0.001f;
+                float easedProgress = Mathf.SmoothStep(0f, 1f, readyProgress);
+                float readyPulse = ready ? SmoothPulse(2.4f) : 0f;
+                readyProgressFill.color = new Color(
+                    0.92f,
+                    0.98f,
+                    1f,
+                    ready
+                        ? 0.56f + readyPulse * 0.08f
+                        : Mathf.Lerp(0.12f, 0.46f, easedProgress));
+                readyProgressFill.gameObject.SetActive(readyProgress > 0.001f);
+            }
+
+            private void ApplyReadyGlow(float normalizedRemaining)
+            {
+                if (readyGlowImage == null)
+                {
+                    return;
+                }
+
+                bool ready = normalizedRemaining <= 0.001f;
+                readyGlowImage.raycastTarget = false;
+                readyGlowImage.type = Image.Type.Simple;
+                float targetVisibility = ready ? 1f : 0f;
+                float fadeSpeed = ready ? 3.6f : 7.5f;
+                readyGlowVisibility = Mathf.MoveTowards(
+                    readyGlowVisibility,
+                    targetVisibility,
+                    GetUiDeltaTime() * fadeSpeed);
+
+                if (readyGlowVisibility <= 0.001f && !ready)
+                {
+                    readyGlowImage.color = Color.clear;
+                    readyGlowImage.rectTransform.localScale = Vector3.one;
+                    readyGlowImage.gameObject.SetActive(false);
+                    return;
+                }
+
+                readyGlowImage.gameObject.SetActive(true);
+                float pulse = SmoothPulse(actionId == CombatHudActionId.Skill1 ? 1.9f : 2.15f);
+                Color color = actionId == CombatHudActionId.Skill1
+                    ? new Color(1f, 0.96f, 0.8f, readyGlowVisibility * (0.16f + pulse * 0.08f))
+                    : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.13f + pulse * 0.06f));
+                readyGlowImage.color = color;
+                readyGlowImage.rectTransform.localScale = Vector3.one * (1f + readyGlowVisibility * pulse * 0.006f);
+            }
+
+            private static float SmoothPulse(float speed)
+            {
+                float raw = 0.5f + Mathf.Sin(Time.unscaledTime * speed) * 0.5f;
+                return Mathf.SmoothStep(0f, 1f, raw);
+            }
+
+            private static float GetUiDeltaTime()
+            {
+                float deltaTime = Time.unscaledDeltaTime;
+                return deltaTime > 0f ? deltaTime : 1f / 60f;
             }
 
             public void ApplyGuideFocus(bool focused, bool dimUnfocused)
