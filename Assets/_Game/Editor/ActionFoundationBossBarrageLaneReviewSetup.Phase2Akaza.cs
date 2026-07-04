@@ -7145,14 +7145,6 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void SetMaterialColorIfPresent(Material material, string propertyName, Color value)
-        {
-            if (material != null && material.HasProperty(propertyName))
-            {
-                material.SetColor(propertyName, value);
-            }
-        }
-
         private static void SetMaterialToggleKeywordIfPresent(
             Material material,
             string propertyName,
