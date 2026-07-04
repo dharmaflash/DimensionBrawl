@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -76,7 +77,7 @@ namespace DimensionBrawl.Tests
 
                 presenter.Show(
                     "천계관리시스템",
-                    "남은 적을 처치하면 기초 전투 검증이 완료됩니다.",
+                    "남은 적을 처치하십시오.",
                     "전투 완료",
                     OlympusTutorialOverlayPresenter.FocusKind.Route,
                     new Vector2(0.5f, 0.76f));
@@ -261,6 +262,44 @@ namespace DimensionBrawl.Tests
             {
                 Assert.IsNull(cues[i].Clip, $"Fast confirmation cue {cues[i].CueId} should stay silent.");
             }
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialStartsWithReadableSoldierChallenge()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+
+            flowController.SkipIntroCutscene();
+            yield return null;
+            yield return null;
+
+            OlympusCorridorTutorialDirector tutorialDirector =
+                RequireComponent<OlympusCorridorTutorialDirector>(
+                    FlowRootName,
+                    "Olympus corridor tutorial director");
+            OlympusTutorialOverlayPresenter overlayPresenter =
+                RequireComponent<OlympusTutorialOverlayPresenter>(
+                    FlowRootName,
+                    "Olympus tutorial overlay presenter");
+
+            Assert.AreEqual("SoldierChallenge", tutorialDirector.CurrentStepId);
+            Assert.AreEqual("Cue", tutorialDirector.CurrentPhaseId);
+            Assert.AreEqual("병사", ReadPrivateField<string>(overlayPresenter, "speaker"));
+            Assert.AreEqual("뭐하는 놈이냐!", ReadPrivateField<string>(overlayPresenter, "dialogue"));
+
+            float startedAt = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - startedAt < 1.1f)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(
+                "SoldierChallenge",
+                tutorialDirector.CurrentStepId,
+                "Soldier challenge should stay readable before the first system instruction.");
         }
 
         [UnityTest]
@@ -537,6 +576,35 @@ namespace DimensionBrawl.Tests
                 "ClearTargets held fire should use the normal combat aim zoom.");
             AppendCameraSnapshot(report, "ClearTargets held fire aim", cameraController, combatCamera, rangedAimController);
             AppendAndAssertAimCameraLaneComposition(report, "ClearTargets held fire aim", combatCamera, player);
+
+            CombatHealth[] tutorialTargets =
+                ReadPrivateField<CombatHealth[]>(tutorialDirector, "tutorialTargets");
+            Assert.That(tutorialTargets.Length, Is.GreaterThan(0));
+            for (int i = 0; i < tutorialTargets.Length; i++)
+            {
+                CombatHealth target = tutorialTargets[i];
+                Assert.IsNotNull(target, $"Tutorial target {i} should exist before clear completion.");
+                Assert.IsTrue(target.gameObject.activeSelf, $"Tutorial target {i} should start active.");
+                target.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    target.MaxHealth + 999f,
+                    target.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.DamageOnly));
+            }
+
+            yield return WaitForStep(tutorialDirector, "Completed", 4f, report);
+            for (int i = 0; i < tutorialTargets.Length; i++)
+            {
+                if (tutorialTargets[i] != null)
+                {
+                    Assert.IsFalse(
+                        tutorialTargets[i].gameObject.activeSelf,
+                        $"Tutorial target {i} should be hidden after tutorial completion.");
+                }
+            }
 
             report.AppendLine();
             report.AppendLine("## Static Step Gates");

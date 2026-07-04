@@ -12,6 +12,7 @@ namespace DimensionBrawl.LevelDesign
     {
         private const string SystemGuideSpeaker = "천계관리시스템";
         private const string SoldierGuideSpeaker = "병사";
+        private const float SoldierChallengeOpeningVoicePaddingSeconds = 0.4f;
 
         public enum DialogueAudioCueId
         {
@@ -98,6 +99,7 @@ namespace DimensionBrawl.LevelDesign
         [Header("Flow")]
         [SerializeField] private bool tutorialEnabled = true;
         [SerializeField, Min(0f)] private float cuePrimeSeconds = 0.45f;
+        [SerializeField, Min(0f)] private float soldierChallengeReadSeconds = 1.8f;
         [SerializeField, Min(0f)] private float completionRecordSeconds = 0.7f;
         [SerializeField, Min(0.1f)] private float promptRepeatSeconds = 4.0f;
         [SerializeField, Min(0f)] private float minimumCueReadSeconds = 0.85f;
@@ -602,6 +604,7 @@ namespace DimensionBrawl.LevelDesign
             UnsubscribeObservers();
             SetEnemyGameplayEnabled(false);
             SetCombatHealthRootCollidersEnabled(tutorialTargets, false);
+            SetCombatHealthRootsActive(tutorialTargets, false);
             SetCollidersEnabled(tutorialRouteBlockers, false);
             SetObjectsActive(tutorialBoundsRoots, false);
             ConfigureTargetCandidates(Array.Empty<CombatHealth>());
@@ -711,7 +714,22 @@ namespace DimensionBrawl.LevelDesign
 
         private float ResolveCueReadSeconds()
         {
-            return Mathf.Max(cuePrimeSeconds, minimumCueReadSeconds);
+            float readSeconds = Mathf.Max(cuePrimeSeconds, minimumCueReadSeconds);
+            if (step != TutorialStep.SoldierChallenge)
+            {
+                return readSeconds;
+            }
+
+            readSeconds = Mathf.Max(readSeconds, soldierChallengeReadSeconds);
+            DialogueAudioCue cue = ResolveDialogueAudioCue(DialogueAudioCueId.SoldierChallenge);
+            if (cue.Clip != null)
+            {
+                readSeconds = Mathf.Max(
+                    readSeconds,
+                    cue.DelaySeconds + cue.Clip.length + SoldierChallengeOpeningVoicePaddingSeconds);
+            }
+
+            return readSeconds;
         }
 
         private float ResolveCompletionReadSeconds()
@@ -865,7 +883,7 @@ namespace DimensionBrawl.LevelDesign
                     ShowGuide(
                         DialogueAudioCueId.ClearTargetsConfirm,
                         SystemGuideSpeaker,
-                        "기초 전투 검증이 완료되었습니다.",
+                        "긴급 무장 프로토콜 종료.",
                         "\ud655\uc778",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));

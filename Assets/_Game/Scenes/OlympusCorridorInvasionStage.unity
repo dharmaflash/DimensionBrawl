@@ -59494,7 +59494,7 @@ Transform:
   m_GameObject: {fileID: 355794907}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.055, z: 4.05}
+  m_LocalPosition: {x: 0, y: -0.34999973, z: 4.05}
   m_LocalScale: {x: 3.7, y: 0.022, z: 0.055}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -59507,7 +59507,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 355794907}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -154710,7 +154710,7 @@ Transform:
   m_GameObject: {fileID: 939522987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.01, z: -0.95}
+  m_LocalPosition: {x: 0, y: -0.34900022, z: -0.95}
   m_LocalScale: {x: 1.7, y: 0.025, z: 0.045}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -154723,7 +154723,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 939522987}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -180678,7 +180678,7 @@ Transform:
   m_GameObject: {fileID: 1116259921}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.015, z: 5.15}
+  m_LocalPosition: {x: 0, y: -0.39, z: 5.15}
   m_LocalScale: {x: 4.45, y: 0.035, z: 4.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -180691,7 +180691,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1116259921}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -196710,7 +196710,7 @@ Transform:
   m_GameObject: {fileID: 1223699249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.015, z: -0.1}
+  m_LocalPosition: {x: 0, y: -0.374, z: -0.1}
   m_LocalScale: {x: 2.35, y: 0.035, z: 2.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -196723,7 +196723,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1223699249}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -244645,7 +244645,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9b8765c2d1e14367a06c3ea4bcb43d11, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewTutorialGuide
   profile: {fileID: 11400000, guid: e87b0498cccb41bd8f0dca2be96f14f7, type: 2}
   startOnEnable: 1
