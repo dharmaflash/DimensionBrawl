@@ -199,6 +199,18 @@ namespace DimensionBrawl.Editor
             ImportedHovlSciFiEffectsPrefabRoot + "/Projectile bullet.prefab";
         private const string ImportedHovlLaserHitPrefabPath =
             ImportedHovlSciFiEffectsPrefabRoot + "/Laser hit.prefab";
+        private const string HovlSciFiEffectsPromotedRoot =
+            "Assets/_Game/Art/VFX/HovlSciFiEffects";
+        private const string HovlSciFiEffectsMaterialRoot =
+            HovlSciFiEffectsPromotedRoot + "/Materials";
+        private const string HovlSciFiEffectsTextureRoot =
+            HovlSciFiEffectsPromotedRoot + "/Textures";
+        private const string HovlSciFiEffectsShaderRoot =
+            HovlSciFiEffectsPromotedRoot + "/Shaders";
+        private const string HovlSciFiEffectsMeshRoot =
+            HovlSciFiEffectsPromotedRoot + "/Meshes";
+        private const string BossBarrageHovlProjectileChildName =
+            "BossBarrageProjectileVfx_HovlProjectileBullet";
         private const string MagicMissilesPromotedRoot =
             "Assets/_Game/Art/VFX/MagicMissiles";
         private const string MagicMissilesMaterialRoot =
@@ -672,6 +684,24 @@ namespace DimensionBrawl.Editor
             EnsureProjectilePrefab();
             EnsureBossBasicFireProfile();
             AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Combat Cue Asset Overlays")]
+        public static void ReapplyBossBarrageCombatCueAssetOverlaysMenu()
+        {
+            EnsureBossBarrageCombatCueAssetOverlays();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation boss barrage combat cue asset overlays.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Projectile And Perfect Dodge Shield VFX")]
+        public static void ReapplyBossProjectileAndPerfectDodgeShieldVfxMenu()
+        {
+            ActionFoundationCombatVfxSetup.EnsureCombatVfxAssets();
+            EnsureBossProjectileVfx();
+            EnsureBossBarrageCombatCueAssetOverlays();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation boss projectile and perfect dodge shield VFX.");
         }
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Player Ranged Basic VFX")]
@@ -2490,7 +2520,6 @@ namespace DimensionBrawl.Editor
         {
             EnsureFolderForAsset(ProjectilePrefabPath);
             Material material = LoadAsset<Material>(ProjectileMaterialPath);
-            Mesh missileMesh = LoadAsset<Mesh>(Forge3DMissileProjectileMeshPath);
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(ProjectilePrefabPath) != null;
             GameObject editableRoot = prefabExists
                 ? PrefabUtility.LoadPrefabContents(ProjectilePrefabPath)
@@ -2504,11 +2533,11 @@ namespace DimensionBrawl.Editor
                 editableRoot.transform.localScale = Vector3.one * 0.62f;
 
                 MeshFilter meshFilter = EnsureComponent<MeshFilter>(editableRoot);
-                meshFilter.sharedMesh = missileMesh;
+                meshFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
-                renderer.enabled = true;
+                renderer.enabled = false;
                 renderer.shadowCastingMode = ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
                 renderer.allowOcclusionWhenDynamic = false;
@@ -2523,6 +2552,7 @@ namespace DimensionBrawl.Editor
 
                 ConfigureBossBarrageProjectileVisuals(editableRoot, material);
                 BossBarrageProjectile projectile = EnsureComponent<BossBarrageProjectile>(editableRoot);
+                // Keep runtime tint/material presentation isolated from the authored Hovl particle materials.
                 SetObjectReferenceArray(projectile, "visualRenderers", new UnityEngine.Object[] { renderer });
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, ProjectilePrefabPath);
             }
@@ -2545,39 +2575,23 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "BossBarrageProjectileVfx_";
             RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
-            Material trailMaterial = LoadOrCreateTransparentMaterial(
-                BossBarrageProjectileTrailMaterialPath,
-                new Color(0.28f, 0.86f, 1f, 0.72f));
 
-            TrailRenderer trail = EnsureComponent<TrailRenderer>(projectileRoot);
-            trail.sharedMaterial = trailMaterial;
-            trail.time = 0.18f;
-            trail.minVertexDistance = 0.03f;
-            trail.startWidth = 0.2f;
-            trail.endWidth = 0.035f;
-            trail.numCornerVertices = 2;
-            trail.numCapVertices = 2;
-            trail.alignment = LineAlignment.View;
-            trail.textureMode = LineTextureMode.Stretch;
-            trail.shadowCastingMode = ShadowCastingMode.Off;
-            trail.receiveShadows = false;
-            trail.emitting = true;
-            trail.autodestruct = false;
+            TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+            if (oldTrail != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldTrail);
+            }
 
-            Gradient gradient = new Gradient();
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(new Color(0.62f, 0.96f, 1f, 1f), 0f),
-                    new GradientColorKey(new Color(0.18f, 0.34f, 1f, 1f), 1f)
-                },
-                new[]
-                {
-                    new GradientAlphaKey(0.8f, 0f),
-                    new GradientAlphaKey(0f, 1f)
-                });
-            trail.colorGradient = gradient;
-            EditorUtility.SetDirty(trail);
+            AttachPromotedHovlSciFiVfxPrefab(
+                projectileRoot.transform,
+                BossBarrageHovlProjectileChildName,
+                ImportedHovlProjectileBulletPrefabPath,
+                Vector3.zero,
+                Vector3.zero,
+                Vector3.one * 2.15f,
+                loopParticles: null,
+                playOnAwake: true);
+
             EditorUtility.SetDirty(projectileRoot);
         }
 
@@ -5828,12 +5842,16 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
             SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
-            SetFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            SetFloat(driver, "perfectDodgeWindowIntensity", 1f);
+            SetFloat(driver, "perfectDodgeProjectileBlockIntensity", 1.18f);
+            SetFloat(driver, "perfectDodgeShieldBlockRadius", 0.86f);
             SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
+            SetBool(driver, "playPerfectDodgeProjectileBlockVfx", true);
         }
 
         private static PerfectDodgeVfxDirector ConfigurePerfectDodgeVfxDirector(
@@ -6063,15 +6081,19 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             ValidateEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             ValidateEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            ValidateEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             ValidateFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             ValidateFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             ValidateFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
             ValidateFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
-            ValidateFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            ValidateFloat(driver, "perfectDodgeWindowIntensity", 1f);
+            ValidateFloat(driver, "perfectDodgeProjectileBlockIntensity", 1.18f);
+            ValidateFloat(driver, "perfectDodgeShieldBlockRadius", 0.86f);
             ValidateFloat(driver, "perfectDodgeAudioIntensity", 1f);
             ValidateFloat(driver, "pressureDamageCueScale", 0.62f);
             ValidateBool(driver, "playDamageVfx", true);
             ValidateBool(driver, "playCriticalVfx", true);
+            ValidateBool(driver, "playPerfectDodgeProjectileBlockVfx", true);
         }
 
         private static void ValidatePerfectDodgeVfxDirector(
@@ -7631,24 +7653,24 @@ namespace DimensionBrawl.Editor
             MeshRenderer renderer = projectilePrefab.GetComponent<MeshRenderer>();
             if (renderer == null)
             {
-                throw new InvalidOperationException("Boss barrage projectile prefab should render the FORGE3D missile mesh from its root MeshRenderer.");
+                throw new InvalidOperationException("Boss barrage projectile prefab should keep a hidden root MeshRenderer for runtime presentation state.");
             }
 
-            if (!renderer.enabled)
+            if (renderer.enabled)
             {
-                throw new InvalidOperationException("Boss barrage projectile root MeshRenderer should stay enabled so the FORGE3D missile body is visible.");
+                throw new InvalidOperationException("Boss barrage projectile root MeshRenderer must stay hidden behind the promoted Hovl projectile VFX.");
             }
 
             MeshFilter meshFilter = projectilePrefab.GetComponent<MeshFilter>();
             if (meshFilter == null)
             {
-                throw new InvalidOperationException("Boss barrage projectile prefab should include a root MeshFilter for the FORGE3D missile mesh.");
+                throw new InvalidOperationException("Boss barrage projectile prefab should include a hidden root MeshFilter for stable runtime scaling.");
             }
 
             ValidateExactAssetReference(
                 meshFilter.sharedMesh,
-                "boss barrage projectile missile mesh",
-                LoadAsset<Mesh>(Forge3DMissileProjectileMeshPath));
+                "boss barrage projectile hidden primitive mesh",
+                LoadPrimitiveMesh(PrimitiveType.Sphere));
             ValidateExactAssetReference(
                 renderer.sharedMaterial,
                 "boss barrage projectile material",
@@ -7664,17 +7686,19 @@ namespace DimensionBrawl.Editor
                 || visualRenderers.GetArrayElementAtIndex(0).objectReferenceValue != renderer)
             {
                 throw new InvalidOperationException(
-                    "Boss barrage projectile should runtime-tint only the FORGE3D missile renderer.");
+                    "Boss barrage projectile should runtime-tint only the hidden root renderer, not the authored Hovl particle materials.");
             }
 
-            TrailRenderer trail = projectilePrefab.GetComponent<TrailRenderer>();
-            if (trail == null)
+            if (projectilePrefab.GetComponent<TrailRenderer>() != null)
             {
-                throw new InvalidOperationException("Boss barrage projectile prefab should include a TrailRenderer for incoming shot readability.");
+                throw new InvalidOperationException("Boss barrage projectile should not fall back to generated TrailRenderer visuals.");
             }
 
-            ValidateGameOwnedAsset(trail.sharedMaterial, "boss barrage projectile trail material");
-            ValidateRenderableMaterialShader(trail.sharedMaterial, "boss barrage projectile trail material shader");
+            ValidatePromotedHovlSciFiParticleVfx(
+                projectilePrefab.transform.Find(BossBarrageHovlProjectileChildName),
+                "boss barrage Hovl projectile",
+                minimumParticleSystems: 6);
+            ValidateNoImportedDependencies(projectilePrefab, "boss barrage projectile prefab");
         }
 
         private static void ValidateExactAssetReference(

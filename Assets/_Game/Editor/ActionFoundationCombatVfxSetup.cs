@@ -73,6 +73,16 @@ namespace DimensionBrawl.Editor
         private const string ShapesFxPortalInnerMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_PortalInner.mat";
         private const string ShapesFxCyanDodecaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_CyanDodeca.mat";
         private const string ShapesFxVioletIcosaMaterialPath = ShapesFxMaterialRoot + "/DB_ShapesFX_VioletIcosa.mat";
+        private const string ImportedHovlSciFiEffectsPrefabRoot =
+            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs";
+        private const string ImportedHovlHexShieldPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/Hex shield.prefab";
+        private const string HovlSciFiEffectsRoot = "Assets/_Game/Art/VFX/HovlSciFiEffects";
+        private const string HovlSciFiEffectsMaterialRoot = HovlSciFiEffectsRoot + "/Materials";
+        private const string HovlSciFiEffectsTextureRoot = HovlSciFiEffectsRoot + "/Textures";
+        private const string HovlSciFiEffectsShaderRoot = HovlSciFiEffectsRoot + "/Shaders";
+        private const string HovlSciFiEffectsMeshRoot = HovlSciFiEffectsRoot + "/Meshes";
+        private const string PerfectDodgeHovlHexShieldChildName = "PerfectDodgeVfx_HovlHexShield";
         private static readonly string[] PlayerRangedGunshotClipPaths =
         {
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
@@ -342,6 +352,10 @@ namespace DimensionBrawl.Editor
                 }
 
                 ValidateNoImportedAssetDependencies(cueId, prefabPath);
+                if (cueId == CombatVfxCueId.PlayerPerfectDodgeWindow)
+                {
+                    ValidatePerfectDodgeHovlShieldPrefab(cue.Prefab);
+                }
             }
 
             ValidateReviewedCombatFeedbackPlayback(profile);
@@ -386,6 +400,11 @@ namespace DimensionBrawl.Editor
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
             EnsureFolder(MeshRoot);
+            EnsureFolder(HovlSciFiEffectsRoot);
+            EnsureFolder(HovlSciFiEffectsMaterialRoot);
+            EnsureFolder(HovlSciFiEffectsTextureRoot);
+            EnsureFolder(HovlSciFiEffectsShaderRoot);
+            EnsureFolder(HovlSciFiEffectsMeshRoot);
             EnsureFolder("Assets/_Game/Art/Audio");
             EnsureFolder("Assets/_Game/Art/Audio/SFX");
             EnsureFolder("Assets/_Game/Art/Audio/SFX/Guns");
@@ -452,7 +471,7 @@ namespace DimensionBrawl.Editor
                 PlayerPerfectDodgeTimeField = SavePerfectDodgeTimeFieldPrefab("DB_VFX_PlayerPerfectDodgeTimeField", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
                 PlayerPerfectDodgePulsewave = SavePerfectDodgePulsewavePrefab("DB_VFX_PlayerPerfectDodgePulsewave", cyan, white, shapesPortalOuter, shapesTorus),
                 PlayerPerfectDodgeHoloCube = SavePerfectDodgeHoloCubePrefab("DB_VFX_PlayerPerfectDodgeHoloCube", cyan, violet, white, shapesCyanDodeca, shapesVioletIcosa, shapesDodeca, shapesIcosa),
-                PlayerPerfectDodgeWindow = SaveBurstPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 2.2f, 3.0f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
+                PlayerPerfectDodgeWindow = SavePerfectDodgeWindowPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 2.2f, 3.0f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
                 PlayerSummonPreSpawnPortal = SaveSummonPreSpawnPortalPrefab("DB_VFX_PlayerSummonPreSpawnPortal", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
                 PlayerSummonLandingCrater = SaveSummonLandingCraterPrefab("DB_VFX_PlayerSummonLandingCrater", gold, smoke, shapesPortalOuter, shapesTorus),
                 PlayerSummonDragonBreathAudio = SaveAudioOnlyCuePrefab("DB_VFX_PlayerSummonDragonBreathAudio"),
@@ -561,12 +580,16 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "perfectDodgePulsewaveCueId", (int)CombatVfxCueId.PlayerPerfectDodgePulsewave);
             SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
+            SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
             SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
             SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
             SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
-            SetFloat(driver, "perfectDodgeWindowIntensity", 0.86f);
+            SetFloat(driver, "perfectDodgeWindowIntensity", 1f);
+            SetFloat(driver, "perfectDodgeProjectileBlockIntensity", 1.18f);
+            SetFloat(driver, "perfectDodgeShieldBlockRadius", 0.86f);
             SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
+            SetBool(driver, "playPerfectDodgeProjectileBlockVfx", true);
         }
 
         private static void ConfigurePerfectDodgeVfxDirector(
@@ -954,7 +977,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, -0.08f, 0f), Vector3.zero, new Vector3(3.8f, 0.72f, 3.8f), 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, -0.16f, 0f), Vector3.zero, new Vector3(7.0f, 0.5f, 7.0f), 0.9f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.62f, 0.05f), Vector3.zero, new Vector3(1.1f, 1.1f, 1.1f), 1.2f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.16f), Vector3.zero, new Vector3(0.42f, 0.26f, 0.42f), 3.0f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.24f), Vector3.zero, Vector3.one, 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerSummonDragonBreathAudio, prefabs.PlayerSummonDragonBreathAudio, Vector3.zero, Vector3.zero, Vector3.one, 0.05f, false, true),
@@ -1094,6 +1117,541 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static GameObject SavePerfectDodgeWindowPrefab(
+            string name,
+            Material material,
+            ParticleSystemShapeType shapeType,
+            float radius,
+            float speed,
+            float arcDegrees,
+            float minLifetime,
+            float maxLifetime,
+            float minSize,
+            float maxSize,
+            int burstCount,
+            Color startColor,
+            Color endColor)
+        {
+            GameObject savedPrefab = SaveBurstPrefab(
+                name,
+                material,
+                shapeType,
+                radius,
+                speed,
+                arcDegrees,
+                minLifetime,
+                maxLifetime,
+                minSize,
+                maxSize,
+                burstCount,
+                startColor,
+                endColor);
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                FreezeCueVisualScale(root);
+                AttachPromotedHovlSciFiVfxPrefab(
+                    root.transform,
+                    PerfectDodgeHovlHexShieldChildName,
+                    ImportedHovlHexShieldPrefabPath,
+                    new Vector3(0f, 0.48f, 0.52f),
+                    Vector3.zero,
+                    Vector3.one * 0.92f,
+                    loopParticles: true,
+                    playOnAwake: true);
+
+                savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save perfect dodge Hovl shield prefab at {prefabPath}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate);
+            ValidatePerfectDodgeHovlShieldPrefab(savedPrefab);
+            ValidateNoImportedAssetDependencies(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabPath);
+            return savedPrefab;
+        }
+
+        private static void FreezeCueVisualScale(GameObject root)
+        {
+            CombatVfxCueVisual visual = root.GetComponent<CombatVfxCueVisual>();
+            if (visual == null)
+            {
+                return;
+            }
+
+            SerializedObject serializedObject = new SerializedObject(visual);
+            RequireProperty(serializedObject, "startScale").vector3Value = Vector3.one;
+            RequireProperty(serializedObject, "endScale").vector3Value = Vector3.one;
+            RequireProperty(serializedObject, "verticalLift").floatValue = 0f;
+            RequireProperty(serializedObject, "forwardTravelDistance").floatValue = 0f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(visual);
+        }
+
+        private static GameObject AttachPromotedHovlSciFiVfxPrefab(
+            Transform parent,
+            string childName,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale,
+            bool? loopParticles,
+            bool playOnAwake)
+        {
+            DestroyChildIfPresent(parent, childName);
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Missing source Hovl Sci-fi VFX prefab at {sourcePrefabPath}.");
+            }
+
+            GameObject vfxInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (vfxInstance == null)
+            {
+                vfxInstance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(vfxInstance))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    vfxInstance,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            vfxInstance.name = childName;
+            vfxInstance.transform.SetParent(parent, worldPositionStays: false);
+            vfxInstance.transform.localPosition = localPosition;
+            vfxInstance.transform.localRotation = Quaternion.Euler(localEuler);
+            vfxInstance.transform.localScale = localScale;
+
+            UnpackNestedPrefabInstances(vfxInstance);
+            StripNonGameMonoBehaviours(vfxInstance);
+            RemoveRigidbodies(vfxInstance);
+            RemoveColliders(vfxInstance);
+            DisableVfxAudioSources(vfxInstance);
+            ConfigurePromotedHovlSciFiParticles(vfxInstance, loopParticles, playOnAwake);
+            RemapPromotedHovlSciFiRendererDependencies(vfxInstance);
+            EditorUtility.SetDirty(vfxInstance);
+            return vfxInstance;
+        }
+
+        private static void ConfigurePromotedHovlSciFiParticles(
+            GameObject root,
+            bool? loopParticles,
+            bool playOnAwake)
+        {
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                if (loopParticles.HasValue)
+                {
+                    main.loop = loopParticles.Value;
+                }
+
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                main.playOnAwake = playOnAwake;
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                if (playOnAwake)
+                {
+                    particleSystem.Play(withChildren: true);
+                }
+
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void RemoveRigidbodies(GameObject root)
+        {
+            Rigidbody[] rigidbodies = root.GetComponentsInChildren<Rigidbody>(includeInactive: true);
+            for (int i = rigidbodies.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(rigidbodies[i]);
+            }
+        }
+
+        private static void DestroyChildIfPresent(Transform parent, string childName)
+        {
+            Transform existing = parent.Find(childName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+        }
+
+        private static void RemapPromotedHovlSciFiRendererDependencies(GameObject root)
+        {
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                if (meshFilters[i].sharedMesh != null)
+                {
+                    meshFilters[i].sharedMesh = EnsurePromotedHovlSciFiMesh(meshFilters[i].sharedMesh);
+                    EditorUtility.SetDirty(meshFilters[i]);
+                }
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                if (skinnedRenderers[i].sharedMesh != null)
+                {
+                    skinnedRenderers[i].sharedMesh = EnsurePromotedHovlSciFiMesh(skinnedRenderers[i].sharedMesh);
+                    EditorUtility.SetDirty(skinnedRenderers[i]);
+                }
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        materials[materialIndex] = EnsurePromotedHovlSciFiMaterial(materials[materialIndex]);
+                    }
+                }
+
+                renderer.sharedMaterials = materials;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            ParticleSystemRenderer[] particleRenderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer particleRenderer = particleRenderers[i];
+                Mesh mesh = particleRenderer.mesh;
+                if (mesh != null)
+                {
+                    particleRenderer.mesh = EnsurePromotedHovlSciFiMesh(mesh);
+                }
+
+                int meshCount = particleRenderer.meshCount;
+                if (meshCount > 0)
+                {
+                    Mesh[] meshes = new Mesh[meshCount];
+                    int copiedCount = particleRenderer.GetMeshes(meshes);
+                    for (int meshIndex = 0; meshIndex < copiedCount; meshIndex++)
+                    {
+                        if (meshes[meshIndex] != null)
+                        {
+                            meshes[meshIndex] = EnsurePromotedHovlSciFiMesh(meshes[meshIndex]);
+                        }
+                    }
+
+                    particleRenderer.SetMeshes(meshes, copiedCount);
+                }
+
+                EditorUtility.SetDirty(particleRenderer);
+            }
+        }
+
+        private static Material EnsurePromotedHovlSciFiMaterial(Material sourceMaterial)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMaterial;
+            }
+
+            string targetPath = HovlSciFiEffectsMaterialRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(sourceMaterial.name)
+                + ".mat";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+            if (material == null)
+            {
+                material = new Material(EnsurePromotedHovlSciFiShader(sourceMaterial.shader));
+                AssetDatabase.CreateAsset(material, targetPath);
+            }
+
+            Shader promotedShader = EnsurePromotedHovlSciFiShader(sourceMaterial.shader);
+            material.shader = promotedShader;
+            material.CopyPropertiesFromMaterial(sourceMaterial);
+            material.shader = promotedShader;
+            material.renderQueue = sourceMaterial.renderQueue;
+
+            string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
+            for (int i = 0; i < textureProperties.Length; i++)
+            {
+                Texture texture = sourceMaterial.GetTexture(textureProperties[i]);
+                if (texture != null)
+                {
+                    SetMaterialTextureIfPresent(
+                        material,
+                        textureProperties[i],
+                        EnsurePromotedHovlSciFiTexture(texture));
+                }
+            }
+
+            RemapSerializedHovlSciFiTextures(material);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            return material;
+        }
+
+        private static Shader EnsurePromotedHovlSciFiShader(Shader sourceShader)
+        {
+            if (sourceShader == null)
+            {
+                return FindParticleShader();
+            }
+
+            string sourcePath = AssetDatabase.GetAssetPath(sourceShader).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceShader;
+            }
+
+            string targetPath = HovlSciFiEffectsShaderRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Shader>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Hovl Sci-fi shader from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            RemapPromotedHovlSciFiShaderDependencies(sourcePath, targetPath);
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(targetPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi shader at {targetPath}.");
+            }
+
+            return shader;
+        }
+
+        private static void RemapPromotedHovlSciFiShaderDependencies(
+            string sourceShaderPath,
+            string targetShaderPath)
+        {
+            string targetAbsolutePath = ToProjectAbsolutePath(targetShaderPath);
+            if (!File.Exists(targetAbsolutePath))
+            {
+                return;
+            }
+
+            string contents = File.ReadAllText(targetAbsolutePath);
+            string[] dependencies = AssetDatabase.GetDependencies(sourceShaderPath, recursive: true);
+            bool changed = false;
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependency = dependencies[i].Replace('\\', '/');
+                if (dependency == sourceShaderPath
+                    || !dependency.StartsWith("Assets/_Imported/", StringComparison.Ordinal)
+                    || !IsPromotableHovlShaderDependency(dependency))
+                {
+                    continue;
+                }
+
+                string promotedDependency = EnsurePromotedHovlSciFiShaderFile(dependency);
+                string sourceGuid = AssetDatabase.AssetPathToGUID(dependency);
+                string promotedGuid = AssetDatabase.AssetPathToGUID(promotedDependency);
+                if (string.IsNullOrWhiteSpace(sourceGuid)
+                    || string.IsNullOrWhiteSpace(promotedGuid)
+                    || sourceGuid == promotedGuid)
+                {
+                    continue;
+                }
+
+                string rewritten = contents.Replace(sourceGuid, promotedGuid);
+                if (!string.Equals(rewritten, contents, StringComparison.Ordinal))
+                {
+                    contents = rewritten;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                File.WriteAllText(targetAbsolutePath, contents);
+            }
+        }
+
+        private static bool IsPromotableHovlShaderDependency(string assetPath)
+        {
+            string extension = Path.GetExtension(assetPath).ToLowerInvariant();
+            return extension == ".hlsl"
+                || extension == ".cginc"
+                || extension == ".shader"
+                || extension == ".shadergraph"
+                || extension == ".compute";
+        }
+
+        private static string EnsurePromotedHovlSciFiShaderFile(string sourcePath)
+        {
+            string targetPath = HovlSciFiEffectsShaderRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to promote Hovl Sci-fi shader dependency from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            return targetPath;
+        }
+
+        private static Texture EnsurePromotedHovlSciFiTexture(Texture sourceTexture)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceTexture;
+            }
+
+            string targetPath = HovlSciFiEffectsTextureRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(Path.GetFileName(sourcePath));
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            if (AssetDatabase.LoadAssetAtPath<Texture>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Hovl Sci-fi texture from {sourcePath} to {targetPath}.");
+                }
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Texture texture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi texture at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static Mesh EnsurePromotedHovlSciFiMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            string targetPath = HovlSciFiEffectsMeshRoot + "/DB_HovlSciFi_"
+                + SanitizeAssetFileName(sourceMesh.name)
+                + ".asset";
+            EnsureFolder(Path.GetDirectoryName(targetPath).Replace('\\', '/'));
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (mesh != null)
+            {
+                return mesh;
+            }
+
+            mesh = UnityEngine.Object.Instantiate(sourceMesh);
+            mesh.name = sourceMesh.name;
+            AssetDatabase.CreateAsset(mesh, targetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+
+            Mesh promotedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(targetPath);
+            if (promotedMesh == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Hovl Sci-fi mesh at {targetPath}.");
+            }
+
+            return promotedMesh;
+        }
+
+        private static void RemapSerializedHovlSciFiTextures(Material material)
+        {
+            SerializedObject serializedMaterial = new SerializedObject(material);
+            SerializedProperty texEnvs = serializedMaterial.FindProperty("m_SavedProperties.m_TexEnvs");
+            if (texEnvs == null || !texEnvs.isArray)
+            {
+                return;
+            }
+
+            for (int i = 0; i < texEnvs.arraySize; i++)
+            {
+                SerializedProperty entry = texEnvs.GetArrayElementAtIndex(i);
+                SerializedProperty textureRef = entry.FindPropertyRelative("second.m_Texture");
+                if (textureRef == null || textureRef.objectReferenceValue is not Texture texture)
+                {
+                    continue;
+                }
+
+                string texturePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                if (texturePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    textureRef.objectReferenceValue = EnsurePromotedHovlSciFiTexture(texture);
+                }
+            }
+
+            serializedMaterial.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(material);
+        }
+
+        private static void ValidatePerfectDodgeHovlShieldPrefab(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                throw new InvalidOperationException("Perfect dodge window prefab should be assigned.");
+            }
+
+            Transform shieldRoot = prefab.transform.Find(PerfectDodgeHovlHexShieldChildName);
+            if (shieldRoot == null)
+            {
+                throw new InvalidOperationException("Perfect dodge window should include the promoted Hovl Hex shield overlay.");
+            }
+
+            if (shieldRoot.GetComponentInChildren<Collider>(includeInactive: true) != null
+                || shieldRoot.GetComponentInChildren<Rigidbody>(includeInactive: true) != null
+                || shieldRoot.GetComponentInChildren<AudioSource>(includeInactive: true) != null)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield must remain visual-only.");
+            }
+
+            ParticleSystem[] particleSystems =
+                shieldRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length < 4)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield should preserve its authored particle stack.");
+            }
+
+            Renderer[] renderers = shieldRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("Perfect dodge Hovl shield should expose promoted renderers.");
+            }
         }
 
         private static GameObject SavePerfectDodgeTimeFieldPrefab(

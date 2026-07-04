@@ -1182,16 +1182,20 @@ MonoBehaviour:
   perfectDodgePulsewaveCueId: 40
   perfectDodgeHoloCubeCueId: 41
   perfectDodgeWindowCueId: 42
+  perfectDodgeProjectileBlockCueId: 34
   perfectDodgeTimeFieldIntensity: 1
   perfectDodgePulsewaveIntensity: 1.12
   perfectDodgeHoloCubeIntensity: 0.92
-  perfectDodgeWindowIntensity: 0.86
+  perfectDodgeWindowIntensity: 1
+  perfectDodgeProjectileBlockIntensity: 1.18
+  perfectDodgeShieldBlockRadius: 0.86
   perfectDodgeAudioIntensity: 1
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
   playDamageVfx: 0
   playCriticalVfx: 0
+  playPerfectDodgeProjectileBlockVfx: 1
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0

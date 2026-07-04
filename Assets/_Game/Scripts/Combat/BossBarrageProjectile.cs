@@ -19,6 +19,7 @@ namespace DimensionBrawl.Combat
         private Rigidbody projectileRigidbody;
         private MaterialPropertyBlock materialPropertyBlock;
         private Material[][] baseSharedMaterials = new Material[0][];
+        private ParticleSystem[] visualParticleSystems = System.Array.Empty<ParticleSystem>();
         private AudioSource[] audioSources = System.Array.Empty<AudioSource>();
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
@@ -101,6 +102,7 @@ namespace DimensionBrawl.Combat
 
             gameObject.SetActive(true);
             ResetTrailRenderers();
+            RestartVisualParticleSystems();
             RestartAudioSources();
         }
 
@@ -201,8 +203,13 @@ namespace DimensionBrawl.Combat
                 responsePolicy,
                 controlLockPolicy);
 
+            bool blockedByInvulnerability = targetHealth.IsInvulnerable;
             bool applied = targetHealth.TryApplyDamage(damageInfo);
             if (applied && deactivateOnHit)
+            {
+                Deactivate();
+            }
+            else if (blockedByInvulnerability && deactivateOnHit)
             {
                 Deactivate();
             }
@@ -211,13 +218,14 @@ namespace DimensionBrawl.Combat
                 applied ? ProjectileImpactResult.AppliedDamage : ProjectileImpactResult.IgnoredDamageRejected,
                 targetHealth,
                 targetProxy);
-            return applied;
+            return applied || blockedByInvulnerability;
         }
 
         public void Deactivate()
         {
             ResetPresentation();
             StopTrailRenderers();
+            StopVisualParticleSystems();
             StopAudioSources();
             active = false;
             remainingLifetime = 0f;
@@ -299,6 +307,7 @@ namespace DimensionBrawl.Combat
                 trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
             }
 
+            visualParticleSystems = GetComponentsInChildren<ParticleSystem>(true);
             audioSources = GetComponentsInChildren<AudioSource>(true);
 
             materialPropertyBlock = new MaterialPropertyBlock();
@@ -467,6 +476,48 @@ namespace DimensionBrawl.Combat
 
                 trail.emitting = false;
                 trail.Clear();
+            }
+        }
+
+        private void RestartVisualParticleSystems()
+        {
+            EnsurePresentationComponents();
+            if (visualParticleSystems == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualParticleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = visualParticleSystems[i];
+                if (particleSystem == null)
+                {
+                    continue;
+                }
+
+                particleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particleSystem.Clear(withChildren: true);
+                particleSystem.Play(withChildren: true);
+            }
+        }
+
+        private void StopVisualParticleSystems()
+        {
+            EnsurePresentationComponents();
+            if (visualParticleSystems == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualParticleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = visualParticleSystems[i];
+                if (particleSystem == null)
+                {
+                    continue;
+                }
+
+                particleSystem.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
 

@@ -22,22 +22,27 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId perfectDodgePulsewaveCueId = CombatVfxCueId.PlayerPerfectDodgePulsewave;
         [SerializeField] private CombatVfxCueId perfectDodgeHoloCubeCueId = CombatVfxCueId.PlayerPerfectDodgeHoloCube;
         [SerializeField] private CombatVfxCueId perfectDodgeWindowCueId = CombatVfxCueId.PlayerPerfectDodgeWindow;
+        [SerializeField] private CombatVfxCueId perfectDodgeProjectileBlockCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
         [SerializeField, Min(0f)] private float perfectDodgeTimeFieldIntensity = 1f;
         [SerializeField, Min(0f)] private float perfectDodgePulsewaveIntensity = 1.12f;
         [SerializeField, Min(0f)] private float perfectDodgeHoloCubeIntensity = 0.92f;
-        [SerializeField, Min(0f)] private float perfectDodgeWindowIntensity = 0.86f;
+        [SerializeField, Min(0f)] private float perfectDodgeWindowIntensity = 1f;
+        [SerializeField, Min(0f)] private float perfectDodgeProjectileBlockIntensity = 1.18f;
+        [SerializeField, Min(0.05f)] private float perfectDodgeShieldBlockRadius = 0.86f;
         [SerializeField, Min(0f)] private float perfectDodgeAudioIntensity = 1f;
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.62f;
         [SerializeField, Range(0.05f, 0.95f)] private float criticalHealthRatio = 0.35f;
         [SerializeField, Min(0f)] private float criticalCueIntensity = 1.18f;
         [SerializeField] private bool playDamageVfx;
         [SerializeField] private bool playCriticalVfx;
+        [SerializeField] private bool playPerfectDodgeProjectileBlockVfx = true;
 
         private bool actionSubscribed;
         private bool healthSubscribed;
         private bool criticalCuePlayed;
         private int damageVfxCueRequestCount;
         private int criticalVfxCueRequestCount;
+        private int perfectDodgeProjectileBlockCueRequestCount;
         private float lastDamageCueIntensity;
         private float lastDamageCuePolicyScale = 1f;
         private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
@@ -53,17 +58,22 @@ namespace DimensionBrawl.Presentation
         public CombatVfxCueId PerfectDodgePulsewaveCueId => perfectDodgePulsewaveCueId;
         public CombatVfxCueId PerfectDodgeHoloCubeCueId => perfectDodgeHoloCubeCueId;
         public CombatVfxCueId PerfectDodgeWindowCueId => perfectDodgeWindowCueId;
+        public CombatVfxCueId PerfectDodgeProjectileBlockCueId => perfectDodgeProjectileBlockCueId;
         public float PerfectDodgeTimeFieldIntensity => perfectDodgeTimeFieldIntensity;
         public float PerfectDodgePulsewaveIntensity => perfectDodgePulsewaveIntensity;
         public float PerfectDodgeHoloCubeIntensity => perfectDodgeHoloCubeIntensity;
         public float PerfectDodgeWindowIntensity => perfectDodgeWindowIntensity;
+        public float PerfectDodgeProjectileBlockIntensity => perfectDodgeProjectileBlockIntensity;
+        public float PerfectDodgeShieldBlockRadius => perfectDodgeShieldBlockRadius;
         public float PerfectDodgeAudioIntensity => perfectDodgeAudioIntensity;
         public PerfectDodgeVfxDirector PerfectDodgeVfxDirector => perfectDodgeVfxDirector;
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int CriticalVfxCueRequestCount => criticalVfxCueRequestCount;
+        public int PerfectDodgeProjectileBlockCueRequestCount => perfectDodgeProjectileBlockCueRequestCount;
         public float PressureDamageCueScale => pressureDamageCueScale;
         public bool PlayDamageVfx => playDamageVfx;
         public bool PlayCriticalVfx => playCriticalVfx;
+        public bool PlayPerfectDodgeProjectileBlockVfx => playPerfectDodgeProjectileBlockVfx;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
         public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
@@ -157,6 +167,7 @@ namespace DimensionBrawl.Presentation
             }
 
             playerHealth.Damaged += HandlePlayerDamaged;
+            playerHealth.DamageBlockedByInvulnerability += HandleDamageBlockedByInvulnerability;
             playerHealth.Died += HandlePlayerDied;
             healthSubscribed = true;
         }
@@ -170,6 +181,7 @@ namespace DimensionBrawl.Presentation
             }
 
             playerHealth.Damaged -= HandlePlayerDamaged;
+            playerHealth.DamageBlockedByInvulnerability -= HandleDamageBlockedByInvulnerability;
             playerHealth.Died -= HandlePlayerDied;
             healthSubscribed = false;
         }
@@ -194,6 +206,11 @@ namespace DimensionBrawl.Presentation
             Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : transform.forward;
             Transform anchor = dodgeAnchor != null ? dodgeAnchor : transform;
             float masterIntensity = Mathf.Max(0f, perfectDodgeCueIntensity);
+            Play(perfectDodgeTimeFieldCueId, anchor, dodgeDirection, perfectDodgeTimeFieldIntensity * masterIntensity, 0f, Vector3.zero);
+            Play(perfectDodgePulsewaveCueId, anchor, dodgeDirection, perfectDodgePulsewaveIntensity * masterIntensity, 0f, Vector3.zero);
+            Play(perfectDodgeHoloCubeCueId, anchor, dodgeDirection, perfectDodgeHoloCubeIntensity * masterIntensity, 0f, Vector3.zero);
+            Play(perfectDodgeWindowCueId, anchor, dodgeDirection, perfectDodgeWindowIntensity, 0f, Vector3.zero);
+
             if (perfectDodgeVfxDirector != null)
             {
                 perfectDodgeVfxDirector.Play(
@@ -202,6 +219,34 @@ namespace DimensionBrawl.Presentation
                     dodgeDirection,
                     masterIntensity,
                     perfectDodgeAudioIntensity);
+            }
+        }
+
+        private void HandleDamageBlockedByInvulnerability(DamageInfo damageInfo)
+        {
+            if (!playPerfectDodgeProjectileBlockVfx
+                || damageInfo.SourceTeam != DamageTeam.Enemy
+                || cuePlayer == null)
+            {
+                return;
+            }
+
+            Transform anchor = DamageAnchor != null ? DamageAnchor : transform;
+            Vector3 blockPoint = ResolvePerfectDodgeShieldBlockPoint(damageInfo, anchor);
+            Vector3 localBlockOffset = anchor.InverseTransformPoint(blockPoint) - new Vector3(0f, 0.04f, 0f);
+            Vector3 blockDirection = damageInfo.Direction.sqrMagnitude > 0.0001f
+                ? -Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized
+                : anchor.forward;
+
+            if (Play(
+                    perfectDodgeProjectileBlockCueId,
+                    anchor,
+                    blockDirection,
+                    perfectDodgeProjectileBlockIntensity,
+                    -1f,
+                    localBlockOffset))
+            {
+                perfectDodgeProjectileBlockCueRequestCount++;
             }
         }
 
@@ -245,6 +290,26 @@ namespace DimensionBrawl.Presentation
                 criticalVfxCueRequestCount++;
                 criticalCuePlayed = true;
             }
+        }
+
+        private Vector3 ResolvePerfectDodgeShieldBlockPoint(DamageInfo damageInfo, Transform anchor)
+        {
+            Vector3 center = anchor.position + Vector3.up * 0.72f;
+            Vector3 incomingDirection = damageInfo.Direction.sqrMagnitude > 0.0001f
+                ? damageInfo.Direction.normalized
+                : (center - damageInfo.Point).normalized;
+            if (incomingDirection.sqrMagnitude <= 0.0001f)
+            {
+                incomingDirection = -anchor.forward;
+            }
+
+            Vector3 shieldSurface = center - incomingDirection * Mathf.Max(0.05f, perfectDodgeShieldBlockRadius);
+            if ((damageInfo.Point - center).sqrMagnitude > 0.0001f)
+            {
+                return Vector3.Lerp(damageInfo.Point, shieldSurface, 0.65f);
+            }
+
+            return shieldSurface;
         }
 
         private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)

@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &584048058251695579
 GameObject:
@@ -123,7 +123,7 @@ Transform:
   - {fileID: 7760350915389741004}
   - {fileID: 6235069447173311943}
   - {fileID: 4361790764421717803}
-  - {fileID: 7491937202824704142}
+  - {fileID: 8163595616321974090}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1748525752851203919
@@ -240,7 +240,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &3747332908549828769
+--- !u!1 &6924730416878772448
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -248,9 +248,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7491937202824704142}
-  - component: {fileID: 1783905958324102597}
-  - component: {fileID: 6660549086033968921}
+  - component: {fileID: 8163595616321974090}
+  - component: {fileID: 5536773760504765180}
+  - component: {fileID: 5380755755396565561}
   m_Layer: 0
   m_Name: ReviewedSfx_PlayerDodgeStart
   m_TagString: Untagged
@@ -258,13 +258,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7491937202824704142
+--- !u!4 &8163595616321974090
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3747332908549828769}
+  m_GameObject: {fileID: 6924730416878772448}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -273,13 +273,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 52083968125565473}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!82 &1783905958324102597
+--- !u!82 &5536773760504765180
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3747332908549828769}
+  m_GameObject: {fileID: 6924730416878772448}
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
@@ -370,19 +370,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &6660549086033968921
+--- !u!114 &5380755755396565561
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3747332908549828769}
+  m_GameObject: {fileID: 6924730416878772448}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fd957b750eeac1e43a824bb53013b64e, type: 3}
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueAudioRandomizer
-  source: {fileID: 1783905958324102597}
+  source: {fileID: 5536773760504765180}
   clips:
   - {fileID: 8300000, guid: 4722a98ce6edf774a9dd840d2eb6370c, type: 3}
   - {fileID: 8300000, guid: 9415e67f7733e34468f43a3b67d9b5bd, type: 3}
