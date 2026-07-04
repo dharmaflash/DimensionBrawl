@@ -24,8 +24,8 @@ MonoBehaviour:
   telegraphMarkerDepthScale: 1.85
   telegraphPulseScale: 1.35
   projectileColor: {r: 0.2, g: 0.95, b: 1, a: 1}
-  projectileVisualScale: {x: 0.72, y: 0.72, z: 2.35}
-  projectileMaterial: {fileID: 2100000, guid: f2a6c1d873be4b44a5bd6e2c0f872c11, type: 2}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 2100000, guid: 1edb3a42b2a100e48b17985cec0c3da5, type: 2}
   initialDelaySeconds: 0.2
   windupSeconds: 1.15
   waveIntervalSeconds: 6.8

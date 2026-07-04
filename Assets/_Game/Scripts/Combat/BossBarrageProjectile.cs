@@ -84,6 +84,11 @@ namespace DimensionBrawl.Combat
             ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
             travelDirection = ResolveDirection(newTravelDirection);
+            if (travelDirection.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(travelDirection, Vector3.up);
+            }
+
             speed = Mathf.Max(0f, newSpeed);
             remainingLifetime = Mathf.Max(0.01f, lifetimeSeconds);
             active = true;

@@ -147,6 +147,71 @@ MonoBehaviour:
     audioMinDistance: 0
     audioMaxDistance: 0
     audioPriority: 0
+  - cueId: 43
+    prefab: {fileID: 1977521300812793789, guid: e5d96d8738ae1474c80f5b10cd828c62, type: 3}
+    localPositionOffset: {x: 0, y: 0, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 0.92, y: 0.92, z: 0.92}
+    lifetimeSeconds: 0.62
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 1
+    audioClips:
+    - {fileID: 8300000, guid: 1717306c713f4f448a4223f6cc2bfe70, type: 3}
+    - {fileID: 8300000, guid: 3dcde7761e4ea0646aa2aa92fc689f66, type: 3}
+    - {fileID: 8300000, guid: e78d6bec49a98b34487ce36630bad38d, type: 3}
+    - {fileID: 8300000, guid: 6a130b53bd1c2cb4fa1d2458895e0eeb, type: 3}
+    - {fileID: 8300000, guid: a7c3a6659409b2b4bba84ee74ad4c542, type: 3}
+    - {fileID: 8300000, guid: bc7766e8162786443bfc91c253667f28, type: 3}
+    audioBaseVolume: 0.49
+    audioMinimumPitch: 0.97
+    audioMaximumPitch: 1.04
+    audioMinimumVolumeMultiplier: 1
+    audioMaximumVolumeMultiplier: 1.12
+    audioSpatialBlend: 0
+    audioMinDistance: 6
+    audioMaxDistance: 36
+    audioPriority: 40
+  - cueId: 44
+    prefab: {fileID: 9185793245650090324, guid: 1bfd97d4d34be054d9ad6e16223173ab, type: 3}
+    localPositionOffset: {x: 0, y: 0.035, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.08, y: 0.72, z: 1.08}
+    lifetimeSeconds: 0.84
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 0
+    audioClips:
+    - {fileID: 8300000, guid: 05c39c411c539c24a95ac8dcbaab1e5f, type: 3}
+    - {fileID: 8300000, guid: 47244091285f83b418476cf5d4bd1f2a, type: 3}
+    audioBaseVolume: 0.5
+    audioMinimumPitch: 0.94
+    audioMaximumPitch: 1
+    audioMinimumVolumeMultiplier: 1
+    audioMaximumVolumeMultiplier: 1.12
+    audioSpatialBlend: 0
+    audioMinDistance: 6
+    audioMaxDistance: 36
+    audioPriority: 32
+  - cueId: 45
+    prefab: {fileID: 5143172557738541458, guid: 953de92487607ee4fb32f5c93ed53d35, type: 3}
+    localPositionOffset: {x: 0, y: 0, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    lifetimeSeconds: 0.05
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0
   - cueId: 37
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.72, z: 0}

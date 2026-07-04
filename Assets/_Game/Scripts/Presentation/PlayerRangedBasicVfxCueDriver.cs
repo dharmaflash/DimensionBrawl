@@ -8,21 +8,29 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class PlayerRangedBasicVfxCueDriver : MonoBehaviour
     {
+        public const bool DefaultPlayImpactVfx = false;
+        public const bool DefaultPlayImpactAudio = true;
+        public const CombatVfxCueId DefaultImpactCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
+        public const float DefaultImpactIntensity = 1f;
+        public const float DefaultImpactAudioIntensity = 0.36f;
+
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
         [SerializeField] private Transform muzzleAnchor;
         [SerializeField] private CombatVfxCueId muzzleFlashCueId = CombatVfxCueId.PlayerRangedMuzzleFlash;
         [SerializeField, Min(0f)] private float muzzleFlashIntensity = 1f;
         [SerializeField, Min(0f)] private float muzzleFlashAudioIntensity = 1f;
-        [SerializeField] private bool playImpactVfx;
-        [SerializeField] private CombatVfxCueId impactCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
-        [SerializeField, Min(0f)] private float impactIntensity = 1f;
-        [SerializeField, Min(0f)] private float impactAudioIntensity = 0.56f;
+        [SerializeField] private bool playImpactVfx = DefaultPlayImpactVfx;
+        [SerializeField] private bool playImpactAudio = DefaultPlayImpactAudio;
+        [SerializeField] private CombatVfxCueId impactCueId = DefaultImpactCueId;
+        [SerializeField, Min(0f)] private float impactIntensity = DefaultImpactIntensity;
+        [SerializeField, Min(0f)] private float impactAudioIntensity = DefaultImpactAudioIntensity;
 
         private readonly HashSet<LaneActionProjectile> watchedProjectiles = new HashSet<LaneActionProjectile>();
         private bool subscribed;
 
         public bool PlayImpactVfx => playImpactVfx;
+        public bool PlayImpactAudio => playImpactAudio;
 
         private void Awake()
         {
@@ -127,7 +135,12 @@ namespace DimensionBrawl.Presentation
             Vector3 impactPoint,
             Vector3 impactDirection)
         {
-            if (cuePlayer == null || projectile == null || !playImpactVfx)
+            if (cuePlayer == null || projectile == null)
+            {
+                return;
+            }
+
+            if (!playImpactVfx && (!playImpactAudio || impactAudioIntensity <= 0f))
             {
                 return;
             }
@@ -136,8 +149,8 @@ namespace DimensionBrawl.Presentation
                 impactCueId,
                 projectile.transform,
                 impactDirection,
-                impactIntensity,
-                impactAudioIntensity);
+                playImpactVfx ? impactIntensity : 0f,
+                playImpactAudio ? impactAudioIntensity : 0f);
         }
 
         private void UnsubscribeProjectiles()

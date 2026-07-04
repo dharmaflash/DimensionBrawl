@@ -20,6 +20,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private SummonEnergyLadder energyLadder;
+        [SerializeField] private BossPressureCostLadder bossCostLadder;
 
         [Header("Player Actions")]
         [SerializeField] private PlayerActionController actionController;
@@ -45,6 +46,11 @@ namespace DimensionBrawl.UI
             if (tutorialGuide == null)
             {
                 tutorialGuide = GetComponent<BossBarrageLaneReviewTutorialGuide>();
+            }
+
+            if (bossCostLadder == null)
+            {
+                bossCostLadder = FindFirstObjectByType<BossPressureCostLadder>();
             }
 
             BindTutorialGuide();
@@ -103,6 +109,13 @@ namespace DimensionBrawl.UI
             if (bossHealth != null)
             {
                 hudPresenter.SetBossHealth(bossHealth.CurrentHealth, bossHealth.MaxHealth);
+            }
+
+            if (bossCostLadder != null)
+            {
+                hudPresenter.SetBossResource(
+                    bossCostLadder.CurrentTierCost,
+                    Mathf.Max(1f, bossCostLadder.CurrentTierTarget));
             }
 
             bool rangedMode = combatModeController == null || combatModeController.IsRangedMode;

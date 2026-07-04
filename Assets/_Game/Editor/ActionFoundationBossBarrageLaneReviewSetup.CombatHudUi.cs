@@ -267,6 +267,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(binder, "playerHealth", playerHealth);
             SetObjectReference(binder, "bossHealth", bossHealth);
             SetObjectReference(binder, "energyLadder", energyLadder);
+            SetObjectReference(binder, "bossCostLadder", UnityEngine.Object.FindFirstObjectByType<BossPressureCostLadder>());
             SetObjectReference(binder, "actionController", actionController);
             SetObjectReference(binder, "combatModeController", combatModeController);
             SetObjectReference(binder, "rangedBasicAttackAction", rangedBasicAttackAction);
@@ -361,6 +362,7 @@ namespace DimensionBrawl.Editor
             }
 
             Image bossHpFill = FindHudDescendant(canvasRoot.transform, "BossHpFill")?.GetComponent<Image>();
+            Image bossCostFill = FindHudDescendant(canvasRoot.transform, "BossCostFill")?.GetComponent<Image>();
             if (bossHpFill != null)
             {
                 bossHpFill.type = Image.Type.Filled;
@@ -370,7 +372,17 @@ namespace DimensionBrawl.Editor
                 MarkComponentDirty(bossHpFill);
             }
 
+            if (bossCostFill != null)
+            {
+                bossCostFill.type = Image.Type.Filled;
+                bossCostFill.fillMethod = Image.FillMethod.Horizontal;
+                bossCostFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+                bossCostFill.fillAmount = 0f;
+                MarkComponentDirty(bossCostFill);
+            }
+
             SetObjectReference(presenter, "bossHealthFill", bossHpFill);
+            SetObjectReference(presenter, "bossResourceFill", bossCostFill);
             SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
             SetObjectReference(presenter, "ammoText", FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
             MarkComponentDirty(presenter);
@@ -903,7 +915,7 @@ namespace DimensionBrawl.Editor
                 ResolveSummonIconRect(buttonSize),
                 buttonSize,
                 iconSprite,
-                new Color(0.74f, 0.77f, 0.8f, 0f),
+                new Color(0.26f, 0.28f, 0.31f, 0f),
                 disabledIconMaterial);
             ConfigureSummonSlotDisabledIcon(button);
             ConfigureLocalImage(
@@ -1460,6 +1472,11 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
+            if (TryApplyResponsiveSideDesignRect(rectTransform, designRect))
+            {
+                return;
+            }
+
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             rectTransform.anchoredPosition = new Vector2(
@@ -1469,6 +1486,53 @@ namespace DimensionBrawl.Editor
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.localScale = Vector3.one;
             MarkComponentDirty(rectTransform);
+        }
+
+        private static bool TryApplyResponsiveSideDesignRect(RectTransform rectTransform, Rect designRect)
+        {
+            bool pinLeft = designRect.xMax <= 700f;
+            bool pinRight = designRect.xMin >= 1800f;
+            if (!pinLeft && !pinRight)
+            {
+                return false;
+            }
+
+            bool pinTop = designRect.yMin < DimensionHudDesignResolution.y * 0.5f;
+            float rightInset = DimensionHudDesignResolution.x - designRect.xMax;
+            float bottomInset = DimensionHudDesignResolution.y - designRect.yMax;
+            if (pinLeft && pinTop)
+            {
+                rectTransform.anchorMin = new Vector2(0f, 1f);
+                rectTransform.anchorMax = new Vector2(0f, 1f);
+                rectTransform.pivot = new Vector2(0f, 1f);
+                rectTransform.anchoredPosition = new Vector2(designRect.xMin, -designRect.yMin);
+            }
+            else if (pinLeft)
+            {
+                rectTransform.anchorMin = new Vector2(0f, 0f);
+                rectTransform.anchorMax = new Vector2(0f, 0f);
+                rectTransform.pivot = new Vector2(0f, 0f);
+                rectTransform.anchoredPosition = new Vector2(designRect.xMin, bottomInset);
+            }
+            else if (pinTop)
+            {
+                rectTransform.anchorMin = new Vector2(1f, 1f);
+                rectTransform.anchorMax = new Vector2(1f, 1f);
+                rectTransform.pivot = new Vector2(1f, 1f);
+                rectTransform.anchoredPosition = new Vector2(-rightInset, -designRect.yMin);
+            }
+            else
+            {
+                rectTransform.anchorMin = new Vector2(1f, 0f);
+                rectTransform.anchorMax = new Vector2(1f, 0f);
+                rectTransform.pivot = new Vector2(1f, 0f);
+                rectTransform.anchoredPosition = new Vector2(-rightInset, bottomInset);
+            }
+
+            rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
+            rectTransform.localScale = Vector3.one;
+            MarkComponentDirty(rectTransform);
+            return true;
         }
 
         private static void Stretch(RectTransform rectTransform)

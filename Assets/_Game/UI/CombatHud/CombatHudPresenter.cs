@@ -12,12 +12,22 @@ namespace DimensionBrawl.UI
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color AmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
-        private static readonly Color SummonChargingFillColor = new Color(0.35f, 0.95f, 1f, 0.72f);
+        private static readonly Color SummonChargingFillColor = new Color(0.08f, 0.86f, 1f, 0.94f);
         private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
-        private static readonly Color SummonUnavailableIconColor = new Color(0.76f, 0.79f, 0.82f, 0.96f);
+        private static readonly Color SummonUnavailableIconColor = new Color(0.26f, 0.28f, 0.31f, 0.96f);
         private static readonly Color SummonReadyGlowColor = new Color(1f, 0.82f, 0.28f, 0.42f);
         private static readonly Color SummonReadyRingColor = new Color(1f, 0.92f, 0.44f, 0.78f);
         private static readonly Color SummonReadySparkColor = new Color(0.44f, 0.98f, 1f, 0.64f);
+        private const float DimensionHudDesignWidth = 2560f;
+        private const float DimensionHudDesignHeight = 1440f;
+
+        private enum ResponsiveHudAnchor
+        {
+            LeftTop,
+            LeftBottom,
+            RightTop,
+            RightBottom
+        }
 
         [Serializable]
         public sealed class ActionSlotBinding
@@ -213,7 +223,7 @@ namespace DimensionBrawl.UI
                 if (iconImage != null)
                 {
                     iconImage.gameObject.SetActive(true);
-                    iconImage.color = ready ? SummonReadyIconColor : new Color(1f, 1f, 1f, 0.9f);
+                    iconImage.color = ready ? SummonReadyIconColor : new Color(0.94f, 0.97f, 1f, 0.96f);
                 }
 
                 if (unavailableIconImage != null)
@@ -228,7 +238,7 @@ namespace DimensionBrawl.UI
                     unavailableIconImage.fillClockwise = false;
                     unavailableIconImage.fillAmount = showWipe ? 1f - fill : 0f;
                     Color color = SummonUnavailableIconColor;
-                    color.a = showWipe ? 0.98f : 0f;
+                    color.a = showWipe ? Mathf.Lerp(0.92f, 0.78f, fill) : 0f;
                     unavailableIconImage.color = color;
                 }
             }
@@ -310,7 +320,7 @@ namespace DimensionBrawl.UI
                 image.fillClockwise = true;
                 image.fillAmount = showFill ? fill : 0f;
                 Color color = SummonChargingFillColor;
-                color.a = showFill ? Mathf.Lerp(0.34f, 0.72f, fill) : 0f;
+                color.a = showFill ? Mathf.Lerp(0.70f, 0.96f, fill) : 0f;
                 image.color = color;
                 image.gameObject.SetActive(showFill);
             }
@@ -340,6 +350,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image resourceFill;
         [SerializeField] private Text bossHealthText;
         [SerializeField] private Image bossHealthFill;
+        [SerializeField] private Image bossResourceFill;
         [SerializeField] private RectTransform aimReticleRoot;
         [SerializeField] private Image[] aimReticleSegments = Array.Empty<Image>();
         [SerializeField] private Color aimReticleColor = new Color(0.82f, 0.96f, 1f, 0.88f);
@@ -349,12 +360,14 @@ namespace DimensionBrawl.UI
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
 
         public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
+        public float BossResourceFillAmount => bossResourceFill != null ? bossResourceFill.fillAmount : 0f;
         public bool AimReticleVisible => aimReticleRoot != null && aimReticleRoot.gameObject.activeInHierarchy;
 
         private void Awake()
         {
             ResolveOptionalRuntimeReferences();
             ApplyPlayerReadoutStyles();
+            ApplyResponsiveSideLayout();
             EnsureAimReticle();
         }
 
@@ -389,13 +402,20 @@ namespace DimensionBrawl.UI
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (bossHealthFill != null)
             {
-                bossHealthFill.type = Image.Type.Filled;
-                bossHealthFill.fillMethod = Image.FillMethod.Horizontal;
-                bossHealthFill.fillOrigin = (int)Image.OriginHorizontal.Left;
                 bossHealthFill.fillAmount = ratio;
             }
 
             SetText(bossHealthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
+        }
+
+        public void SetBossResource(float current, float max)
+        {
+            ResolveOptionalRuntimeReferences();
+            float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            if (bossResourceFill != null)
+            {
+                bossResourceFill.fillAmount = ratio;
+            }
         }
 
         public void SetAimReticleVisible(bool visible, bool active)
@@ -530,6 +550,11 @@ namespace DimensionBrawl.UI
                 bossHealthFill = FindImage("BossHpFill");
             }
 
+            if (bossResourceFill == null)
+            {
+                bossResourceFill = FindImage("BossCostFill");
+            }
+
             if (bossHealthText == null)
             {
                 bossHealthText = FindText("BossHpText");
@@ -547,6 +572,75 @@ namespace DimensionBrawl.UI
             ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
             ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
             ApplyPlayerReadoutStyle(ammoText, 18, AmmoReadoutColor);
+        }
+
+        private void ApplyResponsiveSideLayout()
+        {
+            ApplyResponsiveDesignRect("TopLeftPanel", new Rect(45f, 36f, 571f, 165f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveDesignRect("Timer", new Rect(178f, 55f, 409f, 48f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveDesignRect("Objective", new Rect(180f, 117f, 409f, 64f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveDesignRect("SettingsButton", new Rect(2250f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("PauseButton", new Rect(2396f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("MoveJoystickRing", new Rect(155f, 853f, 421f, 415f), ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect("MoveJoystickKnob", new Rect(303f, 1004f, 122f, 121f), ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect("BasicAttackButton", new Rect(2239f, 1156f, 230f, 248f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("DodgeButton", new Rect(1975f, 1172f, 256f, 218f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("Skill1Button", new Rect(2217f, 868f, 236f, 286f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("UltimateButton", new Rect(1975f, 896f, 248f, 226f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("SummonSlot1Button", new Rect(2293f, 235f, 211f, 216f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
+        }
+
+        private void ApplyResponsiveDesignRect(string objectName, Rect designRect, ResponsiveHudAnchor anchor)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            ApplyResponsiveDesignRect(rectTransform, designRect, anchor);
+        }
+
+        private static void ApplyResponsiveDesignRect(
+            RectTransform rectTransform,
+            Rect designRect,
+            ResponsiveHudAnchor anchor)
+        {
+            float rightInset = DimensionHudDesignWidth - designRect.xMax;
+            float bottomInset = DimensionHudDesignHeight - designRect.yMax;
+            switch (anchor)
+            {
+                case ResponsiveHudAnchor.LeftTop:
+                    rectTransform.anchorMin = new Vector2(0f, 1f);
+                    rectTransform.anchorMax = new Vector2(0f, 1f);
+                    rectTransform.pivot = new Vector2(0f, 1f);
+                    rectTransform.anchoredPosition = new Vector2(designRect.xMin, -designRect.yMin);
+                    break;
+                case ResponsiveHudAnchor.LeftBottom:
+                    rectTransform.anchorMin = new Vector2(0f, 0f);
+                    rectTransform.anchorMax = new Vector2(0f, 0f);
+                    rectTransform.pivot = new Vector2(0f, 0f);
+                    rectTransform.anchoredPosition = new Vector2(designRect.xMin, bottomInset);
+                    break;
+                case ResponsiveHudAnchor.RightTop:
+                    rectTransform.anchorMin = new Vector2(1f, 1f);
+                    rectTransform.anchorMax = new Vector2(1f, 1f);
+                    rectTransform.pivot = new Vector2(1f, 1f);
+                    rectTransform.anchoredPosition = new Vector2(-rightInset, -designRect.yMin);
+                    break;
+                case ResponsiveHudAnchor.RightBottom:
+                    rectTransform.anchorMin = new Vector2(1f, 0f);
+                    rectTransform.anchorMax = new Vector2(1f, 0f);
+                    rectTransform.pivot = new Vector2(1f, 0f);
+                    rectTransform.anchoredPosition = new Vector2(-rightInset, bottomInset);
+                    break;
+            }
+
+            rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
+            rectTransform.localScale = Vector3.one;
         }
 
         private static void ApplyPlayerReadoutStyle(Text text, int fontSize, Color color)

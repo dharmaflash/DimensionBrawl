@@ -48,7 +48,10 @@ namespace DimensionBrawl.Presentation
         PlayerPerfectDodgeTimeField,
         PlayerPerfectDodgePulsewave,
         PlayerPerfectDodgeHoloCube,
-        PlayerPerfectDodgeWindow
+        PlayerPerfectDodgeWindow,
+        PlayerSummonPreSpawnPortal,
+        PlayerSummonLandingCrater,
+        PlayerSummonDragonBreathAudio
     }
 
     public enum CombatVfxCuePlaybackMode
@@ -71,14 +74,23 @@ namespace DimensionBrawl.Presentation
             switch (playbackMode)
             {
                 case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
-                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                    return cueId == CombatVfxCueId.PlayerDodgeStart
+                        || cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                        || cueId == CombatVfxCueId.PlayerRangedProjectileImpact
                         || cueId == CombatVfxCueId.PlayerDamaged
                         || cueId == CombatVfxCueId.PlayerCritical
                         || cueId == CombatVfxCueId.EnemyHit
+                        || cueId == CombatVfxCueId.EliteSummonSignal
+                        || cueId == CombatVfxCueId.SummonBlockOpportunity
+                        || cueId == CombatVfxCueId.SummonFollowupWindow
+                        || cueId == CombatVfxCueId.SummonFollowupHit
                         || cueId == CombatVfxCueId.PlayerPerfectDodgeTimeField
                         || cueId == CombatVfxCueId.PlayerPerfectDodgePulsewave
                         || cueId == CombatVfxCueId.PlayerPerfectDodgeHoloCube
-                        || cueId == CombatVfxCueId.PlayerPerfectDodgeWindow;
+                        || cueId == CombatVfxCueId.PlayerPerfectDodgeWindow
+                        || cueId == CombatVfxCueId.PlayerSummonPreSpawnPortal
+                        || cueId == CombatVfxCueId.PlayerSummonLandingCrater
+                        || cueId == CombatVfxCueId.PlayerSummonDragonBreathAudio;
                 case CombatVfxCuePlaybackMode.PlayerRangedOnly:
                     return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
                 default:

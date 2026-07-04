@@ -103,20 +103,9 @@ namespace DimensionBrawl.Editor
         private const string EliteSummonSignalAudioName = "ReviewedSfx_EliteSummonSignal";
         private const string SummonBlockOpportunityAudioName = "ReviewedSfx_SummonBlockOpportunity";
         private const string SummonFollowupWindowAudioName = "ReviewedSfx_SummonFollowupWindow";
-        private static readonly string[] PlayerRangedProjectileImpactSourceClipPaths =
-        {
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_01.wav",
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_02.wav",
-            ImportedActionRpgSfxCombatRoot + "/Ranged_Magic_Fire_Projectile_Bright_01_03.wav"
-        };
-
-        private static readonly string[] PlayerRangedProjectileImpactClipPaths =
-        {
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_01.wav",
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_02.wav",
-            CombatCueAudioRoot + "/DB_SFX_PlayerRangedProjectileImpact_03.wav"
-        };
-
+        private const string PlayerSummonPreSpawnPortalAudioName = "ReviewedSfx_PlayerSummonPreSpawnPortal";
+        private const string PlayerSummonLandingCraterAudioName = "ReviewedSfx_PlayerSummonLandingCrater";
+        private const string PlayerSummonDragonBreathAudioName = "ReviewedSfx_PlayerSummonDragonBreath";
         private static readonly string[] PlayerDodgeStartSourceClipPaths =
         {
             ImportedActionRpgSfxMovementRoot + "/Whoosh_Dodge_Cloth_Movement_Light_01_01.wav",
@@ -200,16 +189,24 @@ namespace DimensionBrawl.Editor
             CombatCueAudioRoot + "/DB_SFX_SummonFollowupWindow_02.wav",
             CombatCueAudioRoot + "/DB_SFX_SummonFollowupWindow_03.wav"
         };
+        private static readonly string[] PlayerSummonPreSpawnPortalClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_EnemySummon_Spawn_01.mp3"
+        };
+        private static readonly string[] PlayerSummonLandingCraterClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Summon_Land_Heavy_01.mp3",
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Summon_Land_Heavy_02.mp3"
+        };
+        private static readonly string[] PlayerSummonDragonBreathClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Reviewed/DB_SFX_Dragon_Breath_01.mp3"
+        };
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
 
         public static string[] GetPlayerRangedGunshotClipPaths()
         {
             return (string[])PlayerRangedGunshotClipPaths.Clone();
-        }
-
-        public static string[] GetPlayerRangedProjectileImpactClipPaths()
-        {
-            return (string[])PlayerRangedProjectileImpactClipPaths.Clone();
         }
 
         public static string[] GetPlayerDodgeStartClipPaths()
@@ -283,6 +280,7 @@ namespace DimensionBrawl.Editor
         public static void RefreshReviewedCombatCueAudioBanksMenu()
         {
             EnsureReviewedCombatCueAudioBanks();
+            ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
             AssetDatabase.SaveAssets();
             Debug.Log("Refreshed reviewed combat cue audio banks on promoted cue prefabs.");
         }
@@ -345,6 +343,8 @@ namespace DimensionBrawl.Editor
 
                 ValidateNoImportedAssetDependencies(cueId, prefabPath);
             }
+
+            ValidateReviewedCombatFeedbackPlayback(profile);
 
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != ScenePath)
@@ -453,6 +453,9 @@ namespace DimensionBrawl.Editor
                 PlayerPerfectDodgePulsewave = SavePerfectDodgePulsewavePrefab("DB_VFX_PlayerPerfectDodgePulsewave", cyan, white, shapesPortalOuter, shapesTorus),
                 PlayerPerfectDodgeHoloCube = SavePerfectDodgeHoloCubePrefab("DB_VFX_PlayerPerfectDodgeHoloCube", cyan, violet, white, shapesCyanDodeca, shapesVioletIcosa, shapesDodeca, shapesIcosa),
                 PlayerPerfectDodgeWindow = SaveBurstPrefab("DB_VFX_PlayerPerfectDodgeWindow", cyan, ParticleSystemShapeType.Circle, 1.15f, 22f, 360f, 2.2f, 3.0f, 0.18f, 0.42f, 96, new Color(0.42f, 0.98f, 1f, 0.62f), new Color(0.05f, 0.18f, 0.9f, 0f)),
+                PlayerSummonPreSpawnPortal = SaveSummonPreSpawnPortalPrefab("DB_VFX_PlayerSummonPreSpawnPortal", cyan, blue, white, shapesPortalOuter, shapesPortalInner, shapesTorus),
+                PlayerSummonLandingCrater = SaveSummonLandingCraterPrefab("DB_VFX_PlayerSummonLandingCrater", gold, smoke, shapesPortalOuter, shapesTorus),
+                PlayerSummonDragonBreathAudio = SaveAudioOnlyCuePrefab("DB_VFX_PlayerSummonDragonBreathAudio"),
                 PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
                 PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
@@ -487,6 +490,7 @@ namespace DimensionBrawl.Editor
             EnsureReviewedCombatCueAudioBanks();
             CombatVfxCueProfile profile = LoadOrCreate<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             ConfigureCombatVfxCueProfile(profile, prefabs);
+            ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
             return profile;
         }
 
@@ -541,10 +545,11 @@ namespace DimensionBrawl.Editor
                 SetEnum(rangedDriver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
                 SetFloat(rangedDriver, "muzzleFlashIntensity", 1f);
                 SetFloat(rangedDriver, "muzzleFlashAudioIntensity", 1f);
-                SetBool(rangedDriver, "playImpactVfx", false);
-                SetEnum(rangedDriver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
-                SetFloat(rangedDriver, "impactIntensity", 1f);
-                SetFloat(rangedDriver, "impactAudioIntensity", 0.56f);
+                SetBool(rangedDriver, "playImpactVfx", PlayerRangedBasicVfxCueDriver.DefaultPlayImpactVfx);
+                SetBool(rangedDriver, "playImpactAudio", PlayerRangedBasicVfxCueDriver.DefaultPlayImpactAudio);
+                SetEnum(rangedDriver, "impactCueId", (int)PlayerRangedBasicVfxCueDriver.DefaultImpactCueId);
+                SetFloat(rangedDriver, "impactIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactIntensity);
+                SetFloat(rangedDriver, "impactAudioIntensity", PlayerRangedBasicVfxCueDriver.DefaultImpactAudioIntensity);
             }
 
             EditorUtility.SetDirty(player.gameObject);
@@ -666,6 +671,116 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateReviewedCombatFeedbackPlayback(CombatVfxCueProfile profile)
+        {
+            if (profile.PlaybackMode != CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly)
+            {
+                return;
+            }
+
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerDodgeStart);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerRangedMuzzleFlash);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerDamaged);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerCritical);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.EnemyHit);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.EliteSummonSignal);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonBlockOpportunity);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupWindow);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupHit);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgePulsewave);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeHoloCube);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeWindow);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonLandingCrater);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio);
+
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerDodgeStart, PlayerDodgeStartAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, PlayerRangedGunshotAudioName);
+            ValidateCueDoesNotHaveEmbeddedAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                PlayerRangedProjectileImpactAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.EliteSummonSignal, EliteSummonSignalAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonBlockOpportunity, SummonBlockOpportunityAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonFollowupWindow, SummonFollowupWindowAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField, PlayerPerfectDodgeTimeWarpAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeWindow, PlayerPerfectDodgeSuccessAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonPreSpawnPortal, PlayerSummonPreSpawnPortalAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonLandingCrater, PlayerSummonLandingCraterAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerSummonDragonBreathAudio, PlayerSummonDragonBreathAudioName);
+            ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerDamaged);
+        }
+
+        private static void ValidateReviewedPlaybackCue(CombatVfxCueProfile profile, CombatVfxCueId cueId)
+        {
+            if (!profile.AllowsPlayback(cueId))
+            {
+                throw new InvalidOperationException($"{cueId} is part of reviewed combat feedback but is blocked by {profile.PlaybackMode}.");
+            }
+        }
+
+        private static void ValidateCueEmbeddedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string audioObjectName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab before validating reviewed audio.");
+            }
+
+            Transform audioRoot = cue.Prefab.transform.Find(audioObjectName);
+            if (audioRoot == null)
+            {
+                throw new InvalidOperationException($"{cueId} should include reviewed audio child {audioObjectName}.");
+            }
+
+            AudioSource source = audioRoot.GetComponent<AudioSource>();
+            CombatVfxCueAudioRandomizer randomizer = audioRoot.GetComponent<CombatVfxCueAudioRandomizer>();
+            if (source == null || randomizer == null || randomizer.Source != source)
+            {
+                throw new InvalidOperationException($"{cueId} reviewed audio child {audioObjectName} should have a linked AudioSource and CombatVfxCueAudioRandomizer.");
+            }
+
+            if (!source.enabled || randomizer.ClipCount <= 0 || randomizer.BaseVolume <= 0f)
+            {
+                throw new InvalidOperationException($"{cueId} reviewed audio child {audioObjectName} should be enabled and contain audible clips.");
+            }
+        }
+
+        private static void ValidateCueDoesNotHaveEmbeddedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string audioObjectName)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a cue prefab before validating reviewed audio.");
+            }
+
+            if (cue.Prefab.transform.Find(audioObjectName) != null)
+            {
+                throw new InvalidOperationException(
+                    $"{cueId} should use profile-owned hit SFX only; remove duplicate embedded audio child {audioObjectName}.");
+            }
+        }
+
+        private static void ValidateCueProfileAudioBank(CombatVfxCueProfile profile, CombatVfxCueId cueId)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue))
+            {
+                throw new InvalidOperationException($"{cueId} should exist before validating profile audio.");
+            }
+
+            if (cue.AudioClipCount <= 0 || cue.AudioBaseVolume <= 0f)
+            {
+                throw new InvalidOperationException($"{cueId} should keep its reviewed profile audio bank.");
+            }
+        }
+
         private static void ValidateEnemyCombatVfx(BasicSoldierEnemy soldier, CombatVfxCueProfile profile)
         {
             ValidateCuePlayer(soldier.gameObject, profile, soldier.name);
@@ -745,6 +860,9 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, -0.16f, 0f), Vector3.zero, new Vector3(7.0f, 0.5f, 7.0f), 0.9f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.62f, 0.05f), Vector3.zero, new Vector3(1.1f, 1.1f, 1.1f), 1.2f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.16f), Vector3.zero, new Vector3(0.42f, 0.26f, 0.42f), 3.0f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),
+                new CueDefinition(CombatVfxCueId.PlayerSummonDragonBreathAudio, prefabs.PlayerSummonDragonBreathAudio, Vector3.zero, Vector3.zero, Vector3.one, 0.05f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.72f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.14f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyHit, new Vector3(0f, 0.82f, 0f), Vector3.zero, new Vector3(0.1f, 0.09f, 0.1f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.42f, false, true),
@@ -1205,6 +1323,234 @@ namespace DimensionBrawl.Editor
                 new Vector3(1.85f, 1.85f, 1.85f),
                 180f,
                 0.12f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveSummonPreSpawnPortalPrefab(
+            string name,
+            Material cyanMaterial,
+            Material blueMaterial,
+            Material whiteMaterial,
+            Material shapesPortalOuterMaterial,
+            Material shapesPortalInnerMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "SummonPortal_ShapesFxOuterGate",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 1.12f, 0f),
+                    new Vector3(0f, 0f, 0f),
+                    new Vector3(0.62f, 0.62f, 0.62f)),
+                AddMesh(
+                    root.transform,
+                    "SummonPortal_ShapesFxInnerGate",
+                    shapesTorusMesh,
+                    shapesPortalInnerMaterial,
+                    new Vector3(0f, 1.12f, 0.015f),
+                    new Vector3(0f, 0f, 35f),
+                    new Vector3(0.44f, 0.44f, 0.44f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonPortal_CoreDisc",
+                    PrimitiveType.Cylinder,
+                    blueMaterial,
+                    new Vector3(0f, 1.12f, 0.02f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.52f, 0.012f, 0.52f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonPortal_VerticalGlintA",
+                    PrimitiveType.Cube,
+                    whiteMaterial,
+                    new Vector3(-0.34f, 1.12f, 0.04f),
+                    new Vector3(0f, 0f, 0f),
+                    new Vector3(0.018f, 0.78f, 0.018f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonPortal_VerticalGlintB",
+                    PrimitiveType.Cube,
+                    cyanMaterial,
+                    new Vector3(0.34f, 1.12f, 0.04f),
+                    new Vector3(0f, 0f, 0f),
+                    new Vector3(0.018f, 0.66f, 0.018f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "SummonPortal_GateSparks",
+                whiteMaterial,
+                new Vector3(0f, 1.12f, 0.02f),
+                Vector3.zero,
+                0.58f,
+                0.34f,
+                1.15f,
+                0.055f,
+                64,
+                ParticleSystemShapeType.Sphere,
+                0.48f,
+                360f,
+                new Color(0.72f, 1f, 1f, 0.78f));
+            AddParticleBurst(
+                root.transform,
+                "SummonPortal_FloorMotif",
+                cyanMaterial,
+                new Vector3(0f, 0.04f, 0f),
+                Vector3.zero,
+                0.52f,
+                0.28f,
+                0.45f,
+                0.08f,
+                36,
+                ParticleSystemShapeType.Circle,
+                0.72f,
+                360f,
+                new Color(0.18f, 0.94f, 1f, 0.48f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.62f,
+                new Color(0.36f, 0.98f, 1f, 0.86f),
+                new Color(0.04f, 0.22f, 1f, 0f),
+                new Vector3(0.68f, 0.86f, 0.68f),
+                new Vector3(1.22f, 1.06f, 1.22f),
+                210f,
+                0.08f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveSummonLandingCraterPrefab(
+            string name,
+            Material impactMaterial,
+            Material smokeMaterial,
+            Material shapesPortalOuterMaterial,
+            Mesh shapesTorusMesh)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddMesh(
+                    root.transform,
+                    "SummonLanding_ShapesFxShockRing",
+                    shapesTorusMesh,
+                    shapesPortalOuterMaterial,
+                    new Vector3(0f, 0.045f, 0f),
+                    new Vector3(90f, 18f, 0f),
+                    new Vector3(0.74f, 0.74f, 0.74f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CraterDisc",
+                    PrimitiveType.Cylinder,
+                    smokeMaterial,
+                    new Vector3(0f, 0.015f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.72f, 0.01f, 0.72f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CrackA",
+                    PrimitiveType.Cube,
+                    impactMaterial,
+                    new Vector3(0f, 0.04f, 0f),
+                    new Vector3(0f, 18f, 0f),
+                    new Vector3(1.18f, 0.018f, 0.035f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CrackB",
+                    PrimitiveType.Cube,
+                    impactMaterial,
+                    new Vector3(0f, 0.045f, 0f),
+                    new Vector3(0f, -34f, 0f),
+                    new Vector3(0.92f, 0.016f, 0.03f)),
+                AddPrimitive(
+                    root.transform,
+                    "SummonLanding_CoreKick",
+                    PrimitiveType.Sphere,
+                    impactMaterial,
+                    new Vector3(0f, 0.12f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.24f, 0.08f, 0.24f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "SummonLanding_DustBurst",
+                smokeMaterial,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                0.72f,
+                0.42f,
+                1.05f,
+                0.22f,
+                42,
+                ParticleSystemShapeType.Circle,
+                0.52f,
+                360f,
+                new Color(0.62f, 0.66f, 0.68f, 0.44f));
+            AddParticleBurst(
+                root.transform,
+                "SummonLanding_StoneSparks",
+                impactMaterial,
+                new Vector3(0f, 0.1f, 0f),
+                Vector3.zero,
+                0.48f,
+                0.32f,
+                1.9f,
+                0.06f,
+                28,
+                ParticleSystemShapeType.Circle,
+                0.38f,
+                360f,
+                new Color(1f, 0.82f, 0.36f, 0.76f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.84f,
+                new Color(1f, 0.82f, 0.36f, 0.78f),
+                new Color(0.28f, 0.24f, 0.20f, 0f),
+                new Vector3(0.72f, 0.42f, 0.72f),
+                new Vector3(2.25f, 0.65f, 2.25f),
+                96f,
+                0.02f,
+                0f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveAudioOnlyCuePrefab(string name)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                Array.Empty<Renderer>(),
+                0.05f,
+                Color.clear,
+                Color.clear,
+                Vector3.one,
+                Vector3.one,
+                0f,
+                0f,
                 0f);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
@@ -2081,10 +2427,12 @@ namespace DimensionBrawl.Editor
             PromoteReviewedAudioClips(PlayerDodgeStartSourceClipPaths, PlayerDodgeStartClipPaths);
             PromoteReviewedAudioClips(PlayerPerfectDodgeTimeWarpSourceClipPaths, PlayerPerfectDodgeTimeWarpClipPaths);
             PromoteReviewedAudioClips(PlayerPerfectDodgeSuccessSourceClipPaths, PlayerPerfectDodgeSuccessClipPaths);
-            PromoteReviewedAudioClips(PlayerRangedProjectileImpactSourceClipPaths, PlayerRangedProjectileImpactClipPaths);
             PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
             PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
             PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
+            ImportReviewedAudioClips(PlayerSummonPreSpawnPortalClipPaths);
+            ImportReviewedAudioClips(PlayerSummonLandingCraterClipPaths);
+            ImportReviewedAudioClips(PlayerSummonDragonBreathClipPaths);
 
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerDodgeStart.prefab",
@@ -2134,17 +2482,6 @@ namespace DimensionBrawl.Editor
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
                 PlayerRangedProjectileImpactAudioName);
-            AttachReviewedCueAudio(
-                PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
-                PlayerRangedProjectileImpactAudioName,
-                PlayerRangedProjectileImpactClipPaths,
-                0.52f,
-                0.98f,
-                1.05f,
-                0.92f,
-                1.04f,
-                0.18f,
-                132);
 
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_EliteSummonSignal.prefab",
@@ -2190,6 +2527,51 @@ namespace DimensionBrawl.Editor
                 1.04f,
                 0.16f,
                 136);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonPreSpawnPortal.prefab",
+                PlayerSummonPreSpawnPortalAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonPreSpawnPortal.prefab",
+                PlayerSummonPreSpawnPortalAudioName,
+                PlayerSummonPreSpawnPortalClipPaths,
+                0.42f,
+                0.98f,
+                1.04f,
+                0.88f,
+                1.02f,
+                0.16f,
+                136);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonLandingCrater.prefab",
+                PlayerSummonLandingCraterAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonLandingCrater.prefab",
+                PlayerSummonLandingCraterAudioName,
+                PlayerSummonLandingCraterClipPaths,
+                0.56f,
+                0.94f,
+                1.05f,
+                0.88f,
+                1.04f,
+                0.28f,
+                128);
+
+            StripReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonDragonBreathAudio.prefab",
+                PlayerSummonDragonBreathAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerSummonDragonBreathAudio.prefab",
+                PlayerSummonDragonBreathAudioName,
+                PlayerSummonDragonBreathClipPaths,
+                0.48f,
+                0.96f,
+                1.03f,
+                0.9f,
+                1.02f,
+                0.35f,
+                126);
         }
 
         private static void StripReviewedCueAudio(string prefabPath, string childName)
@@ -2247,6 +2629,20 @@ namespace DimensionBrawl.Editor
                 EnsureFolder(Path.GetDirectoryName(targetClipPaths[i]).Replace('\\', '/'));
                 File.Copy(sourceClipPaths[i], targetClipPaths[i], overwrite: true);
                 AssetDatabase.ImportAsset(targetClipPaths[i], ImportAssetOptions.ForceUpdate);
+            }
+        }
+
+        private static void ImportReviewedAudioClips(string[] clipPaths)
+        {
+            for (int i = 0; i < clipPaths.Length; i++)
+            {
+                string absolutePath = ToProjectAbsolutePath(clipPaths[i]);
+                if (!File.Exists(absolutePath))
+                {
+                    throw new FileNotFoundException($"Missing reviewed audio clip at {clipPaths[i]}.");
+                }
+
+                AssetDatabase.ImportAsset(clipPaths[i], ImportAssetOptions.ForceUpdate);
             }
         }
 
@@ -3487,6 +3883,9 @@ namespace DimensionBrawl.Editor
             public GameObject PlayerPerfectDodgePulsewave;
             public GameObject PlayerPerfectDodgeHoloCube;
             public GameObject PlayerPerfectDodgeWindow;
+            public GameObject PlayerSummonPreSpawnPortal;
+            public GameObject PlayerSummonLandingCrater;
+            public GameObject PlayerSummonDragonBreathAudio;
             public GameObject PlayerRangedMuzzleFlash;
             public GameObject PlayerRangedProjectileImpact;
             public GameObject EnemyWindup;

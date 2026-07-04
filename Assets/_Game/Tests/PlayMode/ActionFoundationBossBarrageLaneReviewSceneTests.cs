@@ -231,9 +231,9 @@ namespace DimensionBrawl.Tests
         };
         private static readonly string[] PlayerRangedProjectileImpactClipPaths =
         {
-            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_01.wav",
-            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_02.wav",
-            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_03.wav"
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Shared/DB_SFX_HitWhooshMicro_01.mp3",
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Shared/DB_SFX_HitWhooshMicro_02.mp3",
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Shared/DB_SFX_HitWhooshMicro_03.mp3"
         };
 
         private static readonly string[] EliteSummonSignalClipPaths =
@@ -7002,13 +7002,18 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.SummonBlockOpportunity,
                 CombatVfxCueId.SummonFollowupWindow,
                 "summon block and follow-up window need separate visual reads");
-            AssertCombatCueHasReviewedAudioBank(
+            AssertCombatCueHasProfileAudioBank(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
                 PlayerRangedProjectileImpactClipPaths,
                 "player ranged projectile impact",
-                0.45f,
-                0.62f);
+                0.30f,
+                0.42f);
+            AssertCombatCueHasNoEmbeddedAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                "ReviewedSfx_PlayerRangedProjectileImpact",
+                "player ranged projectile impact");
             AssertCombatCueHasReviewedAudioBank(
                 profile,
                 CombatVfxCueId.EliteSummonSignal,
@@ -7105,6 +7110,45 @@ namespace DimensionBrawl.Tests
                 Assert.AreSame(expectedClip, actualClip, $"{label} clip {i} should use a promoted reviewed SFX clip.");
                 AssertGameOwnedAsset(actualClip, $"{label} clip {i}");
             }
+        }
+
+        private static void AssertCombatCueHasProfileAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths,
+            string label,
+            float minimumBaseVolume,
+            float maximumBaseVolume)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            Assert.AreEqual(expectedClipPaths.Length, cue.AudioClipCount, $"{label} should use reviewed profile audio variations.");
+            Assert.That(cue.AudioBaseVolume, Is.InRange(minimumBaseVolume, maximumBaseVolume), $"{label} profile volume should stay reviewed.");
+            Assert.That(cue.AudioMinimumPitch, Is.InRange(0.94f, 1.08f), $"{label} pitch variation should stay subtle.");
+            Assert.LessOrEqual(cue.AudioMaximumPitch, 1.1f, $"{label} pitch variation should stay readable.");
+            Assert.GreaterOrEqual(cue.AudioMinimumVolumeMultiplier, 0.86f, $"{label} random volume should not vanish.");
+            Assert.LessOrEqual(cue.AudioMaximumVolumeMultiplier, 1.08f, $"{label} random volume should not spike.");
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip expectedClip = LoadAsset<AudioClip>(expectedClipPaths[i]);
+                AudioClip actualClip = cue.GetAudioClip(i);
+                Assert.AreSame(expectedClip, actualClip, $"{label} clip {i} should use the master hit-feedback SFX bank.");
+                AssertGameOwnedAsset(actualClip, $"{label} clip {i}");
+            }
+        }
+
+        private static void AssertCombatCueHasNoEmbeddedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string audioObjectName,
+            string label)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            Assert.IsNull(
+                cue.Prefab.transform.Find(audioObjectName),
+                $"{label} should not also carry embedded audio child {audioObjectName}.");
         }
 
         private static void AssertDistinctCombatCuePrefabs(

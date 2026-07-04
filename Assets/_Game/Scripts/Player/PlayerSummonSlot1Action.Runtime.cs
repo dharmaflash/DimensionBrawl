@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Player
@@ -103,10 +104,11 @@ namespace DimensionBrawl.Player
 
                 Vector3 entryPosition = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight);
                 LastEntryPosition = entryPosition;
-                SpawnEntryCue(entryPosition, settings);
 
                 Vector3 actorTargetPosition = ResolveBattlefieldPoint(targetLane.x, targetZ, settings.EntryHeight);
                 Vector3 actorFacing = ResolvePlanarDirection(actorTargetPosition - entryPosition);
+                PlayEntryPortalCue(entryPosition, actorFacing, tier);
+                SpawnEntryCue(entryPosition, settings);
                 float actorAdvanceDistance = Vector3.Distance(
                     Vector3.ProjectOnPlane(actorTargetPosition - entryPosition, Vector3.up),
                     Vector3.zero);
@@ -218,6 +220,7 @@ namespace DimensionBrawl.Player
                     settings.ActorMoveSpeed);
 
                 lastSummonActor = actor;
+                PlayLandingCraterCue(actor.transform, facingDirection, tier);
                 if (actor.PressureScreen != null)
                 {
                     actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
@@ -233,6 +236,46 @@ namespace DimensionBrawl.Player
 
                 LastSummonActorPosition = actor.transform.position;
                 return actor;
+            }
+
+            private void PlayEntryPortalCue(Vector3 position, Vector3 facingDirection, int tier)
+            {
+                CombatVfxCuePlayer cuePlayer = owner.CombatVfxCuePlayer;
+                if (cuePlayer == null)
+                {
+                    return;
+                }
+
+                Transform anchor = owner.transform;
+                Vector3 localOffset = anchor.InverseTransformPoint(position);
+                cuePlayer.PlayCue(
+                    CombatVfxCueId.PlayerSummonPreSpawnPortal,
+                    anchor,
+                    facingDirection,
+                    ResolveSummonCueIntensity(tier),
+                    0.82f,
+                    localOffset);
+            }
+
+            private void PlayLandingCraterCue(Transform anchor, Vector3 facingDirection, int tier)
+            {
+                CombatVfxCuePlayer cuePlayer = owner.CombatVfxCuePlayer;
+                if (cuePlayer == null || anchor == null)
+                {
+                    return;
+                }
+
+                cuePlayer.PlayCue(
+                    CombatVfxCueId.PlayerSummonLandingCrater,
+                    anchor,
+                    facingDirection,
+                    ResolveSummonCueIntensity(tier),
+                    0.9f);
+            }
+
+            private static float ResolveSummonCueIntensity(int tier)
+            {
+                return 0.88f + Mathf.Clamp(tier - 1, 0, 2) * 0.13f;
             }
 
             private void ConfigureActorVfx(SummonFrontlineProxy actor)

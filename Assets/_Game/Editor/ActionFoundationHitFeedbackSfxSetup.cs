@@ -126,6 +126,16 @@ namespace DimensionBrawl.Editor
             Debug.Log("Validated master hit feedback SFX cue audio assignments.");
         }
 
+        public static void ApplyMasterHitFeedbackCueAudioToProfile()
+        {
+            UpdateCueProfile();
+        }
+
+        public static void ValidateMasterHitFeedbackCueAudioProfile()
+        {
+            ValidateCueProfile();
+        }
+
         public static string[] GetEnemyHitLightClipPaths() => (string[])EnemyHitLightClipPaths.Clone();
         public static string[] GetEnemyHitCueClipPaths() => (string[])EnemyHitCueClipPaths.Clone();
         public static string[] GetPlayerDamagedCueClipPaths() => (string[])PlayerDamagedCueClipPaths.Clone();
