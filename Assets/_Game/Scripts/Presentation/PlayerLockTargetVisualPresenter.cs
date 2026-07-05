@@ -31,6 +31,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Target Outline")]
         [SerializeField] private bool showTargetOutline = true;
+        [SerializeField] private bool useBodyOutlineOnMobile;
         [SerializeField] private Color softOutlineColor = new Color(0.58f, 0.92f, 1f, 0.62f);
         [SerializeField] private Color hardOutlineColor = new Color(1f, 0.78f, 0.36f, 0.72f);
         [SerializeField, Min(0f)] private float outlineWidth = 0.012f;
@@ -93,7 +94,8 @@ namespace DimensionBrawl.Presentation
 
         private void LateUpdate()
         {
-            if ((!showTargetCage && !showTargetOutline)
+            bool useBodyOutline = ShouldUseBodyOutline();
+            if ((!showTargetCage && !useBodyOutline)
                 || lockTargetController == null
                 || !lockTargetController.HasLockTarget
                 || lockTargetController.CurrentTargetHealth == null)
@@ -106,7 +108,15 @@ namespace DimensionBrawl.Presentation
 
             EnsureVisuals();
             presentedTarget = lockTargetController.CurrentTargetHealth;
-            EnsureOutlineVisuals(presentedTarget);
+            if (useBodyOutline)
+            {
+                EnsureOutlineVisuals(presentedTarget);
+            }
+            else
+            {
+                ClearOutlineVisuals();
+            }
+
             Bounds bounds = ResolveTargetBounds(presentedTarget);
             Vector3 center = bounds.center;
             float radius = Mathf.Max(minimumRadius, Mathf.Max(bounds.extents.x, bounds.extents.z) + radiusPadding);
@@ -150,8 +160,8 @@ namespace DimensionBrawl.Presentation
 
             ApplyMaterialProperties();
             ApplyOutlineProperties();
-            SetVisible(true);
-            SetOutlineVisible(showTargetOutline);
+            SetVisible(showTargetCage);
+            SetOutlineVisible(useBodyOutline);
         }
 
         private void PositionRibbon(Transform ribbon, Vector3 position, Quaternion rotation, float height)
@@ -267,7 +277,7 @@ namespace DimensionBrawl.Presentation
 
         private void EnsureOutlineVisuals(CombatHealth targetHealth)
         {
-            if (!showTargetOutline || targetHealth == null)
+            if (!ShouldUseBodyOutline() || targetHealth == null)
             {
                 ClearOutlineVisuals();
                 return;
@@ -348,6 +358,23 @@ namespace DimensionBrawl.Presentation
             outlineRenderer.allowOcclusionWhenDynamic = false;
             outlineRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
             return outlineRenderer;
+        }
+
+        private bool ShouldUseBodyOutline()
+        {
+            if (!showTargetOutline)
+            {
+                return false;
+            }
+
+            return useBodyOutlineOnMobile || !IsMobileRuntime();
+        }
+
+        private static bool IsMobileRuntime()
+        {
+            return Application.isMobilePlatform
+                || Application.platform == RuntimePlatform.Android
+                || Application.platform == RuntimePlatform.IPhonePlayer;
         }
 
         private static bool IsUsableOutlineSource(Renderer renderer)

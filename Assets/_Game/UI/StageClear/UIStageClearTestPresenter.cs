@@ -218,6 +218,8 @@ namespace DimensionBrawl.UI.StageClear
 
         private static void LoadSingleScene(string sceneName, string scenePath)
         {
+            Time.timeScale = 1f;
+
 #if UNITY_EDITOR
             if (!string.IsNullOrEmpty(scenePath))
             {

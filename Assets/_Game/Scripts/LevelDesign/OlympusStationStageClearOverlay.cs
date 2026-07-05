@@ -1,10 +1,11 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
@@ -27,11 +28,15 @@ namespace DimensionBrawl.LevelDesign
 
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private CombatHealth bossHealth;
+        [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private int sortOrder = 7000;
 
         private BossBarragePocketReviewOwner subscribedOwner;
         private CombatHealth subscribedBossHealth;
+        private Coroutine stageClearRoutine;
         private bool shown;
+        private bool combatLocked;
+        private float previousTimeScale = 1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -76,6 +81,7 @@ namespace DimensionBrawl.LevelDesign
         private void OnDisable()
         {
             Unsubscribe();
+            RestoreCombatTimeScale();
         }
 
         private void Update()
@@ -130,6 +136,30 @@ namespace DimensionBrawl.LevelDesign
                     if (candidate != null && candidate.Team == DamageTeam.Enemy)
                     {
                         bossHealth = candidate;
+                    }
+                    else if (candidate != null && candidate.Team == DamageTeam.Player)
+                    {
+                        playerHealth = candidate;
+                    }
+
+                    if (bossHealth != null && playerHealth != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (playerHealth == null)
+            {
+                CombatHealth[] healthComponents = FindObjectsByType<CombatHealth>(
+                    FindObjectsInactive.Exclude,
+                    FindObjectsSortMode.None);
+                for (int i = 0; i < healthComponents.Length; i++)
+                {
+                    CombatHealth candidate = healthComponents[i];
+                    if (candidate != null && candidate.Team == DamageTeam.Player)
+                    {
+                        playerHealth = candidate;
                         break;
                     }
                 }
@@ -196,45 +226,17 @@ namespace DimensionBrawl.LevelDesign
             }
 
             shown = true;
-            if (TryShowAuthoredStageClearScene())
+            LockCombatAfterClear();
+
+            if (stageClearRoutine == null && isActiveAndEnabled)
             {
-                return;
+                stageClearRoutine = StartCoroutine(ShowAuthoredStageClearSceneRoutine());
             }
-
-            GameObject root = new GameObject("StageClearOverlay", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            Canvas canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = sortOrder;
-
-            CanvasScaler scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(2560f, 1440f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            CreateImage("Dim", root.transform, new Color(0f, 0f, 0f, 0.68f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-
-            RectTransform panel = CreateImage(
-                "StageClearPanel",
-                root.transform,
-                new Color(0.02f, 0.028f, 0.045f, 0.96f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f),
-                new Vector2(980f, 560f));
-            panel.anchoredPosition = Vector2.zero;
-
-            Font font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            CreateText(panel, "Title", "STAGE CLEAR", font, 72, new Color(0.76f, 0.94f, 1f, 1f), new Vector2(0f, 120f), new Vector2(900f, 120f));
-            CreateText(panel, "Subtitle", "Olympus Station secured", font, 34, new Color(0.82f, 0.88f, 0.94f, 0.9f), new Vector2(0f, 38f), new Vector2(860f, 70f));
-
-            Button retryButton = CreateButton(panel, "RetryButton", "RETRY", font, new Vector2(-190f, -140f));
-            Button lobbyButton = CreateButton(panel, "LobbyButton", "LOBBY", font, new Vector2(190f, -140f));
-            retryButton.onClick.AddListener(() => LoadSingleScene(CombatSceneName, RetryScenePath));
-            lobbyButton.onClick.AddListener(() => LoadSingleScene(LobbySceneName, LobbyScenePath));
         }
 
-        private bool TryShowAuthoredStageClearScene()
+        private IEnumerator ShowAuthoredStageClearSceneRoutine()
         {
+            bool sceneLoadRequested = false;
             try
             {
                 Scene clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
@@ -248,17 +250,44 @@ namespace DimensionBrawl.LevelDesign
                     SceneManager.LoadScene(ClearUiSceneName, LoadSceneMode.Additive);
                     clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
 #endif
+                    sceneLoadRequested = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[OlympusStationStageClearOverlay] Failed to load authored clear UI scene: {exception.Message}");
+                stageClearRoutine = null;
+                yield break;
+            }
+
+            if (sceneLoadRequested)
+            {
+                yield return null;
+            }
+
+            bool configured = false;
+            float timeoutAt = Time.realtimeSinceStartup + 2f;
+            while (Time.realtimeSinceStartup <= timeoutAt)
+            {
+                Scene clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
+                configured = ConfigureStageClearPresenters(clearScene, sortOrder);
+                if (configured)
+                {
+                    break;
                 }
 
-                return ConfigureStageClearPresenters(clearScene);
+                yield return null;
             }
-            catch (Exception)
+
+            if (!configured)
             {
-                return false;
+                Debug.LogError("[OlympusStationStageClearOverlay] Authored stage clear scene loaded, but no UIStageClearTestPresenter was configured. Runtime fallback UI is intentionally disabled.");
             }
+
+            stageClearRoutine = null;
         }
 
-        private static bool ConfigureStageClearPresenters(Scene clearScene)
+        private static bool ConfigureStageClearPresenters(Scene clearScene, int resolvedSortOrder)
         {
             if (!clearScene.IsValid() || !clearScene.isLoaded)
             {
@@ -267,6 +296,7 @@ namespace DimensionBrawl.LevelDesign
 
             bool configuredAny = false;
             GameObject[] roots = clearScene.GetRootGameObjects();
+            PromoteCanvases(roots, resolvedSortOrder);
             for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
             {
                 MonoBehaviour[] behaviours = roots[rootIndex].GetComponentsInChildren<MonoBehaviour>(true);
@@ -286,6 +316,27 @@ namespace DimensionBrawl.LevelDesign
             return configuredAny;
         }
 
+        private static void PromoteCanvases(GameObject[] roots, int resolvedSortOrder)
+        {
+            int canvasIndex = 0;
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Canvas[] canvases = roots[rootIndex].GetComponentsInChildren<Canvas>(true);
+                for (int canvasIterator = 0; canvasIterator < canvases.Length; canvasIterator++)
+                {
+                    Canvas canvas = canvases[canvasIterator];
+                    if (canvas == null)
+                    {
+                        continue;
+                    }
+
+                    canvas.overrideSorting = true;
+                    canvas.sortingOrder = resolvedSortOrder + canvasIndex;
+                    canvasIndex++;
+                }
+            }
+        }
+
         private static void ConfigurePresenterByReflection(MonoBehaviour presenter)
         {
             Type presenterType = presenter.GetType();
@@ -302,97 +353,112 @@ namespace DimensionBrawl.LevelDesign
             playEntrance?.Invoke(presenter, Array.Empty<object>());
         }
 
-        private static void LoadSingleScene(string sceneName, string scenePath)
+        private void LockCombatAfterClear()
         {
-#if UNITY_EDITOR
-            if (!string.IsNullOrEmpty(scenePath))
+            if (combatLocked)
             {
-                EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
                 return;
             }
-#endif
 
-            if (!string.IsNullOrEmpty(sceneName))
+            combatLocked = true;
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+
+            ResolveReferences();
+            playerHealth?.SetInvulnerableUntil(Time.time + 3600f);
+            DisableCombatResultOverlays();
+            DisableEncounterFailureHooks();
+            StopHostileCombat();
+        }
+
+        private void RestoreCombatTimeScale()
+        {
+            if (!combatLocked)
             {
-                SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+                return;
+            }
+
+            Time.timeScale = previousTimeScale;
+            combatLocked = false;
+        }
+
+        private static void DisableCombatResultOverlays()
+        {
+            BossBarrageLaneReviewOverlayHud[] overlays = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < overlays.Length; i++)
+            {
+                if (overlays[i] != null)
+                {
+                    overlays[i].enabled = false;
+                }
             }
         }
 
-        private static RectTransform CreateImage(
-            string name,
-            Transform parent,
-            Color color,
-            Vector2 anchorMin,
-            Vector2 anchorMax,
-            Vector2 pivot,
-            Vector2 sizeDelta)
+        private static void DisableEncounterFailureHooks()
         {
-            GameObject obj = new GameObject(name, typeof(RectTransform), typeof(Image));
-            obj.transform.SetParent(parent, false);
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = pivot;
-            rect.sizeDelta = sizeDelta;
-            rect.anchoredPosition = Vector2.zero;
-            obj.GetComponent<Image>().color = color;
-            return rect;
+            ActionFoundationTestEncounter[] encounters = FindObjectsByType<ActionFoundationTestEncounter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < encounters.Length; i++)
+            {
+                if (encounters[i] != null)
+                {
+                    encounters[i].enabled = false;
+                }
+            }
         }
 
-        private static void CreateText(
-            Transform parent,
-            string name,
-            string text,
-            Font font,
-            int fontSize,
-            Color color,
-            Vector2 anchoredPosition,
-            Vector2 sizeDelta)
+        private static void StopHostileCombat()
         {
-            GameObject obj = new GameObject(name, typeof(RectTransform), typeof(Text));
-            obj.transform.SetParent(parent, false);
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = sizeDelta;
+            BossBarrageEmitter[] barrageEmitters = FindObjectsByType<BossBarrageEmitter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < barrageEmitters.Length; i++)
+            {
+                barrageEmitters[i]?.SetFiringEnabled(false);
+            }
 
-            Text label = obj.GetComponent<Text>();
-            label.text = text;
-            label.font = font;
-            label.fontSize = fontSize;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = color;
-            label.resizeTextForBestFit = true;
-            label.resizeTextMinSize = 20;
-            label.resizeTextMaxSize = fontSize;
-        }
+            BossBasicFireEmitter[] basicFireEmitters = FindObjectsByType<BossBasicFireEmitter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < basicFireEmitters.Length; i++)
+            {
+                basicFireEmitters[i]?.SetFiringEnabled(false);
+            }
 
-        private static Button CreateButton(Transform parent, string name, string label, Font font, Vector2 anchoredPosition)
-        {
-            GameObject obj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-            obj.transform.SetParent(parent, false);
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 0.5f);
-            rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = new Vector2(300f, 86f);
+            BossPressureActionDirector[] actionDirectors = FindObjectsByType<BossPressureActionDirector>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < actionDirectors.Length; i++)
+            {
+                actionDirectors[i]?.SetActionsEnabled(false);
+            }
 
-            Image image = obj.GetComponent<Image>();
-            image.color = new Color(0.08f, 0.42f, 0.72f, 0.96f);
+            BossPressurePositionController[] positionControllers = FindObjectsByType<BossPressurePositionController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < positionControllers.Length; i++)
+            {
+                positionControllers[i]?.SetMovementEnabled(false);
+            }
 
-            Button button = obj.GetComponent<Button>();
-            ColorBlock colors = button.colors;
-            colors.normalColor = new Color(0.08f, 0.42f, 0.72f, 0.96f);
-            colors.highlightedColor = new Color(0.15f, 0.62f, 0.92f, 1f);
-            colors.pressedColor = new Color(0.04f, 0.28f, 0.52f, 1f);
-            colors.selectedColor = colors.highlightedColor;
-            button.colors = colors;
+            EnemySummonPacingDirector[] pacingDirectors = FindObjectsByType<EnemySummonPacingDirector>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pacingDirectors.Length; i++)
+            {
+                pacingDirectors[i]?.SetPacingEnabled(false);
+            }
 
-            CreateText(obj.transform, "Label", label, font, 34, Color.white, Vector2.zero, new Vector2(260f, 68f));
-            return button;
+            BossPressureCostLadder[] costLadders = FindObjectsByType<BossPressureCostLadder>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < costLadders.Length; i++)
+            {
+                costLadders[i]?.SetGainEnabled(false);
+            }
         }
     }
 }

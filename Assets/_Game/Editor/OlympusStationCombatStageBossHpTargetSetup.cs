@@ -8,6 +8,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
+using DimensionBrawl.UI.StageClear;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace DimensionBrawl.Editor
     public static class OlympusStationCombatStageBossHpTargetSetup
     {
         private const string ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const string ClearUiScenePath = "Assets/_Game/Scenes/Experiments/UI_StageClearTest.unity";
         private const string BossProxyRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string RuntimeBinderRootName = "OlympusStation_BossHpTargetRuntimeBinder";
         private const float BossTargetingDistance = 80f;
@@ -131,6 +133,26 @@ namespace DimensionBrawl.Editor
             try
             {
                 VerifyDocxCombatPolish();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void RunBatchVerifyStageClearAndQuickBalance()
+        {
+            try
+            {
+                VerifyStageClearAuthoredOverlayContract();
+                for (int pass = 0; pass < 3; pass++)
+                {
+                    VerifySustainedPlayerRangedFireDamageAndHud();
+                }
+
+                VerifyLockTargetCameraAimAssist();
+                Debug.Log("Verified OlympusStation stage clear contract and 3 quick balance passes.");
             }
             catch (Exception exception)
             {
@@ -702,6 +724,51 @@ namespace DimensionBrawl.Editor
             VerifySerializedDocxPolishFlags();
         }
 
+        private static void VerifyStageClearAuthoredOverlayContract()
+        {
+            AssetDatabase.Refresh();
+            Scene clearScene = EditorSceneManager.OpenScene(ClearUiScenePath, OpenSceneMode.Single);
+            UIStageClearTestPresenter presenter =
+                RequireSceneComponent<UIStageClearTestPresenter>(clearScene, "authored stage clear presenter");
+            RequireSerializedObjectReference(presenter, "retryButton");
+            RequireSerializedObjectReference(presenter, "nextStageButton");
+
+            if (!IsBuildSettingsSceneEnabled(ClearUiScenePath))
+            {
+                throw new InvalidOperationException($"{ClearUiScenePath} is not enabled in Build Settings.");
+            }
+
+            Type overlayType = typeof(OlympusStationStageClearOverlay);
+            RequireMethod(overlayType, "LockCombatAfterClear", BindingFlags.Instance | BindingFlags.NonPublic);
+            RequireMethod(overlayType, "StopHostileCombat", BindingFlags.Static | BindingFlags.NonPublic);
+            RequireMethod(overlayType, "DisableCombatResultOverlays", BindingFlags.Static | BindingFlags.NonPublic);
+            RequireMethod(overlayType, "DisableEncounterFailureHooks", BindingFlags.Static | BindingFlags.NonPublic);
+            if (overlayType.GetMethod("CreateButton", BindingFlags.Static | BindingFlags.NonPublic) != null
+                || overlayType.GetMethod("CreateImage", BindingFlags.Static | BindingFlags.NonPublic) != null)
+            {
+                throw new InvalidOperationException(
+                    "OlympusStationStageClearOverlay still has runtime UI fallback creation methods.");
+            }
+
+            if (typeof(LobbySceneResolutionAdapter).GetMethod(
+                    "ApplyNow",
+                    BindingFlags.Instance | BindingFlags.Public) == null)
+            {
+                throw new InvalidOperationException("LobbySceneResolutionAdapter.ApplyNow is missing.");
+            }
+
+            FieldInfo mobileOutlineField = typeof(PlayerLockTargetVisualPresenter).GetField(
+                "useBodyOutlineOnMobile",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            if (mobileOutlineField == null)
+            {
+                throw new InvalidOperationException(
+                    "PlayerLockTargetVisualPresenter is missing the mobile body-outline guard.");
+            }
+
+            Debug.Log("Verified OlympusStation authored stage clear UI contract.");
+        }
+
         private static void VerifyAimReticlePresentation()
         {
             AssetDatabase.Refresh();
@@ -1197,6 +1264,41 @@ namespace DimensionBrawl.Editor
             }
 
             return property.boolValue;
+        }
+
+        private static void RequireSerializedObjectReference(UnityEngine.Object target, string propertyName)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null || property.objectReferenceValue == null)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} must reference an authored scene object.");
+            }
+        }
+
+        private static bool IsBuildSettingsSceneEnabled(string scenePath)
+        {
+            EditorBuildSettingsScene[] scenes =
+                EditorBuildSettings.scenes ?? Array.Empty<EditorBuildSettingsScene>();
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                EditorBuildSettingsScene scene = scenes[i];
+                if (scene.enabled && string.Equals(scene.path, scenePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void RequireMethod(Type type, string methodName, BindingFlags flags)
+        {
+            if (type.GetMethod(methodName, flags) == null)
+            {
+                throw new InvalidOperationException($"{type.Name}.{methodName} is missing.");
+            }
         }
 
         private static Vector3 GetSerializedVector3(UnityEngine.Object target, string propertyName)
