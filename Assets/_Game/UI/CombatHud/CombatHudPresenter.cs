@@ -466,6 +466,16 @@ namespace DimensionBrawl.UI
             EnsurePlayerDamageOverlay();
         }
 
+        private void OnRectTransformDimensionsChange()
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            ApplyResponsiveSideLayout();
+        }
+
         private void Update()
         {
             UpdatePlayerDamageOverlay();
@@ -755,6 +765,19 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect("TopLeftPanel", new Rect(45f, 36f, 571f, 165f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Timer", new Rect(178f, 55f, 409f, 48f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Objective", new Rect(180f, 117f, 409f, 64f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveDesignRect("SettingsButton", new Rect(2250f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("PauseButton", new Rect(2396f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect("MoveJoystickRing", new Rect(155f, 853f, 421f, 415f), ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect("MoveJoystickKnob", new Rect(303f, 1004f, 122f, 121f), ResponsiveHudAnchor.LeftBottom);
+
+            ApplyResponsiveDesignRect("BasicAttackButton", new Rect(2239f, 1156f, 230f, 248f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("DodgeButton", new Rect(1975f, 1172f, 256f, 218f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("Skill1Button", new Rect(2217f, 868f, 236f, 286f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("UltimateButton", new Rect(1975f, 896f, 248f, 226f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("SummonSlot1Button", new Rect(2293f, 235f, 211f, 216f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
             RefreshVirtualJoystickRestPosition();
         }
 

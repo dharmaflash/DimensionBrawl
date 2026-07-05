@@ -1417,6 +1417,16 @@ namespace DimensionBrawl.UI
         {
             assistCenter = rawCenter;
             isLockAssistPoint = false;
+            if (rangedBasicAttackAction != null
+                && rangedBasicAttackAction.TryGetTargetLockedAimViewportPoint(out Vector2 targetLockedViewportPoint))
+            {
+                assistCenter = new Vector2(
+                    targetLockedViewportPoint.x * Screen.width,
+                    (1f - targetLockedViewportPoint.y) * Screen.height);
+                isLockAssistPoint = true;
+                return ClampAssistReticlePoint(rawCenter, resolvedScale, ref assistCenter, clampToMaxOffset: false);
+            }
+
             if (lockTargetController != null
                 && lockTargetController.TryGetLockViewportPoint(out Vector2 lockViewportPoint))
             {
@@ -1460,6 +1470,11 @@ namespace DimensionBrawl.UI
         {
             Vector2 viewportPoint = new Vector2(0.5f, 0.5f);
             if (rangedBasicAttackAction != null
+                && rangedBasicAttackAction.TryGetTargetLockedAimViewportPoint(out Vector2 targetLockedViewportPoint))
+            {
+                viewportPoint = targetLockedViewportPoint;
+            }
+            else if (rangedBasicAttackAction != null
                 && rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 actionViewportPoint))
             {
                 viewportPoint = actionViewportPoint;

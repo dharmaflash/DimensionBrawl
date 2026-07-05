@@ -859,6 +859,30 @@ namespace DimensionBrawl.Player
             return true;
         }
 
+        public bool TryGetTargetLockedAimViewportPoint(out Vector2 viewportPoint)
+        {
+            viewportPoint = new Vector2(0.5f, 0.5f);
+            if (cameraController == null
+                || !TryGetAimPreviewDirection(out _)
+                || !HasAimAssistTarget
+                || AimAssistTargetHealth == null
+                || !AimAssistTargetHealth.IsAlive)
+            {
+                return false;
+            }
+
+            Vector3 aimPoint = ResolveTargetLockedAimPoint(AimAssistTargetHealth);
+            if (!cameraController.TryWorldToViewportPoint(aimPoint, out Vector3 projectedPoint))
+            {
+                return false;
+            }
+
+            viewportPoint = new Vector2(
+                Mathf.Clamp01(projectedPoint.x),
+                Mathf.Clamp01(projectedPoint.y));
+            return true;
+        }
+
         private void ResolveFirePreview(
             out Vector3 direction,
             out Vector3 spawnPosition,
@@ -966,6 +990,16 @@ namespace DimensionBrawl.Player
             }
 
             return spawnPosition + ResolveFireTravelDirection(direction, LastResolvedFireDirection) * previewDistance;
+        }
+
+        private Vector3 ResolveTargetLockedAimPoint(CombatHealth targetHealth)
+        {
+            if (TryResolveStableTargetAimPoint(targetHealth, out Vector3 aimPoint))
+            {
+                return aimPoint;
+            }
+
+            return targetHealth.transform.position + Vector3.up * targetHeight;
         }
 
         private bool TryResolveShotPreviewHit(
@@ -1183,6 +1217,18 @@ namespace DimensionBrawl.Player
         private static bool TryResolveStableTargetAimY(CombatHealth targetHealth, out float stableY)
         {
             stableY = default;
+            if (!TryResolveStableTargetAimPoint(targetHealth, out Vector3 stableAimPoint))
+            {
+                return false;
+            }
+
+            stableY = stableAimPoint.y;
+            return true;
+        }
+
+        private static bool TryResolveStableTargetAimPoint(CombatHealth targetHealth, out Vector3 stableAimPoint)
+        {
+            stableAimPoint = default;
             if (targetHealth == null)
             {
                 return false;
@@ -1191,7 +1237,7 @@ namespace DimensionBrawl.Player
             Collider rootCollider = targetHealth.GetComponent<Collider>();
             if (IsUsableAimHeightCollider(rootCollider, targetHealth))
             {
-                stableY = rootCollider.bounds.center.y;
+                stableAimPoint = rootCollider.bounds.center;
                 return true;
             }
 
@@ -1222,7 +1268,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            stableY = bounds.center.y;
+            stableAimPoint = bounds.center;
             return true;
         }
 
