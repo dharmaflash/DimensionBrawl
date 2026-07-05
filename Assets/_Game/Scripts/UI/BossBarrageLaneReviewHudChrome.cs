@@ -200,14 +200,14 @@ namespace DimensionBrawl.UI
             float transitionPulse = Mathf.Clamp01(readyPulse01);
             float readyPulse = Mathf.Max(steadyReadyPulse, transitionPulse);
             float glowAlpha = held
-                ? 0.3f
+                ? 0.46f
                 : ready
-                    ? 0.16f + steadyReadyPulse * 0.18f + transitionPulse * 0.32f
+                    ? 0.36f + steadyReadyPulse * 0.26f + transitionPulse * 0.38f
                     : muted
                         ? 0.045f
                         : 0.08f;
             DrawCircle(
-                Inflate(disk, 9f + readyPulse * 10f),
+                Inflate(disk, 13f + readyPulse * 16f),
                 new Color(resolvedAccent.r, resolvedAccent.g, resolvedAccent.b, glowAlpha),
                 softCircleTexture);
             DrawCircle(
@@ -227,12 +227,12 @@ namespace DimensionBrawl.UI
 
             if (ready)
             {
-                DrawBorder(Inflate(rect, -2f), new Color(accent.r, accent.g, accent.b, 0.38f + transitionPulse * 0.34f), 1.5f);
+                DrawBorder(Inflate(rect, -2f), new Color(accent.r, accent.g, accent.b, 0.68f + transitionPulse * 0.28f), 2.4f);
                 float tickX = rect.xMax - 20f;
                 float tickY = rect.center.y;
-                Color tick = new Color(accent.r, accent.g, accent.b, 0.72f + transitionPulse * 0.22f);
-                DrawLine(new Vector2(tickX - 10f, tickY), new Vector2(tickX, tickY + 8f), tick, 2.2f);
-                DrawLine(new Vector2(tickX, tickY + 8f), new Vector2(tickX + 14f, tickY - 10f), tick, 2.2f);
+                Color tick = new Color(accent.r, accent.g, accent.b, 0.9f + transitionPulse * 0.1f);
+                DrawLine(new Vector2(tickX - 10f, tickY), new Vector2(tickX, tickY + 8f), tick, 3f);
+                DrawLine(new Vector2(tickX, tickY + 8f), new Vector2(tickX + 14f, tickY - 10f), tick, 3f);
             }
 
             EnsureStyles();
@@ -246,14 +246,14 @@ namespace DimensionBrawl.UI
             float pulse = Mathf.Clamp01(Mathf.Max(readyPulse, transitionPulse));
             DrawCircle(
                 Inflate(disk, 7f + pulse * 5f),
-                new Color(accent.r, accent.g, accent.b, 0.18f + pulse * 0.16f),
+                new Color(accent.r, accent.g, accent.b, 0.42f + pulse * 0.3f),
                 ringTexture);
 
             Vector2 center = disk.center;
             float radius = disk.width * (0.55f + transitionPulse * 0.08f);
             float rotation = Time.unscaledTime * 1.95f;
-            Color spark = new Color(accent.r, accent.g, accent.b, 0.56f + pulse * 0.34f);
-            Color goldSpark = new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.5f + pulse * 0.32f);
+            Color spark = new Color(accent.r, accent.g, accent.b, 0.82f + pulse * 0.18f);
+            Color goldSpark = new Color(GoldColor.r, GoldColor.g, GoldColor.b, 0.76f + pulse * 0.22f);
             for (int i = 0; i < 8; i++)
             {
                 float angle = rotation + i * Mathf.PI * 0.25f;

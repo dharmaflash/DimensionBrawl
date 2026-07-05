@@ -75,12 +75,14 @@ namespace DimensionBrawl.Presentation
             switch (playbackMode)
             {
                 case CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly:
-                    return cueId == CombatVfxCueId.PlayerDodgeStart
+                    return cueId == CombatVfxCueId.PlayerBasicAttackHit
+                        || cueId == CombatVfxCueId.PlayerDodgeStart
                         || cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
                         || cueId == CombatVfxCueId.PlayerRangedProjectileImpact
                         || cueId == CombatVfxCueId.PlayerDamaged
                         || cueId == CombatVfxCueId.PlayerCritical
                         || cueId == CombatVfxCueId.EnemyHit
+                        || cueId == CombatVfxCueId.EnemyDeath
                         || cueId == CombatVfxCueId.EliteSummonSignal
                         || cueId == CombatVfxCueId.SummonBlockOpportunity
                         || cueId == CombatVfxCueId.SummonFollowupWindow

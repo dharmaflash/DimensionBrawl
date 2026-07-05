@@ -294,7 +294,7 @@ namespace DimensionBrawl.UI
 
             if (DrawMenuButton("RETRY", primary: false))
             {
-                LoadConfiguredScene(retrySceneName, retryScenePath);
+                LoadRetryScene();
             }
 
             if (DrawMenuButton("SETTINGS", primary: false))
@@ -387,7 +387,7 @@ namespace DimensionBrawl.UI
 
             if (DrawMenuButton("RETRY", primary: true))
             {
-                LoadConfiguredScene(retrySceneName, retryScenePath);
+                LoadRetryScene();
             }
 
             if (DrawMenuButton("STAGE SELECT", primary: false))
@@ -413,8 +413,15 @@ namespace DimensionBrawl.UI
             DrawSolid(new Rect(0f, 0f, Screen.width, Screen.height), dimColor);
             float scale = ResolveScale();
             float inset = edgeInset * scale;
-            float width = Mathf.Min(panelWidth * scale, Screen.width - inset * 2f);
-            float height = Mathf.Min(panelHeight * scale, Screen.height - inset * 2f);
+            float wideBlend = Mathf.Clamp01((Screen.width - 1280f) / 1920f);
+            float responsiveWidth = Mathf.Max(
+                panelWidth * scale,
+                Mathf.Min(Screen.width * Mathf.Lerp(0.34f, 0.42f, wideBlend), 980f * scale));
+            float responsiveHeight = Mathf.Max(
+                panelHeight * scale,
+                Mathf.Min(Screen.height * 0.46f, 680f * scale));
+            float width = Mathf.Min(responsiveWidth, Screen.width - inset * 2f);
+            float height = Mathf.Min(responsiveHeight, Screen.height - inset * 2f);
             Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
             DrawSolid(panel, panelColor);
             DrawBorder(panel, accent, Mathf.Max(2f, 2f * scale));
@@ -724,6 +731,32 @@ namespace DimensionBrawl.UI
             Debug.LogWarning("Review overlay scene route is not configured.", this);
         }
 
+        private void LoadRetryScene()
+        {
+            RestoreTimeScale();
+            Time.timeScale = 1f;
+            DisableGameplayControls();
+
+            Scene activeScene = SceneManager.GetActiveScene();
+#if UNITY_EDITOR
+            if (activeScene.IsValid() && !string.IsNullOrWhiteSpace(activeScene.path))
+            {
+                EditorSceneManager.LoadSceneInPlayMode(
+                    activeScene.path,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                return;
+            }
+#endif
+
+            if (activeScene.IsValid() && !string.IsNullOrWhiteSpace(activeScene.name))
+            {
+                SceneManager.LoadScene(activeScene.name, LoadSceneMode.Single);
+                return;
+            }
+
+            LoadConfiguredScene(retrySceneName, retryScenePath);
+        }
+
         private void RestoreTimeScale()
         {
             if (!hasPausedTime)
@@ -813,7 +846,7 @@ namespace DimensionBrawl.UI
         {
             float widthScale = Screen.width / 2560f;
             float heightScale = Screen.height / 1440f;
-            return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.82f, 1.6f);
+            return Mathf.Clamp(Mathf.Lerp(heightScale, widthScale, 0.35f), 0.82f, 1.6f);
         }
 
         private void EnsureStyles(float scale)

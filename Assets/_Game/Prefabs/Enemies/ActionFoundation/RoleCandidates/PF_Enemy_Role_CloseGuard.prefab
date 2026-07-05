@@ -604,7 +604,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
 --- !u!1 &4034995007322175740
 GameObject:
   m_ObjectHideFlags: 0

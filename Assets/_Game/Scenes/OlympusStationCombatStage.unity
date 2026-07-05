@@ -288,7 +288,7 @@ MonoBehaviour:
   aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
-  aimAssistUsesYawTarget: 0
+  aimAssistUsesYawTarget: 1
   aimAssistMaxYawBlend: 0.85
   aimAssistYawSpeedDegrees: 420
   aimAssistYawReturnSpeedDegrees: 520
@@ -1566,7 +1566,7 @@ MonoBehaviour:
   hipAimAssistAngleDegrees: 45
   aimedAimAssistAngleDegrees: 45
   aimAssistMaxTurnDegrees: 45
-  driveCameraAimAssist: 0
+  driveCameraAimAssist: 1
   cameraAimAssistStrengthScale: 1
   cameraAimAssistMinStrength: 0.05
 --- !u!114 &4013
@@ -2021,7 +2021,7 @@ MonoBehaviour:
   muzzleFlashCueId: 33
   muzzleFlashIntensity: 1
   muzzleFlashAudioIntensity: 1
-  playImpactVfx: 0
+  playImpactVfx: 1
   playImpactAudio: 1
   impactCueId: 34
   impactIntensity: 1
@@ -268841,8 +268841,8 @@ MonoBehaviour:
   - {fileID: 520126473}
   - {fileID: 1839690757}
   - {fileID: 1742448631}
-  retrySceneName: ActionFoundationBossBarrageLaneReview
-  retryScenePath: Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity
+  retrySceneName: OlympusStationCombatStage
+  retryScenePath: Assets/_Game/Scenes/OlympusStationCombatStage.unity
   stageSelectSceneName: UI_StageSelectTest
   stageSelectScenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
   lobbySceneName: UI_LobbyTest
@@ -269033,7 +269033,7 @@ MonoBehaviour:
   fireAimAssistSizeBoost: 0.22
   fireAimAssistThicknessBoost: 0.45
   fireAimReticleFollowsAssist: 1
-  fireAimAssistReticleMaxOffset: 96
+  fireAimAssistReticleMaxOffset: 0
   showLockTargetMarker: 1
   lockTargetMarkerSize: 52
   lockTargetMarkerGap: 12

@@ -40339,8 +40339,8 @@ MonoBehaviour:
   - {fileID: 591314212}
   - {fileID: 1115091630}
   - {fileID: 649319546}
-  retrySceneName: ActionFoundationBossBarrageLaneReview
-  retryScenePath: Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity
+  retrySceneName: OlympusCorridorInvasionStage
+  retryScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
   stageSelectSceneName: UI_StageSelectTest
   stageSelectScenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
   lobbySceneName: UI_LobbyTest

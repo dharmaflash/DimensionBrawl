@@ -15,7 +15,7 @@ namespace DimensionBrawl.UI
         private static readonly Color SummonChargingFillColor = new Color(0.08f, 0.86f, 1f, 0.94f);
         private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
         private static readonly Color SummonUnavailableIconColor = new Color(0.26f, 0.28f, 0.31f, 0.96f);
-        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.86f, 0.22f, 0.88f);
+        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.88f, 0.18f, 1f);
         private static readonly Color SummonReadyRingColor = new Color(1f, 0.96f, 0.36f, 1f);
         private static readonly Color SummonReadySparkColor = new Color(0.36f, 1f, 1f, 1f);
         private const float DimensionHudDesignWidth = 2560f;
@@ -96,7 +96,7 @@ namespace DimensionBrawl.UI
                     highPriorityReady ? 1f : 0.98f,
                     1f,
                     ready
-                        ? (highPriorityReady ? 0.82f + readyPulse * 0.16f : 0.62f + readyPulse * 0.12f)
+                        ? (highPriorityReady ? 0.94f + readyPulse * 0.06f : 0.76f + readyPulse * 0.2f)
                         : Mathf.Lerp(0.12f, 0.46f, easedProgress));
                 readyProgressFill.gameObject.SetActive(readyProgress > 0.001f);
             }
@@ -130,13 +130,13 @@ namespace DimensionBrawl.UI
                 float pulse = SmoothPulse(actionId == CombatHudActionId.Skill1 ? 1.9f : 2.15f);
                 bool highPriorityReady = actionId == CombatHudActionId.Dodge || actionId == CombatHudActionId.Skill1;
                 Color color = actionId == CombatHudActionId.Skill1
-                    ? new Color(1f, 0.94f, 0.42f, readyGlowVisibility * (0.42f + pulse * 0.34f))
+                    ? new Color(1f, 0.96f, 0.34f, readyGlowVisibility * (0.74f + pulse * 0.24f))
                     : actionId == CombatHudActionId.Dodge
-                        ? new Color(0.32f, 1f, 1f, readyGlowVisibility * (0.5f + pulse * 0.38f))
-                        : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.18f + pulse * 0.1f));
+                        ? new Color(0.24f, 1f, 1f, readyGlowVisibility * (0.78f + pulse * 0.22f))
+                        : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.34f + pulse * 0.18f));
                 readyGlowImage.color = color;
                 readyGlowImage.rectTransform.localScale = Vector3.one * (1f
-                    + readyGlowVisibility * (highPriorityReady ? 0.085f + pulse * 0.065f : pulse * 0.018f));
+                    + readyGlowVisibility * (highPriorityReady ? 0.16f + pulse * 0.1f : 0.045f + pulse * 0.035f));
             }
 
             private static float SmoothPulse(float speed)
@@ -332,20 +332,20 @@ namespace DimensionBrawl.UI
             private void ApplyReadyEffect(bool ready)
             {
                 float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 7.2f) * 0.5f;
-                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.58f + pulse * 0.34f);
-                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.82f + pulse * 0.18f);
-                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.72f + pulse * 0.28f);
+                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.84f + pulse * 0.16f);
+                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.94f + pulse * 0.06f);
+                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.88f + pulse * 0.12f);
 
                 if (readyRingImage != null)
                 {
-                    readyRingImage.rectTransform.localScale = Vector3.one * (1.04f + pulse * 0.105f);
+                    readyRingImage.rectTransform.localScale = Vector3.one * (1.1f + pulse * 0.16f);
                 }
 
                 if (readySparkImage != null)
                 {
                     readySparkImage.rectTransform.localRotation =
                         Quaternion.Euler(0f, 0f, -Time.unscaledTime * 148f);
-                    readySparkImage.rectTransform.localScale = Vector3.one * (1.02f + pulse * 0.09f);
+                    readySparkImage.rectTransform.localScale = Vector3.one * (1.08f + pulse * 0.14f);
                 }
             }
 
@@ -441,12 +441,17 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image[] aimReticleSegments = Array.Empty<Image>();
         [SerializeField] private Color aimReticleColor = new Color(0.82f, 0.96f, 1f, 0.88f);
         [SerializeField] private Color aimReticleActiveColor = new Color(0.42f, 0.95f, 1f, 0.96f);
+        [SerializeField] private Image playerDamageOverlayImage;
+        [SerializeField] private Color playerDamageOverlayColor = new Color(1f, 0.04f, 0.02f, 0.38f);
+        [SerializeField, Min(0.05f)] private float playerDamageOverlaySeconds = 0.42f;
         [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
 
         private float bossHealthFillBaseWidth = -1f;
         private float bossResourceFillBaseWidth = -1f;
+        private float playerDamageOverlayTimer;
+        private float lastObservedPlayerHealth = -1f;
 
         public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
         public float BossResourceFillAmount => bossResourceFill != null ? bossResourceFill.fillAmount : 0f;
@@ -458,6 +463,12 @@ namespace DimensionBrawl.UI
             ApplyPlayerReadoutStyles();
             ApplyResponsiveSideLayout();
             EnsureAimReticle();
+            EnsurePlayerDamageOverlay();
+        }
+
+        private void Update()
+        {
+            UpdatePlayerDamageOverlay();
         }
 
         public void SetObjective(string objective)
@@ -477,6 +488,12 @@ namespace DimensionBrawl.UI
         {
             ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            if (lastObservedPlayerHealth >= 0f && current < lastObservedPlayerHealth - 0.01f)
+            {
+                TriggerPlayerDamageOverlay();
+            }
+
+            lastObservedPlayerHealth = Mathf.Max(0f, current);
             if (healthFill != null)
             {
                 healthFill.fillAmount = ratio;
@@ -505,6 +522,76 @@ namespace DimensionBrawl.UI
             {
                 ApplyHorizontalMeter(bossResourceFill, ratio, ref bossResourceFillBaseWidth);
             }
+        }
+
+        private void EnsurePlayerDamageOverlay()
+        {
+            if (playerDamageOverlayImage == null)
+            {
+                playerDamageOverlayImage = FindImage("PlayerDamageOverlay");
+            }
+
+            if (playerDamageOverlayImage == null)
+            {
+                GameObject overlay = new GameObject(
+                    "PlayerDamageOverlay",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image));
+                overlay.transform.SetParent(transform, worldPositionStays: false);
+                playerDamageOverlayImage = overlay.GetComponent<Image>();
+            }
+
+            RectTransform rectTransform = playerDamageOverlayImage.rectTransform;
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            rectTransform.localScale = Vector3.one;
+            playerDamageOverlayImage.raycastTarget = false;
+            playerDamageOverlayImage.color = Color.clear;
+            playerDamageOverlayImage.gameObject.SetActive(false);
+            playerDamageOverlayImage.transform.SetAsLastSibling();
+        }
+
+        private void TriggerPlayerDamageOverlay()
+        {
+            EnsurePlayerDamageOverlay();
+            playerDamageOverlayTimer = Mathf.Max(playerDamageOverlayTimer, playerDamageOverlaySeconds);
+            if (playerDamageOverlayImage != null)
+            {
+                playerDamageOverlayImage.gameObject.SetActive(true);
+                playerDamageOverlayImage.transform.SetAsLastSibling();
+            }
+        }
+
+        private void UpdatePlayerDamageOverlay()
+        {
+            if (playerDamageOverlayImage == null)
+            {
+                return;
+            }
+
+            if (playerDamageOverlayTimer <= 0f)
+            {
+                if (playerDamageOverlayImage.gameObject.activeSelf)
+                {
+                    playerDamageOverlayImage.color = Color.clear;
+                    playerDamageOverlayImage.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            playerDamageOverlayTimer = Mathf.Max(0f, playerDamageOverlayTimer - Time.unscaledDeltaTime);
+            float duration = Mathf.Max(0.05f, playerDamageOverlaySeconds);
+            float normalized = Mathf.Clamp01(playerDamageOverlayTimer / duration);
+            float alpha = playerDamageOverlayColor.a * Mathf.SmoothStep(0f, 1f, normalized);
+            Color color = playerDamageOverlayColor;
+            color.a = alpha;
+            playerDamageOverlayImage.color = color;
+            playerDamageOverlayImage.gameObject.SetActive(alpha > 0.001f);
         }
 
         public void SetAimReticleVisible(bool visible, bool active)

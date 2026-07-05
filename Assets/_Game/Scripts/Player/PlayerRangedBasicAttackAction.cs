@@ -907,18 +907,29 @@ namespace DimensionBrawl.Player
             bool hasResolvedAimAssistTarget = AimAssistTargetHealth != null && AimAssistTargetHealth.IsAlive;
             bool hasSoftAimAssist = aimAssistSuppressesViewportReprojection
                 || (hasResolvedAimAssistTarget && directViewportTargetHealth == null);
-            if (hasViewportAimPoint && !hasSoftAimAssist)
+            Vector3 assistPreviewPoint = default;
+            bool hasAimAssistPreviewPoint = hasResolvedAimAssistTarget
+                && TryResolveAimAssistPreviewPoint(out assistPreviewPoint);
+            if (hasAimAssistPreviewPoint)
+            {
+                resolvedDirection = ResolveFireTravelDirection(assistPreviewPoint - spawnPosition, resolvedDirection);
+            }
+            else if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 resolvedDirection = ResolveFireTravelDirection(rawViewportAimPoint - spawnPosition, resolvedDirection);
             }
 
             cachedFirePreviewDirection = resolvedDirection;
             cachedFirePreviewSpawnPosition = spawnPosition;
-            if (hasViewportAimPoint && !hasSoftAimAssist)
+            if (hasAimAssistPreviewPoint)
+            {
+                cachedFirePreviewAimPoint = assistPreviewPoint;
+            }
+            else if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 cachedFirePreviewAimPoint = rawViewportAimPoint;
             }
-            else if (hasSoftAimAssist && TryResolveAimAssistPreviewPoint(out Vector3 assistPreviewPoint))
+            else if (hasSoftAimAssist && TryResolveAimAssistPreviewPoint(out assistPreviewPoint))
             {
                 cachedFirePreviewAimPoint = assistPreviewPoint;
             }

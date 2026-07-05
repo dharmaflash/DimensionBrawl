@@ -749,7 +749,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
 --- !u!1001 &6471563526405582437
 PrefabInstance:
   m_ObjectHideFlags: 0

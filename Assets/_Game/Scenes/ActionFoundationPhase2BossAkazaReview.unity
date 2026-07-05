@@ -16363,8 +16363,8 @@ MonoBehaviour:
   - {fileID: 28166473}
   - {fileID: 292843605}
   - {fileID: 938536855}
-  retrySceneName: ActionFoundationBossBarrageLaneReview
-  retryScenePath: Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity
+  retrySceneName: ActionFoundationPhase2BossAkazaReview
+  retryScenePath: Assets/_Game/Scenes/ActionFoundationPhase2BossAkazaReview.unity
   stageSelectSceneName: UI_StageSelectTest
   stageSelectScenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
   lobbySceneName: UI_LobbyTest
