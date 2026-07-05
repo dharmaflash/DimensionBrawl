@@ -69,6 +69,7 @@ namespace DimensionBrawl.UI
         private GUIStyle primaryButtonStyle;
         private GUIStyle smallButtonStyle;
         private Texture2D solidTexture;
+        private float cachedStyleScale = -1f;
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
         public BossBarrageLaneReviewHud ReviewHud => reviewHud;
@@ -232,7 +233,8 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            EnsureStyles();
+            float scale = ResolveScale();
+            EnsureStyles(scale);
             int previousDepth = GUI.depth;
             GUI.depth = -2200;
 
@@ -315,6 +317,7 @@ namespace DimensionBrawl.UI
 
         private void DrawSettingsOverlay()
         {
+            float scale = ResolveScale();
             Rect panel = BeginModal("SETTINGS", "Review tuning");
             GUILayout.Label($"HUD Scale {hudScale:0.00}", bodyStyle);
             float newScale = GUILayout.HorizontalSlider(hudScale, 0.8f, 1.35f);
@@ -324,7 +327,7 @@ namespace DimensionBrawl.UI
                 mobileHud?.SetHudScale(hudScale);
             }
 
-            GUILayout.Space(12f);
+            GUILayout.Space(12f * scale);
             bool newTelemetry = GUILayout.Toggle(telemetryVisible, "Detailed Telemetry", bodyStyle);
             if (newTelemetry != telemetryVisible)
             {
@@ -409,16 +412,25 @@ namespace DimensionBrawl.UI
         {
             DrawSolid(new Rect(0f, 0f, Screen.width, Screen.height), dimColor);
             float scale = ResolveScale();
-            float width = Mathf.Min(panelWidth * scale, Screen.width - edgeInset * scale * 2f);
-            float height = Mathf.Min(panelHeight * scale, Screen.height - edgeInset * scale * 2f);
+            float inset = edgeInset * scale;
+            float width = Mathf.Min(panelWidth * scale, Screen.width - inset * 2f);
+            float height = Mathf.Min(panelHeight * scale, Screen.height - inset * 2f);
             Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
             DrawSolid(panel, panelColor);
-            DrawBorder(panel, accent, 2f);
-            GUILayout.BeginArea(new Rect(panel.x + 28f, panel.y + 24f, panel.width - 56f, panel.height - 48f));
+            DrawBorder(panel, accent, Mathf.Max(2f, 2f * scale));
+
+            float horizontalPadding = 28f * scale;
+            float verticalPadding = 24f * scale;
+            GUILayout.BeginArea(
+                new Rect(
+                    panel.x + horizontalPadding,
+                    panel.y + verticalPadding,
+                    panel.width - horizontalPadding * 2f,
+                    panel.height - verticalPadding * 2f));
             titleStyle.normal.textColor = accent;
             GUILayout.Label(title, titleStyle);
             GUILayout.Label(subtitle, bodyStyle);
-            GUILayout.Space(18f);
+            GUILayout.Space(18f * scale);
             return panel;
         }
 
@@ -430,9 +442,13 @@ namespace DimensionBrawl.UI
 
         private bool DrawMenuButton(string label, bool primary)
         {
-            GUILayout.Space(6f);
+            float scale = ResolveScale();
+            GUILayout.Space(6f * scale);
             GUIStyle style = primary ? primaryButtonStyle : buttonStyle;
-            Rect rect = GUILayoutUtility.GetRect(new GUIContent(label), style, GUILayout.Height(48f));
+            Rect rect = GUILayoutUtility.GetRect(
+                new GUIContent(label),
+                style,
+                GUILayout.Height(Mathf.Clamp(48f * scale, 42f, 82f)));
             return DrawImmediateButton(rect, label, style);
         }
 
@@ -795,41 +811,50 @@ namespace DimensionBrawl.UI
 
         private float ResolveScale()
         {
-            return Mathf.Clamp(Screen.height / 1440f, 0.82f, 1.18f);
+            float widthScale = Screen.width / 2560f;
+            float heightScale = Screen.height / 1440f;
+            return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.82f, 1.6f);
         }
 
-        private void EnsureStyles()
+        private void EnsureStyles(float scale)
         {
-            if (titleStyle != null)
+            if (titleStyle != null && Mathf.Abs(cachedStyleScale - scale) < 0.025f)
             {
                 return;
             }
 
+            cachedStyleScale = scale;
+            int titleFontSize = Mathf.RoundToInt(Mathf.Clamp(30f * scale, 24f, 48f));
+            int bodyFontSize = Mathf.RoundToInt(Mathf.Clamp(17f * scale, 15f, 28f));
+            int buttonFontSize = Mathf.RoundToInt(Mathf.Clamp(18f * scale, 16f, 30f));
             titleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 30,
+                fontSize = titleFontSize,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = accentColor }
             };
             bodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 17,
+                fontSize = bodyFontSize,
                 wordWrap = true,
                 normal = { textColor = new Color(0.9f, 0.96f, 1f, 0.94f) }
             };
-            buttonStyle = CreateButtonStyle(new Color(0.05f, 0.08f, 0.12f, 0.9f), Color.white);
-            primaryButtonStyle = CreateButtonStyle(new Color(0.9f, 0.56f, 0.18f, 0.96f), Color.black);
-            smallButtonStyle = CreateButtonStyle(new Color(0.015f, 0.022f, 0.034f, 0.82f), Color.white);
+            buttonStyle = CreateButtonStyle(new Color(0.05f, 0.08f, 0.12f, 0.9f), Color.white, buttonFontSize);
+            primaryButtonStyle = CreateButtonStyle(new Color(0.9f, 0.56f, 0.18f, 0.96f), Color.black, buttonFontSize);
+            smallButtonStyle = CreateButtonStyle(
+                new Color(0.015f, 0.022f, 0.034f, 0.82f),
+                Color.white,
+                buttonFontSize);
         }
 
-        private static GUIStyle CreateButtonStyle(Color background, Color text)
+        private static GUIStyle CreateButtonStyle(Color background, Color text, int fontSize)
         {
             var style = new GUIStyle(GUI.skin.button)
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontStyle = FontStyle.Bold,
-                fontSize = 18,
+                fontSize = fontSize,
                 normal = { textColor = text },
                 hover = { textColor = text },
                 active = { textColor = text },

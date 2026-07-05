@@ -11,7 +11,11 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerMovementController movementController;
         [SerializeField] private RectTransform knob;
         [SerializeField, Range(0f, 0.5f)] private float deadZone = 0.08f;
-        [SerializeField, Range(0.05f, 1f)] private float knobTravelRatio = 0.34f;
+        [SerializeField, Range(0.25f, 1f)] private float inputRadiusRatio = 0.62f;
+        [SerializeField, Range(0.05f, 1f)] private float knobTravelRatio = 0.72f;
+
+        private const float MaximumResponsiveDeadZone = 0.05f;
+        private const float MinimumResponsiveKnobTravelRatio = 0.68f;
 
         private RectTransform rectTransform;
         private Vector2 knobRestPosition;
@@ -71,6 +75,18 @@ namespace DimensionBrawl.UI
             ClearInput();
         }
 
+        public void RefreshRestPosition()
+        {
+            if (knob == null)
+            {
+                hasKnobRestPosition = false;
+                return;
+            }
+
+            knobRestPosition = knob.anchoredPosition;
+            hasKnobRestPosition = true;
+        }
+
         private void UpdateInput(PointerEventData eventData)
         {
             RectTransform joystickRect = rectTransform != null ? rectTransform : GetComponent<RectTransform>();
@@ -88,16 +104,19 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            float radius = Mathf.Max(1f, Mathf.Min(joystickRect.rect.width, joystickRect.rect.height) * 0.5f);
-            Vector2 input = Vector2.ClampMagnitude(localPoint / radius, 1f);
-            if (input.sqrMagnitude < deadZone * deadZone)
+            float visualRadius = Mathf.Max(1f, Mathf.Min(joystickRect.rect.width, joystickRect.rect.height) * 0.5f);
+            float inputRadius = Mathf.Max(1f, visualRadius * Mathf.Clamp(inputRadiusRatio, 0.25f, 1f));
+            Vector2 centeredPoint = localPoint - joystickRect.rect.center;
+            Vector2 input = Vector2.ClampMagnitude(centeredPoint / inputRadius, 1f);
+            float responsiveDeadZone = Mathf.Min(deadZone, MaximumResponsiveDeadZone);
+            if (input.sqrMagnitude < responsiveDeadZone * responsiveDeadZone)
             {
                 input = Vector2.zero;
             }
 
             CurrentInput = input;
             movementController?.SetMoveInput(input);
-            MoveKnob(input, radius);
+            MoveKnob(input, visualRadius);
         }
 
         private void MoveKnob(Vector2 input, float radius)
@@ -108,7 +127,8 @@ namespace DimensionBrawl.UI
             }
 
             CaptureKnobRestPosition();
-            knob.anchoredPosition = knobRestPosition + input * radius * knobTravelRatio;
+            float responsiveTravel = Mathf.Max(knobTravelRatio, MinimumResponsiveKnobTravelRatio);
+            knob.anchoredPosition = knobRestPosition + input * radius * responsiveTravel;
         }
 
         private void ClearInput()

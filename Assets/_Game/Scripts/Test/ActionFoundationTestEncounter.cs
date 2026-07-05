@@ -29,7 +29,37 @@ namespace DimensionBrawl.Test
         public bool IsWon => state == EncounterState.Won;
         public bool IsFailed => state == EncounterState.Failed;
 
+        public void ConfigureCombatants(CombatHealth newPlayerHealth, CombatHealth newEnemyHealth)
+        {
+            bool wasActive = isActiveAndEnabled;
+            if (wasActive)
+            {
+                UnsubscribeHealthEvents();
+            }
+
+            playerHealth = newPlayerHealth;
+            enemyHealth = newEnemyHealth;
+
+            if (wasActive)
+            {
+                SubscribeHealthEvents();
+            }
+
+            SetMarkers();
+        }
+
         private void OnEnable()
+        {
+            SubscribeHealthEvents();
+            SetMarkers();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeHealthEvents();
+        }
+
+        private void SubscribeHealthEvents()
         {
             if (playerHealth != null)
             {
@@ -40,11 +70,9 @@ namespace DimensionBrawl.Test
             {
                 enemyHealth.Died += HandleEnemyDied;
             }
-
-            SetMarkers();
         }
 
-        private void OnDisable()
+        private void UnsubscribeHealthEvents()
         {
             if (playerHealth != null)
             {

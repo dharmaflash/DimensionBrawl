@@ -15,9 +15,9 @@ namespace DimensionBrawl.UI
         private static readonly Color SummonChargingFillColor = new Color(0.08f, 0.86f, 1f, 0.94f);
         private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
         private static readonly Color SummonUnavailableIconColor = new Color(0.26f, 0.28f, 0.31f, 0.96f);
-        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.82f, 0.28f, 0.42f);
-        private static readonly Color SummonReadyRingColor = new Color(1f, 0.92f, 0.44f, 0.78f);
-        private static readonly Color SummonReadySparkColor = new Color(0.44f, 0.98f, 1f, 0.64f);
+        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.86f, 0.22f, 0.88f);
+        private static readonly Color SummonReadyRingColor = new Color(1f, 0.96f, 0.36f, 1f);
+        private static readonly Color SummonReadySparkColor = new Color(0.36f, 1f, 1f, 1f);
         private const float DimensionHudDesignWidth = 2560f;
         private const float DimensionHudDesignHeight = 1440f;
 
@@ -89,12 +89,14 @@ namespace DimensionBrawl.UI
                 bool ready = normalizedRemaining <= 0.001f;
                 float easedProgress = Mathf.SmoothStep(0f, 1f, readyProgress);
                 float readyPulse = ready ? SmoothPulse(2.4f) : 0f;
+                bool highPriorityReady = ready
+                    && (actionId == CombatHudActionId.Dodge || actionId == CombatHudActionId.Skill1);
                 readyProgressFill.color = new Color(
-                    0.92f,
-                    0.98f,
+                    highPriorityReady ? 0.44f : 0.92f,
+                    highPriorityReady ? 1f : 0.98f,
                     1f,
                     ready
-                        ? 0.56f + readyPulse * 0.08f
+                        ? (highPriorityReady ? 0.82f + readyPulse * 0.16f : 0.62f + readyPulse * 0.12f)
                         : Mathf.Lerp(0.12f, 0.46f, easedProgress));
                 readyProgressFill.gameObject.SetActive(readyProgress > 0.001f);
             }
@@ -126,11 +128,15 @@ namespace DimensionBrawl.UI
 
                 readyGlowImage.gameObject.SetActive(true);
                 float pulse = SmoothPulse(actionId == CombatHudActionId.Skill1 ? 1.9f : 2.15f);
+                bool highPriorityReady = actionId == CombatHudActionId.Dodge || actionId == CombatHudActionId.Skill1;
                 Color color = actionId == CombatHudActionId.Skill1
-                    ? new Color(1f, 0.96f, 0.8f, readyGlowVisibility * (0.16f + pulse * 0.08f))
-                    : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.13f + pulse * 0.06f));
+                    ? new Color(1f, 0.94f, 0.42f, readyGlowVisibility * (0.42f + pulse * 0.34f))
+                    : actionId == CombatHudActionId.Dodge
+                        ? new Color(0.32f, 1f, 1f, readyGlowVisibility * (0.5f + pulse * 0.38f))
+                        : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.18f + pulse * 0.1f));
                 readyGlowImage.color = color;
-                readyGlowImage.rectTransform.localScale = Vector3.one * (1f + readyGlowVisibility * pulse * 0.006f);
+                readyGlowImage.rectTransform.localScale = Vector3.one * (1f
+                    + readyGlowVisibility * (highPriorityReady ? 0.085f + pulse * 0.065f : pulse * 0.018f));
             }
 
             private static float SmoothPulse(float speed)
@@ -325,21 +331,21 @@ namespace DimensionBrawl.UI
 
             private void ApplyReadyEffect(bool ready)
             {
-                float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 5.8f) * 0.5f;
-                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.18f + pulse * 0.18f);
-                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.56f + pulse * 0.24f);
-                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.34f + pulse * 0.34f);
+                float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 7.2f) * 0.5f;
+                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.58f + pulse * 0.34f);
+                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.82f + pulse * 0.18f);
+                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.72f + pulse * 0.28f);
 
                 if (readyRingImage != null)
                 {
-                    readyRingImage.rectTransform.localScale = Vector3.one * (1f + pulse * 0.045f);
+                    readyRingImage.rectTransform.localScale = Vector3.one * (1.04f + pulse * 0.105f);
                 }
 
                 if (readySparkImage != null)
                 {
                     readySparkImage.rectTransform.localRotation =
-                        Quaternion.Euler(0f, 0f, -Time.unscaledTime * 82f);
-                    readySparkImage.rectTransform.localScale = Vector3.one * (0.98f + pulse * 0.035f);
+                        Quaternion.Euler(0f, 0f, -Time.unscaledTime * 148f);
+                    readySparkImage.rectTransform.localScale = Vector3.one * (1.02f + pulse * 0.09f);
                 }
             }
 
@@ -439,6 +445,9 @@ namespace DimensionBrawl.UI
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
 
+        private float bossHealthFillBaseWidth = -1f;
+        private float bossResourceFillBaseWidth = -1f;
+
         public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
         public float BossResourceFillAmount => bossResourceFill != null ? bossResourceFill.fillAmount : 0f;
         public bool AimReticleVisible => aimReticleRoot != null && aimReticleRoot.gameObject.activeInHierarchy;
@@ -482,7 +491,7 @@ namespace DimensionBrawl.UI
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (bossHealthFill != null)
             {
-                bossHealthFill.fillAmount = ratio;
+                ApplyHorizontalMeter(bossHealthFill, ratio, ref bossHealthFillBaseWidth);
             }
 
             SetText(bossHealthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
@@ -494,7 +503,7 @@ namespace DimensionBrawl.UI
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (bossResourceFill != null)
             {
-                bossResourceFill.fillAmount = ratio;
+                ApplyHorizontalMeter(bossResourceFill, ratio, ref bossResourceFillBaseWidth);
             }
         }
 
@@ -659,17 +668,16 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect("TopLeftPanel", new Rect(45f, 36f, 571f, 165f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Timer", new Rect(178f, 55f, 409f, 48f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Objective", new Rect(180f, 117f, 409f, 64f), ResponsiveHudAnchor.LeftTop);
-            ApplyResponsiveDesignRect("SettingsButton", new Rect(2250f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("PauseButton", new Rect(2396f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("MoveJoystickRing", new Rect(155f, 853f, 421f, 415f), ResponsiveHudAnchor.LeftBottom);
-            ApplyResponsiveDesignRect("MoveJoystickKnob", new Rect(303f, 1004f, 122f, 121f), ResponsiveHudAnchor.LeftBottom);
-            ApplyResponsiveDesignRect("BasicAttackButton", new Rect(2239f, 1156f, 230f, 248f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("DodgeButton", new Rect(1975f, 1172f, 256f, 218f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("Skill1Button", new Rect(2217f, 868f, 236f, 286f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("UltimateButton", new Rect(1975f, 896f, 248f, 226f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("SummonSlot1Button", new Rect(2293f, 235f, 211f, 216f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
+            RefreshVirtualJoystickRestPosition();
+        }
+
+        private void RefreshVirtualJoystickRestPosition()
+        {
+            Transform found = FindDeepChild(transform, "MoveJoystickRing");
+            CombatHudVirtualJoystick joystick = found != null
+                ? found.GetComponent<CombatHudVirtualJoystick>()
+                : null;
+            joystick?.RefreshRestPosition();
         }
 
         private void ApplyResponsiveDesignRect(string objectName, Rect designRect, ResponsiveHudAnchor anchor)
@@ -747,6 +755,40 @@ namespace DimensionBrawl.UI
             outline.effectColor = ReadoutOutlineColor;
             outline.effectDistance = new Vector2(1.25f, -1.25f);
             outline.useGraphicAlpha = true;
+        }
+
+        private static void ApplyHorizontalMeter(Image image, float ratio, ref float baseWidth)
+        {
+            RectTransform rectTransform = image.rectTransform;
+            if (rectTransform != null)
+            {
+                float currentWidth = Mathf.Abs(rectTransform.rect.width) > 0.01f
+                    ? rectTransform.rect.width
+                    : rectTransform.sizeDelta.x;
+                if (baseWidth <= 0f)
+                {
+                    baseWidth = Mathf.Max(1f, Mathf.Abs(currentWidth));
+                }
+
+                if (!Mathf.Approximately(rectTransform.pivot.x, 0f))
+                {
+                    Vector2 anchoredPosition = rectTransform.anchoredPosition;
+                    anchoredPosition.x -= currentWidth * rectTransform.pivot.x;
+                    rectTransform.pivot = new Vector2(0f, rectTransform.pivot.y);
+                    rectTransform.anchoredPosition = anchoredPosition;
+                }
+
+                rectTransform.SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Horizontal,
+                    Mathf.Max(0f, baseWidth * ratio));
+            }
+
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Horizontal;
+            image.fillOrigin = (int)Image.OriginHorizontal.Left;
+            image.fillAmount = ratio;
+            image.SetVerticesDirty();
+            image.SetLayoutDirty();
         }
 
         private void EnsureAimReticle()

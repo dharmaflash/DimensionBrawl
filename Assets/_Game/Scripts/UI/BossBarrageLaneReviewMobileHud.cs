@@ -41,10 +41,10 @@ namespace DimensionBrawl.UI
         [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;
-        [SerializeField, Min(0f)] private float margin = 72f;
+        [SerializeField, Min(0f)] private float margin = 96f;
         [SerializeField, Min(40f)] private float minimumActionButtonSize = 124f;
         [SerializeField, Min(0f)] private float minimumButtonGap = 30f;
-        [SerializeField, Min(0f)] private float minimumTouchEdgeInset = 64f;
+        [SerializeField, Min(0f)] private float minimumTouchEdgeInset = 96f;
         [SerializeField, Range(0.2f, 0.65f)] private float summonButtonGroupCenterY01 = 0.42f;
         [SerializeField, Min(0.1f)] private float summonButtonGapMultiplier = 1.05f;
         [SerializeField, Range(0.5f, 2f)] private float scale = 1f;
@@ -67,12 +67,12 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color summonSlot3AccentColor = new Color(0.78f, 0.72f, 1f, 1f);
 
         [Header("Move Joystick")]
-        [SerializeField, Min(48f)] private float moveJoystickRadius = 154f;
-        [SerializeField, Min(16f)] private float moveJoystickKnobSize = 64f;
+        [SerializeField, Min(48f)] private float moveJoystickRadius = 236f;
+        [SerializeField, Min(16f)] private float moveJoystickKnobSize = 98f;
         [SerializeField, Range(0f, 0.95f)] private float moveJoystickDeadZone = 0.12f;
-        [SerializeField, Min(1f)] private float moveJoystickTouchRadiusScale = 1.45f;
-        [SerializeField, Min(48f)] private float minimumMoveJoystickRadius = 118f;
-        [SerializeField, Min(16f)] private float minimumMoveJoystickKnobSize = 52f;
+        [SerializeField, Min(1f)] private float moveJoystickTouchRadiusScale = 1.18f;
+        [SerializeField, Min(48f)] private float minimumMoveJoystickRadius = 180f;
+        [SerializeField, Min(16f)] private float minimumMoveJoystickKnobSize = 76f;
 
         [Header("Look Aim")]
         [SerializeField] private bool screenDragControlsAim = true;

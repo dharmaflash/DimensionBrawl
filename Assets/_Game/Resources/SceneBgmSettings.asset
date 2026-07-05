@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31fd80d4cf8f44bb895470f48bb0eb02, type: 3}
+  m_Name: SceneBgmSettings
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SceneBgmSettings
+  entries:
+  - sceneName: UI_LoginTest
+    bgmClip: {fileID: 8300000, guid: 93e7a9245dc8e3544947cc434b374b45, type: 3}
+    volume: 0.45
+    restartWhenSceneLoads: 0
+    outputMixerGroup: {fileID: 0}
+  - sceneName: UI_LobbyTest
+    bgmClip: {fileID: 8300000, guid: e78446b0a6963704385b3a82807ad53c, type: 3}
+    volume: 0.42
+    restartWhenSceneLoads: 0
+    outputMixerGroup: {fileID: 0}
+  - sceneName: UI_StageSelectTest
+    bgmClip: {fileID: 8300000, guid: e78446b0a6963704385b3a82807ad53c, type: 3}
+    volume: 0.42
+    restartWhenSceneLoads: 0
+    outputMixerGroup: {fileID: 0}
+  - sceneName: OlympusCorridorInvasionStage
+    bgmClip: {fileID: 8300000, guid: 8f16f6b419160e04da27c0da00e0bf72, type: 3}
+    volume: 0.4
+    restartWhenSceneLoads: 1
+    outputMixerGroup: {fileID: 0}
+  - sceneName: OlympusStationCombatStage
+    bgmClip: {fileID: 8300000, guid: d90eaceb174ef1643a01881dc76e8bd7, type: 3}
+    volume: 0.34
+    restartWhenSceneLoads: 1
+    outputMixerGroup: {fileID: 0}
+  stopWhenSceneIsUnlisted: 1

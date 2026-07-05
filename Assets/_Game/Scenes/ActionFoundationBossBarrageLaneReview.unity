@@ -16251,8 +16251,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudVirtualJoystick
   movementController: {fileID: 4004}
   knob: {fileID: 1248464255}
-  deadZone: 0.08
-  knobTravelRatio: 0.34
+  deadZone: 0.05
+  inputRadiusRatio: 0.62
+  knobTravelRatio: 0.72
 --- !u!1 &1407035915
 GameObject:
   m_ObjectHideFlags: 0
@@ -20381,10 +20382,10 @@ MonoBehaviour:
   hudOpacity: 1
   buttonSize: 168
   buttonGap: 38
-  margin: 72
+  margin: 96
   minimumActionButtonSize: 124
   minimumButtonGap: 30
-  minimumTouchEdgeInset: 64
+  minimumTouchEdgeInset: 96
   summonButtonGroupCenterY01: 0.42
   summonButtonGapMultiplier: 1.05
   scale: 1
@@ -20403,12 +20404,12 @@ MonoBehaviour:
   summonSlot1AccentColor: {r: 1, g: 0.78, b: 0.36, a: 1}
   summonSlot2AccentColor: {r: 0.42, g: 0.9, b: 1, a: 1}
   summonSlot3AccentColor: {r: 0.78, g: 0.72, b: 1, a: 1}
-  moveJoystickRadius: 154
-  moveJoystickKnobSize: 64
+  moveJoystickRadius: 236
+  moveJoystickKnobSize: 98
   moveJoystickDeadZone: 0.12
-  moveJoystickTouchRadiusScale: 1.45
-  minimumMoveJoystickRadius: 118
-  minimumMoveJoystickKnobSize: 52
+  moveJoystickTouchRadiusScale: 1.18
+  minimumMoveJoystickRadius: 180
+  minimumMoveJoystickKnobSize: 76
   screenDragControlsAim: 1
   rightMouseDragControlsAim: 0
   leftMouseDragControlsAim: 1

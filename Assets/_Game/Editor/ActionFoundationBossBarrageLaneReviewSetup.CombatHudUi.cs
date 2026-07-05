@@ -596,9 +596,11 @@ namespace DimensionBrawl.Editor
             AddOrUpdateSkinImage(skinRoot, "BossSymbol", sprites["Hud_BossSymbol"], new Rect(850f, 39f, 59f, 71f));
             AddOrUpdateSkinImage(skinRoot, "BossNameArea", sprites["Hud_BossNameArea"], new Rect(916f, 51f, 759f, 48f), visible: false);
             AddOrUpdateSkinImage(skinRoot, "BossHpBackground", sprites["Hud_BossHpBackground"], new Rect(851f, 109f, 856f, 31f));
-            AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(867f, 113f, 823f, 24f));
+            Image bossHpFill = AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(867f, 113f, 823f, 24f));
+            ConfigureHorizontalFillImage(bossHpFill, 1f);
             AddOrUpdateSkinImage(skinRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(854f, 142f, 849f, 34f));
-            AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(870f, 144f, 819f, 25f));
+            Image bossCostFill = AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(870f, 144f, 819f, 25f));
+            ConfigureHorizontalFillImage(bossCostFill, 1f);
             AddOrUpdateSkinImage(skinRoot, "PlayerSymbol", sprites["Hud_PlayerSymbol"], new Rect(916.5f, 1195f, 85f, 142f));
             AddOrUpdateSkinImage(skinRoot, "PlayerNameArea", sprites["Hud_PlayerNameArea"], new Rect(1013.5f, 1212f, 215f, 43f), visible: false);
             AddOrUpdateSkinImage(skinRoot, "PlayerHpAmountArea", sprites["Hud_PlayerHpAmountArea"], new Rect(1428.5f, 1220f, 201f, 32f), visible: false);
@@ -714,7 +716,7 @@ namespace DimensionBrawl.Editor
             return root.transform;
         }
 
-        private static void AddOrUpdateSkinImage(Transform parent, string name, Sprite sprite, Rect designRect, bool visible = true)
+        private static Image AddOrUpdateSkinImage(Transform parent, string name, Sprite sprite, Rect designRect, bool visible = true)
         {
             Transform child = parent.Find(name);
             if (child == null)
@@ -733,6 +735,21 @@ namespace DimensionBrawl.Editor
             MarkComponentDirty(rectTransform);
             MarkComponentDirty(image);
             EditorUtility.SetDirty(child.gameObject);
+            return image;
+        }
+
+        private static void ConfigureHorizontalFillImage(Image image, float fillAmount)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Horizontal;
+            image.fillOrigin = (int)Image.OriginHorizontal.Left;
+            image.fillAmount = Mathf.Clamp01(fillAmount);
+            MarkComponentDirty(image);
         }
 
         private static void ConfigureImage(

@@ -22,7 +22,7 @@ MonoBehaviour:
       \uC9C0\uC6D0"
     mockRewardPreview: "\uBD84\uC11D \uB300\uC0C1: \uADE0\uC5F4 \uC2E0\uD638
       \uD30C\uD3B8"
-    stageDefinition: {fileID: 11400000, guid: 84fef28079524e9face06c11200c2569, type: 2}
+    stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
     loadingCardId: stage_to_combat_mood_bridge
   - id: story_v1_retry_route
     displayName: "\uB4A4\uD2C0\uB9B0 \uAC70\uB9AC"
@@ -36,5 +36,5 @@ MonoBehaviour:
       \uC9C0\uC6D0"
     mockRewardPreview: "\uBD84\uC11D \uB300\uC0C1: \uC190\uC2E4\uB41C
       \uB8E8\uD2B8 \uAE30\uB85D"
-    stageDefinition: {fileID: 11400000, guid: 84fef28079524e9face06c11200c2569, type: 2}
+    stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
     loadingCardId: stage_to_combat_mood_bridge

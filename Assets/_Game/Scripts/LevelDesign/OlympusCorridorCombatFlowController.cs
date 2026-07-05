@@ -5,7 +5,12 @@ using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
+using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -13,6 +18,8 @@ namespace DimensionBrawl.LevelDesign
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
         private const string CombatHudInstanceName = "PF_UI_CombatHud";
+        private const string TutorialCombatSceneName = "OlympusStationCombatStage";
+        private const string TutorialCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
 
         private enum FlowPhase
         {
@@ -90,6 +97,7 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
         private AudioSource runtimeTutorialOverlayAudioSource;
+        private bool tutorialCombatSceneLoadStarted;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -231,7 +239,7 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                        LoadTutorialCombatScene();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -501,7 +509,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                LoadTutorialCombatScene();
             }
         }
 
@@ -761,8 +769,26 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                LoadTutorialCombatScene();
             }
+        }
+
+        private void LoadTutorialCombatScene()
+        {
+            if (tutorialCombatSceneLoadStarted)
+            {
+                return;
+            }
+
+            tutorialCombatSceneLoadStarted = true;
+            UnregisterTutorialCompletedHandler();
+#if UNITY_EDITOR
+            EditorSceneManager.LoadSceneInPlayMode(
+                TutorialCombatScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            SceneManager.LoadScene(TutorialCombatSceneName, LoadSceneMode.Single);
+#endif
         }
 
         private bool ShouldRunTutorial()

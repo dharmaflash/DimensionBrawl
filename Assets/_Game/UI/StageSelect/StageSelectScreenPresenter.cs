@@ -12,6 +12,10 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class StageSelectScreenPresenter : MonoBehaviour
     {
+        private const string InvasionSceneName = "OlympusCorridorInvasionStage";
+        private const string InvasionScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string InvasionLoadingCardId = "stage_to_combat_mood_bridge";
+
         [Serializable]
         private struct StageFocusEntry
         {
@@ -115,17 +119,11 @@ namespace DimensionBrawl.UI
 
             if (router != null)
             {
-                if (TryResolveSelectedStage(out UIStageCatalog.StageEntry stage) && stage.HasSceneRoute)
-                {
-                    router.RequestRouteWithScene(
-                        startRoute,
-                        stage.SceneName,
-                        stage.ScenePath,
-                        stage.LoadingCardId);
-                    return;
-                }
-
-                router.RequestRoute(startRoute);
+                router.RequestRouteWithScene(
+                    startRoute,
+                    InvasionSceneName,
+                    InvasionScenePath,
+                    InvasionLoadingCardId);
             }
         }
 

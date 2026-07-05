@@ -2915,7 +2915,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7758205208130309021
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2964,10 +2964,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: f66e119462d0c414aae16d5f25828c14, type: 3}
-  m_Type: 0
+  m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
+  m_FillMethod: 0
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
@@ -3065,7 +3065,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3608184566802895768
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4571,7 +4571,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1043249534236280654
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4620,10 +4620,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 21300000, guid: 9df03df9315e0474b937f72f90a63a38, type: 3}
-  m_Type: 0
+  m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
+  m_FillMethod: 0
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
@@ -4646,7 +4646,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2641551974637246911
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6202,7 +6202,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 155, y: 172}
-  m_SizeDelta: {x: 421, y: 415}
+  m_SizeDelta: {x: 632, y: 623}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &8093454828541769733
 CanvasRenderer:
@@ -8202,8 +8202,8 @@ MonoBehaviour:
   healthFill: {fileID: 8747059325834610369}
   resourceFill: {fileID: 1265204428943132751}
   bossHealthText: {fileID: 0}
-  bossHealthFill: {fileID: 0}
-  bossResourceFill: {fileID: 0}
+  bossHealthFill: {fileID: 1750079343032739603}
+  bossResourceFill: {fileID: 4175585753090252830}
   aimReticleRoot: {fileID: 0}
   aimReticleSegments: []
   aimReticleColor: {r: 0.82, g: 0.96, b: 1, a: 0.88}
@@ -9139,8 +9139,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 303, y: 315}
-  m_SizeDelta: {x: 122, y: 121}
+  m_AnchoredPosition: {x: 379.5, y: 392.5}
+  m_SizeDelta: {x: 183, y: 182}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &5943407286399005691
 CanvasRenderer:

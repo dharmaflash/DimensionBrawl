@@ -45,6 +45,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float margin = 18f;
         [SerializeField] private bool showCenterReticle;
         [SerializeField] private bool usePremiumCompactHud = true;
+        [SerializeField] private bool showPremiumBossBarOnly;
         [SerializeField] private string stageEpisodeLabel = "EP 03 Rift Stabilization";
         [SerializeField] private string objectiveBadgeLabel = "LANE";
         [SerializeField] private string bossDisplayName = "Dimensional Rift Guardian";
@@ -246,13 +247,16 @@ namespace DimensionBrawl.Presentation
             PremiumHudLayout layout = ResolvePremiumHudLayoutForReview(screenWidth, screenHeight, margin);
             CombatResourceReadout playerSurvivalReadout = ResolvePlayerSurvivalReadout();
 
-            BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
-                layout.ObjectiveRect,
-                ResolveStageEpisodeLabel(),
-                ResolveCompactObjectiveLine(),
-                ResolvePremiumObjectiveBadge(),
-                ResolveCompactStageBriefingLine(),
-                ResolveCompactRouteIncentiveLine());
+            if (!showPremiumBossBarOnly)
+            {
+                BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
+                    layout.ObjectiveRect,
+                    ResolveStageEpisodeLabel(),
+                    ResolveCompactObjectiveLine(),
+                    ResolvePremiumObjectiveBadge(),
+                    ResolveCompactStageBriefingLine(),
+                    ResolveCompactRouteIncentiveLine());
+            }
 
             BossBarrageLaneReviewHudChrome.DrawBossBar(
                 layout.BossBarRect,
@@ -261,16 +265,19 @@ namespace DimensionBrawl.Presentation
                 ResolveHealthFill01(bossHealth),
                 ResolveBossCostFill01());
 
-            BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
-                layout.PlayerPanelRect,
-                playerDisplayName,
-                ResolvePlayerSurvivalCueText(),
-                playerSurvivalReadout.Line,
-                ResolveHealthFill01(playerHealth),
-                playerSurvivalReadout.FillColor,
-                ResolveEnergyValueText(),
-                ResolveEnergyFill01(),
-                energyLadder != null && energyLadder.CanSpend);
+            if (!showPremiumBossBarOnly)
+            {
+                BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
+                    layout.PlayerPanelRect,
+                    playerDisplayName,
+                    ResolvePlayerSurvivalCueText(),
+                    playerSurvivalReadout.Line,
+                    ResolveHealthFill01(playerHealth),
+                    playerSurvivalReadout.FillColor,
+                    ResolveEnergyValueText(),
+                    ResolveEnergyFill01(),
+                    energyLadder != null && energyLadder.CanSpend);
+            }
         }
 
         public static PremiumHudLayout ResolvePremiumHudLayoutForReview(

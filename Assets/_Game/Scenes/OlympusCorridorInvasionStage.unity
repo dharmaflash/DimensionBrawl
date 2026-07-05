@@ -244871,8 +244871,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudVirtualJoystick
   movementController: {fileID: 4004}
   knob: {fileID: 1542562588}
-  deadZone: 0.08
-  knobTravelRatio: 0.34
+  deadZone: 0.05
+  inputRadiusRatio: 0.62
+  knobTravelRatio: 0.72
 --- !u!1 &1542629169
 GameObject:
   m_ObjectHideFlags: 0

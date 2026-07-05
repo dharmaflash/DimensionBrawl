@@ -1,5 +1,11 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace DimensionBrawl.UI.StageClear
 {
@@ -8,12 +14,45 @@ namespace DimensionBrawl.UI.StageClear
     {
         [SerializeField] private Button retryButton;
         [SerializeField] private Button nextStageButton;
+        [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private string retrySceneName = "OlympusStationCombatStage";
+        [SerializeField] private string retryScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        [SerializeField] private string lobbySceneName = "UI_LobbyTest";
+        [SerializeField] private string lobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
+        [SerializeField] private bool playEntranceOnEnable = true;
+        [SerializeField, Min(0f)] private float entranceDelaySeconds = 0.04f;
+        [SerializeField, Min(0.01f)] private float entranceDurationSeconds = 0.24f;
+        [SerializeField, Range(0.5f, 1f)] private float entranceStartScale = 0.94f;
+
+        private Coroutine entranceRoutine;
+        private RectTransform targetRect;
 
         public int RetryClickCount { get; private set; }
         public int NextStageClickCount { get; private set; }
 
+        public void ConfigureRoutes(
+            string newRetrySceneName,
+            string newRetryScenePath,
+            string newLobbySceneName,
+            string newLobbyScenePath)
+        {
+            retrySceneName = newRetrySceneName;
+            retryScenePath = newRetryScenePath;
+            lobbySceneName = newLobbySceneName;
+            lobbyScenePath = newLobbyScenePath;
+        }
+
+        private void Awake()
+        {
+            ResolveButtons();
+            ResolveMotionTargets();
+        }
+
         private void OnEnable()
         {
+            ResolveButtons();
+            ResolveMotionTargets();
+
             if (retryButton != null)
             {
                 retryButton.onClick.AddListener(HandleRetryClicked);
@@ -23,10 +62,21 @@ namespace DimensionBrawl.UI.StageClear
             {
                 nextStageButton.onClick.AddListener(HandleNextStageClicked);
             }
+
+            if (playEntranceOnEnable)
+            {
+                PlayEntrance();
+            }
         }
 
         private void OnDisable()
         {
+            if (entranceRoutine != null)
+            {
+                StopCoroutine(entranceRoutine);
+                entranceRoutine = null;
+            }
+
             if (retryButton != null)
             {
                 retryButton.onClick.RemoveListener(HandleRetryClicked);
@@ -38,16 +88,148 @@ namespace DimensionBrawl.UI.StageClear
             }
         }
 
+        public void PlayEntrance()
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            if (entranceRoutine != null)
+            {
+                StopCoroutine(entranceRoutine);
+            }
+
+            entranceRoutine = StartCoroutine(EntranceRoutine());
+        }
+
         private void HandleRetryClicked()
         {
             RetryClickCount++;
-            Debug.Log("Stage clear retry button clicked.");
+            LoadSingleScene(retrySceneName, retryScenePath);
         }
 
         private void HandleNextStageClicked()
         {
             NextStageClickCount++;
-            Debug.Log("Stage clear next stage button clicked.");
+            LoadSingleScene(lobbySceneName, lobbyScenePath);
+        }
+
+        private void ResolveButtons()
+        {
+            retryButton ??= FindButton("RetryButton", "RetryButtonHitArea", "Retry", "RetryStageButton");
+            nextStageButton ??= FindButton("LobbyButton", "NextStageButtonHitArea", "NextStageButton", "Lobby", "NextStage");
+        }
+
+        private void ResolveMotionTargets()
+        {
+            if (canvasGroup == null)
+            {
+                canvasGroup = GetComponent<CanvasGroup>();
+            }
+
+            if (canvasGroup == null)
+            {
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+
+            targetRect ??= transform as RectTransform;
+        }
+
+        private IEnumerator EntranceRoutine()
+        {
+            ResolveMotionTargets();
+
+            Vector3 endScale = targetRect != null ? targetRect.localScale : Vector3.one;
+            Vector3 startScale = new Vector3(
+                endScale.x * entranceStartScale,
+                endScale.y * entranceStartScale,
+                endScale.z);
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
+
+            if (targetRect != null)
+            {
+                targetRect.localScale = startScale;
+            }
+
+            if (entranceDelaySeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(entranceDelaySeconds);
+            }
+
+            float duration = Mathf.Max(0.01f, entranceDurationSeconds);
+            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = Mathf.Clamp01(1f - Mathf.Pow(1f - t, 3f));
+
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = eased;
+                }
+
+                if (targetRect != null)
+                {
+                    targetRect.localScale = Vector3.LerpUnclamped(startScale, endScale, eased);
+                }
+
+                yield return null;
+            }
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 1f;
+                canvasGroup.interactable = true;
+                canvasGroup.blocksRaycasts = true;
+            }
+
+            if (targetRect != null)
+            {
+                targetRect.localScale = endScale;
+            }
+
+            entranceRoutine = null;
+        }
+
+        private Button FindButton(params string[] names)
+        {
+            Button[] buttons = GetComponentsInChildren<Button>(true);
+            for (int nameIndex = 0; nameIndex < names.Length; nameIndex++)
+            {
+                string targetName = names[nameIndex];
+                for (int buttonIndex = 0; buttonIndex < buttons.Length; buttonIndex++)
+                {
+                    Button candidate = buttons[buttonIndex];
+                    if (candidate != null && candidate.name == targetName)
+                    {
+                        return candidate;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static void LoadSingleScene(string sceneName, string scenePath)
+        {
+#if UNITY_EDITOR
+            if (!string.IsNullOrEmpty(scenePath))
+            {
+                EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
+                return;
+            }
+#endif
+
+            if (!string.IsNullOrEmpty(sceneName))
+            {
+                SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            }
         }
     }
 }

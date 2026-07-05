@@ -98,6 +98,8 @@ namespace DimensionBrawl.LevelDesign
 
         [Header("Flow")]
         [SerializeField] private bool tutorialEnabled = true;
+        [SerializeField] private bool preventPlayerDamageDuringTutorial = true;
+        [SerializeField, Min(0.05f)] private float tutorialPlayerInvulnerabilityRefreshSeconds = 0.35f;
         [SerializeField, Min(0f)] private float cuePrimeSeconds = 0.45f;
         [SerializeField, Min(0f)] private float soldierChallengeReadSeconds = 1.8f;
         [SerializeField, Min(0f)] private float completionRecordSeconds = 0.7f;
@@ -144,6 +146,7 @@ namespace DimensionBrawl.LevelDesign
             CreateDefaultDialogueAudioCueSlots();
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private PlayerMovementController player;
+        [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
         [SerializeField] private PlayerActionController actionController;
@@ -237,6 +240,7 @@ namespace DimensionBrawl.LevelDesign
             Collider[] newTutorialRouteBlockers)
         {
             player = newPlayer != null ? newPlayer : player;
+            playerHealth = player != null ? player.GetComponent<CombatHealth>() : playerHealth;
             combatModeController = newCombatModeController != null ? newCombatModeController : combatModeController;
             targetSelector = newTargetSelector != null ? newTargetSelector : targetSelector;
             actionController = newActionController != null ? newActionController : actionController;
@@ -311,6 +315,7 @@ namespace DimensionBrawl.LevelDesign
             PositionFirstTargetForMeleeStep();
             SetEnemyGameplayEnabled(false);
             SubscribeObservers();
+            ApplyTutorialPlayerInvulnerability();
 
             if (combatModeController != null)
             {
@@ -363,6 +368,7 @@ namespace DimensionBrawl.LevelDesign
             stepTimer += Time.deltaTime;
             phaseTimer += Time.deltaTime;
             EnforcePlayerTutorialBounds();
+            ApplyTutorialPlayerInvulnerability();
             ApplyStepInputLocks();
             RepeatPromptIfNeeded();
 
@@ -1202,6 +1208,38 @@ namespace DimensionBrawl.LevelDesign
             {
                 characterController.enabled = wasEnabled;
             }
+        }
+
+        private void ApplyTutorialPlayerInvulnerability()
+        {
+            if (!preventPlayerDamageDuringTutorial || !IsRunning)
+            {
+                return;
+            }
+
+            CombatHealth health = ResolvePlayerHealth();
+            health?.SetInvulnerableUntil(
+                Time.time + Mathf.Max(0.05f, tutorialPlayerInvulnerabilityRefreshSeconds));
+        }
+
+        private CombatHealth ResolvePlayerHealth()
+        {
+            if (playerHealth != null)
+            {
+                return playerHealth;
+            }
+
+            if (player != null)
+            {
+                playerHealth = player.GetComponent<CombatHealth>();
+            }
+
+            if (playerHealth == null && actionController != null)
+            {
+                playerHealth = actionController.GetComponent<CombatHealth>();
+            }
+
+            return playerHealth;
         }
 
         private void SubscribeObservers()
