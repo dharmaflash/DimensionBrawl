@@ -21,10 +21,10 @@ namespace DimensionBrawl.Presentation
         private static readonly int EmissionColorHdrId = Shader.PropertyToID("_EmissionColorHDR");
         private static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
         private static readonly int UseEmissionId = Shader.PropertyToID("_UseEmission");
-        private static readonly Color ForcedAllySummonTint = new Color(0.96f, 0.99f, 1f, 1f);
-        private static readonly Color ForcedAllySummonEmission = new Color(0.72f, 0.92f, 1f, 1f);
+        private static readonly Color ForcedAllySummonTint = new Color(0.74f, 0.95f, 1f, 1f);
+        private static readonly Color ForcedAllySummonEmission = new Color(0.86f, 1f, 1f, 1f);
         private const float ForcedAllySummonTintBlend = 0.94f;
-        private const float ForcedAllySummonEmissionBoost = 2.85f;
+        private const float ForcedAllySummonEmissionBoost = 3.35f;
         private const float MinimumVisibleDamageFlashSeconds = 0.28f;
         private const float MinimumDamageFlashBlend = 0.96f;
         private const float MinimumDamageEmissionBoost = 4.5f;
@@ -210,10 +210,7 @@ namespace DimensionBrawl.Presentation
                 pulseBaseScale = pulseRoot.localScale;
             }
 
-            if (actorRenderers == null || actorRenderers.Length == 0)
-            {
-                actorRenderers = GetComponentsInChildren<Renderer>(includeInactive: true);
-            }
+            EnsureActorRenderersResolved();
         }
 
         private void OnEnable()
@@ -486,7 +483,7 @@ namespace DimensionBrawl.Presentation
                 ? Mathf.Max(allyTeamTintBlend, ForcedAllySummonTintBlend)
                 : enemyTeamTintBlend;
             Color tinted = Color.Lerp(color, target, Mathf.Clamp01(blend));
-            tinted.a = color.a;
+            tinted.a = isPlayerSide ? target.a : color.a;
             return tinted;
         }
 
@@ -584,9 +581,15 @@ namespace DimensionBrawl.Presentation
 
         private Material CreateAllyTintMaterial(Material source)
         {
-            Material material = source != null
-                ? new Material(source)
-                : new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            Shader allyShader = Shader.Find("Universal Render Pipeline/Lit")
+                ?? Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Standard")
+                ?? (source != null ? source.shader : null)
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Hidden/InternalErrorShader");
+            Material material = allyShader != null
+                ? new Material(allyShader)
+                : new Material(source);
             material.name = source != null
                 ? source.name + " (AllyWhiteRuntime)"
                 : "AllyWhiteRuntime";
@@ -604,6 +607,7 @@ namespace DimensionBrawl.Presentation
             Color tint = ForcedAllySummonTint;
             Color emission = ForcedAllySummonEmission * ForcedAllySummonEmissionBoost;
             emission.a = 1f;
+            material.color = tint;
             SetTextureIfPresent(material, BaseMapId, Texture2D.whiteTexture);
             SetTextureIfPresent(material, MainTexId, Texture2D.whiteTexture);
             SetTextureIfPresent(material, EmissionMapId, Texture2D.whiteTexture);
@@ -616,6 +620,11 @@ namespace DimensionBrawl.Presentation
             SetColorIfPresent(material, EmissionColorHdrId, emission);
             SetFloatIfPresent(material, UseEmissionId, 1f);
             SetFloatIfPresent(material, EmissionStrengthId, ForcedAllySummonEmissionBoost);
+            SetFloatIfPresent(material, Shader.PropertyToID("_Surface"), 0f);
+            SetFloatIfPresent(material, Shader.PropertyToID("_Blend"), 0f);
+            SetFloatIfPresent(material, Shader.PropertyToID("_ZWrite"), 1f);
+            material.SetOverrideTag("RenderType", "Opaque");
+            material.renderQueue = 2000;
             material.EnableKeyword("_EMISSION");
         }
 
@@ -1072,10 +1081,55 @@ namespace DimensionBrawl.Presentation
                 animator = GetComponentInChildren<Animator>(includeInactive: true);
             }
 
+            EnsureActorRenderersResolved();
+
             if (vfxAnchor == null)
             {
                 vfxAnchor = transform;
             }
+        }
+
+        private void EnsureActorRenderersResolved()
+        {
+            Renderer[] discoveredRenderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (discoveredRenderers == null || discoveredRenderers.Length == 0)
+            {
+                return;
+            }
+
+            if (actorRenderers == null || actorRenderers.Length == 0 || MissingDiscoveredRenderer(actorRenderers, discoveredRenderers))
+            {
+                actorRenderers = discoveredRenderers;
+            }
+        }
+
+        private static bool MissingDiscoveredRenderer(Renderer[] currentRenderers, Renderer[] discoveredRenderers)
+        {
+            for (int i = 0; i < discoveredRenderers.Length; i++)
+            {
+                Renderer discovered = discoveredRenderers[i];
+                if (discovered == null)
+                {
+                    continue;
+                }
+
+                bool found = false;
+                for (int currentIndex = 0; currentIndex < currentRenderers.Length; currentIndex++)
+                {
+                    if (currentRenderers[currentIndex] == discovered)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private bool PlayVfxCue(CombatVfxCueId cueId, int tier, float baseIntensity)

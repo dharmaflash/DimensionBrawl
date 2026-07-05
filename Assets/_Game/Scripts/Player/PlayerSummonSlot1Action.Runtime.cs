@@ -235,6 +235,7 @@ namespace DimensionBrawl.Player
                 }
 
                 actor.transform.SetParent(owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform, worldPositionStays: true);
+                ConfigureActorTeam(actor);
                 ConfigureActorVfx(actor);
                 ConfigureActorCombat(actor, settings);
                 actor.Activate(
@@ -266,6 +267,16 @@ namespace DimensionBrawl.Player
 
                 LastSummonActorPosition = actor.transform.position;
                 return actor;
+            }
+
+            private void ConfigureActorTeam(SummonFrontlineProxy actor)
+            {
+                if (actor == null || actor.Health == null)
+                {
+                    return;
+                }
+
+                actor.Health.ConfigureTeam(owner.sourceTeam);
             }
 
             private static void RequestSummonLandingCamera(Vector3 position, int tier)
