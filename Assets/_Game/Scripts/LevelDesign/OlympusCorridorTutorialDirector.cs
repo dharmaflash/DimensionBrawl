@@ -149,6 +149,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
+        [SerializeField] private PlayerLockTargetController lockTargetController;
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
@@ -1416,6 +1417,9 @@ namespace DimensionBrawl.LevelDesign
                 targetSelector = targetSelector != null
                     ? targetSelector
                     : player.GetComponent<PlayerCombatTargetSelector>();
+                lockTargetController = lockTargetController != null
+                    ? lockTargetController
+                    : player.GetComponent<PlayerLockTargetController>();
                 actionController = actionController != null
                     ? actionController
                     : player.GetComponent<PlayerActionController>();
@@ -1746,9 +1750,20 @@ namespace DimensionBrawl.LevelDesign
 
         private void ConfigureTargetCandidates(CombatHealth[] candidates)
         {
+            CombatHealth[] resolvedCandidates = candidates ?? Array.Empty<CombatHealth>();
             if (targetSelector != null)
             {
-                targetSelector.ConfigureTargetCandidates(candidates ?? Array.Empty<CombatHealth>());
+                targetSelector.ConfigureTargetCandidates(resolvedCandidates);
+            }
+
+            CombatHealth firstTarget = FindFirstAlive(resolvedCandidates);
+            if (firstTarget != null)
+            {
+                FocusTutorialTarget(firstTarget, step == TutorialStep.Fire || step == TutorialStep.ClearTargets);
+            }
+            else
+            {
+                lockTargetController?.ClearHardLock();
             }
         }
 
@@ -1797,6 +1812,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             Physics.SyncTransforms();
+            FocusTutorialTarget(target, hardLock: false);
         }
 
         private void PositionFirstTargetForRangedStep()
@@ -1825,18 +1841,24 @@ namespace DimensionBrawl.LevelDesign
             }
 
             Physics.SyncTransforms();
+            FocusTutorialTarget(target, hardLock: true);
         }
 
         private CombatHealth FindFirstAliveTutorialTarget()
         {
-            if (tutorialTargets == null)
+            return FindFirstAlive(tutorialTargets);
+        }
+
+        private static CombatHealth FindFirstAlive(CombatHealth[] targets)
+        {
+            if (targets == null)
             {
                 return null;
             }
 
-            for (int i = 0; i < tutorialTargets.Length; i++)
+            for (int i = 0; i < targets.Length; i++)
             {
-                CombatHealth target = tutorialTargets[i];
+                CombatHealth target = targets[i];
                 if (target != null && target.gameObject.activeInHierarchy && target.IsAlive)
                 {
                     return target;
@@ -1844,6 +1866,40 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return null;
+        }
+
+        private void FocusTutorialTarget(CombatHealth target, bool hardLock)
+        {
+            if (target == null || !target.IsAlive)
+            {
+                return;
+            }
+
+            targetSelector?.NotifyTargetContact(target);
+            if (lockTargetController != null)
+            {
+                if (hardLock)
+                {
+                    lockTargetController.RequestHardLock(target);
+                }
+                else
+                {
+                    lockTargetController.ClearHardLock();
+                }
+            }
+
+            if (player == null)
+            {
+                return;
+            }
+
+            Vector3 targetDirection = Vector3.ProjectOnPlane(
+                target.transform.position - player.transform.position,
+                Vector3.up);
+            if (targetDirection.sqrMagnitude > 0.0001f)
+            {
+                player.RequestFacingDirection(targetDirection.normalized, 0.25f, snapImmediately: true);
+            }
         }
 
         private Vector3 ResolveRangedTutorialAimPoint()

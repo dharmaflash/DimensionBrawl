@@ -453,7 +453,14 @@ namespace IsekaiBrawl.Gameplay
 
         private static void RestartBattle()
         {
-            SceneManager.LoadScene(BattleSceneName);
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && !string.IsNullOrWhiteSpace(activeScene.name))
+            {
+                SceneManager.LoadScene(activeScene.name, LoadSceneMode.Single);
+                return;
+            }
+
+            SceneManager.LoadScene(BattleSceneName, LoadSceneMode.Single);
         }
     }
 

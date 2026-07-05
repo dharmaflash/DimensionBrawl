@@ -63,6 +63,7 @@ namespace DimensionBrawl.LevelDesign
         public void ApplyBindings()
         {
             ResolveReferences();
+            ReleasePlayerInputLocks();
             if (playerHealth == null || bossHealth == null || targetSelector == null)
             {
                 return;
@@ -140,6 +141,55 @@ namespace DimensionBrawl.LevelDesign
             LogBindingOnce();
         }
 
+        private void ReleasePlayerInputLocks()
+        {
+            PlayerMovementController movement = ResolvePlayerComponent<PlayerMovementController>();
+            EnableBehaviour(movement);
+            movement?.ClearCinematicMoveInputSpeedScale();
+            movement?.ClearActionMoveInputSpeedScale();
+            movement?.SetMoveInput(Vector2.zero);
+            movement?.SetLookInput(Vector2.zero);
+
+            PlayerActionController actionController = ResolvePlayerComponent<PlayerActionController>();
+            EnableBehaviour(actionController);
+            actionController?.SetCinematicInputLocked(false);
+
+            PlayerCombatModeController combatModeController = ResolvePlayerComponent<PlayerCombatModeController>();
+            EnableBehaviour(combatModeController);
+            combatModeController?.SetCinematicInputLocked(false);
+
+            PlayerRangedAimController rangedAimController = ResolvePlayerComponent<PlayerRangedAimController>();
+            EnableBehaviour(rangedAimController);
+            rangedAimController?.SetAimHeld(false);
+            rangedAimController?.SetFireAimHeld(false);
+            rangedAimController?.SetAimInput(Vector2.zero);
+
+            EnableBehaviour(rangedBasicAttackAction);
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetCinematicInputLocked(false);
+                rangedBasicAttackAction.SetFireHeld(false);
+                rangedBasicAttackAction.SetExternalAimPreviewHeld(false);
+                rangedBasicAttackAction.ClearAimInput();
+            }
+
+            PlayerSkill1Action skill1Action = ResolvePlayerComponent<PlayerSkill1Action>();
+            EnableBehaviour(skill1Action);
+            skill1Action?.SetCinematicInputLocked(false);
+
+            PlayerSummonSlot1Action summonSlot1 = ResolvePlayerComponent<PlayerSummonSlot1Action>();
+            EnableBehaviour(summonSlot1);
+            summonSlot1?.SetCinematicInputLocked(false);
+
+            PlayerSupportSummonSlotAction[] supportSummons =
+                FindObjectsByType<PlayerSupportSummonSlotAction>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < supportSummons.Length; i++)
+            {
+                EnableBehaviour(supportSummons[i]);
+                supportSummons[i]?.SetCinematicInputLocked(false);
+            }
+        }
+
         private void ResolveReferences()
         {
             targetSelector ??= FindFirstObjectByType<PlayerCombatTargetSelector>();
@@ -158,6 +208,24 @@ namespace DimensionBrawl.LevelDesign
             {
                 GameObject bossRoot = GameObject.Find(BossProxyRootName);
                 bossHealth = bossRoot != null ? bossRoot.GetComponent<CombatHealth>() : ResolveBossHealthByHeuristic();
+            }
+        }
+
+        private T ResolvePlayerComponent<T>() where T : Component
+        {
+            if (playerHealth != null && playerHealth.TryGetComponent(out T component))
+            {
+                return component;
+            }
+
+            return FindFirstObjectByType<T>();
+        }
+
+        private static void EnableBehaviour(Behaviour behaviour)
+        {
+            if (behaviour != null)
+            {
+                behaviour.enabled = true;
             }
         }
 

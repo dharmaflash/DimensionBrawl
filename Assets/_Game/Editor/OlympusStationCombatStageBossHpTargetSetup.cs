@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
 using System;
+using System.IO;
 using System.Reflection;
 using DimensionBrawl.Combat;
+using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
@@ -75,6 +77,7 @@ namespace DimensionBrawl.Editor
                 VerifyPlayerRangedFireDamage();
                 VerifySustainedPlayerRangedFireDamageAndHud();
                 VerifyLockTargetCameraAimAssist();
+                VerifyDocxCombatPolish();
             }
             catch (Exception exception)
             {
@@ -114,6 +117,19 @@ namespace DimensionBrawl.Editor
             try
             {
                 VerifyLockTargetCameraAimAssist();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void RunBatchVerifyDocxCombatPolish()
+        {
+            try
+            {
+                VerifyDocxCombatPolish();
             }
             catch (Exception exception)
             {
@@ -665,6 +681,106 @@ namespace DimensionBrawl.Editor
                 $"target={GetHierarchyPath(bossHealth.transform)} strength={requestedStrength:0.###}.");
         }
 
+        private static void VerifyDocxCombatPolish()
+        {
+            VerifyCombatInputRelease();
+            VerifySerializedDocxPolishFlags();
+        }
+
+        private static void VerifyCombatInputRelease()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            OlympusStationCombatStageRuntimeBossTargetBinder runtimeBinder =
+                RequireSceneComponent<OlympusStationCombatStageRuntimeBossTargetBinder>(scene, "runtime boss target binder");
+            PlayerMovementController movement =
+                RequireSceneComponent<PlayerMovementController>(scene, "player movement controller");
+            PlayerActionController actionController =
+                RequireSceneComponent<PlayerActionController>(scene, "player action controller");
+            PlayerCombatModeController combatModeController =
+                RequireSceneComponent<PlayerCombatModeController>(scene, "player combat mode controller");
+            PlayerRangedBasicAttackAction rangedBasicAttack =
+                RequireSceneComponent<PlayerRangedBasicAttackAction>(scene, "player ranged basic attack");
+            PlayerSkill1Action skill1Action =
+                RequireSceneComponent<PlayerSkill1Action>(scene, "player skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireSceneComponent<PlayerSummonSlot1Action>(scene, "player summon slot1 action");
+            PlayerSupportSummonSlotAction[] supportSummons =
+                CollectComponents<PlayerSupportSummonSlotAction>(scene);
+
+            movement.SetCinematicMoveInputSpeedScale(0f);
+            movement.SetActionMoveInputSpeedScale(0f);
+            actionController.SetCinematicInputLocked(true);
+            combatModeController.SetCinematicInputLocked(true);
+            rangedBasicAttack.SetCinematicInputLocked(true);
+            skill1Action.SetCinematicInputLocked(true);
+            summonSlot1Action.SetCinematicInputLocked(true);
+            for (int i = 0; i < supportSummons.Length; i++)
+            {
+                supportSummons[i]?.SetCinematicInputLocked(true);
+            }
+
+            SetPrivateField(rangedBasicAttack, "externalAimPreviewHeld", true);
+            SetPrivateField(rangedBasicAttack, "currentFireHeld", true);
+            SetPrivateField(rangedBasicAttack, "mobileFireHeld", true);
+            SetPrivateField(rangedBasicAttack, "aimInput", Vector2.one);
+
+            runtimeBinder.ApplyBindings();
+
+            if (movement.IsCinematicMoveInputLocked)
+            {
+                throw new InvalidOperationException("Runtime binder did not clear player movement cinematic lock.");
+            }
+
+            movement.SetMoveInput(Vector2.up);
+            if (!movement.TryGetCurrentMoveDirection(out _))
+            {
+                throw new InvalidOperationException("Player movement still rejects shared move input after runtime binding.");
+            }
+
+            ValidatePrivateBoolFalse(actionController, "cinematicInputLocked");
+            ValidatePrivateBoolFalse(combatModeController, "cinematicInputLocked");
+            ValidatePrivateBoolFalse(rangedBasicAttack, "cinematicInputLocked");
+            ValidatePrivateBoolFalse(rangedBasicAttack, "externalAimPreviewHeld");
+            ValidatePrivateBoolFalse(rangedBasicAttack, "currentFireHeld");
+            ValidatePrivateBoolFalse(rangedBasicAttack, "mobileFireHeld");
+            if (GetPrivateField<Vector2>(rangedBasicAttack, "aimInput").sqrMagnitude > 0f)
+            {
+                throw new InvalidOperationException("Runtime binder did not clear ranged aim input.");
+            }
+
+            ValidatePrivateBoolFalse(skill1Action, "cinematicInputLocked");
+            ValidatePrivateBoolFalse(summonSlot1Action, "cinematicInputLocked");
+            for (int i = 0; i < supportSummons.Length; i++)
+            {
+                if (supportSummons[i] != null)
+                {
+                    ValidatePrivateBoolFalse(supportSummons[i], "cinematicInputLocked");
+                }
+            }
+
+            Debug.Log(
+                "Verified OlympusStation runtime binder clears tutorial/cinematic input locks for combat entry. " +
+                $"supportSummons={supportSummons.Length}.");
+        }
+
+        private static void VerifySerializedDocxPolishFlags()
+        {
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusStationCombatStage.unity", "m_RenderPostProcessing: 0");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "m_RenderPostProcessing: 0");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "playDeathVfx: 0");
+            EnsureTextAbsent(
+                "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab",
+                "playDeathVfx: 0");
+            EnsureTextAbsent(
+                "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab",
+                "playDeathVfx: 0");
+            EnsureTextAbsent(
+                "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab",
+                "playDeathVfx: 0");
+            Debug.Log("Verified docx combat polish serialized flags: postprocessing enabled and death VFX enabled.");
+        }
+
         private static void PrepareRangedFireProbe(PlayerRangedBasicAttackAction rangedBasicAttack)
         {
             SetPrivateField(rangedBasicAttack, "cinematicInputLocked", false);
@@ -996,6 +1112,30 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException(
                     $"{target.name}.{propertyName}[{index}] expected {NameOf(expected)} but was {NameOf(actual)}.");
+            }
+        }
+
+        private static void ValidatePrivateBoolFalse(object target, string fieldName)
+        {
+            if (GetPrivateField<bool>(target, fieldName))
+            {
+                throw new InvalidOperationException(
+                    $"{target.GetType().Name}.{fieldName} stayed true after runtime binding.");
+            }
+        }
+
+        private static void EnsureTextAbsent(string assetPath, string forbiddenText)
+        {
+            string fullPath = Path.GetFullPath(assetPath);
+            if (!File.Exists(fullPath))
+            {
+                throw new FileNotFoundException($"Could not find asset for serialized verification: {assetPath}", fullPath);
+            }
+
+            string content = File.ReadAllText(fullPath);
+            if (content.Contains(forbiddenText, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{assetPath} still contains '{forbiddenText}'.");
             }
         }
 

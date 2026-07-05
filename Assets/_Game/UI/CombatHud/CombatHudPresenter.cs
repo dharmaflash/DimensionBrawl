@@ -15,9 +15,9 @@ namespace DimensionBrawl.UI
         private static readonly Color SummonChargingFillColor = new Color(0.08f, 0.86f, 1f, 0.94f);
         private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
         private static readonly Color SummonUnavailableIconColor = new Color(0.26f, 0.28f, 0.31f, 0.96f);
-        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.88f, 0.18f, 1f);
-        private static readonly Color SummonReadyRingColor = new Color(1f, 0.96f, 0.36f, 1f);
-        private static readonly Color SummonReadySparkColor = new Color(0.36f, 1f, 1f, 1f);
+        private static readonly Color SummonReadyGlowColor = new Color(1f, 0.94f, 0.08f, 1f);
+        private static readonly Color SummonReadyRingColor = new Color(1f, 1f, 0.18f, 1f);
+        private static readonly Color SummonReadySparkColor = new Color(0.1f, 1f, 1f, 1f);
         private const float DimensionHudDesignWidth = 2560f;
         private const float DimensionHudDesignHeight = 1440f;
 
@@ -96,7 +96,7 @@ namespace DimensionBrawl.UI
                     highPriorityReady ? 1f : 0.98f,
                     1f,
                     ready
-                        ? (highPriorityReady ? 0.94f + readyPulse * 0.06f : 0.76f + readyPulse * 0.2f)
+                        ? (highPriorityReady ? 0.98f : 0.86f + readyPulse * 0.14f)
                         : Mathf.Lerp(0.12f, 0.46f, easedProgress));
                 readyProgressFill.gameObject.SetActive(readyProgress > 0.001f);
             }
@@ -130,13 +130,13 @@ namespace DimensionBrawl.UI
                 float pulse = SmoothPulse(actionId == CombatHudActionId.Skill1 ? 1.9f : 2.15f);
                 bool highPriorityReady = actionId == CombatHudActionId.Dodge || actionId == CombatHudActionId.Skill1;
                 Color color = actionId == CombatHudActionId.Skill1
-                    ? new Color(1f, 0.96f, 0.34f, readyGlowVisibility * (0.74f + pulse * 0.24f))
+                    ? new Color(1f, 0.98f, 0.12f, readyGlowVisibility * (0.92f + pulse * 0.08f))
                     : actionId == CombatHudActionId.Dodge
-                        ? new Color(0.24f, 1f, 1f, readyGlowVisibility * (0.78f + pulse * 0.22f))
-                        : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.34f + pulse * 0.18f));
+                        ? new Color(0.08f, 1f, 1f, readyGlowVisibility * (0.94f + pulse * 0.06f))
+                        : new Color(0.86f, 0.96f, 1f, readyGlowVisibility * (0.46f + pulse * 0.16f));
                 readyGlowImage.color = color;
                 readyGlowImage.rectTransform.localScale = Vector3.one * (1f
-                    + readyGlowVisibility * (highPriorityReady ? 0.16f + pulse * 0.1f : 0.045f + pulse * 0.035f));
+                    + readyGlowVisibility * (highPriorityReady ? 0.26f + pulse * 0.16f : 0.08f + pulse * 0.05f));
             }
 
             private static float SmoothPulse(float speed)
@@ -332,20 +332,20 @@ namespace DimensionBrawl.UI
             private void ApplyReadyEffect(bool ready)
             {
                 float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 7.2f) * 0.5f;
-                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.84f + pulse * 0.16f);
-                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.94f + pulse * 0.06f);
-                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.88f + pulse * 0.12f);
+                ApplyReadyImage(readyGlowImage, ready, SummonReadyGlowColor, 0.96f + pulse * 0.04f);
+                ApplyReadyImage(readyRingImage, ready, SummonReadyRingColor, 0.98f + pulse * 0.02f);
+                ApplyReadyImage(readySparkImage, ready, SummonReadySparkColor, 0.94f + pulse * 0.06f);
 
                 if (readyRingImage != null)
                 {
-                    readyRingImage.rectTransform.localScale = Vector3.one * (1.1f + pulse * 0.16f);
+                    readyRingImage.rectTransform.localScale = Vector3.one * (1.16f + pulse * 0.22f);
                 }
 
                 if (readySparkImage != null)
                 {
                     readySparkImage.rectTransform.localRotation =
                         Quaternion.Euler(0f, 0f, -Time.unscaledTime * 148f);
-                    readySparkImage.rectTransform.localScale = Vector3.one * (1.08f + pulse * 0.14f);
+                    readySparkImage.rectTransform.localScale = Vector3.one * (1.14f + pulse * 0.2f);
                 }
             }
 
@@ -442,8 +442,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color aimReticleColor = new Color(0.82f, 0.96f, 1f, 0.88f);
         [SerializeField] private Color aimReticleActiveColor = new Color(0.42f, 0.95f, 1f, 0.96f);
         [SerializeField] private Image playerDamageOverlayImage;
-        [SerializeField] private Color playerDamageOverlayColor = new Color(1f, 0.04f, 0.02f, 0.38f);
-        [SerializeField, Min(0.05f)] private float playerDamageOverlaySeconds = 0.42f;
+        [SerializeField] private Color playerDamageOverlayColor = new Color(1f, 0.02f, 0.01f, 0.58f);
+        [SerializeField, Min(0.05f)] private float playerDamageOverlaySeconds = 0.56f;
         [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();

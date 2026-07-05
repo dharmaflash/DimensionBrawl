@@ -521,7 +521,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8

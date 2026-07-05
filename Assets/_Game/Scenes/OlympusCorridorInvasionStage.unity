@@ -489,7 +489,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -234609,7 +234609,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -249889,7 +249889,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8
@@ -253570,7 +253570,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -318589,7 +318589,7 @@ MonoBehaviour:
   playDamageVfx: 1
   offsetDamageVfxToHitPoint: 1
   maxHitPointLocalOffset: 1.35
-  playDeathVfx: 0
+  playDeathVfx: 1
   patternCueOverrides:
   - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
     windupCueId: 8

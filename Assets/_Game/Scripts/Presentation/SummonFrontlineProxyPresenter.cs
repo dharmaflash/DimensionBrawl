@@ -13,9 +13,9 @@ namespace DimensionBrawl.Presentation
         private static readonly int EmissionColorHdrId = Shader.PropertyToID("_EmissionColorHDR");
         private static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
         private static readonly int UseEmissionId = Shader.PropertyToID("_UseEmission");
-        private const float MinimumVisibleDamageFlashSeconds = 0.2f;
+        private const float MinimumVisibleDamageFlashSeconds = 0.28f;
         private const float MinimumDamageFlashBlend = 0.96f;
-        private const float MinimumDamageEmissionBoost = 3.25f;
+        private const float MinimumDamageEmissionBoost = 4.5f;
         private const float MinimumDamageVfxAnchorLocalY = 0.35f;
         private const string DamageVfxAnchorName = "DamageVfxAnchor";
 
@@ -59,6 +59,11 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.9f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 1f);
+        [SerializeField] private bool tintByOwnerTeam = true;
+        [SerializeField] private Color allyTeamTint = new Color(0.12f, 0.96f, 1f, 1f);
+        [SerializeField] private Color enemyTeamTint = new Color(1f, 0.16f, 0.08f, 1f);
+        [SerializeField, Range(0f, 1f)] private float allyTeamTintBlend = 0.34f;
+        [SerializeField, Range(0f, 1f)] private float enemyTeamTintBlend = 0.62f;
         [SerializeField] private Color flashColor = new Color(1f, 1f, 1f, 1f);
         [SerializeField] private Color clashFlashColor = new Color(1f, 0.9f, 0.38f, 1f);
         [SerializeField] private Color attackFlashColor = new Color(1f, 0.74f, 0.24f, 1f);
@@ -423,12 +428,38 @@ namespace DimensionBrawl.Presentation
 
         private Color ResolveTierColor(int tier)
         {
-            return tier switch
+            Color color = tier switch
             {
                 1 => tierOneColor,
                 2 => tierTwoColor,
                 _ => tierThreeColor
             };
+
+            return ApplyTeamTint(color);
+        }
+
+        private Color ApplyTeamTint(Color color)
+        {
+            if (!tintByOwnerTeam)
+            {
+                return color;
+            }
+
+            DamageTeam team = health != null
+                ? health.Team
+                : proxy != null
+                    ? proxy.OwnerTeam
+                    : DamageTeam.Neutral;
+            if (team == DamageTeam.Neutral)
+            {
+                return color;
+            }
+
+            Color target = CombatTeamUtility.IsPlayerSide(team) ? allyTeamTint : enemyTeamTint;
+            float blend = CombatTeamUtility.IsPlayerSide(team) ? allyTeamTintBlend : enemyTeamTintBlend;
+            Color tinted = Color.Lerp(color, target, Mathf.Clamp01(blend));
+            tinted.a = color.a;
+            return tinted;
         }
 
         private float ResolveEntryImpactFlashWeight()
