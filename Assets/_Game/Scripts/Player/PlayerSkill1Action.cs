@@ -38,6 +38,10 @@ namespace DimensionBrawl.Player
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
         [SerializeField, Min(0)] private int prewarmCount = 4;
 
+        [Header("Laser Sweep")]
+        [SerializeField] private PlayerSkill1LaserSweepAction laserSweepAction;
+        [SerializeField] private bool useLaserSweepActionWhenAvailable;
+
         [Header("Failure Feedback")]
         [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
@@ -122,6 +126,11 @@ namespace DimensionBrawl.Player
             if (targetSelector == null)
             {
                 targetSelector = GetComponent<PlayerCombatTargetSelector>();
+            }
+
+            if (laserSweepAction == null)
+            {
+                laserSweepAction = GetComponent<PlayerSkill1LaserSweepAction>();
             }
         }
 
@@ -228,6 +237,14 @@ namespace DimensionBrawl.Player
 
         private void FireTier(int tier)
         {
+            if (useLaserSweepActionWhenAvailable
+                && laserSweepAction != null
+                && laserSweepAction.TryCastLaserSweep(tier))
+            {
+                lastFiredProjectileCount = 0;
+                return;
+            }
+
             SkillTierSettings settings = ResolveTierSettings(tier);
             Vector3 spawnBase = transform.position;
             Vector3 direction = ResolveAimDirection(spawnBase + Vector3.up * settings.SpawnHeight, settings.TargetHeight);

@@ -68,6 +68,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Missiles/Meshes/missile_004_lod0.FBX";
         public const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        public const string PlayerSkill1FourSidesLaserPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1_4SidesLaser_HOVL.prefab";
         public const string RangedBasicProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
         public const string SummonSlot1ProjectilePrefabPath =
@@ -211,6 +213,8 @@ namespace DimensionBrawl.Editor
             ImportedHovlSciFiEffectsPrefabRoot + "/Laser hit.prefab";
         private const string ImportedHovlLaserHudPrefabPath =
             ImportedHovlSciFiEffectsPrefabRoot + "/Laser HUD.prefab";
+        private const string ImportedHovlFourSidesLaserPrefabPath =
+            ImportedHovlSciFiEffectsPrefabRoot + "/4 sides laser.prefab";
         private const string ImportedForge3DMissileExamplePrefabPath =
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Missiles/Example/missile_example.prefab";
         private const string HovlSciFiEffectsPromotedRoot =
@@ -835,7 +839,107 @@ namespace DimensionBrawl.Editor
                 new Color(0.45f, 0.9f, 1f, 1f),
                 0.42f,
                 allowVerticalTravel: false);
+            EnsurePlayerSkill1FourSidesLaserPrefab();
+            EnsurePlayerSkill1LaserSweepBinding(ReviewScenePath);
+            EnsurePlayerSkill1LaserSweepBinding(DuelReviewScenePath);
             AssetDatabase.SaveAssets();
+        }
+
+        private static GameObject EnsurePlayerSkill1FourSidesLaserPrefab()
+        {
+            const string PrefabName = "PF_PlayerSkill1_4SidesLaser_HOVL";
+            EnsureFolderForAsset(PlayerSkill1FourSidesLaserPrefabPath);
+            GameObject sourcePrefab = LoadAsset<GameObject>(ImportedHovlFourSidesLaserPrefabPath);
+            GameObject instance = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            try
+            {
+                if (PrefabUtility.IsPartOfPrefabInstance(instance))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        instance,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                }
+
+                instance.name = PrefabName;
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                instance.transform.localScale = Vector3.one;
+                UnpackNestedPrefabInstances(instance);
+                StripNonGameMonoBehaviours(instance);
+                RestorePlayerSkill1FourSidesLaserAuthoredRotator(instance);
+                RemoveHovlRuntimePhysics(instance);
+                RemoveHovlRuntimeAudio(instance);
+                ConfigurePromotedHovlSciFiParticles(instance, loopParticles: false, playOnAwake: true);
+                RemapPromotedHovlSciFiRendererDependencies(instance);
+                ValidatePromotedHovlSciFiParticleVfx(instance.transform, PrefabName, minimumParticleSystems: 1);
+
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(instance, PlayerSkill1FourSidesLaserPrefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to save player Skill1 4 sides laser prefab at {PlayerSkill1FourSidesLaserPrefabPath}.");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+
+            ValidateNoImportedAssetReference(PlayerSkill1FourSidesLaserPrefabPath);
+            return LoadAsset<GameObject>(PlayerSkill1FourSidesLaserPrefabPath);
+        }
+
+        private static void RestorePlayerSkill1FourSidesLaserAuthoredRotator(GameObject root)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (candidate == null || !string.Equals(candidate.name, "Rotator", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                ActionFoundationHovlRotator rotator =
+                    EnsureComponent<ActionFoundationHovlRotator>(candidate.gameObject);
+                rotator.Configure(new Vector3(0f, 1f, 0f), 0.0167f);
+                EditorUtility.SetDirty(rotator);
+            }
+        }
+
+        private static void EnsurePlayerSkill1LaserSweepBinding(string scenePath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+            {
+                return;
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
+            PlayerSkill1Action skill1Action =
+                RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
+            GameObject actionCueRoot = FindRoot(scene, ActionCuePoolRootName) ?? CreateRoot(scene, ActionCuePoolRootName);
+
+            ConfigurePlayerSkill1LaserSweepAction(
+                player.gameObject,
+                skill1Action,
+                playerHealth,
+                targetSelector,
+                actionCueRoot.transform,
+                LoadAsset<GameObject>(PlayerSkill1FourSidesLaserPrefabPath));
+
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save player Skill1 laser sweep binding in {scenePath}.");
+            }
         }
 
         private static void EnsurePlayerRangedBasicVfxBinding(string scenePath)
@@ -990,6 +1094,7 @@ namespace DimensionBrawl.Editor
                 new Color(0.45f, 0.9f, 1f, 1f),
                 0.42f,
                 allowVerticalTravel: false);
+            GameObject skill1LaserSweepPrefab = EnsurePlayerSkill1FourSidesLaserPrefab();
             LaneActionProjectile rangedBasicProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 RangedBasicProjectilePrefabPath,
                 "PF_PlayerRangedBasicProjectile_AimBolt",
@@ -1042,6 +1147,7 @@ namespace DimensionBrawl.Editor
             projectilePrefab = LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath);
             localDefenseProfile = LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath);
             skill1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(Skill1ProjectilePrefabPath);
+            skill1LaserSweepPrefab = LoadAsset<GameObject>(PlayerSkill1FourSidesLaserPrefabPath);
             rangedBasicProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(RangedBasicProjectilePrefabPath);
             summonSlot1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot1ProjectilePrefabPath);
             summonSlot2ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot2ProjectilePrefabPath);
@@ -1108,6 +1214,7 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 laneSpace,
                 skill1ProjectilePrefab,
+                skill1LaserSweepPrefab,
                 summonSlot1ProjectilePrefab,
                 summonSlot2ProjectilePrefab,
                 summonSlot3ProjectilePrefab,
@@ -1699,6 +1806,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BossBarrageProjectileTrailMaterialPath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(PlayerSkill1FourSidesLaserPrefabPath);
             ValidateNoImportedAssetReference(RangedBasicProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot2ProjectilePrefabPath);
@@ -6840,6 +6948,7 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             LaneActionProjectile skill1ProjectilePrefab,
+            GameObject skill1LaserSweepPrefab,
             LaneActionProjectile summonSlot1ProjectilePrefab,
             LaneActionProjectile summonSlot2ProjectilePrefab,
             LaneActionProjectile summonSlot3ProjectilePrefab,
@@ -6861,6 +6970,13 @@ namespace DimensionBrawl.Editor
             SetEnum(skill1Action, "sourceTeam", (int)DamageTeam.Player);
             SetInt(skill1Action, "prewarmCount", 6);
             ConfigureSkill1TierSettings(skill1Action);
+            ConfigurePlayerSkill1LaserSweepAction(
+                playerRoot,
+                skill1Action,
+                playerHealth,
+                targetSelector,
+                actionCueRoot,
+                skill1LaserSweepPrefab);
 
             PlayerSummonSlot1Action summonSlot1Action = EnsureComponent<PlayerSummonSlot1Action>(playerRoot);
             CombatVfxCuePlayer playerCuePlayer =
@@ -7017,6 +7133,38 @@ namespace DimensionBrawl.Editor
             property.FindPropertyRelative("SpawnForwardOffset").floatValue = spawnForwardOffset;
             property.FindPropertyRelative("SpawnHeight").floatValue = spawnHeight;
             property.FindPropertyRelative("TargetHeight").floatValue = targetHeight;
+        }
+
+        private static void ConfigurePlayerSkill1LaserSweepAction(
+            GameObject playerRoot,
+            PlayerSkill1Action skill1Action,
+            CombatHealth playerHealth,
+            PlayerCombatTargetSelector targetSelector,
+            Transform actionCueRoot,
+            GameObject laserPrefab)
+        {
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                EnsureComponent<PlayerSkill1LaserSweepAction>(playerRoot);
+            SetObjectReference(laserSweepAction, "sourceHealth", playerHealth);
+            SetObjectReference(laserSweepAction, "targetSelector", targetSelector);
+            SetObjectReference(laserSweepAction, "laserPrefab", laserPrefab);
+            SetObjectReference(laserSweepAction, "effectRoot", actionCueRoot);
+            SetEnum(laserSweepAction, "sourceTeam", (int)DamageTeam.Player);
+            SetFloat(laserSweepAction, "activeSeconds", 2.5f);
+            SetFloat(laserSweepAction, "radius", 23.5f);
+            SetFloat(laserSweepAction, "beamHalfWidth", 1.1f);
+            SetFloat(laserSweepAction, "hitIntervalSeconds", 0.08f);
+            SetFloat(laserSweepAction, "effectHeightOffset", 0.03f);
+            SetFloat(laserSweepAction, "effectScale", 1f);
+            SetFloat(laserSweepAction, "effectDestroyDelaySeconds", 1f);
+            SetFloat(laserSweepAction, "tierOneDamagePerTick", 18f);
+            SetFloat(laserSweepAction, "tierTwoDamagePerTick", 32f);
+            SetFloat(laserSweepAction, "tierThreeDamagePerTick", 54f);
+            SetEnum(laserSweepAction, "responsePolicy", (int)DamageResponsePolicy.FlashOnly);
+            SetEnum(laserSweepAction, "controlLockPolicy", (int)CombatControlLockPolicy.None);
+
+            SetObjectReference(skill1Action, "laserSweepAction", laserSweepAction);
+            SetBool(skill1Action, "useLaserSweepActionWhenAvailable", true);
         }
 
         private static PlayerSupportSummonSlotAction EnsureSupportSummonSlotAction(
@@ -9047,6 +9195,22 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(skill1Action, "projectilePrefabObject", LoadAsset<GameObject>(Skill1ProjectilePrefabPath));
             ValidateObjectReference(skill1Action, "projectileRoot", projectileRoot.transform);
             ValidateEnum(skill1Action, "sourceTeam", (int)DamageTeam.Player);
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(skill1Action.gameObject, "player Skill1 laser sweep action");
+            ValidateObjectReference(skill1Action, "laserSweepAction", laserSweepAction);
+            ValidateBool(skill1Action, "useLaserSweepActionWhenAvailable", true);
+            ValidateObjectReference(laserSweepAction, "sourceHealth", playerHealth);
+            ValidateObjectReference(laserSweepAction, "targetSelector", targetSelector);
+            ValidateObjectReference(laserSweepAction, "laserPrefab", LoadAsset<GameObject>(PlayerSkill1FourSidesLaserPrefabPath));
+            ValidateObjectReference(laserSweepAction, "effectRoot", actionCueRoot.transform);
+            ValidateEnum(laserSweepAction, "sourceTeam", (int)DamageTeam.Player);
+            ValidateFloat(laserSweepAction, "activeSeconds", 2.5f);
+            ValidateFloat(laserSweepAction, "radius", 23.5f);
+            ValidateFloat(laserSweepAction, "beamHalfWidth", 1.1f);
+            ValidateFloat(laserSweepAction, "hitIntervalSeconds", 0.08f);
+            ValidateFloat(laserSweepAction, "tierOneDamagePerTick", 18f);
+            ValidateFloat(laserSweepAction, "tierTwoDamagePerTick", 32f);
+            ValidateFloat(laserSweepAction, "tierThreeDamagePerTick", 54f);
 
             ValidateObjectReference(summonSlot1Action, "energyLadder", energyLadder);
             ValidateObjectReference(summonSlot1Action, "sourceHealth", playerHealth);

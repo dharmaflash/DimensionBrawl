@@ -1001,6 +1001,7 @@ GameObject:
   - component: {fileID: 4020}
   - component: {fileID: 4025}
   - component: {fileID: 4026}
+  - component: {fileID: 4027}
   m_Layer: 0
   m_Name: Player_CombatGirl_ActionFoundation
   m_TagString: Player
@@ -1857,6 +1858,8 @@ MonoBehaviour:
   projectileRoot: {fileID: 1763831580}
   sourceTeam: 1
   prewarmCount: 6
+  laserSweepAction: {fileID: 4027}
+  useLaserSweepActionWhenAvailable: 1
   useBlockedHintSeconds: 0.75
   tierSettings:
   - Damage: 84
@@ -2128,6 +2131,35 @@ MonoBehaviour:
   outlineWidth: 0.012
   outlinePulseWidth: 0.003
   outlineEmissionBoost: 1.12
+--- !u!114 &4027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01290eba696ef304e9665df04f578ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1LaserSweepAction
+  sourceHealth: {fileID: 4003}
+  targetSelector: {fileID: 4008}
+  laserPrefab: {fileID: 9195812884990227141, guid: 5c1242f214703c1469e32164313c2a1b, type: 3}
+  effectRoot: {fileID: 394666490}
+  sourceTeam: 1
+  activeSeconds: 2.5
+  radius: 23.5
+  beamHalfWidth: 1.1
+  hitIntervalSeconds: 0.08
+  effectHeightOffset: 0.03
+  effectScale: 1
+  effectDestroyDelaySeconds: 1
+  tierOneDamagePerTick: 18
+  tierTwoDamagePerTick: 32
+  tierThreeDamagePerTick: 54
+  responsePolicy: 2
+  controlLockPolicy: 0
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
