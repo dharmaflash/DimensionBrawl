@@ -107,6 +107,8 @@ namespace DimensionBrawl.Player
         [Header("Entry")]
         [Tooltip("The summon appears in front of the player body, then advances as a frontline actor beyond the player boundary.")]
         [SerializeField, Min(0f)] private float entryForwardOffset = 1.35f;
+        [Tooltip("Delay after the pre-spawn cue before the summon actor becomes visible.")]
+        [SerializeField, Min(0f)] private float summonActorSpawnDelaySeconds = 0.28f;
         [Tooltip("Extra travel time per meter after the authored advance distance. Keep this high enough that summons march instead of snapping to the target.")]
         [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
 
@@ -177,6 +179,7 @@ namespace DimensionBrawl.Player
         public string LastUseBlockedReason => lastBlockedReason;
         internal int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
         internal CombatVfxCuePlayer CombatVfxCuePlayer => combatVfxCuePlayer;
+        internal float SummonActorSpawnDelaySeconds => Mathf.Max(0f, summonActorSpawnDelaySeconds);
 
         public event Action<int> SummonSlot1Used;
         public event Action<int> SummonPressureBlocked;
@@ -221,6 +224,7 @@ namespace DimensionBrawl.Player
             }
 
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
+            summonActorSpawnDelaySeconds = Mathf.Max(0f, summonActorSpawnDelaySeconds);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
             requiredSummonMana = Mathf.Max(1f, requiredSummonMana);
             slotCooldownSeconds = Mathf.Max(0f, slotCooldownSeconds);

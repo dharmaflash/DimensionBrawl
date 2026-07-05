@@ -108,6 +108,31 @@ namespace DimensionBrawl.Player
             }
 
             SpawnEntryCue(entryPosition, settings);
+            owner.RunRoutine(RunDelayedSupportArrival(
+                entryPosition,
+                facingDirection,
+                actorTargetPosition,
+                projectileTargetPosition,
+                tier,
+                settings,
+                actorAdvanceSeconds));
+        }
+
+        private IEnumerator RunDelayedSupportArrival(
+            Vector3 entryPosition,
+            Vector3 facingDirection,
+            Vector3 actorTargetPosition,
+            Vector3 projectileTargetPosition,
+            int tier,
+            PlayerSummonSlot1Action.SummonTierSettings settings,
+            float actorAdvanceSeconds)
+        {
+            float spawnDelay = owner.SummonActorSpawnDelaySeconds;
+            if (spawnDelay > 0f)
+            {
+                yield return new WaitForSeconds(spawnDelay);
+            }
+
             SummonFrontlineProxy actor = SpawnSummonActor(
                 entryPosition,
                 facingDirection,

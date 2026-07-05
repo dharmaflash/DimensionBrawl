@@ -46,7 +46,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool faceTargetOnActivate = true;
         [SerializeField, Min(0f)] private float defaultAdvanceDistance = 0f;
         [SerializeField, Min(0.01f)] private float defaultAdvanceSeconds = 0.25f;
-        [SerializeField, Min(0f)] private float defeatedLingerSeconds = 0.22f;
+        [SerializeField, Min(0f)] private float defeatedLingerSeconds = 1.05f;
 
         [Header("Advance Motion")]
         [SerializeField, Min(0f)] private float advanceStartDelaySeconds;

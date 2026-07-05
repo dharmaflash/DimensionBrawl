@@ -39,6 +39,8 @@ namespace DimensionBrawl.Player
         [Header("Entry")]
         [Tooltip("Support summons keep their authored lane side offset, but appear in front of the player body before crossing the frontline.")]
         [SerializeField, Min(0f)] private float entryForwardOffset = 1.35f;
+        [Tooltip("Delay after the pre-spawn cue before the support summon actor becomes visible.")]
+        [SerializeField, Min(0f)] private float summonActorSpawnDelaySeconds = 0.28f;
         [Tooltip("Extra travel time per meter after the authored advance distance. Keep this high enough that summons march instead of snapping to the target.")]
         [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
 
@@ -106,6 +108,7 @@ namespace DimensionBrawl.Player
         internal Transform SummonActorRoot => summonActorRoot;
         internal CombatVfxCuePlayer CombatVfxCuePlayer => combatVfxCuePlayer;
         internal GameObject EntryCuePrefab => entryCuePrefab;
+        internal float SummonActorSpawnDelaySeconds => Mathf.Max(0f, summonActorSpawnDelaySeconds);
         internal float FirstVolleyDelaySeconds => Mathf.Max(0f, firstVolleyDelaySeconds);
         internal float VolleyIntervalSeconds => Mathf.Max(0.1f, volleyIntervalSeconds);
         internal int MaxVolleyCount => Mathf.Max(1, maxVolleyCount);
@@ -130,6 +133,7 @@ namespace DimensionBrawl.Player
             laneOffset.x = Mathf.Clamp(laneOffset.x, -8f, 8f);
             laneOffset.y = Mathf.Clamp(laneOffset.y, -4f, 8f);
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
+            summonActorSpawnDelaySeconds = Mathf.Max(0f, summonActorSpawnDelaySeconds);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
             requiredSummonMana = Mathf.Max(1f, requiredSummonMana);
             minimumSummonTier = Mathf.Clamp(minimumSummonTier, 1, 3);

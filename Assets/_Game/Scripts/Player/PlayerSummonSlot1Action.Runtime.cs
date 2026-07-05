@@ -113,6 +113,36 @@ namespace DimensionBrawl.Player
                     Vector3.ProjectOnPlane(actorTargetPosition - entryPosition, Vector3.up),
                     Vector3.zero);
                 float actorAdvanceSeconds = owner.ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
+                Vector3 projectileSpawnBase = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
+                owner.StartCoroutine(RunDelayedSummonArrival(
+                    entryPosition,
+                    actorFacing,
+                    actorTargetPosition,
+                    projectileSpawnBase,
+                    targetLane,
+                    targetZ,
+                    tier,
+                    settings,
+                    actorAdvanceSeconds));
+            }
+
+            private IEnumerator RunDelayedSummonArrival(
+                Vector3 entryPosition,
+                Vector3 actorFacing,
+                Vector3 actorTargetPosition,
+                Vector3 projectileSpawnBase,
+                Vector2 targetLane,
+                float targetZ,
+                int tier,
+                SummonTierSettings settings,
+                float actorAdvanceSeconds)
+            {
+                float spawnDelay = owner.SummonActorSpawnDelaySeconds;
+                if (spawnDelay > 0f)
+                {
+                    yield return new WaitForSeconds(spawnDelay);
+                }
+
                 SummonFrontlineProxy actor = SpawnSummonActor(
                     entryPosition,
                     actorFacing,
@@ -123,10 +153,9 @@ namespace DimensionBrawl.Player
                 if (actor != null)
                 {
                     owner.StartCoroutine(RunDelayedSlamVolley(actor, targetLane, settings, actorAdvanceSeconds));
-                    return;
+                    yield break;
                 }
 
-                Vector3 projectileSpawnBase = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
                 FireProjectileVolley(projectileSpawnBase, targetLane.x, targetZ, actorFacing, settings);
             }
 
