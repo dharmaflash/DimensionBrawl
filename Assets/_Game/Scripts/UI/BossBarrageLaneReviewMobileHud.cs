@@ -89,7 +89,7 @@ namespace DimensionBrawl.UI
 
         [Header("Review Reticle")]
         [SerializeField] private bool showFireAimReticle = true;
-        [SerializeField] private bool fireAimReticleUsesScreenCenter = true;
+        [SerializeField] private bool fireAimReticleUsesScreenCenter;
         [SerializeField, Min(4f)] private float fireAimReticleSize = 34f;
         [SerializeField, Min(0f)] private float fireAimReticleGap = 9f;
         [SerializeField, Min(1f)] private float fireAimReticleThickness = 2f;
@@ -1459,11 +1459,16 @@ namespace DimensionBrawl.UI
         private Vector2 ResolveFireAimReticleGuiPoint()
         {
             Vector2 viewportPoint = new Vector2(0.5f, 0.5f);
-            if (!fireAimReticleUsesScreenCenter
-                && rangedBasicAttackAction != null
+            if (rangedBasicAttackAction != null
                 && rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 actionViewportPoint))
             {
                 viewportPoint = actionViewportPoint;
+            }
+            else if (!fireAimReticleUsesScreenCenter
+                && lockTargetController != null
+                && lockTargetController.TryGetLockViewportPoint(out Vector2 lockViewportPoint))
+            {
+                viewportPoint = lockViewportPoint;
             }
 
             return new Vector2(

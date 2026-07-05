@@ -21,6 +21,7 @@ namespace DimensionBrawl.Editor
         private const string BossProxyRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string RuntimeBinderRootName = "OlympusStation_BossHpTargetRuntimeBinder";
         private const float BossTargetingDistance = 80f;
+        private static readonly Vector3 CombatAimFocusOffset = new Vector3(0.45f, 0.06f, 1.05f);
 
         [MenuItem("DimensionBrawl/Stage/Olympus Station/Fix Boss HP Targets")]
         public static void ApplyMenu()
@@ -184,6 +185,19 @@ namespace DimensionBrawl.Editor
             SetFloat(rangedBasicAttack, "aimedAimAssistAngleDegrees", 45f);
             SetFloat(rangedBasicAttack, "aimAssistMaxTurnDegrees", 45f);
             SetBool(rangedBasicAttack, "cameraAimIgnoresNonTargetHits", true);
+
+            ActionCameraController cameraController = FirstSceneComponent<ActionCameraController>(scene);
+            if (cameraController != null)
+            {
+                SetVector3(cameraController, "aimFocusOffset", CombatAimFocusOffset);
+                SetBool(cameraController, "aimAssistUsesYawTarget", true);
+            }
+
+            BossBarrageLaneReviewMobileHud mobileHud = FirstSceneComponent<BossBarrageLaneReviewMobileHud>(scene);
+            if (mobileHud != null)
+            {
+                SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
+            }
 
             ActionFoundationTestEncounter encounter =
                 RequireSceneComponent<ActionFoundationTestEncounter>(scene, "test encounter");
@@ -683,8 +697,37 @@ namespace DimensionBrawl.Editor
 
         private static void VerifyDocxCombatPolish()
         {
+            VerifyAimReticlePresentation();
             VerifyCombatInputRelease();
             VerifySerializedDocxPolishFlags();
+        }
+
+        private static void VerifyAimReticlePresentation()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireSceneComponent<BossBarrageLaneReviewMobileHud>(scene, "mobile review HUD");
+            ActionCameraController cameraController =
+                RequireSceneComponent<ActionCameraController>(scene, "action camera controller");
+
+            if (GetSerializedBool(mobileHud, "fireAimReticleUsesScreenCenter"))
+            {
+                throw new InvalidOperationException(
+                    "Mobile HUD fire reticle is still pinned to raw screen center instead of ranged fire preview.");
+            }
+
+            Vector3 aimFocusOffset = GetSerializedVector3(cameraController, "aimFocusOffset");
+            if ((aimFocusOffset - CombatAimFocusOffset).sqrMagnitude > 0.0001f)
+            {
+                throw new InvalidOperationException(
+                    "Action camera aim focus offset is not aligned with the shoulder camera center line. " +
+                    $"expected={CombatAimFocusOffset} actual={aimFocusOffset}.");
+            }
+
+            Debug.Log(
+                "Verified OlympusStation aim reticle presentation uses ranged fire preview and centered aim focus. " +
+                $"aimFocusOffset={aimFocusOffset}.");
         }
 
         private static void VerifyCombatInputRelease()
@@ -767,7 +810,11 @@ namespace DimensionBrawl.Editor
         private static void VerifySerializedDocxPolishFlags()
         {
             EnsureTextAbsent("Assets/_Game/Scenes/OlympusStationCombatStage.unity", "m_RenderPostProcessing: 0");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusStationCombatStage.unity", "fireAimReticleUsesScreenCenter: 1");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusStationCombatStage.unity", "aimFocusOffset: {x: 0.89");
             EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "m_RenderPostProcessing: 0");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "fireAimReticleUsesScreenCenter: 1");
+            EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "aimFocusOffset: {x: 0.89");
             EnsureTextAbsent("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "playDeathVfx: 0");
             EnsureTextAbsent(
                 "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab",
@@ -976,6 +1023,21 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetVector3(UnityEngine.Object target, string propertyName, Vector3 value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing serialized property {propertyName} on {target.name}.");
+            }
+
+            property.vector3Value = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
         {
             SerializedObject serializedObject = new SerializedObject(target);
@@ -1122,6 +1184,32 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException(
                     $"{target.GetType().Name}.{fieldName} stayed true after runtime binding.");
             }
+        }
+
+        private static bool GetSerializedBool(UnityEngine.Object target, string propertyName)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing serialized property {propertyName} on {target.name}.");
+            }
+
+            return property.boolValue;
+        }
+
+        private static Vector3 GetSerializedVector3(UnityEngine.Object target, string propertyName)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing serialized property {propertyName} on {target.name}.");
+            }
+
+            return property.vector3Value;
         }
 
         private static void EnsureTextAbsent(string assetPath, string forbiddenText)

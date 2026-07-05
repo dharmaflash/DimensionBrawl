@@ -274,7 +274,7 @@ MonoBehaviour:
   shieldBlockFeedbackCooldownSeconds: 0.07
   liveFireFeedbackScale: 1
   aimCameraOffset: {x: 0.45, y: 0.88, z: 2.72}
-  aimFocusOffset: {x: 0.89, y: 0.06, z: 1.05}
+  aimFocusOffset: {x: 0.45, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
   aimBlendInSpeed: 14
   aimBlendOutSpeed: 18
@@ -20422,7 +20422,7 @@ MonoBehaviour:
   lookAimDragSensitivity: 0.00435
   lookAimScreenMinX: 0
   showFireAimReticle: 1
-  fireAimReticleUsesScreenCenter: 1
+  fireAimReticleUsesScreenCenter: 0
   fireAimReticleSize: 34
   fireAimReticleGap: 9
   fireAimReticleThickness: 2

@@ -491,7 +491,7 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 CameraStartOffset = new Vector3(0.14f, 0.68f, -4.25f);
         private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.18f, 1.5f);
         private static readonly Vector3 CameraAimOffset = new Vector3(0.45f, 0.88f, 2.72f);
-        private static readonly Vector3 CameraAimFocusOffset = new Vector3(0.89f, 0.06f, 1.05f);
+        private static readonly Vector3 CameraAimFocusOffset = new Vector3(0.45f, 0.06f, 1.05f);
         private const float CameraAimFieldOfViewDelta = -5.5f;
         private const float CameraAimBlendInSpeed = 14f;
         private const float CameraAimBlendOutSpeed = 18f;
@@ -6807,7 +6807,7 @@ namespace DimensionBrawl.Editor
             SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
             SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
             SetFloat(mobileHud, "lookAimDragSensitivity", 0.00435f);
-            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
+            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
             SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
             SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
             SetBool(mobileHud, "showLockTargetMarker", true);
@@ -11951,7 +11951,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
             ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
             ValidateFloat(hud, "lookAimDragSensitivity", 0.00435f);
-            ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
+            ValidateBool(hud, "fireAimReticleUsesScreenCenter", false);
             ValidateBool(hud, "fireAimReticleFollowsAssist", true);
             ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
             ValidateBool(hud, "showLockTargetMarker", true);
