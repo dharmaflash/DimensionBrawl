@@ -4,7 +4,6 @@ using DimensionBrawl.LevelDesign;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace DimensionBrawl.Editor
@@ -13,15 +12,9 @@ namespace DimensionBrawl.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string RootName = "OlympusStation_NoCrossCenterLine";
-        private const string HovlBlueEffectPrefabPath =
-            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs/Hex shield.prefab";
-        private const string HovlShieldSourceMaterialFallbackPath =
-            "Assets/_Imported/AssetStore/VFX/Hovl Studio/HSFiles/Materials/HexShield3Dshield.mat";
-        private const string HovlShieldMaterialName = "HexShield3Dshield";
-        private const string HologramMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_OlympusNoCrossCenterLine_HovlBlue.mat";
-        private const string HologramBrightMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_OlympusNoCrossCenterLine_HovlBlue_Bright.mat";
+        private const string RedCubeZonePrefabPath =
+            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs/Red cubes zone.prefab";
+        private const float RedCubeZoneDepth = 0.22f;
 
         [MenuItem("DimensionBrawl/Stage/Olympus Station/Apply No-Cross Center Line")]
         public static void ApplyMenu()
@@ -59,18 +52,11 @@ namespace DimensionBrawl.Editor
                 UnityEngine.Object.DestroyImmediate(existing);
             }
 
-            Material hologram = EnsureHovlBlueMaterial(
-                HologramMaterialPath,
-                "AF_OlympusNoCrossCenterLine_HovlBlue",
-                new Color(0.06f, 0.78f, 1f, 0.5f),
-                opacity: 0.46f,
-                emission: 5.2f);
-            Material brightHologram = EnsureHovlBlueMaterial(
-                HologramBrightMaterialPath,
-                "AF_OlympusNoCrossCenterLine_HovlBlue_Bright",
-                new Color(0.16f, 0.92f, 1f, 0.82f),
-                opacity: 0.78f,
-                emission: 6.8f);
+            GameObject redCubeZonePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RedCubeZonePrefabPath);
+            if (redCubeZonePrefab == null)
+            {
+                throw new InvalidOperationException($"Could not load {RedCubeZonePrefabPath}.");
+            }
 
             Vector3 center = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, 0f);
             float halfWidth = laneSpace.HalfWidth;
@@ -81,22 +67,13 @@ namespace DimensionBrawl.Editor
             root.transform.position = center;
             root.transform.rotation = laneSpace.transform.rotation;
 
-            CreateStrip(root.transform, "HardBoundary_GlowFloor", new Vector3(0f, 0.032f, 0f),
-                new Vector3(lineWidth + 0.6f, 0.028f, 0.52f), hologram);
-            CreateStrip(root.transform, "HardBoundary_CoreLine", new Vector3(0f, 0.062f, 0f),
-                new Vector3(lineWidth, 0.055f, 0.16f), brightHologram);
-            CreateStrip(root.transform, "HardBoundary_StopWall", new Vector3(0f, 0.68f, 0.018f),
-                new Vector3(lineWidth, 1.18f, 0.045f), hologram);
-
-            int chevronCount = 9;
-            float chevronSpacing = lineWidth / chevronCount;
-            float startX = -lineWidth * 0.5f + chevronSpacing * 0.5f;
-            for (int i = 0; i < chevronCount; i++)
-            {
-                float x = startX + i * chevronSpacing;
-                CreateChevron(root.transform, $"PushbackChevron_{i:00}_Left", x - 0.12f, -28f, brightHologram);
-                CreateChevron(root.transform, $"PushbackChevron_{i:00}_Right", x + 0.12f, 28f, brightHologram);
-            }
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(redCubeZonePrefab, scene);
+            instance.name = "NoCross_RedCubeZone_Line";
+            instance.transform.SetParent(root.transform, false);
+            instance.transform.localPosition = new Vector3(0f, 0.13f, RedCubeZoneDepth);
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+            ConfigureRedCubeZone(instance, lineWidth);
 
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene))
@@ -109,144 +86,36 @@ namespace DimensionBrawl.Editor
             Debug.Log($"Applied no-cross center line to {ScenePath}.");
         }
 
-        private static void CreateChevron(Transform root, string name, float x, float yawDegrees, Material material)
+        private static void ConfigureRedCubeZone(GameObject instance, float lineWidth)
         {
-            GameObject strip = CreateStrip(root, name, new Vector3(x, 0.09f, -0.37f),
-                new Vector3(0.58f, 0.038f, 0.075f), material);
-            strip.transform.localRotation = Quaternion.Euler(0f, yawDegrees, 0f);
-        }
-
-        private static GameObject CreateStrip(
-            Transform root,
-            string name,
-            Vector3 localPosition,
-            Vector3 localScale,
-            Material material)
-        {
-            GameObject strip = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            strip.name = name;
-            strip.transform.SetParent(root, false);
-            strip.transform.localPosition = localPosition;
-            strip.transform.localRotation = Quaternion.identity;
-            strip.transform.localScale = localScale;
-            Collider collider = strip.GetComponent<Collider>();
-            if (collider != null)
+            ParticleSystem[] systems = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < systems.Length; i++)
             {
-                UnityEngine.Object.DestroyImmediate(collider);
-            }
+                ParticleSystem system = systems[i];
+                ParticleSystem.MainModule main = system.main;
+                main.loop = true;
+                main.prewarm = true;
+                main.playOnAwake = true;
+                main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0f);
 
-            Renderer renderer = strip.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.sharedMaterial = material;
-                renderer.shadowCastingMode = ShadowCastingMode.Off;
-                renderer.receiveShadows = false;
-            }
-
-            return strip;
-        }
-
-        private static Material EnsureHovlBlueMaterial(
-            string path,
-            string materialName,
-            Color color,
-            float opacity,
-            float emission)
-        {
-            Material source = LoadHovlShieldMaterial();
-            if (source == null)
-            {
-                throw new InvalidOperationException(
-                    $"Could not find Hovl shield material from {HovlBlueEffectPrefabPath}.");
-            }
-
-            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                material = new Material(source)
+                ParticleSystem.ShapeModule shape = system.shape;
+                if (shape.enabled)
                 {
-                    name = materialName
-                };
-                AssetDatabase.CreateAsset(material, path);
-            }
-            else
-            {
-                material.CopyPropertiesFromMaterial(source);
-            }
-
-            material.name = materialName;
-            material.shader = source.shader;
-            material.enableInstancing = true;
-            SetColorIfPresent(material, "_BaseColor", color);
-            SetColorIfPresent(material, "_Color", color);
-            SetColorIfPresent(material, "_TintColor", color);
-            if (material.HasProperty("_EmissionColor"))
-            {
-                material.SetColor("_EmissionColor", new Color(0.36f, 0.96f, 1f, color.a) * 2.2f);
-            }
-
-            material.SetOverrideTag("RenderType", "Transparent");
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.EnableKeyword("_BUILTIN_SURFACE_TYPE_TRANSPARENT");
-            SetFloatIfPresent(material, "_Surface", 1f);
-            SetFloatIfPresent(material, "_BUILTIN_Surface", 1f);
-            SetFloatIfPresent(material, "_Blend", 0f);
-            SetFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
-            SetFloatIfPresent(material, "_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-            SetFloatIfPresent(material, "_ZWrite", 0f);
-            SetFloatIfPresent(material, "_Opacity", opacity);
-            SetFloatIfPresent(material, "_Textureopacity", opacity);
-            SetFloatIfPresent(material, "_Texturesopacity", opacity);
-            SetFloatIfPresent(material, "_Emission", emission);
-            SetFloatIfPresent(material, "_Color_power", 1.65f);
-            SetFloatIfPresent(material, "_Fresnelpower", 2.4f);
-            SetFloatIfPresent(material, "_Fresnelscale", 1.15f);
-            SetFloatIfPresent(material, "_Triplanar_tiling", 0.22f);
-            SetFloatIfPresent(material, "_Shield_step", 1f);
-            material.renderQueue = (int)RenderQueue.Transparent + 35;
-
-            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.BakedEmissive;
-            EditorUtility.SetDirty(material);
-            return material;
-        }
-
-        private static Material LoadHovlShieldMaterial()
-        {
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HovlBlueEffectPrefabPath);
-            if (prefab != null)
-            {
-                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(includeInactive: true);
-                for (int i = 0; i < renderers.Length; i++)
-                {
-                    Material[] sharedMaterials = renderers[i].sharedMaterials;
-                    for (int j = 0; j < sharedMaterials.Length; j++)
-                    {
-                        Material candidate = sharedMaterials[j];
-                        if (candidate != null &&
-                            string.Equals(candidate.name, HovlShieldMaterialName, StringComparison.Ordinal))
-                        {
-                            return candidate;
-                        }
-                    }
+                    shape.shapeType = ParticleSystemShapeType.Box;
+                    shape.scale = new Vector3(lineWidth, 0.12f, RedCubeZoneDepth);
+                    shape.randomPositionAmount = 0.03f;
                 }
-            }
 
-            return AssetDatabase.LoadAssetAtPath<Material>(HovlShieldSourceMaterialFallbackPath);
-        }
+                ParticleSystem.VelocityOverLifetimeModule velocity = system.velocityOverLifetime;
+                velocity.enabled = true;
+                velocity.space = ParticleSystemSimulationSpace.Local;
+                velocity.x = new ParticleSystem.MinMaxCurve(-0.18f, 0.18f);
+                velocity.y = new ParticleSystem.MinMaxCurve(0f);
+                velocity.z = new ParticleSystem.MinMaxCurve(0f);
 
-        private static void SetColorIfPresent(Material material, string propertyName, Color color)
-        {
-            if (material.HasProperty(propertyName))
-            {
-                material.SetColor(propertyName, color);
-            }
-        }
-
-        private static void SetFloatIfPresent(Material material, string propertyName, float value)
-        {
-            if (material.HasProperty(propertyName))
-            {
-                material.SetFloat(propertyName, value);
+                system.Stop(withChildren: false, ParticleSystemStopBehavior.StopEmittingAndClear);
+                system.Play(withChildren: false);
             }
         }
 
