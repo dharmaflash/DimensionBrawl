@@ -425,7 +425,7 @@ namespace DimensionBrawl.Player
             bool canContinue = nextAttackQueued && ActiveBasicComboLength > 0;
             if (canContinue && !isComboFinisher && actionTimer >= chainStart)
             {
-                StartAttack(NextComboIndex());
+                StartAttack(ResolveQueuedComboIndexAfterCurrent());
                 return;
             }
 
@@ -437,7 +437,7 @@ namespace DimensionBrawl.Player
 
             if (canContinue || (attackBufferTimer > 0f && ActiveBasicComboLength > 0))
             {
-                StartAttack(NextComboIndex());
+                StartAttack(ResolveQueuedComboIndexAfterCurrent());
                 return;
             }
 
@@ -449,6 +449,18 @@ namespace DimensionBrawl.Player
 
             movement?.ClearActionMoveInputSpeedScale();
             state = PlayerActionState.Free;
+        }
+
+        private int ResolveQueuedComboIndexAfterCurrent()
+        {
+            if (ActiveBasicComboLength <= 0)
+            {
+                return 0;
+            }
+
+            return comboIndex >= ActiveBasicComboLength - 1
+                ? 0
+                : NextComboIndex();
         }
 
         private void TryApplyAttackHit(PlayerActionProfile.AttackStep step)

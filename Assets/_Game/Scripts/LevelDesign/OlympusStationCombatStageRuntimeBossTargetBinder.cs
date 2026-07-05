@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -72,6 +73,7 @@ namespace DimensionBrawl.LevelDesign
             playerHealth.ConfigureTeam(DamageTeam.Player);
             bossHealth.ConfigureTeam(DamageTeam.Enemy);
             targetSelector.ConfigureTargetCandidates(new[] { bossHealth }, refreshNow: true);
+            ConfigureHostileTargetSensors();
             encounter?.ConfigureCombatants(playerHealth, bossHealth);
 
             SetField(targetSelector, "selectionRadius", BossTargetingDistance);
@@ -261,6 +263,57 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return null;
+        }
+
+        private void ConfigureHostileTargetSensors()
+        {
+            if (playerHealth == null)
+            {
+                return;
+            }
+
+            CombatTargetSensor[] sensors =
+                FindObjectsByType<CombatTargetSensor>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            CombatHealth[] playerCandidate = { playerHealth };
+            for (int i = 0; i < sensors.Length; i++)
+            {
+                CombatTargetSensor sensor = sensors[i];
+                if (sensor == null)
+                {
+                    continue;
+                }
+
+                CombatHealth sensorHealth = sensor.SelfHealth != null
+                    ? sensor.SelfHealth
+                    : sensor.GetComponent<CombatHealth>();
+                if (sensorHealth == null
+                    || CombatTeamUtility.IsPlayerSide(sensorHealth.Team)
+                    || !CombatTeamUtility.AreHostile(sensorHealth.Team, playerHealth.Team))
+                {
+                    continue;
+                }
+
+                SetField(sensor, "searchRadius", BossTargetingDistance);
+                sensor.ConfigureTargetCandidates(playerCandidate, refreshNow: true);
+                ConfigureAiAgentTarget(sensor, playerHealth);
+            }
+        }
+
+        private static void ConfigureAiAgentTarget(Component source, CombatHealth targetHealth)
+        {
+            if (source == null || targetHealth == null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = source.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is ICombatAiAgent agent)
+                {
+                    agent.ConfigureTarget(targetHealth.transform, targetHealth);
+                }
+            }
         }
 
         private void SubscribeBossDamageLog()

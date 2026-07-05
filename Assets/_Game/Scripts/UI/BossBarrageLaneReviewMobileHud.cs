@@ -149,9 +149,11 @@ namespace DimensionBrawl.UI
         private bool previousSummonSlot1Ready;
         private bool previousSummonSlot2Ready;
         private bool previousSummonSlot3Ready;
+        private bool previousSkillReady;
         private float summonSlot1ReadyPulseTimer;
         private float summonSlot2ReadyPulseTimer;
         private float summonSlot3ReadyPulseTimer;
+        private float skillReadyPulseTimer;
 
         public string MoveActionName => moveActionName;
         public string BasicDefenseActionName => basicDefenseActionName;
@@ -380,7 +382,7 @@ namespace DimensionBrawl.UI
                 summonSlot3Action?.QueueSummon();
             }
 
-            UpdateSummonReadinessFeedback(Time.unscaledDeltaTime);
+            UpdateActionReadinessFeedback(Time.unscaledDeltaTime);
         }
 
         private void ReleaseHudControls()
@@ -430,7 +432,7 @@ namespace DimensionBrawl.UI
             DrawLockTargetMarker();
             DrawButton(dodgeRect, "DODGE", IsHeld(dodgeRect));
             DrawButton(swapRect, "SWAP", false);
-            DrawButton(skillRect, "SKILL", false);
+            DrawSkillButton();
             DrawSummonButtons();
             BossBarrageLaneReviewHudChrome.EndOpacity(previousChromeOpacity);
             GUI.color = previousGuiColor;
@@ -1120,6 +1122,22 @@ namespace DimensionBrawl.UI
                 ResolveActionAccent(label));
         }
 
+        private void DrawSkillButton()
+        {
+            bool skillReady = IsSkillReady();
+            bool skillPending = skill1Action == null;
+            BossBarrageLaneReviewHudChrome.DrawActionButton(
+                skillRect,
+                BuildSkillButtonLabel(skillReady),
+                IsHeld(skillRect),
+                skillPending,
+                skillAccentColor,
+                ResolveSkillFill01(),
+                ready: skillReady,
+                unavailable: !skillReady && !skillPending,
+                readyPulse01: ResolveSummonReadyPulse01(skillReadyPulseTimer));
+        }
+
         private void DrawMoveJoystick()
         {
             float resolvedScale = ResolveScale();
@@ -1197,6 +1215,16 @@ namespace DimensionBrawl.UI
                 iconKind: 3);
         }
 
+        private void UpdateActionReadinessFeedback(float deltaTime)
+        {
+            UpdateSummonReadinessFeedback(deltaTime);
+            UpdateSummonReadyPulse(
+                IsSkillReady(),
+                ref previousSkillReady,
+                ref skillReadyPulseTimer,
+                deltaTime);
+        }
+
         private void UpdateSummonReadinessFeedback(float deltaTime)
         {
             UpdateSummonReadyPulse(
@@ -1239,6 +1267,47 @@ namespace DimensionBrawl.UI
             return summonReadyPulseSeconds > 0.001f
                 ? Mathf.Clamp01(pulseTimer / summonReadyPulseSeconds)
                 : 0f;
+        }
+
+        private string BuildSkillButtonLabel(bool skillReady)
+        {
+            if (skill1Action == null)
+            {
+                return "SKILL";
+            }
+
+            if (skillReady)
+            {
+                int tier = Mathf.Clamp(skill1Action.ReadySkillTier, 1, 3);
+                return $"SKILL\nLV{tier}";
+            }
+
+            if (skill1Action.ShowUseBlockedHint && !string.IsNullOrWhiteSpace(skill1Action.LastUseBlockedReason))
+            {
+                return "SKILL\nWAIT";
+            }
+
+            return "SKILL\nCHARGE";
+        }
+
+        private bool IsSkillReady()
+        {
+            return skill1Action != null && skill1Action.IsSkillReady;
+        }
+
+        private float ResolveSkillFill01()
+        {
+            if (skill1Action != null)
+            {
+                return skill1Action.SkillReadyFill01;
+            }
+
+            if (energyLadder == null)
+            {
+                return 0f;
+            }
+
+            return energyLadder.AvailableTier > 0 ? 1f : energyLadder.CurrentTierFillRatio;
         }
 
         private bool IsPrimarySummonReady()

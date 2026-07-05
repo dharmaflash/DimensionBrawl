@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Reflection;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
@@ -458,6 +459,71 @@ namespace DimensionBrawl.LevelDesign
             for (int i = 0; i < costLadders.Length; i++)
             {
                 costLadders[i]?.SetGainEnabled(false);
+            }
+
+            StopActiveProjectiles();
+            DismissHostileSummons();
+            DisableHostileAiAgents();
+        }
+
+        private static void StopActiveProjectiles()
+        {
+            BossBarrageProjectile[] bossProjectiles = FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i] != null && bossProjectiles[i].IsActive)
+                {
+                    bossProjectiles[i].Deactivate();
+                }
+            }
+
+            LaneActionProjectile[] laneProjectiles = FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < laneProjectiles.Length; i++)
+            {
+                if (laneProjectiles[i] != null && laneProjectiles[i].IsActive)
+                {
+                    laneProjectiles[i].Deactivate();
+                }
+            }
+        }
+
+        private static void DismissHostileSummons()
+        {
+            SummonFrontlineProxy[] proxies = FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                SummonFrontlineProxy proxy = proxies[i];
+                if (proxy != null
+                    && proxy.IsActive
+                    && !CombatTeamUtility.IsPlayerSide(proxy.OwnerTeam))
+                {
+                    proxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
+                }
+            }
+        }
+
+        private static void DisableHostileAiAgents()
+        {
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour is not ICombatAiAgent agent
+                    || agent.SelfHealth == null
+                    || CombatTeamUtility.IsPlayerSide(agent.SelfHealth.Team))
+                {
+                    continue;
+                }
+
+                behaviour.enabled = false;
             }
         }
     }
