@@ -257,6 +257,7 @@ namespace DimensionBrawl.UI
 
                 ApplyIconReadiness(enabled, availabilityFill01);
                 ApplyReadyEffect(enabled);
+                ApplyVisualOrder();
 
                 if (canvasGroup != null)
                 {
@@ -274,11 +275,50 @@ namespace DimensionBrawl.UI
                     return;
                 }
 
+                cooldownFill ??= FindChildImage(root, "CooldownFill");
                 iconImage ??= FindChildImage(root, "Icon");
                 unavailableIconImage ??= FindChildImage(root, "IconDisabled");
                 readyGlowImage ??= FindChildImage(root, "ReadyGlow");
                 readyRingImage ??= FindChildImage(root, "ReadyRing");
                 readySparkImage ??= FindChildImage(root, "ReadySparkRing");
+            }
+
+            private void ApplyVisualOrder()
+            {
+                if (readyGlowImage != null)
+                {
+                    readyGlowImage.transform.SetAsFirstSibling();
+                }
+
+                if (cooldownFill != null)
+                {
+                    cooldownFill.transform.SetAsLastSibling();
+                }
+
+                if (unavailableIconImage != null)
+                {
+                    unavailableIconImage.transform.SetAsLastSibling();
+                }
+
+                if (readyRingImage != null)
+                {
+                    readyRingImage.transform.SetAsLastSibling();
+                }
+
+                if (readySparkImage != null)
+                {
+                    readySparkImage.transform.SetAsLastSibling();
+                }
+
+                if (labelText != null)
+                {
+                    labelText.transform.SetAsLastSibling();
+                }
+
+                if (stateText != null)
+                {
+                    stateText.transform.SetAsLastSibling();
+                }
             }
 
             private Transform ResolveSlotRoot()
@@ -398,6 +438,7 @@ namespace DimensionBrawl.UI
             {
                 float fill = Mathf.Clamp01(availabilityFill01);
                 bool showFill = !enabled && fill > 0.001f;
+                image.enabled = true;
                 image.raycastTarget = false;
                 image.preserveAspect = false;
                 image.type = Image.Type.Filled;
@@ -409,6 +450,8 @@ namespace DimensionBrawl.UI
                 color.a = showFill ? Mathf.Lerp(0.70f, 0.96f, fill) : 0f;
                 image.color = color;
                 image.gameObject.SetActive(showFill);
+                image.SetVerticesDirty();
+                image.SetMaterialDirty();
             }
 
             private static void ApplySlotTextOutline(Text text)
@@ -444,6 +487,11 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image playerDamageOverlayImage;
         [SerializeField] private Color playerDamageOverlayColor = new Color(1f, 0.02f, 0.01f, 0.58f);
         [SerializeField, Min(0.05f)] private float playerDamageOverlaySeconds = 0.56f;
+        [SerializeField] private Color playerHealthDecreaseFlashColor = new Color(1f, 0.18f, 0.08f, 1f);
+        [SerializeField] private Color playerResourceDecreaseFlashColor = new Color(0.16f, 1f, 1f, 1f);
+        [SerializeField] private Color bossHealthDecreaseFlashColor = new Color(1f, 0.78f, 0.08f, 1f);
+        [SerializeField] private Color bossResourceDecreaseFlashColor = new Color(0.35f, 0.86f, 1f, 1f);
+        [SerializeField, Min(0.05f)] private float meterDecreaseFlashSeconds = 0.24f;
         [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
@@ -452,6 +500,22 @@ namespace DimensionBrawl.UI
         private float bossResourceFillBaseWidth = -1f;
         private float playerDamageOverlayTimer;
         private float lastObservedPlayerHealth = -1f;
+        private float lastPlayerHealthRatio = -1f;
+        private float lastPlayerResourceRatio = -1f;
+        private float lastBossHealthRatio = -1f;
+        private float lastBossResourceRatio = -1f;
+        private float playerHealthDecreaseFlashTimer;
+        private float playerResourceDecreaseFlashTimer;
+        private float bossHealthDecreaseFlashTimer;
+        private float bossResourceDecreaseFlashTimer;
+        private Color playerHealthBaseColor = Color.white;
+        private Color playerResourceBaseColor = Color.white;
+        private Color bossHealthBaseColor = Color.white;
+        private Color bossResourceBaseColor = Color.white;
+        private bool playerHealthBaseColorCaptured;
+        private bool playerResourceBaseColorCaptured;
+        private bool bossHealthBaseColorCaptured;
+        private bool bossResourceBaseColorCaptured;
 
         public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
         public float BossResourceFillAmount => bossResourceFill != null ? bossResourceFill.fillAmount : 0f;
@@ -464,6 +528,7 @@ namespace DimensionBrawl.UI
             ApplyResponsiveSideLayout();
             EnsureAimReticle();
             EnsurePlayerDamageOverlay();
+            CaptureMeterBaseColors();
         }
 
         private void OnRectTransformDimensionsChange()
@@ -479,6 +544,7 @@ namespace DimensionBrawl.UI
         private void Update()
         {
             UpdatePlayerDamageOverlay();
+            UpdateMeterDecreaseFlashes();
         }
 
         public void SetObjective(string objective)
@@ -503,6 +569,7 @@ namespace DimensionBrawl.UI
                 TriggerPlayerDamageOverlay();
             }
 
+            TriggerDecreaseFlashIfNeeded(ratio, ref lastPlayerHealthRatio, ref playerHealthDecreaseFlashTimer);
             lastObservedPlayerHealth = Mathf.Max(0f, current);
             if (healthFill != null)
             {
@@ -512,10 +579,16 @@ namespace DimensionBrawl.UI
             SetText(healthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
         }
 
+        public void ShowPlayerDamageOverlay()
+        {
+            TriggerPlayerDamageOverlay();
+        }
+
         public void SetBossHealth(float current, float max)
         {
             ResolveOptionalRuntimeReferences();
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            TriggerDecreaseFlashIfNeeded(ratio, ref lastBossHealthRatio, ref bossHealthDecreaseFlashTimer);
             if (bossHealthFill != null)
             {
                 ApplyHorizontalMeter(bossHealthFill, ratio, ref bossHealthFillBaseWidth);
@@ -528,6 +601,7 @@ namespace DimensionBrawl.UI
         {
             ResolveOptionalRuntimeReferences();
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            TriggerDecreaseFlashIfNeeded(ratio, ref lastBossResourceRatio, ref bossResourceDecreaseFlashTimer);
             if (bossResourceFill != null)
             {
                 ApplyHorizontalMeter(bossResourceFill, ratio, ref bossResourceFillBaseWidth);
@@ -573,6 +647,7 @@ namespace DimensionBrawl.UI
             {
                 playerDamageOverlayImage.gameObject.SetActive(true);
                 playerDamageOverlayImage.transform.SetAsLastSibling();
+                ApplyPlayerDamageOverlayVisual();
             }
         }
 
@@ -595,6 +670,16 @@ namespace DimensionBrawl.UI
             }
 
             playerDamageOverlayTimer = Mathf.Max(0f, playerDamageOverlayTimer - Time.unscaledDeltaTime);
+            ApplyPlayerDamageOverlayVisual();
+        }
+
+        private void ApplyPlayerDamageOverlayVisual()
+        {
+            if (playerDamageOverlayImage == null)
+            {
+                return;
+            }
+
             float duration = Mathf.Max(0.05f, playerDamageOverlaySeconds);
             float normalized = Mathf.Clamp01(playerDamageOverlayTimer / duration);
             float alpha = playerDamageOverlayColor.a * Mathf.SmoothStep(0f, 1f, normalized);
@@ -627,6 +712,7 @@ namespace DimensionBrawl.UI
         {
             ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            TriggerDecreaseFlashIfNeeded(ratio, ref lastPlayerResourceRatio, ref playerResourceDecreaseFlashTimer);
             if (resourceFill != null)
             {
                 resourceFill.fillAmount = ratio;
@@ -750,6 +836,83 @@ namespace DimensionBrawl.UI
             {
                 ammoText = FindText("AmmoText");
             }
+
+            CaptureMeterBaseColors();
+        }
+
+        private void CaptureMeterBaseColors()
+        {
+            CaptureMeterBaseColor(healthFill, ref playerHealthBaseColor, ref playerHealthBaseColorCaptured);
+            CaptureMeterBaseColor(resourceFill, ref playerResourceBaseColor, ref playerResourceBaseColorCaptured);
+            CaptureMeterBaseColor(bossHealthFill, ref bossHealthBaseColor, ref bossHealthBaseColorCaptured);
+            CaptureMeterBaseColor(bossResourceFill, ref bossResourceBaseColor, ref bossResourceBaseColorCaptured);
+        }
+
+        private void UpdateMeterDecreaseFlashes()
+        {
+            float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : 1f / 60f;
+            playerHealthDecreaseFlashTimer = Mathf.Max(0f, playerHealthDecreaseFlashTimer - deltaTime);
+            playerResourceDecreaseFlashTimer = Mathf.Max(0f, playerResourceDecreaseFlashTimer - deltaTime);
+            bossHealthDecreaseFlashTimer = Mathf.Max(0f, bossHealthDecreaseFlashTimer - deltaTime);
+            bossResourceDecreaseFlashTimer = Mathf.Max(0f, bossResourceDecreaseFlashTimer - deltaTime);
+
+            ApplyMeterDecreaseFlash(
+                healthFill,
+                playerHealthBaseColor,
+                playerHealthDecreaseFlashColor,
+                playerHealthDecreaseFlashTimer);
+            ApplyMeterDecreaseFlash(
+                resourceFill,
+                playerResourceBaseColor,
+                playerResourceDecreaseFlashColor,
+                playerResourceDecreaseFlashTimer);
+            ApplyMeterDecreaseFlash(
+                bossHealthFill,
+                bossHealthBaseColor,
+                bossHealthDecreaseFlashColor,
+                bossHealthDecreaseFlashTimer);
+            ApplyMeterDecreaseFlash(
+                bossResourceFill,
+                bossResourceBaseColor,
+                bossResourceDecreaseFlashColor,
+                bossResourceDecreaseFlashTimer);
+        }
+
+        private void TriggerDecreaseFlashIfNeeded(
+            float ratio,
+            ref float lastRatio,
+            ref float flashTimer)
+        {
+            if (lastRatio >= 0f && ratio < lastRatio - 0.001f)
+            {
+                flashTimer = Mathf.Max(flashTimer, meterDecreaseFlashSeconds);
+            }
+
+            lastRatio = ratio;
+        }
+
+        private void ApplyMeterDecreaseFlash(Image image, Color baseColor, Color flashColor, float timer)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            float duration = Mathf.Max(0.05f, meterDecreaseFlashSeconds);
+            float normalized = Mathf.Clamp01(timer / duration);
+            float weight = Mathf.SmoothStep(0f, 1f, normalized);
+            image.color = Color.Lerp(baseColor, flashColor, weight);
+        }
+
+        private static void CaptureMeterBaseColor(Image image, ref Color color, ref bool captured)
+        {
+            if (captured || image == null)
+            {
+                return;
+            }
+
+            color = image.color;
+            captured = true;
         }
 
         private void ApplyPlayerReadoutStyles()

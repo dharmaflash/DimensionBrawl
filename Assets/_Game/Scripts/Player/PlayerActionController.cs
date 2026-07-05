@@ -7,6 +7,8 @@ namespace DimensionBrawl.Player
 {
     public sealed class PlayerActionController : MonoBehaviour
     {
+        private const float BasicAttackHitStopSeconds = 0f;
+
         private enum PlayerActionState
         {
             Free,
@@ -162,6 +164,7 @@ namespace DimensionBrawl.Player
         private bool dodgeFeedbackActive;
         private bool perfectDodgeTriggeredThisDodge;
         private bool nextAttackQueued;
+        private bool basicAttackHeld;
         private bool cinematicInputLocked;
         private bool healthSubscribed;
         private float nextDodgeAllowedTime;
@@ -220,6 +223,17 @@ namespace DimensionBrawl.Player
             }
 
             mobileAttackQueued = true;
+        }
+
+        public void SetBasicAttackHeld(bool held)
+        {
+            if (!CanAcceptQueuedInput())
+            {
+                basicAttackHeld = false;
+                return;
+            }
+
+            basicAttackHeld = held;
         }
 
         public void QueueDodge()
@@ -316,6 +330,7 @@ namespace DimensionBrawl.Player
         {
             float deltaTime = Time.deltaTime;
             bool attackPressed = ReadAttackPressed();
+            bool attackHeld = ReadAttackHeld();
             bool dodgePressed = ReadDodgePressed();
 
             if (attackBufferTimer > 0f)
@@ -332,7 +347,7 @@ namespace DimensionBrawl.Player
                 comboIndex = 0;
             }
 
-            if (attackPressed && CanUseBasicAttack())
+            if ((attackPressed || attackHeld) && CanUseBasicAttack())
             {
                 attackBufferTimer = CurrentAttackStep().inputBufferSeconds;
                 TryQueueNextAttack();
@@ -364,7 +379,7 @@ namespace DimensionBrawl.Player
         private void StartAttack(int index)
         {
             state = PlayerActionState.Attacking;
-            comboIndex = Mathf.Clamp(index, 0, Mathf.Max(0, ActiveBasicComboLength - 1));
+            comboIndex = WrapComboIndex(index);
             actionTimer = 0f;
             attackHasHit = false;
             attackBufferTimer = 0f;
@@ -406,10 +421,11 @@ namespace DimensionBrawl.Player
 
             float activeEnd = step.startupSeconds + step.activeSeconds;
             float chainStart = activeEnd + step.recoverySeconds * ActiveComboChainRecoveryRatio;
-            bool canContinue = nextAttackQueued && comboIndex < ActiveBasicComboLength - 1;
-            if (canContinue && actionTimer >= chainStart)
+            bool isComboFinisher = ActiveBasicComboLength > 0 && comboIndex >= ActiveBasicComboLength - 1;
+            bool canContinue = nextAttackQueued && ActiveBasicComboLength > 0;
+            if (canContinue && !isComboFinisher && actionTimer >= chainStart)
             {
-                StartAttack(comboIndex + 1);
+                StartAttack(NextComboIndex());
                 return;
             }
 
@@ -419,13 +435,18 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            if (canContinue || (attackBufferTimer > 0f && comboIndex < ActiveBasicComboLength - 1))
+            if (canContinue || (attackBufferTimer > 0f && ActiveBasicComboLength > 0))
             {
-                StartAttack(comboIndex + 1);
+                StartAttack(NextComboIndex());
                 return;
             }
 
             comboResetTimer = ActiveComboResetSeconds;
+            if (ActiveBasicComboLength > 0 && comboIndex >= ActiveBasicComboLength - 1)
+            {
+                comboIndex = 0;
+            }
+
             movement?.ClearActionMoveInputSpeedScale();
             state = PlayerActionState.Free;
         }
@@ -457,7 +478,7 @@ namespace DimensionBrawl.Player
                     step.damage,
                     hitCenter,
                     hitDirection.sqrMagnitude > 0f ? hitDirection : direction,
-                    step.hitStopSeconds,
+                    BasicAttackHitStopSeconds,
                     PlayerActionProfile.ResolveResponsePolicy(step, comboIndex, ActiveBasicComboLength),
                     PlayerActionProfile.ResolveControlLockPolicy(step, comboIndex, ActiveBasicComboLength));
 
@@ -633,7 +654,7 @@ namespace DimensionBrawl.Player
 
         private void TryQueueNextAttack()
         {
-            if (state != PlayerActionState.Attacking || nextAttackQueued || comboIndex >= ActiveBasicComboLength - 1)
+            if (state != PlayerActionState.Attacking || nextAttackQueued || ActiveBasicComboLength <= 0)
             {
                 return;
             }
@@ -742,6 +763,24 @@ namespace DimensionBrawl.Player
             comboResetTimer = 0f;
             attackHasHit = false;
             nextAttackQueued = false;
+            basicAttackHeld = false;
+        }
+
+        private int NextComboIndex()
+        {
+            return WrapComboIndex(comboIndex + 1);
+        }
+
+        private int WrapComboIndex(int index)
+        {
+            int length = ActiveBasicComboLength;
+            if (length <= 0)
+            {
+                return 0;
+            }
+
+            int wrapped = index % length;
+            return wrapped < 0 ? wrapped + length : wrapped;
         }
 
         private bool CanAcceptQueuedInput()
@@ -755,6 +794,7 @@ namespace DimensionBrawl.Player
             mobileDodgeQueued = false;
             attackBufferTimer = 0f;
             nextAttackQueued = false;
+            basicAttackHeld = false;
             suppressBasicAttackDeviceFallback = false;
         }
 
@@ -773,7 +813,7 @@ namespace DimensionBrawl.Player
                     damage = 10f,
                     hitRadius = 0.5f,
                     hitDistance = 1.2f,
-                    hitStopSeconds = 0.03f,
+                    hitStopSeconds = BasicAttackHitStopSeconds,
                     responsePolicy = DamageResponsePolicy.Stagger,
                     controlLockPolicy = CombatControlLockPolicy.InterruptAction
                 };
@@ -819,6 +859,7 @@ namespace DimensionBrawl.Player
             if (cinematicInputLocked)
             {
                 mobileAttackQueued = false;
+                basicAttackHeld = false;
                 suppressBasicAttackDeviceFallback = false;
                 return false;
             }
@@ -838,6 +879,30 @@ namespace DimensionBrawl.Player
 
             return (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
                 || (Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame);
+        }
+
+        private bool ReadAttackHeld()
+        {
+            if (cinematicInputLocked)
+            {
+                basicAttackHeld = false;
+                return false;
+            }
+
+            bool held = basicAttackHeld;
+            if (basicAttackAction != null && basicAttackAction.action != null)
+            {
+                held |= basicAttackAction.action.IsPressed();
+            }
+
+            if (!useDeviceFallbackWhenActionMissing || !IsActionMissing(basicAttackAction))
+            {
+                return held;
+            }
+
+            return held
+                || (Keyboard.current != null && Keyboard.current.enterKey.isPressed)
+                || (Gamepad.current != null && Gamepad.current.buttonWest.isPressed);
         }
 
         private bool ReadDodgePressed()

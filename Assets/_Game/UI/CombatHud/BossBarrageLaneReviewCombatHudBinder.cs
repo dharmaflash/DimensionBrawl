@@ -34,6 +34,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
 
         private bool tutorialMoveInputLocked;
+        private CombatHealth subscribedPlayerDamageHealth;
 
         private void Awake()
         {
@@ -75,10 +76,14 @@ namespace DimensionBrawl.UI
                 inputBridge.ActionRequested += HandleActionRequested;
                 inputBridge.ActionHoldChanged += HandleActionHoldChanged;
             }
+
+            SubscribePlayerDamageFeedback();
         }
 
         private void OnDisable()
         {
+            UnsubscribePlayerDamageFeedback();
+
             if (inputBridge != null)
             {
                 inputBridge.ActionRequested -= HandleActionRequested;
@@ -93,6 +98,7 @@ namespace DimensionBrawl.UI
         {
             tutorialGuide?.TickTutorial(Time.deltaTime);
             UpdateTutorialMovementInputLock();
+            SubscribePlayerDamageFeedback();
             if (hudPresenter == null)
             {
                 return;
@@ -260,10 +266,12 @@ namespace DimensionBrawl.UI
         {
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
+                actionController?.SetBasicAttackHeld(false);
                 rangedBasicAttackAction?.SetFireHeld(held);
                 return;
             }
 
+            actionController?.SetBasicAttackHeld(held);
             if (!held)
             {
                 rangedBasicAttackAction?.SetFireHeld(false);
@@ -284,6 +292,80 @@ namespace DimensionBrawl.UI
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action);
+        }
+
+        private void SubscribePlayerDamageFeedback()
+        {
+            ResolvePlayerHealth();
+            if (subscribedPlayerDamageHealth == playerHealth)
+            {
+                return;
+            }
+
+            UnsubscribePlayerDamageFeedback();
+            if (playerHealth == null)
+            {
+                return;
+            }
+
+            playerHealth.Damaged += HandlePlayerDamaged;
+            playerHealth.DamageBlockedByInvulnerability += HandlePlayerDamageBlocked;
+            subscribedPlayerDamageHealth = playerHealth;
+        }
+
+        private void UnsubscribePlayerDamageFeedback()
+        {
+            if (subscribedPlayerDamageHealth == null)
+            {
+                return;
+            }
+
+            subscribedPlayerDamageHealth.Damaged -= HandlePlayerDamaged;
+            subscribedPlayerDamageHealth.DamageBlockedByInvulnerability -= HandlePlayerDamageBlocked;
+            subscribedPlayerDamageHealth = null;
+        }
+
+        private void HandlePlayerDamaged(DamageInfo damageInfo)
+        {
+            ShowPlayerDamageOverlayForHostileHit(damageInfo);
+        }
+
+        private void HandlePlayerDamageBlocked(DamageInfo damageInfo)
+        {
+            ShowPlayerDamageOverlayForHostileHit(damageInfo);
+        }
+
+        private void ShowPlayerDamageOverlayForHostileHit(DamageInfo damageInfo)
+        {
+            if (playerHealth != null && CombatTeamUtility.AreAllied(damageInfo.SourceTeam, playerHealth.Team))
+            {
+                return;
+            }
+
+            hudPresenter?.ShowPlayerDamageOverlay();
+        }
+
+        private void ResolvePlayerHealth()
+        {
+            if (playerHealth != null)
+            {
+                return;
+            }
+
+            if (actionController != null)
+            {
+                playerHealth = actionController.GetComponent<CombatHealth>();
+            }
+
+            if (playerHealth == null && movementController != null)
+            {
+                playerHealth = movementController.GetComponent<CombatHealth>();
+            }
+
+            if (playerHealth == null && rangedBasicAttackAction != null)
+            {
+                playerHealth = rangedBasicAttackAction.GetComponent<CombatHealth>();
+            }
         }
 
         private void ResolveMovementController()

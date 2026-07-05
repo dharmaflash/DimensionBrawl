@@ -642,6 +642,20 @@ namespace DimensionBrawl.Player
             LastUseBlockedReason = string.Empty;
             blockedHintUntil = 0f;
             RangedReloadCompleted?.Invoke();
+            RequestContinuousFireAfterReloadIfHeld();
+        }
+
+        private void RequestContinuousFireAfterReloadIfHeld()
+        {
+            if (!fireContinuouslyWhileHeld || !CanAcceptContinuousFireInput() || !ReadFireHeld())
+            {
+                return;
+            }
+
+            currentFireHeld = true;
+            pendingFireThisFrame = true;
+            SetFireAimHold(true);
+            InvalidateFirePreviewCache();
         }
 
         private void ConsumeAmmoAfterFire()

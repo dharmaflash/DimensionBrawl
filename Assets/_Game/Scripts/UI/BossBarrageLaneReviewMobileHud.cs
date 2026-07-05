@@ -324,6 +324,7 @@ namespace DimensionBrawl.UI
             bool basicPressed = firePointerPressed;
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
+                actionController?.SetBasicAttackHeld(false);
                 if (basicHeld || previousBasicHeld)
                 {
                     rangedBasicAttackAction?.SetFireHeld(basicHeld);
@@ -336,6 +337,7 @@ namespace DimensionBrawl.UI
             }
             else
             {
+                actionController?.SetBasicAttackHeld(basicHeld);
                 if (previousBasicHeld)
                 {
                     rangedBasicAttackAction?.SetFireHeld(false);
@@ -388,6 +390,7 @@ namespace DimensionBrawl.UI
             if (previousBasicHeld || firePointerHeld)
             {
                 rangedBasicAttackAction?.SetFireHeld(false);
+                actionController?.SetBasicAttackHeld(false);
             }
 
             ClearFirePointerState();

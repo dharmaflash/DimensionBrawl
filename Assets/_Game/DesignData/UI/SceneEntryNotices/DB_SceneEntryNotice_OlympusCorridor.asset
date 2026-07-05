@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4b7e7e80a2348f7a086f4ad3bd4e101, type: 3}
+  m_Name: DB_SceneEntryNotice_OlympusCorridor
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.SceneEntryNoticeProfile
+  eyebrowText: GUIDE SYSTEM
+  titleText: Corridor Link Established
+  bodyText: Support status window is online. Follow the active guide prompt and keep
+    HP stable.
+  leftStatusText: ROUTE // OLYMPUS
+  rightStatusText: ASSIST // ACTIVE
+  accentColor: {r: 0.18, g: 0.92, b: 1, a: 1}
+  backgroundColor: {r: 0.005, g: 0.035, b: 0.055, a: 0.87}
+  scanColor: {r: 0.44, g: 1, b: 1, a: 0.72}
+  dimColor: {r: 0, g: 0.018, b: 0.028, a: 0.16}
+  startupDelaySeconds: 0.22
+  revealSeconds: 0.38
+  holdSeconds: 1.82
+  dismissSeconds: 0.34
+  typewriterCharactersPerSecond: 48
+  startBeepClip: {fileID: 0}

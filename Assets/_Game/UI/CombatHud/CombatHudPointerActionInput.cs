@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.UI
 {
@@ -11,6 +12,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool sendHoldState;
 
         private bool pointerHeld;
+        private Button visualButton;
 
         public CombatHudActionId ActionId => actionId;
         public bool SendsHoldState => sendHoldState;
@@ -28,6 +30,13 @@ namespace DimensionBrawl.UI
             {
                 inputBridge = GetComponentInParent<CombatHudInputBridge>();
             }
+
+            SuppressLegacyClickEvent();
+        }
+
+        private void OnEnable()
+        {
+            SuppressLegacyClickEvent();
         }
 
         private void OnDisable()
@@ -42,13 +51,12 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            if (!sendHoldState)
+            pointerHeld = true;
+            if (sendHoldState)
             {
-                return;
+                inputBridge?.SetActionHeld(actionId, true);
             }
 
-            pointerHeld = true;
-            inputBridge?.SetActionHeld(actionId, true);
             inputBridge?.RequestAction(actionId);
         }
 
@@ -59,18 +67,37 @@ namespace DimensionBrawl.UI
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            ReleaseHold();
+            if (!sendHoldState)
+            {
+                ReleaseHold();
+            }
         }
 
         private void ReleaseHold()
         {
-            if (!pointerHeld || !sendHoldState || actionId == CombatHudActionId.None)
+            if (!pointerHeld)
             {
                 return;
             }
 
             pointerHeld = false;
-            inputBridge?.SetActionHeld(actionId, false);
+            if (sendHoldState && actionId != CombatHudActionId.None)
+            {
+                inputBridge?.SetActionHeld(actionId, false);
+            }
+        }
+
+        private void SuppressLegacyClickEvent()
+        {
+            if (visualButton == null)
+            {
+                visualButton = GetComponent<Button>();
+            }
+
+            if (visualButton != null)
+            {
+                visualButton.onClick = new Button.ButtonClickedEvent();
+            }
         }
     }
 }
