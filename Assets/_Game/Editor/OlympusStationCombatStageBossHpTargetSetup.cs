@@ -74,6 +74,7 @@ namespace DimensionBrawl.Editor
                 VerifyProjectileDamage();
                 VerifyPlayerRangedFireDamage();
                 VerifySustainedPlayerRangedFireDamageAndHud();
+                VerifyLockTargetCameraAimAssist();
             }
             catch (Exception exception)
             {
@@ -100,6 +101,19 @@ namespace DimensionBrawl.Editor
             try
             {
                 VerifySustainedPlayerRangedFireDamageAndHud();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
+        public static void RunBatchVerifyLockTargetCameraAimAssist()
+        {
+            try
+            {
+                VerifyLockTargetCameraAimAssist();
             }
             catch (Exception exception)
             {
@@ -556,6 +570,101 @@ namespace DimensionBrawl.Editor
                 $"delta={damageDelta} hudFill={actualFill:0.###}.");
         }
 
+        private static void VerifyLockTargetCameraAimAssist()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            CombatHealth bossHealth = ResolveBossHealth(scene);
+            CombatHealth playerHealth = ResolvePlayerHealth(scene);
+            Collider bossCollider = ResolveActiveBossCollider(bossHealth);
+            PlayerCombatModeController combatModeController =
+                RequireSceneComponent<PlayerCombatModeController>(scene, "player combat mode controller");
+            PlayerCombatTargetSelector targetSelector =
+                RequireSceneComponent<PlayerCombatTargetSelector>(scene, "player target selector");
+            PlayerLockTargetController lockTargetController =
+                RequireSceneComponent<PlayerLockTargetController>(scene, "player lock target controller");
+            PlayerRangedBasicAttackAction rangedBasicAttack =
+                RequireSceneComponent<PlayerRangedBasicAttackAction>(scene, "player ranged basic attack");
+            ActionCameraController cameraController =
+                RequireSceneComponent<ActionCameraController>(scene, "action camera controller");
+
+            combatModeController.SetRangedMode();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            SetObjectReference(targetSelector, "selfHealth", playerHealth);
+            SetObjectReferenceArray(targetSelector, "targetCandidates", new UnityEngine.Object[] { bossHealth });
+            SetFloat(targetSelector, "selectionRadius", BossTargetingDistance);
+            SetFloat(targetSelector, "attackAimRadius", BossTargetingDistance);
+            targetSelector.ConfigureTargetCandidates(new[] { bossHealth }, refreshNow: true);
+
+            SetObjectReference(lockTargetController, "targetSelector", targetSelector);
+            SetObjectReference(lockTargetController, "sourceHealth", playerHealth);
+            SetObjectReference(lockTargetController, "cameraController", cameraController);
+            Vector3 lockPoint = bossCollider.bounds.center;
+            SetPrivateField(lockTargetController, "currentTargetHealth", bossHealth);
+            SetPrivateField(lockTargetController, "currentTargetPoint", lockPoint);
+            SetPrivateField(lockTargetController, "currentLockType", PlayerLockTargetController.LockTargetType.HardLock);
+            SetPrivateField(lockTargetController, "currentStrength01", 1f);
+            SetPrivateField(lockTargetController, "requestedHardLockTarget", bossHealth);
+
+            SetObjectReference(rangedBasicAttack, "combatModeController", combatModeController);
+            SetObjectReference(rangedBasicAttack, "targetSelector", targetSelector);
+            SetObjectReference(rangedBasicAttack, "lockTargetController", lockTargetController);
+            SetObjectReference(rangedBasicAttack, "sourceHealth", playerHealth);
+            SetObjectReference(rangedBasicAttack, "cameraController", cameraController);
+            SetBool(rangedBasicAttack, "driveCameraAimAssist", true);
+            SetBool(rangedBasicAttack, "useAimAssist", true);
+            SetBool(rangedBasicAttack, "disableAimAssistWithManualInput", false);
+            SetBool(rangedBasicAttack, "cameraAimIgnoresNonTargetHits", true);
+            SetFloat(rangedBasicAttack, "cameraAimAssistStrengthScale", 1f);
+            SetFloat(rangedBasicAttack, "cameraAimAssistMinStrength", 0.01f);
+            SetFloat(rangedBasicAttack, "aimAssistDistance", BossTargetingDistance);
+            SetFloat(rangedBasicAttack, "hipAimAssistAngleDegrees", 45f);
+            SetFloat(rangedBasicAttack, "aimedAimAssistAngleDegrees", 45f);
+            SetFloat(rangedBasicAttack, "aimAssistMaxTurnDegrees", 45f);
+            PrepareRangedFireProbe(rangedBasicAttack);
+            SetPrivateField(cameraController, "hasAimAssistYawTarget", false);
+            SetPrivateField(cameraController, "requestedAimAssistStrength01", 0f);
+
+            Physics.SyncTransforms();
+            rangedBasicAttack.SetFireHeld(true);
+            if (!rangedBasicAttack.TryGetAimPreviewDirection(out Vector3 previewDirection)
+                || !rangedBasicAttack.HasAimAssistTarget
+                || rangedBasicAttack.AimAssistTargetHealth != bossHealth)
+            {
+                throw new InvalidOperationException(
+                    "Lock target aim preview did not resolve the OlympusStation boss. " +
+                    $"hasTarget={rangedBasicAttack.HasAimAssistTarget} " +
+                    $"target={NameOf(rangedBasicAttack.AimAssistTargetHealth)} direction={previewDirection}.");
+            }
+
+            bool aimAssistMayDriveCamera =
+                GetPrivateField<bool>(rangedBasicAttack, "aimAssistMayDriveCamera");
+            if (!aimAssistMayDriveCamera)
+            {
+                throw new InvalidOperationException(
+                    "Lock target aim assist resolved, but camera drive remained disabled.");
+            }
+
+            InvokePrivateMethod(rangedBasicAttack, "UpdateCameraAimAssistIfNeeded");
+            bool cameraRequestQueued =
+                GetPrivateField<bool>(cameraController, "hasAimAssistYawTarget");
+            float requestedStrength =
+                GetPrivateField<float>(cameraController, "requestedAimAssistStrength01");
+            if (!cameraRequestQueued || requestedStrength <= 0f)
+            {
+                throw new InvalidOperationException(
+                    "Lock target aim assist did not request a camera yaw target. " +
+                    $"queued={cameraRequestQueued} strength={requestedStrength:0.###}.");
+            }
+
+            rangedBasicAttack.SetFireHeld(false);
+            Debug.Log(
+                "Verified OlympusStation lock-target ranged aim can drive camera aim assist. " +
+                $"target={GetHierarchyPath(bossHealth.transform)} strength={requestedStrength:0.###}.");
+        }
+
         private static void PrepareRangedFireProbe(PlayerRangedBasicAttackAction rangedBasicAttack)
         {
             SetPrivateField(rangedBasicAttack, "cinematicInputLocked", false);
@@ -783,6 +892,44 @@ namespace DimensionBrawl.Editor
             }
 
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            if (target == null)
+            {
+                throw new InvalidOperationException($"Cannot read {fieldName} on null target.");
+            }
+
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing field {fieldName} on {target.GetType().Name}.");
+            }
+
+            return (T)field.GetValue(target);
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName)
+        {
+            if (target == null)
+            {
+                throw new InvalidOperationException($"Cannot invoke {methodName} on null target.");
+            }
+
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing method {methodName} on {target.GetType().Name}.");
+            }
+
+            method.Invoke(target, Array.Empty<object>());
         }
 
         private static void SetObjectReferenceArray(

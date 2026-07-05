@@ -1281,7 +1281,7 @@ namespace DimensionBrawl.Player
                     lockTargetHealth,
                     lockStrength,
                     lockTargetDirection,
-                    allowCameraAimAssist: false,
+                    allowCameraAimAssist: true,
                     suppressViewportReprojection: true);
                 SetAimAssistPreviewPoint(lockTargetHealth, lockTargetAimPoint);
                 return lockTargetDirection;
