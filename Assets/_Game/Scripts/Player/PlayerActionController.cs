@@ -836,8 +836,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            return (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-                || (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
+            return (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame)
                 || (Gamepad.current != null && Gamepad.current.buttonWest.wasPressedThisFrame);
         }
 

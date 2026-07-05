@@ -11,6 +11,7 @@ namespace DimensionBrawl.UI
         [Header("UI")]
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
+        [SerializeField] private CombatHudVirtualJoystick moveJoystick;
         [SerializeField] private BossBarrageLaneReviewOverlayHud overlayHud;
         [SerializeField] private BossBarrageLaneReviewTutorialGuide tutorialGuide;
         [SerializeField] private bool useSingleSummonPresentation;
@@ -24,12 +25,15 @@ namespace DimensionBrawl.UI
 
         [Header("Player Actions")]
         [SerializeField] private PlayerActionController actionController;
+        [SerializeField] private PlayerMovementController movementController;
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
+
+        private bool tutorialMoveInputLocked;
 
         private void Awake()
         {
@@ -43,6 +47,11 @@ namespace DimensionBrawl.UI
                 inputBridge = GetComponentInChildren<CombatHudInputBridge>(includeInactive: true);
             }
 
+            if (moveJoystick == null)
+            {
+                moveJoystick = GetComponentInChildren<CombatHudVirtualJoystick>(includeInactive: true);
+            }
+
             if (tutorialGuide == null)
             {
                 tutorialGuide = GetComponent<BossBarrageLaneReviewTutorialGuide>();
@@ -53,6 +62,7 @@ namespace DimensionBrawl.UI
                 bossCostLadder = FindFirstObjectByType<BossPressureCostLadder>();
             }
 
+            ResolveMovementController();
             BindTutorialGuide();
         }
 
@@ -76,16 +86,18 @@ namespace DimensionBrawl.UI
             }
 
             rangedBasicAttackAction?.SetFireHeld(false);
+            ClearTutorialMovementInputLock();
         }
 
         private void Update()
         {
+            tutorialGuide?.TickTutorial(Time.deltaTime);
+            UpdateTutorialMovementInputLock();
             if (hudPresenter == null)
             {
                 return;
             }
 
-            tutorialGuide?.TickTutorial(Time.deltaTime);
             UpdatePrimaryReadouts();
             UpdateActionReadouts();
             UpdateSummonReadouts();
@@ -272,6 +284,63 @@ namespace DimensionBrawl.UI
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action);
+        }
+
+        private void ResolveMovementController()
+        {
+            if (movementController != null)
+            {
+                return;
+            }
+
+            if (actionController != null)
+            {
+                movementController = actionController.GetComponent<PlayerMovementController>();
+            }
+
+            if (movementController == null && rangedBasicAttackAction != null)
+            {
+                movementController = rangedBasicAttackAction.GetComponent<PlayerMovementController>();
+            }
+
+            if (movementController == null && combatModeController != null)
+            {
+                movementController = combatModeController.GetComponent<PlayerMovementController>();
+            }
+        }
+
+        private void UpdateTutorialMovementInputLock()
+        {
+            bool shouldLock = tutorialGuide != null && tutorialGuide.ShouldBlockMoveInput;
+            if (tutorialMoveInputLocked == shouldLock)
+            {
+                return;
+            }
+
+            tutorialMoveInputLocked = shouldLock;
+            ResolveMovementController();
+            moveJoystick?.SetInputBlocked(shouldLock);
+            if (shouldLock)
+            {
+                movementController?.SetMoveInput(Vector2.zero);
+                movementController?.SetSharedMoveInputBlocked(true);
+                return;
+            }
+
+            movementController?.SetSharedMoveInputBlocked(false);
+        }
+
+        private void ClearTutorialMovementInputLock()
+        {
+            if (!tutorialMoveInputLocked)
+            {
+                return;
+            }
+
+            tutorialMoveInputLocked = false;
+            moveJoystick?.SetInputBlocked(false);
+            ResolveMovementController();
+            movementController?.SetSharedMoveInputBlocked(false);
         }
 
         private float ResolveRemainingSeconds()

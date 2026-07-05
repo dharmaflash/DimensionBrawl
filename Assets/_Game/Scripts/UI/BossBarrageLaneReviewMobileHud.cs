@@ -936,10 +936,12 @@ namespace DimensionBrawl.UI
 
         private void UpdateHudLookAim()
         {
-            bool pointerAimActive = screenDragControlsAim && lookPointerHeld;
+            bool pointerLookActive = screenDragControlsAim && lookPointerHeld;
+            bool pointerAimActive = pointerLookActive && ShouldRoutePointerDragToAim();
+            bool pointerViewActive = pointerLookActive && !pointerAimActive;
             Vector2 keyboardPeekInput = ResolveKeyboardPeekAimInput();
             bool keyboardPeekActive = keyboardPeekInput.sqrMagnitude > 0.0001f && IsKeyboardPeekAllowed();
-            bool shouldRouteLookAim = pointerAimActive || keyboardPeekActive;
+            bool shouldRouteLookAim = pointerLookActive || keyboardPeekActive;
             if (!shouldRouteLookAim && !hudLookAimActive)
             {
                 return;
@@ -957,7 +959,10 @@ namespace DimensionBrawl.UI
             }
 
             aimInput = Vector2.ClampMagnitude(aimInput, 1f);
-            movement?.SetLookInput(routeAimToMovementLook ? aimInput : Vector2.zero);
+            Vector2 movementLookInput = pointerViewActive
+                ? lookAimInput
+                : routeAimToMovementLook ? aimInput : Vector2.zero;
+            movement?.SetLookInput(Vector2.ClampMagnitude(movementLookInput, 1f));
             rangedBasicAttackAction?.SetAimInput(aimInput);
             aimController?.SetAimInput(aimInput);
             aimController?.SetAimHeld(pointerAimActive);
@@ -1024,6 +1029,13 @@ namespace DimensionBrawl.UI
 
             return (aimController != null && aimController.IsAiming)
                 || (rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive);
+        }
+
+        private bool ShouldRoutePointerDragToAim()
+        {
+            return (combatModeController == null || combatModeController.IsRangedMode)
+                && rangedBasicAttackAction != null
+                && rangedBasicAttackAction.IsFireHeld;
         }
 
         private static bool IsKeyboardKeyPressed(Key key)

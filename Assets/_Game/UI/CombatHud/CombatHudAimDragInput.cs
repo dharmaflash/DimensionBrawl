@@ -64,15 +64,10 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (!CanAim())
-            {
-                return;
-            }
-
             pointerHeld = true;
             keyboardAimActive = false;
             pointerAimInput = Vector2.zero;
-            ApplyAim(pointerAimInput, holdAim: true);
+            ApplyPointerDrag(pointerAimInput);
         }
 
         public void OnDrag(PointerEventData eventData)
@@ -88,7 +83,7 @@ namespace DimensionBrawl.UI
             Vector2 resolvedInput = pointerAimInput.sqrMagnitude >= dragDeadZone * dragDeadZone
                 ? pointerAimInput
                 : Vector2.zero;
-            ApplyAim(resolvedInput, holdAim: true);
+            ApplyPointerDrag(resolvedInput);
         }
 
         public void OnPointerUp(PointerEventData eventData)
@@ -111,6 +106,22 @@ namespace DimensionBrawl.UI
             pointerHeld = false;
             pointerAimInput = Vector2.zero;
             ApplyAim(Vector2.zero, holdAim: false);
+        }
+
+        private void ApplyPointerDrag(Vector2 input)
+        {
+            Vector2 resolvedInput = Vector2.ClampMagnitude(input, 1f);
+            if (ShouldRoutePointerDragToAim())
+            {
+                ApplyAim(resolvedInput, holdAim: true);
+                return;
+            }
+
+            CurrentAimInput = Vector2.zero;
+            movementController?.SetLookInput(resolvedInput);
+            rangedBasicAttackAction?.SetAimInput(Vector2.zero);
+            aimController?.SetAimInput(Vector2.zero);
+            aimController?.SetAimHeld(false);
         }
 
         private Vector2 ResolveKeyboardPeekInput()
@@ -155,6 +166,13 @@ namespace DimensionBrawl.UI
         private bool CanAim()
         {
             return combatModeController == null || combatModeController.IsRangedMode;
+        }
+
+        private bool ShouldRoutePointerDragToAim()
+        {
+            return CanAim()
+                && rangedBasicAttackAction != null
+                && rangedBasicAttackAction.IsFireHeld;
         }
     }
 }

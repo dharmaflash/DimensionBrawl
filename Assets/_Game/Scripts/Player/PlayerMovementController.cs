@@ -92,6 +92,7 @@ namespace DimensionBrawl.Player
         private float cinematicMoveInputSpeedScale = 1f;
         private bool actionMoveInputScaleActive;
         private bool cinematicMoveInputScaleActive;
+        private bool sharedMoveInputBlocked;
         private bool laneConstraintEnabled = true;
         private bool scriptedMoveInputOverrideActive;
         private Vector2 scriptedMoveInputOverride;
@@ -122,7 +123,7 @@ namespace DimensionBrawl.Player
 
         public void SetMoveInput(Vector2 input)
         {
-            if (!CanAcceptSharedInput())
+            if (!CanAcceptSharedInput() || sharedMoveInputBlocked)
             {
                 mobileMoveInput = Vector2.zero;
                 return;
@@ -140,6 +141,23 @@ namespace DimensionBrawl.Player
             }
 
             mobileLookInput = Vector2.ClampMagnitude(input, 1f);
+        }
+
+        public void SetSharedMoveInputBlocked(bool blocked)
+        {
+            if (sharedMoveInputBlocked == blocked)
+            {
+                return;
+            }
+
+            sharedMoveInputBlocked = blocked;
+            if (!sharedMoveInputBlocked)
+            {
+                return;
+            }
+
+            mobileMoveInput = Vector2.zero;
+            planarVelocity = Vector3.zero;
         }
 
         internal void SetScriptedInputOverride(Vector2 moveInput, Vector2 lookInput)
@@ -325,6 +343,11 @@ namespace DimensionBrawl.Player
             if (scriptedMoveInputOverrideActive)
             {
                 return scriptedMoveInputOverride;
+            }
+
+            if (sharedMoveInputBlocked)
+            {
+                return Vector2.zero;
             }
 
             Vector2 input = ReadSharedInput(moveAction, mobileMoveInput);

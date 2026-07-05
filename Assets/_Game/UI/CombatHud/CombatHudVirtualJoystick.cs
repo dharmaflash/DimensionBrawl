@@ -21,6 +21,7 @@ namespace DimensionBrawl.UI
         private Vector2 knobRestPosition;
         private bool hasKnobRestPosition;
         private bool pointerHeld;
+        private bool inputBlocked;
 
         public Vector2 CurrentInput { get; private set; }
 
@@ -56,13 +57,19 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (inputBlocked)
+            {
+                ClearInput();
+                return;
+            }
+
             pointerHeld = true;
             UpdateInput(eventData);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!pointerHeld)
+            if (!pointerHeld || inputBlocked)
             {
                 return;
             }
@@ -87,8 +94,28 @@ namespace DimensionBrawl.UI
             hasKnobRestPosition = true;
         }
 
+        public void SetInputBlocked(bool blocked)
+        {
+            if (inputBlocked == blocked)
+            {
+                return;
+            }
+
+            inputBlocked = blocked;
+            if (inputBlocked)
+            {
+                ClearInput();
+            }
+        }
+
         private void UpdateInput(PointerEventData eventData)
         {
+            if (inputBlocked)
+            {
+                ClearInput();
+                return;
+            }
+
             RectTransform joystickRect = rectTransform != null ? rectTransform : GetComponent<RectTransform>();
             if (joystickRect == null)
             {

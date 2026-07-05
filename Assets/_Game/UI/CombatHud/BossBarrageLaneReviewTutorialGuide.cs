@@ -47,6 +47,7 @@ namespace DimensionBrawl.UI
         public bool HasActiveStep => IsTutorialEnabled && IsPocketReadyForGuide && !completed && !failed && CurrentStep != null;
         public CombatHudActionId CurrentFocusAction => HasActiveStep ? CurrentStep.FocusAction : CombatHudActionId.None;
         public bool CurrentFocusDimUnfocusedActions => HasActiveStep && CurrentStep.DimUnfocusedActions;
+        public bool ShouldBlockMoveInput => HasActiveStep && StepBlocksMoveInput(CurrentStep);
 
         public string CurrentObjective
         {
@@ -102,6 +103,13 @@ namespace DimensionBrawl.UI
         private bool IsTutorialEnabled => profile != null && profile.TutorialEnabled && profile.StepCount > 0;
         private bool IsPocketReadyForGuide => pocketReviewOwner != null && pocketReviewOwner.isActiveAndEnabled;
         private BossBarrageLaneReviewTutorialProfile.Step CurrentStep => profile != null ? profile.GetStep(stepIndex) : null;
+
+        private static bool StepBlocksMoveInput(BossBarrageLaneReviewTutorialProfile.Step step)
+        {
+            return step != null
+                && (step.FocusAction == CombatHudActionId.Dodge
+                    || step.CompletionCondition == BossBarrageLaneReviewTutorialCondition.DodgeStarted);
+        }
 
         private void OnEnable()
         {
