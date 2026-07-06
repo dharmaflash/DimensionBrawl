@@ -105,9 +105,6 @@ namespace DimensionBrawl.Player
         public int ActiveProjectileCount => CountActiveProjectiles();
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
-        public bool IsSkillReady => energyLadder != null && energyLadder.AvailableTier > 0;
-        public int ReadySkillTier => energyLadder != null ? energyLadder.AvailableTier : 0;
-        public float SkillReadyFill01 => ResolveSkillReadyFill01();
         public DamageResponsePolicy ProjectileResponsePolicy => SkillProjectileResponsePolicy;
         public CombatControlLockPolicy ProjectileControlLockPolicy => SkillProjectileControlLockPolicy;
 
@@ -236,18 +233,6 @@ namespace DimensionBrawl.Player
             {
                 lastBlockedReason = null;
             }
-        }
-
-        private float ResolveSkillReadyFill01()
-        {
-            if (energyLadder == null)
-            {
-                return 0f;
-            }
-
-            return energyLadder.AvailableTier > 0
-                ? 1f
-                : energyLadder.CurrentTierFillRatio;
         }
 
         private void FireTier(int tier)

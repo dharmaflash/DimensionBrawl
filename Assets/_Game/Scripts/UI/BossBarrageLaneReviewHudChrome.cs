@@ -136,48 +136,23 @@ namespace DimensionBrawl.UI
                 energyReady ? GoldColor : IceColor);
         }
 
-        public static void DrawActionButton(
-            Rect rect,
-            string label,
-            bool held,
-            bool pending,
-            Color accent,
-            float fill01 = 1f,
-            bool ready = false,
-            bool unavailable = false,
-            float readyPulse01 = 0f)
+        public static void DrawActionButton(Rect rect, string label, bool held, bool pending, Color accent)
         {
             float size = Mathf.Min(rect.width, rect.height);
             Rect circle = RectFromCenter(rect.center, size);
-            bool muted = pending || (unavailable && !ready);
-            Color resolvedAccent = muted ? new Color(0.5f, 0.56f, 0.62f, 0.55f) : accent;
+            Color resolvedAccent = pending ? new Color(0.5f, 0.56f, 0.62f, 0.55f) : accent;
             float pulse = 0.5f + Mathf.Sin(Time.unscaledTime * 4.2f) * 0.5f;
-            float steadyReadyPulse = ready ? 0.5f + Mathf.Sin(Time.unscaledTime * 5.6f) * 0.5f : 0f;
-            float transitionPulse = Mathf.Clamp01(readyPulse01);
-            float readyPulse = Mathf.Max(steadyReadyPulse, transitionPulse);
             Color glow = resolvedAccent;
-            glow.a = held
-                ? 0.42f
-                : ready
-                    ? 0.36f + steadyReadyPulse * 0.26f + transitionPulse * 0.36f
-                    : muted
-                        ? 0.07f
-                        : Mathf.Lerp(0.14f, 0.24f, pulse);
-            DrawCircle(Inflate(circle, 16f + readyPulse * 12f), glow, softCircleTexture);
-            DrawCircle(circle, new Color(0.018f, 0.026f, 0.037f, muted ? 0.52f : 0.76f), circleTexture);
-            DrawProgressRing(circle, pending ? 0f : fill01, ready ? accent : resolvedAccent, ready ? 4.8f : 3f);
+            glow.a = held ? 0.36f : pending ? 0.08f : Mathf.Lerp(0.14f, 0.24f, pulse);
+            DrawCircle(Inflate(circle, 16f), glow, softCircleTexture);
+            DrawCircle(circle, new Color(0.018f, 0.026f, 0.037f, pending ? 0.46f : 0.76f), circleTexture);
             DrawCircle(circle, resolvedAccent, ringTexture);
-            DrawCircle(Inflate(circle, -size * 0.16f), new Color(1f, 1f, 1f, held ? 0.2f : ready ? 0.12f + readyPulse * 0.08f : 0.07f), ringTexture);
-            if (ready)
-            {
-                DrawSummonReadyHalo(circle, accent, readyPulse, transitionPulse);
-            }
-
+            DrawCircle(Inflate(circle, -size * 0.16f), new Color(1f, 1f, 1f, held ? 0.18f : 0.07f), ringTexture);
             DrawControlTicks(circle, resolvedAccent, held);
 
             EnsureStyles();
             centerLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(size * 0.17f, 16f, 28f));
-            centerLabelStyle.normal.textColor = muted ? MutedTextColor : TextColor;
+            centerLabelStyle.normal.textColor = pending ? MutedTextColor : TextColor;
             GUI.Label(new Rect(rect.x, rect.center.y - size * 0.17f, rect.width, size * 0.34f), label, centerLabelStyle);
         }
 
