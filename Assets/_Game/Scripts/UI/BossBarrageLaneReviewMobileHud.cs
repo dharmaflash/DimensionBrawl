@@ -1,5 +1,6 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -16,6 +17,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerRangedAimController aimController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
+        [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private PlayerLockTargetController lockTargetController;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
@@ -37,6 +39,7 @@ namespace DimensionBrawl.UI
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField] private bool drawHudVisuals = true;
+        [SerializeField] private bool tutorialInputBlocked;
         [SerializeField] private bool useSingleSummonButton;
         [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
@@ -181,6 +184,15 @@ namespace DimensionBrawl.UI
         public float HudOpacity => hudOpacity;
         public bool UseSingleSummonButton => useSingleSummonButton;
 
+        public void SetTutorialInputBlocked(bool blocked)
+        {
+            tutorialInputBlocked = blocked;
+            if (blocked)
+            {
+                ReleaseHudControls();
+            }
+        }
+
         public void SetHudScale(float value)
         {
             scale = Mathf.Clamp(value, 0.5f, 2f);
@@ -247,6 +259,8 @@ namespace DimensionBrawl.UI
                 rangedBasicAttackAction = movement.GetComponent<PlayerRangedBasicAttackAction>();
             }
 
+            ResolveCameraController();
+
             if (lockTargetController == null && movement != null)
             {
                 lockTargetController = movement.GetComponent<PlayerLockTargetController>();
@@ -296,6 +310,17 @@ namespace DimensionBrawl.UI
             }
 
             BuildLayout();
+            if (tutorialInputBlocked)
+            {
+                if (HasHeldReviewControl())
+                {
+                    ReleaseHudControls();
+                }
+
+                UpdateSummonReadinessFeedback(Time.unscaledDeltaTime);
+                return;
+            }
+
             UpdateMovePointerState();
             UpdateFirePointerState();
             UpdateLookPointerState();
@@ -963,12 +988,16 @@ namespace DimensionBrawl.UI
 
             aimInput = Vector2.ClampMagnitude(aimInput, 1f);
             Vector2 movementLookInput = pointerViewActive
-                ? lookAimInput
+                ? Vector2.zero
                 : routeAimToMovementLook ? aimInput : Vector2.zero;
+            movement?.SetSharedFacingRequestsBlocked(pointerViewActive);
+            movement?.SetSharedLookActionBlocked(pointerLookActive);
             movement?.SetLookInput(Vector2.ClampMagnitude(movementLookInput, 1f));
             rangedBasicAttackAction?.SetAimInput(aimInput);
             aimController?.SetAimInput(aimInput);
             aimController?.SetAimHeld(pointerAimActive);
+            cameraController = ResolveCameraController();
+            cameraController?.SetLookPeekInput(pointerViewActive ? lookAimInput : Vector2.zero);
             hudLookAimActive = shouldRouteLookAim;
         }
 
@@ -980,10 +1009,25 @@ namespace DimensionBrawl.UI
             }
 
             movement?.SetLookInput(Vector2.zero);
+            movement?.SetSharedLookActionBlocked(false);
+            movement?.SetSharedFacingRequestsBlocked(false);
             rangedBasicAttackAction?.SetAimInput(Vector2.zero);
             aimController?.SetAimInput(Vector2.zero);
             aimController?.SetAimHeld(false);
+            cameraController = ResolveCameraController();
+            cameraController?.SetLookPeekInput(Vector2.zero);
             hudLookAimActive = false;
+        }
+
+        private ActionCameraController ResolveCameraController()
+        {
+            if (cameraController != null)
+            {
+                return cameraController;
+            }
+
+            cameraController = FindFirstObjectByType<ActionCameraController>();
+            return cameraController;
         }
 
         private Vector2 ResolveDragAimInput(Vector2 guiDelta)

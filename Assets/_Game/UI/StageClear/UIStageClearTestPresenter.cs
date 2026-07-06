@@ -15,17 +15,27 @@ namespace DimensionBrawl.UI.StageClear
         [SerializeField] private Button retryButton;
         [SerializeField] private Button nextStageButton;
         [SerializeField] private CanvasGroup canvasGroup;
+        [SerializeField] private RectTransform motionRoot;
+        [Header("Clear Audio")]
+        [SerializeField] private AudioSource clearBgmSource;
+        [SerializeField] private AudioClip clearBgmClip;
+        [SerializeField, Range(0f, 1f)] private float clearBgmVolume = 0.9f;
         [SerializeField] private string retrySceneName = "OlympusStationCombatStage";
         [SerializeField] private string retryScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         [SerializeField] private string lobbySceneName = "UI_LobbyTest";
         [SerializeField] private string lobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
         [SerializeField] private bool playEntranceOnEnable = true;
-        [SerializeField, Min(0f)] private float entranceDelaySeconds = 0.04f;
-        [SerializeField, Min(0.01f)] private float entranceDurationSeconds = 0.24f;
+        [SerializeField, Min(0f)] private float entranceDelaySeconds = 0.02f;
+        [SerializeField, Min(0.01f)] private float entranceDurationSeconds = 0.42f;
         [SerializeField, Range(0.5f, 1f)] private float entranceStartScale = 0.94f;
+        [SerializeField] private Vector2 entranceOffset = new Vector2(96f, -8f);
 
         private Coroutine entranceRoutine;
         private RectTransform targetRect;
+        private bool hasEntranceBaseTransform;
+        private Vector2 entranceBasePosition;
+        private Vector3 entranceBaseScale;
+        private bool clearBgmPlayed;
 
         public int RetryClickCount { get; private set; }
         public int NextStageClickCount { get; private set; }
@@ -100,6 +110,7 @@ namespace DimensionBrawl.UI.StageClear
                 StopCoroutine(entranceRoutine);
             }
 
+            PlayClearBgmOnce();
             entranceRoutine = StartCoroutine(EntranceRoutine());
         }
 
@@ -134,13 +145,27 @@ namespace DimensionBrawl.UI.StageClear
             }
 
             targetRect ??= transform as RectTransform;
+            if (motionRoot == null)
+            {
+                motionRoot = FindRectTransform("StageClearResponsiveRoot");
+            }
+
+            targetRect = motionRoot != null ? motionRoot : targetRect;
+            if (targetRect != null && !hasEntranceBaseTransform)
+            {
+                entranceBasePosition = targetRect.anchoredPosition;
+                entranceBaseScale = targetRect.localScale;
+                hasEntranceBaseTransform = true;
+            }
         }
 
         private IEnumerator EntranceRoutine()
         {
             ResolveMotionTargets();
 
-            Vector3 endScale = targetRect != null ? targetRect.localScale : Vector3.one;
+            Vector3 endScale = targetRect != null && hasEntranceBaseTransform ? entranceBaseScale : Vector3.one;
+            Vector2 endPosition = targetRect != null && hasEntranceBaseTransform ? entranceBasePosition : Vector2.zero;
+            Vector2 startPosition = endPosition + entranceOffset;
             Vector3 startScale = new Vector3(
                 endScale.x * entranceStartScale,
                 endScale.y * entranceStartScale,
@@ -155,6 +180,7 @@ namespace DimensionBrawl.UI.StageClear
 
             if (targetRect != null)
             {
+                targetRect.anchoredPosition = startPosition;
                 targetRect.localScale = startScale;
             }
 
@@ -176,6 +202,7 @@ namespace DimensionBrawl.UI.StageClear
 
                 if (targetRect != null)
                 {
+                    targetRect.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, eased);
                     targetRect.localScale = Vector3.LerpUnclamped(startScale, endScale, eased);
                 }
 
@@ -191,6 +218,7 @@ namespace DimensionBrawl.UI.StageClear
 
             if (targetRect != null)
             {
+                targetRect.anchoredPosition = endPosition;
                 targetRect.localScale = endScale;
             }
 
@@ -210,6 +238,60 @@ namespace DimensionBrawl.UI.StageClear
                     {
                         return candidate;
                     }
+                }
+            }
+
+            return null;
+        }
+
+        private void PlayClearBgmOnce()
+        {
+            if (clearBgmPlayed || clearBgmClip == null)
+            {
+                return;
+            }
+
+            clearBgmPlayed = true;
+            AudioSource source = ResolveClearBgmSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            source.clip = null;
+            source.loop = false;
+            source.playOnAwake = false;
+            source.spatialBlend = 0f;
+            source.priority = 24;
+            source.volume = Mathf.Clamp01(clearBgmVolume);
+            source.PlayOneShot(clearBgmClip, Mathf.Clamp01(clearBgmVolume));
+        }
+
+        private AudioSource ResolveClearBgmSource()
+        {
+            if (clearBgmSource != null)
+            {
+                return clearBgmSource;
+            }
+
+            clearBgmSource = GetComponent<AudioSource>();
+            if (clearBgmSource == null)
+            {
+                clearBgmSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            return clearBgmSource;
+        }
+
+        private RectTransform FindRectTransform(string objectName)
+        {
+            RectTransform[] rectTransforms = GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < rectTransforms.Length; i++)
+            {
+                RectTransform candidate = rectTransforms[i];
+                if (candidate != null && candidate.name == objectName)
+                {
+                    return candidate;
                 }
             }
 

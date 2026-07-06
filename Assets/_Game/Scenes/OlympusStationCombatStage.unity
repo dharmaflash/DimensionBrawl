@@ -288,6 +288,8 @@ MonoBehaviour:
   aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
+  lookPeekHorizontalOffset: 1.15
+  lookPeekVerticalOffset: 0.55
   aimAssistUsesYawTarget: 1
   aimAssistMaxYawBlend: 0.85
   aimAssistYawSpeedDegrees: 420
@@ -1071,7 +1073,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   team: 1
-  maxHealth: 120
+  maxHealth: 480
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
@@ -1659,6 +1661,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: 1.55, y: 0.55}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.12
   requiredSummonMana: 300
   minimumSummonTier: 3
@@ -1702,6 +1705,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: -1.55, y: 0.35}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.1
   requiredSummonMana: 100
   minimumSummonTier: 1
@@ -1746,6 +1750,7 @@ MonoBehaviour:
   actorPrewarmCount: 2
   maxActiveSummonActors: 1
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.12
   useBlockedHintSeconds: 0.75
   requiredSummonMana: 200
@@ -2125,6 +2130,7 @@ MonoBehaviour:
   pulseScale: 0.08
   spinDegreesPerSecond: 72
   showTargetOutline: 1
+  useBodyOutlineOnMobile: 0
   softOutlineColor: {r: 0.58, g: 0.92, b: 1, a: 0.62}
   hardOutlineColor: {r: 1, g: 0.78, b: 0.36, a: 0.72}
   outlineWidth: 0.012
@@ -185702,7 +185708,7 @@ PrefabInstance:
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossHealthText
       value: 
-      objectReference: {fileID: 1248464258}
+      objectReference: {fileID: 0}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossResourceFill
       value: 
@@ -185791,6 +185797,10 @@ PrefabInstance:
       propertyPath: m_FontData.m_HorizontalOverflow
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5496796597266892738, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5636449933055466095, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
       value: 
@@ -185842,6 +185852,10 @@ PrefabInstance:
     - target: {fileID: 5657396244988120885, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 50.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 5704358636811254415, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5756717049702816846, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
@@ -187109,17 +187123,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2291999956420801781, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
   m_PrefabInstance: {fileID: 1248464237}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1248464258 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5419335234344246674, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-  m_PrefabInstance: {fileID: 1248464237}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
 --- !u!1 &1248464259 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6831720353784711515, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
@@ -257551,7 +257554,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1755312243
 RectTransform:
   m_ObjectHideFlags: 0
@@ -257608,11 +257611,11 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 18
+    m_FontSize: 32
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 8
-    m_MaxSize: 18
+    m_MaxSize: 32
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -269059,6 +269062,7 @@ MonoBehaviour:
   combatModeController: {fileID: 4014}
   aimController: {fileID: 4013}
   rangedBasicAttackAction: {fileID: 4012}
+  cameraController: {fileID: 0}
   lockTargetController: {fileID: 4025}
   skill1Action: {fileID: 4018}
   summonSlot1Action: {fileID: 4017}
@@ -269076,6 +269080,7 @@ MonoBehaviour:
   weaponSwapActionName: WeaponSwap
   showHud: 0
   drawHudVisuals: 0
+  tutorialInputBlocked: 0
   useSingleSummonButton: 0
   hudOpacity: 1
   buttonSize: 168
@@ -283155,7 +283160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
-  maxHealth: 3600
+  maxHealth: 2400
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
@@ -298077,7 +298082,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2043663568
 RectTransform:
   m_ObjectHideFlags: 0

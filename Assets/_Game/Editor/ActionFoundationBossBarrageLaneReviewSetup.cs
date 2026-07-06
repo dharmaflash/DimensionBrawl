@@ -345,7 +345,8 @@ namespace DimensionBrawl.Editor
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
         private const string BossBasicFireMuzzleName = "BossBasicFireMuzzle";
-        private const float BossProxyReviewMaxHealth = 3600f;
+        private const float BossProxyReviewMaxHealth = 2400f;
+        private const float PlayerReviewMaxHealth = 360f;
         private const float PlayerSummonBaseEnergyPerSecond = 8f;
         private const float PlayerSummonBackSafetyGainScale = 0.35f;
         private const float PlayerSummonMidChargeGainScale = 0.75f;
@@ -1028,12 +1029,14 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
             SummonEnergyLadder energyLadder =
                 RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
 
             ApplyPlayerSummonEnergyTuning(energyLadder);
+            SetFloat(playerHealth, "maxHealth", PlayerReviewMaxHealth);
             SetFloat(bossHealth, "maxHealth", BossProxyReviewMaxHealth);
             ConfigureSkill1TierSettings(skill1Action);
             summonSlot1Action.ConfigureSummonActionProfile(LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
@@ -1176,6 +1179,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(energyLadder, "laneSpace", laneSpace);
             SetObjectReference(energyLadder, "trackedPlayer", player.transform);
             ApplyPlayerSummonEnergyTuning(energyLadder);
+            SetFloat(playerHealth, "maxHealth", PlayerReviewMaxHealth);
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);

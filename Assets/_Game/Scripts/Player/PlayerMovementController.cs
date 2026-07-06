@@ -93,6 +93,8 @@ namespace DimensionBrawl.Player
         private bool actionMoveInputScaleActive;
         private bool cinematicMoveInputScaleActive;
         private bool sharedMoveInputBlocked;
+        private bool sharedLookActionBlocked;
+        private bool sharedFacingRequestsBlocked;
         private bool laneConstraintEnabled = true;
         private bool scriptedMoveInputOverrideActive;
         private Vector2 scriptedMoveInputOverride;
@@ -134,7 +136,7 @@ namespace DimensionBrawl.Player
 
         public void SetLookInput(Vector2 input)
         {
-            if (!CanAcceptSharedInput())
+            if (!CanAcceptSharedInput() || sharedLookActionBlocked)
             {
                 mobileLookInput = Vector2.zero;
                 return;
@@ -158,6 +160,34 @@ namespace DimensionBrawl.Player
 
             mobileMoveInput = Vector2.zero;
             planarVelocity = Vector3.zero;
+        }
+
+        public void SetSharedLookActionBlocked(bool blocked)
+        {
+            if (sharedLookActionBlocked == blocked)
+            {
+                return;
+            }
+
+            sharedLookActionBlocked = blocked;
+            if (sharedLookActionBlocked)
+            {
+                mobileLookInput = Vector2.zero;
+            }
+        }
+
+        public void SetSharedFacingRequestsBlocked(bool blocked)
+        {
+            if (sharedFacingRequestsBlocked == blocked)
+            {
+                return;
+            }
+
+            sharedFacingRequestsBlocked = blocked;
+            if (sharedFacingRequestsBlocked)
+            {
+                ClearRequestedFacing();
+            }
         }
 
         internal void SetScriptedInputOverride(Vector2 moveInput, Vector2 lookInput)
@@ -253,6 +283,11 @@ namespace DimensionBrawl.Player
 
         public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
         {
+            if (sharedFacingRequestsBlocked)
+            {
+                return;
+            }
+
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (planarDirection.sqrMagnitude <= 0.0001f)
             {
@@ -365,6 +400,11 @@ namespace DimensionBrawl.Player
             if (scriptedLookInputOverrideActive)
             {
                 return scriptedLookInputOverride;
+            }
+
+            if (sharedLookActionBlocked)
+            {
+                return Vector2.zero;
             }
 
             return ReadSharedInput(lookAction, mobileLookInput);
@@ -514,11 +554,17 @@ namespace DimensionBrawl.Player
 
         private void UpdateFacing(Vector3 desiredMoveDirection, Vector2 lookInput, float deltaTime)
         {
-            Vector3 facingDirection = BuildWorldDirection(lookInput);
+            Vector3 facingDirection = sharedFacingRequestsBlocked
+                ? Vector3.zero
+                : BuildWorldDirection(lookInput);
 
             TryRequestSharpTurn(desiredMoveDirection);
 
-            if (requestedFacingTimer > 0f)
+            if (sharedFacingRequestsBlocked)
+            {
+                ClearRequestedFacing();
+            }
+            else if (requestedFacingTimer > 0f)
             {
                 requestedFacingTimer = Mathf.Max(0f, requestedFacingTimer - deltaTime);
                 facingDirection = requestedFacingDirection;
@@ -539,6 +585,12 @@ namespace DimensionBrawl.Player
                 transform.rotation,
                 targetRotation,
                 turnRateDegrees * deltaTime);
+        }
+
+        private void ClearRequestedFacing()
+        {
+            requestedFacingDirection = Vector3.zero;
+            requestedFacingTimer = 0f;
         }
 
         private void UpdateStopSettle(Vector2 moveInput, float deltaTime, bool suppressLocomotionStateChanges)

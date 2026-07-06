@@ -13,7 +13,8 @@ namespace DimensionBrawl.Presentation
             SwapMode,
             RangedAttack,
             Dodge,
-            Route
+            Route,
+            SummonSlots
         }
 
         public enum GuideState
@@ -904,6 +905,8 @@ namespace DimensionBrawl.Presentation
             {
                 case FocusKind.MoveStick:
                     return resolvedPadding + 34f;
+                case FocusKind.SummonSlots:
+                    return resolvedPadding + 180f;
                 case FocusKind.SwapMode:
                     return resolvedPadding + 22f;
                 case FocusKind.MeleeAttack:
@@ -1108,6 +1111,8 @@ namespace DimensionBrawl.Presentation
                     return dodgeIcon;
                 case FocusKind.Route:
                     return routeIcon;
+                case FocusKind.SummonSlots:
+                    return routeIcon;
                 default:
                     return null;
             }
@@ -1152,6 +1157,8 @@ namespace DimensionBrawl.Presentation
                     return "DODGE";
                 case FocusKind.Route:
                     return "ROUTE";
+                case FocusKind.SummonSlots:
+                    return "SUMMON";
                 default:
                     return "GUIDE";
             }
@@ -1173,6 +1180,8 @@ namespace DimensionBrawl.Presentation
                     return "EVD";
                 case FocusKind.Route:
                     return "GO";
+                case FocusKind.SummonSlots:
+                    return "SUM";
                 default:
                     return string.Empty;
             }
@@ -1192,6 +1201,7 @@ namespace DimensionBrawl.Presentation
                         ? new Color(1f, 0.38f, 0.28f, 0.96f)
                         : new Color(1f, 0.55f, 0.46f, 0.62f);
                 case FocusKind.Route:
+                case FocusKind.SummonSlots:
                     return targetGuideState == GuideState.Ready
                         ? new Color(0.64f, 1f, 0.42f, 0.96f)
                         : new Color(0.7f, 1f, 0.56f, 0.62f);
@@ -1220,6 +1230,7 @@ namespace DimensionBrawl.Presentation
                 case FocusKind.SwapMode:
                 case FocusKind.RangedAttack:
                 case FocusKind.Dodge:
+                case FocusKind.SummonSlots:
                     return true;
                 default:
                     return false;

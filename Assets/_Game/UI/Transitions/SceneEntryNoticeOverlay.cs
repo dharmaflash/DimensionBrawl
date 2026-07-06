@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -25,6 +26,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text leftStatusText;
         [SerializeField] private Text rightStatusText;
         [SerializeField] private AudioSource audioSource;
+        [SerializeField, Range(0f, 1f)] private float startBeepVolume = 0.85f;
         [SerializeField] private bool playOnStart = true;
         [SerializeField] private bool replayOnEnable;
         [SerializeField] private bool useUnscaledTime = true;
@@ -39,6 +41,8 @@ namespace DimensionBrawl.UI
         private string bodySource = string.Empty;
         private bool gameplayPauseApplied;
         private float previousTimeScale = 1f;
+
+        public event Func<IEnumerator> BeforeGameplayPauseReleased;
 
         private void Reset()
         {
@@ -109,9 +113,14 @@ namespace DimensionBrawl.UI
 
         public void HideImmediate()
         {
-            visible = false;
+            HideVisualsImmediate();
             ReleaseGameplayPause();
             SetPointerInputBlocked(false);
+        }
+
+        private void HideVisualsImmediate()
+        {
+            visible = false;
             if (rootGroup != null)
             {
                 rootGroup.alpha = 0f;
@@ -178,9 +187,36 @@ namespace DimensionBrawl.UI
                 yield return null;
             }
 
-            HideImmediate();
+            HideVisualsImmediate();
+            yield return RunBeforeGameplayPauseReleasedHandlers();
+            ReleaseGameplayPause();
+            SetPointerInputBlocked(false);
             noticeFinished?.Invoke();
             playRoutine = null;
+        }
+
+        private IEnumerator RunBeforeGameplayPauseReleasedHandlers()
+        {
+            Func<IEnumerator> handlers = BeforeGameplayPauseReleased;
+            if (handlers == null)
+            {
+                yield break;
+            }
+
+            Delegate[] invocationList = handlers.GetInvocationList();
+            for (int i = 0; i < invocationList.Length; i++)
+            {
+                if (invocationList[i] is not Func<IEnumerator> handler)
+                {
+                    continue;
+                }
+
+                IEnumerator routine = handler.Invoke();
+                if (routine != null)
+                {
+                    yield return routine;
+                }
+            }
         }
 
         private void ApplyProfile()
@@ -348,12 +384,37 @@ namespace DimensionBrawl.UI
 
         private void PlayStartBeep()
         {
-            if (profile == null || profile.StartBeepClip == null || audioSource == null)
+            AudioClip clip = profile != null ? profile.StartBeepClip : null;
+            if (clip == null)
             {
                 return;
             }
 
-            audioSource.PlayOneShot(profile.StartBeepClip);
+            AudioSource source = ResolveAudioSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            source.PlayOneShot(clip, Mathf.Clamp01(startBeepVolume));
+        }
+
+        private AudioSource ResolveAudioSource()
+        {
+            if (audioSource == null)
+            {
+                audioSource = GetComponent<AudioSource>();
+            }
+
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+            audioSource.spatialBlend = 0f;
+            return audioSource;
         }
 
         private int ResolveTypewriterCount(float elapsedSeconds)

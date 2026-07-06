@@ -1071,7 +1071,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   team: 1
-  maxHealth: 120
+  maxHealth: 480
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
@@ -13888,7 +13888,7 @@ PrefabInstance:
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossHealthText
       value: 
-      objectReference: {fileID: 1248464258}
+      objectReference: {fileID: 0}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossResourceFill
       value: 
@@ -19414,7 +19414,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1755312243
 RectTransform:
   m_ObjectHideFlags: 0
@@ -19471,11 +19471,11 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 18
+    m_FontSize: 32
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 8
-    m_MaxSize: 18
+    m_MaxSize: 32
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -21606,7 +21606,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
-  maxHealth: 3600
+  maxHealth: 2400
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:

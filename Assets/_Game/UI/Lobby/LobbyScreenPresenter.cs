@@ -24,6 +24,10 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0f)] private float operationEntryDelaySeconds = 0.35f;
         [SerializeField] private string operationEntryLineTextKey = "ui.lobby.operation_entry";
         [SerializeField, TextArea] private string operationEntryFallbackLine = "Operation route acquired. Opening chapter map.";
+        [Header("Audio")]
+        [SerializeField] private AudioSource uiAudioSource;
+        [SerializeField] private AudioClip pveButtonSfx;
+        [SerializeField, Range(0f, 1f)] private float pveButtonSfxVolume = 0.85f;
         [SerializeField] private UnityEvent primaryCtaRequested = new UnityEvent();
 
         private Coroutine primaryRouteRoutine;
@@ -67,6 +71,7 @@ namespace DimensionBrawl.UI
             }
 
             primaryCtaRequested.Invoke();
+            PlayOneShot(pveButtonSfx, pveButtonSfxVolume);
             if (!playOperationEntryBeat || operationEntryDelaySeconds <= 0f)
             {
                 RequestPrimaryRoute();
@@ -193,6 +198,42 @@ namespace DimensionBrawl.UI
             {
                 target.text = value;
             }
+        }
+
+        private void PlayOneShot(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            AudioSource source = ResolveUiAudioSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+        }
+
+        private AudioSource ResolveUiAudioSource()
+        {
+            if (uiAudioSource != null)
+            {
+                return uiAudioSource;
+            }
+
+            uiAudioSource = GetComponent<AudioSource>();
+            if (uiAudioSource == null)
+            {
+                uiAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            uiAudioSource.playOnAwake = false;
+            uiAudioSource.loop = false;
+            uiAudioSource.spatialBlend = 0f;
+            uiAudioSource.priority = 32;
+            return uiAudioSource;
         }
     }
 }

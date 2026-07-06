@@ -21,6 +21,9 @@ namespace DimensionBrawl.UI
         [SerializeField] private string promptTextKey;
         [SerializeField] private string versionTextKey;
         [SerializeField] private string statusTextKey;
+        [Header("Audio")]
+        [SerializeField] private AudioClip startButtonSfx;
+        [SerializeField, Range(0f, 1f)] private float startButtonSfxVolume = 0.85f;
         [SerializeField] private UnityEvent startRequested = new UnityEvent();
 
         private void OnEnable()
@@ -66,6 +69,7 @@ namespace DimensionBrawl.UI
 
         public void HandleStartClicked()
         {
+            PlayTransitionOneShot(startButtonSfx, startButtonSfxVolume);
             startRequested.Invoke();
 
             if (router != null)
@@ -97,5 +101,24 @@ namespace DimensionBrawl.UI
             target.text = string.Empty;
         }
 
+        private static void PlayTransitionOneShot(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            GameObject host = new GameObject("LoginStartTransitionSfx");
+            DontDestroyOnLoad(host);
+
+            AudioSource source = host.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            source.priority = 32;
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+
+            Destroy(host, Mathf.Max(0.1f, clip.length) + 0.1f);
+        }
     }
 }

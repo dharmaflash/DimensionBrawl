@@ -40,6 +40,7 @@ namespace DimensionBrawl.UI
             CanvasScaler[] scalers = FindObjectsByType<CanvasScaler>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
+            bool appliedAny = false;
             for (int i = 0; i < scalers.Length; i++)
             {
                 CanvasScaler scaler = scalers[i];
@@ -56,7 +57,12 @@ namespace DimensionBrawl.UI
 
                 adapter.canvasScaler = scaler;
                 adapter.ApplyNow();
-                return;
+                appliedAny = true;
+            }
+
+            if (!appliedAny)
+            {
+                Debug.LogWarning($"No CanvasScaler found for lobby resolution adaptation in scene: {scene.name}");
             }
         }
 
@@ -143,7 +149,8 @@ namespace DimensionBrawl.UI
         private static bool IsLobbyBackgroundFrame(RectTransform rect)
         {
             return rect.name == "LobbyBackgroundFrame"
-                || rect.name == "LobbyBackgroundCover";
+                || rect.name == "LobbyBackgroundCover"
+                || rect.name == "Dimension_Lobby_UI_0000_Background";
         }
     }
 }

@@ -1,10 +1,9 @@
 fileFormatVersion: 2
-guid: d4b7e7e80a2348f7a086f4ad3bd4e101
+guid: 1f8f3d0b9e1a42e4a6d0d5b67c8e9f20
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences:
-  - startBeepClip: {fileID: 8300000, guid: 480de4e28dbc0da4e9a1bdffcbca163d, type: 3}
+  defaultReferences: []
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

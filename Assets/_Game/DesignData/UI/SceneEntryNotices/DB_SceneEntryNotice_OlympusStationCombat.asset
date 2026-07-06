@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4b7e7e80a2348f7a086f4ad3bd4e101, type: 3}
   m_Name: DB_SceneEntryNotice_OlympusStationCombat
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.SceneEntryNoticeProfile
-  eyebrowText: COMBAT NOTICE
-  titleText: Olympus Station Combat Zone
-  bodyText: Hostile dimensional signature locked. Maintain lane discipline and finish
-    the guardian.
-  leftStatusText: TARGET // LOCKED
+  eyebrowText: Warning
+  titleText: "\uC804\uC0DD\uC790 \uCE68\uACF5"
+  bodyText: "\uC801\uB300\uC801 \uC2E0\uD638\uAC00 \uAC10\uC9C0\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+    \uC804\uC120\uC744 \uC720\uC9C0\uD558\uBA70 \uC801 \uC9C0\uD718\uC744 \uCC98\uCE58\uD558\uC2ED\uC2DC\uC624."
+  leftStatusText: "\uCC9C\uACC4\uAD00\uB9AC\uC2DC\uC2A4\uD15C"
   rightStatusText: SUPPORT // ONLINE
   accentColor: {r: 0.22, g: 0.94, b: 1, a: 1}
   backgroundColor: {r: 0.006, g: 0.038, b: 0.06, a: 0.88}
@@ -27,4 +27,4 @@ MonoBehaviour:
   holdSeconds: 1.7
   dismissSeconds: 0.32
   typewriterCharactersPerSecond: 48
-  startBeepClip: {fileID: 0}
+  startBeepClip: {fileID: 8300000, guid: 480de4e28dbc0da4e9a1bdffcbca163d, type: 3}

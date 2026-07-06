@@ -524,8 +524,10 @@ namespace DimensionBrawl.UI
         private void Awake()
         {
             ResolveOptionalRuntimeReferences();
+            DisableDuplicateHudText("AmmoText", ammoText);
             ApplyPlayerReadoutStyles();
             ApplyResponsiveSideLayout();
+            ApplyBossHeaderSpacing();
             EnsureAimReticle();
             EnsurePlayerDamageOverlay();
             CaptureMeterBaseColors();
@@ -539,6 +541,7 @@ namespace DimensionBrawl.UI
             }
 
             ApplyResponsiveSideLayout();
+            ApplyBossHeaderSpacing();
         }
 
         private void Update()
@@ -594,7 +597,11 @@ namespace DimensionBrawl.UI
                 ApplyHorizontalMeter(bossHealthFill, ratio, ref bossHealthFillBaseWidth);
             }
 
-            SetText(bossHealthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
+            if (bossHealthText != null && bossHealthText != actionFeedbackText)
+            {
+                SetText(bossHealthText, string.Empty);
+                bossHealthText.gameObject.SetActive(false);
+            }
         }
 
         public void SetBossResource(float current, float max)
@@ -742,7 +749,7 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            int fontSize = reloading ? 16 : 18;
+            int fontSize = 32;
             ApplyPlayerReadoutStyle(ammoText, fontSize, reloading ? InputModeReadoutColor : AmmoReadoutColor);
             ammoText.fontSize = fontSize;
             SetText(ammoText, label);
@@ -920,7 +927,7 @@ namespace DimensionBrawl.UI
             ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
             ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
             ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
-            ApplyPlayerReadoutStyle(ammoText, 18, AmmoReadoutColor);
+            ApplyPlayerReadoutStyle(ammoText, 32, AmmoReadoutColor);
         }
 
         private void ApplyResponsiveSideLayout()
@@ -942,6 +949,51 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
             ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
             RefreshVirtualJoystickRestPosition();
+        }
+
+        private void ApplyBossHeaderSpacing()
+        {
+            ApplyCenterDesignRect("BossNameArea", new Rect(930f, 51f, 745f, 48f));
+            ApplyCenterDesignRect("ActionFeedback", new Rect(930f, 51f, 745f, 48f));
+            ApplyCenterDesignRect("BossHpBackground", new Rect(925f, 109f, 782f, 31f));
+            ApplyCenterDesignRect("BossHpFill", new Rect(941f, 113f, 749f, 24f));
+            ApplyCenterDesignRect("BossCostBackground", new Rect(928f, 142f, 775f, 34f));
+            ApplyCenterDesignRect("BossCostFill", new Rect(944f, 144f, 745f, 25f));
+        }
+
+        private void ApplyCenterDesignRect(string objectName, Rect designRect)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = new Vector2(
+                designRect.xMin + designRect.width * 0.5f - DimensionHudDesignWidth * 0.5f,
+                DimensionHudDesignHeight * 0.5f - designRect.yMin - designRect.height * 0.5f);
+            rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void DisableDuplicateHudText(string objectName, Text activeText)
+        {
+            Text[] texts = GetComponentsInChildren<Text>(includeInactive: true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                Text text = texts[i];
+                if (text == null || text == activeText || !string.Equals(text.name, objectName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                text.text = string.Empty;
+                text.gameObject.SetActive(false);
+            }
         }
 
         private void RefreshVirtualJoystickRestPosition()

@@ -14,6 +14,9 @@ namespace DimensionBrawl.Editor
         private const string PrefabPath = "Assets/_Game/UI/Transitions/PF_UI_SceneEntryNoticeOverlay.prefab";
         private const string ProfileFolder = "Assets/_Game/DesignData/UI/SceneEntryNotices";
         private const string InstanceRootName = "SceneEntryNoticeOverlay";
+        private const string CutsceneScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string CombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const string DefaultStartBeepClipGuid = "480de4e28dbc0da4e9a1bdffcbca163d";
 
         [MenuItem("DimensionBrawl/UI/Scene Entry Notice/Apply To Olympus Scenes")]
         public static void ApplyToOlympusScenesMenu()
@@ -34,26 +37,31 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        [MenuItem("DimensionBrawl/UI/Scene Entry Notice/Remove From Cutscene Scene")]
+        public static void RemoveFromCutsceneSceneMenu()
+        {
+            RemoveFromScene(CutsceneScenePath);
+        }
+
+        public static void RunBatchRemoveCutscene()
+        {
+            try
+            {
+                RemoveFromScene(CutsceneScenePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                EditorApplication.Exit(1);
+            }
+        }
+
         public static void ApplyToOlympusScenes()
         {
             AssetDatabase.Refresh();
             EnsureFolder(ProfileFolder);
 
-            SceneEntryNoticeProfile corridorProfile = EnsureProfile(
-                ProfileFolder + "/DB_SceneEntryNotice_OlympusCorridor.asset",
-                "GUIDE SYSTEM",
-                "Corridor Link Established",
-                "Support status window is online. Follow the active guide prompt and keep HP stable.",
-                "ROUTE // OLYMPUS",
-                "ASSIST // ACTIVE",
-                new Color(0.18f, 0.92f, 1f, 1f),
-                new Color(0.005f, 0.035f, 0.055f, 0.87f),
-                new Color(0.44f, 1f, 1f, 0.72f),
-                new Color(0f, 0.018f, 0.028f, 0.16f),
-                0.22f,
-                0.38f,
-                1.82f,
-                0.34f);
+            AudioClip startBeepClip = ResolveStartBeepClip();
             SceneEntryNoticeProfile combatProfile = EnsureProfile(
                 ProfileFolder + "/DB_SceneEntryNotice_OlympusStationCombat.asset",
                 "COMBAT NOTICE",
@@ -68,12 +76,13 @@ namespace DimensionBrawl.Editor
                 0.16f,
                 0.34f,
                 1.7f,
-                0.32f);
+                0.32f,
+                startBeepClip);
             GameObject prefab = EnsurePrefabAsset();
             EnsurePrefabDefaultProfile(prefab, combatProfile);
 
-            ApplyToScene("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", prefab, corridorProfile);
-            ApplyToScene("Assets/_Game/Scenes/OlympusStationCombatStage.unity", prefab, combatProfile);
+            RemoveFromScene(CutsceneScenePath);
+            ApplyToScene(CombatScenePath, prefab, combatProfile);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -107,6 +116,7 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedOverlay = new SerializedObject(overlay);
             serializedOverlay.FindProperty("profile").objectReferenceValue = profile;
             serializedOverlay.FindProperty("playOnStart").boolValue = true;
+            serializedOverlay.FindProperty("startBeepVolume").floatValue = 0.85f;
             serializedOverlay.FindProperty("replayOnEnable").boolValue = false;
             serializedOverlay.FindProperty("useUnscaledTime").boolValue = true;
             serializedOverlay.FindProperty("pauseGameplayDuringNotice").boolValue = true;
@@ -120,6 +130,24 @@ namespace DimensionBrawl.Editor
             if (!EditorSceneManager.SaveScene(scene, scenePath))
             {
                 throw new InvalidOperationException($"Failed to save scene entry notice scene: {scenePath}");
+            }
+        }
+
+        private static void RemoveFromScene(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            SceneEntryNoticeOverlay overlay = FindSceneComponent<SceneEntryNoticeOverlay>(scene);
+            GameObject root = overlay != null ? overlay.gameObject : FindRoot(scene, InstanceRootName);
+            if (root == null)
+            {
+                return;
+            }
+
+            UnityEngine.Object.DestroyImmediate(root);
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to remove scene entry notice from scene: {scenePath}");
             }
         }
 
@@ -157,6 +185,7 @@ namespace DimensionBrawl.Editor
 
                 SerializedObject serializedOverlay = new SerializedObject(overlay);
                 serializedOverlay.FindProperty("profile").objectReferenceValue = profile;
+                serializedOverlay.FindProperty("startBeepVolume").floatValue = 0.85f;
                 serializedOverlay.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(overlay);
                 PrefabUtility.SaveAsPrefabAsset(contents, path);
@@ -267,6 +296,7 @@ namespace DimensionBrawl.Editor
             serializedOverlay.FindProperty("rightStatusText").objectReferenceValue = rightStatusText;
             serializedOverlay.FindProperty("audioSource").objectReferenceValue = audioSource;
             serializedOverlay.FindProperty("playOnStart").boolValue = true;
+            serializedOverlay.FindProperty("startBeepVolume").floatValue = 0.85f;
             serializedOverlay.FindProperty("replayOnEnable").boolValue = false;
             serializedOverlay.FindProperty("useUnscaledTime").boolValue = true;
             serializedOverlay.FindProperty("pauseGameplayDuringNotice").boolValue = true;
@@ -290,7 +320,8 @@ namespace DimensionBrawl.Editor
             float startupDelay,
             float revealSeconds,
             float holdSeconds,
-            float dismissSeconds)
+            float dismissSeconds,
+            AudioClip startBeepClip)
         {
             SceneEntryNoticeProfile profile = AssetDatabase.LoadAssetAtPath<SceneEntryNoticeProfile>(path);
             if (profile == null)
@@ -314,9 +345,18 @@ namespace DimensionBrawl.Editor
             serializedProfile.FindProperty("holdSeconds").floatValue = holdSeconds;
             serializedProfile.FindProperty("dismissSeconds").floatValue = dismissSeconds;
             serializedProfile.FindProperty("typewriterCharactersPerSecond").floatValue = 48f;
+            serializedProfile.FindProperty("startBeepClip").objectReferenceValue = startBeepClip;
             serializedProfile.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
+        }
+
+        private static AudioClip ResolveStartBeepClip()
+        {
+            string path = AssetDatabase.GUIDToAssetPath(DefaultStartBeepClipGuid);
+            return string.IsNullOrEmpty(path)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<AudioClip>(path);
         }
 
         private static Image CreateImage(Transform parent, string name, Color color)

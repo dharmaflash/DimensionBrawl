@@ -51,12 +51,22 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0f)] private float focusDelaySeconds = 0.02f;
         [SerializeField, Min(0f)] private float initialFocusDurationSeconds = 0.18f;
         [SerializeField, Min(0f)] private float selectedFocusDurationSeconds = 0.3f;
+        [Header("Audio")]
+        [SerializeField] private AudioSource uiAudioSource;
+        [SerializeField] private AudioClip sceneEnterSfx;
+        [SerializeField] private AudioClip startButtonSfx;
+        [SerializeField] private AudioClip backButtonSfx;
+        [SerializeField, Range(0f, 1f)] private float sceneEnterSfxVolume = 0.8f;
+        [SerializeField, Range(0f, 1f)] private float startButtonSfxVolume = 0.9f;
+        [SerializeField, Range(0f, 1f)] private float backButtonSfxVolume = 0.8f;
 
         private Coroutine focusRoutine;
+        private bool sceneEnterSfxPlayed;
 
         private void OnEnable()
         {
             ApplySelectedStage();
+            PlaySceneEnterSfxOnce();
 
             if (startButton != null)
             {
@@ -116,6 +126,7 @@ namespace DimensionBrawl.UI
         public void HandleStartClicked()
         {
             startRequested.Invoke();
+            PlayOneShot(startButtonSfx, startButtonSfxVolume);
 
             if (router != null)
             {
@@ -135,6 +146,7 @@ namespace DimensionBrawl.UI
             }
 
             backRequested.Invoke();
+            PlayOneShot(backButtonSfx, backButtonSfxVolume);
 
             if (router != null)
             {
@@ -264,6 +276,53 @@ namespace DimensionBrawl.UI
 #else
             return false;
 #endif
+        }
+
+        private void PlaySceneEnterSfxOnce()
+        {
+            if (sceneEnterSfxPlayed)
+            {
+                return;
+            }
+
+            sceneEnterSfxPlayed = true;
+            PlayOneShot(sceneEnterSfx, sceneEnterSfxVolume);
+        }
+
+        private void PlayOneShot(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            AudioSource source = ResolveUiAudioSource();
+            if (source == null)
+            {
+                return;
+            }
+
+            source.PlayOneShot(clip, Mathf.Clamp01(volume));
+        }
+
+        private AudioSource ResolveUiAudioSource()
+        {
+            if (uiAudioSource != null)
+            {
+                return uiAudioSource;
+            }
+
+            uiAudioSource = GetComponent<AudioSource>();
+            if (uiAudioSource == null)
+            {
+                uiAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            uiAudioSource.playOnAwake = false;
+            uiAudioSource.loop = false;
+            uiAudioSource.spatialBlend = 0f;
+            uiAudioSource.priority = 32;
+            return uiAudioSource;
         }
     }
 }

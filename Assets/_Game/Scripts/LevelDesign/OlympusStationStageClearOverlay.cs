@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Test;
@@ -25,11 +26,21 @@ namespace DimensionBrawl.LevelDesign
         private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
         private const string BossObjectName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string StageClearPresenterTypeName = "DimensionBrawl.UI.StageClear.UIStageClearTestPresenter";
+        private static readonly string[] CombatHudExitRootNames =
+        {
+            "BossBarrageLaneReview_CombatHudCanvas",
+            "PF_UI_CombatHud",
+            "BossBarrageLaneReview_DebugHud",
+            "PF_UI_CombatHudPresentation"
+        };
 
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private int sortOrder = 7000;
+        [SerializeField, Min(0f)] private float combatHudExitSeconds = 0.42f;
+        [SerializeField, Min(0f)] private float postBossDefeatHoldSeconds = 1.1f;
+        [SerializeField, Min(0f)] private float hudExitSlidePixels = 128f;
 
         private BossBarragePocketReviewOwner subscribedOwner;
         private CombatHealth subscribedBossHealth;
@@ -236,6 +247,13 @@ namespace DimensionBrawl.LevelDesign
 
         private IEnumerator ShowAuthoredStageClearSceneRoutine()
         {
+            yield return PlayCombatHudExitRoutine();
+
+            if (postBossDefeatHoldSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(postBossDefeatHoldSeconds);
+            }
+
             bool sceneLoadRequested = false;
             try
             {
@@ -285,6 +303,147 @@ namespace DimensionBrawl.LevelDesign
             }
 
             stageClearRoutine = null;
+        }
+
+        private IEnumerator PlayCombatHudExitRoutine()
+        {
+            List<UiExitTarget> targets = CollectCombatHudExitTargets();
+            if (targets.Count <= 0)
+            {
+                HideCombatHudRootsImmediate();
+                yield break;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                targets[i].SetInteractive(false);
+            }
+
+            float duration = Mathf.Max(0.01f, combatHudExitSeconds);
+            if (combatHudExitSeconds <= 0f)
+            {
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    targets[i].Apply(1f);
+                }
+
+                HideCombatHudRootsImmediate();
+                yield break;
+            }
+
+            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                float eased = EaseOutCubic(elapsed / duration);
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    targets[i].Apply(eased);
+                }
+
+                yield return null;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                targets[i].Apply(1f);
+            }
+
+            HideCombatHudRootsImmediate();
+        }
+
+        private List<UiExitTarget> CollectCombatHudExitTargets()
+        {
+            List<UiExitTarget> targets = new List<UiExitTarget>(8);
+            HashSet<Transform> seen = new HashSet<Transform>();
+
+            for (int i = 0; i < CombatHudExitRootNames.Length; i++)
+            {
+                GameObject root = GameObject.Find(CombatHudExitRootNames[i]);
+                AddUiExitTarget(root != null ? root.transform : null, targets, seen);
+            }
+
+            BossBarrageLaneReviewOverlayHud[] overlayHuds = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < overlayHuds.Length; i++)
+            {
+                Transform target = overlayHuds[i] != null ? overlayHuds[i].transform : null;
+                AddUiExitTarget(target, targets, seen);
+            }
+
+            return targets;
+        }
+
+        private static void HideCombatHudRootsImmediate()
+        {
+            for (int i = 0; i < CombatHudExitRootNames.Length; i++)
+            {
+                GameObject root = GameObject.Find(CombatHudExitRootNames[i]);
+                if (root == null)
+                {
+                    continue;
+                }
+
+                Canvas[] canvases = root.GetComponentsInChildren<Canvas>(true);
+                for (int canvasIndex = 0; canvasIndex < canvases.Length; canvasIndex++)
+                {
+                    if (canvases[canvasIndex] != null)
+                    {
+                        canvases[canvasIndex].enabled = false;
+                    }
+                }
+
+                root.SetActive(false);
+            }
+        }
+
+        private void AddUiExitTarget(Transform target, List<UiExitTarget> targets, HashSet<Transform> seen)
+        {
+            if (target == null || !seen.Add(target))
+            {
+                return;
+            }
+
+            RectTransform rectTransform = target as RectTransform;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            CanvasGroup canvasGroup = target.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = target.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            Vector2 exitOffset = CalculateHudExitOffset(rectTransform);
+            targets.Add(new UiExitTarget(canvasGroup, rectTransform, exitOffset));
+        }
+
+        private Vector2 CalculateHudExitOffset(RectTransform rectTransform)
+        {
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(null, rectTransform.position);
+            Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            Vector2 direction = screenPoint - center;
+            if (direction.sqrMagnitude < 16f)
+            {
+                direction = Vector2.down;
+            }
+            else
+            {
+                direction.Normalize();
+            }
+
+            if (Mathf.Abs(direction.x) < 0.18f)
+            {
+                direction.x = 0f;
+            }
+
+            if (Mathf.Abs(direction.y) < 0.18f)
+            {
+                direction.y = screenPoint.y >= center.y ? 0.22f : -0.22f;
+            }
+
+            return direction.normalized * Mathf.Max(0f, hudExitSlidePixels);
         }
 
         private static bool ConfigureStageClearPresenters(Scene clearScene, int resolvedSortOrder)
@@ -351,6 +510,12 @@ namespace DimensionBrawl.LevelDesign
                 "PlayEntrance",
                 BindingFlags.Instance | BindingFlags.Public);
             playEntrance?.Invoke(presenter, Array.Empty<object>());
+        }
+
+        private static float EaseOutCubic(float t)
+        {
+            t = Mathf.Clamp01(t);
+            return 1f - Mathf.Pow(1f - t, 3f);
         }
 
         private void LockCombatAfterClear()
@@ -458,6 +623,46 @@ namespace DimensionBrawl.LevelDesign
             for (int i = 0; i < costLadders.Length; i++)
             {
                 costLadders[i]?.SetGainEnabled(false);
+            }
+        }
+
+        private sealed class UiExitTarget
+        {
+            private readonly CanvasGroup canvasGroup;
+            private readonly RectTransform rectTransform;
+            private readonly Vector2 startPosition;
+            private readonly Vector2 endPosition;
+
+            public UiExitTarget(CanvasGroup canvasGroup, RectTransform rectTransform, Vector2 exitOffset)
+            {
+                this.canvasGroup = canvasGroup;
+                this.rectTransform = rectTransform;
+                startPosition = rectTransform != null ? rectTransform.anchoredPosition : Vector2.zero;
+                endPosition = startPosition + exitOffset;
+            }
+
+            public void SetInteractive(bool interactive)
+            {
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                canvasGroup.interactable = interactive;
+                canvasGroup.blocksRaycasts = interactive;
+            }
+
+            public void Apply(float t)
+            {
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 1f - Mathf.Clamp01(t);
+                }
+
+                if (rectTransform != null)
+                {
+                    rectTransform.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, Mathf.Clamp01(t));
+                }
             }
         }
     }

@@ -389,8 +389,12 @@ namespace DimensionBrawl.Editor
 
             SetObjectReference(presenter, "bossHealthFill", bossHpFill);
             SetObjectReference(presenter, "bossResourceFill", bossCostFill);
-            SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
-            SetObjectReference(presenter, "ammoText", FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
+            SetObjectReference(presenter, "bossHealthText", null);
+            SetObjectReference(
+                presenter,
+                "ammoText",
+                FindCombatHudPrefabText(canvasRoot.transform, "AmmoText")
+                    ?? FindHudDescendant(canvasRoot.transform, "AmmoText")?.GetComponent<Text>());
             BindExistingActionSlotEffectImages(canvasRoot, presenter);
             MarkComponentDirty(presenter);
         }
@@ -594,12 +598,12 @@ namespace DimensionBrawl.Editor
             Transform skinRoot = EnsureDimensionSkinRoot(hudRoot.transform);
             AddOrUpdateSkinImage(skinRoot, "TopLeftPanel", sprites["Hud_TopLeftPanel"], new Rect(45f, 36f, 571f, 165f));
             AddOrUpdateSkinImage(skinRoot, "BossSymbol", sprites["Hud_BossSymbol"], new Rect(850f, 39f, 59f, 71f));
-            AddOrUpdateSkinImage(skinRoot, "BossNameArea", sprites["Hud_BossNameArea"], new Rect(916f, 51f, 759f, 48f), visible: false);
-            AddOrUpdateSkinImage(skinRoot, "BossHpBackground", sprites["Hud_BossHpBackground"], new Rect(851f, 109f, 856f, 31f));
-            Image bossHpFill = AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(867f, 113f, 823f, 24f));
+            AddOrUpdateSkinImage(skinRoot, "BossNameArea", sprites["Hud_BossNameArea"], new Rect(930f, 51f, 745f, 48f), visible: false);
+            AddOrUpdateSkinImage(skinRoot, "BossHpBackground", sprites["Hud_BossHpBackground"], new Rect(925f, 109f, 782f, 31f));
+            Image bossHpFill = AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(941f, 113f, 749f, 24f));
             ConfigureHorizontalFillImage(bossHpFill, 1f);
-            AddOrUpdateSkinImage(skinRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(854f, 142f, 849f, 34f));
-            Image bossCostFill = AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(870f, 144f, 819f, 25f));
+            AddOrUpdateSkinImage(skinRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(928f, 142f, 775f, 34f));
+            Image bossCostFill = AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(944f, 144f, 745f, 25f));
             ConfigureHorizontalFillImage(bossCostFill, 1f);
             AddOrUpdateSkinImage(skinRoot, "PlayerSymbol", sprites["Hud_PlayerSymbol"], new Rect(916.5f, 1195f, 85f, 142f));
             AddOrUpdateSkinImage(skinRoot, "PlayerNameArea", sprites["Hud_PlayerNameArea"], new Rect(1013.5f, 1212f, 215f, 43f), visible: false);
@@ -609,7 +613,7 @@ namespace DimensionBrawl.Editor
 
             ConfigureText(hudRoot, "Timer", new Rect(178f, 55f, 409f, 48f), Color.black, 18);
             ConfigureText(hudRoot, "Objective", new Rect(180f, 117f, 409f, 64f), Color.black, 18);
-            ConfigureText(hudRoot, "ActionFeedback", new Rect(916f, 51f, 759f, 48f), Color.black, 18);
+            ConfigureText(hudRoot, "ActionFeedback", new Rect(930f, 51f, 745f, 48f), Color.black, 18);
             ConfigureReadoutText(
                 hudRoot,
                 "InputMode",
@@ -634,7 +638,7 @@ namespace DimensionBrawl.Editor
                 "AmmoText",
                 new Rect(1650f, 1268f, 178f, 42f),
                 CombatHudAmmoReadoutColor,
-                18);
+                32);
 
             ConfigureImage(hudRoot, "PauseButton", sprites["Hud_ButtonPause"], new Rect(2396f, 47f, 100f, 95f), preserveAspect: false);
             ConfigureImage(hudRoot, "MoveJoystickRing", sprites["Hud_JoystickPanel"], new Rect(155f, 853f, 421f, 415f), preserveAspect: false);
@@ -650,6 +654,7 @@ namespace DimensionBrawl.Editor
             ConfigureFillImage(hudRoot, "HealthBar", sprites["Hud_PlayerHpFill"], new Rect(1006.5f, 1263f, 633f, 20f));
             ConfigureImage(hudRoot, "ResourceBar_Track", sprites["Hud_PlayerMpBackground"], new Rect(1011.5f, 1296f, 616f, 28f), preserveAspect: false);
             ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(1017.5f, 1299f, 605f, 21f));
+            HideLooseHudText(hudRoot, "AmmoText");
             HideLegacyHudLabels(hudRoot);
             HideActionButtonTexts(hudRoot);
             ConfigureActionButtonAvailabilityEffects(
@@ -905,6 +910,32 @@ namespace DimensionBrawl.Editor
                     target.gameObject.SetActive(false);
                     EditorUtility.SetDirty(target.gameObject);
                 }
+            }
+        }
+
+        private static void HideLooseHudText(GameObject hudRoot, string objectName)
+        {
+            if (hudRoot == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < hudRoot.transform.childCount; i++)
+            {
+                Transform child = hudRoot.transform.GetChild(i);
+                if (child == null || !string.Equals(child.name, objectName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (child.GetComponent<Text>() == null)
+                {
+                    continue;
+                }
+
+                child.gameObject.SetActive(false);
+                MarkComponentDirty(child);
+                EditorUtility.SetDirty(child.gameObject);
             }
         }
 
@@ -1901,6 +1932,13 @@ namespace DimensionBrawl.Editor
             }
 
             return null;
+        }
+
+        private static Text FindCombatHudPrefabText(Transform root, string name)
+        {
+            Transform hudInstance = FindHudDescendant(root, "PF_UI_CombatHud");
+            Transform target = hudInstance != null ? FindHudDescendant(hudInstance, name) : null;
+            return target != null ? target.GetComponent<Text>() : null;
         }
     }
 }
