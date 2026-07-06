@@ -256,7 +256,6 @@ namespace DimensionBrawl.Player
             summonActorPool.TrimActiveCountBeforeSpawn(owner.MaxActiveSummonActors);
             SummonFrontlineProxy actor = GetSummonActor(prefab);
             actor.transform.SetParent(owner.SummonActorRoot != null ? owner.SummonActorRoot : owner.transform, worldPositionStays: true);
-            ConfigureActorTeam(actor);
             ConfigureActorVfx(actor);
             ConfigureActorCombat(actor, settings);
             actor.Activate(
@@ -291,16 +290,6 @@ namespace DimensionBrawl.Player
             }
 
             return actor;
-        }
-
-        private void ConfigureActorTeam(SummonFrontlineProxy actor)
-        {
-            if (actor == null || actor.Health == null)
-            {
-                return;
-            }
-
-            actor.Health.ConfigureTeam(owner.SourceTeam);
         }
 
         private static void RequestSummonLandingCamera(Vector3 position, int tier)
