@@ -52,19 +52,41 @@ namespace DimensionBrawl.Editor
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Combat HUD UI")]
         public static void ReapplyBossBarrageCombatHudUiMenu()
         {
-            EnsureDimensionHudSpriteImporters();
-            EnsureCombatHudUiMaterials();
-            EnsureCombatHudUiGeneratedSprites();
-            ApplyDimensionHudSkinToPrefabAsset();
-            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
-            EnsureExistingReviewHudVisualPolicy(scene);
-            EnsureCombatHudCanvasForOpenScene(scene);
-            if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
+            CombatHudUiWriter.ReapplyToReviewScene();
+        }
+
+        private static class CombatHudUiWriter
+        {
+            public static void ReapplyToReviewScene()
             {
-                throw new InvalidOperationException($"Failed to save {ReviewScenePath}.");
+                EnsureUiAssets();
+                Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+                ApplyToOpenReviewScene(scene);
+                SaveReviewScene(scene);
+                AssetDatabase.SaveAssets();
             }
 
-            AssetDatabase.SaveAssets();
+            public static void EnsureUiAssets()
+            {
+                EnsureDimensionHudSpriteImporters();
+                EnsureCombatHudUiMaterials();
+                EnsureCombatHudUiGeneratedSprites();
+                ApplyDimensionHudSkinToPrefabAsset();
+            }
+
+            private static void ApplyToOpenReviewScene(Scene scene)
+            {
+                EnsureExistingReviewHudVisualPolicy(scene);
+                EnsureCombatHudCanvasForOpenScene(scene);
+            }
+
+            private static void SaveReviewScene(Scene scene)
+            {
+                if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
+                {
+                    throw new InvalidOperationException($"Failed to save {ReviewScenePath}.");
+                }
+            }
         }
 
         private static void CreateCombatHudCanvas(
@@ -82,10 +104,7 @@ namespace DimensionBrawl.Editor
             BossBarragePocketReviewOwner pocketOwner,
             BossBarrageLaneReviewOverlayHud overlayHud)
         {
-            EnsureDimensionHudSpriteImporters();
-            EnsureCombatHudUiMaterials();
-            EnsureCombatHudUiGeneratedSprites();
-            ApplyDimensionHudSkinToPrefabAsset();
+            CombatHudUiWriter.EnsureUiAssets();
             EnsureExistingReviewHudVisualPolicy(scene);
             GameObject canvasRoot = EnsureCombatHudCanvasForOpenScene(scene);
             ConfigureCombatHudBinder(
