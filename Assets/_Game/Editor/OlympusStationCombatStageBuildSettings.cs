@@ -4,15 +4,9 @@ using UnityEditor;
 
 namespace DimensionBrawl.Editor
 {
-    [InitializeOnLoad]
     public static class OlympusStationCombatStageBuildSettings
     {
         public const string ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
-
-        static OlympusStationCombatStageBuildSettings()
-        {
-            EditorApplication.delayCall += EnsureSceneRegistered;
-        }
 
         [MenuItem("DimensionBrawl/Stage/Olympus Station/Ensure Combat Scene Build Settings")]
         public static void EnsureSceneRegistered()
