@@ -2,6 +2,7 @@ using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.Player
@@ -16,6 +17,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool holdFireActivatesAim = true;
         [SerializeField] private bool useDeviceFallbackWhenActionMissing = true;
         [SerializeField] private bool allowMouseFireFallback;
+        [SerializeField] private bool allowDesktopMouseFireFallbackWhenActionMissing = true;
+        [SerializeField] private bool blockMouseFireFallbackOverUi = true;
         [SerializeField] private Key keyboardTestKey = Key.F;
 
         [Header("References")]
@@ -1581,8 +1584,7 @@ namespace DimensionBrawl.Player
             }
 
             return keyboardPressed
-                || (allowMouseFireFallback
-                && Mouse.current != null
+                || (ShouldReadMouseFireFallback()
                 && Mouse.current.leftButton.wasPressedThisFrame)
                 || (Gamepad.current != null
                 && (Gamepad.current.rightTrigger.wasPressedThisFrame
@@ -1609,10 +1611,28 @@ namespace DimensionBrawl.Player
             }
 
             return keyboardHeld
-                || (allowMouseFireFallback
-                && Mouse.current != null
+                || (ShouldReadMouseFireFallback()
                 && Mouse.current.leftButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.rightTrigger.ReadValue() > 0.5f);
+        }
+
+        private bool ShouldReadMouseFireFallback()
+        {
+            if (Mouse.current == null)
+            {
+                return false;
+            }
+
+            bool canUseMouseFallback = allowMouseFireFallback
+                || (allowDesktopMouseFireFallbackWhenActionMissing && !Application.isMobilePlatform);
+            if (!canUseMouseFallback)
+            {
+                return false;
+            }
+
+            return !blockMouseFireFallbackOverUi
+                || EventSystem.current == null
+                || !EventSystem.current.IsPointerOverGameObject();
         }
 
         private bool IsKeyboardHeld()
