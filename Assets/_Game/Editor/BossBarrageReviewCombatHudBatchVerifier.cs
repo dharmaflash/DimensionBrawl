@@ -29,6 +29,8 @@ namespace DimensionBrawl.Editor
             "DimensionBrawl.BossBarrage.CombatHudBatch.Active";
         private const string StartedAtKey =
             "DimensionBrawl.BossBarrage.CombatHudBatch.StartedAt";
+        private const string StartedUtcTicksKey =
+            "DimensionBrawl.BossBarrage.CombatHudBatch.StartedUtcTicks";
         private const string CapturedKey =
             "DimensionBrawl.BossBarrage.CombatHudBatch.Captured";
         private const string CombatHudCanvasRootName =
@@ -107,6 +109,7 @@ namespace DimensionBrawl.Editor
 
         private const double WarmupSeconds = 3.0;
         private const double TimeoutSeconds = 90.0;
+        private const double StaleResumeSeconds = 600.0;
         private const int WarmupFrames = 30;
         private const int CaptureWidth = 3120;
         private const int CaptureHeight = 1440;
@@ -127,6 +130,7 @@ namespace DimensionBrawl.Editor
 
             EditorPrefs.SetBool(ActiveKey, true);
             EditorPrefs.SetFloat(StartedAtKey, (float)EditorApplication.timeSinceStartup);
+            EditorPrefs.SetString(StartedUtcTicksKey, DateTime.UtcNow.Ticks.ToString());
             EditorPrefs.SetBool(CapturedKey, false);
             EditorApplication.update -= Monitor;
             EditorApplication.update += Monitor;
@@ -137,6 +141,13 @@ namespace DimensionBrawl.Editor
         {
             if (!EditorPrefs.GetBool(ActiveKey, false))
             {
+                return;
+            }
+
+            if (IsStaleResumeState())
+            {
+                Debug.LogWarning("Clearing stale Boss Barrage Combat HUD batch verification state.");
+                Clear();
                 return;
             }
 
@@ -180,6 +191,26 @@ namespace DimensionBrawl.Editor
                 Debug.LogException(exception);
                 Finish(1);
             }
+        }
+
+        private static bool IsStaleResumeState()
+        {
+            string startedUtcTicksText = EditorPrefs.GetString(StartedUtcTicksKey, string.Empty);
+            if (!long.TryParse(startedUtcTicksText, out long startedUtcTicks))
+            {
+                return true;
+            }
+
+            DateTime startedUtc = new DateTime(startedUtcTicks, DateTimeKind.Utc);
+            double utcAgeSeconds = (DateTime.UtcNow - startedUtc).TotalSeconds;
+            if (utcAgeSeconds < -1.0 || utcAgeSeconds > StaleResumeSeconds)
+            {
+                return true;
+            }
+
+            double startedAt = EditorPrefs.GetFloat(StartedAtKey, (float)EditorApplication.timeSinceStartup);
+            double editorAgeSeconds = EditorApplication.timeSinceStartup - startedAt;
+            return editorAgeSeconds < -1.0;
         }
 
         private static VerificationSnapshot VerifyActivePlayScene()
@@ -1559,6 +1590,7 @@ namespace DimensionBrawl.Editor
         {
             EditorPrefs.DeleteKey(ActiveKey);
             EditorPrefs.DeleteKey(StartedAtKey);
+            EditorPrefs.DeleteKey(StartedUtcTicksKey);
             EditorPrefs.DeleteKey(CapturedKey);
             EditorApplication.update -= Monitor;
         }
