@@ -79,8 +79,6 @@ namespace DimensionBrawl.Player
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetY = 0.20f;
         [SerializeField] private bool useStableAimOrigin = true;
         [SerializeField] private bool useAimAssist = true;
-        [SerializeField] private bool fallbackToSelectedTargetWhenCameraAimMisses = true;
-        [SerializeField, Min(0f)] private float selectedTargetFallbackDistance = 45f;
         [SerializeField] private bool disableAimAssistWithManualInput;
         [SerializeField, Min(0f)] private float aimAssistDistance = 30f;
         [SerializeField, Range(0f, 45f)] private float hipAimAssistAngleDegrees = 14f;
@@ -946,24 +944,6 @@ namespace DimensionBrawl.Player
                 spawnPosition,
                 rawAimDirection,
                 directViewportTargetHealth);
-            if (ShouldUseSelectedTargetFallback(directViewportTargetHealth)
-                && TryResolveSelectedTargetAimDirection(
-                    spawnPosition,
-                    resolvedDirection,
-                    out Vector3 selectedTargetDirection,
-                    out Vector3 selectedTargetAimPoint,
-                    out CombatHealth selectedTargetHealth))
-            {
-                SetAimAssistState(
-                    selectedTargetHealth,
-                    0.72f,
-                    selectedTargetDirection,
-                    allowCameraAimAssist: false,
-                    suppressViewportReprojection: true);
-                SetAimAssistPreviewPoint(selectedTargetHealth, selectedTargetAimPoint);
-                resolvedDirection = selectedTargetDirection;
-            }
-
             bool hasResolvedAimAssistTarget = AimAssistTargetHealth != null && AimAssistTargetHealth.IsAlive;
             bool hasSoftAimAssist = aimAssistSuppressesViewportReprojection
                 || (hasResolvedAimAssistTarget && directViewportTargetHealth == null);
@@ -997,56 +977,6 @@ namespace DimensionBrawl.Player
             {
                 cachedFirePreviewAimPoint = ResolveFirePreviewAimPoint(spawnPosition, resolvedDirection);
             }
-        }
-
-        private bool ShouldUseSelectedTargetFallback(CombatHealth directViewportTargetHealth)
-        {
-            return fallbackToSelectedTargetWhenCameraAimMisses
-                && directViewportTargetHealth == null
-                && !HasManualAimInput()
-                && (AimAssistTargetHealth == null || !AimAssistTargetHealth.IsAlive);
-        }
-
-        private bool TryResolveSelectedTargetAimDirection(
-            Vector3 spawnPosition,
-            Vector3 fallbackDirection,
-            out Vector3 direction,
-            out Vector3 aimPoint,
-            out CombatHealth targetHealth)
-        {
-            direction = fallbackDirection;
-            aimPoint = default;
-            targetHealth = null;
-            if (targetSelector == null
-                || !targetSelector.TryGetCurrentTarget(out _, out CombatHealth selectedTargetHealth)
-                || selectedTargetHealth == null
-                || !selectedTargetHealth.IsAlive)
-            {
-                return false;
-            }
-
-            if (!CombatTeamUtility.AreHostile(sourceHealth != null ? sourceHealth.Team : sourceTeam, selectedTargetHealth.Team))
-            {
-                return false;
-            }
-
-            aimPoint = ResolveTargetLockedAimPoint(selectedTargetHealth);
-            Vector3 offset = aimPoint - spawnPosition;
-            if (offset.sqrMagnitude <= 0.0001f)
-            {
-                return false;
-            }
-
-            float maxDistance = Mathf.Max(selectedTargetFallbackDistance, aimAssistDistance);
-            Vector3 planarOffset = Vector3.ProjectOnPlane(offset, Vector3.up);
-            if (maxDistance > 0.01f && planarOffset.sqrMagnitude > maxDistance * maxDistance)
-            {
-                return false;
-            }
-
-            targetHealth = selectedTargetHealth;
-            direction = ResolveFireTravelDirection(offset, fallbackDirection);
-            return true;
         }
 
         private bool TryResolveAimAssistPreviewPoint(out Vector3 aimPoint)
