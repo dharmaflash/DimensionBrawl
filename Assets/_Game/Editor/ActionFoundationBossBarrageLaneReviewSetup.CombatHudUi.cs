@@ -7,6 +7,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -375,6 +376,12 @@ namespace DimensionBrawl.Editor
                 "SummonSlot3Button",
                 CombatHudActionId.SummonSlot3,
                 sendHoldState: false);
+            ConfigureCombatHudPointerAction(
+                canvasRoot,
+                inputBridge,
+                "PauseButton",
+                CombatHudActionId.Pause,
+                sendHoldState: false);
         }
 
         private static void ConfigureCombatHudPresenterRuntimeReferences(
@@ -534,6 +541,59 @@ namespace DimensionBrawl.Editor
             pointerAction.Configure(inputBridge, actionId, sendHoldState);
             SetBehaviourEnabled(pointerAction, true);
             MarkComponentDirty(pointerAction);
+
+            Button button = target.GetComponent<Button>();
+            if (button != null)
+            {
+                ConfigurePersistentCombatHudButtonRoute(button, inputBridge, actionId);
+            }
+        }
+
+        private static void ConfigurePersistentCombatHudButtonRoute(
+            Button button,
+            CombatHudInputBridge inputBridge,
+            CombatHudActionId actionId)
+        {
+            if (button == null || inputBridge == null)
+            {
+                return;
+            }
+
+            for (int i = button.onClick.GetPersistentEventCount() - 1; i >= 0; i--)
+            {
+                UnityEventTools.RemovePersistentListener(button.onClick, i);
+            }
+
+            switch (actionId)
+            {
+                case CombatHudActionId.BasicAttack:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestBasicAttack);
+                    break;
+                case CombatHudActionId.Dodge:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestDodge);
+                    break;
+                case CombatHudActionId.Skill1:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSkill1);
+                    break;
+                case CombatHudActionId.Ultimate:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestUltimate);
+                    break;
+                case CombatHudActionId.SummonSlot1:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot1);
+                    break;
+                case CombatHudActionId.SummonSlot2:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot2);
+                    break;
+                case CombatHudActionId.SummonSlot3:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot3);
+                    break;
+                case CombatHudActionId.Pause:
+                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestPause);
+                    break;
+            }
+
+            MarkComponentDirty(button);
+            EditorUtility.SetDirty(button.gameObject);
         }
 
         private static void EnsureCombatHudEventSystem(Scene scene)

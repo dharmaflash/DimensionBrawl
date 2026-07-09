@@ -7330,6 +7330,8 @@ namespace DimensionBrawl.Editor
             SetBool(rangedBasicAttackAction, "cameraAimIgnoresNonTargetHits", true);
             SetBool(rangedBasicAttackAction, "stabilizeDirectTargetAimHeight", false);
             SetBool(rangedBasicAttackAction, "useAimAssist", true);
+            SetBool(rangedBasicAttackAction, "fallbackToSelectedTargetWhenCameraAimMisses", true);
+            SetFloat(rangedBasicAttackAction, "selectedTargetFallbackDistance", PlayerRangedBasicAimAssistDistance);
             SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
             SetBool(rangedBasicAttackAction, "useMagazineReload", true);

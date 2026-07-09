@@ -31,12 +31,12 @@ namespace DimensionBrawl.UI
                 inputBridge = GetComponentInParent<CombatHudInputBridge>();
             }
 
-            SuppressLegacyClickEvent();
+            CacheVisualButton();
         }
 
         private void OnEnable()
         {
-            SuppressLegacyClickEvent();
+            CacheVisualButton();
         }
 
         private void OnDisable()
@@ -87,16 +87,11 @@ namespace DimensionBrawl.UI
             }
         }
 
-        private void SuppressLegacyClickEvent()
+        private void CacheVisualButton()
         {
             if (visualButton == null)
             {
                 visualButton = GetComponent<Button>();
-            }
-
-            if (visualButton != null)
-            {
-                visualButton.onClick = new Button.ButtonClickedEvent();
             }
         }
     }

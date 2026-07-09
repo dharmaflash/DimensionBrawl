@@ -413,6 +413,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttack, "sourceHealth", playerHealth);
             SetBool(rangedBasicAttack, "requireAimToFire", false);
             SetBool(rangedBasicAttack, "useAimAssist", true);
+            SetBool(rangedBasicAttack, "fallbackToSelectedTargetWhenCameraAimMisses", true);
+            SetFloat(rangedBasicAttack, "selectedTargetFallbackDistance", BossTargetingDistance);
             SetBool(rangedBasicAttack, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttack, "cameraAimIgnoresNonTargetHits", true);
             SetFloat(rangedBasicAttack, "aimAssistDistance", BossTargetingDistance);
@@ -526,6 +528,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttack, "sourceHealth", playerHealth);
             SetBool(rangedBasicAttack, "requireAimToFire", false);
             SetBool(rangedBasicAttack, "useAimAssist", true);
+            SetBool(rangedBasicAttack, "fallbackToSelectedTargetWhenCameraAimMisses", true);
+            SetFloat(rangedBasicAttack, "selectedTargetFallbackDistance", BossTargetingDistance);
             SetBool(rangedBasicAttack, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttack, "cameraAimIgnoresNonTargetHits", true);
             SetFloat(rangedBasicAttack, "aimAssistDistance", BossTargetingDistance);
@@ -667,6 +671,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttack, "cameraController", cameraController);
             SetBool(rangedBasicAttack, "driveCameraAimAssist", true);
             SetBool(rangedBasicAttack, "useAimAssist", true);
+            SetBool(rangedBasicAttack, "fallbackToSelectedTargetWhenCameraAimMisses", true);
+            SetFloat(rangedBasicAttack, "selectedTargetFallbackDistance", BossTargetingDistance);
             SetBool(rangedBasicAttack, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttack, "cameraAimIgnoresNonTargetHits", true);
             SetFloat(rangedBasicAttack, "cameraAimAssistStrengthScale", 1f);
