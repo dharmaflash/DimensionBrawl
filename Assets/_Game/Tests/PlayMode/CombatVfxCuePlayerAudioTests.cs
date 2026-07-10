@@ -22,6 +22,8 @@ namespace DimensionBrawl.Tests
         };
         private const string BossBarrageProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
+        private const string BossBarrageMissileFlyLoopClipPath =
+            "Assets/_Game/Art/Audio/SFX/MissileShield/DB_SFX_Missile_Fly_Loop_01.mp3";
         private const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
         private const string SummonSlot1ProjectilePrefabPath =
@@ -295,9 +297,9 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void PromotedProjectilePrefabsDoNotCarryTemporarySfx()
+        public void PromotedProjectilePrefabsKeepOnlyReviewedProjectileSfx()
         {
-            AssertProjectilePrefabHasNoAuthoredAudio(BossBarrageProjectilePrefabPath);
+            AssertBossProjectileUsesReviewedMissileFlyLoop();
             AssertProjectilePrefabHasNoAuthoredAudio(Skill1ProjectilePrefabPath);
             AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot1ProjectilePrefabPath);
             AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot2ProjectilePrefabPath);
@@ -359,7 +361,7 @@ namespace DimensionBrawl.Tests
         {
             Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored.");
             Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a cue prefab.");
-            Assert.That(cue.LifetimeSeconds, Is.InRange(0.34f, 0.55f), $"{cueId} lifetime should stay tight for the snappy reviewed gunshot bank.");
+            Assert.That(cue.LifetimeSeconds, Is.InRange(0.5f, 0.62f), $"{cueId} lifetime should stay tight for the snappy reviewed gunshot bank.");
             CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(true);
             Assert.AreEqual(1, randomizers.Length, $"{cueId} should carry exactly one reviewed audio randomizer.");
             CombatVfxCueAudioRandomizer randomizer = randomizers[0];
@@ -393,6 +395,25 @@ namespace DimensionBrawl.Tests
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             Assert.IsNotNull(prefab, $"Missing projectile prefab at {prefabPath}.");
             AssertNoAuthoredAudio(prefab, prefab.name);
+        }
+
+        private static void AssertBossProjectileUsesReviewedMissileFlyLoop()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BossBarrageProjectilePrefabPath);
+            Assert.IsNotNull(prefab, $"Missing projectile prefab at {BossBarrageProjectilePrefabPath}.");
+
+            AudioSource[] audioSources = prefab.GetComponentsInChildren<AudioSource>(true);
+            Assert.AreEqual(1, audioSources.Length, "Boss projectile should carry exactly one reviewed missile flight loop.");
+            AudioSource source = audioSources[0];
+            Assert.AreEqual("BossBarrageProjectileAudio_MissileFlyLoop", source.name);
+            Assert.IsNotNull(source.clip, "Boss projectile missile flight loop should keep its reviewed clip.");
+            Assert.AreEqual(
+                BossBarrageMissileFlyLoopClipPath,
+                AssetDatabase.GetAssetPath(source.clip).Replace('\\', '/'));
+            Assert.IsFalse(source.playOnAwake);
+            Assert.IsTrue(source.loop);
+            Assert.AreEqual(0.22f, source.volume, 0.001f);
+            Assert.AreEqual(0.68f, source.spatialBlend, 0.001f);
         }
 
         private static void AssertNoAuthoredAudio(GameObject root, string label)

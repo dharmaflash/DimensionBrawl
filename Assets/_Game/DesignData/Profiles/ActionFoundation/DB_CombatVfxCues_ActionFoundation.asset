@@ -148,7 +148,7 @@ MonoBehaviour:
     audioMaxDistance: 0
     audioPriority: 0
   - cueId: 46
-    prefab: {fileID: 8962397797242291048, guid: c2a48b27e7a046744b660f62a01da52c, type: 3}
+    prefab: {fileID: 7202124174645068347, guid: 526ca16b9d14e674489d952475108a93, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
     localScale: {x: 0.55, y: 0.55, z: 0.55}

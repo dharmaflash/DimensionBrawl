@@ -30,4 +30,4 @@ MonoBehaviour:
   targetHeight: 1.1
   projectileColor: {r: 1, g: 0.55, b: 0.18, a: 1}
   projectileVisualScale: {x: 1, y: 1, z: 1}
-  projectileMaterial: {fileID: 2100000, guid: 84d5b8e9cc8dc224e894f15986ed1963, type: 2}
+  projectileMaterial: {fileID: 0}

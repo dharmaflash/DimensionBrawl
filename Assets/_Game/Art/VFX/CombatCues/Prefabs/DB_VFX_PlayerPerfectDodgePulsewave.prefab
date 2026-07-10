@@ -14697,6 +14697,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5236547424224337725}
+  - component: {fileID: 8843926158087763798}
   m_Layer: 0
   m_Name: DB_VFX_PlayerPerfectDodgePulsewave
   m_TagString: Untagged
@@ -14720,6 +14721,34 @@ Transform:
   - {fileID: 4754406751217263515}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8843926158087763798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931620212918913059}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e91d34c8df14e458a9f876c2b0f6d21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueVisual
+  renderers:
+  - {fileID: 5859965340228598823}
+  - {fileID: 7979769444109915743}
+  - {fileID: 6221488625285104059}
+  - {fileID: 2677152326276536479}
+  - {fileID: 7707616090908398493}
+  - {fileID: 8233156977976651216}
+  - {fileID: 3745222030800126135}
+  startColor: {r: 1, g: 1, b: 1, a: 1}
+  endColor: {r: 1, g: 1, b: 1, a: 1}
+  startScale: {x: 1, y: 1, z: 1}
+  endScale: {x: 1, y: 1, z: 1}
+  lifetimeSeconds: 0.9
+  spinDegreesPerSecond: 0
+  verticalLift: 0
+  forwardTravelDistance: 0
 --- !u!1 &2974549333198985550
 GameObject:
   m_ObjectHideFlags: 0

@@ -2694,7 +2694,7 @@ MonoBehaviour:
   strafeDistance: 1.45
   repositionMoveSpeed: 4
   telegraphLine: {fileID: 0}
-  telegraphVfxPrefab: {fileID: 4038951093609904758, guid: cabf5e3f744b2d7409d89288ad8980c2, type: 3}
+  telegraphVfxPrefab: {fileID: 1977521300812793789, guid: e5d96d8738ae1474c80f5b10cd828c62, type: 3}
   telegraphStartColor: {r: 1, g: 0.18, b: 0.08, a: 0.26}
   telegraphEndColor: {r: 1, g: 0.28, b: 0.12, a: 0.96}
   telegraphStartWidth: 0.045

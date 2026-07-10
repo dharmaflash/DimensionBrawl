@@ -9892,7 +9892,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6091206577326306607
+--- !u!1 &5443758183811650936
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9900,9 +9900,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 623164478410583452}
-  - component: {fileID: 744016127998704913}
-  - component: {fileID: 6873158747753048586}
+  - component: {fileID: 8542913341022443213}
+  - component: {fileID: 8491605215057700325}
+  - component: {fileID: 7088976266739304484}
   m_Layer: 0
   m_Name: ReviewedSfx_PlayerPerfectDodgeSuccess
   m_TagString: Untagged
@@ -9910,13 +9910,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &623164478410583452
+--- !u!4 &8542913341022443213
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6091206577326306607}
+  m_GameObject: {fileID: 5443758183811650936}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -9925,13 +9925,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6853432850869003024}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!82 &744016127998704913
+--- !u!82 &8491605215057700325
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6091206577326306607}
+  m_GameObject: {fileID: 5443758183811650936}
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
@@ -10022,19 +10022,19 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &6873158747753048586
+--- !u!114 &7088976266739304484
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6091206577326306607}
+  m_GameObject: {fileID: 5443758183811650936}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fd957b750eeac1e43a824bb53013b64e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueAudioRandomizer
-  source: {fileID: 744016127998704913}
+  source: {fileID: 8491605215057700325}
   clips:
   - {fileID: 8300000, guid: e68ae10ab4d3f67459de711b75955488, type: 3}
   baseVolume: 0.34
@@ -15038,6 +15038,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6853432850869003024}
+  - component: {fileID: 4064075809273767770}
   m_Layer: 0
   m_Name: DB_VFX_PlayerPerfectDodgeWindow
   m_TagString: Untagged
@@ -15059,9 +15060,36 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7060930406243860363}
-  - {fileID: 623164478410583452}
+  - {fileID: 8542913341022443213}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4064075809273767770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7363812077356106408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e91d34c8df14e458a9f876c2b0f6d21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueVisual
+  renderers:
+  - {fileID: 6017347045204476708}
+  - {fileID: 7069801228688379915}
+  - {fileID: 8558733001529485293}
+  - {fileID: 5311971797584884828}
+  - {fileID: 7037593424746255013}
+  - {fileID: 7755420068734642297}
+  startColor: {r: 1, g: 1, b: 1, a: 1}
+  endColor: {r: 1, g: 1, b: 1, a: 1}
+  startScale: {x: 1, y: 1, z: 1}
+  endScale: {x: 1, y: 1, z: 1}
+  lifetimeSeconds: 1.15
+  spinDegreesPerSecond: 0
+  verticalLift: 0
+  forwardTravelDistance: 0
 --- !u!1 &7660692334162310489
 GameObject:
   m_ObjectHideFlags: 0

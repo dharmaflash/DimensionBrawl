@@ -303,6 +303,11 @@ MonoBehaviour:
   tierOneColor: {r: 0.24, g: 1, b: 0.78, a: 0.78}
   tierTwoColor: {r: 0.38, g: 0.74, b: 1, a: 0.9}
   tierThreeColor: {r: 1, g: 0.76, b: 0.24, a: 1}
+  tintByOwnerTeam: 1
+  allyTeamTint: {r: 0.92, g: 0.98, b: 1, a: 1}
+  enemyTeamTint: {r: 1, g: 0.16, b: 0.08, a: 1}
+  allyTeamTintBlend: 0.78
+  enemyTeamTintBlend: 0.62
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   clashFlashColor: {r: 1, g: 0.92, b: 0.35, a: 1}
   attackFlashColor: {r: 1, g: 0.74, b: 0.24, a: 1}
@@ -1826,7 +1831,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 6e631f5d04186d748b9a476bd7bab10d, type: 2}
+  - {fileID: 2100000, guid: f29c7e89ea315ea4dabef3a4bc118f2c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

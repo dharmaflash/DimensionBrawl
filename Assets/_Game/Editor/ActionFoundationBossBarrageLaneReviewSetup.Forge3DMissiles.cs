@@ -198,7 +198,7 @@ namespace DimensionBrawl.Editor
             material.shader = promotedShader;
             material.CopyPropertiesFromMaterial(sourceMaterial);
             material.shader = promotedShader;
-            material.renderQueue = sourceMaterial.renderQueue;
+            material.renderQueue = ResolveForge3DMissileRenderQueue(sourceMaterial);
 
             string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
             for (int i = 0; i < textureProperties.Length; i++)
@@ -218,6 +218,18 @@ namespace DimensionBrawl.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
             return material;
+        }
+
+        private static int ResolveForge3DMissileRenderQueue(Material sourceMaterial)
+        {
+            int renderQueue = sourceMaterial.renderQueue;
+            if (sourceMaterial.HasProperty("_Surface")
+                && sourceMaterial.GetFloat("_Surface") > 0.5f)
+            {
+                return Mathf.Max((int)RenderQueue.Transparent, renderQueue);
+            }
+
+            return renderQueue;
         }
 
         private static Shader EnsurePromotedForge3DMissileShader(Shader sourceShader)

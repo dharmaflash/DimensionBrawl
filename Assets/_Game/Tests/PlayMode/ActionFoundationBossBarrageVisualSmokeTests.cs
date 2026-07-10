@@ -92,7 +92,7 @@ namespace DimensionBrawl.Tests
                     "Boss pressure summon should be releasable for a visual clash/state read.");
             }
 
-            yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSeconds(0.35f);
 
             Assert.Greater(
                 bossBasicFire.ActiveProjectileCount + bossBarrage.ActiveProjectileCount,
@@ -161,9 +161,10 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1 = RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSkill1LaserSweepAction skill1LaserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
-            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             BossBarrageEmitter bossBarrage = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
@@ -183,7 +184,7 @@ namespace DimensionBrawl.Tests
                 closeThreatHealth.transform.position,
                 Vector3.forward,
                 0f));
-            yield return null;
+            yield return new WaitForSeconds(0.35f);
 
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(bossBarrage.BeginWindup());
@@ -192,9 +193,14 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
             pocketOwner.Tick(0f);
 
+            float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            Assert.IsTrue(skill1LaserSweepAction.HasActiveSweep);
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
+            Assert.Less(
+                bossHealth.CurrentHealth,
+                bossHealthBeforeFollowup,
+                "The clear frame should reach its follow-up through the live four-way Skill1 laser sweep.");
             pocketOwner.Tick(0f);
 
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
@@ -414,23 +420,6 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected an active enemy boss barrage projectile.");
-            return null;
-        }
-
-        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
-        {
-            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
-                {
-                    return projectiles[i];
-                }
-            }
-
-            Assert.Fail("Expected an active Player Skill1 projectile.");
             return null;
         }
 
