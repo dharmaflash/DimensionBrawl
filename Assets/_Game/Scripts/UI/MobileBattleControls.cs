@@ -248,7 +248,13 @@ namespace IsekaiBrawl.Gameplay
         public static bool TryGetMoveInput(out Vector2 moveInput)
         {
             moveInput = Vector2.zero;
-            return false;
+            if (Instance == null || !Instance.isTouchLayoutActive)
+            {
+                return false;
+            }
+
+            moveInput = Instance.ResolveMoveInput();
+            return moveInput.sqrMagnitude > 0.0004f;
         }
 
         public static bool TryConsumeDirectDodge(out float directionSign)
