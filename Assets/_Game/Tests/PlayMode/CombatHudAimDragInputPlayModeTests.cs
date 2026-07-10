@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using DimensionBrawl.Player;
+using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -80,6 +81,29 @@ namespace DimensionBrawl.Tests
             LogAssert.NoUnexpectedReceived();
 
             Object.Destroy(binderObject);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator LegacyMobileHudDisableIgnoresDestroyedMovementBinding()
+        {
+            GameObject movementObject = new("DestroyedLegacyHudMovementBinding", typeof(CharacterController));
+            PlayerMovementController movementController = movementObject.AddComponent<PlayerMovementController>();
+            GameObject hudObject = new("BossBarrageLaneReviewMobileHud");
+            BossBarrageLaneReviewMobileHud mobileHud = hudObject.AddComponent<BossBarrageLaneReviewMobileHud>();
+            FieldInfo movementField = typeof(BossBarrageLaneReviewMobileHud).GetField(
+                "movement",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(movementField);
+            movementField.SetValue(mobileHud, movementController);
+
+            Object.Destroy(movementObject);
+            yield return null;
+
+            Assert.DoesNotThrow(() => hudObject.SetActive(false));
+            LogAssert.NoUnexpectedReceived();
+
+            Object.Destroy(hudObject);
             yield return null;
         }
     }

@@ -337,72 +337,90 @@ namespace DimensionBrawl.UI
 
             if (anyHudHeld)
             {
-                actionController?.SuppressBasicAttackDeviceFallbackThisFrame();
-                rangedBasicAttackAction?.SuppressDeviceFallbackThisFrame();
+                if (actionController != null)
+                {
+                    actionController.SuppressBasicAttackDeviceFallbackThisFrame();
+                }
+
+                if (rangedBasicAttackAction != null)
+                {
+                    rangedBasicAttackAction.SuppressDeviceFallbackThisFrame();
+                }
             }
 
             Vector2 moveInput = ResolveMoveInput();
-            movement?.SetMoveInput(moveInput);
+            if (movement != null)
+            {
+                movement.SetMoveInput(moveInput);
+            }
             UpdateHudLookAim();
 
             bool basicHeld = firePointerHeld;
             bool basicPressed = firePointerPressed;
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
-                actionController?.SetBasicAttackHeld(false);
-                if (basicHeld || previousBasicHeld)
+                if (actionController != null)
                 {
-                    rangedBasicAttackAction?.SetFireHeld(basicHeld);
+                    actionController.SetBasicAttackHeld(false);
                 }
 
-                if (basicPressed)
+                if ((basicHeld || previousBasicHeld) && rangedBasicAttackAction != null)
                 {
-                    rangedBasicAttackAction?.QueueFire();
+                    rangedBasicAttackAction.SetFireHeld(basicHeld);
+                }
+
+                if (basicPressed && rangedBasicAttackAction != null)
+                {
+                    rangedBasicAttackAction.QueueFire();
                 }
             }
             else
             {
-                actionController?.SetBasicAttackHeld(basicHeld);
-                if (previousBasicHeld)
+                if (actionController != null)
                 {
-                    rangedBasicAttackAction?.SetFireHeld(false);
+                    actionController.SetBasicAttackHeld(basicHeld);
                 }
 
-                if (basicPressed)
+                if (previousBasicHeld && rangedBasicAttackAction != null)
                 {
-                    actionController?.QueueBasicAttack();
+                    rangedBasicAttackAction.SetFireHeld(false);
+                }
+
+                if (basicPressed && actionController != null)
+                {
+                    actionController.QueueBasicAttack();
                 }
             }
             previousBasicHeld = basicHeld;
 
-            if (IsPressed(dodgeRect))
+            if (IsPressed(dodgeRect) && actionController != null)
             {
-                actionController?.QueueDodge();
+                actionController.QueueDodge();
             }
 
-            if (IsPressed(swapRect))
+            if (IsPressed(swapRect) && combatModeController != null)
             {
-                combatModeController?.QueueCombatModeSwap();
+                combatModeController.QueueCombatModeSwap();
             }
 
-            if (IsPressed(skillRect))
+            if (IsPressed(skillRect) && skill1Action != null)
             {
-                skill1Action?.QueueSkill1();
+                skill1Action.QueueSkill1();
             }
 
-            if (IsPressed(summonSlot1Rect))
+            if (IsPressed(summonSlot1Rect) && summonSlot1Action != null)
             {
-                summonSlot1Action?.QueueSummonSlot1();
+                summonSlot1Action.QueueSummonSlot1();
             }
 
-            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot2Rect))
+            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot2Rect) && summonSlot2Action != null)
             {
-                summonSlot2Action?.QueueSummon();
+                summonSlot2Action.QueueSummon();
             }
 
-            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot3Rect))
+            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot3Rect) && summonSlot3Action != null)
             {
-                summonSlot3Action?.QueueSummon();
+                summonSlot3Action.QueueSummon();
             }
 
             UpdateSummonReadinessFeedback(Time.unscaledDeltaTime);
@@ -410,12 +428,22 @@ namespace DimensionBrawl.UI
 
         private void ReleaseHudControls()
         {
-            movement?.SetMoveInput(Vector2.zero);
+            if (movement != null)
+            {
+                movement.SetMoveInput(Vector2.zero);
+            }
             ReleaseHudLookAim();
             if (previousBasicHeld || firePointerHeld)
             {
-                rangedBasicAttackAction?.SetFireHeld(false);
-                actionController?.SetBasicAttackHeld(false);
+                if (rangedBasicAttackAction != null)
+                {
+                    rangedBasicAttackAction.SetFireHeld(false);
+                }
+
+                if (actionController != null)
+                {
+                    actionController.SetBasicAttackHeld(false);
+                }
             }
 
             ClearFirePointerState();
@@ -990,14 +1018,28 @@ namespace DimensionBrawl.UI
             Vector2 movementLookInput = pointerViewActive
                 ? Vector2.zero
                 : routeAimToMovementLook ? aimInput : Vector2.zero;
-            movement?.SetSharedFacingRequestsBlocked(pointerViewActive);
-            movement?.SetSharedLookActionBlocked(pointerLookActive);
-            movement?.SetLookInput(Vector2.ClampMagnitude(movementLookInput, 1f));
-            rangedBasicAttackAction?.SetAimInput(aimInput);
-            aimController?.SetAimInput(aimInput);
-            aimController?.SetAimHeld(pointerAimActive);
+            if (movement != null)
+            {
+                movement.SetSharedFacingRequestsBlocked(pointerViewActive);
+                movement.SetSharedLookActionBlocked(pointerLookActive);
+                movement.SetLookInput(Vector2.ClampMagnitude(movementLookInput, 1f));
+            }
+
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetAimInput(aimInput);
+            }
+
+            if (aimController != null)
+            {
+                aimController.SetAimInput(aimInput);
+                aimController.SetAimHeld(pointerAimActive);
+            }
             cameraController = ResolveCameraController();
-            cameraController?.SetLookPeekInput(pointerViewActive ? lookAimInput : Vector2.zero);
+            if (cameraController != null)
+            {
+                cameraController.SetLookPeekInput(pointerViewActive ? lookAimInput : Vector2.zero);
+            }
             hudLookAimActive = shouldRouteLookAim;
         }
 
@@ -1008,14 +1050,28 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            movement?.SetLookInput(Vector2.zero);
-            movement?.SetSharedLookActionBlocked(false);
-            movement?.SetSharedFacingRequestsBlocked(false);
-            rangedBasicAttackAction?.SetAimInput(Vector2.zero);
-            aimController?.SetAimInput(Vector2.zero);
-            aimController?.SetAimHeld(false);
+            if (movement != null)
+            {
+                movement.SetLookInput(Vector2.zero);
+                movement.SetSharedLookActionBlocked(false);
+                movement.SetSharedFacingRequestsBlocked(false);
+            }
+
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetAimInput(Vector2.zero);
+            }
+
+            if (aimController != null)
+            {
+                aimController.SetAimInput(Vector2.zero);
+                aimController.SetAimHeld(false);
+            }
             cameraController = ResolveCameraController();
-            cameraController?.SetLookPeekInput(Vector2.zero);
+            if (cameraController != null)
+            {
+                cameraController.SetLookPeekInput(Vector2.zero);
+            }
             hudLookAimActive = false;
         }
 
