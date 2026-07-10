@@ -142,7 +142,10 @@ namespace DimensionBrawl.UI
             }
 
             CurrentInput = input;
-            movementController?.SetMoveInput(input);
+            if (movementController != null)
+            {
+                movementController.SetMoveInput(input);
+            }
             MoveKnob(input, visualRadius);
         }
 
@@ -162,7 +165,10 @@ namespace DimensionBrawl.UI
         {
             pointerHeld = false;
             CurrentInput = Vector2.zero;
-            movementController?.SetMoveInput(Vector2.zero);
+            if (movementController != null)
+            {
+                movementController.SetMoveInput(Vector2.zero);
+            }
             ResetKnob();
         }
 

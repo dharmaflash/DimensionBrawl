@@ -90,13 +90,19 @@ namespace DimensionBrawl.UI
                 inputBridge.ActionHoldChanged -= HandleActionHoldChanged;
             }
 
-            rangedBasicAttackAction?.SetFireHeld(false);
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetFireHeld(false);
+            }
             ClearTutorialMovementInputLock();
         }
 
         private void Update()
         {
-            tutorialGuide?.TickTutorial(Time.deltaTime);
+            if (tutorialGuide != null)
+            {
+                tutorialGuide.TickTutorial(Time.deltaTime);
+            }
             UpdateTutorialMovementInputLock();
             SubscribePlayerDamageFeedback();
             if (hudPresenter == null)
@@ -220,25 +226,46 @@ namespace DimensionBrawl.UI
                     QueueBasicAttack();
                     break;
                 case CombatHudActionId.Dodge:
-                    actionController?.QueueDodge();
+                    if (actionController != null)
+                    {
+                        actionController.QueueDodge();
+                    }
                     break;
                 case CombatHudActionId.Skill1:
-                    skill1Action?.QueueSkill1();
+                    if (skill1Action != null)
+                    {
+                        skill1Action.QueueSkill1();
+                    }
                     break;
                 case CombatHudActionId.Ultimate:
-                    combatModeController?.QueueCombatModeSwap();
+                    if (combatModeController != null)
+                    {
+                        combatModeController.QueueCombatModeSwap();
+                    }
                     break;
                 case CombatHudActionId.SummonSlot1:
-                    summonSlot1Action?.QueueSummonSlot1();
+                    if (summonSlot1Action != null)
+                    {
+                        summonSlot1Action.QueueSummonSlot1();
+                    }
                     break;
                 case CombatHudActionId.SummonSlot2:
-                    summonSlot2Action?.QueueSummon();
+                    if (summonSlot2Action != null)
+                    {
+                        summonSlot2Action.QueueSummon();
+                    }
                     break;
                 case CombatHudActionId.SummonSlot3:
-                    summonSlot3Action?.QueueSummon();
+                    if (summonSlot3Action != null)
+                    {
+                        summonSlot3Action.QueueSummon();
+                    }
                     break;
                 case CombatHudActionId.Pause:
-                    overlayHud?.OpenPauseMenu();
+                    if (overlayHud != null)
+                    {
+                        overlayHud.OpenPauseMenu();
+                    }
                     break;
             }
         }
@@ -255,26 +282,43 @@ namespace DimensionBrawl.UI
         {
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
-                rangedBasicAttackAction?.QueueFire();
+                if (rangedBasicAttackAction != null)
+                {
+                    rangedBasicAttackAction.QueueFire();
+                }
                 return;
             }
 
-            actionController?.QueueBasicAttack();
+            if (actionController != null)
+            {
+                actionController.QueueBasicAttack();
+            }
         }
 
         private void SetBasicAttackHeld(bool held)
         {
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
-                actionController?.SetBasicAttackHeld(false);
-                rangedBasicAttackAction?.SetFireHeld(held);
+                if (actionController != null)
+                {
+                    actionController.SetBasicAttackHeld(false);
+                }
+
+                if (rangedBasicAttackAction != null)
+                {
+                    rangedBasicAttackAction.SetFireHeld(held);
+                }
                 return;
             }
 
-            actionController?.SetBasicAttackHeld(held);
-            if (!held)
+            if (actionController != null)
             {
-                rangedBasicAttackAction?.SetFireHeld(false);
+                actionController.SetBasicAttackHeld(held);
+            }
+
+            if (!held && rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetFireHeld(false);
             }
         }
 
@@ -342,7 +386,10 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            hudPresenter?.ShowPlayerDamageOverlay();
+            if (hudPresenter != null)
+            {
+                hudPresenter.ShowPlayerDamageOverlay();
+            }
         }
 
         private void ResolvePlayerHealth()
@@ -401,15 +448,24 @@ namespace DimensionBrawl.UI
 
             tutorialMoveInputLocked = shouldLock;
             ResolveMovementController();
-            moveJoystick?.SetInputBlocked(shouldLock);
+            if (moveJoystick != null)
+            {
+                moveJoystick.SetInputBlocked(shouldLock);
+            }
             if (shouldLock)
             {
-                movementController?.SetMoveInput(Vector2.zero);
-                movementController?.SetSharedMoveInputBlocked(true);
+                if (movementController != null)
+                {
+                    movementController.SetMoveInput(Vector2.zero);
+                    movementController.SetSharedMoveInputBlocked(true);
+                }
                 return;
             }
 
-            movementController?.SetSharedMoveInputBlocked(false);
+            if (movementController != null)
+            {
+                movementController.SetSharedMoveInputBlocked(false);
+            }
         }
 
         private void ClearTutorialMovementInputLock()
@@ -420,9 +476,15 @@ namespace DimensionBrawl.UI
             }
 
             tutorialMoveInputLocked = false;
-            moveJoystick?.SetInputBlocked(false);
+            if (moveJoystick != null)
+            {
+                moveJoystick.SetInputBlocked(false);
+            }
             ResolveMovementController();
-            movementController?.SetSharedMoveInputBlocked(false);
+            if (movementController != null)
+            {
+                movementController.SetSharedMoveInputBlocked(false);
+            }
         }
 
         private float ResolveRemainingSeconds()
