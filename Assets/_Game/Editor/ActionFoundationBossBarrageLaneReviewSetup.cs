@@ -438,10 +438,12 @@ namespace DimensionBrawl.Editor
             CinematicProfileRoot + "/DB_Cinematic_SummonRecall.asset";
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private const string MagicaClothRuntimeScriptPrefix =
+            "Assets/_Imported/AssetStore/MagicaCloth2/";
         private static readonly Vector3 InoriRifleMuzzleFallbackLocalPosition = new Vector3(-0.92f, 0.03f, 0f);
         private static readonly string[] PreservedImportedRuntimeScriptPrefixes =
         {
-            "Assets/_Imported/AssetStore/MagicaCloth2/"
+            MagicaClothRuntimeScriptPrefix
         };
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
@@ -5404,6 +5406,7 @@ namespace DimensionBrawl.Editor
             modelInstance.transform.localRotation = Quaternion.identity;
             modelInstance.transform.localScale = Vector3.one;
             StripNonGameMonoBehaviours(modelInstance);
+            DisableImportedClothSimulation(modelInstance);
             RemapInoriPlayerMeshes(modelInstance);
             AssignInoriPlayerMaterials(modelInstance);
 
@@ -12455,6 +12458,31 @@ namespace DimensionBrawl.Editor
             }
 
             return false;
+        }
+
+        private static void DisableImportedClothSimulation(GameObject root)
+        {
+            MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                MonoScript script = MonoScript.FromMonoBehaviour(behaviour);
+                string scriptPath = script != null
+                    ? AssetDatabase.GetAssetPath(script).Replace('\\', '/')
+                    : string.Empty;
+                if (!scriptPath.StartsWith(MagicaClothRuntimeScriptPrefix, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                behaviour.enabled = false;
+                EditorUtility.SetDirty(behaviour);
+            }
         }
 
         private static Material ResolveRangedCandidateMaterial(string hint, int slotIndex)
