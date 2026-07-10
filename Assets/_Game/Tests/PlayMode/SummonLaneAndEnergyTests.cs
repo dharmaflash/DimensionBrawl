@@ -1503,6 +1503,69 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RangedBasicCameraAimIgnoresAllySummonAndTargetsEnemyBehind()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject cameraObject = new GameObject("ActionCamera");
+            GameObject allyObject = new GameObject("AllySummon");
+            GameObject enemyObject = new GameObject("Enemy");
+
+            try
+            {
+                Vector3 testOrigin = new Vector3(1000f, 100f, 1000f);
+                playerObject.transform.SetPositionAndRotation(testOrigin, Quaternion.LookRotation(Vector3.forward));
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                PlayerCombatTargetSelector targetSelector = playerObject.AddComponent<PlayerCombatTargetSelector>();
+                PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.nearClipPlane = 0.01f;
+                cameraObject.transform.SetPositionAndRotation(
+                    testOrigin + new Vector3(0f, 1f, -5f),
+                    Quaternion.LookRotation(Vector3.forward));
+                ActionCameraController cameraController = cameraObject.AddComponent<ActionCameraController>();
+
+                allyObject.transform.position = testOrigin + new Vector3(0f, 1f, 4f);
+                allyObject.AddComponent<SphereCollider>().radius = 0.75f;
+                CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+                allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+
+                enemyObject.transform.position = testOrigin + new Vector3(0f, 1f, 8f);
+                enemyObject.AddComponent<SphereCollider>().radius = 0.75f;
+                CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+                enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                targetSelector.ConfigureTargetCandidates(new[] { enemyHealth }, refreshNow: false);
+                rangedAction.ConfigureReferences(
+                    null,
+                    null,
+                    null,
+                    targetSelector,
+                    playerHealth,
+                    cameraController,
+                    null);
+
+                Physics.SyncTransforms();
+
+                Assert.IsTrue(rangedAction.TryGetAimPreviewDirection(out _));
+                Assert.IsTrue(rangedAction.HasAimAssistTarget);
+                Assert.AreSame(
+                    enemyHealth,
+                    rangedAction.AimAssistTargetHealth,
+                    "A player-side summon crossing the camera ray must not replace the hostile aim target behind it.");
+                Assert.AreNotSame(allyHealth, rangedAction.AimAssistTargetHealth);
+            }
+            finally
+            {
+                Object.DestroyImmediate(enemyObject);
+                Object.DestroyImmediate(allyObject);
+                Object.DestroyImmediate(cameraObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void RangedBasicStartsReloadWhenMagazineRunsEmpty()
         {
             GameObject playerObject = new GameObject("Player");

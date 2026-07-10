@@ -337,9 +337,7 @@ namespace DimensionBrawl.Player
             lockTargetController?.NotifyAttackTarget(AimAssistTargetHealth);
             projectile.transform.SetParent(projectileRoot, worldPositionStays: true);
             projectile.transform.position = spawnPosition;
-            DamageTeam resolvedSourceTeam = sourceHealth != null && sourceHealth.Team != DamageTeam.Neutral
-                ? sourceHealth.Team
-                : sourceTeam;
+            DamageTeam resolvedSourceTeam = ResolveSourceTeam();
             projectile.Configure(
                 sourceHealth,
                 resolvedSourceTeam,
@@ -1405,7 +1403,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            if (targetHealth == null || !targetHealth.IsAlive)
+            if (!IsValidAimTarget(targetHealth))
             {
                 return false;
             }
@@ -1427,6 +1425,12 @@ namespace DimensionBrawl.Player
             bool allowCameraAimAssist = true,
             bool suppressViewportReprojection = false)
         {
+            if (!IsValidAimTarget(targetHealth))
+            {
+                targetHealth = null;
+                strength01 = 0f;
+            }
+
             AimAssistTargetHealth = targetHealth;
             HasAimAssistTarget = targetHealth != null && targetHealth.IsAlive && strength01 > 0f;
             AimAssistStrength01 = HasAimAssistTarget ? Mathf.Clamp01(strength01) : 0f;
@@ -1445,17 +1449,22 @@ namespace DimensionBrawl.Player
 
         private bool IsValidDirectViewportTarget(CombatHealth targetHealth)
         {
-            if (targetHealth == null || !targetHealth.IsAlive)
-            {
-                return false;
-            }
+            return IsValidAimTarget(targetHealth);
+        }
 
-            if (sourceHealth != null && targetHealth == sourceHealth)
-            {
-                return false;
-            }
+        private bool IsValidAimTarget(CombatHealth targetHealth)
+        {
+            return targetHealth != null
+                && targetHealth.IsAlive
+                && targetHealth != sourceHealth
+                && CombatTeamUtility.AreHostile(ResolveSourceTeam(), targetHealth.Team);
+        }
 
-            return targetHealth.Team != sourceTeam && targetHealth.Team != DamageTeam.Neutral;
+        private DamageTeam ResolveSourceTeam()
+        {
+            return sourceHealth != null && sourceHealth.Team != DamageTeam.Neutral
+                ? sourceHealth.Team
+                : sourceTeam;
         }
 
         private void RequestFacingOnFire(Vector3 direction)
@@ -1702,22 +1711,9 @@ namespace DimensionBrawl.Player
             }
 
             hitTargetHealth = ResolveHitCombatHealth(hitCollider);
-            if (hitTargetHealth != null)
+            if (hitTargetHealth != null && !IsValidAimTarget(hitTargetHealth))
             {
-                if (!hitTargetHealth.IsAlive)
-                {
-                    return false;
-                }
-
-                if (sourceHealth != null && hitTargetHealth == sourceHealth)
-                {
-                    return false;
-                }
-
-                if (hitTargetHealth.Team == sourceTeam || hitTargetHealth.Team == DamageTeam.Neutral)
-                {
-                    return false;
-                }
+                return false;
             }
 
             return true;
