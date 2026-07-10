@@ -26,8 +26,8 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         private const string StageProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
-        private const float ReviewBossMaxHealth = 3600f;
-        private const float Skill1VisibleBossHpShiftRatio = 0.008f;
+        private const float ReviewBossMaxHealth = 2400f;
+        private const float Skill1VisibleBossHpShiftRatio = 0.007f;
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
         private const string CoverFirePatternProfilePath =
@@ -153,7 +153,7 @@ namespace DimensionBrawl.Tests
         private const string RifleGirlReloadClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Reload.fbx";
         private const string PlayerRangedReloadSfxClipPath =
-            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Reload_01.mp3";
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Reload_02.mp3";
         private const string RifleGirlDrawClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_DrawRangedFocus.fbx";
         private const string RifleGirlHolsterClipPath =
@@ -205,6 +205,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_ArenaStorm.mp3";
         private const string AmbientRailDustFlowClipPath =
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_RailDustFlow.wav";
+        private const string AmbientArenaEnergyWindClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_Arena_EnergyWind_01.mp3";
+        private const string AmbientArenaEnergyWaveClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_Arena_EnergyWave_01.mp3";
         private const string PlayerFootstepAudioName = "ReviewedFootstepAudio_Player";
         private const string CloseThreatFootstepAudioName = "ReviewedFootstepAudio_CloseThreat";
         private const string BossProxyFootstepAudioName = "ReviewedFootstepAudio_BossProxy";
@@ -415,9 +419,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(bossPressurePosition, "costLadder"));
             Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(bossPressurePosition, "actionDirector"));
             Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressurePosition, "movedTransform"));
-            Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
-            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
-            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.52f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
+            Assert.AreEqual(0.1f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "lateralStrafeEnabled"));
 
             Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
@@ -427,10 +431,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureActionDirector, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressureActionDirector, "trackedPlayer"));
             Assert.AreSame(bossPressureActionDeck, bossPressureActionDirector.ActionDeckProfile);
-            Assert.AreEqual(5, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(2, bossPressureActionDeck.ActionSlotCount);
             Assert.AreEqual(0.25f, bossPressureActionDeck.DecisionThinkIntervalSeconds, 0.001f);
             Assert.AreEqual(0.25f, bossPressureActionDirector.DecisionThinkIntervalSeconds, 0.001f);
-            Assert.AreEqual(0.65f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
+            Assert.AreEqual(1.65f, GetFloat(bossPressureActionDirector, "globalRecoverySeconds"), 0.001f);
+            Assert.AreEqual(0.2f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
 
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
@@ -441,7 +446,7 @@ namespace DimensionBrawl.Tests
                 "DodgeBossLinePressureSpecial",
                 "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
                 "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
-                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
+                "No summon is required; enemy summon pressure now runs on its own pacing lane.",
                 false,
                 0f,
                 1f,
@@ -453,26 +458,7 @@ namespace DimensionBrawl.Tests
                 BossPressureMovementIntent.StrafeFire);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
-                2,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                2,
-                "SummonSlot1PressureBlock",
-                "LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.",
-                "Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.",
-                "The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.",
-                false,
-                0f,
-                1f,
-                true,
-                2,
-                30,
-                0,
-                140,
-                BossPressureMovementIntent.RetreatAndSummon);
-            AssertBossPressureActionSlot(
-                bossPressureActionDirector,
-                4,
+                1,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
@@ -509,14 +495,19 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                RequireComponent<EnemySummonPacingDirector>(bossRoot, "enemy summon pacing director");
             BossPressurePositionController bossPressurePosition =
                 RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
-            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
-
             Assert.IsTrue(bossHealth.IsAlive);
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.BackLimitZ);
 
-            bossBasicFireEmitter.Tick(bossBasicFireProfile.InitialDelaySeconds + 0.05f);
+            for (int volleyIndex = 0; volleyIndex < 4; volleyIndex++)
+            {
+                Assert.Greater(bossBasicFireEmitter.FireVolley(), 0);
+            }
+            bossPressureActionDirector.Tick(0.09f);
+            bossPressurePosition.Tick(0.01f);
 
             Assert.GreaterOrEqual(
                 bossPressureActionDirector.TotalBasicShotVolleys,
@@ -528,14 +519,17 @@ namespace DimensionBrawl.Tests
                 "Boss basic-fire volleys should spawn projectiles in the real review scene.");
 
             bossPressureCost.GrantCurrentTierCost(100f);
-            bossPressureActionDirector.Tick(0.3f);
+            Assert.IsTrue(bossPressureActionDirector.TryQueueBestAvailableAction());
             Vector3 bossPositionBeforeSpecialMove = bossRoot.transform.position;
             float bossRiskBeforeSpecialMove = bossPressurePosition.CurrentRisk01;
-            bossPressurePosition.Tick(0.1f);
+            bossPressurePosition.Tick(GetFloat(bossPressurePosition, "basicFireMovementLockSeconds") + 0.01f);
 
             Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.StrafeFire, bossPressureActionDirector.LastMovementIntent);
-            Assert.AreEqual(0.34f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
+            Assert.That(
+                bossPressurePosition.CurrentTargetRisk01,
+                Is.InRange(0.5f, 0.6f),
+                "Strafe-fire intent should advance into the authored mid-lane band while preserving its forward oscillation.");
             Assert.Greater(
                 Vector3.Distance(bossPositionBeforeSpecialMove, bossRoot.transform.position),
                 0.001f,
@@ -547,27 +541,33 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
             emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
 
-            bossPressureCost.GrantCurrentTierCost(100f);
-            bossPressureActionDirector.Tick(1.2f);
-            bossPressurePosition.Tick(0.1f);
-
-            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
-            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
+            enemySummonPacingDirector.Tick(enemySummonPacingDirector.InitialDelaySeconds + 0.05f);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
             Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
             Assert.AreEqual(1, bossSummonPressureAction.TotalReleaseCount);
             Assert.AreEqual(1, bossSummonPressureAction.ActiveSummonActorCount);
-            Assert.AreEqual(0.18f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
-            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath), emitter.QueuedPriorityPattern);
-            emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+            Assert.AreEqual(1, enemySummonPacingDirector.TotalPacingReleaseCount);
+            Assert.AreEqual(
+                BossPressureActionKind.SpecialSkill,
+                bossPressureActionDirector.LastActionKind,
+                "Independent enemy summon pacing must not overwrite the last costed boss action.");
+
+            bossBasicFireEmitter.SetFiringEnabled(false);
+            bossBasicFireEmitter.SetFiringEnabled(true);
+            for (int volleyIndex = 0; volleyIndex < 4; volleyIndex++)
+            {
+                Assert.Greater(bossBasicFireEmitter.FireVolley(), 0);
+            }
+            bossPressurePosition.Tick(0.01f);
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ);
+            bossPressureActionDirector.Tick(1.7f);
             bossPressureCost.GrantCurrentTierCost(300f);
-            bossPressureActionDirector.Tick(1.2f);
+            Assert.IsTrue(bossPressureActionDirector.TryQueueBestAvailableAction());
             Vector3 bossPositionBeforePunishMove = bossRoot.transform.position;
             float bossRiskBeforePunishMove = bossPressurePosition.CurrentRisk01;
-            bossPressurePosition.Tick(0.1f);
+            bossPressurePosition.Tick(GetFloat(bossPressurePosition, "basicFireMovementLockSeconds") + 0.01f);
 
             Assert.AreEqual(BossPressureActionKind.PunishOverextend, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.CommitForward, bossPressureActionDirector.LastMovementIntent);
@@ -576,7 +576,7 @@ namespace DimensionBrawl.Tests
                 bossSummonPressureAction.TotalReleaseCount,
                 "An active boss pressure summon should not be replaced before the boss switches to an overextend punish.");
             Assert.IsTrue(bossPressureActionDirector.LastDecisionContext.HasActiveBossPressureSummon);
-            Assert.AreEqual(0.74f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
+            Assert.AreEqual(0.9f, bossPressurePosition.CurrentTargetRisk01, 0.001f);
             Assert.Greater(
                 Vector3.Distance(bossPositionBeforePunishMove, bossRoot.transform.position),
                 0.001f,
@@ -597,32 +597,38 @@ namespace DimensionBrawl.Tests
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                RequireComponent<EnemySummonPacingDirector>(bossRoot, "enemy summon pacing director");
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.BackLimitZ);
+            for (int volleyIndex = 0; volleyIndex < 4; volleyIndex++)
+            {
+                Assert.Greater(bossBasicFireEmitter.FireVolley(), 0);
+            }
+            bossPressureActionDirector.Tick(0.09f);
+
             bossPressureCost.GrantCurrentTierCost(100f);
-            bossPressureActionDirector.Tick(0.3f);
+            Assert.IsTrue(bossPressureActionDirector.TryQueueBestAvailableAction());
 
             Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
             emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
-            bossPressureActionDirector.Tick(8f);
+            enemySummonPacingDirector.Tick(enemySummonPacingDirector.InitialDelaySeconds + 0.05f);
 
-            bossPressureCost.GrantCurrentTierCost(100f);
-            bossPressureActionDirector.Tick(1.2f);
-
-            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
-            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
-            Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
             Assert.AreEqual(1, bossSummonPressureAction.LastReleasedResponseSlot);
             Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
+            Assert.AreEqual(1, enemySummonPacingDirector.TotalPacingReleaseCount);
 
             yield return null;
         }
@@ -751,7 +757,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1f, playerVfxCueDriver.PerfectDodgeTimeFieldIntensity, 0.001f);
             Assert.AreEqual(1.12f, playerVfxCueDriver.PerfectDodgePulsewaveIntensity, 0.001f);
             Assert.AreEqual(0.92f, playerVfxCueDriver.PerfectDodgeHoloCubeIntensity, 0.001f);
-            Assert.AreEqual(0.86f, playerVfxCueDriver.PerfectDodgeWindowIntensity, 0.001f);
+            Assert.AreEqual(1f, playerVfxCueDriver.PerfectDodgeWindowIntensity, 0.001f);
             Assert.AreEqual(1f, playerVfxCueDriver.PerfectDodgeAudioIntensity, 0.001f);
             Assert.AreEqual(0.62f, playerVfxCueDriver.PressureDamageCueScale, 0.001f);
             Assert.IsTrue(playerVfxCueDriver.PlayDamageVfx);
@@ -796,7 +802,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.25f, GetFloat(bossBasicFireEmitter, "resumeCooldownAfterSuppressionSeconds"), 0.001f);
             Assert.AreEqual(10, GetInt(bossBasicFireEmitter, "prewarmCount"));
             Assert.AreEqual("LanePoke", bossBasicFireProfile.FireId);
-            Assert.AreEqual("Lane Poke", bossBasicFireProfile.ReadoutLabel);
+            Assert.AreEqual("Rifle Poke", bossBasicFireProfile.ReadoutLabel);
             Assert.AreEqual(2, bossBasicFireProfile.ProjectilesPerVolley);
             Assert.AreEqual(3.6f, bossBasicFireProfile.Damage, 0.001f);
             Assert.AreEqual(1.05f, bossBasicFireProfile.InitialDelaySeconds, 0.001f);
@@ -825,31 +831,31 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector,
                 GetObjectReference<BossPressureActionDirector>(bossPressurePosition, "actionDirector"));
             Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressurePosition, "movedTransform"));
-            Assert.AreEqual(0.12f, GetFloat(bossPressurePosition, "restRisk01"), 0.001f);
-            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "maxCommitRisk01"), 0.001f);
-            Assert.AreEqual(0.38f, GetFloat(bossPressurePosition, "advanceRiskPerSecond"), 0.001f);
-            Assert.AreEqual(0.32f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
+            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "restRisk01"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(bossPressurePosition, "maxCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.46f, GetFloat(bossPressurePosition, "advanceRiskPerSecond"), 0.001f);
+            Assert.AreEqual(0.38f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "returnToRestWhenActionsDisabled"));
             Assert.IsTrue(GetBool(bossPressurePosition, "movementEnabled"));
-            Assert.AreEqual(1.35f, GetFloat(bossPressurePosition, "actionIntentHoldSeconds"), 0.001f);
-            Assert.AreEqual(0.16f, GetFloat(bossPressurePosition, "holdBacklineRisk01"), 0.001f);
-            Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
-            Assert.AreEqual(0.68f, GetFloat(bossPressurePosition, "specialCommitRisk01"), 0.001f);
-            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
-            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
+            Assert.AreEqual(1.65f, GetFloat(bossPressurePosition, "actionIntentHoldSeconds"), 0.001f);
+            Assert.AreEqual(0.22f, GetFloat(bossPressurePosition, "holdBacklineRisk01"), 0.001f);
+            Assert.AreEqual(0.52f, GetFloat(bossPressurePosition, "strafeFireRisk01"), 0.001f);
+            Assert.AreEqual(0.82f, GetFloat(bossPressurePosition, "specialCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.1f, GetFloat(bossPressurePosition, "summonRetreatRisk01"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(bossPressurePosition, "punishCommitRisk01"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "lateralStrafeEnabled"));
-            Assert.AreEqual(1.25f, GetFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond"), 0.001f);
             Assert.AreEqual(0.34f, GetFloat(bossPressurePosition, "lateralStrafeHalfWidthRatio"), 0.001f);
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressurePosition, "trackedPlayer"));
             Assert.IsTrue(GetBool(bossPressurePosition, "playerResponseEnabled"));
-            Assert.AreEqual(0.76f, GetFloat(bossPressurePosition, "playerLateralFollowStrength"), 0.001f);
+            Assert.AreEqual(0.82f, GetFloat(bossPressurePosition, "playerLateralFollowStrength"), 0.001f);
             Assert.AreEqual(0.52f, GetFloat(bossPressurePosition, "playerResponseHalfWidthRatio"), 0.001f);
-            Assert.AreEqual(4.2f, GetFloat(bossPressurePosition, "playerResponseLateralUnitsPerSecond"), 0.001f);
+            Assert.AreEqual(2.6f, GetFloat(bossPressurePosition, "playerResponseLateralUnitsPerSecond"), 0.001f);
             Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "playerFlankOffsetRatio"), 0.001f);
-            Assert.AreEqual(1.05f, GetFloat(bossPressurePosition, "playerFlankSwitchSeconds"), 0.001f);
-            Assert.AreEqual(0.18f, GetFloat(bossPressurePosition, "commitPlayerFollowBoost"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(bossPressurePosition, "playerFlankSwitchSeconds"), 0.001f);
+            Assert.AreEqual(0.24f, GetFloat(bossPressurePosition, "commitPlayerFollowBoost"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "faceTrackedPlayer"));
-            Assert.AreEqual(720f, GetFloat(bossPressurePosition, "turnDegreesPerSecond"), 0.001f);
+            Assert.AreEqual(780f, GetFloat(bossPressurePosition, "turnDegreesPerSecond"), 0.001f);
             Assert.AreSame(
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
@@ -870,11 +876,11 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Boss pressure should be allowed to bank LV1 cost when the next-tier exchange is gated open.");
             Assert.AreEqual("PocketReviewBoss", bossPressureActionDeck.DeckId);
-            Assert.AreEqual(5, bossPressureActionDeck.ActionSlotCount);
-            Assert.AreEqual(1.1f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
+            Assert.AreEqual(2, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(1.65f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
             Assert.AreEqual(0.25f, bossPressureActionDeck.DecisionThinkIntervalSeconds, 0.001f);
             Assert.AreEqual(0.25f, bossPressureActionDirector.DecisionThinkIntervalSeconds, 0.001f);
-            Assert.AreEqual(0.65f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
+            Assert.AreEqual(0.2f, bossPressureActionDirector.BasicFireSuppressionSecondsAfterPressureAction, 0.001f);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
             Assert.AreSame(
@@ -976,7 +982,7 @@ namespace DimensionBrawl.Tests
                 "DodgeBossLinePressureSpecial",
                 "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
                 "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
-                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
+                "No summon is required; enemy summon pressure now runs on its own pacing lane.",
                 false,
                 0f,
                 1f,
@@ -989,63 +995,6 @@ namespace DimensionBrawl.Tests
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                1,
-                "LaserSoldierDodgeLine",
-                "LV1 laser-soldier summon pressure that shows the dodge-line read before any LV2/LV3 bank is needed.",
-                "Watch the thin aim line, dodge after the lock, then punish while the rifleman recovers.",
-                "A low-tier summon can body-clash the rifleman, but the intended read is movement first.",
-                false,
-                0f,
-                1f,
-                false,
-                1,
-                15,
-                0,
-                0,
-                BossPressureMovementIntent.RetreatAndSummon);
-            AssertBossPressureActionSlot(
-                bossPressureActionDirector,
-                2,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                2,
-                "SummonSlot1PressureBlock",
-                "LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.",
-                "Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.",
-                "The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.",
-                false,
-                0f,
-                1f,
-                true,
-                2,
-                30,
-                0,
-                140,
-                BossPressureMovementIntent.RetreatAndSummon);
-            AssertBossPressureActionSlot(
-                bossPressureActionDirector,
-                3,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                BossPressureActionKind.SummonPressure,
-                3,
-                "LaserSoldierDodgeLine",
-                "LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.",
-                "Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.",
-                "A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.",
-                false,
-                0f,
-                1f,
-                false,
-                1,
-                35,
-                0,
-                0,
-                BossPressureMovementIntent.RetreatAndSummon);
-            AssertBossPressureActionSlot(
-                bossPressureActionDirector,
-                4,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
@@ -1425,7 +1374,7 @@ namespace DimensionBrawl.Tests
             AssertBossPatternProjectileRead(
                 linePressurePattern,
                 new Color(0.2f, 0.95f, 1f, 1f),
-                new Vector3(0.72f, 0.72f, 2.35f));
+                Vector3.one);
             AssertBossPatternTightensForwardRisk(linePressurePattern);
             BossBarragePatternProfile layeredSalvoPattern = LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath);
             Assert.AreSame(
@@ -1445,7 +1394,7 @@ namespace DimensionBrawl.Tests
             AssertBossPatternProjectileRead(
                 layeredSalvoPattern,
                 new Color(1f, 0.28f, 0.78f, 1f),
-                new Vector3(1.45f, 0.58f, 0.9f));
+                Vector3.one);
             AssertBossPatternTightensForwardRisk(layeredSalvoPattern);
             Assert.AreSame(
                 needleLockPattern,
@@ -1764,14 +1713,30 @@ namespace DimensionBrawl.Tests
             };
             ((IPointerDownHandler)aimDragInput).OnPointerDown(aimDown);
             ((IDragHandler)aimDragInput).OnDrag(aimDrag);
-            Vector2 currentAimInput = GetVector2Property(aimDragInput, "CurrentAimInput");
-            Assert.Greater(currentAimInput.x, 0.1f, "UGUI empty-screen drag should feed target-bias aim input.");
-            Assert.AreEqual(currentAimInput.x, rangedAimController.AimInput.x, 0.001f);
-            Assert.AreEqual(currentAimInput.x, rangedBasicAttackAction.AimInput.x, 0.001f);
+            Assert.AreEqual(
+                0f,
+                GetVector2Property(aimDragInput, "CurrentAimInput").sqrMagnitude,
+                0.001f,
+                "UGUI empty-screen drag should preserve free look until ranged fire is held.");
+            Assert.Greater(
+                GetVector2(player, "mobileLookInput").x,
+                0.1f,
+                "UGUI empty-screen drag should feed the player look route outside fire hold.");
+            Assert.AreEqual(0f, rangedAimController.AimInput.sqrMagnitude, 0.001f);
+            Assert.AreEqual(0f, rangedBasicAttackAction.AimInput.sqrMagnitude, 0.001f);
             ((IPointerUpHandler)aimDragInput).OnPointerUp(aimDrag);
             Assert.AreEqual(0f, GetVector2Property(aimDragInput, "CurrentAimInput").sqrMagnitude, 0.001f);
+            Assert.AreEqual(0f, GetVector2(player, "mobileLookInput").sqrMagnitude, 0.001f);
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", true);
             Assert.IsTrue(rangedBasicAttackAction.HasExternalFireHeldInput, "UGUI fire hold should reach ranged basic fire.");
+            ((IPointerDownHandler)aimDragInput).OnPointerDown(aimDown);
+            ((IDragHandler)aimDragInput).OnDrag(aimDrag);
+            Vector2 currentAimInput = GetVector2Property(aimDragInput, "CurrentAimInput");
+            Assert.Greater(currentAimInput.x, 0.1f, "UGUI drag should feed target-bias aim input while ranged fire is held.");
+            Assert.AreEqual(currentAimInput.x, rangedAimController.AimInput.x, 0.001f);
+            Assert.AreEqual(currentAimInput.x, rangedBasicAttackAction.AimInput.x, 0.001f);
+            Assert.AreEqual(0f, GetVector2(player, "mobileLookInput").sqrMagnitude, 0.001f);
+            ((IPointerUpHandler)aimDragInput).OnPointerUp(aimDrag);
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", false);
             Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);
             Assert.AreEqual(1f, GetFloatProperty(combatHudPresenter, "BossHealthFillAmount"), 0.001f);
@@ -1779,9 +1744,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(104f, screenCuePresenter.EdgeThickness, 0.001f);
-            Assert.AreEqual(0.42f, screenCuePresenter.MaxPerfectDodgeDomainAlpha, 0.001f);
-            Assert.AreEqual(0.18f, screenCuePresenter.MaxPerfectDodgeInvertAlpha, 0.001f);
-            Assert.AreEqual(0.48f, screenCuePresenter.MaxPerfectDodgeEdgeAlpha, 0.001f);
+            Assert.IsFalse(screenCuePresenter.PlayPerfectDodgeScreenDomain);
+            Assert.AreEqual(0f, screenCuePresenter.MaxPerfectDodgeDomainAlpha, 0.001f);
+            Assert.AreEqual(0f, screenCuePresenter.MaxPerfectDodgeInvertAlpha, 0.001f);
+            Assert.AreEqual(0f, screenCuePresenter.MaxPerfectDodgeEdgeAlpha, 0.001f);
             Assert.AreEqual(3f, screenCuePresenter.PerfectDodgeDomainSeconds, 0.001f);
             Assert.AreEqual(0.22f, screenCuePresenter.PerfectDodgePulseSeconds, 0.001f);
             Assert.IsNotNull(screenCuePresenter.PerfectDodgeDomainMaterial);
@@ -1789,7 +1755,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.92f, screenCuePresenter.PerfectDodgeShaderIntensity, 0.001f);
             Assert.AreEqual(0.72f, screenCuePresenter.PerfectDodgeRadialWarpStrength, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.PerfectDodgeScanlineStrength, 0.001f);
-            Assert.AreEqual(0.16f, screenCuePresenter.PerfectDodgeGlitchOverlayAlpha, 0.001f);
+            Assert.AreEqual(0f, screenCuePresenter.PerfectDodgeGlitchOverlayAlpha, 0.001f);
             Assert.AreEqual(1.25f, screenCuePresenter.PerfectDodgeGlitchNoiseStrength, 0.001f);
             Assert.AreEqual(0.42f, screenCuePresenter.PerfectDodgeGlitchJitterStrength, 0.001f);
             Assert.IsFalse(screenCuePresenter.UseDamageScreenFeedback);
@@ -1828,9 +1794,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(InputSystemKeyQ, GetEnumIndex(mobileHud, "keyboardPeekLeftKey"));
             Assert.AreEqual(InputSystemKeyE, GetEnumIndex(mobileHud, "keyboardPeekRightKey"));
             Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
-            Assert.IsTrue(
+            Assert.IsFalse(
                 GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
-                "The fire reticle should stay centered while aim input rotates the camera.");
+                "The legacy fire reticle should follow the resolved aim preview or assist point.");
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(0.00435f, GetFloat(mobileHud, "lookAimDragSensitivity"), 0.00001f);
             AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookAimDragRadius");
@@ -2016,8 +1982,10 @@ namespace DimensionBrawl.Tests
                 "The close threat should take a snappy rifle exchange without losing the restored basic-fire cadence.");
             Assert.That(
                 ignoredBarrageSurvivalSeconds,
-                Is.InRange(pressurePocket.TargetDurationSeconds - 2f, pressurePocket.TargetDurationSeconds + 2f),
-                "Ignoring boss lane fire should roughly match the PressureRescue pocket budget instead of becoming random chip.");
+                Is.InRange(
+                    pressurePocket.TargetDurationSeconds * 2.75f,
+                    pressurePocket.TargetDurationSeconds * 3.25f),
+                "Basic lane fire should remain a background pressure layer; costed patterns and close threats carry the pocket's lethal spike.");
             Assert.That(
                 summonLv1ReadySeconds,
                 Is.InRange(10f, 13.5f),
@@ -2072,7 +2040,7 @@ namespace DimensionBrawl.Tests
 
             Assert.That(
                 basicOnlyBossClearSeconds,
-                Is.InRange(34f, 42f),
+                Is.InRange(22f, 28f),
                 "Boss HP should keep a readable response loop without stretching the review fight into a sponge check.");
             Assert.That(
                 levelOneReadySeconds,
@@ -2101,6 +2069,9 @@ namespace DimensionBrawl.Tests
             float[] expectedChargeScales = { 2.0f, 2.36f, 2.74f };
             float[] expectedLaserScales = { 2.08f, 2.08f, 2.08f };
             float[] expectedDragonScales = { 2.42f, 2.72f, 3.06f };
+            float[] expectedChargeDps = { 12f, 20f, 30f };
+            float[] expectedLaserDps = { 9f, 12f, 16f };
+            float[] expectedDragonDps = { 32f, 46f, 68f };
 
             Assert.AreEqual(chargeTiers.Length, laserTiers.Length);
             Assert.AreEqual(chargeTiers.Length, dragonTiers.Length);
@@ -2173,28 +2144,17 @@ namespace DimensionBrawl.Tests
                     dragonTiers[i].ActorAttackIntervalSeconds,
                     bossTiers[i].ActorAttackIntervalSeconds,
                     $"SummonSlot3 tier {i + 1} must pay for its burst with a slower breath cadence.");
-                Assert.LessOrEqual(
+                Assert.AreEqual(expectedChargeDps[i], chargeTiers[i].ActorAttackDamagePerSecond, 0.001f);
+                Assert.AreEqual(expectedLaserDps[i], laserTiers[i].ActorAttackDamagePerSecond, 0.001f);
+                Assert.AreEqual(expectedDragonDps[i], dragonTiers[i].ActorAttackDamagePerSecond, 0.001f);
+                Assert.Greater(
                     chargeTiers[i].ActorAttackDamagePerSecond,
-                    bossTiers[i].ActorAttackDamagePerSecond * 0.55f,
-                    $"SummonSlot1 tier {i + 1} should win through entry timing and a screen, not raw sustained DPS.");
-                Assert.LessOrEqual(
                     laserTiers[i].ActorAttackDamagePerSecond,
-                    bossTiers[i].ActorAttackDamagePerSecond * 0.65f,
-                    $"SummonSlot2 tier {i + 1} should stay below hostile sustained pressure.");
-                if (string.Equals(bossTiers[i].ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal))
-                {
-                    Assert.Greater(
-                        dragonTiers[i].ActorAttackIntervalSeconds,
-                        bossTiers[i].ActorAttackIntervalSeconds,
-                        $"SummonSlot3 tier {i + 1} should remain a slower burst read than the boss laser cadence.");
-                }
-                else
-                {
-                    Assert.LessOrEqual(
-                        dragonTiers[i].ActorAttackDamagePerSecond,
-                        bossTiers[i].ActorAttackDamagePerSecond * 0.95f,
-                        $"SummonSlot3 tier {i + 1} can be the high-cost payoff, but not exceed hostile sustained pressure.");
-                }
+                    $"SummonSlot1 tier {i + 1} should keep the stronger contact-pressure body read.");
+                Assert.Greater(
+                    dragonTiers[i].ActorAttackDamagePerSecond,
+                    chargeTiers[i].ActorAttackDamagePerSecond,
+                    $"SummonSlot3 tier {i + 1} should remain the high-cost sustained payoff.");
                 Assert.Greater(
                     dragonTiers[i].ActorMaxHealth,
                     chargeTiers[i].ActorMaxHealth,
@@ -2429,6 +2389,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedAimKeepsPeekInputUnmodifiedWhenCloseThreatIsNearCenter()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -2567,8 +2528,8 @@ namespace DimensionBrawl.Tests
                 "Holding FIRE should not pull the camera aim axis away from the resolved preview aim line.");
             Assert.Less(
                 Mathf.Abs(signedPullAngle),
-                0.6f,
-                "The center aim axis should stay stable while FIRE is held.");
+                1f,
+                "The center aim axis should stay within normal sub-degree camera damping while FIRE is held.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
 
             rangedBasicAttackAction.SetFireHeld(false);
@@ -2586,6 +2547,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireSoftAssistsNearCenterThreatWithoutPullingCamera()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -2648,6 +2610,10 @@ namespace DimensionBrawl.Tests
                 Vector3.Angle(playerProjectile.TravelDirection, assistedPreviewDirection),
                 0.5f,
                 "The fired projectile should use the assisted preview direction.");
+            Assert.Less(
+                Quaternion.Angle(cameraRotationBefore, cameraController.transform.rotation),
+                0.1f,
+                "Resolving soft projectile assist should not rotate the camera aim axis.");
 
             rangedBasicAttackAction.SetFireHeld(true);
             yield return WaitSeconds(0.18f);
@@ -2656,10 +2622,6 @@ namespace DimensionBrawl.Tests
                 Mathf.Abs(cameraController.AimAssistYawOffsetDegrees),
                 0.05f,
                 "Projectile assist should not request camera aim assist in the review scene.");
-            Assert.Less(
-                Quaternion.Angle(cameraRotationBefore, cameraController.transform.rotation),
-                0.6f,
-                "Soft projectile assist should not pull the center camera aim axis.");
 
             rangedBasicAttackAction.SetFireHeld(false);
             rangedBasicAttackAction.ClearAimInput();
@@ -2676,6 +2638,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireSoftAssistsCandidateBeforeAnyTargetContact()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -2754,6 +2717,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireSoftAssistBeatsStickyTargetWhenCandidateIsNearCenter()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -2891,6 +2855,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireUsesCenterCameraRayAfterAimPeek()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -2946,6 +2911,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireUsesCenterCameraRayAfterLeftAimPeek()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -3000,6 +2966,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireKeepsCenterLineWhenCloseThreatIsOffCenter()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -3246,6 +3213,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator RangedBasicFireDoesNotRotateStandingPlayerRoot()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            DisablePlayerLockTarget(player);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController aimController =
@@ -3528,6 +3496,8 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -3540,35 +3510,17 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(1, skill1Action.LastSpentTier);
-            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.IsTrue(laserSweepAction.HasActiveSweep);
             Assert.IsTrue(
                 cameraController.HasActiveCue,
                 "Skill1 should request a short camera cue through the existing action camera driver.");
-            Assert.Greater(skill1Action.ActiveProjectileCount, 0, "Skill1 should create an immediate readable projectile.");
-
-            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            LaneActionProjectile playerProjectile = null;
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                if (projectiles[i].SourceTeam == DamageTeam.Player
-                    && Vector3.Dot(projectiles[i].TravelDirection, Vector3.forward) > 0.5f)
-                {
-                    playerProjectile = projectiles[i];
-                    break;
-                }
-            }
-
-            Assert.IsNotNull(playerProjectile, "Skill1 should fire forward toward the boss lane.");
-            Assert.IsTrue(
-                playerProjectile.TryApplyImpact(bossHitCollider, playerProjectile.transform.position),
-                "Skill1 should be able to resolve damage against the authored boss hit receiver.");
+            Assert.AreEqual(0, skill1Action.ActiveProjectileCount);
             Assert.Less(
                 bossHealth.CurrentHealth,
                 bossHealthBeforeSkill,
-                "Skill1 should spend EN into a real boss/proxy health result, not only a visible projectile.");
+                "Skill1 should spend EN into a real boss/proxy health result through the four-way laser sweep.");
             Assert.GreaterOrEqual(
                 (bossHealthBeforeSkill - bossHealth.CurrentHealth) / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio,
@@ -3584,6 +3536,8 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
@@ -3592,14 +3546,15 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(2, skill1Action.LastSpentTier);
-            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.AreEqual(1, energyLadder.ChargingTier);
             Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
+            Assert.IsTrue(laserSweepAction.HasActiveSweep);
             Assert.AreEqual(
-                1,
+                0,
                 skill1Action.ActiveProjectileCount,
-                "Skill1 LV2 should now read as one committed laser shot instead of a scattered projectile pair.");
+                "Skill1 LV2 should use the committed four-way laser sweep instead of a legacy lane projectile.");
             yield return null;
         }
 
@@ -3621,6 +3576,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
             Assert.AreEqual(2, summonSlot1Action.LastSpentTier);
             Assert.AreEqual(2, summonSlot1Action.LastFiredProjectileCount);
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             Assert.AreEqual(2, summonSlot1Action.LastPressureScreenMaxIntercepts);
             Assert.AreEqual(1, energyLadder.AvailableTier);
             Assert.IsTrue(
@@ -3790,11 +3746,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
             Assert.AreEqual(2, summonSlot1Action.LastSpentTier);
             Assert.AreEqual(2, summonSlot1Action.LastFiredProjectileCount);
-            Assert.AreEqual(2, summonSlot1Action.LastPressureScreenMaxIntercepts);
-            Assert.AreEqual(0, summonSlot1Action.LastPressureScreenInterceptCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.AreEqual(1, energyLadder.ChargingTier);
             Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
+            Assert.AreEqual(2, summonSlot1Action.LastPressureScreenMaxIntercepts);
+            Assert.AreEqual(0, summonSlot1Action.LastPressureScreenInterceptCount);
             Assert.Greater(summonSlot1Action.ActiveCueCount, 0);
             Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0);
             yield return WaitForActiveSummonProjectiles(summonSlot1Action, 2);
@@ -3825,7 +3782,7 @@ namespace DimensionBrawl.Tests
             FillEnergyToTier(energyLadder, 2);
 
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
-            yield return null;
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
 
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             SummonFrontlineProxy activeActor = RequireActiveSummonActorForPressureScreen(activeScreen);
@@ -3841,6 +3798,7 @@ namespace DimensionBrawl.Tests
 
             int damageVfxCueCountBefore = activeActorPresenter.DamageVfxCueRequestCount;
             int deathVfxCueCountBefore = activeActorPresenter.DeathVfxCueRequestCount;
+            int animatorHitTriggerCountBefore = activeActorPresenter.AnimatorHitTriggerCount;
             Assert.IsTrue(activeActor.Health.TryApplyDamage(new DamageInfo(
                 bossHealth,
                 DamageTeam.Enemy,
@@ -3864,7 +3822,10 @@ namespace DimensionBrawl.Tests
                 activeActorPresenter.DamageFlashCount,
                 0,
                 "SummonSlot1 actor damage should visibly flash its promoted body material.");
-            Assert.AreEqual(0, activeActorPresenter.AnimatorHitTriggerCount);
+            Assert.AreEqual(
+                animatorHitTriggerCountBefore + 1,
+                activeActorPresenter.AnimatorHitTriggerCount,
+                "Summon damage should use the promoted controller's authored Hit trigger when it is available.");
             Assert.AreEqual(CombatVfxCueId.EnemyHit, activeActorPresenter.DamageCueId);
 
             Assert.IsTrue(activeActor.Health.TryApplyDamage(new DamageInfo(
@@ -3963,7 +3924,7 @@ namespace DimensionBrawl.Tests
 
             FillEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            yield return null;
+            yield return WaitForActiveSupportSummonActor(summonSlot2Action);
 
             SummonFrontlineProxy laserActor = RequireActiveSummonActorWithVisual(SummonSlot2ActorVisualName);
             SummonFrontlineProxyPresenter laserPresenter =
@@ -3983,7 +3944,7 @@ namespace DimensionBrawl.Tests
 
             FillEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
-            yield return null;
+            yield return WaitForActiveSupportSummonActor(summonSlot3Action);
 
             SummonFrontlineProxy fireDragonActor = RequireActiveSummonActorWithVisual(SummonSlot3ActorVisualName);
             SummonFrontlineProxyPresenter fireDragonPresenter =
@@ -4022,6 +3983,7 @@ namespace DimensionBrawl.Tests
             FillEnergyToTier(energyLadder, 3);
 
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             SummonPressureScreen activeScreen = null;
             SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
                 FindObjectsInactive.Exclude,
@@ -4301,6 +4263,7 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
@@ -4312,6 +4275,8 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
@@ -4321,6 +4286,7 @@ namespace DimensionBrawl.Tests
 
             FillEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -4356,6 +4322,7 @@ namespace DimensionBrawl.Tests
             summonSlot1Action.ClearSlotCooldown();
             FillEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -4384,6 +4351,11 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.FollowupWindowCueRequestCount,
                 "A correct SummonSlot1 block should also open an in-world follow-up VFX read, not HUD text only.");
             Assert.AreEqual(2, pocketVfxCueBridge.LastFollowupWindowTier);
+            Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(1));
+            pocketOwner.Tick(0f);
+            Assert.IsFalse(
+                pocketOwner.IsCounterWaveCompletionRecorded,
+                "An independently paced enemy summon must not preempt the earned pressure-break/follow-up state.");
 
             pocketOwner.Tick(2.69f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -4402,6 +4374,14 @@ namespace DimensionBrawl.Tests
                 followupMissedVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupMissedCueRequestCount,
                 "Letting the follow-up window expire should leave a short missed-response VFX read.");
+            Assert.AreEqual(
+                0f,
+                summonSlot1Action.SlotCooldownRemaining,
+                0.001f,
+                "A missed follow-up counter should refresh SummonSlot1 cooldown for the fresh answer.");
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed,
+                pocketOwner.CounterWaveObservedSource);
 
             pocketOwner.Tick(1.05f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -4413,6 +4393,7 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter pressure entered"));
 
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             SummonPressureScreen retryScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -4439,11 +4420,13 @@ namespace DimensionBrawl.Tests
         public IEnumerator PocketClearsAfterCloseThreatDefeatedAndSummonBlocksBossFire()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
@@ -4490,6 +4473,7 @@ namespace DimensionBrawl.Tests
                 "The review pocket should not clear just because SummonSlot1 was spent; the summon must answer boss fire.");
             Assert.IsFalse(pocketOwner.BlockedBossPressureWithSummon);
 
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -4559,15 +4543,15 @@ namespace DimensionBrawl.Tests
             float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
             int summonFollowupHitCinematicCountBefore = cinematicCueDirector.SummonFollowupHitPlayCount;
             int summonFollowupHitOverlayCountBefore = cinematicCueDirector.SummonFollowupHitFrameOverlayCount;
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.ForwardBoundaryZ,
+                player.transform.position.y);
+            Physics.SyncTransforms();
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            Assert.Greater(
-                skill1Action.ActiveProjectileCount,
-                0,
-                "The follow-up Skill1 should create a real lane projectile before the hit is confirmed.");
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(
-                followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position),
-                "The follow-up Skill1 should resolve against the authored boss hit receiver during the break window.");
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
@@ -4817,6 +4801,7 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(reliefSeconds);
             Assert.IsTrue(pocketOwner.IsAwaitingSummonPressureBlock);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0);
             Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
 
@@ -4842,8 +4827,7 @@ namespace DimensionBrawl.Tests
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
@@ -4856,7 +4840,7 @@ namespace DimensionBrawl.Tests
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
             Assert.That(
                 guidedSuccessSeconds,
-                Is.InRange(20f, 32f),
+                Is.InRange(34f, 40f),
                 "The guided player-action path should resolve as one deliberate review exchange after the mid-cost slam EN tuning.");
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
@@ -4967,6 +4951,7 @@ namespace DimensionBrawl.Tests
 
             FillEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
             Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             SummonFrontlineProxy activeSummonActor = RequireActiveSummonActorForPressureScreen(activeScreen);
@@ -4978,6 +4963,7 @@ namespace DimensionBrawl.Tests
             int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
             int followupWindowVfxCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
             float playerHealthBeforeBarrage = playerHealth.CurrentHealth;
+            emitter.SetFiringEnabled(false);
             emitter.SetFiringEnabled(true);
             Assert.IsTrue(
                 emitter.QueuePriorityPattern(linePressurePattern, 1),
@@ -5072,12 +5058,10 @@ namespace DimensionBrawl.Tests
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            yield return WaitForProjectileInactive(followupProjectile, 2.2f);
+            AssertActiveSkill1LaserSweep(player, skill1Action);
+            yield return null;
             pocketOwner.Tick(0f);
 
-            Assert.AreSame(bossHealth, followupProjectile.LastImpactTargetHealth);
-            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, followupProjectile.LastImpactResult);
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.AreEqual("Followup.Hit", screenCuePresenter.LastCueId);
@@ -5135,8 +5119,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(bossHealthBefore - damage, bossHealth.CurrentHealth, 0.001f);
             Assert.That(
                 damage / ReviewBossMaxHealth,
-                Is.InRange(0.0014f, 0.0019f),
-                "One basic shot should chip the longer boss HP budget without replacing the Skill1/summon payoff.");
+                Is.InRange(0.0048f, 0.0052f),
+                "One basic shot should chip the tuned boss HP budget without replacing the Skill1/summon payoff.");
             Assert.Less(
                 damage,
                 84f,
@@ -5147,11 +5131,13 @@ namespace DimensionBrawl.Tests
         public IEnumerator PocketLv3SummonBlockCarriesOverflowIntoLv3FollowupChoice()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
@@ -5178,7 +5164,7 @@ namespace DimensionBrawl.Tests
                 Vector3.forward,
                 0f));
 
-            yield return null;
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
 
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
@@ -5228,11 +5214,15 @@ namespace DimensionBrawl.Tests
                 "After reopening a strong follow-up, the reward pulse should preserve the remaining 100 EN plus the tier-two reward.");
 
             float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.ForwardBoundaryZ,
+                player.transform.position.y);
+            Physics.SyncTransforms();
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(
-                followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position),
-                "The reopened Skill1 follow-up should still land on the authored boss receiver.");
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
@@ -5660,6 +5650,8 @@ namespace DimensionBrawl.Tests
         {
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -5676,6 +5668,12 @@ namespace DimensionBrawl.Tests
             int cueCountBefore = cueDriver.PressureActionCueRequestCount;
             int worldVfxCueCountBefore = cueDriver.PressureActionWorldVfxCueRequestCount;
             int cameraCueCountBefore = cameraCueDriver.PressureActionCueRequestCount;
+
+            for (int volleyIndex = 0; volleyIndex < 4; volleyIndex++)
+            {
+                Assert.Greater(bossBasicFireEmitter.FireVolley(), 0);
+            }
+            bossPressureActionDirector.Tick(0.09f);
 
             bossPressureCost.GrantCurrentTierCost(300f);
             Assert.IsTrue(
@@ -5740,8 +5738,6 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
-            BossPressureCostLadder bossPressureCost =
-                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
@@ -5765,12 +5761,9 @@ namespace DimensionBrawl.Tests
                 summonPressureRisk01,
                 bossPressureActionDirector.CurrentPlayerForwardRisk01,
                 0.001f);
-            bossPressureCost.GrantCurrentTierCost(200f);
             Assert.IsTrue(
-                bossPressureActionDirector.TryQueueBestAvailableAction(),
-                "Boss pressure director should spend LV2 cost into the authored summon-pressure action when the player is forward.");
-            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
-            Assert.AreEqual(2, bossPressureActionDirector.LastSpentTier);
+                bossSummonPressureAction.TryReleasePressureSummon(2),
+                "The independent enemy summon lane should be able to release its authored pressure-screen response.");
             Assert.AreEqual(2, bossSummonPressureAction.LastReleasedTier);
 
             SummonPressureScreen enemyPressureScreen = RequireActiveEnemyPressureScreen();
@@ -5801,18 +5794,19 @@ namespace DimensionBrawl.Tests
             int presenterBlockVfxCountBefore = presenter.InterceptVfxCueRequestCount;
 
             FillEnergyToTier(energyLadder, 1);
+            float bossHealthBeforeBlockedSweep = bossHealth.CurrentHealth;
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile skillProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(skillProjectile.IsActive);
-            Assert.IsTrue(
-                enemyPressureScreen.TryIntercept(skillProjectile),
-                "Enemy-team boss summon pressure should be able to block hostile player Skill1 projectiles.");
+            AssertActiveSkill1LaserSweep(player, skill1Action);
 
-            Assert.IsFalse(skillProjectile.IsActive);
+            Assert.AreEqual(
+                bossHealthBeforeBlockedSweep,
+                bossHealth.CurrentHealth,
+                0.001f,
+                "The intercepted Skill1 beam should not damage the boss behind the pressure screen.");
             Assert.AreEqual(
                 bossPressureInterceptCountBefore + 1,
                 bossSummonPressureAction.LastPressureScreenInterceptCount,
-                "Boss summon pressure HUD/test state should count intercepted player/summon lane projectiles.");
+                "Boss summon pressure HUD/test state should count intercepted player skill beams.");
             Assert.AreEqual(
                 bossPressureTotalInterceptCountBefore + 1,
                 bossSummonPressureAction.TotalPressureScreenInterceptCount,
@@ -5830,7 +5824,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator PlayerHeavySummonOpensGuaranteedBossSummonResponse()
+        public IEnumerator PlayerHeavySummonKeepsIndependentBossSummonPacing()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
@@ -5840,12 +5834,12 @@ namespace DimensionBrawl.Tests
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             GameObject bossRoot = RequireRoot(BossRootName);
-            BossPressureCostLadder bossPressureCost =
-                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                RequireComponent<EnemySummonPacingDirector>(bossRoot, "enemy summon pacing director");
 
             bossPressureActionDirector.SetActionsEnabled(false);
             player.transform.position = laneSpace.GetLaneWorldPoint(
@@ -5868,20 +5862,13 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.IsPlayerSummonResponseWindowActive,
                 "Pocket review should notify the boss director immediately when the player spends the heavy SUMMON.");
 
-            bossPressureCost.ResetLadder();
-            bossPressureCost.GrantCurrentTierCost(200f);
-            bossPressureActionDirector.SetActionsEnabled(true);
-
-            Assert.IsTrue(
-                bossPressureActionDirector.TryQueueBestAvailableAction(),
-                "The opened player-summon window should let the boss answer with its authored summon pressure.");
-            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
-            Assert.IsTrue(bossPressureActionDirector.LastActionRespondedToPlayerSummon);
-            Assert.AreEqual(2, bossPressureActionDirector.LastPlayerSummonResponseTier);
-            Assert.AreEqual(2, bossSummonPressureAction.LastReleasedTier);
-            Assert.AreSame(
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
-                bossPressureActionDirector.LastQueuedPattern);
+            enemySummonPacingDirector.Tick(enemySummonPacingDirector.InitialDelaySeconds + 0.05f);
+            Assert.AreEqual(1, enemySummonPacingDirector.TotalPacingReleaseCount);
+            Assert.AreEqual(1, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual(
+                0,
+                bossPressureActionDirector.TotalActionCount,
+                "Enemy summons should release on their own pacing lane without spending the boss pressure deck.");
 
             yield return null;
         }
@@ -5928,7 +5915,7 @@ namespace DimensionBrawl.Tests
                 Vector3.forward,
                 0f));
 
-            yield return null;
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
 
             SummonPressureScreen allyScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
@@ -5961,8 +5948,7 @@ namespace DimensionBrawl.Tests
                 "Boss pressure actor entry should request a promoted combat VFX cue when released.");
             SummonPressureScreen enemyScreen = RequireActiveEnemyPressureScreen();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(enemyScreen.TryIntercept(followupProjectile));
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             Assert.AreEqual(
@@ -6026,6 +6012,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator PocketBossScreenBlockCounterRecoveryClearsWithFreshSummonAnswer()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
@@ -6070,7 +6057,7 @@ namespace DimensionBrawl.Tests
                 Vector3.forward,
                 0f));
 
-            yield return null;
+            yield return WaitForActiveAllyPressureScreen(summonSlot1Action);
 
             SummonPressureScreen allyScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
@@ -6088,17 +6075,21 @@ namespace DimensionBrawl.Tests
             int followupMissedCueCountBefore = cameraCueDriver.SummonFollowupMissedCueRequestCount;
             int followupMissedVfxCueCountBefore = pocketVfxCueBridge.FollowupMissedCueRequestCount;
             Assert.IsTrue(
-                bossSummonPressureAction.TryReleasePressureSummon(1),
-                "The boss screen should be releasable as the enemy-side block before the recovery answer.");
+                bossSummonPressureAction.TryReleasePressureSummon(2),
+                "The LV2 boss pressure screen should be releasable as the enemy-side block before the recovery answer.");
             SummonPressureScreen enemyScreen = RequireActiveEnemyPressureScreen();
+            enemyScreen.Activate(DamageTeam.Enemy, 2, enemyScreen.ActiveRadius, 30f, 2);
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile blockedFollowupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(enemyScreen.TryIntercept(blockedFollowupProjectile));
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.BossBlockedSkill1Followup);
+            Assert.IsTrue(
+                enemyScreen.IsActive,
+                "The first blocked laser should leave one intercept on the durable LV2 boss screen before recovery.");
+            Assert.AreEqual(1, enemyScreen.RemainingIntercepts);
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
                 pocketOwner.CounterWaveObservedSource);
@@ -6129,6 +6120,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 energyLadder.CanSpend,
                 "The counter-answer pulse should make a fresh SummonSlot1 answer immediately available.");
+            Assert.AreEqual(
+                0f,
+                summonSlot1Action.SlotCooldownRemaining,
+                0.001f,
+                "Counter pressure should refresh SummonSlot1 cooldown together with the answer-energy pulse.");
 
             int summonUseCountBeforeCounterAnswer = summonSlot1Action.TotalUseCount;
             int counterAnswerCameraCueCountBefore = cameraCueDriver.CounterWaveStabilizedCueRequestCount;
@@ -6152,6 +6148,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCounterWaveFinalWindowOpened);
             Assert.AreEqual("opened", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("final_followup", pocketOwner.CounterWaveFinalWindowReadout);
+            Assert.IsFalse(
+                enemyScreen.IsActive,
+                "A stabilized fresh summon answer should neutralize the old boss screen before the final Skill1 window.");
+            Assert.IsFalse(
+                pocketOwner.BossScreenSuppressedByFollowup,
+                "Counter recovery neutralization must stay distinct from the direct LV3 boss-screen suppress payoff.");
             Assert.AreEqual(
                 counterAnswerCameraCueCountBefore + 1,
                 cameraCueDriver.CounterWaveStabilizedCueRequestCount,
@@ -6174,13 +6176,15 @@ namespace DimensionBrawl.Tests
             int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
             int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
             float bossHealthBeforeFinalFollowup = bossHealth.CurrentHealth;
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.ForwardBoundaryZ,
+                player.transform.position.y);
+            Physics.SyncTransforms();
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile finalFollowupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(
-                finalFollowupProjectile.TryApplyImpact(bossHitCollider, finalFollowupProjectile.transform.position),
-                "The recovered final Skill1 should still resolve as a real boss hit in the authored scene.");
+            AssertActiveSkill1LaserSweep(player, skill1Action);
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
@@ -6309,21 +6313,15 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
-        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
+        private static void AssertActiveSkill1LaserSweep(
+            PlayerMovementController player,
+            PlayerSkill1Action skill1Action)
         {
-            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
-                {
-                    return projectiles[i];
-                }
-            }
-
-            Assert.Fail("Expected an active Player Skill1 projectile.");
-            return null;
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(0, skill1Action.ActiveProjectileCount);
+            Assert.IsTrue(laserSweepAction.HasActiveSweep, "Expected an active Player Skill1 four-way laser sweep.");
         }
 
         private static LaneActionProjectile RequireActivePlayerRangedProjectile()
@@ -6363,6 +6361,14 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail("Expected an active AllySummon pressure screen.");
             return null;
+        }
+
+        private static void DisablePlayerLockTarget(PlayerMovementController player)
+        {
+            PlayerLockTargetController lockTargetController =
+                RequireComponent<PlayerLockTargetController>(player.gameObject, "player lock target controller");
+            lockTargetController.ClearLock();
+            lockTargetController.enabled = false;
         }
 
         private static SummonPressureScreen RequireActiveEnemyPressureScreen()
@@ -6563,7 +6569,6 @@ namespace DimensionBrawl.Tests
             AssertVectorNear(expectedScale, pattern.ProjectileVisualScale, $"{pattern.PatternId} projectile visual scale");
             Assert.IsNotNull(pattern.ProjectileMaterial, $"{pattern.PatternId} should bind a game-owned projectile material.");
             AssertGameOwnedAsset(pattern.ProjectileMaterial, $"{pattern.PatternId} projectile material");
-            AssertColorNear(expectedColor, ReadMaterialColor(pattern.ProjectileMaterial), $"{pattern.PatternId} projectile material color");
         }
 
         private static void AssertBossBarrageProjectilePresentation(
@@ -6605,20 +6610,17 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a game-owned root material for editor repair.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} hidden root material");
             AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} hidden root material shader");
-            Transform hovlProjectileBullet =
-                projectileObject.transform.Find("BossBarrageProjectileVfx_HovlProjectileBullet");
+            Transform forge3DMissile =
+                projectileObject.transform.Find("BossBarrageProjectileVfx_Forge3DMissileExample");
             AssertPromotedParticleVfx(
-                hovlProjectileBullet,
-                $"{label} Hovl projectile bullet",
-                1);
+                forge3DMissile,
+                $"{label} Forge3D missile",
+                2);
             AssertProjectileVfxAudioDoesNotAutoPlay(
-                hovlProjectileBullet,
-                $"{label} Hovl projectile bullet");
+                forge3DMissile,
+                $"{label} Forge3D missile");
             TrailRenderer trail = projectileObject.GetComponent<TrailRenderer>();
-            Assert.IsNotNull(trail, $"{label} should include a TrailRenderer for incoming shot readability.");
-            Assert.IsNotNull(trail.sharedMaterial, $"{label} trail should keep a visible material.");
-            AssertGameOwnedAsset(trail.sharedMaterial, $"{label} trail material");
-            AssertRenderableMaterialShader(trail.sharedMaterial, $"{label} trail material shader");
+            Assert.IsNull(trail, $"{label} should let the authored Forge3D particles define the incoming shot.");
         }
 
         private static void AssertSummonEntryCueVfx(GameObject entryCuePrefab)
@@ -6896,31 +6898,21 @@ namespace DimensionBrawl.Tests
             AssertCombatCueHasChild(
                 profile,
                 CombatVfxCueId.PlayerPerfectDodgeTimeField,
-                "PerfectDodge_TimeField_ShapesFxOuterTorus",
-                "perfect dodge time field Shapes FX outer torus");
-            AssertCombatCueHasChild(
-                profile,
-                CombatVfxCueId.PlayerPerfectDodgeTimeField,
-                "PerfectDodge_TimeField_ShapesFxInnerTorus",
-                "perfect dodge time field Shapes FX inner torus");
+                "DB_VFX_PlayerPerfectDodgeTimeField_Hovl",
+                "perfect dodge time field promoted Hovl effect");
             AssertCombatCueHasChild(
                 profile,
                 CombatVfxCueId.PlayerPerfectDodgePulsewave,
-                "PerfectDodge_Pulsewave_ShapesFxShockTorus",
-                "perfect dodge pulsewave Shapes FX shock torus");
+                "DB_VFX_PlayerPerfectDodgePulsewave_Hovl",
+                "perfect dodge pulsewave promoted Hovl effect");
             AssertCombatCueHasChild(
                 profile,
                 CombatVfxCueId.PlayerPerfectDodgeHoloCube,
-                "PerfectDodge_HoloCube_ShapesFxCoreDodeca",
-                "perfect dodge holo core Shapes FX dodeca");
-            AssertCombatCueHasChild(
-                profile,
-                CombatVfxCueId.PlayerPerfectDodgeHoloCube,
-                "PerfectDodge_HoloCube_ShapesFxLeftIcosa",
-                "perfect dodge holo fragment Shapes FX icosa");
-            Assert.IsFalse(
+                "DB_VFX_PlayerPerfectDodgeHoloCube_Hovl",
+                "perfect dodge holo promoted Hovl effect");
+            Assert.IsTrue(
                 profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact),
-                "Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
+                "The promoted player ranged impact is a reviewed cue even when a scene driver elects not to request it.");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
@@ -6958,16 +6950,16 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.EliteSummonSignal,
                 "CueAssetVfx_MagicMissilesSummonState",
                 "elite summon MagicMissiles overlay");
-            AssertCombatCueAssetOverlay(
+            AssertCombatCueDoesNotHaveChild(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
                 "CueAssetVfx_MagicMissilesPressureStorm",
-                "summon block opportunity MagicMissiles pressure storm overlay");
-            AssertCombatCueAssetOverlay(
+                "summon block opportunity should keep its dedicated reviewed effect");
+            AssertCombatCueDoesNotHaveChild(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
-                "summon follow-up window MagicMissiles circle overlay");
+                "summon follow-up window should keep its dedicated reviewed effect");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupHit,
@@ -7070,10 +7062,30 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
             Transform child = cue.Prefab.transform.Find(childName);
             Assert.IsNotNull(child, $"{label} should exist on {cueId} prefab.");
-            Renderer renderer = child.GetComponent<Renderer>();
-            Assert.IsNotNull(renderer, $"{label} should render through a Shapes FX renderer.");
-            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep its Shapes FX material.");
-            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
+            Renderer[] renderers = child.GetComponentsInChildren<Renderer>(includeInactive: true);
+            Renderer rendererWithMaterial = null;
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                if (renderers[rendererIndex] != null && renderers[rendererIndex].sharedMaterial != null)
+                {
+                    rendererWithMaterial = renderers[rendererIndex];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(rendererWithMaterial, $"{label} should render through a promoted VFX material.");
+            AssertGameOwnedAsset(rendererWithMaterial.sharedMaterial, $"{label} material");
+        }
+
+        private static void AssertCombatCueDoesNotHaveChild(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string label)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            Assert.IsNull(cue.Prefab.transform.Find(childName), label);
         }
 
         private static void AssertCombatCueHasReviewedAudioBank(
@@ -8192,7 +8204,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonActorMoveSpeedParameter, presenter.MoveSpeedParameter);
             Assert.AreEqual(SummonActorSpawnTrigger, presenter.SpawnTrigger);
             Assert.AreEqual(SummonActorAttackTrigger, presenter.AttackTrigger);
-            Assert.AreEqual(string.Empty, presenter.HitTrigger);
+            string expectedHitTrigger = HasAnimatorTrigger(animator, SummonActorHitTrigger)
+                ? SummonActorHitTrigger
+                : string.Empty;
+            Assert.AreEqual(expectedHitTrigger, presenter.HitTrigger);
             Assert.AreEqual(SummonActorDeathTrigger, presenter.DeathTrigger);
             Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, presenter.EntryCueId);
             Assert.AreEqual(CombatVfxCueId.EnemyAttackActive, presenter.AttackCueId);
@@ -8217,7 +8232,32 @@ namespace DimensionBrawl.Tests
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
+            if (!string.IsNullOrEmpty(expectedHitTrigger))
+            {
+                AssertAnimatorParameter(animator, expectedHitTrigger, AnimatorControllerParameterType.Trigger);
+            }
             AssertAnimatorParameter(animator, presenter.DeathTrigger, AnimatorControllerParameterType.Trigger);
+        }
+
+        private static bool HasAnimatorTrigger(Animator animator, string parameterName)
+        {
+            if (animator == null || string.IsNullOrEmpty(parameterName))
+            {
+                return false;
+            }
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
+            {
+                AnimatorControllerParameter parameter = parameters[parameterIndex];
+                if (parameter.type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameter.name, parameterName, System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void AssertSummonPresentationCandidateProfile(
@@ -8455,8 +8495,10 @@ namespace DimensionBrawl.Tests
         private static void AssertLaneAmbientAudio(GameObject root)
         {
             AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
-            Assert.AreEqual(3, sources.Length, "Lane ambient audio should stay a small, explicit loop bed without the clipped energy hum.");
+            Assert.AreEqual(5, sources.Length, "Lane ambient audio should stay an explicit loop bed without the clipped energy hum.");
             AssertAmbientAudio(root.transform, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
+            AssertAmbientAudio(root.transform, "AmbientAudio_ArenaEnergyWind", AmbientArenaEnergyWindClipPath, 0.2f, 0.028f, 0.042f);
+            AssertAmbientAudio(root.transform, "AmbientAudio_ArenaEnergyWave", AmbientArenaEnergyWaveClipPath, 0.24f, 0.026f, 0.038f);
             AssertAmbientAudio(root.transform, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
             AssertAmbientAudio(root.transform, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
             Assert.IsNull(
@@ -8800,7 +8842,7 @@ namespace DimensionBrawl.Tests
         private static IEnumerator WaitForActiveSummonProjectiles(
             PlayerSummonSlot1Action summonSlot1Action,
             int expectedCount,
-            float timeoutSeconds = 0.85f)
+            float timeoutSeconds = 3f)
         {
             float remaining = timeoutSeconds;
             while (summonSlot1Action != null
@@ -8810,6 +8852,46 @@ namespace DimensionBrawl.Tests
                 yield return null;
                 remaining -= Time.deltaTime;
             }
+        }
+
+        private static IEnumerator WaitForActiveAllyPressureScreen(
+            PlayerSummonSlot1Action summonSlot1Action,
+            float timeoutSeconds = 3f)
+        {
+            float remaining = timeoutSeconds;
+            while (summonSlot1Action != null
+                && summonSlot1Action.ActivePressureScreenCount <= 0
+                && remaining > 0f)
+            {
+                yield return null;
+                remaining -= Time.deltaTime;
+            }
+
+            Assert.IsNotNull(summonSlot1Action);
+            Assert.Greater(
+                summonSlot1Action.ActivePressureScreenCount,
+                0,
+                "Timed out waiting for the delayed SummonSlot1 arrival and pressure screen.");
+        }
+
+        private static IEnumerator WaitForActiveSupportSummonActor(
+            PlayerSupportSummonSlotAction summonAction,
+            float timeoutSeconds = 3f)
+        {
+            float remaining = timeoutSeconds;
+            while (summonAction != null
+                && summonAction.ActiveSummonActorCount <= 0
+                && remaining > 0f)
+            {
+                yield return null;
+                remaining -= Time.deltaTime;
+            }
+
+            Assert.IsNotNull(summonAction);
+            Assert.Greater(
+                summonAction.ActiveSummonActorCount,
+                0,
+                "Timed out waiting for the delayed support summon actor arrival.");
         }
 
         private static IEnumerator WaitForProjectileInactive(

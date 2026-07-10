@@ -15,11 +15,10 @@ namespace DimensionBrawl.Tests
         {
             "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity",
-            "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity"
         };
 
         [UnityTest]
-        public IEnumerator CombatReviewFireReticlesStayAtInputHeight()
+        public IEnumerator CombatReviewFireReticlesMatchAuthoredAimRoutes()
         {
             for (int i = 0; i < ScenePaths.Length; i++)
             {
@@ -27,15 +26,16 @@ namespace DimensionBrawl.Tests
                 yield return null;
 
                 BossBarrageLaneReviewMobileHud mobileHud = RequireObject<BossBarrageLaneReviewMobileHud>();
-                Assert.IsTrue(
+                bool expectsScreenCenter = !ScenePaths[i].Contains("BossBarrageLaneReview");
+                bool expectsAssistFollowing = !ScenePaths[i].Contains("FrontlineMotivationReview");
+                Assert.AreEqual(
+                    expectsScreenCenter,
                     GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
-                    $"{ScenePaths[i]} should keep the fire reticle at the input crosshair height when target assist is acquired.");
-                if (ScenePaths[i].Contains("BossBarrageLaneReview"))
-                {
-                    Assert.IsTrue(
-                        GetBool(mobileHud, "fireAimReticleFollowsAssist"),
-                        $"{ScenePaths[i]} should keep the input reticle centered while drawing a separate assist reticle.");
-                }
+                    $"{ScenePaths[i]} should preserve its authored pointer-versus-center fire reticle route.");
+                Assert.AreEqual(
+                    expectsAssistFollowing,
+                    GetBool(mobileHud, "fireAimReticleFollowsAssist"),
+                    $"{ScenePaths[i]} should preserve its authored aim-assist reticle route.");
             }
         }
 

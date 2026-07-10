@@ -44,7 +44,6 @@ namespace DimensionBrawl.Editor
         private const string LoginAccountServerToastId = "Login.AccountServerNotice";
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
         private const string ImportedRoot = "Assets/_Imported/";
-        private const string ActionFoundationScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
         private const string BossBarrageReviewScenePath =
             "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
 
@@ -2168,11 +2167,6 @@ namespace DimensionBrawl.Editor
         {
             RequireNonEmpty(scenePath, label);
             string normalized = scenePath.Replace('\\', '/');
-            if (string.Equals(normalized, ActionFoundationScenePath, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException($"{label} must not route to ActionFoundationTest.");
-            }
-
             bool isAllowedCombatReviewScene = allowCombatReviewScene
                 && string.Equals(normalized, BossBarrageReviewScenePath, StringComparison.Ordinal);
             if (!normalized.StartsWith(UiSceneRoot, StringComparison.Ordinal) && !isAllowedCombatReviewScene)

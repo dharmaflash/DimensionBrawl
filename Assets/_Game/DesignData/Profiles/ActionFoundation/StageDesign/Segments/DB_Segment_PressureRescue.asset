@@ -34,7 +34,7 @@ MonoBehaviour:
     routeDominanceShare: 0.64
     entryExitLaneBias: 0.7
     timeToNextReliefWindowSeconds: 6.4
-    riskDifferential: 0.67
+    riskDifferential: 0.6
     featuredSummonNeed: 3
     objectiveCue: Survive the pressure pocket.
     designNotes: Boss lane fire carries the main overload, close pressure forces the

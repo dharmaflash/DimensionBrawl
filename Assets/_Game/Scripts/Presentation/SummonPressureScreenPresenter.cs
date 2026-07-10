@@ -193,6 +193,11 @@ namespace DimensionBrawl.Presentation
             HandleInterceptedProjectile(screen, projectile != null ? projectile.transform : null);
         }
 
+        private void OnSkillBeamIntercepted(SummonPressureScreen screen)
+        {
+            HandleInterceptedProjectile(screen, null);
+        }
+
         private void HandleInterceptedProjectile(SummonPressureScreen screen, Transform projectileTransform)
         {
             lastKnownRadius = screen.ActiveRadius;
@@ -407,6 +412,7 @@ namespace DimensionBrawl.Presentation
             pressureScreen.Activated += OnScreenActivated;
             pressureScreen.Intercepted += OnScreenIntercepted;
             pressureScreen.ActionProjectileIntercepted += OnActionProjectileIntercepted;
+            pressureScreen.SkillBeamIntercepted += OnSkillBeamIntercepted;
             pressureScreen.Deactivated += OnScreenDeactivated;
             subscribed = true;
         }
@@ -421,6 +427,7 @@ namespace DimensionBrawl.Presentation
             pressureScreen.Activated -= OnScreenActivated;
             pressureScreen.Intercepted -= OnScreenIntercepted;
             pressureScreen.ActionProjectileIntercepted -= OnActionProjectileIntercepted;
+            pressureScreen.SkillBeamIntercepted -= OnSkillBeamIntercepted;
             pressureScreen.Deactivated -= OnScreenDeactivated;
             subscribed = false;
         }

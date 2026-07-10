@@ -27,6 +27,7 @@ namespace DimensionBrawl.Editor
             "C:/tmp/DimensionBrawl-FrontlineMotivationReview-Validation.txt";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
+        private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
 
         [MenuItem("DimensionBrawl/Create Action Foundation Frontline Motivation Review Scene")]
         public static void CreateFrontlineMotivationReviewSceneMenu()
@@ -102,6 +103,30 @@ namespace DimensionBrawl.Editor
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
+            BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                ActionFoundationBossBarrageLaneReviewSetup.ConfigureEnemySummonPacingDirector(
+                    bossSummonPressureAction.gameObject,
+                    bossSummonPressureAction);
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = player.GetComponent<CombatHealth>();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            PlayerSkill1Action skill1Action = player.GetComponent<PlayerSkill1Action>();
+            GameObject actionCuePool = FindSceneObjectByName(ActionCuePoolRootName);
+            GameObject laserSweepPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                ActionFoundationBossBarrageLaneReviewSetup.PlayerSkill1FourSidesLaserPrefabPath);
+            if (playerHealth == null || skill1Action == null || actionCuePool == null || laserSweepPrefab == null)
+            {
+                throw new InvalidOperationException("Frontline review scene is missing the Skill1 laser sweep binding inputs.");
+            }
+
+            ActionFoundationBossBarrageLaneReviewSetup.ConfigurePlayerSkill1LaserSweepAction(
+                player.gameObject,
+                skill1Action,
+                playerHealth,
+                targetSelector,
+                actionCuePool.transform,
+                laserSweepPrefab);
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonSlotAction("SummonSlot3");
 
@@ -116,6 +141,8 @@ namespace DimensionBrawl.Editor
             MarkDirty(pocketOwner);
             MarkDirty(hud);
             MarkDirty(cameraCueBridge);
+            MarkDirty(enemySummonPacingDirector);
+            MarkDirty(skill1Action);
             SetString(hud, "stageEpisodeLabel", profile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", profile.ObjectiveBadgeLabel);
             SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
@@ -203,6 +230,9 @@ namespace DimensionBrawl.Editor
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
+            EnemySummonPacingDirector enemySummonPacingDirector = RequireObject<EnemySummonPacingDirector>();
+            PlayerSkill1Action skill1Action = RequireObject<PlayerSkill1Action>();
+            PlayerSkill1LaserSweepAction laserSweepAction = RequireObject<PlayerSkill1LaserSweepAction>();
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
@@ -215,6 +245,15 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
+            ValidateObjectReference(enemySummonPacingDirector, "summonPressureAction", bossSummonPressureAction);
+            if (!enemySummonPacingDirector.PacingEnabled)
+            {
+                throw new InvalidOperationException(
+                    $"{enemySummonPacingDirector.name} must keep enemy summon pacing enabled.");
+            }
+
+            ValidateObjectReference(skill1Action, "laserSweepAction", laserSweepAction);
+            ValidateBool(skill1Action, "useLaserSweepActionWhenAvailable", true);
             if (pocketOwner.StageProfile != profile)
             {
                 throw new InvalidOperationException($"{pocketOwner.name}.StageProfile is not bound to {profile.name}.");

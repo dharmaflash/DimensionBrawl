@@ -63,7 +63,7 @@ implementation has been made in this checkpoint.
 | Aircraft silhouettes | `Assets/_Imported/SpecialSkillsEffectsPack/Models/Jet_04.fbx`, `Bomber_02.fbx`, `Bomb_01.fbx`, `UAV_01.fbx` | Files exist. | direct | Use as background flyby/strike props if materials validate. |
 | Portals | `Assets/_Imported/SpecialSkillsEffectsPack/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_16_SpaceWarpPortal/Effect_16_SpaceWarpPortal.prefab` | File exists. | direct | Use before soldier spawn. This satisfies "no soldier spawn without pre-spawn signal". |
 | Explosions / impacts | `Effect_10_SpaceFleetCall/.../Effect_10_ShellExplosion*.prefab`, `Effect_13_DangerClose/.../Effect_13_Explosion.prefab`, `Effect_50_DeathWave.prefab` | Files exist. | direct | Use for staggered background hits. Avoid poison-colored `Effect_23` unless recolor/readability is confirmed. |
-| Sword | `Assets/_Imported/SpecialSkillsEffectsPack/Models/Sword_1.fbx` | Already referenced by `IntroGatePodCutsceneReviewSetup.cs` as `SwordModelPath`. | direct | Replace rifle-focused handoff with sword/melee confrontation. |
+| Sword | `Assets/_Imported/SpecialSkillsEffectsPack/Models/Sword_1.fbx` | File exists in the imported effects pack. | direct | Replace rifle-focused handoff with sword/melee confrontation. |
 | Slash / melee FX | `Effect_08_GroundSlash.prefab`, `Effect_36_MadnessSlash.prefab`, SpecialSkills slash textures/materials | Files exist. | direct | Use sparingly for sword ready/deflection; no overpowered ultimate read. |
 | Masked sci-fi soldiers | `Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab`, `PF_Enemy_SciFiSoldier_EliteDeck.prefab`, `PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab` | Files exist in `_Game`. | direct | Use these instead of review-only primitive commandos. Keep faces hidden by helmet/angle. |
 | Soldier attack/hit anims | `Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiHeavyBattleArmor/HBA_MeleeAttackWeapon.fbx`, `HBA_MeleeAttackForwardWeapon.fbx` | Files exist. | direct | Use for soldiers attacking through portals and being interrupted. |
@@ -110,10 +110,8 @@ cheap commando bridge starts.
      camera references.
    - Compile validation before scene/profile generation.
 3. Scene/profile/timeline checkpoint:
-   - Regenerate/update `IntroGatePodCutsceneReview` and Olympus intro port without
-     overwriting user-adjusted visual roots unexpectedly.
-   - Validate `IntroGatePodCutsceneReview`, `OlympusCorridorInvasionStage`, and
-     cinematic package.
+   - Update the Olympus runtime intro without overwriting user-adjusted visual roots unexpectedly.
+   - Validate `OlympusCorridorInvasionStage` and its cinematic package.
 4. Capture/polish checkpoint:
    - Capture at least: air raid, portal opening, soldier surge, protagonist kick,
      sword ready, Rina back-view handoff.

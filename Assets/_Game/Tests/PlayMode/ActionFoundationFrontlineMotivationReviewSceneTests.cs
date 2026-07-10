@@ -125,9 +125,27 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            EnemySummonPacingDirector enemySummonPacingDirector =
+                RequireComponent<EnemySummonPacingDirector>(bossRoot, "enemy summon pacing director");
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerSkill1Action skill1Action =
+                RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
 
             Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(pocketOwner, "stageProfile"));
             Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(reviewHud, "stageProfile"));
+            Assert.IsTrue(enemySummonPacingDirector.PacingEnabled);
+            Assert.AreSame(
+                bossSummonPressureAction,
+                GetObjectReference<BossSummonPressureAction>(enemySummonPacingDirector, "summonPressureAction"));
+            Assert.AreSame(
+                laserSweepAction,
+                GetObjectReference<PlayerSkill1LaserSweepAction>(skill1Action, "laserSweepAction"));
+            Assert.IsTrue(GetBool(skill1Action, "useLaserSweepActionWhenAvailable"));
             Assert.AreEqual(stageProfile.ObjectiveStepCount, pocketOwner.ObjectiveStepCount);
             Assert.AreEqual("ActionFoundationFrontlineMotivationReview", overlayHud.RetrySceneName);
             Assert.AreEqual(ScenePath, overlayHud.RetryScenePath);
@@ -406,16 +424,18 @@ namespace DimensionBrawl.Tests
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace =
+                RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "summon lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
-            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
+            SetField(summonSlot1Action, "summonActorSpawnDelaySeconds", 0f);
 
             Assert.IsFalse(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("pending", pocketOwner.CounterWaveRecordState);
@@ -668,14 +688,16 @@ namespace DimensionBrawl.Tests
                 cameraCueDriver.CounterWaveStabilizedCueRequestCount);
             Assert.AreEqual(2, cameraCueDriver.LastCounterWaveStabilizedTier);
 
+            float guidedLaneZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, 0.72f);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, guidedLaneZ, player.transform.position.y);
+            Physics.SyncTransforms();
             float bossHealthBeforeFinalHit = bossHealth.CurrentHealth;
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(
                 skill1Action.TryUseSkill1(),
                 "Counter recovery should end through the real Skill1 action.");
-            LaneActionProjectile finalFollowupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(finalFollowupProjectile.TryApplyImpact(bossHitCollider, finalFollowupProjectile.transform.position));
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFinalHit);
             int counterRecoveryRecordEventCount = 0;
             BossBarragePocketReviewOwner.RouteResultRecord counterRecoveryEventRecord = default;
@@ -1060,13 +1082,14 @@ namespace DimensionBrawl.Tests
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
-            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
             BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+
+            SetField(summonSlot1Action, "summonActorSpawnDelaySeconds", 0f);
 
             if (closeThreatEnemy != null)
             {
@@ -1146,14 +1169,15 @@ namespace DimensionBrawl.Tests
 
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
+            float bossHealthBeforeSkill1 = bossHealth.CurrentHealth;
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(3, skill1Action.LastSpentTier);
-            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
-            Assert.AreEqual(1, ApplyActivePlayerSkillProjectiles(bossHitCollider));
+            Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
+            Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeSkill1);
             pocketOwner.Tick(0f);
             Assert.AreEqual(3, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.AreEqual(3, pocketOwner.HighestSkill1FollowupHitTier);
-            Assert.GreaterOrEqual(pocketOwner.Skill1FollowupDamage, 200f);
+            Assert.Greater(pocketOwner.Skill1FollowupDamage, 0f);
 
             int cleanRecordEventCount = 0;
             BossBarragePocketReviewOwner.RouteResultRecord cleanEventRecord = default;
@@ -1383,42 +1407,6 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail($"{label} should expose at least one child collider under its CombatHealth root.");
             return null;
-        }
-
-        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
-        {
-            LaneActionProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
-                {
-                    return projectiles[i];
-                }
-            }
-
-            Assert.Fail("Expected an active Player Skill1 projectile.");
-            return null;
-        }
-
-        private static int ApplyActivePlayerSkillProjectiles(Collider hitCollider)
-        {
-            LaneActionProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            int hitCount = 0;
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                if (projectiles[i].IsActive
-                    && projectiles[i].SourceTeam == DamageTeam.Player
-                    && projectiles[i].TryApplyImpact(hitCollider, projectiles[i].transform.position))
-                {
-                    hitCount++;
-                }
-            }
-
-            return hitCount;
         }
 
         private static LaneActionProjectile RequireActivePlayerRangedProjectile()

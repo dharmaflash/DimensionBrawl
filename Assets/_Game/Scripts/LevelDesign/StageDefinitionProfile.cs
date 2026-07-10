@@ -124,7 +124,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string mapContentRootName = "OlympusCorridorStageMap";
         [SerializeField] private Vector3 mapScale = new Vector3(1.5f, 1.5f, 1.5f);
         [SerializeField] private string layoutId = "OLYMPUS_CORRIDOR_LONG_01";
-        [SerializeField] private string scenePrefabSource = "Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity";
+        [SerializeField] private string scenePrefabSource = string.Empty;
 
         [Header("Design Contract")]
         [TextArea, SerializeField] private string objective =

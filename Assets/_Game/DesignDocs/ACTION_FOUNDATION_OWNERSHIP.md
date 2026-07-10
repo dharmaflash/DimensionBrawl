@@ -35,7 +35,6 @@ This note records the current action-feel foundation and the ownership boundarie
 - Enemy prefab candidates under `_Game/Prefabs/Enemies/ActionFoundation`: authored Unity prefabs for reviewed presentation/gameplay baselines. They may own local components and local child references, but scene target candidates, camera controller references, encounter membership, and wave ownership must be provided by the scene or future encounter authoring.
 - Enemy role candidate prefabs under `_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates`: authored review variants for the 7 general and 5 elite linear-run roles. They may specialize starting pattern, pattern deck, elite trait subset, local VFX cue bindings, and visual candidate notes for inspection, but they are not a runtime prefab builder, wave spawner, or encounter-composition system.
 - `PF_Enemy_SciFiSoldier_EliteDeck` remains the shared elite soldier baseline. The role candidate prefabs are review variants that bind role-specific data for inspection; do not replace encounter production prefab selection with them until encounter composition proves a real presentation or balance need.
-- `StageEncounterReviewOwner`: review-only stage pocket tracker for authored route scenes. It may bind placed scene enemies and pocket anchors back to `LinearStageTemplateProfile` data, expose the current objective cue, count remaining enemies, and mark route completion for tests/manual review. It must not spawn enemies, choose prefabs, pay rewards, implement summons, own boss phases, mutate stage assets, or become a production stage manager.
 - Future player basic fire owner: a reviewed narrow component may own tap/hold/drag input interpretation, quick fire requests, aim-mode handoff, weak aim assist, local cooldown, and one local projectile pool for `BasicDefenseFire`. It must not own boss pattern schedules, summon exchange timing, PvP skill rules, camera ownership beyond explicit cue requests, or hard-lock target selection.
 - Future player skill projectile owner: a reviewed narrow component or data-backed action may own one costed/cooldown player skill shot, including startup, release, projectile shape, and cleanup. It may reuse boss-pattern shapes only as a readable skill, not as player basic fire. It must not own boss AI, summon AI, UI layout, or encounter progression.
 - Future boss basic-fire owner: a reviewed narrow component may own regular boss pressure shots between major patterns. It should use shared projectile mechanics where possible but stay separate from `BossSkillPattern` selection so normal fire, skill fire, and future PvP skill conversions remain readable.
@@ -61,8 +60,8 @@ This note records the current action-feel foundation and the ownership boundarie
 
 ## Explicit Non-Ownership
 
-- Existing player, enemy, camera, VFX, and stage-review scripts do not own production summon behavior.
-- Production summon behavior must be introduced only through a reviewed narrow summon owner. Do not hide it inside `PlayerActionController`, `BasicSoldierEnemy`, `StageEncounterReviewOwner`, camera scripts, VFX cue drivers, or elite enemy traits.
+- Existing player, enemy, camera, and VFX scripts do not own production summon behavior.
+- Production summon behavior must be introduced only through a reviewed narrow summon owner. Do not hide it inside `PlayerActionController`, `BasicSoldierEnemy`, camera scripts, VFX cue drivers, or elite enemy traits.
 - No script owns the full summon roster, summon inventory, summon upgrade economy, or complete summon UI.
 - `SummonSlot1` may become functional before the full summon system exists, but it must remain one reviewed slice with explicit target/team/cue cleanup boundaries.
 - `EN LV1~LV3` is combat energy for the first skill/summon slice, not a progression upgrade system. Do not mix it with account progression, currency, gacha, inventory, or permanent summon growth.
@@ -77,5 +76,5 @@ This note records the current action-feel foundation and the ownership boundarie
 - No enemy script hardcodes behavior by specific pattern id when the same outcome can be expressed through profile or deck data.
 - No role deck or archetype profile may directly reference raw asset-store prefabs. Promote reviewed prefab/model/VFX pieces into `_Game` before assigning object references.
 - No role candidate profile may hide missing presentation behind a shared catch-all prefab without a written reuse reason. Shared source visuals are allowed only when the prefab variant still carries role-specific data and a reviewer can inspect why the reuse is acceptable.
-- No enemy prefab candidate may serialize `ActionFoundationTest` player target candidates or camera controller references. Target lists and camera bindings are scene/encounter responsibilities.
+- No enemy prefab candidate may serialize scene player target candidates or camera controller references. Target lists and camera bindings are scene/encounter responsibilities.
 - No normal-hit script owns global slow motion. Time-scale effects belong to a later explicit perfect-dodge, counter, ultimate, or authored cue bundle slice.

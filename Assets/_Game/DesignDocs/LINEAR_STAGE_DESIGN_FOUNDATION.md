@@ -147,12 +147,7 @@ The first new pivot review pocket should prove:
 | 4 | `Relief` | `reset_breath` | `RecoverPosition` | none | Does the route breathe before the final stand? |
 | 5 | `FinalStand` | `final_stand_mix` | `FinalClear` | `FinalStandCommanderElite`, `BacklineShooter`, `FanSuppressor`, optional `Skirmisher` | Does the final pocket combine prior reads without adding a new rule? |
 
-The review scene for this route is `Assets/_Game/Scenes/ActionFoundationStageBreakGateReview.unity`. It places already-authored role candidate prefab instances through a dedicated editor setup slice. `StageEncounterReviewOwner` is the narrow runtime reader for this scene only: it maps the authored pocket anchors and placed enemy health references back to the `S1-1 Break Gate` template, then exposes current pocket, objective cue, remaining enemies, and route completion for manual review/tests. It does not add a runtime wave spawner, hidden prefab selector, reward payout, summon behavior, or boss phase logic.
-
-The same review scene may include authored presentation and progression roots for manual readability:
-
-- `StageBreakGateReview_SpringIslesDressing` is presentation-only Spring Isles dressing. It must not add combat colliders. It is an art adaptation checkpoint, not the new core product direction by itself.
-- `StageBreakGateReview_ProgressionGates` owns review-only pocket clear walls, side lane blockers, pocket objective markers, and route flow cues. Its runtime presenter only reads `StageEncounterReviewOwner` completion state and toggles authored blocker/visual objects; it must not spawn enemies, select prefabs, pay rewards, or become the production stage manager.
+The former `ActionFoundationStageBreakGateReview` scene and its review-only runtime owners have been retired. The ScriptableObject route data remains authoritative for this foundation; playable integration belongs in the canonical combat reviews and the Olympus runtime stage scenes.
 
 ## Authoring Boundaries
 
@@ -181,7 +176,6 @@ Validation checks:
 ## Next Follow-Ups
 
 1. Review the authored stage templates in Unity's Inspector.
-2. Review `ActionFoundationStageBreakGateReview.unity` in Play Mode and tune only authored positions/counts if the route reads poorly.
-3. Use the review-only `StageEncounterReviewOwner` to verify current pocket/objective/enemy-clear readability before building production encounter progression.
-4. Keep full summon economy, reward payout, boss phases, and stage-select UI separate until this foundation is accepted.
-5. For the current pivot, author the next review pocket around fixed-rear boss projectile pressure, forward-risk `EN LV1~LV3` charge, tiered skill/summon spend reset, `BasicDefenseAttack` close-threat handling, and one `SummonSlot1` answer before expanding a whole chapter.
+2. Validate playable route readability in the canonical combat reviews and Olympus runtime stages.
+3. Keep full summon economy, reward payout, boss phases, and stage-select UI separate until this foundation is accepted.
+4. For the current pivot, author the next review pocket around fixed-rear boss projectile pressure, forward-risk `EN LV1~LV3` charge, tiered skill/summon spend reset, `BasicDefenseAttack` close-threat handling, and one `SummonSlot1` answer before expanding a whole chapter.

@@ -288,6 +288,8 @@ MonoBehaviour:
   aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
+  lookPeekHorizontalOffset: 1.15
+  lookPeekVerticalOffset: 0.55
   aimAssistUsesYawTarget: 0
   aimAssistMaxYawBlend: 0.85
   aimAssistYawSpeedDegrees: 420
@@ -1071,7 +1073,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   team: 1
-  maxHealth: 480
+  maxHealth: 360
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
@@ -1512,6 +1514,8 @@ MonoBehaviour:
   holdFireActivatesAim: 1
   useDeviceFallbackWhenActionMissing: 1
   allowMouseFireFallback: 0
+  allowDesktopMouseFireFallbackWhenActionMissing: 1
+  blockMouseFireFallbackOverUi: 1
   keyboardTestKey: 20
   combatModeController: {fileID: 4014}
   aimController: {fileID: 4013}
@@ -1660,6 +1664,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: 1.55, y: 0.55}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.12
   requiredSummonMana: 300
   minimumSummonTier: 3
@@ -1703,6 +1708,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: -1.55, y: 0.35}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.1
   requiredSummonMana: 100
   minimumSummonTier: 1
@@ -1747,6 +1753,7 @@ MonoBehaviour:
   actorPrewarmCount: 2
   maxActiveSummonActors: 1
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.12
   useBlockedHintSeconds: 0.75
   requiredSummonMana: 200
@@ -2126,6 +2133,7 @@ MonoBehaviour:
   pulseScale: 0.08
   spinDegreesPerSecond: 72
   showTargetOutline: 1
+  useBodyOutlineOnMobile: 0
   softOutlineColor: {r: 0.58, g: 0.92, b: 1, a: 0.62}
   hardOutlineColor: {r: 1, g: 0.78, b: 0.36, a: 0.72}
   outlineWidth: 0.012
@@ -15295,17 +15303,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2291999956420801781, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
   m_PrefabInstance: {fileID: 1248464237}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1248464258 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5419335234344246674, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-  m_PrefabInstance: {fileID: 1248464237}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
 --- !u!1 &1248464259 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6831720353784711515, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
@@ -20361,6 +20358,7 @@ MonoBehaviour:
   combatModeController: {fileID: 4014}
   aimController: {fileID: 4013}
   rangedBasicAttackAction: {fileID: 4012}
+  cameraController: {fileID: 0}
   lockTargetController: {fileID: 4025}
   skill1Action: {fileID: 4018}
   summonSlot1Action: {fileID: 4017}
@@ -20378,6 +20376,7 @@ MonoBehaviour:
   weaponSwapActionName: WeaponSwap
   showHud: 0
   drawHudVisuals: 0
+  tutorialInputBlocked: 0
   useSingleSummonButton: 0
   hudOpacity: 1
   buttonSize: 168
@@ -20486,6 +20485,7 @@ MonoBehaviour:
   margin: 18
   showCenterReticle: 1
   usePremiumCompactHud: 1
+  showPremiumBossBarOnly: 0
   stageEpisodeLabel: EP 03 Survival Pressure
   objectiveBadgeLabel: HP
   bossDisplayName: Dimensional Rift Guardian
@@ -21059,6 +21059,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder
   hudPresenter: {fileID: 1248464262}
   inputBridge: {fileID: 1248464261}
+  moveJoystick: {fileID: 0}
   overlayHud: {fileID: 1831336403}
   tutorialGuide: {fileID: 0}
   useSingleSummonPresentation: 0
@@ -21068,6 +21069,7 @@ MonoBehaviour:
   energyLadder: {fileID: 4019}
   bossCostLadder: {fileID: 1932639515}
   actionController: {fileID: 4005}
+  movementController: {fileID: 0}
   combatModeController: {fileID: 4014}
   rangedBasicAttackAction: {fileID: 4012}
   skill1Action: {fileID: 4018}

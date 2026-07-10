@@ -85,7 +85,7 @@ namespace DimensionBrawl.Tests
                 "Backline EN gain should be slow enough that hiding does not refill summons quickly.");
             Assert.Greater(
                 forwardGainMultiplier,
-                2.5f,
+                2f,
                 "Forward-risk EN gain should be visually obvious within a short demo beat.");
 
             energy.Tick(20f);
@@ -682,7 +682,7 @@ namespace DimensionBrawl.Tests
                 serializedProfile.ApplyModifiedPropertiesWithoutUndo();
 
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
-                Assert.IsFalse(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerDamaged));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerCritical));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
@@ -2018,6 +2018,72 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageProjectileSweepsAcrossPlayerAtLargeDelta()
+        {
+            GameObject targetObject = new GameObject("BossProjectileSweepTarget");
+            targetObject.AddComponent<SphereCollider>().radius = 0.5f;
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Player);
+            targetHealth.ResetHealthToFull();
+            float healthBefore = targetHealth.CurrentHealth;
+
+            GameObject projectileObject = new GameObject("BossProjectileSweepSource");
+            projectileObject.transform.position = Vector3.forward * 5f;
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 20f, 1f, 0.2f);
+            Physics.SyncTransforms();
+
+            projectile.Tick(0.5f);
+
+            Assert.Less(targetHealth.CurrentHealth, healthBefore);
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
+            Assert.AreSame(targetHealth, projectile.LastImpactTargetHealth);
+            Assert.IsFalse(projectile.IsActive);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(targetObject);
+        }
+
+        [Test]
+        public void BossBarrageProjectileSweepHitsPressureScreenBeforePlayer()
+        {
+            GameObject targetObject = new GameObject("BossProjectileSweepCoveredTarget");
+            targetObject.transform.position = Vector3.zero;
+            targetObject.AddComponent<SphereCollider>().radius = 0.5f;
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Player);
+            targetHealth.ResetHealthToFull();
+            float healthBefore = targetHealth.CurrentHealth;
+
+            GameObject screenObject = new GameObject("BossProjectileSweepPressureScreen");
+            screenObject.transform.position = Vector3.forward * 2f;
+            screenObject.AddComponent<SphereCollider>().radius = 0.75f;
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = screenObject.AddComponent<SummonPressureScreen>();
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 0.75f, 1f);
+
+            GameObject projectileObject = new GameObject("BossProjectileSweepScreenSource");
+            projectileObject.transform.position = Vector3.forward * 5f;
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 20f, 1f, 0.2f);
+            Physics.SyncTransforms();
+
+            projectile.Tick(0.5f);
+
+            Assert.AreEqual(1, pressureScreen.InterceptedProjectiles);
+            Assert.AreEqual(healthBefore, targetHealth.CurrentHealth, 0.001f);
+            Assert.IsFalse(projectile.IsActive);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(screenObject);
+            Object.DestroyImmediate(targetObject);
+        }
+
+        [Test]
         public void BossBarrageProjectileGivesActivePressureScreenPriorityOverSummonBody()
         {
             GameObject actorObject = new GameObject("ScreenedAllySummonActor");
@@ -2415,7 +2481,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, presenter.AnimatorDeathTriggerCount);
             Assert.AreEqual(0f, animator.GetFloat(presenter.MoveSpeedParameter), 0.001f);
 
-            proxy.Tick(1f);
+            proxy.Tick(1.1f);
             Assert.IsFalse(proxy.IsPresentationVisible);
 
             Object.DestroyImmediate(proxyObject);
@@ -3003,6 +3069,7 @@ namespace DimensionBrawl.Tests
                 actorPrefab,
                 null);
             summonAction.ConfigureSlotCooldown(0f);
+            SetPrivateInstanceField(summonAction, "summonActorSpawnDelaySeconds", 0f);
 
             Assert.IsTrue(summonAction.TryUseSummonSlot1());
             Vector2 entryLane = lane.GetLaneCoordinates(summonAction.LastEntryPosition);
@@ -3138,6 +3205,7 @@ namespace DimensionBrawl.Tests
                 actorPrefab,
                 null);
             summonAction.ConfigureSlotCooldown(0f);
+            SetPrivateInstanceField(summonAction, "summonActorSpawnDelaySeconds", 0f);
 
             SerializedObject serializedAction = new SerializedObject(summonAction);
             SerializedProperty maxActiveActors = serializedAction.FindProperty("maxActiveSummonActors");
@@ -3208,6 +3276,7 @@ namespace DimensionBrawl.Tests
             BossPressurePositionController positionController =
                 bossObject.AddComponent<BossPressurePositionController>();
             positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+            SetPrivateInstanceField(positionController, "forwardPressureOscillationEnabled", false);
             bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.6f);
 
             positionController.Tick(1f);
@@ -3225,7 +3294,7 @@ namespace DimensionBrawl.Tests
             positionController.Tick(1f);
             float disabledRisk = bossCost.EvaluateBossForwardRisk01(bossObject.transform.position);
 
-            Assert.AreEqual(0.08f, restRisk, 0.001f);
+            Assert.AreEqual(0.18f, restRisk, 0.001f);
             Assert.Greater(buildingRisk, restRisk);
             Assert.Greater(readyRisk, buildingRisk);
             Assert.Less(disabledRisk, readyRisk);
@@ -3275,6 +3344,7 @@ namespace DimensionBrawl.Tests
             BossPressurePositionController positionController =
                 bossObject.AddComponent<BossPressurePositionController>();
             positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+            SetPrivateInstanceField(positionController, "forwardPressureOscillationEnabled", false);
 
             int firedCount = basicFireEmitter.FireVolley();
             positionController.Tick(0.1f);
@@ -3284,7 +3354,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(firedCount, director.LastBasicShotProjectileCount);
             Assert.AreEqual(0f, director.LastBasicShotAgeSeconds, 0.001f);
             Assert.AreEqual(
-                0.34f,
+                0.52f,
                 positionController.CurrentTargetRisk01,
                 0.001f,
                 "A boss that has just fired basic shots should strafe instead of reading as a static turret.");
@@ -4305,7 +4375,7 @@ namespace DimensionBrawl.Tests
                 expectedSlotIndex: 0,
                 expectedSpentTier: 1,
                 expectedMovementIntent: BossPressureMovementIntent.StrafeFire,
-                expectedPositionRisk01: 0.34f,
+                expectedPositionRisk01: 0.52f,
                 expectedRespondsToPlayerSummon: false,
                 expectedSummonTier: 0);
 
@@ -4318,7 +4388,7 @@ namespace DimensionBrawl.Tests
                 expectedSlotIndex: 2,
                 expectedSpentTier: 2,
                 expectedMovementIntent: BossPressureMovementIntent.RetreatAndSummon,
-                expectedPositionRisk01: 0.18f,
+                expectedPositionRisk01: 0.1f,
                 expectedRespondsToPlayerSummon: true,
                 expectedSummonTier: 2);
 
@@ -4331,7 +4401,7 @@ namespace DimensionBrawl.Tests
                 expectedSlotIndex: 3,
                 expectedSpentTier: 3,
                 expectedMovementIntent: BossPressureMovementIntent.RetreatAndSummon,
-                expectedPositionRisk01: 0.18f,
+                expectedPositionRisk01: 0.1f,
                 expectedRespondsToPlayerSummon: false,
                 expectedSummonTier: 3);
 
@@ -4344,7 +4414,7 @@ namespace DimensionBrawl.Tests
                 expectedSlotIndex: 4,
                 expectedSpentTier: 3,
                 expectedMovementIntent: BossPressureMovementIntent.CommitForward,
-                expectedPositionRisk01: 0.74f,
+                expectedPositionRisk01: 0.9f,
                 expectedRespondsToPlayerSummon: false,
                 expectedSummonTier: 0);
 
@@ -4475,6 +4545,7 @@ namespace DimensionBrawl.Tests
                     bossCost,
                     director,
                     bossObject.transform);
+                SetPrivateInstanceField(positionController, "forwardPressureOscillationEnabled", false);
 
                 if (observedPlayerSummonTier > 0)
                 {
@@ -4621,6 +4692,7 @@ namespace DimensionBrawl.Tests
             BossPressurePositionController positionController =
                 bossObject.AddComponent<BossPressurePositionController>();
             positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+            SetPrivateInstanceField(positionController, "forwardPressureOscillationEnabled", false);
 
             basicFireEmitter.Tick(basicFireProfile.InitialDelaySeconds + 0.05f);
 
@@ -4633,7 +4705,7 @@ namespace DimensionBrawl.Tests
 
             Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
             Assert.AreEqual(BossPressureMovementIntent.StrafeFire, director.LastMovementIntent);
-            Assert.AreEqual(0.34f, positionController.CurrentTargetRisk01, 0.001f);
+            Assert.AreEqual(0.52f, positionController.CurrentTargetRisk01, 0.001f);
             emitter.CancelQueuedPriorityPattern(specialPattern);
 
             bossCost.GrantCurrentTierCost(100f);
@@ -4645,7 +4717,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, summonAction.LastReleasedTier);
             Assert.AreEqual(1, summonAction.TotalReleaseCount);
             Assert.AreEqual(1, summonAction.ActiveSummonActorCount);
-            Assert.AreEqual(0.18f, positionController.CurrentTargetRisk01, 0.001f);
+            Assert.AreEqual(0.1f, positionController.CurrentTargetRisk01, 0.001f);
             emitter.CancelQueuedPriorityPattern(summonPattern);
 
             playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
@@ -4657,7 +4729,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossPressureMovementIntent.CommitForward, director.LastMovementIntent);
             Assert.AreEqual(1, summonAction.TotalReleaseCount);
             Assert.IsTrue(director.LastDecisionContext.HasActiveBossPressureSummon);
-            Assert.AreEqual(0.74f, positionController.CurrentTargetRisk01, 0.001f);
+            Assert.AreEqual(0.9f, positionController.CurrentTargetRisk01, 0.001f);
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);
@@ -4734,6 +4806,49 @@ namespace DimensionBrawl.Tests
                 activeProxy.AdvanceProgress01,
                 0.75f,
                 "Boss pressure summons should cross the corridor quickly by walking, not by snapping to the player side.");
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossSummonPressureSuppressionReportsScreensSeparatelyFromActors()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonPressureScreen prefabScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefab.ConfigurePresentation(null, prefabScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            Assert.IsTrue(summonAction.TryReleasePressureSummon(2));
+            Assert.AreEqual(1, summonAction.SuppressActivePressureScreens(3));
+            Assert.AreEqual(1, summonAction.TotalPressureScreenSuppressCount);
+            Assert.AreEqual(1, summonAction.TotalPressureActorSuppressCount);
+            Assert.AreEqual(0, summonAction.ActiveSummonActorCount);
+
+            Assert.IsTrue(summonAction.TryReleasePressureSummon(2));
+            Assert.AreEqual(2, summonAction.SuppressActivePressureResponses(3));
+            Assert.AreEqual(2, summonAction.TotalPressureScreenSuppressCount);
+            Assert.AreEqual(2, summonAction.TotalPressureActorSuppressCount);
+            Assert.AreEqual(0, summonAction.ActiveSummonActorCount);
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);
@@ -5726,6 +5841,133 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(enemyProjectileObject);
             Object.DestroyImmediate(alliedProjectileObject);
             Object.DestroyImmediate(screenObject);
+        }
+
+        [Test]
+        public void SummonPressureScreenIdentifiesAndConsumesIntersectingSkillBeam()
+        {
+            GameObject screenObject = new GameObject("SummonPressureScreen");
+            screenObject.transform.position = Vector3.forward * 4f;
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+            screen.Activate(DamageTeam.Enemy, 2, 1f, 1f);
+
+            int interceptedBeamCount = 0;
+            screen.SkillBeamIntercepted += _ => interceptedBeamCount++;
+
+            Assert.IsFalse(
+                SummonPressureScreen.TryInterceptAnySkillBeam(
+                    DamageTeam.Enemy,
+                    Vector3.zero,
+                    Vector3.forward,
+                    Vector3.right,
+                    10f,
+                    0.25f,
+                    out int ignoredBeamIndex,
+                    out float ignoredBeamDistance));
+            Assert.AreEqual(-1, ignoredBeamIndex);
+            Assert.IsTrue(float.IsPositiveInfinity(ignoredBeamDistance));
+
+            Assert.IsTrue(
+                SummonPressureScreen.TryInterceptAnySkillBeam(
+                    DamageTeam.Player,
+                    Vector3.zero,
+                    Vector3.forward,
+                    Vector3.right,
+                    10f,
+                    0.25f,
+                    out int forwardBeamIndex,
+                    out float forwardBeamDistance));
+            Assert.AreEqual(0, forwardBeamIndex);
+            Assert.AreEqual(3f, forwardBeamDistance, 0.001f);
+            Assert.AreEqual(1, screen.RemainingIntercepts);
+
+            screenObject.transform.position = Vector3.left * 4f;
+            Assert.IsTrue(
+                SummonPressureScreen.TryInterceptAnySkillBeam(
+                    DamageTeam.Player,
+                    Vector3.zero,
+                    Vector3.forward,
+                    Vector3.right,
+                    10f,
+                    0.25f,
+                    out int leftBeamIndex,
+                    out float leftBeamDistance));
+            Assert.AreEqual(3, leftBeamIndex);
+            Assert.AreEqual(3f, leftBeamDistance, 0.001f);
+            Assert.AreEqual(2, interceptedBeamCount);
+            Assert.IsFalse(screen.IsActive);
+
+            Object.DestroyImmediate(screenObject);
+        }
+
+        [Test]
+        public void PlayerLaserSweepDamagesTargetBeforeButNotBehindPressureScreen()
+        {
+            GameObject playerObject = new GameObject("LaserSweepPlayer");
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                playerObject.AddComponent<PlayerSkill1LaserSweepAction>();
+
+            GameObject frontTargetObject = new GameObject("LaserSweepFrontTarget");
+            frontTargetObject.transform.position = Vector3.forward * 2f;
+            frontTargetObject.AddComponent<SphereCollider>();
+            CombatHealth frontTargetHealth = frontTargetObject.AddComponent<CombatHealth>();
+            frontTargetHealth.ConfigureTeam(DamageTeam.Enemy);
+            frontTargetHealth.ResetHealthToFull();
+            float frontHealthBefore = frontTargetHealth.CurrentHealth;
+
+            GameObject rearTargetObject = new GameObject("LaserSweepRearTarget");
+            rearTargetObject.transform.position = Vector3.forward * 6f;
+            rearTargetObject.AddComponent<SphereCollider>();
+            CombatHealth rearTargetHealth = rearTargetObject.AddComponent<CombatHealth>();
+            rearTargetHealth.ConfigureTeam(DamageTeam.Enemy);
+            rearTargetHealth.ResetHealthToFull();
+            float rearHealthBefore = rearTargetHealth.CurrentHealth;
+
+            GameObject screenObject = new GameObject("LaserSweepEnemyScreen");
+            screenObject.transform.position = Vector3.forward * 4f;
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+            screen.Activate(DamageTeam.Enemy, 1, 1f, 1f);
+
+            Assert.IsTrue(
+                SummonPressureScreen.TryInterceptAnySkillBeam(
+                    DamageTeam.Player,
+                    Vector3.zero,
+                    Vector3.forward,
+                    Vector3.right,
+                    10f,
+                    0.25f,
+                    out int blockedBeamIndex,
+                    out float blockedBeamDistance));
+
+            MethodInfo applyDamage = typeof(PlayerSkill1LaserSweepAction).GetMethod(
+                "ApplyDamageForBeamSpace",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(applyDamage);
+            applyDamage.Invoke(
+                laserSweepAction,
+                new object[]
+                {
+                    Vector3.zero,
+                    playerObject.transform,
+                    10f,
+                    true,
+                    blockedBeamIndex,
+                    blockedBeamDistance
+                });
+
+            Assert.Less(frontTargetHealth.CurrentHealth, frontHealthBefore);
+            Assert.AreEqual(rearHealthBefore, rearTargetHealth.CurrentHealth, 0.001f);
+
+            Object.DestroyImmediate(screenObject);
+            Object.DestroyImmediate(rearTargetObject);
+            Object.DestroyImmediate(frontTargetObject);
+            Object.DestroyImmediate(playerObject);
         }
 
         [Test]

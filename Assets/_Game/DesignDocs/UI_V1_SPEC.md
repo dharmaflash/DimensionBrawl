@@ -31,7 +31,7 @@ V1 UI should prove:
 UI work may happen on another PC if it follows these rules:
 
 - Work under `Assets/_Game/UI/`, `Assets/_Game/Scenes/UI/`, and optional `Assets/_Game/DesignData/UI/`.
-- Do not edit `Assets/_Game/Scenes/ActionFoundationTest.unity` for UI layout experiments.
+- Do not edit canonical combat or runtime stage scenes for UI layout experiments.
 - Use separate UI inspection scenes such as `UI_LoginTest`, `UI_LobbyTest`, and `UI_CombatHudTest`.
 - Use authored prefabs and serialized references. Do not build the full UI hierarchy at runtime.
 - Do not reference `Assets/_Imported/` directly.
@@ -62,7 +62,7 @@ Other-PC UI work may include a minimal scene-flow shell if it stays UI-owned:
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
 - Scene flow code must not own save data, account login, progression unlocks, combat result resolution, or gameplay state.
 - The combat HUD test scene may simulate `Start Combat`, `Win`, `Fail`, and `Return Lobby` with mock UI state only.
-- Do not connect the flow directly to `ActionFoundationTest.unity` until an explicit integration pass.
+- Do not connect the flow directly to canonical combat scenes until an explicit integration pass.
 - Do not create a permanent all-purpose `GameManager` just to move between UI scenes.
 
 If a transition needs persistent objects, keep them narrow:
@@ -191,7 +191,7 @@ The test scene may call simple presenter setup methods in `Awake` or `Start`, bu
 Before merging UI work from another PC:
 
 - The branch starts from the latest pushed `main`.
-- No changes to `ActionFoundationTest.unity` unless explicitly coordinated.
+- No changes to canonical combat or runtime stage scenes unless explicitly coordinated.
 - For UI-loop test builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the route-table UI scenes only.
 - No direct references to `_Imported/`.
 - No full runtime UI hierarchy construction.

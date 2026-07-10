@@ -43,6 +43,7 @@ namespace DimensionBrawl.Combat
         public event Action<SummonPressureScreen> Activated;
         public event Action<SummonPressureScreen, BossBarrageProjectile> Intercepted;
         public event Action<SummonPressureScreen, LaneActionProjectile> ActionProjectileIntercepted;
+        public event Action<SummonPressureScreen> SkillBeamIntercepted;
         public event Action<SummonPressureScreen> Deactivated;
 
         private void Awake()
@@ -165,6 +166,24 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
+        public bool TryInterceptSkillBeam(DamageTeam sourceTeam, Vector3 sourcePosition)
+        {
+            if (!active || !CombatTeamUtility.AreHostile(ownerTeam, sourceTeam))
+            {
+                return false;
+            }
+
+            interceptedProjectiles++;
+            RequestScreenBlockCamera(transform.position - sourcePosition);
+            SkillBeamIntercepted?.Invoke(this);
+            if (interceptedProjectiles >= maxIntercepts)
+            {
+                Deactivate();
+            }
+
+            return true;
+        }
+
         private void RequestScreenBlockCamera(Vector3 incomingDirection)
         {
             if (!CombatTeamUtility.IsPlayerSide(ownerTeam))
@@ -279,6 +298,83 @@ namespace DimensionBrawl.Combat
             }
 
             return false;
+        }
+
+        public static bool TryInterceptAnySkillBeam(
+            DamageTeam sourceTeam,
+            Vector3 origin,
+            Vector3 forward,
+            Vector3 right,
+            float maxDistance,
+            float halfWidth,
+            out int blockedBeamIndex,
+            out float blockedBeamDistance)
+        {
+            blockedBeamIndex = -1;
+            blockedBeamDistance = float.PositiveInfinity;
+            Vector3[] directions =
+            {
+                ResolvePlanarDirection(forward, Vector3.forward),
+                ResolvePlanarDirection(right, Vector3.right),
+                ResolvePlanarDirection(-forward, Vector3.back),
+                ResolvePlanarDirection(-right, Vector3.left)
+            };
+
+            SummonPressureScreen closestScreen = null;
+            for (int screenIndex = ActiveScreens.Count - 1; screenIndex >= 0; screenIndex--)
+            {
+                SummonPressureScreen screen = ActiveScreens[screenIndex];
+                if (screen == null || !screen.IsActive)
+                {
+                    ActiveScreens.RemoveAt(screenIndex);
+                    continue;
+                }
+
+                if (!CombatTeamUtility.AreHostile(screen.OwnerTeam, sourceTeam))
+                {
+                    continue;
+                }
+
+                Vector3 offset = Vector3.ProjectOnPlane(screen.transform.position - origin, Vector3.up);
+                for (int directionIndex = 0; directionIndex < directions.Length; directionIndex++)
+                {
+                    Vector3 direction = directions[directionIndex];
+                    float forwardDistance = Vector3.Dot(offset, direction);
+                    if (forwardDistance < 0f || forwardDistance > Mathf.Max(0f, maxDistance))
+                    {
+                        continue;
+                    }
+
+                    float interceptWidth = Mathf.Max(0f, halfWidth) + screen.ActiveRadius;
+                    Vector3 lateralOffset = offset - direction * forwardDistance;
+                    float blockDistance = Mathf.Max(0f, forwardDistance - screen.ActiveRadius);
+                    if (lateralOffset.sqrMagnitude > interceptWidth * interceptWidth
+                        || blockDistance >= blockedBeamDistance)
+                    {
+                        continue;
+                    }
+
+                    closestScreen = screen;
+                    blockedBeamDistance = blockDistance;
+                    blockedBeamIndex = directionIndex;
+                }
+            }
+
+            if (closestScreen == null
+                || !closestScreen.TryInterceptSkillBeam(sourceTeam, origin))
+            {
+                blockedBeamIndex = -1;
+                blockedBeamDistance = float.PositiveInfinity;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static Vector3 ResolvePlanarDirection(Vector3 direction, Vector3 fallback)
+        {
+            Vector3 planar = Vector3.ProjectOnPlane(direction, Vector3.up);
+            return planar.sqrMagnitude > 0.0001f ? planar.normalized : fallback;
         }
 
         private void OnTriggerEnter(Collider other)

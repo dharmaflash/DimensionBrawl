@@ -19,6 +19,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0f, 1f)] private float impactSfxVolume = 0.42f;
         [SerializeField] private Vector2 impactSfxPitchRange = new Vector2(0.96f, 1.04f);
 
+        private readonly RaycastHit[] sweepHits = new RaycastHit[32];
+        private readonly Collider[] overlapHits = new Collider[32];
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
         private MaterialPropertyBlock materialPropertyBlock;
@@ -131,16 +133,96 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            transform.position += travelDirection * speed * deltaTime;
-            if (SummonPressureScreen.TryInterceptAnyOverlapping(this, transform.position, ResolveWorldColliderRadius()))
+            Vector3 startPosition = transform.position;
+            Vector3 travelDelta = travelDirection * speed * deltaTime;
+            if (TryApplyTravelImpacts(startPosition, travelDelta))
             {
                 return;
             }
 
+            transform.position = startPosition + travelDelta;
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f)
             {
                 Deactivate();
+            }
+        }
+
+        private bool TryApplyTravelImpacts(Vector3 startPosition, Vector3 travelDelta)
+        {
+            float radius = ResolveWorldColliderRadius();
+            float distance = travelDelta.magnitude;
+            if (distance > 0.0001f)
+            {
+                Vector3 direction = travelDelta / distance;
+                int hitCount = Physics.SphereCastNonAlloc(
+                    startPosition,
+                    radius,
+                    direction,
+                    sweepHits,
+                    distance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide);
+                SortSweepHitsByDistance(hitCount);
+                for (int i = 0; i < hitCount; i++)
+                {
+                    RaycastHit hit = sweepHits[i];
+                    if (hit.collider == null
+                        || hit.collider.transform == transform
+                        || hit.collider.transform.IsChildOf(transform))
+                    {
+                        continue;
+                    }
+
+                    transform.position = hit.point;
+                    if (TryApplyImpact(hit.collider, hit.point) && !active)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            Vector3 endPosition = startPosition + travelDelta;
+            transform.position = endPosition;
+            int overlapCount = Physics.OverlapSphereNonAlloc(
+                endPosition,
+                radius,
+                overlapHits,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+            for (int i = 0; i < overlapCount; i++)
+            {
+                Collider hitCollider = overlapHits[i];
+                if (hitCollider != null && TryApplyImpact(hitCollider, endPosition) && !active)
+                {
+                    return true;
+                }
+            }
+
+            return !active;
+        }
+
+        private void SortSweepHitsByDistance(int hitCount)
+        {
+            for (int i = 0; i < hitCount - 1; i++)
+            {
+                int nearestIndex = i;
+                for (int j = i + 1; j < hitCount; j++)
+                {
+                    if (sweepHits[j].distance < sweepHits[nearestIndex].distance)
+                    {
+                        nearestIndex = j;
+                    }
+                }
+
+                if (nearestIndex == i)
+                {
+                    continue;
+                }
+
+                RaycastHit swap = sweepHits[i];
+                sweepHits[i] = sweepHits[nearestIndex];
+                sweepHits[nearestIndex] = swap;
             }
         }
 
@@ -152,8 +234,14 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (hitCollider.GetComponentInParent<SummonPressureScreen>() != null)
+            SummonPressureScreen hitPressureScreen = hitCollider.GetComponentInParent<SummonPressureScreen>();
+            if (hitPressureScreen != null)
             {
+                if (hitPressureScreen.TryIntercept(this))
+                {
+                    return true;
+                }
+
                 SetLastImpact(ProjectileImpactResult.IgnoredPressureScreen, null, null);
                 return false;
             }

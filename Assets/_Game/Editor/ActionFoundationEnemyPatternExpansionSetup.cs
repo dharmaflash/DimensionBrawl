@@ -1,14 +1,9 @@
 using System;
-using System.Collections.Generic;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
-using DimensionBrawl.Player;
-using DimensionBrawl.Presentation;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace DimensionBrawl.Editor
 {
@@ -25,20 +20,12 @@ namespace DimensionBrawl.Editor
         public const string AuraBufferEliteProfilePath = ActionFoundationProfileSetup.ProfileRoot + "/DB_ElitePattern_AuraBuffer.asset";
         public const string SummonPackageEliteProfilePath = ActionFoundationProfileSetup.ProfileRoot + "/DB_ElitePattern_SummonPackage.asset";
         public const string PhaseSwapEliteProfilePath = ActionFoundationProfileSetup.ProfileRoot + "/DB_ElitePattern_PhaseSwap.asset";
-        public const string RetreatShotEnemyRootName = "Enemy_SciFiSoldier_RetreatShot";
-        public const string RetreatBlinkEnemyRootName = "Enemy_SciFiSoldier_RetreatBlink";
-        public const string GuardBreakEnemyRootName = "Enemy_SciFiSoldier_GuardBreak";
-        public const string GeneralDeckEnemyRootName = "Enemy_SciFiSoldier_GeneralDeck";
-        public const string EliteDeckEnemyRootName = "Enemy_SciFiSoldier_EliteDeck";
-        public const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Extended Enemy Patterns")]
         public static void ReapplyExtendedEnemyPatternsMenu()
         {
-            ActionFoundationProfileSetup.ReapplyGameplayProfilesMenu();
             EnsureExtendedPatternAssets();
-            EnsureExtendedSceneSamples();
-            Debug.Log("Reapplied ActionFoundation extended enemy pattern assets and scene samples.");
+            Debug.Log("Reapplied ActionFoundation extended enemy pattern assets.");
         }
 
         public static void EnsureExtendedPatternAssets()
@@ -317,213 +304,7 @@ namespace DimensionBrawl.Editor
             AssetDatabase.SaveAssets();
         }
 
-        public static void EnsureExtendedSceneSamples()
-        {
-            Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
-            GameObject[] roots = scene.GetRootGameObjects();
-            PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
-            PlayerCombatTargetSelector targetSelector = RequireComponent<PlayerCombatTargetSelector>(playerActions.gameObject, "player target selector");
-            ActionCameraController cameraController = RequireObject<ActionCameraController>(roots, "action camera");
-            BasicSoldierEnemy template = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.ClosePunishEnemyRootName, "close punish sample");
-            CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
 
-            CombatAiPatternProfile closePunish = LoadOrCreateEnemyPatternProfile(ActionFoundationProfileSetup.EnemyPatternProfilePath);
-            CombatAiPatternProfile retreatShot = LoadOrCreateEnemyPatternProfile(RetreatShotPatternPath);
-            CombatAiPatternProfile retreatBlink = LoadOrCreateEnemyPatternProfile(RetreatBlinkPatternPath);
-            CombatAiPatternProfile guardBreak = LoadOrCreateEnemyPatternProfile(GuardBreakPatternPath);
-            CombatAiPatternDeck generalDeck = LoadOrCreate<CombatAiPatternDeck>(GeneralPatternDeckPath);
-            CombatAiPatternDeck eliteDeck = LoadOrCreate<CombatAiPatternDeck>(ElitePatternDeckPath);
-            CombatAiElitePatternProfile shieldCycle = LoadOrCreate<CombatAiElitePatternProfile>(ShieldCycleEliteProfilePath);
-            CombatAiElitePatternProfile armorBreak = LoadOrCreate<CombatAiElitePatternProfile>(ArmorBreakEliteProfilePath);
-            CombatAiElitePatternProfile auraBuffer = LoadOrCreate<CombatAiElitePatternProfile>(AuraBufferEliteProfilePath);
-            CombatAiElitePatternProfile summonPackage = LoadOrCreate<CombatAiElitePatternProfile>(SummonPackageEliteProfilePath);
-            CombatAiElitePatternProfile phaseSwap = LoadOrCreate<CombatAiElitePatternProfile>(PhaseSwapEliteProfilePath);
-
-            BasicSoldierEnemy retreatShotSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, RetreatShotEnemyRootName);
-            BasicSoldierEnemy retreatBlinkSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, RetreatBlinkEnemyRootName);
-            BasicSoldierEnemy guardBreakSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, GuardBreakEnemyRootName);
-            BasicSoldierEnemy generalDeckSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, GeneralDeckEnemyRootName);
-            BasicSoldierEnemy eliteDeckSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, EliteDeckEnemyRootName);
-            BasicSoldierEnemy eliteTraitsSoldier = ActionFoundationProfileSetup.EnsurePatternSampleEnemy(scene, template, EliteTraitsEnemyRootName);
-
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                retreatShotSoldier,
-                RetreatShotEnemyRootName,
-                "RetreatShot",
-                retreatShot,
-                new Vector3(-7.2f, 0f, 5.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "RetreatShot");
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                retreatBlinkSoldier,
-                RetreatBlinkEnemyRootName,
-                "RetreatBlink",
-                retreatBlink,
-                new Vector3(-8.4f, 0f, 3.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "RetreatBlink");
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                guardBreakSoldier,
-                GuardBreakEnemyRootName,
-                "GuardBreak",
-                guardBreak,
-                new Vector3(7.2f, 0f, 5.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "GuardBreak");
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                generalDeckSoldier,
-                GeneralDeckEnemyRootName,
-                "GeneralDeck",
-                closePunish,
-                generalDeck,
-                new Vector3(-7.2f, 0f, 8.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "GeneralDeck");
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                eliteDeckSoldier,
-                EliteDeckEnemyRootName,
-                "EliteDeck",
-                guardBreak,
-                eliteDeck,
-                new Vector3(7.2f, 0f, 8.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "EliteDeck");
-            ActionFoundationProfileSetup.ConfigurePatternSampleEnemy(
-                eliteTraitsSoldier,
-                EliteTraitsEnemyRootName,
-                "EliteTraits",
-                guardBreak,
-                eliteDeck,
-                new Vector3(0f, 0f, 10.8f),
-                playerActions.transform,
-                playerHealth,
-                cameraController,
-                "EliteTraits");
-
-            ConfigureEliteTraitsSample(
-                eliteTraitsSoldier,
-                RequireComponent<CombatHealth>(eliteDeckSoldier.gameObject, "elite deck health"),
-                new[] { shieldCycle, armorBreak, auraBuffer, summonPackage, phaseSwap });
-
-            CombatHealth[] enemyCandidates = CollectAuthoredEnemyCandidates(scene.GetRootGameObjects());
-            ActionFoundationProfileSetup.ConfigurePlayerTargetSelector(
-                targetSelector,
-                playerActions.transform,
-                playerHealth,
-                cameraController.transform,
-                enemyCandidates);
-
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-        }
-
-        private static void ConfigureEliteTraitsSample(
-            BasicSoldierEnemy soldier,
-            CombatHealth auraProtectedTarget,
-            CombatAiElitePatternProfile[] profiles)
-        {
-            EnemyElitePatternController controller = soldier.GetComponent<EnemyElitePatternController>();
-            if (controller == null)
-            {
-                controller = soldier.gameObject.AddComponent<EnemyElitePatternController>();
-            }
-
-            GameObject summonSignal = EnsureSummonSignalObject(soldier.transform);
-            Renderer cueRenderer = ResolveCueRenderer(soldier);
-            Animator animator = soldier.GetComponentInChildren<Animator>(includeInactive: true);
-            CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, $"{soldier.name} health");
-
-            SerializedObject serializedObject = new SerializedObject(controller);
-            SetObjectReference(serializedObject, "health", soldierHealth);
-            SetObjectReference(serializedObject, "soldier", soldier);
-            SetObjectReference(serializedObject, "animator", animator);
-            SetObjectReference(serializedObject, "cueRenderer", cueRenderer);
-            SetObjectReferenceArray(serializedObject, "eliteProfiles", profiles);
-            SetObjectReferenceArray(serializedObject, "auraProtectedTargets", new UnityEngine.Object[] { auraProtectedTarget });
-            SetObjectReferenceArray(serializedObject, "summonSignalObjects", new UnityEngine.Object[] { summonSignal });
-            serializedObject.ApplyModifiedProperties();
-
-            EditorUtility.SetDirty(controller);
-            EditorUtility.SetDirty(summonSignal);
-        }
-
-        private static GameObject EnsureSummonSignalObject(Transform owner)
-        {
-            GameObject existing = FindChildObject(owner, "SummonPackageSignal_EliteTraits");
-            if (existing != null)
-            {
-                existing.SetActive(false);
-                return existing;
-            }
-
-            GameObject signal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            signal.name = "SummonPackageSignal_EliteTraits";
-            signal.transform.SetParent(owner, false);
-            signal.transform.localPosition = new Vector3(0f, 0.025f, 1.8f);
-            signal.transform.localRotation = Quaternion.identity;
-            signal.transform.localScale = new Vector3(1.8f, 0.02f, 1.8f);
-            signal.SetActive(false);
-            Collider collider = signal.GetComponent<Collider>();
-            if (collider != null)
-            {
-                UnityEngine.Object.DestroyImmediate(collider);
-            }
-
-            return signal;
-        }
-
-        private static Renderer ResolveCueRenderer(BasicSoldierEnemy soldier)
-        {
-            Renderer[] renderers = soldier.GetComponentsInChildren<Renderer>(includeInactive: true);
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                Renderer renderer = renderers[i];
-                if (renderer != null && renderer.name.IndexOf("ReadableAttackTelegraph", StringComparison.Ordinal) < 0)
-                {
-                    return renderer;
-                }
-            }
-
-            return null;
-        }
-
-        private static CombatHealth[] CollectAuthoredEnemyCandidates(GameObject[] roots)
-        {
-            string[] names =
-            {
-                ActionFoundationProfileSetup.ClosePunishEnemyRootName,
-                ActionFoundationProfileSetup.LungeStrikeEnemyRootName,
-                ActionFoundationProfileSetup.HeavyWindupEnemyRootName,
-                ActionFoundationProfileSetup.LinePressureEnemyRootName,
-                ActionFoundationProfileSetup.FanPressureEnemyRootName,
-                ActionFoundationProfileSetup.TrainingDeckEnemyRootName,
-                RetreatShotEnemyRootName,
-                RetreatBlinkEnemyRootName,
-                GuardBreakEnemyRootName,
-                GeneralDeckEnemyRootName,
-                EliteDeckEnemyRootName,
-                EliteTraitsEnemyRootName
-            };
-            List<CombatHealth> candidates = new List<CombatHealth>(names.Length);
-            for (int i = 0; i < names.Length; i++)
-            {
-                BasicSoldierEnemy soldier = RequireRootComponent<BasicSoldierEnemy>(roots, names[i], names[i]);
-                candidates.Add(RequireComponent<CombatHealth>(soldier.gameObject, $"{names[i]} health"));
-            }
-
-            return candidates.ToArray();
-        }
 
         private static void ConfigureEnemyPatternProfile(
             CombatAiPatternProfile profile,
@@ -835,60 +616,5 @@ namespace DimensionBrawl.Editor
             return property;
         }
 
-        private static T RequireObject<T>(GameObject[] roots, string label) where T : Component
-        {
-            for (int i = 0; i < roots.Length; i++)
-            {
-                T component = roots[i].GetComponentInChildren<T>(true);
-                if (component != null)
-                {
-                    return component;
-                }
-            }
-
-            throw new InvalidOperationException($"Missing required {label}.");
-        }
-
-        private static T RequireRootComponent<T>(GameObject[] roots, string rootName, string label) where T : Component
-        {
-            for (int i = 0; i < roots.Length; i++)
-            {
-                GameObject root = roots[i];
-                if (root != null && root.name == rootName)
-                {
-                    T component = root.GetComponent<T>();
-                    if (component != null)
-                    {
-                        return component;
-                    }
-                }
-            }
-
-            throw new InvalidOperationException($"Missing required {label} root component named {rootName}.");
-        }
-
-        private static T RequireComponent<T>(GameObject owner, string label) where T : Component
-        {
-            if (!owner.TryGetComponent(out T component))
-            {
-                throw new InvalidOperationException($"{owner.name} is missing required {label}.");
-            }
-
-            return component;
-        }
-
-        private static GameObject FindChildObject(Transform root, string objectName)
-        {
-            Transform[] children = root.GetComponentsInChildren<Transform>(true);
-            for (int i = 0; i < children.Length; i++)
-            {
-                if (children[i] != null && children[i].name == objectName)
-                {
-                    return children[i].gameObject;
-                }
-            }
-
-            return null;
-        }
     }
 }

@@ -38,10 +38,8 @@ namespace DimensionBrawl.Editor
 
         private static readonly string[] ReviewScenePaths =
         {
-            "Assets/_Game/Scenes/ActionFoundationTest.unity",
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity",
             ActionFoundationBossBarrageLaneReviewSetup.ReviewScenePath,
-            ActionFoundationBossBarrageLaneReviewSetup.DuelReviewScenePath,
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
         };
 

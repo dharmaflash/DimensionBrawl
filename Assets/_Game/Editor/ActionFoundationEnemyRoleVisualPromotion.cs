@@ -308,7 +308,7 @@ namespace DimensionBrawl.Editor
             return visual;
         }
 
-        private static void ReapplyPromotedMaterials(GameObject visual, EnemyRoleVisualSpec spec)
+        internal static void ReapplyPromotedMaterials(GameObject visual, EnemyRoleVisualSpec spec)
         {
             Dictionary<string, Queue<Renderer>> sourceRenderersByName = LoadSourceRenderersByName(spec.SourcePrefabPath);
             Material[] defaultMaterials = PromoteDefaultMaterials(spec);

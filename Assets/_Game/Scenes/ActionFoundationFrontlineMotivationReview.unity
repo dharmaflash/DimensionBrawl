@@ -265,6 +265,14 @@ MonoBehaviour:
   microShakeFrequency: 34
   microShakePositionAxes: {x: 1, y: 0.58, z: 0.05}
   microShakeEulerAxes: {x: 0.34, y: 0.28, z: 1}
+  rifleFireFeedbackCooldownSeconds: 0.035
+  sustainedFireFeedbackIntervalSeconds: 0.135
+  heavyShotFeedbackCooldownSeconds: 0.08
+  hitFeedbackCooldownSeconds: 0.12
+  explosionFeedbackCooldownSeconds: 0.14
+  laserSustainFeedbackIntervalSeconds: 0.14
+  shieldBlockFeedbackCooldownSeconds: 0.07
+  liveFireFeedbackScale: 1
   aimCameraOffset: {x: 0.45, y: 0.88, z: 2.72}
   aimFocusOffset: {x: 0.89, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
@@ -274,11 +282,14 @@ MonoBehaviour:
   aimOrbitUsesInput: 1
   aimOrbitHoldsYawUntilAimEnds: 1
   aimOrbitRotatesCameraPosition: 1
+  aimRigUsesWorldLookOffset: 0
   aimOrbitYawLimitDegrees: 45
   aimOrbitUsesPitchInput: 1
   aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
+  lookPeekHorizontalOffset: 1.15
+  lookPeekVerticalOffset: 0.55
   aimAssistUsesYawTarget: 0
   aimAssistMaxYawBlend: 0.85
   aimAssistYawSpeedDegrees: 420
@@ -614,10 +625,23 @@ MonoBehaviour:
   cinematicCamera: {fileID: 1002}
   driveCameraTransformFromProfile: 1
   disableActionCameraControllerDuringPoseDrive: 1
+  sourceCameraRigRoot: {fileID: 0}
+  sourceCameraTransform: {fileID: 0}
+  sourceCameraComponent: {fileID: 0}
+  sourceCameraBindings: []
+  sourceActorRigRoot: {fileID: 0}
+  sourceActorVisibilityRoot: {fileID: 0}
+  sourceActorBindings: []
+  sourceActorGradeExcludedRoots: []
+  primaryActorRootHiddenDuringSourceActorAnimation: {fileID: 0}
+  screenFadeCanvasGroup: {fileID: 0}
+  screenFadeImage: {fileID: 0}
+  maxPlaybackDeltaSeconds: 0.033333335
   playLinkedActionCueOnStart: 0
   linkedActionCueDirector: {fileID: 0}
   linkedActionCueKind: 0
   linkedActionCueTier: 1
+  behavioursDisabledDuringPlayback: []
 --- !u!114 &1011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -973,6 +997,7 @@ GameObject:
   - component: {fileID: 4011}
   - component: {fileID: 4020}
   - component: {fileID: 4019}
+  - component: {fileID: 4021}
   m_Layer: 0
   m_Name: Player_CombatGirl_ActionFoundation
   m_TagString: Player
@@ -1263,12 +1288,6 @@ MonoBehaviour:
   heavyCameraDistanceDelta: 0.075
   heavyCameraFocusHeightDelta: 0.035
   playCameraMicroShake: 1
-  lightCameraMicroShakeSeconds: 0.055
-  heavyCameraMicroShakeSeconds: 0.12
-  lightCameraMicroShakePosition: 0.018
-  heavyCameraMicroShakePosition: 0.065
-  lightCameraMicroShakeEuler: 0.18
-  heavyCameraMicroShakeEuler: 0.78
   playVisualRecoil: 1
   visualRecoilCooldownSeconds: 0.045
   lightRecoilDistance: 0.018
@@ -1365,6 +1384,7 @@ MonoBehaviour:
   playerHealth: {fileID: 4003}
   cuePlayer: {fileID: 4010}
   perfectDodgeVfxDirector: {fileID: 0}
+  cameraController: {fileID: 0}
   attackAnchor: {fileID: 85052602}
   dodgeAnchor: {fileID: 1228450371}
   damageAnchor: {fileID: 85052602}
@@ -1421,11 +1441,14 @@ MonoBehaviour:
   holdFireActivatesAim: 1
   useDeviceFallbackWhenActionMissing: 1
   allowMouseFireFallback: 0
+  allowDesktopMouseFireFallbackWhenActionMissing: 1
+  blockMouseFireFallbackOverUi: 1
   keyboardTestKey: 20
   combatModeController: {fileID: 4013}
   aimController: {fileID: 4012}
   movement: {fileID: 4004}
   targetSelector: {fileID: 4008}
+  lockTargetController: {fileID: 0}
   sourceHealth: {fileID: 4003}
   cameraController: {fileID: 1004}
   animator: {fileID: 7073178709513095078}
@@ -1478,11 +1501,6 @@ MonoBehaviour:
   driveCameraAimAssist: 0
   cameraAimAssistStrengthScale: 1
   cameraAimAssistMinStrength: 0.05
-  fireCameraCueOffset: {x: 0.025, y: 0.01, z: -0.045}
-  fireCameraCueSeconds: 0.1
-  fireFieldOfViewDelta: -0.8
-  fireCameraDistanceDelta: -0.04
-  fireFocusHeightDelta: 0
 --- !u!114 &4012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1574,6 +1592,7 @@ MonoBehaviour:
   actorPrewarmCount: 2
   maxActiveSummonActors: 1
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.55
   useBlockedHintSeconds: 0.75
   requiredSummonMana: 200
@@ -1685,6 +1704,8 @@ MonoBehaviour:
   projectileRoot: {fileID: 188710811}
   sourceTeam: 1
   prewarmCount: 6
+  laserSweepAction: {fileID: 4021}
+  useLaserSweepActionWhenAvailable: 1
   useBlockedHintSeconds: 0.75
   tierSettings:
   - Damage: 84
@@ -1796,6 +1817,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: 1.55, y: 0.55}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.55
   requiredSummonMana: 300
   minimumSummonTier: 3
@@ -1839,6 +1861,7 @@ MonoBehaviour:
   sourceTeam: 3
   laneOffset: {x: -1.55, y: 0.35}
   entryForwardOffset: 1.35
+  summonActorSpawnDelaySeconds: 0.28
   actorEntryCatchupSecondsPerMeter: 0.55
   requiredSummonMana: 100
   minimumSummonTier: 1
@@ -1887,6 +1910,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerRangedBasicVfxCueDriver
   rangedBasicAttackAction: {fileID: 4011}
   cuePlayer: {fileID: 4010}
+  cameraController: {fileID: 0}
   muzzleAnchor: {fileID: 724149925}
   muzzleFlashCueId: 33
   muzzleFlashIntensity: 1
@@ -1896,6 +1920,39 @@ MonoBehaviour:
   impactCueId: 34
   impactIntensity: 1
   impactAudioIntensity: 0.56
+  playPhysicalImpactVfx: 1
+  physicalImpactVfxPrefab: {fileID: 0}
+  physicalImpactVfxScale: 0.42
+  physicalImpactVfxLifetimeSeconds: 1.05
+--- !u!114 &4021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01290eba696ef304e9665df04f578ea2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1LaserSweepAction
+  sourceHealth: {fileID: 4003}
+  targetSelector: {fileID: 4008}
+  laserPrefab: {fileID: 9195812884990227141, guid: 5c1242f214703c1469e32164313c2a1b, type: 3}
+  effectRoot: {fileID: 2006160252}
+  sourceTeam: 1
+  activeSeconds: 2.5
+  radius: 23.5
+  beamHalfWidth: 1.1
+  hitIntervalSeconds: 0.08
+  effectHeightOffset: 0.03
+  effectScale: 1
+  effectDestroyDelaySeconds: 1
+  tierOneDamagePerTick: 18
+  tierTwoDamagePerTick: 32
+  tierThreeDamagePerTick: 54
+  responsePolicy: 2
+  controlLockPolicy: 0
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
@@ -4895,6 +4952,8 @@ MonoBehaviour:
   bobAmplitude: 0.32
   bobFrequency: 0.16
   phaseOffset: 0.8
+  lockAuthoredLocalRotation: 0
+  lockAuthoredLocalScale: 0
 --- !u!23 &538124655
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5273,6 +5332,8 @@ MonoBehaviour:
   bobAmplitude: 8.4
   bobFrequency: 0.055
   phaseOffset: 0.4
+  lockAuthoredLocalRotation: 0
+  lockAuthoredLocalScale: 0
 --- !u!23 &588551700
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -7550,6 +7611,8 @@ MonoBehaviour:
   bobAmplitude: 0.06
   bobFrequency: 0.28
   phaseOffset: 0.2
+  lockAuthoredLocalRotation: 0
+  lockAuthoredLocalScale: 0
 --- !u!23 &837057962
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8393,6 +8456,7 @@ MonoBehaviour:
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
+  playPerfectDodgeScreenDomain: 1
   maxPerfectDodgeDomainAlpha: 0.42
   maxPerfectDodgeInvertAlpha: 0.18
   maxPerfectDodgeEdgeAlpha: 0.48
@@ -8466,6 +8530,8 @@ MonoBehaviour:
   combatModeController: {fileID: 4013}
   aimController: {fileID: 4012}
   rangedBasicAttackAction: {fileID: 4011}
+  cameraController: {fileID: 0}
+  lockTargetController: {fileID: 0}
   skill1Action: {fileID: 4015}
   summonSlot1Action: {fileID: 4014}
   summonSlot2Action: {fileID: 4018}
@@ -8482,6 +8548,7 @@ MonoBehaviour:
   weaponSwapActionName: WeaponSwap
   showHud: 1
   drawHudVisuals: 1
+  tutorialInputBlocked: 0
   useSingleSummonButton: 0
   hudOpacity: 1
   buttonSize: 168
@@ -8537,6 +8604,17 @@ MonoBehaviour:
   fireAimAssistThicknessBoost: 0.45
   fireAimReticleFollowsAssist: 0
   fireAimAssistReticleMaxOffset: 96
+  showLockTargetMarker: 1
+  lockTargetMarkerSize: 52
+  lockTargetMarkerGap: 12
+  lockTargetMarkerThickness: 3
+  lockTargetMarkerColor: {r: 0.62, g: 0.98, b: 1, a: 0.96}
+  hardLockTargetMarkerColor: {r: 1, g: 0.86, b: 0.32, a: 1}
+  lockTargetMarkerPulseBoost: 0.18
+  lockTargetCoreDotSize: 13
+  lockTargetCoreHaloSize: 34
+  lockTargetCoreColor: {r: 1, g: 0.08, b: 0.04, a: 1}
+  hardLockTargetCoreColor: {r: 1, g: 0.2, b: 0.06, a: 1}
 --- !u!114 &981272990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8579,6 +8657,7 @@ MonoBehaviour:
   margin: 18
   showCenterReticle: 0
   usePremiumCompactHud: 1
+  showPremiumBossBarOnly: 0
   stageEpisodeLabel: EP 03 Survival Pressure
   objectiveBadgeLabel: HP
   bossDisplayName: Dimensional Rift Curtain
@@ -11442,6 +11521,7 @@ GameObject:
   - component: {fileID: 1426401973}
   - component: {fileID: 1426401977}
   - component: {fileID: 1426401978}
+  - component: {fileID: 1426401981}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_BossProxy_NeedleLock
   m_TagString: Untagged
@@ -12044,6 +12124,25 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.05
   m_Center: {x: 0, y: -0.35, z: -0.05}
+--- !u!114 &1426401981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1426401969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a7403340c564fa49bdb37b281821b39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.EnemySummonPacingDirector
+  summonPressureAction: {fileID: 1426401974}
+  pacingEnabled: 1
+  summonTier: 1
+  initialDelaySeconds: 10.5
+  respawnIntervalSeconds: 14.5
+  retryIntervalSeconds: 1.1
+  summonTierSequence: 01000000010000000200000001000000
 --- !u!1 &1434294015
 GameObject:
   m_ObjectHideFlags: 0
@@ -14002,6 +14101,8 @@ MonoBehaviour:
   bobAmplitude: 0.42
   bobFrequency: 0.18
   phaseOffset: 0.1
+  lockAuthoredLocalRotation: 0
+  lockAuthoredLocalScale: 0
 --- !u!23 &1754576727
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -16256,6 +16357,8 @@ MonoBehaviour:
   bobAmplitude: 0.38
   bobFrequency: 0.2
   phaseOffset: 0.5
+  lockAuthoredLocalRotation: 0
+  lockAuthoredLocalScale: 0
 --- !u!23 &2068443055
 MeshRenderer:
   m_ObjectHideFlags: 0

@@ -5,9 +5,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
 using DimensionBrawl.Presentation;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace DimensionBrawl.Editor
 {
@@ -43,7 +41,6 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             ActionFoundationEnemyPatternExpansionSetup.EnsureExtendedPatternAssets();
 
-            Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
             CombatAiPatternProfile closePunishProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             CombatAiPatternDeck generalDeck =
@@ -57,8 +54,6 @@ namespace DimensionBrawl.Editor
             ActionFoundationSciFiEliteSoldierVisualSetup.EnsureEliteDeckVisualAssets();
 
             EnsureSoldierPrefabCandidate(
-                scene,
-                ActionFoundationProfileSetup.ClosePunishEnemyRootName,
                 MeleeSoldierPrefabName,
                 MeleeSoldierPrefabPath,
                 closePunishProfile,
@@ -66,8 +61,6 @@ namespace DimensionBrawl.Editor
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.MaintenanceWorker);
             EnsureSoldierPrefabCandidate(
-                scene,
-                ActionFoundationEnemyPatternExpansionSetup.GeneralDeckEnemyRootName,
                 GeneralDeckSoldierPrefabName,
                 GeneralDeckSoldierPrefabPath,
                 closePunishProfile,
@@ -75,8 +68,6 @@ namespace DimensionBrawl.Editor
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.GeneralDeckRifle);
             EnsureSoldierPrefabCandidate(
-                scene,
-                ActionFoundationEnemyPatternExpansionSetup.EliteDeckEnemyRootName,
                 EliteDeckSoldierPrefabName,
                 EliteDeckSoldierPrefabPath,
                 guardBreakProfile,
@@ -169,8 +160,6 @@ namespace DimensionBrawl.Editor
         }
 
         private static void EnsureSoldierPrefabCandidate(
-            Scene scene,
-            string sourceRootName,
             string prefabName,
             string prefabPath,
             CombatAiPatternProfile startingProfile,
@@ -178,16 +167,20 @@ namespace DimensionBrawl.Editor
             CombatAiElitePatternProfile[] eliteProfiles,
             SoldierVisualCandidate visualCandidate)
         {
-            BasicSoldierEnemy source = RequireRootComponent<BasicSoldierEnemy>(scene, sourceRootName);
-            GameObject candidate = UnityEngine.Object.Instantiate(source.gameObject);
-            candidate.name = prefabName;
-            candidate.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            candidate.transform.localScale = Vector3.one;
-            candidate.SetActive(true);
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing source prefab {prefabPath}; retired review scenes are no longer used to bootstrap enemy prefabs.");
+            }
 
+            GameObject candidate = PrefabUtility.LoadPrefabContents(prefabPath);
             try
             {
-                SanitizeSoldierCandidate(candidate, source.transform, startingProfile, patternDeck);
+                candidate.name = prefabName;
+                candidate.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                candidate.transform.localScale = Vector3.one;
+                candidate.SetActive(true);
+                SanitizeSoldierCandidate(candidate, candidate.transform, startingProfile, patternDeck);
                 ConfigureEliteProfiles(candidate, eliteProfiles);
                 ConfigureSoldierContactDamagePresentation(candidate, visualCandidate);
 
@@ -200,15 +193,14 @@ namespace DimensionBrawl.Editor
                     ActionFoundationSciFiEliteSoldierVisualSetup.ApplyEliteDeckVisual(candidate);
                 }
 
-                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(candidate, prefabPath);
-                if (savedPrefab == null)
+                if (PrefabUtility.SaveAsPrefabAsset(candidate, prefabPath) == null)
                 {
-                    throw new InvalidOperationException($"Failed to save enemy prefab candidate at {prefabPath}.");
+                    throw new InvalidOperationException($"Failed to refresh enemy prefab candidate at {prefabPath}.");
                 }
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(candidate);
+                PrefabUtility.UnloadPrefabContents(candidate);
             }
         }
 
@@ -734,29 +726,6 @@ namespace DimensionBrawl.Editor
             }
 
             return false;
-        }
-
-        private static T RequireRootComponent<T>(Scene scene, string rootName) where T : Component
-        {
-            GameObject[] roots = scene.GetRootGameObjects();
-            for (int i = 0; i < roots.Length; i++)
-            {
-                GameObject root = roots[i];
-                if (root == null || root.name != rootName)
-                {
-                    continue;
-                }
-
-                T component = root.GetComponent<T>();
-                if (component == null)
-                {
-                    throw new InvalidOperationException($"{rootName} is missing {typeof(T).Name}.");
-                }
-
-                return component;
-            }
-
-            throw new InvalidOperationException($"Missing root GameObject {rootName} in {scene.path}.");
         }
 
         private static T RequireComponent<T>(GameObject root, string label) where T : Component

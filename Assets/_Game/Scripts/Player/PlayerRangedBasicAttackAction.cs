@@ -1328,6 +1328,9 @@ namespace DimensionBrawl.Player
             if (IsValidDirectViewportTarget(directViewportTargetHealth))
             {
                 SetAimAssistState(directViewportTargetHealth, 1f, LastRawAimDirection);
+                SetAimAssistPreviewPoint(
+                    directViewportTargetHealth,
+                    ResolveTargetLockedAimPoint(directViewportTargetHealth));
                 return LastRawAimDirection;
             }
 

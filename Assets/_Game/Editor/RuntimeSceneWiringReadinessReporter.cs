@@ -18,7 +18,6 @@ namespace DimensionBrawl.Editor
 
         private static readonly SceneExpectation[] MinimumSceneExpectations =
         {
-            new("Assets/_Game/Scenes/ActionFoundationTest.unity", SceneContractKind.FoundationEncounter),
             new("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", SceneContractKind.BossBarrageReview),
             new("Assets/_Game/Scenes/UI/UI_CombatHudTest.unity", SceneContractKind.UiRoute)
         };
@@ -201,9 +200,6 @@ namespace DimensionBrawl.Editor
 
             switch (expectation.ContractKind)
             {
-                case SceneContractKind.FoundationEncounter:
-                    CheckFoundationEncounterContract(expectation, report);
-                    break;
                 case SceneContractKind.BossBarrageReview:
                     CheckBossBarrageReviewContract(expectation, report);
                     break;
@@ -213,17 +209,6 @@ namespace DimensionBrawl.Editor
                 default:
                     report.AddIssue($"{expectation.ScenePath}: unknown scene contract kind {expectation.ContractKind}.");
                     break;
-            }
-        }
-
-        private static void CheckFoundationEncounterContract(SceneExpectation expectation, ReportBuilder report)
-        {
-            ActionFoundationTestEncounter[] encounters =
-                Object.FindObjectsByType<ActionFoundationTestEncounter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            report.AppendLine($"- ActionFoundationTestEncounter count: {encounters.Length}");
-            if (encounters.Length != 1)
-            {
-                report.AddIssue($"{expectation.ScenePath}: expected exactly one ActionFoundationTestEncounter, found {encounters.Length}.");
             }
         }
 
@@ -290,7 +275,6 @@ namespace DimensionBrawl.Editor
 
         private enum SceneContractKind
         {
-            FoundationEncounter,
             BossBarrageReview,
             UiRoute
         }

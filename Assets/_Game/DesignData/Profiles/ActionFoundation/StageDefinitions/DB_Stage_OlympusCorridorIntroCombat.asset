@@ -22,7 +22,7 @@ MonoBehaviour:
   mapContentRootName: OlympusCorridorStageMap
   mapScale: {x: 1.5, y: 1.5, z: 1.5}
   layoutId: OLYMPUS_CORRIDOR_LONG_01
-  scenePrefabSource: Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity
+  scenePrefabSource:
   objective: Intro cutscene, boss entrance, and combat start share the Olympus corridor
     map, anchor set, and runtime state vocabulary.
   clearCondition: Boss defeated or corridor exit state reached; reward payout and
@@ -183,7 +183,7 @@ MonoBehaviour:
     sourcePath: arkdata:HI3_CombatCutscene_ApplyData_2026-06-26
     localTakeaway: Use HI3 for camera/stage-context and combat presentation vocabulary,
       not geometry recovery.
-  - sourceId: local-olympus-lookdev
-    sourcePath: Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity
-    localTakeaway: Use the current promoted Olympus corridor lookdev as the real
-      geometry source.
+  - sourceId: local-olympus-stage
+    sourcePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
+    localTakeaway: The promoted runtime stage is the canonical authored geometry
+      after retiring the legacy lookdev source.

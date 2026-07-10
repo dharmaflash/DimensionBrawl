@@ -285,8 +285,10 @@ namespace DimensionBrawl.Combat
             {
                 actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
                 actor.PressureScreen.ActionProjectileIntercepted -= HandlePressureScreenActionProjectileIntercepted;
+                actor.PressureScreen.SkillBeamIntercepted -= HandlePressureScreenSkillBeamIntercepted;
                 actor.PressureScreen.Intercepted += HandlePressureScreenIntercepted;
                 actor.PressureScreen.ActionProjectileIntercepted += HandlePressureScreenActionProjectileIntercepted;
+                actor.PressureScreen.SkillBeamIntercepted += HandlePressureScreenSkillBeamIntercepted;
                 lastPressureScreenMaxIntercepts = Mathf.Max(0, settings.ScreenIntercepts);
                 actor.PressureScreen.Activate(
                     ownerTeam,
@@ -307,7 +309,11 @@ namespace DimensionBrawl.Combat
 
         public int SuppressActivePressureResponses(int responseSlot)
         {
-            return SuppressActivePressureScreens(responseSlot);
+            int screensBefore = totalPressureScreenSuppressCount;
+            int actorsBefore = totalPressureActorSuppressCount;
+            SuppressActivePressureScreens(responseSlot);
+            return Mathf.Max(0, totalPressureScreenSuppressCount - screensBefore)
+                + Mathf.Max(0, totalPressureActorSuppressCount - actorsBefore);
         }
 
         public int SuppressActivePressureScreens(int responseSlot)
@@ -342,7 +348,7 @@ namespace DimensionBrawl.Combat
             lastPressureScreenSuppressResponseSlot = resolvedResponseSlot;
             totalPressureScreenSuppressCount += suppressedScreens;
             totalPressureActorSuppressCount += suppressedActors;
-            return suppressedScreens + suppressedActors;
+            return suppressedScreens;
         }
 
         private void ConfigureActorVfx(SummonFrontlineProxy actor)
@@ -535,19 +541,20 @@ namespace DimensionBrawl.Combat
 
         private void HandlePressureScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)
         {
-            SummonFrontlineProxy actor = FindActorForPressureScreen(screen);
-            if (actor == null || !actor.IsActive)
-            {
-                return;
-            }
-
-            lastPressureScreenInterceptCount++;
-            lastPressureScreenInterceptResponseSlot = actor.ActiveTier;
-            totalPressureScreenInterceptCount++;
-            PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
+            RecordPressureScreenIntercept(screen);
         }
 
         private void HandlePressureScreenActionProjectileIntercepted(SummonPressureScreen screen, LaneActionProjectile projectile)
+        {
+            RecordPressureScreenIntercept(screen);
+        }
+
+        private void HandlePressureScreenSkillBeamIntercepted(SummonPressureScreen screen)
+        {
+            RecordPressureScreenIntercept(screen);
+        }
+
+        private void RecordPressureScreenIntercept(SummonPressureScreen screen)
         {
             SummonFrontlineProxy actor = FindActorForPressureScreen(screen);
             if (actor == null || !actor.IsActive)
@@ -574,6 +581,7 @@ namespace DimensionBrawl.Combat
                 {
                     actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
                     actor.PressureScreen.ActionProjectileIntercepted -= HandlePressureScreenActionProjectileIntercepted;
+                    actor.PressureScreen.SkillBeamIntercepted -= HandlePressureScreenSkillBeamIntercepted;
                 }
             });
         }

@@ -721,6 +721,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            TrySuppressBossScreenForHighTierFollowup();
             CaptureCloseThreatDefeat();
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
@@ -904,6 +905,11 @@ namespace DimensionBrawl.Test
 
         private void StartSummonPressureBreak(int pressureTier)
         {
+            if (counterWaveFinalWindowOpened && pressurePacing.IsSummonFollowupWindowActive)
+            {
+                return;
+            }
+
             int resolvedTier = Mathf.Clamp(pressureTier, 1, 3);
             float pressureBreakSeconds = ResolveSummonPressureBreakSeconds(resolvedTier);
             float followupWindowSeconds = ResolveSummonFollowupWindowSeconds(resolvedTier);
@@ -1071,7 +1077,8 @@ namespace DimensionBrawl.Test
         private void TrySuppressBossScreenForHighTierFollowup()
         {
             int suppressTier = ResolveFollowupBossScreenSuppressTier();
-            if (bossScreenSuppressedByFollowup
+            if ((playerHealth != null && !playerHealth.IsAlive)
+                || bossScreenSuppressedByFollowup
                 || bossBlockedSkill1Followup
                 || skill1FollowupHitConfirmed
                 || !pressurePacing.IsSummonFollowupWindowActive
@@ -1080,6 +1087,11 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            SuppressBossPressureScreens(suppressTier);
+        }
+
+        private void SuppressBossPressureScreens(int suppressTier)
+        {
             BossSummonPressureAction pressureAction = bossPressureActionDirector != null
                 ? bossPressureActionDirector.SummonPressureAction
                 : null;
@@ -1088,7 +1100,8 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            int suppressed = pressureAction.SuppressActivePressureScreens(suppressTier);
+            int resolvedTier = Mathf.Clamp(suppressTier, 1, 3);
+            int suppressed = pressureAction.SuppressActivePressureScreens(resolvedTier);
             if (suppressed <= 0)
             {
                 return;
@@ -1098,10 +1111,18 @@ namespace DimensionBrawl.Test
             bossPressureScreensSuppressedByFollowup += suppressed;
             highestBossScreenSuppressSummonTier = Mathf.Max(
                 highestBossScreenSuppressSummonTier,
-                suppressTier);
+                resolvedTier);
             vanguardAssistSuppressTier = 0;
             vanguardAssistSuppressTimer = 0f;
-            BossScreenSuppressedByFollowupConfirmed?.Invoke(suppressTier, suppressed);
+            BossScreenSuppressedByFollowupConfirmed?.Invoke(resolvedTier, suppressed);
+        }
+
+        private void NeutralizeBossPressureResponsesForCounterRecovery(int responseTier)
+        {
+            BossSummonPressureAction pressureAction = bossPressureActionDirector != null
+                ? bossPressureActionDirector.SummonPressureAction
+                : null;
+            pressureAction?.SuppressActivePressureResponses(Mathf.Clamp(responseTier, 1, 3));
         }
 
         private int ResolveFollowupBossScreenSuppressTier()
@@ -1133,7 +1154,8 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            if (pressurePacing.IsSummonFollowupWindowActive
+            if ((pressurePacing.IsSummonPressureBreakActive
+                    || pressurePacing.IsSummonFollowupWindowActive)
                 && !followupMissedNotified
                 && !bossBlockedSkill1Followup)
             {
@@ -1170,6 +1192,7 @@ namespace DimensionBrawl.Test
                 counterWaveAllyHoldInterrupted = false;
                 ApplyCounterWaveEntryRoutePenalty();
                 GrantCounterWaveAnswerEnergyPulse();
+                summonSlot1Action?.ClearSlotCooldown();
                 CounterWaveObserved?.Invoke(counterWaveSource);
             }
         }
@@ -1239,6 +1262,8 @@ namespace DimensionBrawl.Test
             skill1FollowupHitConfirmed = false;
             bossBlockedSkill1Followup = false;
             bossScreenSuppressedByFollowup = false;
+            NeutralizeBossPressureResponsesForCounterRecovery(resolvedTier);
+
             skill1FollowupDamage = 0f;
             skill1FollowupClearTimer = 0f;
             followupMissedNotified = false;

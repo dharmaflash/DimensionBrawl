@@ -182,6 +182,11 @@ namespace DimensionBrawl.Enemies
         {
             patternProfile = profile;
             activePatternDeckIndex = -1;
+            lockedAttackDirection = DirectionToTarget();
+            hasLockedAttackDirection = state == SoldierState.Prepare
+                ? ActiveLockAttackDirectionAfterPrepare
+                : (state == SoldierState.Telegraph || state == SoldierState.Active)
+                    && ActiveLockAttackDirectionOnWindup;
             PatternStateChanged?.Invoke(currentPatternState, patternProfile);
         }
 

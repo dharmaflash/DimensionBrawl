@@ -90,8 +90,25 @@ namespace DimensionBrawl.Player
             float elapsed = 0f;
             float hitTimer = 0f;
             float damagePerTick = ResolveDamagePerTick(tier);
+            Vector3 forward = ResolvePlanarDirection(beamSpace.forward, Vector3.forward);
+            Vector3 right = ResolvePlanarDirection(beamSpace.right, Vector3.right);
+            bool hasBlockedBeam = SummonPressureScreen.TryInterceptAnySkillBeam(
+                sourceTeam,
+                origin,
+                forward,
+                right,
+                radius,
+                beamHalfWidth,
+                out int blockedBeamIndex,
+                out float blockedBeamDistance);
 
-            ApplyDamageForBeamSpace(origin, beamSpace, damagePerTick);
+            ApplyDamageForBeamSpace(
+                origin,
+                beamSpace,
+                damagePerTick,
+                hasBlockedBeam,
+                blockedBeamIndex,
+                blockedBeamDistance);
 
             while (elapsed < activeSeconds)
             {
@@ -107,7 +124,13 @@ namespace DimensionBrawl.Player
                 if (hitTimer >= hitIntervalSeconds || elapsed >= activeSeconds)
                 {
                     hitTimer = 0f;
-                    ApplyDamageForBeamSpace(ResolveOrigin(), beamSpace, damagePerTick);
+                    ApplyDamageForBeamSpace(
+                        ResolveOrigin(),
+                        beamSpace,
+                        damagePerTick,
+                        hasBlockedBeam,
+                        blockedBeamIndex,
+                        blockedBeamDistance);
                 }
 
                 yield return null;
@@ -165,7 +188,10 @@ namespace DimensionBrawl.Player
         private void ApplyDamageForBeamSpace(
             Vector3 origin,
             Transform beamSpace,
-            float damagePerTick)
+            float damagePerTick,
+            bool hasBlockedBeam,
+            int blockedBeamIndex,
+            float blockedBeamDistance)
         {
             if (damagePerTick <= 0f || beamSpace == null)
             {
@@ -193,7 +219,15 @@ namespace DimensionBrawl.Player
                     continue;
                 }
 
-                if (!IsInsideCurrentBeams(planarOffset, forward, right, out Vector3 hitDirection))
+                if (!IsInsideCurrentBeams(
+                        planarOffset,
+                        forward,
+                        right,
+                        out Vector3 hitDirection,
+                        out int hitBeamIndex)
+                    || (hasBlockedBeam
+                        && hitBeamIndex == blockedBeamIndex
+                        && Vector3.Dot(planarOffset, hitDirection) >= blockedBeamDistance))
                 {
                     continue;
                 }
@@ -228,12 +262,36 @@ namespace DimensionBrawl.Player
             Vector3 planarOffset,
             Vector3 forward,
             Vector3 right,
-            out Vector3 hitDirection)
+            out Vector3 hitDirection,
+            out int hitBeamIndex)
         {
-            return IsInsideBeam(planarOffset, forward, out hitDirection)
-                || IsInsideBeam(planarOffset, right, out hitDirection)
-                || IsInsideBeam(planarOffset, -forward, out hitDirection)
-                || IsInsideBeam(planarOffset, -right, out hitDirection);
+            if (IsInsideBeam(planarOffset, forward, out hitDirection))
+            {
+                hitBeamIndex = 0;
+                return true;
+            }
+
+            if (IsInsideBeam(planarOffset, right, out hitDirection))
+            {
+                hitBeamIndex = 1;
+                return true;
+            }
+
+            if (IsInsideBeam(planarOffset, -forward, out hitDirection))
+            {
+                hitBeamIndex = 2;
+                return true;
+            }
+
+            if (IsInsideBeam(planarOffset, -right, out hitDirection))
+            {
+                hitBeamIndex = 3;
+                return true;
+            }
+
+            hitDirection = Vector3.forward;
+            hitBeamIndex = -1;
+            return false;
         }
 
         private bool IsInsideBeam(Vector3 planarOffset, Vector3 direction, out Vector3 hitDirection)

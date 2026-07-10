@@ -22,7 +22,6 @@ namespace DimensionBrawl.Editor
     public static partial class ActionFoundationBossBarrageLaneReviewSetup
     {
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
-        public const string DuelReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity";
         private const string OlympusInvasionStageScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         public const string PatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_NeedleLock.asset";
@@ -62,8 +61,6 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LinePressure.mat";
         private const string LayeredSalvoProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LayeredSalvo.mat";
-        private const string BossBasicFireProjectileMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBasicFireProjectile.mat";
         private const string Forge3DMissileProjectileMeshPath =
             "Assets/_Imported/AssetStore/FORGE3D/Sci-Fi Effects/Effects/Missiles/Meshes/missile_004_lod0.FBX";
         public const string Skill1ProjectilePrefabPath =
@@ -91,7 +88,7 @@ namespace DimensionBrawl.Editor
         public const string BossLaserSummonActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
         public const string BossLaserTelegraphVfxPrefabPath =
-            "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs/Laser teleport.prefab";
+            "Assets/_Game/Art/VFX/CombatCues/Prefabs/DB_VFX_PlayerSummonPreSpawnPortal.prefab";
         public const string BossLaserTelegraphSfxClipPath =
             "Assets/_Game/Art/Audio/SFX/BossLaser/DB_SFX_BossLaser_Charge_01.mp3";
         public const string BossLaserSustainLoopSfxClipPath =
@@ -326,9 +323,6 @@ namespace DimensionBrawl.Editor
         private const string SummonActorPoolRootName = ReviewRootPrefix + "SummonActorPool";
         private const string BossSummonActorPoolRootName = ReviewRootPrefix + "BossSummonActorPool";
         private const string PocketOwnerRootName = ReviewRootPrefix + "PocketOwner";
-        private const string DuelOwnerRootName = ReviewRootPrefix + "DuelOwner";
-        private const string DuelClearMarkerName = ReviewRootPrefix + "DuelClearMarker";
-        private const string DuelFailMarkerName = ReviewRootPrefix + "DuelFailMarker";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string ArenaVfxRootName = "ActionFoundation_ArenaVfx";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
@@ -540,7 +534,6 @@ namespace DimensionBrawl.Editor
             string[] scenePaths =
             {
                 ReviewScenePath,
-                DuelReviewScenePath,
                 ActionFoundationFrontlineMotivationReviewSetup.ScenePath,
                 OlympusInvasionStageScenePath
             };
@@ -698,32 +691,11 @@ namespace DimensionBrawl.Editor
             Debug.Log("ActionFoundation boss barrage lane review scene validation passed.");
         }
 
-        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Summon Duel Review Scene")]
-        public static void ReapplyBossSummonDuelReviewSceneMenu()
-        {
-            EnsureBossSummonDuelReviewScene();
-            Debug.Log("Reapplied ActionFoundation boss summon duel review scene.");
-        }
-
-        [MenuItem("DimensionBrawl/Validate Action Foundation Boss Summon Duel Review Scene")]
-        public static void ValidateBossSummonDuelReviewSceneMenu()
-        {
-            ValidateBossSummonDuelReviewScene();
-            Debug.Log("ActionFoundation boss summon duel review scene validation passed.");
-        }
-
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Proxy Body Hitboxes")]
         public static void ReapplyBossProxyBodyHitboxesMenu()
         {
             EnsureBossProxyBodyHitboxes();
             Debug.Log("Reapplied ActionFoundation boss proxy body hitboxes.");
-        }
-
-        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Summon Duel Review End State")]
-        public static void ReapplyBossSummonDuelReviewEndStateMenu()
-        {
-            EnsureBossSummonDuelReviewEndStateBindings();
-            Debug.Log("Reapplied ActionFoundation boss summon duel review end-state bindings.");
         }
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Player Summon Presentation")]
@@ -736,7 +708,6 @@ namespace DimensionBrawl.Editor
             EnsureSupportSummonActionProfiles();
             EnsureSummonPresentationCandidateProfiles();
             EnsurePlayerSummonReviewHudBindings(ReviewScenePath);
-            EnsurePlayerSummonReviewHudBindings(DuelReviewScenePath);
             Debug.Log("Reapplied ActionFoundation player summon presentation assets.");
         }
 
@@ -752,14 +723,12 @@ namespace DimensionBrawl.Editor
         public static void EnsureBossProxyBodyHitboxes()
         {
             EnsureBossProxyBodyHitbox(ReviewScenePath);
-            EnsureBossProxyBodyHitbox(DuelReviewScenePath);
         }
 
         public static void EnsureBossBasicFireBindings()
         {
             EnsureBossBasicFireProfile();
             EnsureBossBasicFireBinding(ReviewScenePath);
-            EnsureBossBasicFireBinding(DuelReviewScenePath);
             AssetDatabase.SaveAssets();
         }
 
@@ -821,7 +790,6 @@ namespace DimensionBrawl.Editor
                 0.28f,
                 true);
             EnsurePlayerRangedBasicVfxBinding(ReviewScenePath);
-            EnsurePlayerRangedBasicVfxBinding(DuelReviewScenePath);
             AssetDatabase.SaveAssets();
         }
 
@@ -844,7 +812,6 @@ namespace DimensionBrawl.Editor
                 allowVerticalTravel: false);
             EnsurePlayerSkill1FourSidesLaserPrefab();
             EnsurePlayerSkill1LaserSweepBinding(ReviewScenePath);
-            EnsurePlayerSkill1LaserSweepBinding(DuelReviewScenePath);
             AssetDatabase.SaveAssets();
         }
 
@@ -994,13 +961,6 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(pocketOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
             }
 
-            GameObject duelRoot = FindRoot(scene, DuelOwnerRootName);
-            if (duelRoot != null
-                && duelRoot.TryGetComponent(out BossSummonDuelReviewOwner duelOwner))
-            {
-                SetObjectReference(duelOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
-            }
-
             GameObject hudRoot = FindRoot(scene, HudRootName);
             if (hudRoot != null
                 && hudRoot.TryGetComponent(out BossBarrageLaneReviewHud reviewHud))
@@ -1137,7 +1097,7 @@ namespace DimensionBrawl.Editor
             EnsureBossSummonPressureProfile();
             EnsureSummonPresentationCandidateProfiles();
             ActionCinematicCueProfile cinematicCueProfile = ActionFoundationProfileSetup.EnsureCinematicCueProfileAsset();
-            Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
             patternProfile = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
             coverFirePatternProfile = LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath);
             escortScreenPatternProfile = LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath);
@@ -1808,7 +1768,6 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(PunishNetPatternProfilePath);
             ValidateNoImportedAssetReference(LinePressurePatternProfilePath);
             ValidateNoImportedAssetReference(BossBasicFireProfilePath);
-            ValidateNoImportedAssetReference(BossBasicFireProjectileMaterialPath);
             ValidateNoImportedAssetReference(BossBarrageProjectileTrailMaterialPath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
@@ -1918,162 +1877,6 @@ namespace DimensionBrawl.Editor
             // Materials and runtime tinting stay game-owned and are validated on the projectile prefab.
         }
 
-        public static void EnsureBossSummonDuelReviewScene()
-        {
-            EnsureBossBarrageLaneReviewScene();
-            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
-
-            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
-            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
-            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
-            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
-            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
-            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
-            PlayerSummonSlot1Action summonSlot1Action =
-                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
-            PlayerSupportSummonSlotAction summonSlot2Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
-            PlayerSupportSummonSlotAction summonSlot3Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
-            SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
-            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
-            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
-            ValidateBossProxyBodyContract(bossProxy, bossHealth);
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
-            BossBasicFireEmitter bossBasicFireEmitter =
-                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
-            BossPressureCostLadder bossPressureCost =
-                RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
-            BossPressureActionDirector bossPressureActionDirector =
-                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
-            BossSummonPressureAction bossSummonPressureAction =
-                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
-            GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
-            GameObject pocketOwner = RequireRoot(scene, PocketOwnerRootName);
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
-
-            closeThreat.SetActive(false);
-            pocketOwner.SetActive(false);
-            SetObjectReferenceArray(targetSelector, "targetCandidates", new UnityEngine.Object[] { bossHealth });
-            SetObjectReference(encounter, "enemyHealth", bossHealth);
-
-            GameObject duelOwnerRoot = CreateRoot(scene, DuelOwnerRootName);
-            BossSummonDuelReviewOwner duelOwner = EnsureComponent<BossSummonDuelReviewOwner>(duelOwnerRoot);
-            GameObject clearMarker = EnsureResultMarker(
-                duelOwnerRoot.transform,
-                DuelClearMarkerName,
-                laneSpace.GetBattlefieldWorldPoint(-laneSpace.HalfWidth - 1.35f, laneSpace.ForwardBoundaryZ + 1.0f, 0.75f),
-                new Color(0.25f, 1f, 0.5f, 1f));
-            GameObject failMarker = EnsureResultMarker(
-                duelOwnerRoot.transform,
-                DuelFailMarkerName,
-                laneSpace.GetBattlefieldWorldPoint(laneSpace.HalfWidth + 1.35f, laneSpace.ForwardBoundaryZ + 1.0f, 0.75f),
-                new Color(1f, 0.16f, 0.18f, 1f));
-            ConfigureBossSummonDuelOwner(
-                duelOwner,
-                playerHealth,
-                bossHealth,
-                energyLadder,
-                skill1Action,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action,
-                emitter,
-                bossBasicFireEmitter,
-                bossPressureCost,
-                bossPressureActionDirector,
-                bossSummonPressureAction,
-                clearMarker,
-                failMarker);
-
-            SetObjectReference(reviewHud, "closeThreatHealth", null);
-            SetObjectReference(reviewHud, "pocketReviewOwner", null);
-            SetObjectReference(reviewHud, "duelReviewOwner", duelOwner);
-            ActionScreenCuePresenter screenCuePresenter =
-                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
-            SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
-            SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
-            ConfigurePerfectDodgeScreenCueMaterials(screenCuePresenter);
-
-            if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
-            {
-                throw new InvalidOperationException($"Failed to save boss summon duel review scene at {DuelReviewScenePath}.");
-            }
-
-            AssetDatabase.SaveAssets();
-        }
-
-        public static void EnsureBossSummonDuelReviewEndStateBindings()
-        {
-            Scene scene = EditorSceneManager.OpenScene(DuelReviewScenePath, OpenSceneMode.Single);
-            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
-            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
-            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
-            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
-            PlayerSummonSlot1Action summonSlot1Action =
-                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
-            PlayerSupportSummonSlotAction summonSlot2Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
-            PlayerSupportSummonSlotAction summonSlot3Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
-            SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
-            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
-            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
-            BossBasicFireEmitter bossBasicFireEmitter =
-                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
-            BossPressureCostLadder bossPressureCost =
-                RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
-            BossPressureActionDirector bossPressureActionDirector =
-                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
-            BossSummonPressureAction bossSummonPressureAction =
-                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
-            GameObject duelOwnerRoot = RequireRoot(scene, DuelOwnerRootName);
-            BossSummonDuelReviewOwner duelOwner =
-                RequireComponent<BossSummonDuelReviewOwner>(duelOwnerRoot, "boss summon duel owner");
-            ActionScreenCuePresenter screenCuePresenter =
-                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
-
-            ApplyPlayerSummonEnergyTuning(energyLadder);
-            GameObject clearMarker = EnsureResultMarker(
-                duelOwnerRoot.transform,
-                DuelClearMarkerName,
-                laneSpace.GetBattlefieldWorldPoint(-laneSpace.HalfWidth - 1.35f, laneSpace.ForwardBoundaryZ + 1.0f, 0.75f),
-                new Color(0.25f, 1f, 0.5f, 1f));
-            GameObject failMarker = EnsureResultMarker(
-                duelOwnerRoot.transform,
-                DuelFailMarkerName,
-                laneSpace.GetBattlefieldWorldPoint(laneSpace.HalfWidth + 1.35f, laneSpace.ForwardBoundaryZ + 1.0f, 0.75f),
-                new Color(1f, 0.16f, 0.18f, 1f));
-
-            ConfigureBossSummonDuelOwner(
-                duelOwner,
-                playerHealth,
-                bossHealth,
-                energyLadder,
-                skill1Action,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action,
-                emitter,
-                bossBasicFireEmitter,
-                bossPressureCost,
-                bossPressureActionDirector,
-                bossSummonPressureAction,
-                clearMarker,
-                failMarker);
-            SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
-            SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
-            ConfigurePerfectDodgeScreenCueMaterials(screenCuePresenter);
-
-            if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
-            {
-                throw new InvalidOperationException($"Failed to save boss summon duel review scene at {DuelReviewScenePath}.");
-            }
-
-            AssetDatabase.SaveAssets();
-        }
 
         private static void EnsurePlayerSummonReviewHudBindings(string scenePath)
         {
@@ -2105,96 +1908,6 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        public static void ValidateBossSummonDuelReviewScene()
-        {
-            Scene scene = EditorSceneManager.OpenScene(DuelReviewScenePath, OpenSceneMode.Single);
-            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
-            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
-            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
-            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
-            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
-            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
-            PlayerSummonSlot1Action summonSlot1Action =
-                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
-            PlayerSupportSummonSlotAction summonSlot2Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
-            PlayerSupportSummonSlotAction summonSlot3Action =
-                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
-            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
-            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
-            BossBasicFireEmitter bossBasicFireEmitter =
-                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
-            BossPressureCostLadder bossPressureCost =
-                RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
-            BossPressureActionDirector bossPressureActionDirector =
-                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
-            BossSummonPressureAction bossSummonPressureAction =
-                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
-            GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
-            GameObject pocketOwner = RequireRoot(scene, PocketOwnerRootName);
-            BossSummonDuelReviewOwner duelOwner =
-                RequireComponent<BossSummonDuelReviewOwner>(RequireRoot(scene, DuelOwnerRootName), "boss summon duel owner");
-            GameObject clearMarker = RequireChild(duelOwner.transform, DuelClearMarkerName).gameObject;
-            GameObject failMarker = RequireChild(duelOwner.transform, DuelFailMarkerName).gameObject;
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
-            ActionScreenCuePresenter screenCuePresenter =
-                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
-
-            if (closeThreat.activeSelf)
-            {
-                throw new InvalidOperationException("Boss summon duel scene should disable the close-threat pocket sample.");
-            }
-
-            if (pocketOwner.activeSelf)
-            {
-                throw new InvalidOperationException("Boss summon duel scene should disable the one-pocket review owner.");
-            }
-
-            SerializedProperty targetCandidates = RequireProperty(new SerializedObject(targetSelector), "targetCandidates");
-            if (targetCandidates.arraySize != 1)
-            {
-                throw new InvalidOperationException("Boss summon duel target selector should keep only the far boss candidate.");
-            }
-
-            ValidateArrayReference(targetSelector, "targetCandidates", 0, bossHealth);
-            ValidateObjectReference(encounter, "enemyHealth", bossHealth);
-            ValidateBossSummonDuelOwner(
-                duelOwner,
-                playerHealth,
-                bossHealth,
-                energyLadder,
-                skill1Action,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action,
-                emitter,
-                bossBasicFireEmitter,
-                bossPressureCost,
-                bossPressureActionDirector,
-                bossSummonPressureAction,
-                clearMarker,
-                failMarker);
-            ValidateObjectReference(reviewHud, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(reviewHud, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(reviewHud, "pocketReviewOwner", null);
-            ValidateObjectReference(reviewHud, "duelReviewOwner", duelOwner);
-            ValidateObjectReference(screenCuePresenter, "pocketReviewOwner", null);
-            ValidateObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
-            ValidateStringContains(
-                reviewHud.CompactObjectiveReadout,
-                duelOwner.CompactObjectiveCue,
-                "duel compact objective readout");
-            ValidateStringContains(
-                reviewHud.RouteIncentiveReadout,
-                duelOwner.RouteIncentiveCue,
-                "duel route incentive readout");
-            ValidateStringContains(
-                reviewHud.CompactCombatCueReadout,
-                duelOwner.CompactObjectiveCue,
-                "duel compact combat cue readout");
-        }
 
         private static void ApplySkillGrammar(
             SerializedObject serializedObject,
@@ -2299,8 +2012,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.1f;
             RequireProperty(serializedObject, "projectileColor").colorValue = new Color(1f, 0.55f, 0.18f, 1f);
             RequireProperty(serializedObject, "projectileVisualScale").vector3Value = Vector3.one;
-            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue =
-                LoadAsset<Material>(BossBasicFireProjectileMaterialPath);
+            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = null;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
@@ -3979,6 +3691,36 @@ namespace DimensionBrawl.Editor
             EnemySummonPacingDirector enemySummonPacingDirector =
                 ConfigureEnemySummonPacingDirector(bossProxy, bossSummonPressureAction);
 
+            BossPressureActionDirector bossPressureActionDirector = ConfigureBossPressureLoop(
+                bossProxy,
+                laneSpace,
+                playerTransform,
+                emitter,
+                basicFireEmitter,
+                bossPressureCost,
+                bossSummonPressureAction,
+                out BossPressurePositionController bossPressurePosition);
+            EditorUtility.SetDirty(bossPressureCost);
+            EditorUtility.SetDirty(basicFireEmitter);
+            EditorUtility.SetDirty(bossSummonPressureAction);
+            EditorUtility.SetDirty(enemySummonPacingDirector);
+            EditorUtility.SetDirty(bossPressureActionDirector);
+            EditorUtility.SetDirty(bossPressurePosition);
+
+            ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
+            return bossProxy;
+        }
+
+        private static BossPressureActionDirector ConfigureBossPressureLoop(
+            GameObject bossProxy,
+            SummonLaneSpace laneSpace,
+            Transform playerTransform,
+            BossBarrageEmitter emitter,
+            BossBasicFireEmitter basicFireEmitter,
+            BossPressureCostLadder bossPressureCost,
+            BossSummonPressureAction bossSummonPressureAction,
+            out BossPressurePositionController bossPressurePosition)
+        {
             BossPressureActionDirector bossPressureActionDirector =
                 EnsureComponent<BossPressureActionDirector>(bossProxy);
             bossPressureActionDirector.ConfigureReferences(
@@ -3997,8 +3739,7 @@ namespace DimensionBrawl.Editor
             SetInt(bossPressureActionDirector, "minimumBasicFireVolleysBeforePressureAction", 4);
             SetFloat(bossPressureActionDirector, "minimumBasicFireAgeBeforePressureActionSeconds", 0.08f);
 
-            BossPressurePositionController bossPressurePosition =
-                EnsureComponent<BossPressurePositionController>(bossProxy);
+            bossPressurePosition = EnsureComponent<BossPressurePositionController>(bossProxy);
             bossPressurePosition.ConfigureReferences(
                 laneSpace,
                 bossPressureCost,
@@ -4046,15 +3787,7 @@ namespace DimensionBrawl.Editor
             SetFloat(bossPressurePosition, "basicFireMovementLockSeconds", 0.34f);
             SetFloat(bossPressurePosition, "retreatAnimationRiskDelta", 0.025f);
             SetFloat(bossPressurePosition, "retreatTriggerCooldownSeconds", 1.05f);
-            EditorUtility.SetDirty(bossPressureCost);
-            EditorUtility.SetDirty(basicFireEmitter);
-            EditorUtility.SetDirty(bossSummonPressureAction);
-            EditorUtility.SetDirty(enemySummonPacingDirector);
-            EditorUtility.SetDirty(bossPressureActionDirector);
-            EditorUtility.SetDirty(bossPressurePosition);
-
-            ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
-            return bossProxy;
+            return bossPressureActionDirector;
         }
 
         private static void PatchBossBarrageLaneReviewEnemySummonPacing(string scenePath)
@@ -4079,7 +3812,7 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static EnemySummonPacingDirector ConfigureEnemySummonPacingDirector(
+        internal static EnemySummonPacingDirector ConfigureEnemySummonPacingDirector(
             GameObject bossProxy,
             BossSummonPressureAction bossSummonPressureAction)
         {
@@ -7142,7 +6875,7 @@ namespace DimensionBrawl.Editor
             property.FindPropertyRelative("TargetHeight").floatValue = targetHeight;
         }
 
-        private static void ConfigurePlayerSkill1LaserSweepAction(
+        internal static void ConfigurePlayerSkill1LaserSweepAction(
             GameObject playerRoot,
             PlayerSkill1Action skill1Action,
             CombatHealth playerHealth,
@@ -8821,7 +8554,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 profile,
                 "projectileMaterial",
-                LoadAsset<Material>(BossBasicFireProjectileMaterialPath));
+                null);
         }
 
         private static void ValidateLaneAmbientVfx(Scene scene)
@@ -10783,12 +10516,14 @@ namespace DimensionBrawl.Editor
             Vector3 localEulerAngles,
             Vector3 localScale)
         {
+            EnemyRoleVisualSpec visualSpec = ActionFoundationEnemyRoleVisualSetup.CreateForRole(roleId);
             Transform existingVisual = parent.Find(targetVisualName);
             if (existingVisual != null)
             {
                 existingVisual.localPosition = localPosition;
                 existingVisual.localRotation = Quaternion.Euler(localEulerAngles);
                 existingVisual.localScale = localScale;
+                ActionFoundationEnemyRoleVisualSetup.ReapplyPromotedMaterials(existingVisual.gameObject, visualSpec);
                 RemapRoleVisualImportedDependencies(existingVisual.gameObject);
                 ValidateSummonActorRoleVisualContents(existingVisual.gameObject, targetVisualName);
                 return existingVisual;
@@ -10799,7 +10534,6 @@ namespace DimensionBrawl.Editor
                 : targetVisualName;
             RemoveChildrenWithPrefix(parent, visualPrefix);
 
-            EnemyRoleVisualSpec visualSpec = ActionFoundationEnemyRoleVisualSetup.CreateForRole(roleId);
             GameObject prefabContents = PrefabUtility.LoadPrefabContents(rolePrefabPath);
             try
             {
@@ -10815,6 +10549,7 @@ namespace DimensionBrawl.Editor
                 visual.transform.localPosition = localPosition;
                 visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
                 visual.transform.localScale = localScale;
+                ActionFoundationEnemyRoleVisualSetup.ReapplyPromotedMaterials(visual, visualSpec);
                 RemapRoleVisualImportedDependencies(visual);
                 ValidateSummonActorRoleVisualContents(visual, targetVisualName);
                 return visual.transform;
@@ -11672,126 +11407,6 @@ namespace DimensionBrawl.Editor
             ValidateAssignedObjectReference(owner, "failMarker");
         }
 
-        private static void ConfigureBossSummonDuelOwner(
-            BossSummonDuelReviewOwner owner,
-            CombatHealth playerHealth,
-            CombatHealth bossHealth,
-            SummonEnergyLadder energyLadder,
-            PlayerSkill1Action skill1Action,
-            PlayerSummonSlot1Action summonSlot1Action,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            PlayerSupportSummonSlotAction summonSlot3Action,
-            BossBarrageEmitter bossBarrageEmitter,
-            BossBasicFireEmitter bossBasicFireEmitter,
-            BossPressureCostLadder bossPressureCost,
-            BossPressureActionDirector bossPressureActionDirector,
-            BossSummonPressureAction bossSummonPressureAction,
-            GameObject clearMarker,
-            GameObject failMarker)
-        {
-            SetObjectReference(owner, "playerHealth", playerHealth);
-            SetObjectReference(owner, "bossHealth", bossHealth);
-            SetObjectReference(owner, "energyLadder", energyLadder);
-            SetObjectReference(owner, "skill1Action", skill1Action);
-            SetObjectReference(owner, "summonSlot1Action", summonSlot1Action);
-            SetObjectReference(owner, "summonSlot2Action", summonSlot2Action);
-            SetObjectReference(owner, "summonSlot3Action", summonSlot3Action);
-            SetObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
-            SetObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
-            SetObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
-            SetObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
-            SetObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
-            SetObjectReference(owner, "clearMarker", clearMarker);
-            SetObjectReference(owner, "failMarker", failMarker);
-            SetBool(owner, "grantPlayerEnergyOnStart", true);
-            SetFloat(owner, "startingPlayerEnergy", 150f);
-            SetBool(owner, "grantBossCostOnStart", true);
-            SetFloat(owner, "startingBossCost", 150f);
-            SetBool(owner, "stopBarrageOnEnd", true);
-            SetBool(owner, "stopBossPressureCostOnEnd", true);
-            SetBool(owner, "stopBossPressureActionsOnEnd", true);
-            SetBool(owner, "stopEnergyGainOnEnd", true);
-            SetInt(owner, "requiredBossPressureActions", 2);
-            SetInt(owner, "requiredBossSkillPatterns", 1);
-            SetInt(owner, "requiredBossSummonPressureActions", 1);
-            SetInt(owner, "requiredBossPunishPatterns", 0);
-            SetInt(owner, "requiredBossSummonReleases", 1);
-            SetInt(owner, "requiredBossPressureBlocks", 1);
-            SetInt(owner, "requiredPlayerSummonUses", 2);
-            SetInt(owner, "requiredSupportSummonUses", 1);
-            SetInt(owner, "requiredBossResponsesToPlayerSummons", 1);
-            SetInt(owner, "requiredAllyPressureBlocks", 1);
-            SetInt(owner, "requiredSummonClashes", 1);
-            SetInt(owner, "requiredSummonActorDefeats", 1);
-            SetInt(owner, "requiredBossRepressureAfterSummonDefeat", 1);
-            SetInt(owner, "requiredFrontlineLoopCycles", 1);
-            SetInt(owner, "requiredSkill1ResponseUses", 1);
-            SetFloat(owner, "requiredSkill1ResponseDamage", 60f);
-            SetFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
-            SetFloat(owner, "requiredBossDamage", 220f);
-            SetBool(owner, "failWhenPlayerDies", true);
-            EditorUtility.SetDirty(owner);
-        }
-
-        private static void ValidateBossSummonDuelOwner(
-            BossSummonDuelReviewOwner owner,
-            CombatHealth playerHealth,
-            CombatHealth bossHealth,
-            SummonEnergyLadder energyLadder,
-            PlayerSkill1Action skill1Action,
-            PlayerSummonSlot1Action summonSlot1Action,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            PlayerSupportSummonSlotAction summonSlot3Action,
-            BossBarrageEmitter bossBarrageEmitter,
-            BossBasicFireEmitter bossBasicFireEmitter,
-            BossPressureCostLadder bossPressureCost,
-            BossPressureActionDirector bossPressureActionDirector,
-            BossSummonPressureAction bossSummonPressureAction,
-            GameObject clearMarker,
-            GameObject failMarker)
-        {
-            ValidateObjectReference(owner, "playerHealth", playerHealth);
-            ValidateObjectReference(owner, "bossHealth", bossHealth);
-            ValidateObjectReference(owner, "energyLadder", energyLadder);
-            ValidateObjectReference(owner, "skill1Action", skill1Action);
-            ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
-            ValidateObjectReference(owner, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(owner, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
-            ValidateObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
-            ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
-            ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
-            ValidateObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
-            ValidateObjectReference(owner, "clearMarker", clearMarker);
-            ValidateObjectReference(owner, "failMarker", failMarker);
-            ValidateBool(owner, "grantPlayerEnergyOnStart", true);
-            ValidateFloat(owner, "startingPlayerEnergy", 150f);
-            ValidateBool(owner, "grantBossCostOnStart", true);
-            ValidateFloat(owner, "startingBossCost", 150f);
-            ValidateBool(owner, "stopBarrageOnEnd", true);
-            ValidateBool(owner, "stopBossPressureCostOnEnd", true);
-            ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
-            ValidateBool(owner, "stopEnergyGainOnEnd", true);
-            ValidateInt(owner, "requiredBossPressureActions", 2);
-            ValidateInt(owner, "requiredBossSkillPatterns", 1);
-            ValidateInt(owner, "requiredBossSummonPressureActions", 1);
-            ValidateInt(owner, "requiredBossPunishPatterns", 0);
-            ValidateInt(owner, "requiredBossSummonReleases", 1);
-            ValidateInt(owner, "requiredBossPressureBlocks", 1);
-            ValidateInt(owner, "requiredPlayerSummonUses", 2);
-            ValidateInt(owner, "requiredSupportSummonUses", 1);
-            ValidateInt(owner, "requiredBossResponsesToPlayerSummons", 1);
-            ValidateInt(owner, "requiredAllyPressureBlocks", 1);
-            ValidateInt(owner, "requiredSummonClashes", 1);
-            ValidateInt(owner, "requiredSummonActorDefeats", 1);
-            ValidateInt(owner, "requiredBossRepressureAfterSummonDefeat", 1);
-            ValidateInt(owner, "requiredFrontlineLoopCycles", 1);
-            ValidateInt(owner, "requiredSkill1ResponseUses", 1);
-            ValidateFloat(owner, "requiredSkill1ResponseDamage", 60f);
-            ValidateFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
-            ValidateFloat(owner, "requiredBossDamage", 220f);
-            ValidateBool(owner, "failWhenPlayerDies", true);
-        }
 
         private static void ValidatePocketCueBridges(
             BossBarragePocketReviewOwner owner,
