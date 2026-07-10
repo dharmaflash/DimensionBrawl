@@ -214,7 +214,8 @@ namespace IsekaiBrawl.Gameplay
             }
 
             GameObject directorObject = new("PveEncounterDirector_Runtime");
-            directorObject.AddComponent<PveEncounterDirector>();
+            PveEncounterDirector director = directorObject.AddComponent<PveEncounterDirector>();
+            director.ConfigureRuntimeBootstrap(PveStageContext.SelectedStage);
         }
 
         private void OnDisable()
@@ -4069,6 +4070,7 @@ namespace IsekaiBrawl.Gameplay
             public bool ContentsSpawned { get; set; }
             public bool Cleared { get; set; }
             public bool ClearedEmittersTriggered { get; set; }
+            public int PendingEnemySpawnCount { get; set; }
         }
 
         [SerializeField] private PveStageData defaultStage;
@@ -4081,6 +4083,16 @@ namespace IsekaiBrawl.Gameplay
         private PlayerController playerController;
         private PveStageData activeStage;
         private int nextEncounterIndex;
+
+        public PveStageData ActiveStage => activeStage;
+        public Transform RuntimeRoot => runtimeRoot;
+        public int EncounterGroupCount => runtimeGroups.Count;
+
+        public void ConfigureRuntimeBootstrap(PveStageData stage)
+        {
+            defaultStage = stage;
+            allowRuntimeStageRootBootstrap = true;
+        }
 
         private void Start()
         {
@@ -4111,6 +4123,7 @@ namespace IsekaiBrawl.Gameplay
 
                 GameObject rootObject = new("PveRuntimeStage");
                 runtimeRoot = rootObject.transform;
+                runtimeRoot.SetParent(transform, worldPositionStays: false);
             }
 
             BuildRuntimeGroups();
@@ -4239,11 +4252,14 @@ namespace IsekaiBrawl.Gameplay
                     continue;
                 }
 
-                SummonUnit enemy = SpawnEnemyPlacement(placement);
-                if (enemy != null)
+                if (placement.spawnDelay > 0.01f)
                 {
-                    group.SpawnedEnemies.Add(enemy);
+                    group.PendingEnemySpawnCount++;
+                    StartCoroutine(SpawnEnemyPlacementDelayed(group, placement));
+                    continue;
                 }
+
+                SpawnAndTrackEnemy(group, placement);
             }
 
             for (int index = 0; index < group.Source.projectileEmitterPlacements.Count; index++)
@@ -4321,6 +4337,11 @@ namespace IsekaiBrawl.Gameplay
 
         private bool IsGroupCleared(RuntimeEncounterGroup group)
         {
+            if (group.PendingEnemySpawnCount > 0)
+            {
+                return false;
+            }
+
             for (int index = 0; index < group.SpawnedEnemies.Count; index++)
             {
                 SummonUnit enemy = group.SpawnedEnemies[index];
@@ -4340,6 +4361,22 @@ namespace IsekaiBrawl.Gameplay
             }
 
             return true;
+        }
+
+        private IEnumerator SpawnEnemyPlacementDelayed(RuntimeEncounterGroup group, PveEnemyPlacement placement)
+        {
+            yield return new WaitForSeconds(placement.spawnDelay);
+            SpawnAndTrackEnemy(group, placement);
+            group.PendingEnemySpawnCount = Mathf.Max(0, group.PendingEnemySpawnCount - 1);
+        }
+
+        private void SpawnAndTrackEnemy(RuntimeEncounterGroup group, PveEnemyPlacement placement)
+        {
+            SummonUnit enemy = SpawnEnemyPlacement(placement);
+            if (enemy != null)
+            {
+                group.SpawnedEnemies.Add(enemy);
+            }
         }
 
         private PveProjectileEmitter FindEmitterForPlacement(RuntimeEncounterGroup group, int placementIndex)
