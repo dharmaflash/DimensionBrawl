@@ -118,10 +118,21 @@ namespace DimensionBrawl.UI
             }
 
             CurrentAimInput = Vector2.zero;
-            movementController?.SetLookInput(resolvedInput);
-            rangedBasicAttackAction?.SetAimInput(Vector2.zero);
-            aimController?.SetAimInput(Vector2.zero);
-            aimController?.SetAimHeld(false);
+            if (movementController != null)
+            {
+                movementController.SetLookInput(resolvedInput);
+            }
+
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetAimInput(Vector2.zero);
+            }
+
+            if (aimController != null)
+            {
+                aimController.SetAimInput(Vector2.zero);
+                aimController.SetAimHeld(false);
+            }
         }
 
         private Vector2 ResolveKeyboardPeekInput()
@@ -157,10 +168,21 @@ namespace DimensionBrawl.UI
         {
             Vector2 resolvedInput = CanAim() ? Vector2.ClampMagnitude(input, 1f) : Vector2.zero;
             CurrentAimInput = resolvedInput;
-            movementController?.SetLookInput(routeAimToMovementLook ? resolvedInput : Vector2.zero);
-            rangedBasicAttackAction?.SetAimInput(resolvedInput);
-            aimController?.SetAimInput(resolvedInput);
-            aimController?.SetAimHeld(holdAim);
+            if (movementController != null)
+            {
+                movementController.SetLookInput(routeAimToMovementLook ? resolvedInput : Vector2.zero);
+            }
+
+            if (rangedBasicAttackAction != null)
+            {
+                rangedBasicAttackAction.SetAimInput(resolvedInput);
+            }
+
+            if (aimController != null)
+            {
+                aimController.SetAimInput(resolvedInput);
+                aimController.SetAimHeld(holdAim);
+            }
         }
 
         private bool CanAim()
