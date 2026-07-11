@@ -24,6 +24,11 @@ namespace DimensionBrawl.UI
         private bool pointerHeld;
         private bool keyboardAimActive;
         private Vector2 pointerAimInput;
+        private Vector2 keyboardPeekInput;
+        private InputAction keyboardPeekAction;
+        private PlayerCombatModeController subscribedCombatModeController;
+        private PlayerRangedAimController subscribedAimController;
+        private PlayerRangedBasicAttackAction subscribedRangedBasicAttackAction;
 
         public Vector2 CurrentAimInput { get; private set; }
         public bool IsPointerHeld => pointerHeld;
@@ -35,19 +40,42 @@ namespace DimensionBrawl.UI
             PlayerRangedAimController newAimController,
             PlayerRangedBasicAttackAction newRangedBasicAttackAction)
         {
+            bool rebindStateEvents = isActiveAndEnabled;
+            if (rebindStateEvents)
+            {
+                UnsubscribeStateEvents();
+            }
+
             movementController = newMovementController;
             combatModeController = newCombatModeController;
             aimController = newAimController;
             rangedBasicAttackAction = newRangedBasicAttackAction;
+
+            if (rebindStateEvents)
+            {
+                SubscribeStateEvents();
+                RefreshKeyboardAim();
+            }
+        }
+
+        private void OnEnable()
+        {
+            SubscribeStateEvents();
+            EnableKeyboardPeekAction();
+            RefreshKeyboardAim();
         }
 
         private void OnDisable()
         {
+            DisableKeyboardPeekAction();
+            UnsubscribeStateEvents();
+            keyboardPeekInput = Vector2.zero;
+            keyboardAimActive = false;
             ReleasePointerAim();
             ApplyAim(Vector2.zero, holdAim: false);
         }
 
-        private void Update()
+        private void RefreshKeyboardAim()
         {
             if (pointerHeld)
             {
@@ -106,6 +134,7 @@ namespace DimensionBrawl.UI
             pointerHeld = false;
             pointerAimInput = Vector2.zero;
             ApplyAim(Vector2.zero, holdAim: false);
+            RefreshKeyboardAim();
         }
 
         private void ApplyPointerDrag(Vector2 input)
@@ -137,7 +166,7 @@ namespace DimensionBrawl.UI
 
         private Vector2 ResolveKeyboardPeekInput()
         {
-            if (!keyboardPeekControlsAim || Keyboard.current == null || !CanAim())
+            if (!keyboardPeekControlsAim || !CanAim())
             {
                 return Vector2.zero;
             }
@@ -150,18 +179,7 @@ namespace DimensionBrawl.UI
                 return Vector2.zero;
             }
 
-            float x = 0f;
-            if (Keyboard.current[keyboardPeekLeftKey] != null && Keyboard.current[keyboardPeekLeftKey].isPressed)
-            {
-                x -= 1f;
-            }
-
-            if (Keyboard.current[keyboardPeekRightKey] != null && Keyboard.current[keyboardPeekRightKey].isPressed)
-            {
-                x += 1f;
-            }
-
-            return new Vector2(x, 0f);
+            return Vector2.ClampMagnitude(keyboardPeekInput, 1f);
         }
 
         private void ApplyAim(Vector2 input, bool holdAim)
@@ -195,6 +213,132 @@ namespace DimensionBrawl.UI
             return CanAim()
                 && rangedBasicAttackAction != null
                 && rangedBasicAttackAction.IsFireHeld;
+        }
+
+        private void EnableKeyboardPeekAction()
+        {
+            if (!keyboardPeekControlsAim
+                || keyboardPeekAction != null
+                || Application.isMobilePlatform
+                || Keyboard.current == null)
+            {
+                return;
+            }
+
+            string leftPath = ResolveKeyboardControlPath(keyboardPeekLeftKey);
+            string rightPath = ResolveKeyboardControlPath(keyboardPeekRightKey);
+            if (string.IsNullOrEmpty(leftPath) && string.IsNullOrEmpty(rightPath))
+            {
+                return;
+            }
+
+            keyboardPeekAction = new InputAction(
+                $"{nameof(CombatHudAimDragInput)} Keyboard Peek",
+                InputActionType.Value,
+                expectedControlType: "Axis");
+            var composite = keyboardPeekAction.AddCompositeBinding("1DAxis");
+            if (!string.IsNullOrEmpty(leftPath))
+            {
+                composite.With("Negative", leftPath);
+            }
+
+            if (!string.IsNullOrEmpty(rightPath))
+            {
+                composite.With("Positive", rightPath);
+            }
+
+            keyboardPeekAction.performed += HandleKeyboardPeekChanged;
+            keyboardPeekAction.canceled += HandleKeyboardPeekChanged;
+            keyboardPeekAction.Enable();
+        }
+
+        private void DisableKeyboardPeekAction()
+        {
+            if (keyboardPeekAction == null)
+            {
+                return;
+            }
+
+            keyboardPeekAction.performed -= HandleKeyboardPeekChanged;
+            keyboardPeekAction.canceled -= HandleKeyboardPeekChanged;
+            keyboardPeekAction.Disable();
+            keyboardPeekAction.Dispose();
+            keyboardPeekAction = null;
+        }
+
+        private void HandleKeyboardPeekChanged(InputAction.CallbackContext context)
+        {
+            keyboardPeekInput = new Vector2(context.ReadValue<float>(), 0f);
+            RefreshKeyboardAim();
+        }
+
+        private void SubscribeStateEvents()
+        {
+            UnsubscribeStateEvents();
+            if (combatModeController != null)
+            {
+                subscribedCombatModeController = combatModeController;
+                subscribedCombatModeController.CombatModeChanged += HandleCombatModeChanged;
+            }
+
+            if (aimController != null)
+            {
+                subscribedAimController = aimController;
+                subscribedAimController.AimModeChanged += HandleAimModeChanged;
+            }
+
+            if (rangedBasicAttackAction != null)
+            {
+                subscribedRangedBasicAttackAction = rangedBasicAttackAction;
+                subscribedRangedBasicAttackAction.AimPreviewStateChanged += HandleAimPreviewStateChanged;
+            }
+        }
+
+        private void UnsubscribeStateEvents()
+        {
+            if (subscribedCombatModeController != null)
+            {
+                subscribedCombatModeController.CombatModeChanged -= HandleCombatModeChanged;
+            }
+
+            if (subscribedAimController != null)
+            {
+                subscribedAimController.AimModeChanged -= HandleAimModeChanged;
+            }
+
+            if (subscribedRangedBasicAttackAction != null)
+            {
+                subscribedRangedBasicAttackAction.AimPreviewStateChanged -= HandleAimPreviewStateChanged;
+            }
+
+            subscribedCombatModeController = null;
+            subscribedAimController = null;
+            subscribedRangedBasicAttackAction = null;
+        }
+
+        private void HandleCombatModeChanged(PlayerCombatMode combatMode)
+        {
+            RefreshKeyboardAim();
+        }
+
+        private void HandleAimModeChanged(bool isAiming)
+        {
+            RefreshKeyboardAim();
+        }
+
+        private void HandleAimPreviewStateChanged()
+        {
+            RefreshKeyboardAim();
+        }
+
+        private static string ResolveKeyboardControlPath(Key key)
+        {
+            if (key == Key.None || Keyboard.current == null)
+            {
+                return null;
+            }
+
+            return Keyboard.current[key]?.path;
         }
     }
 }

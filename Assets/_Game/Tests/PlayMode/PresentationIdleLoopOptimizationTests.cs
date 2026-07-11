@@ -80,6 +80,13 @@ namespace DimensionBrawl.Tests
                 combatHudPresenter.GetMethod("Update", flags),
                 "Combat HUD feedback should tick only while a damage or meter flash is active.");
 
+            System.Type combatHudAimDragInput = System.Type.GetType(
+                "DimensionBrawl.UI.CombatHudAimDragInput, Assembly-CSharp");
+            Assert.IsNotNull(combatHudAimDragInput);
+            Assert.IsNull(
+                combatHudAimDragInput.GetMethod("Update", flags),
+                "Combat HUD aim drag should react to pointer and input-action events instead of polling every frame.");
+
             System.Type sceneEntryNoticeOverlay = System.Type.GetType(
                 "DimensionBrawl.UI.SceneEntryNoticeOverlay, Assembly-CSharp");
             Assert.IsNotNull(sceneEntryNoticeOverlay);
