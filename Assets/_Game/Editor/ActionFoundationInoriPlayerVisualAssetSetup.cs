@@ -47,6 +47,7 @@ namespace DimensionBrawl.Editor
         {
             PromoteModel();
             PromoteMaterials();
+            RemapModelMaterials();
             EnsureRiflePoseTuningProfile();
             AssetDatabase.SaveAssets();
         }
@@ -180,6 +181,50 @@ namespace DimensionBrawl.Editor
             {
                 PromoteMaterial(MaterialSpecs[i]);
             }
+        }
+
+        private static void RemapModelMaterials()
+        {
+            ModelImporter importer = RequireModelImporter(ModelPath);
+            var materialIdentifiers = new List<AssetImporter.SourceAssetIdentifier>();
+            foreach (KeyValuePair<AssetImporter.SourceAssetIdentifier, UnityEngine.Object> remap
+                     in importer.GetExternalObjectMap())
+            {
+                if (remap.Key.type == typeof(Material))
+                {
+                    materialIdentifiers.Add(remap.Key);
+                }
+            }
+
+            for (int i = 0; i < materialIdentifiers.Count; i++)
+            {
+                importer.RemoveRemap(materialIdentifiers[i]);
+            }
+
+            for (int identifierIndex = 0; identifierIndex < materialIdentifiers.Count; identifierIndex++)
+            {
+                AssetImporter.SourceAssetIdentifier identifier = materialIdentifiers[identifierIndex];
+                MaterialSpec? matchedSpec = null;
+                for (int specIndex = 0; specIndex < MaterialSpecs.Length; specIndex++)
+                {
+                    if (string.Equals(MaterialSpecs[specIndex].SourceName, identifier.name, StringComparison.Ordinal))
+                    {
+                        matchedSpec = MaterialSpecs[specIndex];
+                        break;
+                    }
+                }
+
+                if (!matchedSpec.HasValue)
+                {
+                    throw new InvalidOperationException(
+                        $"Missing promoted Inori material mapping for model slot {identifier.name}.");
+                }
+
+                Material material = LoadMaterial(matchedSpec.Value.TargetName);
+                importer.AddRemap(identifier, material);
+            }
+
+            importer.SaveAndReimport();
         }
 
         private static void PromoteMaterial(MaterialSpec spec)

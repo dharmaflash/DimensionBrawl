@@ -59,16 +59,22 @@ namespace DimensionBrawl.Presentation
         private void OnEnable()
         {
             CacheAuthoredState();
+            ActionFoundationArenaAnimationScheduler.Register(this);
         }
 
-        private void LateUpdate()
+        private void OnDisable()
         {
-            float time = Time.time + phaseOffset;
+            ActionFoundationArenaAnimationScheduler.Unregister(this);
+        }
+
+        internal void TickScheduled(float time, float deltaTime)
+        {
             if (localRotationDegreesPerSecond.sqrMagnitude > 0f)
             {
-                transform.Rotate(localRotationDegreesPerSecond * Time.deltaTime, Space.Self);
+                transform.Rotate(localRotationDegreesPerSecond * deltaTime, Space.Self);
             }
 
+            time += phaseOffset;
             if (bobAmplitude > 0f && bobFrequency > 0f)
             {
                 float bob = Mathf.Sin(time * bobFrequency * Mathf.PI * 2f) * bobAmplitude;

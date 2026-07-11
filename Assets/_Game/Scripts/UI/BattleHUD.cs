@@ -56,6 +56,10 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private Color bottomDockAccentColor = new(0.24f, 0.56f, 0.94f, 0.0016f);
         [SerializeField] private bool allowRuntimeUiBootstrap;
 
+        [Header("Performance")]
+        [SerializeField, Range(10f, 60f)] private float hudRefreshRate = 30f;
+        [SerializeField, Min(0.1f)] private float layoutRefreshInterval = 0.5f;
+
         private BattleManager battleManager;
         private BattleEnergySystem energySystem;
         private PlayerController playerController;
@@ -66,6 +70,7 @@ namespace IsekaiBrawl.Gameplay
         private Image enemyBaseFillImage;
         private Image energyFillImage;
         private Image playerHpFillImage;
+        private Image miniMapFrontlineImage;
         private bool isSubscribedToBattleManager;
         private bool isSubscribedToEnergySystem;
         private bool isSubscribedToPlayer;
@@ -74,6 +79,14 @@ namespace IsekaiBrawl.Gameplay
         private readonly List<Image> enemyMiniMapMarkers = new();
         private RectTransform bottomDockPanel;
         private RectTransform bottomDockAccent;
+        private float nextHudRefreshTime;
+        private float nextLayoutRefreshTime;
+        private float lastLayoutWidth;
+        private float lastLayoutHeight;
+        private Rect lastLayoutSafeArea;
+        private bool lastLayoutWasMobile;
+        private bool lastLayoutWasOverview;
+        private bool responsiveLayoutInitialized;
 
         private void Awake()
         {
@@ -82,7 +95,7 @@ namespace IsekaiBrawl.Gameplay
             RuntimeUIFontUtility.ApplyRecursively(transform);
             ResolveReferences();
             CacheSliderFillImages();
-            ApplyResponsiveLayout();
+            ApplyResponsiveLayout(force: true);
             NormalizeVisibleHudText();
         }
 
@@ -93,7 +106,10 @@ namespace IsekaiBrawl.Gameplay
             RuntimeUIFontUtility.ApplyRecursively(transform);
             ResolveReferences();
             CacheSliderFillImages();
-            ApplyResponsiveLayout();
+            nextHudRefreshTime = 0f;
+            nextLayoutRefreshTime = 0f;
+            responsiveLayoutInitialized = false;
+            ApplyResponsiveLayout(force: true);
             NormalizeVisibleHudText();
             TrySubscribe();
         }
@@ -158,7 +174,7 @@ namespace IsekaiBrawl.Gameplay
             UpdateFrontlineUI();
             UpdateBossTacticUI();
             UpdateMiniMap();
-            ApplyResponsiveLayout();
+            ApplyResponsiveLayout(force: true);
             NormalizeVisibleHudText();
         }
 
@@ -170,6 +186,15 @@ namespace IsekaiBrawl.Gameplay
                 TrySubscribe();
             }
 
+            ApplyResponsiveLayout();
+            float unscaledTime = Time.unscaledTime;
+            if (unscaledTime < nextHudRefreshTime)
+            {
+                return;
+            }
+
+            nextHudRefreshTime = unscaledTime + 1f / Mathf.Max(1f, hudRefreshRate);
+
             UpdateTimer();
             UpdateModeUI();
             UpdateSkillUI();
@@ -177,7 +202,6 @@ namespace IsekaiBrawl.Gameplay
             UpdateFrontlineUI();
             UpdateBossTacticUI();
             UpdateMiniMap();
-            ApplyResponsiveLayout();
             NormalizeVisibleHudText();
         }
 
@@ -1212,11 +1236,11 @@ namespace IsekaiBrawl.Gameplay
 
         private void UpdateMiniMapUnitMarkers(float laneHalfWidth, float laneLength)
         {
-            SummonUnit[] units = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> units = SummonUnit.ActiveUnits;
             int friendlyIndex = 0;
             int enemyIndex = 0;
 
-            for (int index = 0; index < units.Length; index++)
+            for (int index = 0; index < units.Count; index++)
             {
                 SummonUnit summonUnit = units[index];
                 if (summonUnit == null || !summonUnit.IsAlive)
@@ -1250,14 +1274,22 @@ namespace IsekaiBrawl.Gameplay
             miniMapFrontlineMarker.anchoredPosition = new Vector2(0f, ((frontlineState.ClashCenterNormalized - 0.5f) * miniMapField.rect.height));
             miniMapFrontlineMarker.sizeDelta = new Vector2(Mathf.Lerp(82f, 140f, Mathf.Abs(frontlineState.Balance)), 4f);
 
-            Image frontlineImage = miniMapFrontlineMarker.GetComponent<Image>();
-            if (frontlineImage != null)
+            if (miniMapFrontlineImage == null)
             {
-                frontlineImage.color = frontlineState.Balance >= 0.25f
+                miniMapFrontlineImage = miniMapFrontlineMarker.GetComponent<Image>();
+            }
+
+            if (miniMapFrontlineImage != null)
+            {
+                Color targetColor = frontlineState.Balance >= 0.25f
                     ? frontlineAdvantageColor
                     : frontlineState.Balance <= -0.25f
                         ? frontlineDangerColor
                         : frontlineNeutralColor;
+                if (miniMapFrontlineImage.color != targetColor)
+                {
+                    miniMapFrontlineImage.color = targetColor;
+                }
             }
         }
 
@@ -1297,8 +1329,15 @@ namespace IsekaiBrawl.Gameplay
             Image marker = pool[index];
             if (marker != null)
             {
-                marker.color = color;
-                marker.gameObject.SetActive(true);
+                if (marker.color != color)
+                {
+                    marker.color = color;
+                }
+
+                if (!marker.gameObject.activeSelf)
+                {
+                    marker.gameObject.SetActive(true);
+                }
             }
 
             return marker;
@@ -1310,7 +1349,11 @@ namespace IsekaiBrawl.Gameplay
             {
                 if (pool[index] != null)
                 {
-                    pool[index].gameObject.SetActive(index < activeCount);
+                    bool shouldBeActive = index < activeCount;
+                    if (pool[index].gameObject.activeSelf != shouldBeActive)
+                    {
+                        pool[index].gameObject.SetActive(shouldBeActive);
+                    }
                 }
             }
         }
@@ -1437,7 +1480,7 @@ namespace IsekaiBrawl.Gameplay
             scaler.matchWidthOrHeight = 0.6f;
         }
 
-        private void ApplyResponsiveLayout()
+        private void ApplyResponsiveLayout(bool force = false)
         {
             RectTransform root = transform as RectTransform;
             if (root == null)
@@ -1445,10 +1488,33 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
+            float layoutWidth = ResolveLayoutWidth(root);
+            float layoutHeight = ResolveLayoutHeight(root);
+            Rect safeArea = Screen.safeArea;
+            bool useMobileLayout = MobileBattleControls.ShouldUseMobileLayout(root);
+            bool isOverviewMode = battleCamera != null && battleCamera.IsOverviewMode;
+            float unscaledTime = Application.isPlaying ? Time.unscaledTime : 0f;
+            bool layoutStateUnchanged = responsiveLayoutInitialized
+                && Mathf.Approximately(lastLayoutWidth, layoutWidth)
+                && Mathf.Approximately(lastLayoutHeight, layoutHeight)
+                && lastLayoutSafeArea == safeArea
+                && lastLayoutWasMobile == useMobileLayout
+                && lastLayoutWasOverview == isOverviewMode;
+            if (!force && layoutStateUnchanged && unscaledTime < nextLayoutRefreshTime)
+            {
+                return;
+            }
+
+            responsiveLayoutInitialized = true;
+            lastLayoutWidth = layoutWidth;
+            lastLayoutHeight = layoutHeight;
+            lastLayoutSafeArea = safeArea;
+            lastLayoutWasMobile = useMobileLayout;
+            lastLayoutWasOverview = isOverviewMode;
+            nextLayoutRefreshTime = unscaledTime + Mathf.Max(0.1f, layoutRefreshInterval);
+
             float uiScale = RuntimeCanvasLayoutUtility.ResolveScale(root);
             ResolveSafeAreaPadding(root, out float safeLeft, out float safeRight, out float safeTop, out float safeBottom);
-            bool useMobileLayout = MobileBattleControls.ShouldUseMobileLayout(root);
-            float layoutWidth = ResolveLayoutWidth(root);
             bool compactMobile = useMobileLayout && layoutWidth <= 620f;
             float mobileSideInset = useMobileLayout ? (compactMobile ? 10f : 14f) : 0f;
             float mobileLeftActionReserve = 0f;
@@ -1463,9 +1529,9 @@ namespace IsekaiBrawl.Gameplay
             RectTransform panelRoot = transform.Find("BattleStatusPanel") as RectTransform;
             if (panelRoot != null)
             {
-                ApplyHudLayout(root, panelRoot, useMobileLayout, battleCamera != null && battleCamera.IsOverviewMode, uiScale);
+                ApplyHudLayout(root, panelRoot, useMobileLayout, isOverviewMode, uiScale);
                 panelRoot.anchoredPosition = new Vector2(safeLeft + (16f * uiScale), -(safeTop + ((useMobileLayout ? 68f : 72f) * uiScale)));
-                ApplyStatusTextLayout(panelRoot, useMobileLayout, battleCamera != null && battleCamera.IsOverviewMode, uiScale);
+                ApplyStatusTextLayout(panelRoot, useMobileLayout, isOverviewMode, uiScale);
             }
 
             ApplyMiniMapLayout(root, uiScale);
@@ -1478,7 +1544,7 @@ namespace IsekaiBrawl.Gameplay
             ApplyTopBarsLayout(root, safeLeft, safeRight, safeTop, safeBottom, useMobileLayout, mobileSideInset, mobileLeftActionReserve, mobileRightActionReserve, mobileContentCenterOffset, uiScale);
             ApplyHandLayout(root, safeLeft, safeRight, safeBottom, useMobileLayout, mobileSideInset, mobileLeftActionReserve, mobileRightActionReserve, mobileContentCenterOffset, uiScale);
             ApplyEnemyIntentLayout(safeRight, safeTop, useMobileLayout, uiScale);
-            ApplyMobileHudVisibility(useMobileLayout, battleCamera != null && battleCamera.IsOverviewMode);
+            ApplyMobileHudVisibility(useMobileLayout, isOverviewMode);
         }
 
         private void ApplyBottomDockLayout(RectTransform root, float safeLeft, float safeRight, float safeBottom, bool useMobileLayout, float uiScale)

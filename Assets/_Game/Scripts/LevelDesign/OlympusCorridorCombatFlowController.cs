@@ -5,6 +5,7 @@ using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
@@ -1252,6 +1253,9 @@ namespace DimensionBrawl.LevelDesign
             Camera activeIntroCamera = ResolveActiveIntroCamera();
             if (activeIntroCamera != null)
             {
+                CopyCameraPresentation(
+                    activeIntroCamera,
+                    combatCameraController.GetComponent<Camera>());
                 if (combatCameraHandoffPose != null)
                 {
                     combatCameraController.PrimeFromHandoffPose(combatCameraHandoffPose);
@@ -1265,6 +1269,35 @@ namespace DimensionBrawl.LevelDesign
             }
 
             combatCameraController.PrimeFromHandoffPose(combatCameraHandoffPose);
+        }
+
+        private static void CopyCameraPresentation(Camera source, Camera target)
+        {
+            if (source == null || target == null)
+            {
+                return;
+            }
+
+            target.fieldOfView = source.fieldOfView;
+            target.clearFlags = source.clearFlags;
+            target.backgroundColor = source.backgroundColor;
+            target.allowHDR = source.allowHDR;
+            target.allowMSAA = source.allowMSAA;
+            target.nearClipPlane = source.nearClipPlane;
+            target.farClipPlane = source.farClipPlane;
+
+            UniversalAdditionalCameraData sourceData =
+                source.GetComponent<UniversalAdditionalCameraData>();
+            UniversalAdditionalCameraData targetData =
+                target.GetComponent<UniversalAdditionalCameraData>();
+            if (sourceData == null || targetData == null)
+            {
+                return;
+            }
+
+            targetData.renderPostProcessing = sourceData.renderPostProcessing;
+            targetData.antialiasing = sourceData.antialiasing;
+            targetData.antialiasingQuality = sourceData.antialiasingQuality;
         }
 
         private Camera ResolveActiveIntroCamera()

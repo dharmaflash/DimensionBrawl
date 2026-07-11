@@ -41,12 +41,37 @@ namespace IsekaiBrawl.Gameplay
         private Renderer roleMarkerBackRenderer;
         private Renderer roleMarkerPlateRenderer;
         private TextMeshPro roleMarkerText;
+        private Camera cachedMainCamera;
 
         public bool IsDestroyed => isDestroyed;
         public float CurrentHP => currentHP;
         public float MaxHP => maxHP;
         public float EnergyReward => energyReward;
         public BattleStructureRole Role => structureRole;
+        public static IReadOnlyList<BattleStructure> ActiveInstances => ActiveStructures;
+        public static int ActiveCount
+        {
+            get
+            {
+                int activeCount = 0;
+                for (int index = 0; index < ActiveStructures.Count; index++)
+                {
+                    BattleStructure structure = ActiveStructures[index];
+                    if (structure != null && !structure.isDestroyed)
+                    {
+                        activeCount++;
+                    }
+                }
+
+                return activeCount;
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveStructures.Clear();
+        }
 
         private void OnEnable()
         {
@@ -607,12 +632,20 @@ namespace IsekaiBrawl.Gameplay
 
         private void UpdateHealthBarFacing()
         {
-            if (healthBarRoot == null || Camera.main == null)
+            if (healthBarRoot == null)
             {
                 return;
             }
 
-            healthBarRoot.forward = Camera.main.transform.forward;
+            if (cachedMainCamera == null || !cachedMainCamera.isActiveAndEnabled)
+            {
+                cachedMainCamera = Camera.main;
+            }
+
+            if (cachedMainCamera != null)
+            {
+                healthBarRoot.forward = cachedMainCamera.transform.forward;
+            }
         }
     }
 }

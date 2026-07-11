@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -32,6 +33,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Vector2 volleySfxPitchRange = new Vector2(0.96f, 1.04f);
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(12);
+        private SpatialOneShotAudioPool impactAudioPool;
         private float cooldownTimer;
         private float lastForwardRisk01;
         private int totalVolleysFired;
@@ -94,6 +96,7 @@ namespace DimensionBrawl.Combat
             projectilePrefab = newProjectilePrefab;
             projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
             prewarmCount = Mathf.Max(0, newPrewarmCount);
+            EnsureImpactAudioPool();
             PrewarmPool();
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
         }
@@ -227,6 +230,7 @@ namespace DimensionBrawl.Combat
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             if (projectileRoot == null)
             {
                 projectileRoot = transform;
@@ -237,6 +241,7 @@ namespace DimensionBrawl.Combat
                 volleyAudioSource = GetComponent<AudioSource>();
             }
 
+            EnsureImpactAudioPool();
             PrewarmPool();
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
         }
@@ -291,7 +296,8 @@ namespace DimensionBrawl.Combat
                 fireProfile.ProjectileLifetimeSeconds,
                 fireProfile.ProjectileRadius,
                 fireProfile.DamageResponsePolicy,
-                fireProfile.ControlLockPolicy);
+                fireProfile.ControlLockPolicy,
+                impactAudioPool);
             return true;
         }
 
@@ -356,6 +362,20 @@ namespace DimensionBrawl.Combat
                 projectile.Deactivate();
                 pool.Add(projectile);
             }
+        }
+
+        private void EnsureImpactAudioPool()
+        {
+            if (impactAudioPool == null)
+            {
+                impactAudioPool = GetComponent<SpatialOneShotAudioPool>();
+                if (impactAudioPool == null)
+                {
+                    impactAudioPool = gameObject.AddComponent<SpatialOneShotAudioPool>();
+                }
+            }
+
+            impactAudioPool.ConfigurePrewarmCount(Mathf.Clamp(prewarmCount, 4, 16));
         }
 
         private BossBarrageProjectile GetInactiveProjectile()

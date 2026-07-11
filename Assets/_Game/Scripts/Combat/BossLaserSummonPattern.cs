@@ -127,6 +127,7 @@ namespace DimensionBrawl.Combat
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             ResolveReferences();
             HideTelegraphVisual();
         }
@@ -452,7 +453,7 @@ namespace DimensionBrawl.Combat
                     continue;
                 }
 
-                CombatHealth health = hit.GetComponentInParent<CombatHealth>();
+                CombatHealth health = CombatHealth.ResolveFromCollider(hit);
                 if (health == null
                     || health == sourceHealth
                     || !health.IsAlive
@@ -491,7 +492,7 @@ namespace DimensionBrawl.Combat
         {
             if (cameraController == null)
             {
-                cameraController = FindFirstObjectByType<ActionCameraController>();
+                cameraController = ActionCameraController.ActiveInstance;
             }
 
             return cameraController;

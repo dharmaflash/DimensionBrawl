@@ -19,6 +19,8 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private float minimumHorizontalInput = 0.18f;
 
         private readonly Dictionary<EnemyProjectile, TrackedThreat> activeThreats = new();
+        private readonly List<EnemyProjectile> threatIterationBuffer = new();
+        private readonly List<EnemyProjectile> resolvedThreatBuffer = new();
         private PlayerController playerController;
         private float previousPlayerX;
         private float lastHorizontalMovementTime;
@@ -44,11 +46,15 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            EnemyProjectile[] trackedProjectiles = new EnemyProjectile[activeThreats.Count];
-            activeThreats.Keys.CopyTo(trackedProjectiles, 0);
-            for (int index = 0; index < trackedProjectiles.Length; index++)
+            threatIterationBuffer.Clear();
+            foreach (EnemyProjectile projectile in activeThreats.Keys)
             {
-                EnemyProjectile projectile = trackedProjectiles[index];
+                threatIterationBuffer.Add(projectile);
+            }
+
+            for (int index = 0; index < threatIterationBuffer.Count; index++)
+            {
+                EnemyProjectile projectile = threatIterationBuffer[index];
                 if (projectile == null)
                 {
                     continue;
@@ -143,7 +149,7 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            List<EnemyProjectile> resolvedProjectiles = null;
+            resolvedThreatBuffer.Clear();
             foreach (KeyValuePair<EnemyProjectile, TrackedThreat> pair in activeThreats)
             {
                 if (pair.Key != null && !pair.Key.WasDodged)
@@ -151,18 +157,12 @@ namespace IsekaiBrawl.Gameplay
                     continue;
                 }
 
-                resolvedProjectiles ??= new List<EnemyProjectile>();
-                resolvedProjectiles.Add(pair.Key);
+                resolvedThreatBuffer.Add(pair.Key);
             }
 
-            if (resolvedProjectiles == null)
+            for (int index = 0; index < resolvedThreatBuffer.Count; index++)
             {
-                return;
-            }
-
-            foreach (EnemyProjectile projectile in resolvedProjectiles)
-            {
-                activeThreats.Remove(projectile);
+                activeThreats.Remove(resolvedThreatBuffer[index]);
             }
         }
 

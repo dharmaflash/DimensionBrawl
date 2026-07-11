@@ -1,3 +1,4 @@
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
@@ -9,6 +10,8 @@ namespace DimensionBrawl.Presentation
     [DefaultExecutionOrder(900)]
     public sealed class ActionScreenCuePresenter : MonoBehaviour
     {
+        private const float MaximumResultCueDeltaSeconds = 0.1f;
+
         private enum ScreenCueCategory
         {
             Player,
@@ -125,8 +128,10 @@ namespace DimensionBrawl.Presentation
         private float damageFeedbackDuration;
         private float damageFeedbackIntensity;
         private float criticalHealthPulseTimer;
+        private Coroutine cueRoutine;
         private Vector2 damageScreenDirection = Vector2.zero;
         private Texture2D damageVignetteTexture;
+        private Camera cachedMainCamera;
         private float activeIntensity = 1f;
         private Color activeFlashColor = Color.clear;
         private Color activeVignetteColor = Color.clear;
@@ -314,30 +319,49 @@ namespace DimensionBrawl.Presentation
         private void OnEnable()
         {
             Subscribe();
+            StartCueRoutineIfNeeded();
         }
 
         private void OnDisable()
         {
+            StopCueRoutine();
             Unsubscribe();
             PerfectDodgeScreenDomainRuntime.Clear();
         }
 
         private void OnDestroy()
         {
+            StopCueRoutine();
             PerfectDodgeScreenDomainRuntime.Clear();
             DestroyUnityObject(damageVignetteTexture);
             damageVignetteTexture = null;
         }
 
-        private void Update()
+        private IEnumerator RefreshCuesUntilSettled()
         {
-            float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
-            flashTimer = Mathf.Max(0f, flashTimer - deltaTime);
-            vignetteTimer = Mathf.Max(0f, vignetteTimer - deltaTime);
-            perfectDodgeDomainTimer = Mathf.Max(0f, perfectDodgeDomainTimer - deltaTime);
-            damageFeedbackTimer = Mathf.Max(0f, damageFeedbackTimer - deltaTime);
-            criticalHealthPulseTimer = Mathf.Max(0f, criticalHealthPulseTimer - deltaTime);
-            PublishPerfectDodgeDomainState();
+            yield return null;
+
+            while (isActiveAndEnabled && HasActivePresentationTimer())
+            {
+                float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
+                float cueDeltaTime = activeCategory == ScreenCueCategory.Result
+                    ? Mathf.Min(deltaTime, MaximumResultCueDeltaSeconds)
+                    : deltaTime;
+                flashTimer = Mathf.Max(0f, flashTimer - cueDeltaTime);
+                vignetteTimer = Mathf.Max(0f, vignetteTimer - cueDeltaTime);
+                perfectDodgeDomainTimer = Mathf.Max(0f, perfectDodgeDomainTimer - deltaTime);
+                damageFeedbackTimer = Mathf.Max(0f, damageFeedbackTimer - deltaTime);
+                criticalHealthPulseTimer = Mathf.Max(0f, criticalHealthPulseTimer - deltaTime);
+                PublishPerfectDodgeDomainState();
+                if (!HasActivePresentationTimer())
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            cueRoutine = null;
         }
 
         private void OnGUI()
@@ -698,6 +722,8 @@ namespace DimensionBrawl.Presentation
                     playerCueRequestCount++;
                     break;
             }
+
+            StartCueRoutineIfNeeded();
         }
 
         private void RequestPerfectDodgeDomainCue()
@@ -715,6 +741,7 @@ namespace DimensionBrawl.Presentation
             perfectDodgeDomainTimer = Mathf.Max(perfectDodgeDomainTimer, perfectDodgeDomainDuration);
             perfectDodgeDomainIntensity = 1f;
             PublishPerfectDodgeDomainState();
+            StartCueRoutineIfNeeded();
         }
 
         private void PublishPerfectDodgeDomainState()
@@ -775,12 +802,22 @@ namespace DimensionBrawl.Presentation
 
         private Vector2 ResolvePerfectDodgeScreenCenter()
         {
-            if (actionController == null || Camera.main == null)
+            if (actionController == null)
             {
                 return new Vector2(0.5f, 0.5f);
             }
 
-            Vector3 viewportPoint = Camera.main.WorldToViewportPoint(actionController.transform.position + Vector3.up * 0.72f);
+            if (cachedMainCamera == null || !cachedMainCamera.isActiveAndEnabled)
+            {
+                cachedMainCamera = Camera.main;
+            }
+
+            if (cachedMainCamera == null)
+            {
+                return new Vector2(0.5f, 0.5f);
+            }
+
+            Vector3 viewportPoint = cachedMainCamera.WorldToViewportPoint(actionController.transform.position + Vector3.up * 0.72f);
             if (viewportPoint.z <= 0f)
             {
                 return new Vector2(0.5f, 0.5f);
@@ -825,6 +862,31 @@ namespace DimensionBrawl.Presentation
             lastDamageFeedbackIntensity = damageFeedbackIntensity;
             lastDamageFeedbackDuration = damageFeedbackDuration;
             lastDamageScreenDirection = damageScreenDirection;
+            StartCueRoutineIfNeeded();
+        }
+
+        private bool HasActivePresentationTimer()
+        {
+            return HasActiveCue || HasActiveDamageFeedback;
+        }
+
+        private void StartCueRoutineIfNeeded()
+        {
+            if (cueRoutine == null && Application.isPlaying && isActiveAndEnabled && HasActivePresentationTimer())
+            {
+                cueRoutine = StartCoroutine(RefreshCuesUntilSettled());
+            }
+        }
+
+        private void StopCueRoutine()
+        {
+            if (cueRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(cueRoutine);
+            cueRoutine = null;
         }
 
         private float ResolveDamageFeedbackPolicyScale(DamageInfo damageInfo)

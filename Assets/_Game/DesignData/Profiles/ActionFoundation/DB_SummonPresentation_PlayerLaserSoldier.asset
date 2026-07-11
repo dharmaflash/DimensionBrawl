@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Player Summon - SciFi Laser Soldier
   side: 0
   actorPrefab: {fileID: 6985020562745326000, guid: b835176a3da54d049b15b863fb3b147f, type: 3}
-  visualSourceAsset: {fileID: 919132149155446097, guid: 08683623514947141859e56091ccca10, type: 3}
+  visualSourceAsset: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
   visualChildName: SummonSlot2Visual_LaserRifleman
   sourceRoleId: SciFiSoldier.LineCaster
   animatorController: {fileID: 9100000, guid: 27d210c1e9af86b4181fb751ec8e80ff, type: 2}

@@ -308,6 +308,8 @@ namespace IsekaiBrawl.Gameplay
         private float waveLaneAnchorExpireTime;
         private bool needsSummonReplan;
         private bool siegeStrikePending;
+        private Transform cachedGroundVisualRoot;
+        private Renderer[] cachedGroundRenderers = Array.Empty<Renderer>();
         private float lastDirectProjectileExposureTime = float.NegativeInfinity;
 
         public SummonData NextSummon => nextSummon;
@@ -1113,17 +1115,7 @@ namespace IsekaiBrawl.Gameplay
 
         private static int CountActiveStructures()
         {
-            BattleStructure[] structures = FindObjectsByType<BattleStructure>(FindObjectsSortMode.None);
-            int activeCount = 0;
-            for (int index = 0; index < structures.Length; index++)
-            {
-                if (structures[index] != null && !structures[index].IsDestroyed)
-                {
-                    activeCount++;
-                }
-            }
-
-            return activeCount;
+            return BattleStructure.ActiveCount;
         }
 
         private void UpdateSummonIntent(bool forceNotify)
@@ -2378,7 +2370,7 @@ namespace IsekaiBrawl.Gameplay
 
         private BossFormationSnapshot EvaluateBossFormation(float laneLength)
         {
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             float enemyFrontZ = laneLength - bossRearInset;
             float playerHeroZ = playerController != null ? Mathf.Max(playerController.transform.position.z, 0f) : laneLength * 0.1f;
             float playerFrontZ = 0f;
@@ -2389,7 +2381,7 @@ namespace IsekaiBrawl.Gameplay
             int enemyUnitCount = 0;
             int playerUnitCount = 0;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive)
@@ -2433,14 +2425,14 @@ namespace IsekaiBrawl.Gameplay
 
         private BattleStructure FindPriorityStructure(BossFormationSnapshot formation, float laneLength)
         {
-            BattleStructure[] structures = FindObjectsByType<BattleStructure>(FindObjectsSortMode.None);
+            IReadOnlyList<BattleStructure> structures = BattleStructure.ActiveInstances;
             BattleStructure bestStructure = null;
             float bestScore = float.MinValue;
             int playerInterventionLane = playerController != null
                 ? playerController.FocusLaneIndex
                 : BattleLaneUtility.DefaultLaneCount / 2;
 
-            for (int index = 0; index < structures.Length; index++)
+            for (int index = 0; index < structures.Count; index++)
             {
                 BattleStructure structure = structures[index];
                 if (structure == null || structure.IsDestroyed)
@@ -3041,7 +3033,13 @@ namespace IsekaiBrawl.Gameplay
             }
 
             Transform visualRoot = transform.GetChild(0);
-            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            if (cachedGroundVisualRoot != visualRoot)
+            {
+                cachedGroundVisualRoot = visualRoot;
+                cachedGroundRenderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            }
+
+            Renderer[] renderers = cachedGroundRenderers;
             if (renderers == null || renderers.Length == 0)
             {
                 return;

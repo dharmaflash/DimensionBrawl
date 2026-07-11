@@ -37,7 +37,6 @@ namespace DimensionBrawl.UI
 
         private Coroutine playRoutine;
         private bool started;
-        private bool visible;
         private string bodySource = string.Empty;
         private bool gameplayPauseApplied;
         private float previousTimeScale = 1f;
@@ -85,16 +84,6 @@ namespace DimensionBrawl.UI
             SetPointerInputBlocked(false);
         }
 
-        private void Update()
-        {
-            if (!visible)
-            {
-                return;
-            }
-
-            UpdateScanLine(TimeValue);
-        }
-
         public void SetProfile(SceneEntryNoticeProfile noticeProfile)
         {
             profile = noticeProfile;
@@ -120,7 +109,6 @@ namespace DimensionBrawl.UI
 
         private void HideVisualsImmediate()
         {
-            visible = false;
             if (rootGroup != null)
             {
                 rootGroup.alpha = 0f;
@@ -154,7 +142,6 @@ namespace DimensionBrawl.UI
                 yield return WaitSeconds(startupDelay);
             }
 
-            visible = true;
             noticeStarted?.Invoke();
             PlayStartBeep();
 
@@ -184,6 +171,7 @@ namespace DimensionBrawl.UI
             {
                 float t = Mathf.Clamp01(elapsed / dismissSeconds);
                 ApplyDismiss(EaseIn(t));
+                UpdateScanLine(TimeValue);
                 yield return null;
             }
 
@@ -247,7 +235,6 @@ namespace DimensionBrawl.UI
 
         private void PrepareIntroState()
         {
-            visible = false;
             if (rootGroup != null)
             {
                 rootGroup.alpha = 0f;

@@ -56,7 +56,7 @@ namespace DimensionBrawl.Presentation
         private string lastSignalId;
         private string lastAnimatorTrigger;
         private CombatVfxCueId lastVfxCueId;
-        private float frameTimer;
+        private float frameEndTime;
         private float frameDuration;
 
         public ActionCinematicCueProfile CueProfile => cueProfile;
@@ -65,7 +65,7 @@ namespace DimensionBrawl.Presentation
         public bool AllowCuePlayback => allowCuePlayback;
         public bool AllowSequenceBridgePlayback => allowSequenceBridgePlayback;
         public bool DrawCinematicBars => drawCinematicBars;
-        public bool HasActiveFrameOverlay => frameTimer > 0f;
+        public bool HasActiveFrameOverlay => ResolveFrameSecondsRemaining() > 0f;
         public bool HasActiveMovementLock => movementLockActive;
         public bool HasActiveInputLock => inputLockActive;
         public bool IsPlaying => activeRoutine != null;
@@ -110,24 +110,13 @@ namespace DimensionBrawl.Presentation
             }
 
             RestoreCinematicState();
-            frameTimer = 0f;
+            frameEndTime = 0f;
             frameDuration = 0f;
-        }
-
-        private void Update()
-        {
-            if (frameTimer <= 0f)
-            {
-                return;
-            }
-
-            float deltaTime = useUnscaledClock ? Time.unscaledDeltaTime : Time.deltaTime;
-            frameTimer = Mathf.Max(0f, frameTimer - Mathf.Max(0f, deltaTime));
         }
 
         private void OnGUI()
         {
-            if (!drawCinematicBars || frameTimer <= 0f)
+            if (!drawCinematicBars || !HasActiveFrameOverlay)
             {
                 return;
             }
@@ -185,7 +174,7 @@ namespace DimensionBrawl.Presentation
             lastPlayedCueId = sequence.cueId;
             totalPlayCount++;
             frameDuration = EstimateSequenceSeconds(sequence);
-            frameTimer = frameDuration;
+            frameEndTime = FrameClock + frameDuration;
             RecordPlayedCueKind(kind, lastPlayedTier, lastPlayedCueId, frameDuration > 0f);
             activeRoutine = StartCoroutine(PlaySequence(sequence, lastPlayedTier, planarDirection));
             return true;
@@ -235,7 +224,7 @@ namespace DimensionBrawl.Presentation
                 movementLockTimer = Mathf.Max(movementLockTimer, sequenceBridgeLockSeconds);
                 inputLockTimer = Mathf.Max(inputLockTimer, sequenceBridgeLockSeconds);
                 frameDuration = Mathf.Max(frameDuration, sequenceBridgeLockSeconds);
-                frameTimer = Mathf.Max(frameTimer, sequenceBridgeLockSeconds);
+                frameEndTime = Mathf.Max(frameEndTime, FrameClock + sequenceBridgeLockSeconds);
             }
 
             if (movementLockTimer > 0f)
@@ -319,7 +308,7 @@ namespace DimensionBrawl.Presentation
 
             float duration = EstimateSequenceSeconds(sequence);
             frameDuration = Mathf.Max(frameDuration, duration);
-            frameTimer = Mathf.Max(frameTimer, duration);
+            frameEndTime = Mathf.Max(frameEndTime, FrameClock + duration);
             totalPlayCount++;
             RecordPlayedCueKind(kind, Mathf.Max(1, tier), sequence.cueId, duration > 0f);
         }
@@ -353,11 +342,18 @@ namespace DimensionBrawl.Presentation
                 return 0f;
             }
 
-            float normalized = Mathf.Clamp01(frameTimer / frameDuration);
+            float normalized = Mathf.Clamp01(ResolveFrameSecondsRemaining() / frameDuration);
             float fadeIn = Mathf.Clamp01((1f - normalized) / 0.18f);
             float fadeOut = Mathf.Clamp01(normalized / 0.24f);
             float weight = Mathf.Min(fadeIn, fadeOut);
             return weight * weight * (3f - 2f * weight);
         }
+
+        private float ResolveFrameSecondsRemaining()
+        {
+            return Mathf.Max(0f, frameEndTime - FrameClock);
+        }
+
+        private float FrameClock => useUnscaledClock ? Time.unscaledTime : Time.time;
     }
 }

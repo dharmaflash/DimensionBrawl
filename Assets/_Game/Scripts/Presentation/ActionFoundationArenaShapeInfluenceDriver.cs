@@ -42,9 +42,15 @@ namespace DimensionBrawl.Presentation
         {
             CacheRenderers();
             ApplyTargets();
+            ActionFoundationArenaAnimationScheduler.Register(this);
         }
 
-        private void LateUpdate()
+        private void OnDisable()
+        {
+            ActionFoundationArenaAnimationScheduler.Unregister(this);
+        }
+
+        internal void TickScheduled()
         {
             ApplyTargets();
         }

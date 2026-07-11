@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -78,8 +79,6 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private ParticleSystem activeSkillEffect;
 
         private float cooldownRemaining;
-        private int enemySummonLayerMask;
-        private int playerSummonLayerMask;
         private PlayerController playerController;
         private float dodgeOverdriveExpiresAt;
         private bool isFrontlineHoldActive;
@@ -102,8 +101,6 @@ namespace IsekaiBrawl.Gameplay
 
         private void Awake()
         {
-            enemySummonLayerMask = LayerMask.GetMask("EnemySummon");
-            playerSummonLayerMask = LayerMask.GetMask("PlayerSummon");
             playerController = GetComponent<PlayerController>();
             if (activeSkillEffect == null)
             {
@@ -210,74 +207,34 @@ namespace IsekaiBrawl.Gameplay
             float supportHeal = 16f + (hadFrontlineHold ? 6f : 0f) + (hadOverdrive ? 8f : 0f);
             float enemyPulseDamage = activeSkillDamage + (hadOverdrive ? 6f : 0f);
             int buffedAllies = 0;
-            if (playerSummonLayerMask != 0)
+            IReadOnlyList<SummonUnit> activeUnits = SummonUnit.ActiveUnits;
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                Collider[] alliedSummonColliders = Physics.OverlapSphere(transform.position, activeSkillRange, playerSummonLayerMask);
-                for (int index = 0; index < alliedSummonColliders.Length; index++)
+                SummonUnit summonUnit = activeUnits[index];
+                if (summonUnit == null
+                    || !summonUnit.IsPlayerTeam
+                    || !summonUnit.IsAlive
+                    || (summonUnit.transform.position - transform.position).sqrMagnitude > rangeSquared)
                 {
-                    SummonUnit summonUnit = alliedSummonColliders[index].GetComponentInParent<SummonUnit>();
-                    if (summonUnit == null || !summonUnit.IsPlayerTeam || !summonUnit.IsAlive)
-                    {
-                        continue;
-                    }
-
-                    summonUnit.ApplyHeroSupport(supportDuration, supportDamageMultiplier, supportMoveMultiplier, supportHeal);
-                    buffedAllies++;
+                    continue;
                 }
-            }
-            else
-            {
-                SummonUnit[] alliedUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
-                for (int index = 0; index < alliedUnits.Length; index++)
-                {
-                    SummonUnit summonUnit = alliedUnits[index];
-                    if (summonUnit == null || !summonUnit.IsPlayerTeam || !summonUnit.IsAlive)
-                    {
-                        continue;
-                    }
 
-                    if ((summonUnit.transform.position - transform.position).sqrMagnitude > rangeSquared)
-                    {
-                        continue;
-                    }
-
-                    summonUnit.ApplyHeroSupport(supportDuration, supportDamageMultiplier, supportMoveMultiplier, supportHeal);
-                    buffedAllies++;
-                }
+                summonUnit.ApplyHeroSupport(supportDuration, supportDamageMultiplier, supportMoveMultiplier, supportHeal);
+                buffedAllies++;
             }
 
-            if (enemySummonLayerMask != 0)
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                Collider[] enemySummonColliders = Physics.OverlapSphere(transform.position, activeSkillRange, enemySummonLayerMask);
-                for (int index = 0; index < enemySummonColliders.Length; index++)
+                SummonUnit summonUnit = activeUnits[index];
+                if (summonUnit == null
+                    || summonUnit.IsPlayerTeam
+                    || !summonUnit.IsAlive
+                    || (summonUnit.transform.position - transform.position).sqrMagnitude > rangeSquared)
                 {
-                    SummonUnit summonUnit = enemySummonColliders[index].GetComponentInParent<SummonUnit>();
-                    if (summonUnit == null || summonUnit.IsPlayerTeam)
-                    {
-                        continue;
-                    }
-
-                    summonUnit.TakeDamage(enemyPulseDamage);
+                    continue;
                 }
-            }
-            else
-            {
-                SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
-                for (int index = 0; index < summonUnits.Length; index++)
-                {
-                    SummonUnit summonUnit = summonUnits[index];
-                    if (summonUnit == null || summonUnit.IsPlayerTeam)
-                    {
-                        continue;
-                    }
 
-                    if ((summonUnit.transform.position - transform.position).sqrMagnitude > rangeSquared)
-                    {
-                        continue;
-                    }
-
-                    summonUnit.TakeDamage(enemyPulseDamage);
-                }
+                summonUnit.TakeDamage(enemyPulseDamage);
             }
 
             float clearRadiusMultiplier = projectileClearRadiusMultiplier + (hadOverdrive ? 0.18f : 0f);
@@ -354,33 +311,10 @@ namespace IsekaiBrawl.Gameplay
 
             int escortedCount = 0;
             float rangeSquared = frontlineHoldRange * frontlineHoldRange;
-            if (playerSummonLayerMask != 0)
+            IReadOnlyList<SummonUnit> activeUnits = SummonUnit.ActiveUnits;
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                Collider[] colliders = Physics.OverlapSphere(transform.position, frontlineHoldRange, playerSummonLayerMask);
-                for (int index = 0; index < colliders.Length; index++)
-                {
-                    SummonUnit unit = colliders[index] != null ? colliders[index].GetComponentInParent<SummonUnit>() : null;
-                    if (unit == null || !unit.IsAlive || !unit.IsPlayerTeam)
-                    {
-                        continue;
-                    }
-
-                    Vector3 delta = unit.transform.position - transform.position;
-                    if (delta.sqrMagnitude > rangeSquared || delta.z < -2.4f)
-                    {
-                        continue;
-                    }
-
-                    escortedCount++;
-                }
-
-                return escortedCount;
-            }
-
-            SummonUnit[] allUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
-            for (int index = 0; index < allUnits.Length; index++)
-            {
-                SummonUnit unit = allUnits[index];
+                SummonUnit unit = activeUnits[index];
                 if (unit == null || !unit.IsAlive || !unit.IsPlayerTeam)
                 {
                     continue;
@@ -525,7 +459,6 @@ namespace IsekaiBrawl.Gameplay
 
         private float cooldownRemaining;
         private float rallyTimer;
-        private int playerSummonLayerMask;
         private PlayerController playerController;
         private string currentAutoTargetRoleLabel = "NONE";
 
@@ -544,7 +477,6 @@ namespace IsekaiBrawl.Gameplay
 
         private void Awake()
         {
-            playerSummonLayerMask = LayerMask.GetMask("PlayerSummon");
             playerController = GetComponent<PlayerController>();
         }
 
@@ -710,12 +642,12 @@ namespace IsekaiBrawl.Gameplay
                 return false;
             }
 
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             float bestDistance = float.MaxValue;
             Transform bestTargetTransform = null;
             Vector3 bestAimPosition = Vector3.zero;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive || summonUnit.IsPlayerTeam)
@@ -936,9 +868,9 @@ namespace IsekaiBrawl.Gameplay
         {
             rallyTimer = rallyPulseInterval;
 
-            SummonUnit[] alliedUnits = GatherAlliedUnits();
+            IReadOnlyList<SummonUnit> alliedUnits = SummonUnit.ActiveUnits;
             int buffedUnitCount = 0;
-            for (int index = 0; index < alliedUnits.Length; index++)
+            for (int index = 0; index < alliedUnits.Count; index++)
             {
                 SummonUnit alliedUnit = alliedUnits[index];
                 if (alliedUnit == null || !alliedUnit.IsAlive || !alliedUnit.IsPlayerTeam)
@@ -972,24 +904,6 @@ namespace IsekaiBrawl.Gameplay
                 buffedUnitCount++;
             }
 
-        }
-
-        private SummonUnit[] GatherAlliedUnits()
-        {
-            if (playerSummonLayerMask != 0)
-            {
-                Collider[] colliders = Physics.OverlapSphere(transform.position, rallyRadius, playerSummonLayerMask);
-                SummonUnit[] units = new SummonUnit[colliders.Length];
-                for (int index = 0; index < colliders.Length; index++)
-                {
-                    units[index] = colliders[index] != null ? colliders[index].GetComponentInParent<SummonUnit>() : null;
-                }
-
-                return units;
-            }
-
-            SummonUnit[] allUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
-            return allUnits;
         }
     }
 

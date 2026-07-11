@@ -1,11 +1,12 @@
-﻿{
+{
     "name": "DimensionBrawl.Runtime",
     "rootNamespace": "DimensionBrawl",
     "references": [
         "Unity.InputSystem",
         "Unity.TextMeshPro",
         "Unity.Cinemachine",
-        "Unity.Timeline"
+        "Unity.Timeline",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

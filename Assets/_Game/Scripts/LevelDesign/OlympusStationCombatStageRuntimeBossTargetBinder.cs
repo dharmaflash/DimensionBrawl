@@ -23,7 +23,6 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private ActionFoundationTestEncounter encounter;
 
-        private bool appliedAfterStart;
         private CombatHealth subscribedBossHealth;
         private bool bindingLogged;
 
@@ -46,18 +45,6 @@ namespace DimensionBrawl.LevelDesign
         private void Start()
         {
             ApplyBindings();
-            appliedAfterStart = true;
-        }
-
-        private void LateUpdate()
-        {
-            if (appliedAfterStart)
-            {
-                return;
-            }
-
-            ApplyBindings();
-            appliedAfterStart = true;
         }
 
         public void ApplyBindings()

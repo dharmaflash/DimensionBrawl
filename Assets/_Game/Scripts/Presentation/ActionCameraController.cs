@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 namespace DimensionBrawl.Presentation
 {
@@ -7,6 +8,8 @@ namespace DimensionBrawl.Presentation
     [RequireComponent(typeof(Camera))]
     public sealed class ActionCameraController : MonoBehaviour
     {
+        private static readonly List<ActionCameraController> ActiveControllers = new(2);
+
         [Header("Targets")]
         [SerializeField] private Transform target;
         [SerializeField] private Transform threat;
@@ -175,6 +178,30 @@ namespace DimensionBrawl.Presentation
         public Vector3 LastMicroShakeLocalOffset => lastMicroShakeLocalOffset;
         public Vector3 LastMicroShakeEulerOffset => lastMicroShakeEulerOffset;
         public float LastManualViewIntentTime => lastManualViewIntentTime;
+        public static ActionCameraController ActiveInstance
+        {
+            get
+            {
+                for (int index = ActiveControllers.Count - 1; index >= 0; index--)
+                {
+                    ActionCameraController controller = ActiveControllers[index];
+                    if (controller != null && controller.isActiveAndEnabled)
+                    {
+                        return controller;
+                    }
+
+                    ActiveControllers.RemoveAt(index);
+                }
+
+                return null;
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveControllers.Clear();
+        }
 
         public Vector3 GetAimPlanarForward()
         {
@@ -714,6 +741,7 @@ namespace DimensionBrawl.Presentation
 
         private void Awake()
         {
+            RegisterActiveController();
             controlledCamera = ResolveControlledCamera();
             CaptureBaseFieldOfViewFromControlledCamera();
             if (!hasBaseFieldOfView)
@@ -735,11 +763,13 @@ namespace DimensionBrawl.Presentation
 
         private void OnEnable()
         {
+            RegisterActiveController();
             enabledOrbitAction = EnableActionIfNeeded(orbitAction);
         }
 
         private void OnDisable()
         {
+            ActiveControllers.Remove(this);
             DisableActionIfOwned(orbitAction, enabledOrbitAction);
             aimOrbitInput = Vector2.zero;
             lookPeekInput = Vector2.zero;
@@ -759,6 +789,19 @@ namespace DimensionBrawl.Presentation
             microShakeDirectionBias = Vector2.zero;
             lastMicroShakeLocalOffset = Vector3.zero;
             lastMicroShakeEulerOffset = Vector3.zero;
+        }
+
+        private void OnDestroy()
+        {
+            ActiveControllers.Remove(this);
+        }
+
+        private void RegisterActiveController()
+        {
+            if (!ActiveControllers.Contains(this))
+            {
+                ActiveControllers.Add(this);
+            }
         }
 
         private Vector3 BuildFocusPoint()

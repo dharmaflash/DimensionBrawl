@@ -250,6 +250,9 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud reviewHud = FirstSceneComponent<BossBarrageLaneReviewHud>(scene);
             if (reviewHud != null)
             {
+                reviewHud.enabled = false;
+                SetBool(reviewHud, "showHud", false);
+                SetBool(reviewHud, "showCenterReticle", false);
                 SetObjectReference(reviewHud, "playerHealth", playerHealth);
                 SetObjectReference(reviewHud, "closeThreatHealth", null);
                 SetObjectReference(reviewHud, "bossHealth", bossHealth);
@@ -261,6 +264,13 @@ namespace DimensionBrawl.Editor
             {
                 SetObjectReference(combatHudBinder, "playerHealth", playerHealth);
                 SetObjectReference(combatHudBinder, "bossHealth", bossHealth);
+            }
+
+            CombatHudPresenter combatHudPresenter = FirstSceneComponent<CombatHudPresenter>(scene);
+            if (combatHudPresenter != null)
+            {
+                ActionFoundationBossBarrageLaneReviewSetup.NormalizeCombatHudInstanceToPrefabSkin(
+                    combatHudPresenter.gameObject);
             }
 
             Component runtimeBinder =

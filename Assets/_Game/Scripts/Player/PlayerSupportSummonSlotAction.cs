@@ -63,6 +63,9 @@ namespace DimensionBrawl.Player
         private bool actionEnabledHere;
         private bool queued;
         private bool cinematicInputLocked;
+        private InputAction subscribedSummonInputAction;
+        private InputAction keyboardFallbackAction;
+        private Coroutine feedbackRoutine;
         private int lastSpentTier;
         private int totalUseCount;
         private float blockedHintTimer;
@@ -147,24 +150,19 @@ namespace DimensionBrawl.Player
         private void OnEnable()
         {
             actionEnabledHere = EnableActionIfNeeded(summonAction);
+            SubscribeInput();
             Executor.Prewarm();
+            EnsureFeedbackRoutine();
         }
 
         private void OnDisable()
         {
+            UnsubscribeInput();
             queued = false;
+            feedbackRoutine = null;
             executor?.Detach();
             DisableActionIfOwned(summonAction, actionEnabledHere);
             actionEnabledHere = false;
-        }
-
-        private void Update()
-        {
-            TickFeedback(Time.deltaTime);
-            if (ReadSummonPressed())
-            {
-                TryUseSummon();
-            }
         }
 
         public void ConfigureReferences(
@@ -202,9 +200,21 @@ namespace DimensionBrawl.Player
 
         public void ConfigureSlot(string newSlotActionName, Key newKeyboardTestKey, Vector2 newLaneOffset)
         {
+            bool refreshInput = isActiveAndEnabled
+                && (keyboardTestKey != newKeyboardTestKey
+                    || !string.Equals(slotActionName, newSlotActionName, StringComparison.Ordinal));
+            if (refreshInput)
+            {
+                UnsubscribeInput();
+            }
+
             slotActionName = string.IsNullOrWhiteSpace(newSlotActionName) ? slotActionName : newSlotActionName;
             keyboardTestKey = newKeyboardTestKey;
             laneOffset = newLaneOffset;
+            if (refreshInput)
+            {
+                SubscribeInput();
+            }
         }
 
         public void ConfigureSummonActionProfile(SummonSlotActionProfile newSummonActionProfile)
@@ -233,6 +243,7 @@ namespace DimensionBrawl.Player
         {
             slotCooldownSeconds = Mathf.Max(0f, cooldownSeconds);
             slotCooldownRemaining = Mathf.Min(slotCooldownRemaining, slotCooldownSeconds);
+            EnsureFeedbackRoutine();
         }
 
         public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)
@@ -255,6 +266,7 @@ namespace DimensionBrawl.Player
             }
 
             queued = true;
+            ConsumeQueuedSummon();
         }
 
         public void SetCinematicInputLocked(bool locked)
@@ -313,6 +325,7 @@ namespace DimensionBrawl.Player
             lastPressureScreenInterceptTier = 0;
             blockedHintTimer = 0f;
             lastBlockedReason = null;
+            EnsureFeedbackRoutine();
             Executor.FireTier(lastSpentTier, tierSettings);
             SummonUsed?.Invoke(this, lastSpentTier);
             return true;
@@ -398,29 +411,70 @@ namespace DimensionBrawl.Player
             return true;
         }
 
-        private bool ReadSummonPressed()
+        private void SubscribeInput()
         {
-            if (cinematicInputLocked)
+            InputAction action = summonAction != null ? summonAction.action : null;
+            if (action != null)
             {
-                queued = false;
-                return false;
+                subscribedSummonInputAction = action;
+                subscribedSummonInputAction.performed += HandleSummonPerformed;
+                return;
             }
 
-            bool pressed = queued;
+            if (!useKeyboardWhenActionMissing || keyboardTestKey == Key.None)
+            {
+                return;
+            }
+
+            keyboardFallbackAction = new InputAction(
+                $"{slotActionName}.KeyboardFallback",
+                InputActionType.Button,
+                $"<Keyboard>/{keyboardTestKey}");
+            keyboardFallbackAction.performed += HandleSummonPerformed;
+            keyboardFallbackAction.Enable();
+        }
+
+        private void UnsubscribeInput()
+        {
+            if (subscribedSummonInputAction != null)
+            {
+                subscribedSummonInputAction.performed -= HandleSummonPerformed;
+                subscribedSummonInputAction = null;
+            }
+
+            if (keyboardFallbackAction == null)
+            {
+                return;
+            }
+
+            keyboardFallbackAction.performed -= HandleSummonPerformed;
+            keyboardFallbackAction.Disable();
+            keyboardFallbackAction.Dispose();
+            keyboardFallbackAction = null;
+        }
+
+        private void HandleSummonPerformed(InputAction.CallbackContext context)
+        {
+            if (!CanAcceptQueuedInput())
+            {
+                return;
+            }
+
+            TryUseSummon();
+        }
+
+        private void ConsumeQueuedSummon()
+        {
+            if (!queued)
+            {
+                return;
+            }
+
             queued = false;
-            if (summonAction != null && summonAction.action != null)
+            if (CanAcceptQueuedInput())
             {
-                pressed |= summonAction.action.WasPressedThisFrame();
+                TryUseSummon();
             }
-
-            if (pressed || !useKeyboardWhenActionMissing || !IsActionMissing(summonAction))
-            {
-                return pressed;
-            }
-
-            return Keyboard.current != null
-                && Keyboard.current[keyboardTestKey] != null
-                && Keyboard.current[keyboardTestKey].wasPressedThisFrame;
         }
 
         private bool CanAcceptQueuedInput()
@@ -432,9 +486,33 @@ namespace DimensionBrawl.Player
         {
             lastBlockedReason = string.IsNullOrWhiteSpace(reason) ? "Unavailable" : reason;
             blockedHintTimer = useBlockedHintSeconds;
+            EnsureFeedbackRoutine();
         }
 
-        private void TickFeedback(float deltaTime)
+        private void EnsureFeedbackRoutine()
+        {
+            if (!isActiveAndEnabled
+                || feedbackRoutine != null
+                || (slotCooldownRemaining <= 0f && blockedHintTimer <= 0f))
+            {
+                return;
+            }
+
+            feedbackRoutine = StartCoroutine(RunFeedbackTimers());
+        }
+
+        private IEnumerator RunFeedbackTimers()
+        {
+            while (slotCooldownRemaining > 0f || blockedHintTimer > 0f)
+            {
+                yield return null;
+                TickFeedback(Time.deltaTime, Time.unscaledDeltaTime);
+            }
+
+            feedbackRoutine = null;
+        }
+
+        private void TickFeedback(float deltaTime, float unscaledDeltaTime)
         {
             if (slotCooldownRemaining > 0f)
             {
@@ -446,7 +524,7 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - deltaTime);
+            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - unscaledDeltaTime);
             if (blockedHintTimer <= 0f)
             {
                 lastBlockedReason = null;
@@ -472,9 +550,5 @@ namespace DimensionBrawl.Player
             }
         }
 
-        private static bool IsActionMissing(InputActionReference actionReference)
-        {
-            return actionReference == null || actionReference.action == null;
-        }
     }
 }

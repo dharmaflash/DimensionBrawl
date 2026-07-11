@@ -70,6 +70,9 @@ namespace DimensionBrawl.UI
         private GUIStyle smallButtonStyle;
         private Texture2D solidTexture;
         private float cachedStyleScale = -1f;
+        private BossBarragePocketReviewOwner subscribedPocketReviewOwner;
+        private InputAction pauseAction;
+        private bool resultControlsLocked;
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
         public BossBarrageLaneReviewHud ReviewHud => reviewHud;
@@ -96,11 +99,17 @@ namespace DimensionBrawl.UI
             BossBarrageLaneReviewMobileHud newMobileHud,
             ActionScreenCuePresenter newScreenCuePresenter)
         {
+            UnsubscribePocketResult();
             pocketReviewOwner = newPocketReviewOwner;
             reviewHud = newReviewHud;
             mobileHud = newMobileHud;
             screenCuePresenter = newScreenCuePresenter;
             CaptureSettings();
+            if (isActiveAndEnabled)
+            {
+                SubscribePocketResult();
+                RefreshOverlayState();
+            }
         }
 
         public void ConfigureInputLocks(params Behaviour[] newInputLockBehaviours)
@@ -190,16 +199,27 @@ namespace DimensionBrawl.UI
             CaptureSettings();
         }
 
+        private void OnEnable()
+        {
+            SubscribePocketResult();
+            EnablePauseInput();
+            RefreshOverlayState();
+        }
+
         private void OnDisable()
         {
+            DisablePauseInput();
+            UnsubscribePocketResult();
+            resultControlsLocked = false;
             RestoreTimeScale();
             RestoreGameplayControls();
         }
 
-        private void Update()
+        private void RefreshOverlayState()
         {
             if (!showOverlay)
             {
+                resultControlsLocked = false;
                 RestoreTimeScale();
                 RestoreGameplayControls();
                 return;
@@ -209,26 +229,26 @@ namespace DimensionBrawl.UI
             {
                 RestoreTimeScale();
                 mode = OverlayMode.None;
-                DisableGameplayControls();
+                if (!resultControlsLocked)
+                {
+                    DisableGameplayControls();
+                    resultControlsLocked = true;
+                }
+
                 return;
             }
 
-            if (WasPausePressed())
+            if (resultControlsLocked)
             {
-                if (mode == OverlayMode.None)
-                {
-                    OpenPauseMenu();
-                }
-                else
-                {
-                    Resume();
-                }
+                resultControlsLocked = false;
+                RestoreGameplayControls();
             }
         }
 
         private void OnGUI()
         {
-            if (!showOverlay)
+            bool hasResult = HasResult;
+            if (!showOverlay || (!hasResult && mode == OverlayMode.None && !drawIdleButton))
             {
                 return;
             }
@@ -238,7 +258,7 @@ namespace DimensionBrawl.UI
             int previousDepth = GUI.depth;
             GUI.depth = -2200;
 
-            if (HasResult)
+            if (hasResult)
             {
                 DrawResultOverlay();
             }
@@ -261,15 +281,84 @@ namespace DimensionBrawl.UI
             GUI.depth = previousDepth;
         }
 
-        private bool WasPausePressed()
+        private void SubscribePocketResult()
         {
-            if (pauseKey == Key.None || Keyboard.current == null)
+            if (subscribedPocketReviewOwner == pocketReviewOwner)
             {
-                return false;
+                return;
             }
 
-            var key = Keyboard.current[pauseKey];
-            return key != null && key.wasPressedThisFrame;
+            UnsubscribePocketResult();
+            subscribedPocketReviewOwner = pocketReviewOwner;
+            if (subscribedPocketReviewOwner == null)
+            {
+                return;
+            }
+
+            subscribedPocketReviewOwner.PocketCleared += HandlePocketResult;
+            subscribedPocketReviewOwner.PocketFailed += HandlePocketResult;
+        }
+
+        private void UnsubscribePocketResult()
+        {
+            if (subscribedPocketReviewOwner == null)
+            {
+                return;
+            }
+
+            subscribedPocketReviewOwner.PocketCleared -= HandlePocketResult;
+            subscribedPocketReviewOwner.PocketFailed -= HandlePocketResult;
+            subscribedPocketReviewOwner = null;
+        }
+
+        private void HandlePocketResult()
+        {
+            RefreshOverlayState();
+        }
+
+        private void EnablePauseInput()
+        {
+            if (pauseAction != null || pauseKey == Key.None)
+            {
+                return;
+            }
+
+            pauseAction = new InputAction(
+                "BossBarrageReviewPause",
+                InputActionType.Button,
+                $"<Keyboard>/{pauseKey}");
+            pauseAction.performed += HandlePausePerformed;
+            pauseAction.Enable();
+        }
+
+        private void DisablePauseInput()
+        {
+            if (pauseAction == null)
+            {
+                return;
+            }
+
+            pauseAction.performed -= HandlePausePerformed;
+            pauseAction.Disable();
+            pauseAction.Dispose();
+            pauseAction = null;
+        }
+
+        private void HandlePausePerformed(InputAction.CallbackContext context)
+        {
+            if (!showOverlay || HasResult)
+            {
+                return;
+            }
+
+            if (mode == OverlayMode.None)
+            {
+                OpenPauseMenu();
+            }
+            else
+            {
+                Resume();
+            }
         }
 
         private void DrawPauseButton()

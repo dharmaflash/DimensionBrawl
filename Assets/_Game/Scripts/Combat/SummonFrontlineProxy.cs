@@ -37,7 +37,20 @@ namespace DimensionBrawl.Combat
     [DisallowMultipleComponent]
     public sealed class SummonFrontlineProxy : MonoBehaviour
     {
+        private readonly struct ColliderProxyBinding
+        {
+            public ColliderProxyBinding(Collider collider, SummonFrontlineProxy proxy)
+            {
+                Collider = collider;
+                Proxy = proxy;
+            }
+
+            public Collider Collider { get; }
+            public SummonFrontlineProxy Proxy { get; }
+        }
+
         private static readonly List<SummonFrontlineProxy> ActiveRegistry = new List<SummonFrontlineProxy>(16);
+        private static readonly Dictionary<int, ColliderProxyBinding> ColliderProxyBindings = new(64);
 
         [SerializeField] private Transform projectileOrigin;
         [SerializeField] private SummonPressureScreen pressureScreen;
@@ -121,6 +134,43 @@ namespace DimensionBrawl.Combat
                 CompactActiveRegistry();
                 return ActiveRegistry.Count;
             }
+        }
+
+        public static int CachedColliderBindingCount => ColliderProxyBindings.Count;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveRegistry.Clear();
+            ColliderProxyBindings.Clear();
+        }
+
+        public static SummonFrontlineProxy ResolveFromCollider(Collider collider)
+        {
+            if (collider == null)
+            {
+                return null;
+            }
+
+            int id = collider.GetInstanceID();
+            if (ColliderProxyBindings.TryGetValue(id, out ColliderProxyBinding binding)
+                && binding.Collider == collider
+                && binding.Proxy != null)
+            {
+                return binding.Proxy;
+            }
+
+            SummonFrontlineProxy proxy = collider.GetComponentInParent<SummonFrontlineProxy>();
+            if (proxy != null)
+            {
+                ColliderProxyBindings[id] = new ColliderProxyBinding(collider, proxy);
+            }
+            else
+            {
+                ColliderProxyBindings.Remove(id);
+            }
+
+            return proxy;
         }
 
         private void Awake()

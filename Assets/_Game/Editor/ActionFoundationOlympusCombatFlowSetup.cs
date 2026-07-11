@@ -12,6 +12,7 @@ using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Rendering.Universal;
@@ -27,6 +28,11 @@ namespace DimensionBrawl.Editor
         private const string CombatStartAnchorName = "Gameplay_CombatStartAnchor";
         private const string TimelineDirectorName = "IntroGatePodReview_TimelineDirector";
         private const string PlayerRevealHandoffCameraName = "CM_03_src_c10_player_reveal_rina_quest_start";
+        private const string PlayerRevealCameraRigRootName = "IntroGatePodReview_PlayerRevealCameraRig";
+        private const string CutsceneCinemachineShotsRootName = "IntroGatePodReview_CinemachineShots";
+        private const string BombingPreludeRootName = "IntroGatePodBombingPrelude_Olympus";
+        private const string CutsceneCueDirectorRootName = "IntroGatePodReview_CueDirector";
+        private const string FirstPersonRendererMaskRootName = "IntroGatePodReview_FirstPersonRendererMask";
         private const string RevealShotId = "src_c10_player_reveal_rina_quest_start";
         private const string RevealAnimationTrackName = "Player Reveal Rina Camera Motion";
         private const string RevealHandoffMatchClipName = "AC_OlympusIntro_RevealHandoffCombatMatch";
@@ -185,6 +191,128 @@ namespace DimensionBrawl.Editor
         public static void RunBatchApplyOlympusCorridorCombatFlow()
         {
             EnsureOlympusCorridorCombatFlowAppliedForBatch();
+        }
+
+        public static void RunBatchNormalizeOlympusCorridorCombatHud()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            GameObject packageRoot = RequireObjectInScene(scene, CombatPackageRootName);
+            NormalizeCombatHudPrefabSkin(packageRoot);
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene, StageScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save {StageScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
+        public static void RunBatchRepairCurrentOlympusCorridorCombatBindings()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            GameObject packageRoot = RequireObjectInScene(scene, CombatPackageRootName);
+            GameObject flowRoot = RequireObjectInScene(scene, FlowRootName);
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    flowRoot,
+                    "Olympus corridor combat flow controller");
+
+            GameObject boundsRoot = FindDirectChildObject(packageRoot.transform, CorridorBoundsRootName);
+            if (boundsRoot == null)
+            {
+                boundsRoot = CreateCorridorBounds(packageRoot.transform);
+            }
+
+            Transform corridorStartMarker =
+                RequireObjectInScene(scene, CorridorCombatStartMarkerName).transform;
+            DisableMarkerColliders(corridorStartMarker);
+            GameObject stairTrigger = FindDirectChildObject(packageRoot.transform, StairTriggerName);
+            if (stairTrigger == null)
+            {
+                stairTrigger = CreateStairTrigger(packageRoot.transform, corridorStartMarker);
+            }
+
+            SphereCollider stairTriggerCollider = stairTrigger.GetComponent<SphereCollider>();
+            if (stairTriggerCollider == null)
+            {
+                stairTriggerCollider = stairTrigger.AddComponent<SphereCollider>();
+            }
+
+            stairTriggerCollider.isTrigger = true;
+            stairTriggerCollider.radius = 2.75f;
+            EditorUtility.SetDirty(stairTriggerCollider);
+
+            GameObject introSwordGateRoot =
+                RequireChildObject(packageRoot.transform, IntroSwordGateRootName);
+            GameObject stairEntryAnchor =
+                RequireChildObject(introSwordGateRoot.transform, StairEntryAnchorName);
+            GameObject traversalSupport =
+                FindDirectChildObject(introSwordGateRoot.transform, StairTraversalSupportName);
+            if (traversalSupport == null)
+            {
+                CreateStairTraversalSupport(
+                    introSwordGateRoot.transform,
+                    stairEntryAnchor.transform.position,
+                    corridorStartMarker.position);
+            }
+
+            GameObject stageClearExit = FindRootOrDescendant(scene, StageClearExitAnchorName);
+            Vector3 stageClearExitPosition =
+                packageRoot.transform.TransformPoint(new Vector3(0f, 0f, 60f));
+            stageClearExitPosition.y = corridorStartMarker.position.y;
+            if (stageClearExit == null)
+            {
+                stageClearExit = CreateRoot(
+                    scene,
+                    StageClearExitAnchorName,
+                    stageClearExitPosition,
+                    packageRoot.transform.rotation);
+            }
+            else
+            {
+                stageClearExit.transform.SetPositionAndRotation(
+                    stageClearExitPosition,
+                    packageRoot.transform.rotation);
+                EditorUtility.SetDirty(stageClearExit.transform);
+            }
+
+            GameObject bossRoot = RequireChildObject(packageRoot.transform, SourceBossRootName);
+            GameObject closeThreatRoot = RequireChildObject(packageRoot.transform, SourceCloseThreatRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "canonical boss health");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(closeThreatRoot, "canonical close threat health");
+            ActionCameraController cameraController =
+                RequireComponent<ActionCameraController>(
+                    RequireChildObject(packageRoot.transform, CombatCameraName),
+                    "combat action camera");
+            ConfigureCenteredCombatCamera(cameraController, packageRoot.transform);
+
+            SetObjectReferenceArray(
+                flowController,
+                "corridorBoundsRoots",
+                new UnityEngine.Object[] { boundsRoot });
+            SetObjectReferenceArray(
+                flowController,
+                "corridorTargets",
+                new UnityEngine.Object[] { closeThreatHealth, bossHealth });
+            SetObjectReferenceArray(
+                flowController,
+                "corridorClearTargets",
+                new UnityEngine.Object[] { closeThreatHealth });
+            SetObjectReference(flowController, "stairTriggerCenter", stairTrigger.transform);
+            SetFloat(flowController, "stairTriggerRadius", stairTriggerCollider.radius);
+            boundsRoot.SetActive(false);
+            EditorUtility.SetDirty(boundsRoot);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene, StageScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save {StageScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
         }
 
         public static void RunBatchPlayModeValidateOlympusCorridorCombatFlow()
@@ -1202,6 +1330,7 @@ namespace DimensionBrawl.Editor
             List<GameObject> importedRoots = MoveCanonicalCombatRoots(stageScene);
             MapImportedRoots(importedRoots, packageRoot.transform, combatStartAnchor);
             RenameCombatCamera(importedRoots);
+            NormalizeCombatHudPrefabSkin(packageRoot);
 
             GameObject playerRoot = RequireChildObject(packageRoot.transform, SourcePlayerRootName);
             PlayerMovementController player = RequireComponent<PlayerMovementController>(playerRoot, "combat player movement");
@@ -2374,12 +2503,18 @@ namespace DimensionBrawl.Editor
         private static Behaviour[] FindCutsceneBehavioursToDisableOnHandoff(Scene scene)
         {
             var behaviours = new List<Behaviour>();
-            IntroGatePodInvasionBridgeCue invasionBridge =
-                FindObjectByName<IntroGatePodInvasionBridgeCue>(scene, InvasionBridgeRootName);
-            if (invasionBridge != null)
-            {
-                behaviours.Add(invasionBridge);
-            }
+            AddUniqueBehaviour(
+                behaviours,
+                FindObjectByName<IntroGatePodInvasionBridgeCue>(scene, InvasionBridgeRootName));
+            AddUniqueBehaviour(
+                behaviours,
+                FindObjectByName<IntroGatePodCutsceneCueDirector>(scene, CutsceneCueDirectorRootName));
+            AddUniqueBehaviour(
+                behaviours,
+                FindObjectByName<IntroGatePodFirstPersonRendererMask>(scene, FirstPersonRendererMaskRootName));
+            AddUniqueBehaviour(
+                behaviours,
+                FindObjectByName<CinemachineBrain>(scene, SourceMainCameraRootName));
 
             return behaviours.ToArray();
         }
@@ -2394,12 +2529,43 @@ namespace DimensionBrawl.Editor
             }
 
             GameObject firstPersonResidualVisual = FindRootOrDescendant(scene, FirstPersonResidualVisualRootName);
-            if (firstPersonResidualVisual != null)
-            {
-                roots.Add(firstPersonResidualVisual);
-            }
+            AddUniqueRoot(roots, firstPersonResidualVisual);
+            AddUniqueRoot(roots, FindRootOrDescendant(scene, PlayerRevealCameraRigRootName));
+            AddUniqueRoot(roots, FindRootOrDescendant(scene, CutsceneCinemachineShotsRootName));
+            AddUniqueRoot(roots, FindRootOrDescendant(scene, BombingPreludeRootName));
 
             return roots.ToArray();
+        }
+
+        private static void AddUniqueBehaviour(List<Behaviour> behaviours, Behaviour behaviour)
+        {
+            if (behaviour != null && !behaviours.Contains(behaviour))
+            {
+                behaviours.Add(behaviour);
+            }
+        }
+
+        private static void AddUniqueRoot(List<GameObject> roots, GameObject root)
+        {
+            if (root != null && !roots.Contains(root))
+            {
+                roots.Add(root);
+            }
+        }
+
+        private static void NormalizeCombatHudPrefabSkin(GameObject searchRoot)
+        {
+            CombatHudPresenter presenter = searchRoot != null
+                ? searchRoot.GetComponentInChildren<CombatHudPresenter>(includeInactive: true)
+                : null;
+            if (presenter == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing canonical combat HUD presenter under {searchRoot?.name ?? "<null>"}.");
+            }
+
+            ActionFoundationBossBarrageLaneReviewSetup.NormalizeCombatHudInstanceToPrefabSkin(
+                presenter.gameObject);
         }
 
         private static void ApplyAuthoringInitialState(
@@ -5825,6 +5991,40 @@ namespace DimensionBrawl.Editor
             SerializedProperty property = serialized.FindProperty(propertyName)
                 ?? throw new InvalidOperationException($"{target.name} has no serialized property `{propertyName}`.");
             property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetObjectReferenceArray(
+            UnityEngine.Object target,
+            string propertyName,
+            IReadOnlyList<UnityEngine.Object> values)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName)
+                ?? throw new InvalidOperationException($"{target.name} has no serialized property `{propertyName}`.");
+            if (!property.isArray)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} is not a serialized array.");
+            }
+
+            property.arraySize = values?.Count ?? 0;
+            for (int i = 0; i < property.arraySize; i++)
+            {
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName)
+                ?? throw new InvalidOperationException($"{target.name} has no serialized property `{propertyName}`.");
+            property.floatValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
         }

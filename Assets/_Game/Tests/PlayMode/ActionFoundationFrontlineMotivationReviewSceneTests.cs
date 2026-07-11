@@ -68,6 +68,27 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.AreEqual(ScenePath, SceneManager.GetActiveScene().path);
+            BossBarrageLaneReviewMobileHud legacyMobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "legacy mobile HUD");
+            Assert.IsFalse(legacyMobileHud.enabled);
+            Assert.IsFalse(GetBool(legacyMobileHud, "showHud"));
+            Assert.IsFalse(GetBool(legacyMobileHud, "drawHudVisuals"));
+            Assert.AreEqual(
+                5,
+                ActionFoundationArenaAnimationScheduler.RegisteredTransformMotionCount,
+                "Frontline arena transform motions should share the runtime scheduler.");
+            Assert.AreEqual(
+                31,
+                ActionFoundationArenaAnimationScheduler.RegisteredFloatingShapeCount,
+                "Frontline floating shapes should share the runtime scheduler.");
+            Assert.AreEqual(
+                7,
+                ActionFoundationArenaAnimationScheduler.RegisteredInfluenceDriverCount,
+                "Frontline influence drivers should share the runtime scheduler.");
+            Assert.AreEqual(
+                1,
+                Resources.FindObjectsOfTypeAll<ActionFoundationArenaAnimationScheduler>().Length,
+                "Frontline arena animation should use one LateUpdate scheduler.");
 
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);

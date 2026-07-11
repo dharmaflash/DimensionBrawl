@@ -47,7 +47,14 @@ namespace DimensionBrawl.Presentation
 
         private readonly List<Renderer> outlineRenderers = new List<Renderer>();
         private readonly List<GameObject> outlineObjects = new List<GameObject>();
+        private readonly List<Collider> targetBoundsColliders = new List<Collider>();
         private Transform visualRoot;
+        private Transform baseRingTransform;
+        private Transform topRingTransform;
+        private Transform frontRibbonTransform;
+        private Transform backRibbonTransform;
+        private Transform leftRibbonTransform;
+        private Transform rightRibbonTransform;
         private Renderer[] renderers;
         private Mesh ringMesh;
         private Mesh verticalRibbonMesh;
@@ -56,6 +63,8 @@ namespace DimensionBrawl.Presentation
         private MaterialPropertyBlock propertyBlock;
         private CombatHealth presentedTarget;
         private CombatHealth outlinedTarget;
+        private CombatHealth boundsTarget;
+        private bool targetBoundsCached;
 
         public PlayerLockTargetController LockTargetController => lockTargetController;
 
@@ -128,35 +137,32 @@ namespace DimensionBrawl.Presentation
             visualRoot.rotation = Quaternion.identity;
             visualRoot.localScale = Vector3.one;
 
-            Transform baseRing = visualRoot.Find("LockBaseRing");
-            Transform topRing = visualRoot.Find("LockTopRing");
-            Transform frontRibbon = visualRoot.Find("LockRibbonFront");
-            Transform backRibbon = visualRoot.Find("LockRibbonBack");
-            Transform leftRibbon = visualRoot.Find("LockRibbonLeft");
-            Transform rightRibbon = visualRoot.Find("LockRibbonRight");
-            if (baseRing != null)
+            if (baseRingTransform != null)
             {
-                baseRing.localPosition = Vector3.zero;
-                baseRing.localRotation = Quaternion.Euler(0f, Time.time * spinDegreesPerSecond, 0f);
-                baseRing.localScale = new Vector3(resolvedRadius, 1f, resolvedRadius);
+                baseRingTransform.localPosition = Vector3.zero;
+                baseRingTransform.localRotation = Quaternion.Euler(0f, Time.time * spinDegreesPerSecond, 0f);
+                baseRingTransform.localScale = new Vector3(resolvedRadius, 1f, resolvedRadius);
             }
 
-            if (topRing != null)
+            if (topRingTransform != null)
             {
-                topRing.localPosition = Vector3.up * height;
-                topRing.localRotation = Quaternion.Euler(0f, -Time.time * spinDegreesPerSecond * 0.58f, 0f);
-                topRing.localScale = new Vector3(resolvedRadius * 0.74f, 1f, resolvedRadius * 0.74f);
-                topRing.gameObject.SetActive(showTopRing);
+                topRingTransform.localPosition = Vector3.up * height;
+                topRingTransform.localRotation = Quaternion.Euler(0f, -Time.time * spinDegreesPerSecond * 0.58f, 0f);
+                topRingTransform.localScale = new Vector3(resolvedRadius * 0.74f, 1f, resolvedRadius * 0.74f);
+                if (topRingTransform.gameObject.activeSelf != showTopRing)
+                {
+                    topRingTransform.gameObject.SetActive(showTopRing);
+                }
             }
 
-            PositionRibbon(frontRibbon, new Vector3(0f, 0f, resolvedRadius), Quaternion.identity, height);
-            PositionRibbon(backRibbon, new Vector3(0f, 0f, -resolvedRadius), Quaternion.Euler(0f, 180f, 0f), height);
-            PositionRibbon(leftRibbon, new Vector3(-resolvedRadius, 0f, 0f), Quaternion.Euler(0f, -90f, 0f), height);
-            PositionRibbon(rightRibbon, new Vector3(resolvedRadius, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), height);
-            SetRibbonActive(frontRibbon);
-            SetRibbonActive(backRibbon);
-            SetRibbonActive(leftRibbon);
-            SetRibbonActive(rightRibbon);
+            PositionRibbon(frontRibbonTransform, new Vector3(0f, 0f, resolvedRadius), Quaternion.identity, height);
+            PositionRibbon(backRibbonTransform, new Vector3(0f, 0f, -resolvedRadius), Quaternion.Euler(0f, 180f, 0f), height);
+            PositionRibbon(leftRibbonTransform, new Vector3(-resolvedRadius, 0f, 0f), Quaternion.Euler(0f, -90f, 0f), height);
+            PositionRibbon(rightRibbonTransform, new Vector3(resolvedRadius, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), height);
+            SetRibbonActive(frontRibbonTransform);
+            SetRibbonActive(backRibbonTransform);
+            SetRibbonActive(leftRibbonTransform);
+            SetRibbonActive(rightRibbonTransform);
 
             ApplyMaterialProperties();
             ApplyOutlineProperties();
@@ -273,6 +279,12 @@ namespace DimensionBrawl.Presentation
             Renderer left = EnsureMeshRenderer("LockRibbonLeft", verticalRibbonMesh, resolvedFresnelMaterial);
             Renderer right = EnsureMeshRenderer("LockRibbonRight", verticalRibbonMesh, resolvedFresnelMaterial);
             renderers = new[] { baseRing, topRing, front, back, left, right };
+            baseRingTransform = baseRing != null ? baseRing.transform : null;
+            topRingTransform = topRing != null ? topRing.transform : null;
+            frontRibbonTransform = front != null ? front.transform : null;
+            backRibbonTransform = back != null ? back.transform : null;
+            leftRibbonTransform = left != null ? left.transform : null;
+            rightRibbonTransform = right != null ? right.transform : null;
         }
 
         private void EnsureOutlineVisuals(CombatHealth targetHealth)
@@ -481,16 +493,19 @@ namespace DimensionBrawl.Presentation
                 return new Bounds(transform.position + Vector3.up, Vector3.one);
             }
 
-            Collider[] colliders = targetHealth.GetComponentsInChildren<Collider>();
+            if (!targetBoundsCached || boundsTarget != targetHealth)
+            {
+                CacheTargetBoundsColliders(targetHealth);
+            }
+
             Bounds bounds = default;
             bool hasBounds = false;
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < targetBoundsColliders.Count; i++)
             {
-                Collider collider = colliders[i];
+                Collider collider = targetBoundsColliders[i];
                 if (collider == null
                     || !collider.enabled
-                    || !collider.gameObject.activeInHierarchy
-                    || collider.GetComponentInParent<SummonPressureScreen>() != null)
+                    || !collider.gameObject.activeInHierarchy)
                 {
                     continue;
                 }
@@ -512,6 +527,27 @@ namespace DimensionBrawl.Presentation
             }
 
             return new Bounds(targetHealth.transform.position + Vector3.up * fallbackHeight, new Vector3(1f, minimumHeight, 1f));
+        }
+
+        private void CacheTargetBoundsColliders(CombatHealth targetHealth)
+        {
+            targetBoundsColliders.Clear();
+            boundsTarget = targetHealth;
+            targetBoundsCached = true;
+            if (targetHealth == null)
+            {
+                return;
+            }
+
+            targetHealth.GetComponentsInChildren(includeInactive: false, targetBoundsColliders);
+            for (int i = targetBoundsColliders.Count - 1; i >= 0; i--)
+            {
+                Collider collider = targetBoundsColliders[i];
+                if (collider == null || SummonPressureScreen.ResolveFromCollider(collider) != null)
+                {
+                    targetBoundsColliders.RemoveAt(i);
+                }
+            }
         }
 
         private float fallbackHeight => Mathf.Max(0.5f, minimumHeight * 0.5f);

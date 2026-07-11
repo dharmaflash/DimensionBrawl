@@ -19,7 +19,10 @@ namespace DimensionBrawl.Editor
 
         private const string OldMaintenanceVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string SourceModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
-        private const string SourceVariantPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string SourceVariantPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
+        private const string ImportedCommandoPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string ImportedCommonWeaponRoot = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/";
+        private const string SourceBodyMaterialPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Materials/M_SciFiSoldier_01.mat";
         private const string SourceAssaultRifleModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/FBX Files/SM_SciFiAssaultRifle_01.FBX";
         private const string SourceAssaultRifleMaterialPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/Materials/M_AssaultRifle.mat";
         private const string SourceAnimationRoot = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Animations";
@@ -67,6 +70,7 @@ namespace DimensionBrawl.Editor
 
             ConfigureModelImporter(ModelPath);
             ConfigureWeaponModelImporter(AssaultRifleModelPath);
+            EnsureCanonicalCommandoSourcePrefab();
             Avatar avatar = LoadAvatar(ModelPath);
             ConfigureAnimationImporter(IdleClipPath, "S01_IdleAimAssaultRifle", true, avatar);
             ConfigureAnimationImporter(RunClipPath, "S01_RunForwardAssaultRifle", true, avatar);
@@ -203,6 +207,213 @@ namespace DimensionBrawl.Editor
             PromoteWeaponMaterial(sourceMaterial);
         }
 
+        private static void EnsureCanonicalCommandoSourcePrefab()
+        {
+            EnsureFolder("Assets/_Game/Prefabs/Enemies/ActionFoundation");
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(SourceVariantPrefabPath) == null
+                && !AssetDatabase.CopyAsset(ImportedCommandoPrefabPath, SourceVariantPrefabPath))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to promote Commando source prefab from {ImportedCommandoPrefabPath}.");
+            }
+
+            Material bodyMaterial = PromoteMaterial(
+                AssetDatabase.LoadAssetAtPath<Material>(SourceBodyMaterialPath));
+            Material weaponMaterial = PromoteWeaponMaterial(
+                AssetDatabase.LoadAssetAtPath<Material>(SourceAssaultRifleMaterialPath));
+            GameObject canonicalWeaponAsset = AssetDatabase.LoadAssetAtPath<GameObject>(AssaultRifleModelPath);
+            if (bodyMaterial == null || weaponMaterial == null || canonicalWeaponAsset == null)
+            {
+                throw new InvalidOperationException("Canonical Commando visual dependencies are missing.");
+            }
+
+            GameObject root = PrefabUtility.LoadPrefabContents(SourceVariantPrefabPath);
+            try
+            {
+                RemapCommandoBodyMeshes(root);
+                Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+                var importedWeaponRoots = new List<GameObject>();
+                for (int i = 0; i < transforms.Length; i++)
+                {
+                    GameObject candidate = transforms[i].gameObject;
+                    if (!PrefabUtility.IsAnyPrefabInstanceRoot(candidate))
+                    {
+                        continue;
+                    }
+
+                    string sourcePath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(candidate)
+                        .Replace('\\', '/');
+                    if (sourcePath.StartsWith(ImportedCommonWeaponRoot, StringComparison.Ordinal))
+                    {
+                        importedWeaponRoots.Add(candidate);
+                    }
+                }
+
+                GameObject canonicalWeapon = null;
+                for (int i = 0; i < importedWeaponRoots.Count; i++)
+                {
+                    GameObject importedWeapon = importedWeaponRoots[i];
+                    bool keepAsAssaultRifle = string.Equals(
+                        importedWeapon.name,
+                        "SM_SciFiAssaultRifle_01",
+                        StringComparison.Ordinal);
+                    if (keepAsAssaultRifle && canonicalWeapon == null)
+                    {
+                        Transform importedTransform = importedWeapon.transform;
+                        canonicalWeapon = PrefabUtility.InstantiatePrefab(
+                            canonicalWeaponAsset,
+                            importedTransform.parent) as GameObject;
+                        if (canonicalWeapon == null)
+                        {
+                            throw new InvalidOperationException("Failed to instantiate the canonical Commando assault rifle.");
+                        }
+
+                        canonicalWeapon.name = importedWeapon.name;
+                        canonicalWeapon.transform.localPosition = importedTransform.localPosition;
+                        canonicalWeapon.transform.localRotation = importedTransform.localRotation;
+                        canonicalWeapon.transform.localScale = importedTransform.localScale;
+                        canonicalWeapon.SetActive(importedWeapon.activeSelf);
+                    }
+
+                    UnityEngine.Object.DestroyImmediate(importedWeapon);
+                }
+
+                if (canonicalWeapon == null)
+                {
+                    Transform socket = FindDescendant(root.transform, "RefPosAssaultRifle_Action");
+                    if (socket == null)
+                    {
+                        throw new InvalidOperationException("Canonical Commando prefab is missing RefPosAssaultRifle_Action.");
+                    }
+
+                    canonicalWeapon = PrefabUtility.InstantiatePrefab(canonicalWeaponAsset, socket) as GameObject;
+                    if (canonicalWeapon == null)
+                    {
+                        throw new InvalidOperationException("Failed to attach the canonical Commando assault rifle.");
+                    }
+
+                    canonicalWeapon.name = "SM_SciFiAssaultRifle_01";
+                    canonicalWeapon.transform.localPosition = Vector3.zero;
+                    canonicalWeapon.transform.localRotation = Quaternion.identity;
+                    canonicalWeapon.transform.localScale = Vector3.one;
+                }
+
+                AssignSingleMaterial(canonicalWeapon, weaponMaterial);
+                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (!renderers[i].transform.IsChildOf(canonicalWeapon.transform))
+                    {
+                        AssignSingleMaterial(renderers[i], bodyMaterial);
+                    }
+                }
+
+                Animator[] animators = root.GetComponentsInChildren<Animator>(true);
+                Avatar avatar = LoadAvatar(ModelPath);
+                for (int i = 0; i < animators.Length; i++)
+                {
+                    animators[i].avatar = avatar;
+                    animators[i].runtimeAnimatorController = null;
+                    EditorUtility.SetDirty(animators[i]);
+                }
+
+                if (PrefabUtility.SaveAsPrefabAsset(root, SourceVariantPrefabPath) == null)
+                {
+                    throw new InvalidOperationException($"Failed to save canonical Commando prefab at {SourceVariantPrefabPath}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+
+            string[] dependencies = AssetDatabase.GetDependencies(SourceVariantPrefabPath, recursive: true);
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                if (dependencies[i].StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical Commando prefab still references imported asset {dependencies[i]}.");
+                }
+            }
+        }
+
+        private static void RemapCommandoBodyMeshes(GameObject root)
+        {
+            Dictionary<string, Mesh> promotedMeshes = AssetDatabase.LoadAllAssetsAtPath(ModelPath)
+                .OfType<Mesh>()
+                .GroupBy(mesh => mesh.name)
+                .ToDictionary(group => group.Key, group => group.First());
+            if (promotedMeshes.Count == 0)
+            {
+                throw new InvalidOperationException($"No promoted Commando meshes were found at {ModelPath}.");
+            }
+
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                Mesh sourceMesh = meshFilters[i].sharedMesh;
+                if (sourceMesh != null && IsImportedCommandoBodyMesh(sourceMesh))
+                {
+                    meshFilters[i].sharedMesh = RequirePromotedMesh(promotedMeshes, sourceMesh.name);
+                    EditorUtility.SetDirty(meshFilters[i]);
+                }
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers = root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh sourceMesh = skinnedRenderers[i].sharedMesh;
+                if (sourceMesh != null && IsImportedCommandoBodyMesh(sourceMesh))
+                {
+                    skinnedRenderers[i].sharedMesh = RequirePromotedMesh(promotedMeshes, sourceMesh.name);
+                    EditorUtility.SetDirty(skinnedRenderers[i]);
+                }
+            }
+        }
+
+        private static bool IsImportedCommandoBodyMesh(Mesh mesh)
+        {
+            string path = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+            return string.Equals(path, SourceModelPath, StringComparison.Ordinal);
+        }
+
+        private static Mesh RequirePromotedMesh(IReadOnlyDictionary<string, Mesh> promotedMeshes, string meshName)
+        {
+            if (promotedMeshes.TryGetValue(meshName, out Mesh mesh))
+            {
+                return mesh;
+            }
+
+            throw new InvalidOperationException($"Missing promoted Commando mesh {meshName} at {ModelPath}.");
+        }
+
+        private static void AssignSingleMaterial(GameObject root, Material material)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                AssignSingleMaterial(renderers[i], material);
+            }
+        }
+
+        private static void AssignSingleMaterial(Renderer renderer, Material material)
+        {
+            Material[] materials = renderer.sharedMaterials;
+            if (materials.Length == 0)
+            {
+                materials = new Material[1];
+            }
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                materials[i] = material;
+            }
+
+            renderer.sharedMaterials = materials;
+            EditorUtility.SetDirty(renderer);
+        }
+
         private static void PromoteAnimationClip(string sourceFileName, string targetPath)
         {
             EnsureFolder(AnimationRoot);
@@ -230,6 +441,7 @@ namespace DimensionBrawl.Editor
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             importer.importAnimation = false;
             importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.isReadable = false;
             importer.SaveAndReimport();
         }
 
@@ -243,6 +455,7 @@ namespace DimensionBrawl.Editor
 
             importer.importAnimation = false;
             importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.isReadable = false;
             importer.SaveAndReimport();
         }
 

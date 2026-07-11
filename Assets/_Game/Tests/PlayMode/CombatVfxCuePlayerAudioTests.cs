@@ -34,6 +34,85 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_FireBreath.prefab";
 
         [UnityTest]
+        public IEnumerator SpatialOneShotAudioPoolReusesPrewarmedSources()
+        {
+            GameObject owner = new GameObject("SpatialOneShotAudioPoolTestOwner");
+            AudioClip clip = AudioClip.Create("SpatialOneShotAudioPoolTestClip", 4410, 1, 44100, false);
+            try
+            {
+                owner.AddComponent<AudioListener>();
+                SpatialOneShotAudioPool pool = owner.AddComponent<SpatialOneShotAudioPool>();
+                int prewarmedCount = pool.PoolSize;
+                Assert.GreaterOrEqual(prewarmedCount, 2);
+
+                Assert.IsTrue(pool.Play(clip, Vector3.left, 0.5f, 1f, 0.5f, 1f, 20f, 128));
+                Assert.IsTrue(pool.Play(clip, Vector3.right, 0.5f, 1f, 0.5f, 1f, 20f, 128));
+                Assert.AreEqual(prewarmedCount, pool.PoolSize);
+                Assert.AreEqual(2, pool.ActiveCount);
+
+                yield return new WaitForSeconds(0.25f);
+                Assert.AreEqual(0, pool.ActiveCount);
+
+                Assert.IsTrue(pool.Play(clip, Vector3.zero, 0.5f, 1f, 0.5f, 1f, 20f, 128));
+                Assert.AreEqual(prewarmedCount, pool.PoolSize);
+                pool.ReleaseAll();
+                Assert.AreEqual(0, pool.ActiveCount);
+                yield return null;
+            }
+            finally
+            {
+                Object.Destroy(owner);
+                Object.Destroy(clip);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SpatialOneShotVfxPoolReusesPrewarmedEffectsAfterLifetime()
+        {
+            GameObject owner = new GameObject("SpatialOneShotVfxPoolTestOwner");
+            GameObject prefab = new GameObject("SpatialOneShotVfxPoolTestPrefab");
+            SpatialOneShotVfxPool pool = null;
+            float previousTimeScale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 1f;
+                prefab.AddComponent<ParticleSystem>();
+                prefab.SetActive(false);
+                pool = SpatialOneShotVfxPool.GetOrCreate(owner.transform);
+                pool.Prewarm(prefab, 2);
+                int prewarmedCount = pool.GetPoolSize(prefab);
+
+                pool.Play(prefab, Vector3.left, Quaternion.identity, 0.5f, 0.05f);
+                pool.Play(prefab, Vector3.right, Quaternion.identity, 0.5f, 0.05f);
+                Assert.AreEqual(2, prewarmedCount);
+                Assert.AreEqual(prewarmedCount, pool.GetPoolSize(prefab));
+                Assert.AreEqual(2, pool.GetActiveCount(prefab));
+
+                yield return new WaitForSeconds(0.08f);
+                Assert.AreEqual(0, pool.GetActiveCount(prefab));
+
+                pool.Play(prefab, Vector3.zero, Quaternion.identity, 0.5f, 0.05f);
+                Assert.AreEqual(prewarmedCount, pool.GetPoolSize(prefab));
+                Assert.AreEqual(1, pool.GetActiveCount(prefab));
+            }
+            finally
+            {
+                Time.timeScale = previousTimeScale;
+                if (pool != null)
+                {
+                    Object.Destroy(pool.gameObject);
+                }
+
+                Object.Destroy(owner);
+                Object.Destroy(prefab);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator CombatVfxCuePlayerRestartsAudioSourcesInsideCuePrefab()
         {
             GameObject owner = new GameObject("CombatVfxCuePlayerAudioTestOwner");

@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.Tests
 {
@@ -35,6 +36,89 @@ namespace DimensionBrawl.Tests
         {
             Time.timeScale = 1f;
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ReviewSceneRendersVisibleBossHudOverlay()
+        {
+            yield return null;
+
+            GameObject bossHudRoot = GameObject.Find("BossHudRoot");
+            Assert.IsNotNull(bossHudRoot, "The authored combat HUD should expose a dedicated boss presentation root.");
+            Assert.IsTrue(bossHudRoot.activeInHierarchy);
+            RectTransform[] sceneRects = Object.FindObjectsByType<RectTransform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            int bossHudRootCount = 0;
+            for (int i = 0; i < sceneRects.Length; i++)
+            {
+                if (sceneRects[i] != null && sceneRects[i].name == "BossHudRoot")
+                {
+                    bossHudRootCount++;
+                    Assert.AreSame(bossHudRoot.transform, sceneRects[i]);
+                }
+            }
+
+            Assert.AreEqual(1, bossHudRootCount, "The rendered scene should use only the prefab-owned boss HUD root.");
+
+            Image[] sceneImages = Object.FindObjectsByType<Image>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            int activeBossHealthFillCount = 0;
+            for (int i = 0; i < sceneImages.Length; i++)
+            {
+                if (sceneImages[i] != null
+                    && sceneImages[i].name == "BossHpFill"
+                    && sceneImages[i].gameObject.activeInHierarchy)
+                {
+                    activeBossHealthFillCount++;
+                }
+            }
+
+            Assert.AreEqual(
+                1,
+                activeBossHealthFillCount,
+                "Only the authoritative boss HP fill should render after legacy scene overrides are resolved.");
+
+            string[] requiredGraphics =
+            {
+                "BossSymbol",
+                "BossHpBackground",
+                "BossHpFill",
+                "BossCostBackground",
+                "BossCostFill"
+            };
+            for (int i = 0; i < requiredGraphics.Length; i++)
+            {
+                Transform child = bossHudRoot.transform.Find(requiredGraphics[i]);
+                Image image = child != null ? child.GetComponent<Image>() : null;
+                Assert.IsNotNull(image, $"Boss HUD graphic '{requiredGraphics[i]}' is missing its authored Image.");
+                Assert.IsTrue(child.gameObject.activeInHierarchy);
+                Assert.IsTrue(image.enabled);
+                Assert.IsNotNull(image.sprite);
+                Assert.Greater(image.color.a, 0.5f);
+            }
+
+            Camera camera = RequireGameplayCamera();
+            string capturePath = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Logs",
+                "boss_barrage_hud_smoke.png"));
+            Texture2D frame = CaptureCameraWithOverlayCanvases(camera, capturePath);
+            try
+            {
+                int redBossHealthPixels = CountBossHudHealthPixels(frame);
+                int minimumRedPixels = Mathf.Max(120, Mathf.RoundToInt(frame.width * frame.height * 0.00045f));
+                Assert.GreaterOrEqual(
+                    redBossHealthPixels,
+                    minimumRedPixels,
+                    "The final frame should contain the authored red boss HP fill in the upper-center HUD region.");
+            }
+            finally
+            {
+                Object.Destroy(frame);
+            }
         }
 
         [UnityTest]
@@ -300,6 +384,92 @@ namespace DimensionBrawl.Tests
                 camera.targetTexture = previousTargetTexture;
                 RenderTexture.active = previousActive;
                 Object.Destroy(renderTexture);
+            }
+        }
+
+        private static Texture2D CaptureCameraWithOverlayCanvases(Camera camera, string path)
+        {
+            Canvas[] canvases = Object.FindObjectsByType<Canvas>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            CanvasCaptureState[] states = new CanvasCaptureState[canvases.Length];
+            try
+            {
+                for (int i = 0; i < canvases.Length; i++)
+                {
+                    Canvas canvas = canvases[i];
+                    states[i] = new CanvasCaptureState(canvas);
+                    if (canvas == null || !canvas.isActiveAndEnabled || canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                    {
+                        continue;
+                    }
+
+                    canvas.worldCamera = camera;
+                    canvas.planeDistance = Mathf.Max(camera.nearClipPlane + 0.1f, 1f);
+                    canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                }
+
+                Canvas.ForceUpdateCanvases();
+                return CaptureCamera(camera, path);
+            }
+            finally
+            {
+                for (int i = 0; i < states.Length; i++)
+                {
+                    states[i].Restore();
+                }
+
+                Canvas.ForceUpdateCanvases();
+            }
+        }
+
+        private static int CountBossHudHealthPixels(Texture2D frame)
+        {
+            int xMin = Mathf.FloorToInt(frame.width * 0.24f);
+            int xMax = Mathf.CeilToInt(frame.width * 0.76f);
+            int yMin = Mathf.FloorToInt(frame.height * 0.68f);
+            int yMax = Mathf.CeilToInt(frame.height * 0.97f);
+            int count = 0;
+            for (int y = yMin; y < yMax; y++)
+            {
+                for (int x = xMin; x < xMax; x++)
+                {
+                    Color32 pixel = frame.GetPixel(x, y);
+                    if (pixel.r >= 190 && pixel.g <= 90 && pixel.b <= 90 && pixel.a >= 180)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private readonly struct CanvasCaptureState
+        {
+            private readonly Canvas canvas;
+            private readonly RenderMode renderMode;
+            private readonly Camera worldCamera;
+            private readonly float planeDistance;
+
+            public CanvasCaptureState(Canvas canvas)
+            {
+                this.canvas = canvas;
+                renderMode = canvas != null ? canvas.renderMode : default;
+                worldCamera = canvas != null ? canvas.worldCamera : null;
+                planeDistance = canvas != null ? canvas.planeDistance : 0f;
+            }
+
+            public void Restore()
+            {
+                if (canvas == null)
+                {
+                    return;
+                }
+
+                canvas.renderMode = renderMode;
+                canvas.worldCamera = worldCamera;
+                canvas.planeDistance = planeDistance;
             }
         }
 

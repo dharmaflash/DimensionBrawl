@@ -211,6 +211,7 @@ namespace DimensionBrawl.Enemies
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             if (selfHealth == null)
             {
                 selfHealth = GetComponent<CombatHealth>();

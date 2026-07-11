@@ -38,6 +38,23 @@ namespace DimensionBrawl.Editor
             new MaterialSpec(SourceRoot + "/Materials/Weapon/Rifle_Weapon_Style_Wood.mat", MaterialRoot + "/DB_RifleGirl_RangedFocus.mat")
         };
 
+        private static readonly ModelMaterialSpec[] RangedCandidateModelMaterialSpecs =
+        {
+            new ModelMaterialSpec("10 - Default", MaterialRoot + "/DB_RifleGirl_Body.mat"),
+            new ModelMaterialSpec("Face", MaterialRoot + "/DB_RifleGirl_Face.mat"),
+            new ModelMaterialSpec("Rifle_Body", MaterialRoot + "/DB_RifleGirl_Body.mat"),
+            new ModelMaterialSpec("Rifle_Cloth", MaterialRoot + "/DB_RifleGirl_Cloth01.mat"),
+            new ModelMaterialSpec("Rifle_Hair", MaterialRoot + "/DB_RifleGirl_Hair01.mat"),
+            new ModelMaterialSpec("Rifle_Sportswear", MaterialRoot + "/DB_RifleGirl_Sportswear.mat"),
+            new ModelMaterialSpec("Weapon_Rifle", MaterialRoot + "/DB_RifleGirl_RangedFocus.mat"),
+            new ModelMaterialSpec("eye", MaterialRoot + "/DB_RifleGirl_Eye.mat")
+        };
+
+        private static readonly ModelMaterialSpec[] RangedCandidateWeaponMaterialSpecs =
+        {
+            new ModelMaterialSpec("Weapon_Rifle", MaterialRoot + "/DB_RifleGirl_RangedFocus.mat")
+        };
+
         private static readonly AnimationSpec[] AnimationSpecs =
         {
             new AnimationSpec("Aiming/R_AimIdle.fbx", "RG_AimIdle", true),
@@ -93,6 +110,8 @@ namespace DimensionBrawl.Editor
             PromoteModel(SourceModelPath, RangedCandidateModelPath, true);
             PromoteModel(SourceWeaponModelPath, RangedCandidateWeaponModelPath, false);
             PromoteMaterials();
+            RemapModelMaterials(RangedCandidateModelPath, RangedCandidateModelMaterialSpecs);
+            RemapModelMaterials(RangedCandidateWeaponModelPath, RangedCandidateWeaponMaterialSpecs);
 
             for (int i = 0; i < AnimationSpecs.Length; i++)
             {
@@ -121,6 +140,41 @@ namespace DimensionBrawl.Editor
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 importer.humanDescription = sourceImporter.humanDescription;
+            }
+
+            importer.SaveAndReimport();
+        }
+
+        private static void RemapModelMaterials(string modelPath, ModelMaterialSpec[] materialSpecs)
+        {
+            ModelImporter importer = RequireModelImporter(modelPath);
+            var materialIdentifiers = new List<AssetImporter.SourceAssetIdentifier>();
+            foreach (KeyValuePair<AssetImporter.SourceAssetIdentifier, UnityEngine.Object> remap
+                     in importer.GetExternalObjectMap())
+            {
+                if (remap.Key.type == typeof(Material))
+                {
+                    materialIdentifiers.Add(remap.Key);
+                }
+            }
+
+            for (int i = 0; i < materialIdentifiers.Count; i++)
+            {
+                importer.RemoveRemap(materialIdentifiers[i]);
+            }
+
+            for (int i = 0; i < materialSpecs.Length; i++)
+            {
+                ModelMaterialSpec spec = materialSpecs[i];
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(spec.MaterialPath);
+                if (material == null)
+                {
+                    throw new InvalidOperationException($"Missing promoted model material at {spec.MaterialPath}.");
+                }
+
+                importer.AddRemap(
+                    new AssetImporter.SourceAssetIdentifier(typeof(Material), spec.SourceName),
+                    material);
             }
 
             importer.SaveAndReimport();
@@ -715,6 +769,18 @@ namespace DimensionBrawl.Editor
 
             public string SourcePath { get; }
             public string TargetPath { get; }
+        }
+
+        private readonly struct ModelMaterialSpec
+        {
+            public ModelMaterialSpec(string sourceName, string materialPath)
+            {
+                SourceName = sourceName;
+                MaterialPath = materialPath;
+            }
+
+            public string SourceName { get; }
+            public string MaterialPath { get; }
         }
 
         private readonly struct AnimationSpec

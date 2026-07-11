@@ -28,7 +28,7 @@ namespace DimensionBrawl.Presentation
         private bool subscribed;
         private bool hasObservedRiskBand;
         private SummonEnergyRiskBand lastRiskBand;
-        private float forwardRiskCueCooldown;
+        private float nextForwardRiskCueTime;
         private int forwardRiskCueRequestCount;
         private int tierReadyCueRequestCount;
         private int spendCueRequestCount;
@@ -81,16 +81,6 @@ namespace DimensionBrawl.Presentation
             Unsubscribe();
         }
 
-        private void Update()
-        {
-            if (forwardRiskCueCooldown > 0f)
-            {
-                forwardRiskCueCooldown = Mathf.Max(0f, forwardRiskCueCooldown - Time.deltaTime);
-            }
-
-            RefreshNow();
-        }
-
         public void RefreshNow()
         {
             if (energyLadder == null)
@@ -98,7 +88,16 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            SummonEnergyRiskBand currentRiskBand = energyLadder.CurrentRiskBand;
+            ObserveRiskBand(energyLadder.CurrentRiskBand);
+        }
+
+        private void HandleRiskBandChanged(SummonEnergyRiskBand currentRiskBand)
+        {
+            ObserveRiskBand(currentRiskBand);
+        }
+
+        private void ObserveRiskBand(SummonEnergyRiskBand currentRiskBand)
+        {
             if (!hasObservedRiskBand)
             {
                 lastRiskBand = currentRiskBand;
@@ -113,10 +112,10 @@ namespace DimensionBrawl.Presentation
 
             lastRiskBand = currentRiskBand;
             if (currentRiskBand == SummonEnergyRiskBand.ForwardRisk
-                && forwardRiskCueCooldown <= 0f
+                && Time.time >= nextForwardRiskCueTime
                 && Play(forwardRiskCueId, 1, forwardRiskCueIntensity))
             {
-                forwardRiskCueCooldown = forwardRiskCueCooldownSeconds;
+                nextForwardRiskCueTime = Time.time + Mathf.Max(0f, forwardRiskCueCooldownSeconds);
                 forwardRiskCueRequestCount++;
             }
         }
@@ -205,6 +204,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            energyLadder.RiskBandChanged += HandleRiskBandChanged;
             energyLadder.TierAvailable += HandleTierAvailable;
             energyLadder.EnergySpent += HandleEnergySpent;
             subscribed = true;
@@ -218,6 +218,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            energyLadder.RiskBandChanged -= HandleRiskBandChanged;
             energyLadder.TierAvailable -= HandleTierAvailable;
             energyLadder.EnergySpent -= HandleEnergySpent;
             subscribed = false;

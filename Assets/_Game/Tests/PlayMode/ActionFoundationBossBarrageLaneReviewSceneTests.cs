@@ -165,18 +165,12 @@ namespace DimensionBrawl.Tests
         private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
         private const string BossHumanoidControllerPath =
             "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
-        private const string BossHumanoidImportedRoot =
-            "Assets/_Imported/AssetStore/Protofactor/Sci Fi";
-        private const string BossHumanoidShooterRoot =
-            BossHumanoidImportedRoot + "/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3";
-        private const string BossHumanoidCommonWeaponRoot =
-            BossHumanoidImportedRoot + "/Common/Weapons";
         private const string BossHumanoidSourcePrefabPath =
-            BossHumanoidShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
         private const string BossHumanoidSourceModelPath =
-            BossHumanoidShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
         private const string BossHumanoidSourceAssaultRifleModelPath =
-            BossHumanoidCommonWeaponRoot + "/FBX Files/SM_SciFiAssaultRifle_01.FBX";
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
         private const string BossHumanoidLineCasterVariantModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
         private const string BossHumanoidAssaultRifleName = "SM_SciFiAssaultRifle_01";
@@ -1740,6 +1734,58 @@ namespace DimensionBrawl.Tests
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", false);
             Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);
             Assert.AreEqual(1f, GetFloatProperty(combatHudPresenter, "BossHealthFillAmount"), 0.001f);
+            Assert.IsTrue(
+                GetBoolProperty(combatHudPresenter, "BossHudVisible"),
+                "The bound boss should make the authored UGUI boss HUD visible.");
+            RectTransform bossHudRoot = GetObjectReference<RectTransform>(combatHudPresenter, "bossHudRoot");
+            Assert.IsNotNull(bossHudRoot, "The combat HUD presenter should own an explicit boss HUD root.");
+            Assert.IsTrue(bossHudRoot.gameObject.activeInHierarchy);
+            RectTransform[] sceneRectTransforms = UnityEngine.Object.FindObjectsByType<RectTransform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            int bossHudRootCount = 0;
+            for (int i = 0; i < sceneRectTransforms.Length; i++)
+            {
+                RectTransform candidate = sceneRectTransforms[i];
+                if (candidate != null && candidate.name == "BossHudRoot")
+                {
+                    bossHudRootCount++;
+                    Assert.AreSame(
+                        bossHudRoot,
+                        candidate,
+                        "The scene must not keep a second local boss HUD beside the prefab-owned root.");
+                }
+            }
+
+            Assert.AreEqual(1, bossHudRootCount, "The combat HUD must expose exactly one boss presentation root.");
+            Assert.Greater(bossHudRoot.rect.width, 100f, "The boss HUD root should have a resolved canvas width.");
+            Assert.Greater(bossHudRoot.rect.height, 100f, "The boss HUD root should have a resolved canvas height.");
+            Assert.Greater(bossHudRoot.lossyScale.sqrMagnitude, 0.01f, "The boss HUD root must not collapse to zero scale.");
+            string[] requiredBossHudGraphics =
+            {
+                "BossSymbol",
+                "BossHpBackground",
+                "BossHpFill",
+                "BossCostBackground",
+                "BossCostFill"
+            };
+            for (int i = 0; i < requiredBossHudGraphics.Length; i++)
+            {
+                Transform graphic = bossHudRoot.Find(requiredBossHudGraphics[i]);
+                Assert.IsNotNull(graphic, $"Boss HUD graphic '{requiredBossHudGraphics[i]}' is missing.");
+                Assert.IsTrue(
+                    graphic.gameObject.activeInHierarchy,
+                    $"Boss HUD graphic '{requiredBossHudGraphics[i]}' should be visible while a boss is bound.");
+                UnityEngine.UI.Image image = graphic.GetComponent<UnityEngine.UI.Image>();
+                Assert.IsNotNull(image, $"Boss HUD graphic '{requiredBossHudGraphics[i]}' should be an authored Image.");
+                Assert.IsNotNull(image.sprite, $"Boss HUD graphic '{requiredBossHudGraphics[i]}' should use an authored sprite.");
+                Assert.Greater(image.color.a, 0.5f, $"Boss HUD graphic '{requiredBossHudGraphics[i]}' should be opaque.");
+                Assert.Greater(
+                    image.canvasRenderer.GetInheritedAlpha(),
+                    0.5f,
+                    $"Boss HUD graphic '{requiredBossHudGraphics[i]}' should not be hidden by a parent CanvasGroup.");
+            }
+
             Assert.IsTrue(screenCuePresenter.ShowScreenCues);
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
@@ -1828,6 +1874,21 @@ namespace DimensionBrawl.Tests
                 GetFloatProperty(combatHudPresenter, "BossHealthFillAmount"),
                 0.001f,
                 "The Dimension HUD boss HP fill should track the real boss CombatHealth ratio.");
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CombatHudFormattedReadoutsReuseStableCachedStrings()
+        {
+            Component binder = RequireObjectByTypeName(
+                "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder");
+
+            AssertPrivateStringIsCached(binder, "ResolveAmmoReadout");
+            AssertPrivateStringIsCached(binder, "ResolveCombatModeLabel");
+            AssertPrivateStringIsCached(binder, "ResolveEnergyInputModeLabel");
+            AssertPrivateStringIsCached(binder, "ResolvePrimarySummonState");
+            AssertPrivateStringIsCached(binder, "ResolveSkillLabel", 3);
 
             yield return null;
         }
@@ -2207,6 +2268,40 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator RangedPhysicalImpactVfxUsesPrewarmedPool()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerRangedBasicVfxCueDriver cueDriver =
+                RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "ranged basic VFX cue driver");
+            MethodInfo playPhysicalImpact = typeof(PlayerRangedBasicVfxCueDriver).GetMethod(
+                "PlayPhysicalImpactVfx",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(playPhysicalImpact);
+            Assert.GreaterOrEqual(cueDriver.PhysicalImpactVfxPoolSize, 2);
+            int prewarmedCount = cueDriver.PhysicalImpactVfxPoolSize;
+
+            try
+            {
+                playPhysicalImpact.Invoke(
+                    cueDriver,
+                    new object[] { player.transform.position + Vector3.forward, Vector3.back });
+                playPhysicalImpact.Invoke(
+                    cueDriver,
+                    new object[] { player.transform.position + Vector3.right, Vector3.left });
+
+                Assert.AreEqual(prewarmedCount, cueDriver.PhysicalImpactVfxPoolSize);
+                Assert.AreEqual(2, cueDriver.ActivePhysicalImpactVfxCount);
+            }
+            finally
+            {
+                InvokePrivateMethod(cueDriver, "ReleaseAllPhysicalImpactVfx");
+            }
+
+            Assert.AreEqual(0, cueDriver.ActivePhysicalImpactVfxCount);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RangedBasicFireUsesRangedChannelAndAimCue()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -2298,6 +2393,7 @@ namespace DimensionBrawl.Tests
             aimController.SetAimHeld(true);
             aimController.SetAimInput(Vector2.zero);
             yield return WaitSeconds(0.35f);
+            yield return null;
 
             Vector3 shoulderDirectionBeforePeek = Vector3.ProjectOnPlane(
                 cameraController.transform.position - combatModeController.transform.position,
@@ -2307,6 +2403,7 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.right);
             yield return WaitSeconds(0.35f);
+            yield return null;
 
             Assert.AreEqual(1f, cameraController.AimOrbitInput.x, 0.001f);
             Assert.That(cameraController.AimYawOffsetDegrees, Is.InRange(30f, 45.01f));
@@ -2331,6 +2428,7 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.right * 5f);
             yield return WaitSeconds(0.1f);
+            yield return null;
             Assert.LessOrEqual(
                 Mathf.Abs(cameraController.AimYawOffsetDegrees),
                 45.01f,
@@ -2339,6 +2437,7 @@ namespace DimensionBrawl.Tests
             float heldRightYaw = cameraController.AimYawOffsetDegrees;
             aimController.SetAimInput(Vector2.zero);
             yield return WaitSeconds(0.22f);
+            yield return null;
             Assert.AreEqual(
                 heldRightYaw,
                 cameraController.AimYawOffsetDegrees,
@@ -2347,10 +2446,12 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.left);
             yield return WaitSeconds(0.35f);
+            yield return null;
             Assert.That(cameraController.AimYawOffsetDegrees, Is.InRange(-45.01f, -30f));
 
             aimController.SetAimInput(Vector2.up);
             yield return WaitSeconds(0.35f);
+            yield return null;
             Assert.AreEqual(1f, cameraController.AimOrbitInput.y, 0.001f);
             Assert.That(
                 cameraController.AimPitchOffsetDegrees,
@@ -2360,6 +2461,7 @@ namespace DimensionBrawl.Tests
             float heldUpPitch = cameraController.AimPitchOffsetDegrees;
             aimController.SetAimInput(Vector2.zero);
             yield return WaitSeconds(0.22f);
+            yield return null;
             Assert.AreEqual(
                 heldUpPitch,
                 cameraController.AimPitchOffsetDegrees,
@@ -2368,6 +2470,7 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.down);
             yield return WaitSeconds(0.35f);
+            yield return null;
             Assert.That(
                 cameraController.AimPitchOffsetDegrees,
                 Is.InRange(-16.01f, -10f),
@@ -2375,6 +2478,7 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimHeld(false);
             yield return WaitSeconds(0.22f);
+            yield return null;
             Assert.Less(
                 Mathf.Abs(cameraController.AimYawOffsetDegrees),
                 1f,
@@ -3485,6 +3589,45 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Skill1LaserSweepReusesPrewarmedVisualEffect()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(player.gameObject, "Skill1 laser sweep action");
+            GameObject pooledEffect = (GameObject)RequirePrivateField(
+                laserSweepAction,
+                "pooledEffect").GetValue(laserSweepAction);
+
+            Assert.IsNotNull(pooledEffect, "The canonical laser sweep should prewarm its visual effect.");
+            Assert.IsFalse(pooledEffect.activeSelf);
+
+            try
+            {
+                Assert.IsTrue(laserSweepAction.TryCastLaserSweep(1));
+                Assert.AreSame(
+                    pooledEffect,
+                    RequirePrivateField(laserSweepAction, "activeEffect").GetValue(laserSweepAction));
+                Assert.IsTrue(pooledEffect.activeSelf);
+                yield return null;
+
+                InvokePrivateMethod(laserSweepAction, "StopActiveSweep");
+                Assert.IsFalse(pooledEffect.activeSelf);
+
+                Assert.IsTrue(laserSweepAction.TryCastLaserSweep(2));
+                Assert.AreSame(
+                    pooledEffect,
+                    RequirePrivateField(laserSweepAction, "activeEffect").GetValue(laserSweepAction));
+                Assert.IsTrue(pooledEffect.activeSelf);
+            }
+            finally
+            {
+                InvokePrivateMethod(laserSweepAction, "StopActiveSweep");
+            }
+
             yield return null;
         }
 
@@ -5378,6 +5521,8 @@ namespace DimensionBrawl.Tests
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             BossBasicFireEmitter basicFireEmitter =
                 RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
+            SpatialOneShotAudioPool impactAudioPool =
+                RequireComponent<SpatialOneShotAudioPool>(bossRoot, "boss impact audio pool");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
@@ -5411,8 +5556,16 @@ namespace DimensionBrawl.Tests
                 projectileLanePoint.y,
                 laneSpace.ForwardBoundaryZ,
                 "Boss basic fire should still originate from the boss/frontline side.");
+            Assert.AreSame(
+                impactAudioPool,
+                RequirePrivateField(basicProjectile, "impactAudioPool").GetValue(basicProjectile));
 
+            int activeImpactAudioBefore = impactAudioPool.ActiveCount;
             Assert.IsTrue(basicProjectile.TryApplyImpact(playerHitCollider, basicProjectile.transform.position));
+            Assert.Greater(
+                impactAudioPool.ActiveCount,
+                activeImpactAudioBefore,
+                "Boss projectile impacts should use the prewarmed spatial audio pool.");
             Assert.AreEqual(
                 playerHealthBefore - profile.Damage,
                 playerHealth.CurrentHealth,
@@ -8423,15 +8576,7 @@ namespace DimensionBrawl.Tests
 
         private static void AssertBossHumanoidCommandoAsset(Object asset, string label)
         {
-            Assert.IsNotNull(asset, $"{label} should be assigned.");
-            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
-            bool isGameOwned = assetPath.StartsWith("Assets/_Game/")
-                && !assetPath.Contains("/_Imported/");
-            bool isExactCommandoSource = assetPath.StartsWith(BossHumanoidShooterRoot + "/SciFiSoldier_01/")
-                || assetPath.StartsWith(BossHumanoidCommonWeaponRoot + "/");
-            Assert.IsTrue(
-                isGameOwned || isExactCommandoSource,
-                $"{label} should reference the exact SciFiSoldier_01_Commando source or a promoted `_Game` asset, found {assetPath}.");
+            AssertGameOwnedAsset(asset, label);
         }
 
         private static void AssertRenderableMaterialShader(Material material, string label)
@@ -8827,6 +8972,16 @@ namespace DimensionBrawl.Tests
             MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(method, $"{target.GetType().Name} should define private method {methodName}.");
             method.Invoke(target, null);
+        }
+
+        private static void AssertPrivateStringIsCached(object target, string methodName, params object[] arguments)
+        {
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, $"{target.GetType().Name} should define private method {methodName}.");
+            string first = method.Invoke(target, arguments) as string;
+            string second = method.Invoke(target, arguments) as string;
+            Assert.IsNotNull(first, $"{methodName} should return a readout string.");
+            Assert.AreSame(first, second, $"{methodName} should reuse its stable formatted readout.");
         }
 
         private static IEnumerator WaitSeconds(float seconds)

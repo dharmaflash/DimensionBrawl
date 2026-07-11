@@ -187,6 +187,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0.01f)] private float cameraShakeDurationSeconds = 0.72f;
 
         private bool explosionWasActive;
+        private GameObject cachedExplosionRoot;
+        private ParticleSystem[] cachedExplosionParticleSystems = Array.Empty<ParticleSystem>();
+        private VisualEffect[] cachedExplosionVisualEffects = Array.Empty<VisualEffect>();
         private float currentImpactFlashAlpha;
         private float currentWarningSweepAlpha;
         private bool cameraBaseCaptured;
@@ -213,6 +216,7 @@ namespace DimensionBrawl.Presentation
             director = newDirector;
             commandos = newCommandos ?? Array.Empty<CommandoCue>();
             explosionRoot = newExplosionRoot;
+            cachedExplosionRoot = null;
             explosionLight = newExplosionLight;
             explosionStartSeconds = Mathf.Max(0f, newExplosionStartSeconds);
             explosionDurationSeconds = Mathf.Max(0.01f, newExplosionDurationSeconds);
@@ -382,8 +386,9 @@ namespace DimensionBrawl.Presentation
                 explosionRoot.SetActive(active);
             }
 
-            ParticleSystem[] particleSystems = explosionRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-            VisualEffect[] visualEffects = explosionRoot.GetComponentsInChildren<VisualEffect>(includeInactive: true);
+            EnsureExplosionComponentCache();
+            ParticleSystem[] particleSystems = cachedExplosionParticleSystems;
+            VisualEffect[] visualEffects = cachedExplosionVisualEffects;
             if (!active)
             {
                 for (int i = 0; i < particleSystems.Length; i++)
@@ -447,6 +452,22 @@ namespace DimensionBrawl.Presentation
             }
 
             explosionWasActive = true;
+        }
+
+        private void EnsureExplosionComponentCache()
+        {
+            if (cachedExplosionRoot == explosionRoot)
+            {
+                return;
+            }
+
+            cachedExplosionRoot = explosionRoot;
+            cachedExplosionParticleSystems = explosionRoot != null
+                ? explosionRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true)
+                : Array.Empty<ParticleSystem>();
+            cachedExplosionVisualEffects = explosionRoot != null
+                ? explosionRoot.GetComponentsInChildren<VisualEffect>(includeInactive: true)
+                : Array.Empty<VisualEffect>();
         }
 
         private void SampleScreenImpact(float elapsedSeconds)

@@ -428,12 +428,11 @@ namespace DimensionBrawl.Tests
 
                 playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
                 energy.Tick(0.01f);
-                presenter.RefreshNow();
 
                 Assert.AreEqual(
                     1,
                     presenter.ForwardRiskCueRequestCount,
-                    "Entering the forward-risk EN band should create a visible player-side state cue.");
+                    "Entering the forward-risk EN band should create a visible player-side state cue through RiskBandChanged without frame polling.");
 
                 energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
 
@@ -890,6 +889,37 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ActionCameraControllerTracksMostRecentlyEnabledInstance()
+        {
+            ActionCameraController previousController = ActionCameraController.ActiveInstance;
+            GameObject firstCameraObject = new GameObject("FirstActionCamera");
+            GameObject secondCameraObject = new GameObject("SecondActionCamera");
+            try
+            {
+                firstCameraObject.AddComponent<Camera>();
+                ActionCameraController firstController =
+                    firstCameraObject.AddComponent<ActionCameraController>();
+                Assert.AreSame(firstController, ActionCameraController.ActiveInstance);
+
+                secondCameraObject.AddComponent<Camera>();
+                ActionCameraController secondController =
+                    secondCameraObject.AddComponent<ActionCameraController>();
+                Assert.AreSame(secondController, ActionCameraController.ActiveInstance);
+
+                secondCameraObject.SetActive(false);
+                Assert.AreSame(firstController, ActionCameraController.ActiveInstance);
+
+                firstCameraObject.SetActive(false);
+                Assert.AreSame(previousController, ActionCameraController.ActiveInstance);
+            }
+            finally
+            {
+                Object.DestroyImmediate(secondCameraObject);
+                Object.DestroyImmediate(firstCameraObject);
+            }
+        }
+
+        [Test]
         public void CombatHitFeedbackRequestsCameraRecoilAndHitStopForHeavyHit()
         {
             GameObject enemyObject = new GameObject("Enemy");
@@ -899,6 +929,7 @@ namespace DimensionBrawl.Tests
             float previousTimeScale = Time.timeScale;
             try
             {
+                Time.timeScale = 1f;
                 bodyObject.name = "EnemyBody";
                 bodyObject.transform.SetParent(enemyObject.transform, worldPositionStays: false);
                 Renderer bodyRenderer = bodyObject.GetComponent<Renderer>();
@@ -2420,6 +2451,86 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineClashReusesPrewarmedContactDamageVfx()
+        {
+            GameObject contactVfxPrefab = new GameObject("ContactDamageVfxPrefab");
+            GameObject allyObject = new GameObject("PooledVfxAllySummon");
+            GameObject enemyObject = new GameObject("PooledVfxEnemySummon");
+            try
+            {
+                contactVfxPrefab.AddComponent<ParticleSystem>();
+                contactVfxPrefab.SetActive(false);
+
+                SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+                allyCollider.isTrigger = true;
+                CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+                allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+                SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+                allyProxy.ConfigureHealth(allyHealth);
+                SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+                allyClash.ConfigureReferences(allyProxy, allyHealth);
+                allyClash.ConfigureTuning(1f, 0.35f, 0f, 0.1f);
+                SetPrivateInstanceField(allyClash, "contactDamageVfxPrefab", contactVfxPrefab);
+                SetPrivateInstanceField(allyClash, "contactDamageVfxPrewarmCount", 3);
+
+                System.Reflection.MethodInfo prewarmMethod = typeof(SummonFrontlineClash).GetMethod(
+                    "PrewarmContactDamageVfxPool",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                Assert.IsNotNull(prewarmMethod);
+                prewarmMethod.Invoke(allyClash, null);
+
+                SphereCollider enemyCollider = enemyObject.AddComponent<SphereCollider>();
+                enemyCollider.isTrigger = true;
+                CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+                enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+                enemyHealth.ConfigureMaxHealth(1000f);
+                SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
+                enemyProxy.ConfigureHealth(enemyHealth);
+                SummonFrontlineClash enemyClash = enemyObject.AddComponent<SummonFrontlineClash>();
+                enemyClash.ConfigureReferences(enemyProxy, enemyHealth);
+                SetPrivateInstanceField(enemyClash, "contactDamageVfxPrefab", contactVfxPrefab);
+                SetPrivateInstanceField(enemyClash, "contactDamageVfxPrewarmCount", 3);
+                prewarmMethod.Invoke(enemyClash, null);
+
+                allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 3f, 1f);
+                enemyProxy.Activate(Vector3.forward * 0.5f, Vector3.back, 1, 2f, 1f, 3f, 1f);
+
+                int prewarmedCount = allyClash.ContactDamageVfxPoolSize;
+                Assert.AreEqual(3, prewarmedCount);
+                Assert.AreEqual(
+                    prewarmedCount,
+                    enemyClash.ContactDamageVfxPoolSize,
+                    "Actors using the same impact prefab should share one scene-level VFX pool.");
+                for (int hitIndex = 0; hitIndex < prewarmedCount; hitIndex++)
+                {
+                    SetPrivateInstanceField(allyClash, "nextDamageTime", 0f);
+                    Assert.IsTrue(allyClash.TryProcessClash(enemyCollider));
+                }
+
+                Assert.AreEqual(prewarmedCount, allyClash.ContactDamageVfxPoolSize);
+                Assert.AreEqual(prewarmedCount, allyClash.ActiveContactDamageVfxCount);
+
+                allyObject.SetActive(false);
+                Assert.AreEqual(
+                    prewarmedCount,
+                    enemyClash.ActiveContactDamageVfxCount,
+                    "World-space contact VFX should finish independently when the source actor is pooled.");
+                Assert.AreEqual(prewarmedCount, allyClash.ContactDamageVfxPoolSize);
+            }
+            finally
+            {
+                if (SpatialOneShotVfxPool.ActiveInstance != null)
+                {
+                    Object.DestroyImmediate(SpatialOneShotVfxPool.ActiveInstance.gameObject);
+                }
+
+                Object.DestroyImmediate(enemyObject);
+                Object.DestroyImmediate(allyObject);
+                Object.DestroyImmediate(contactVfxPrefab);
+            }
+        }
+
+        [Test]
         public void SummonFrontlineProxyPresenterLocksInitialAdvanceDuringSpawnPresentation()
         {
             GameObject proxyObject = new GameObject("SpawnLockedSummonProxy");
@@ -2929,8 +3040,21 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonFrontlineProxyState.Attacking, allyProxy.CurrentState);
             Assert.AreEqual(SummonFrontlineProxyState.Attacking, enemyProxy.CurrentState);
             Assert.AreEqual(1, allyClash.TotalClashCount);
+            Assert.AreEqual(1, allyClash.ContactScanCount);
             Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
             Assert.AreEqual(SummonFrontlineClashTargetKind.HostileSummon, allyClash.LastTargetKind);
+
+            for (int tickIndex = 0; tickIndex < 5; tickIndex++)
+            {
+                allyClash.Tick(0.01f);
+            }
+
+            Assert.AreEqual(
+                1,
+                allyClash.ContactScanCount,
+                "Short frame ticks should reuse the recent contact scan instead of querying physics every frame.");
+            allyClash.Tick(0.04f);
+            Assert.AreEqual(2, allyClash.ContactScanCount);
 
             Object.DestroyImmediate(enemyObject);
             Object.DestroyImmediate(allyObject);

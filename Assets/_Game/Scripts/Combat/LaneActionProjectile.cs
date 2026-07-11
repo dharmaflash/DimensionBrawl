@@ -60,6 +60,7 @@ namespace DimensionBrawl.Combat
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             EnsurePhysicsComponents();
         }
 
@@ -194,13 +195,13 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (hitCollider.GetComponentInParent<SummonPressureScreen>() != null)
+            if (SummonPressureScreen.ResolveFromCollider(hitCollider) != null)
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredPressureScreen, null, null);
                 return false;
             }
 
-            SummonFrontlineProxy targetProxy = hitCollider.GetComponentInParent<SummonFrontlineProxy>();
+            SummonFrontlineProxy targetProxy = SummonFrontlineProxy.ResolveFromCollider(hitCollider);
             if (targetProxy != null && !targetProxy.IsActive)
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredInactiveSummon, null, targetProxy);
@@ -208,8 +209,8 @@ namespace DimensionBrawl.Combat
             }
 
             CombatHealth targetHealth = targetProxy != null
-                ? targetProxy.Health ?? hitCollider.GetComponentInParent<CombatHealth>()
-                : hitCollider.GetComponentInParent<CombatHealth>();
+                ? targetProxy.Health ?? CombatHealth.ResolveFromCollider(hitCollider)
+                : CombatHealth.ResolveFromCollider(hitCollider);
             if (targetHealth == null)
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredMissingHealth, null, targetProxy);
@@ -274,7 +275,7 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            ActionCameraController cameraController = ActionCameraController.ActiveInstance;
             if (cameraController == null)
             {
                 return;

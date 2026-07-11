@@ -8,13 +8,47 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class CombatVfxCuePlayer : MonoBehaviour
     {
+        private sealed class CueInstanceComponents
+        {
+            public CombatVfxCueVisual[] CueVisuals;
+            public ParticleSystem[] Particles;
+            public VisualEffect[] VisualEffects;
+            public CombatVfxCueAudioRandomizer[] AudioRandomizers;
+            public AudioSource[] AudioSources;
+        }
+
+        private sealed class PooledAudioSource
+        {
+            public GameObject Root;
+            public AudioSource Source;
+            public float ReleaseTime;
+            public bool Active;
+        }
+
+        private struct ScheduledCueRelease
+        {
+            public GameObject Instance;
+            public float ReleaseTime;
+        }
+
         [SerializeField] private CombatVfxCueProfile profile;
         [SerializeField] private Transform pooledRoot;
+        [SerializeField, Range(1, 16)] private int profileAudioPrewarmCount = 4;
 
         private readonly Dictionary<GameObject, Queue<GameObject>> poolsByPrefab = new Dictionary<GameObject, Queue<GameObject>>();
         private readonly Dictionary<GameObject, GameObject> prefabByInstance = new Dictionary<GameObject, GameObject>();
+        private readonly Dictionary<GameObject, CueInstanceComponents> componentsByInstance =
+            new Dictionary<GameObject, CueInstanceComponents>();
+        private readonly List<ScheduledCueRelease> scheduledCueReleases = new List<ScheduledCueRelease>(16);
+        private readonly List<PooledAudioSource> profileAudioPool = new List<PooledAudioSource>(8);
+        private readonly HashSet<AudioSource> randomizedAudioSources = new HashSet<AudioSource>();
+        private int activeProfileAudioSourceCount;
+        private Coroutine releaseRoutine;
 
         public CombatVfxCueProfile Profile => profile;
+        public int ProfileAudioPoolSize => profileAudioPool.Count;
+        public int ActiveProfileAudioSourceCount => activeProfileAudioSourceCount;
+        public int ScheduledCueReleaseCount => scheduledCueReleases.Count;
 
         private void Awake()
         {
@@ -27,6 +61,33 @@ namespace DimensionBrawl.Presentation
         private void Start()
         {
             PrewarmKnownCues();
+            PrewarmProfileAudioSources();
+        }
+
+        private void OnEnable()
+        {
+            StartReleaseRoutineIfNeeded();
+        }
+
+        private void OnDisable()
+        {
+            StopReleaseRoutine();
+            ReleaseAllProfileAudioSources();
+        }
+
+        private void OnDestroy()
+        {
+            StopReleaseRoutine();
+            for (int i = 0; i < profileAudioPool.Count; i++)
+            {
+                if (profileAudioPool[i]?.Root != null)
+                {
+                    Destroy(profileAudioPool[i].Root);
+                }
+            }
+
+            profileAudioPool.Clear();
+            activeProfileAudioSourceCount = 0;
         }
 
         public bool PlayCue(
@@ -92,7 +153,12 @@ namespace DimensionBrawl.Presentation
             float releaseSeconds = Mathf.Max(cue.LifetimeSeconds, embeddedAudioTailSeconds);
             if (releaseSeconds > 0f)
             {
-                StartCoroutine(ReleaseAfterSeconds(instance, releaseSeconds));
+                scheduledCueReleases.Add(new ScheduledCueRelease
+                {
+                    Instance = instance,
+                    ReleaseTime = Time.time + releaseSeconds
+                });
+                StartReleaseRoutineIfNeeded();
             }
 
             return true;
@@ -110,12 +176,11 @@ namespace DimensionBrawl.Presentation
                 pool.Clear();
             }
 
-            List<KeyValuePair<GameObject, GameObject>> instances =
-                new List<KeyValuePair<GameObject, GameObject>>(prefabByInstance);
-            for (int i = 0; i < instances.Count; i++)
+            scheduledCueReleases.Clear();
+            foreach (KeyValuePair<GameObject, GameObject> pair in prefabByInstance)
             {
-                GameObject instance = instances[i].Key;
-                GameObject prefab = instances[i].Value;
+                GameObject instance = pair.Key;
+                GameObject prefab = pair.Value;
                 if (instance == null || prefab == null)
                 {
                     continue;
@@ -183,14 +248,32 @@ namespace DimensionBrawl.Presentation
             GameObject instance = Instantiate(prefab, pooledRoot);
             instance.name = prefab.name;
             prefabByInstance[instance] = prefab;
+            componentsByInstance[instance] = new CueInstanceComponents
+            {
+                CueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true),
+                Particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true),
+                VisualEffects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true),
+                AudioRandomizers = instance.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true),
+                AudioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true)
+            };
             instance.SetActive(false);
             return instance;
         }
 
-        private IEnumerator ReleaseAfterSeconds(GameObject instance, float seconds)
+        private void ReleaseExpiredCueInstances()
         {
-            yield return new WaitForSeconds(seconds);
-            ReleaseInstance(instance);
+            float now = Time.time;
+            for (int i = scheduledCueReleases.Count - 1; i >= 0; i--)
+            {
+                ScheduledCueRelease scheduled = scheduledCueReleases[i];
+                if (now < scheduled.ReleaseTime)
+                {
+                    continue;
+                }
+
+                scheduledCueReleases.RemoveAt(i);
+                ReleaseInstance(scheduled.Instance);
+            }
         }
 
         private void ReleaseInstance(GameObject instance)
@@ -206,49 +289,44 @@ namespace DimensionBrawl.Presentation
             GetPool(prefab).Enqueue(instance);
         }
 
-        private static float PlayEffects(GameObject instance, float audioScale)
+        private float PlayEffects(GameObject instance, float audioScale)
         {
+            CueInstanceComponents components = ResolveInstanceComponents(instance);
             float audioTailSeconds = 0f;
-            CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
-            for (int i = 0; i < cueVisuals.Length; i++)
+            for (int i = 0; i < components.CueVisuals.Length; i++)
             {
-                cueVisuals[i].Restart();
+                components.CueVisuals[i].Restart();
             }
 
-            ParticleSystem[] particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-            for (int i = 0; i < particles.Length; i++)
+            for (int i = 0; i < components.Particles.Length; i++)
             {
-                particles[i].Clear(withChildren: true);
-                particles[i].Play(withChildren: true);
+                components.Particles[i].Clear(withChildren: true);
+                components.Particles[i].Play(withChildren: true);
             }
 
-            VisualEffect[] visualEffects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true);
-            for (int i = 0; i < visualEffects.Length; i++)
+            for (int i = 0; i < components.VisualEffects.Length; i++)
             {
-                visualEffects[i].Reinit();
-                visualEffects[i].Play();
+                components.VisualEffects[i].Reinit();
+                components.VisualEffects[i].Play();
             }
 
-            CombatVfxCueAudioRandomizer[] audioRandomizers = instance.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
-            HashSet<AudioSource> randomizedSources = null;
-            for (int i = 0; i < audioRandomizers.Length; i++)
+            randomizedAudioSources.Clear();
+            for (int i = 0; i < components.AudioRandomizers.Length; i++)
             {
-                CombatVfxCueAudioRandomizer audioRandomizer = audioRandomizers[i];
+                CombatVfxCueAudioRandomizer audioRandomizer = components.AudioRandomizers[i];
                 if (audioRandomizer == null || !audioRandomizer.Play(audioScale) || audioRandomizer.Source == null)
                 {
                     continue;
                 }
 
-                randomizedSources ??= new HashSet<AudioSource>();
-                randomizedSources.Add(audioRandomizer.Source);
+                randomizedAudioSources.Add(audioRandomizer.Source);
                 audioTailSeconds = Mathf.Max(audioTailSeconds, audioRandomizer.LastPlayedClipDurationSeconds);
             }
 
-            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
+            for (int i = 0; i < components.AudioSources.Length; i++)
             {
-                AudioSource audioSource = audioSources[i];
-                if (randomizedSources != null && randomizedSources.Contains(audioSource))
+                AudioSource audioSource = components.AudioSources[i];
+                if (randomizedAudioSources.Contains(audioSource))
                 {
                     continue;
                 }
@@ -270,7 +348,7 @@ namespace DimensionBrawl.Presentation
             return audioTailSeconds;
         }
 
-        private static void PlayCueAudio(CombatVfxCue cue, Transform anchor, Vector3 fallbackPosition, float audioScale)
+        private void PlayCueAudio(CombatVfxCue cue, Transform anchor, Vector3 fallbackPosition, float audioScale)
         {
             if (cue.AudioClipCount <= 0 || cue.AudioBaseVolume <= 0f)
             {
@@ -289,10 +367,16 @@ namespace DimensionBrawl.Presentation
                 pitch = 1f;
             }
 
-            GameObject audioObject = new GameObject("CombatVfxCueAudio");
-            audioObject.transform.position = anchor != null ? anchor.position : fallbackPosition;
+            PooledAudioSource pooledAudio = AcquireProfileAudioSource();
+            if (pooledAudio == null || pooledAudio.Root == null || pooledAudio.Source == null)
+            {
+                return;
+            }
 
-            AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+            pooledAudio.Root.transform.SetParent(null, worldPositionStays: false);
+            pooledAudio.Root.transform.position = anchor != null ? anchor.position : fallbackPosition;
+            pooledAudio.Root.SetActive(true);
+            AudioSource audioSource = pooledAudio.Source;
             audioSource.clip = clip;
             audioSource.playOnAwake = false;
             audioSource.loop = false;
@@ -307,8 +391,199 @@ namespace DimensionBrawl.Presentation
             audioSource.maxDistance = cue.AudioMaxDistance;
             audioSource.priority = cue.AudioPriority;
             audioSource.Play();
+            pooledAudio.Active = true;
+            activeProfileAudioSourceCount++;
+            pooledAudio.ReleaseTime = Time.time + clip.length / pitch + 0.1f;
+            StartReleaseRoutineIfNeeded();
+        }
 
-            Destroy(audioObject, clip.length / pitch + 0.1f);
+        private IEnumerator ReleaseScheduledContentUntilIdle()
+        {
+            yield return null;
+
+            while (isActiveAndEnabled && HasScheduledContent())
+            {
+                ReleaseExpiredCueInstances();
+                ReleaseExpiredProfileAudioSources();
+                if (!HasScheduledContent())
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            releaseRoutine = null;
+        }
+
+        private bool HasScheduledContent()
+        {
+            return scheduledCueReleases.Count > 0 || activeProfileAudioSourceCount > 0;
+        }
+
+        private void StartReleaseRoutineIfNeeded()
+        {
+            if (releaseRoutine == null && Application.isPlaying && isActiveAndEnabled && HasScheduledContent())
+            {
+                releaseRoutine = StartCoroutine(ReleaseScheduledContentUntilIdle());
+            }
+        }
+
+        private void StopReleaseRoutine()
+        {
+            if (releaseRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(releaseRoutine);
+            releaseRoutine = null;
+        }
+
+        private CueInstanceComponents ResolveInstanceComponents(GameObject instance)
+        {
+            if (componentsByInstance.TryGetValue(instance, out CueInstanceComponents components))
+            {
+                return components;
+            }
+
+            components = new CueInstanceComponents
+            {
+                CueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true),
+                Particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true),
+                VisualEffects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true),
+                AudioRandomizers = instance.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true),
+                AudioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true)
+            };
+            componentsByInstance[instance] = components;
+            return components;
+        }
+
+        private void PrewarmProfileAudioSources()
+        {
+            if (!HasProfileAudioCues())
+            {
+                return;
+            }
+
+            int targetCount = Mathf.Max(1, profileAudioPrewarmCount);
+            while (profileAudioPool.Count < targetCount)
+            {
+                CreateProfileAudioSource();
+            }
+        }
+
+        private bool HasProfileAudioCues()
+        {
+            if (profile == null)
+            {
+                return false;
+            }
+
+            int cueCount = System.Enum.GetValues(typeof(CombatVfxCueId)).Length;
+            for (int i = 0; i < cueCount; i++)
+            {
+                CombatVfxCueId cueId = (CombatVfxCueId)i;
+                if (profile.TryGetCue(cueId, out CombatVfxCue cue) && cue.AudioClipCount > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private PooledAudioSource AcquireProfileAudioSource()
+        {
+            ReleaseExpiredProfileAudioSources();
+            for (int i = 0; i < profileAudioPool.Count; i++)
+            {
+                PooledAudioSource pooledAudio = profileAudioPool[i];
+                if (pooledAudio != null && pooledAudio.Root != null && !pooledAudio.Active)
+                {
+                    return pooledAudio;
+                }
+            }
+
+            return CreateProfileAudioSource();
+        }
+
+        private PooledAudioSource CreateProfileAudioSource()
+        {
+            Transform parent = pooledRoot != null ? pooledRoot : transform;
+            GameObject root = new GameObject($"CombatVfxCueAudio_Pooled_{profileAudioPool.Count:00}");
+            root.transform.SetParent(parent, worldPositionStays: false);
+            AudioSource source = root.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            root.SetActive(false);
+            PooledAudioSource pooledAudio = new PooledAudioSource
+            {
+                Root = root,
+                Source = source
+            };
+            profileAudioPool.Add(pooledAudio);
+            return pooledAudio;
+        }
+
+        private void ReleaseExpiredProfileAudioSources()
+        {
+            if (activeProfileAudioSourceCount <= 0)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            for (int i = 0; i < profileAudioPool.Count; i++)
+            {
+                PooledAudioSource pooledAudio = profileAudioPool[i];
+                if (pooledAudio != null && pooledAudio.Active && now >= pooledAudio.ReleaseTime)
+                {
+                    ReleaseProfileAudioSource(pooledAudio);
+                }
+            }
+        }
+
+        private void ReleaseAllProfileAudioSources()
+        {
+            if (activeProfileAudioSourceCount <= 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < profileAudioPool.Count; i++)
+            {
+                PooledAudioSource pooledAudio = profileAudioPool[i];
+                if (pooledAudio != null && pooledAudio.Active)
+                {
+                    ReleaseProfileAudioSource(pooledAudio);
+                }
+            }
+        }
+
+        private void ReleaseProfileAudioSource(PooledAudioSource pooledAudio)
+        {
+            if (pooledAudio == null || !pooledAudio.Active)
+            {
+                return;
+            }
+
+            pooledAudio.Active = false;
+            activeProfileAudioSourceCount = Mathf.Max(0, activeProfileAudioSourceCount - 1);
+            pooledAudio.ReleaseTime = 0f;
+            if (pooledAudio.Root == null || pooledAudio.Source == null)
+            {
+                return;
+            }
+
+            pooledAudio.Source.Stop();
+            pooledAudio.Source.clip = null;
+            pooledAudio.Root.SetActive(false);
+            if (isActiveAndEnabled && gameObject.activeInHierarchy)
+            {
+                Transform parent = pooledRoot != null ? pooledRoot : transform;
+                pooledAudio.Root.transform.SetParent(parent, worldPositionStays: false);
+            }
         }
 
         private static AudioClip PickCueAudioClip(CombatVfxCue cue)
@@ -332,30 +607,27 @@ namespace DimensionBrawl.Presentation
             return null;
         }
 
-        private static void StopEffects(GameObject instance)
+        private void StopEffects(GameObject instance)
         {
-            CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
-            for (int i = 0; i < cueVisuals.Length; i++)
+            CueInstanceComponents components = ResolveInstanceComponents(instance);
+            for (int i = 0; i < components.CueVisuals.Length; i++)
             {
-                cueVisuals[i].StopNow();
+                components.CueVisuals[i].StopNow();
             }
 
-            ParticleSystem[] particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-            for (int i = 0; i < particles.Length; i++)
+            for (int i = 0; i < components.Particles.Length; i++)
             {
-                particles[i].Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                components.Particles[i].Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
 
-            VisualEffect[] visualEffects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true);
-            for (int i = 0; i < visualEffects.Length; i++)
+            for (int i = 0; i < components.VisualEffects.Length; i++)
             {
-                visualEffects[i].Stop();
+                components.VisualEffects[i].Stop();
             }
 
-            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
+            for (int i = 0; i < components.AudioSources.Length; i++)
             {
-                audioSources[i].Stop();
+                components.AudioSources[i].Stop();
             }
         }
 

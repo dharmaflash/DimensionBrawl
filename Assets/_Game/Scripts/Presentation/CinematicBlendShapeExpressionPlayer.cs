@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -53,12 +54,16 @@ namespace DimensionBrawl.Presentation
 
         private readonly Dictionary<string, RuntimeShapeTarget> activeTargetsByKey =
             new Dictionary<string, RuntimeShapeTarget>();
+        private readonly List<string> settledTargetKeys = new List<string>(16);
 
         private string lastExpressionName = string.Empty;
         private int playCount;
+        private Coroutine blendRoutine;
 
         public string LastExpressionName => lastExpressionName;
         public int PlayCount => playCount;
+        public int ActiveTargetCount => activeTargetsByKey.Count;
+        public bool IsBlending => blendRoutine != null;
 
         private void Awake()
         {
@@ -68,25 +73,56 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private void Update()
+        private void OnEnable()
         {
-            if (activeTargetsByKey.Count == 0)
-            {
-                return;
-            }
+            StartBlendRoutineIfNeeded();
+        }
 
-            float step = blendSpeed <= 0f ? 1f : 1f - Mathf.Exp(-blendSpeed * Time.deltaTime);
-            foreach (RuntimeShapeTarget target in activeTargetsByKey.Values)
+        private void OnDisable()
+        {
+            StopBlendRoutine();
+        }
+
+        private IEnumerator BlendUntilSettled()
+        {
+            yield return null;
+
+            while (activeTargetsByKey.Count > 0)
             {
-                if (target.Renderer == null || target.Renderer.sharedMesh == null)
+                float step = blendSpeed <= 0f ? 1f : 1f - Mathf.Exp(-blendSpeed * Time.deltaTime);
+                settledTargetKeys.Clear();
+                foreach (KeyValuePair<string, RuntimeShapeTarget> pair in activeTargetsByKey)
                 {
-                    continue;
+                    RuntimeShapeTarget target = pair.Value;
+                    if (target.Renderer == null || target.Renderer.sharedMesh == null)
+                    {
+                        settledTargetKeys.Add(pair.Key);
+                        continue;
+                    }
+
+                    float current = target.Renderer.GetBlendShapeWeight(target.ShapeIndex);
+                    float next = Mathf.Lerp(current, target.TargetWeight, step);
+                    if (Mathf.Abs(next - target.TargetWeight) <= 0.025f)
+                    {
+                        next = target.TargetWeight;
+                        settledTargetKeys.Add(pair.Key);
+                    }
+
+                    target.Renderer.SetBlendShapeWeight(target.ShapeIndex, next);
                 }
 
-                float current = target.Renderer.GetBlendShapeWeight(target.ShapeIndex);
-                float next = Mathf.Lerp(current, target.TargetWeight, step);
-                target.Renderer.SetBlendShapeWeight(target.ShapeIndex, next);
+                for (int i = 0; i < settledTargetKeys.Count; i++)
+                {
+                    activeTargetsByKey.Remove(settledTargetKeys[i]);
+                }
+
+                if (activeTargetsByKey.Count > 0)
+                {
+                    yield return null;
+                }
             }
+
+            blendRoutine = null;
         }
 
         public void Configure(ExpressionPreset[] newPresets)
@@ -113,6 +149,7 @@ namespace DimensionBrawl.Presentation
                 QueuePreset(preset);
                 lastExpressionName = expressionName;
                 playCount++;
+                StartBlendRoutineIfNeeded();
                 return true;
             }
 
@@ -136,7 +173,28 @@ namespace DimensionBrawl.Presentation
                 target.Renderer.SetBlendShapeWeight(target.ShapeIndex, target.TargetWeight);
             }
 
+            activeTargetsByKey.Clear();
+            StopBlendRoutine();
             return true;
+        }
+
+        private void StartBlendRoutineIfNeeded()
+        {
+            if (blendRoutine == null && activeTargetsByKey.Count > 0 && isActiveAndEnabled)
+            {
+                blendRoutine = StartCoroutine(BlendUntilSettled());
+            }
+        }
+
+        private void StopBlendRoutine()
+        {
+            if (blendRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(blendRoutine);
+            blendRoutine = null;
         }
 
         private void QueuePreset(ExpressionPreset preset)

@@ -23,8 +23,14 @@ namespace DimensionBrawl.Tests
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
         private const string PlayerRootName = "Player_CombatGirl_ActionFoundation";
         private const string CombatPackageRootName = "OlympusCorridor_BossBarrageCombatPackage";
+        private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
         private const string IntroSwordGateRootName = "OlympusCorridor_IntroSwordGate";
         private const string CombatHudRootName = "PF_UI_CombatHud";
+        private const string PlayerRevealCameraRigRootName = "IntroGatePodReview_PlayerRevealCameraRig";
+        private const string CutsceneCinemachineShotsRootName = "IntroGatePodReview_CinemachineShots";
+        private const string BombingPreludeRootName = "IntroGatePodBombingPrelude_Olympus";
+        private const string CutsceneCueDirectorRootName = "IntroGatePodReview_CueDirector";
+        private const string FirstPersonRendererMaskRootName = "IntroGatePodReview_FirstPersonRendererMask";
         private const string TutorialTimingReportPath = "C:/tmp/DimensionBrawl-OlympusTutorialTimingReport.md";
         private const string TutorialAimFovReportPath = "C:/tmp/DimensionBrawl-OlympusAimFovReport.md";
         private const float ExpectedMinimumTutorialStepSeconds = 0.85f;
@@ -235,6 +241,92 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.That(combatHudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator IntroOnlyPresentationLeavesTheRuntimeAfterHandoff()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            GameObject revealCameraRig = RequireSceneObject(PlayerRevealCameraRigRootName);
+            GameObject cinemachineShots = RequireSceneObject(CutsceneCinemachineShotsRootName);
+            GameObject bombingPrelude = RequireSceneObject(BombingPreludeRootName);
+            Behaviour cueDirector = RequireBehaviourByTypeName(
+                CutsceneCueDirectorRootName,
+                "DimensionBrawl.Presentation.IntroGatePodCutsceneCueDirector");
+            Behaviour rendererMask = RequireBehaviourByTypeName(
+                FirstPersonRendererMaskRootName,
+                "DimensionBrawl.Presentation.IntroGatePodFirstPersonRendererMask");
+            Behaviour introBrain = RequireBehaviourByTypeName(
+                "Main Camera",
+                "Unity.Cinemachine.CinemachineBrain");
+            Camera introCamera = RequireComponent<Camera>("Main Camera", "intro camera");
+            Camera combatCamera = RequireComponent<Camera>(CombatCameraName, "combat camera");
+            float introFieldOfView = introCamera.fieldOfView;
+            CameraClearFlags introClearFlags = introCamera.clearFlags;
+            Color introBackground = introCamera.backgroundColor;
+
+            Assert.IsTrue(revealCameraRig.activeInHierarchy);
+            Assert.IsTrue(cinemachineShots.activeInHierarchy);
+            Assert.IsTrue(bombingPrelude.activeInHierarchy);
+            Assert.IsTrue(cueDirector.enabled);
+            Assert.IsTrue(rendererMask.enabled);
+            Assert.IsTrue(introBrain.enabled);
+
+            flowController.SkipIntroCutscene();
+            Assert.That(combatCamera.fieldOfView, Is.EqualTo(introFieldOfView).Within(0.001f));
+            Assert.AreEqual(introClearFlags, combatCamera.clearFlags);
+            Assert.That(
+                Vector4.Distance(introBackground, combatCamera.backgroundColor),
+                Is.LessThanOrEqualTo(0.001f));
+            yield return null;
+            yield return null;
+
+            Assert.IsFalse(revealCameraRig.activeSelf);
+            Assert.IsFalse(cinemachineShots.activeSelf);
+            Assert.IsFalse(bombingPrelude.activeSelf);
+            Assert.IsFalse(cueDirector.enabled);
+            Assert.IsFalse(rendererMask.enabled);
+            Assert.IsFalse(introBrain.enabled);
+        }
+
+        [UnityTest]
+        public IEnumerator CorridorCombatKeepsAuthoredBoundsAndTargets()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            GameObject boundsRoot = RequireSceneObject("OlympusCorridor_CorridorCombatBounds");
+            GameObject stairTrigger = RequireSceneObject("OlympusCorridor_StairToCorridorCombatTrigger");
+            GameObject traversalSupport = RequireSceneObject("OlympusCorridor_IntroStairTraversalSupport");
+            GameObject stageClearExit = RequireSceneObject("StageClear_CorridorExit");
+            GameObject[] boundsRoots = ReadPrivateField<GameObject[]>(flowController, "corridorBoundsRoots");
+            CombatHealth[] targets = ReadPrivateField<CombatHealth[]>(flowController, "corridorTargets");
+            CombatHealth[] clearTargets = ReadPrivateField<CombatHealth[]>(flowController, "corridorClearTargets");
+            Transform stairTriggerCenter = ReadPrivateField<Transform>(flowController, "stairTriggerCenter");
+            float stairTriggerRadius = ReadPrivateField<float>(flowController, "stairTriggerRadius");
+
+            Assert.That(boundsRoots, Has.Length.EqualTo(1));
+            Assert.AreSame(boundsRoot, boundsRoots[0]);
+            Assert.IsFalse(boundsRoot.activeSelf, "Corridor bounds should stay dormant until corridor combat starts.");
+            Assert.That(boundsRoot.GetComponentsInChildren<BoxCollider>(true), Has.Length.EqualTo(4));
+            Assert.That(targets, Has.Length.EqualTo(2));
+            Assert.That(clearTargets, Has.Length.EqualTo(1));
+            Assert.AreSame(clearTargets[0], targets[0]);
+            Assert.AreEqual(DamageTeam.Enemy, targets[0].Team);
+            Assert.AreEqual(DamageTeam.Enemy, targets[1].Team);
+            Assert.AreSame(stairTrigger.transform, stairTriggerCenter);
+            Assert.That(stairTriggerRadius, Is.EqualTo(2.75f).Within(0.001f));
+            Assert.IsTrue(stairTrigger.GetComponent<SphereCollider>().isTrigger);
+            Assert.IsNotNull(traversalSupport.GetComponent<BoxCollider>());
+            Assert.IsTrue(stageClearExit.activeInHierarchy);
+            Assert.That(
+                stageClearExit.transform.position.y,
+                Is.EqualTo(stairTrigger.transform.position.y).Within(0.001f));
+            yield return null;
         }
 
         [UnityTest]
@@ -761,6 +853,23 @@ namespace DimensionBrawl.Tests
             return component;
         }
 
+        private static Behaviour RequireBehaviourByTypeName(string objectName, string fullTypeName)
+        {
+            GameObject gameObject = RequireSceneObject(objectName);
+            Behaviour[] behaviours = gameObject.GetComponents<Behaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                Behaviour behaviour = behaviours[i];
+                if (behaviour != null && behaviour.GetType().FullName == fullTypeName)
+                {
+                    return behaviour;
+                }
+            }
+
+            Assert.Fail($"Missing behaviour {fullTypeName} on {objectName}.");
+            return null;
+        }
+
         private static GameObject RequireSceneObject(string objectName)
         {
             GameObject gameObject = FindSceneObjectIncludingInactive(objectName);
@@ -1165,8 +1274,8 @@ namespace DimensionBrawl.Tests
 
         private static void ExpectKnownMissingSupportDragonPrefabLogs()
         {
-            const string supportDragonGuid = "bffbfb5b2823ee54692bcc11c2a88512";
-            const string humanoidBossGuid = "a000f0e5a2493904492a06a283982f07";
+            const string supportDragonGuid = "eb1e983e7185682438ea67300bb11fcd";
+            const string humanoidBossGuid = "d405ed8ecd0740748a4c4f82842ebd49";
             bool missingSupportDragon = string.IsNullOrWhiteSpace(
                 UnityEditor.AssetDatabase.GUIDToAssetPath(supportDragonGuid));
             bool missingHumanoidBoss = string.IsNullOrWhiteSpace(

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -26,6 +27,10 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Transform projectileRoot;
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(16);
+        private SpatialOneShotAudioPool impactAudioPool;
+        private Collider[] sourceBodyColliders = Array.Empty<Collider>();
+        private CombatHealth sourceBodyColliderOwner;
+        private bool sourceBodyCollidersCaptured;
         private float cooldownTimer;
         private float windupTimer;
         private bool windupActive;
@@ -82,6 +87,11 @@ namespace DimensionBrawl.Combat
         {
             laneSpace = newLaneSpace;
             trackedPlayer = newTrackedPlayer;
+            if (sourceHealth != newSourceHealth)
+            {
+                InvalidateSourceBodyColliderCache();
+            }
+
             sourceHealth = newSourceHealth;
         }
 
@@ -95,6 +105,7 @@ namespace DimensionBrawl.Combat
             projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
             prewarmCount = Mathf.Max(0, newPrewarmCount);
             ClearQueuedPriorityPattern();
+            EnsureImpactAudioPool();
             PrewarmPool();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
@@ -276,11 +287,13 @@ namespace DimensionBrawl.Combat
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             if (projectileRoot == null)
             {
                 projectileRoot = transform;
             }
 
+            EnsureImpactAudioPool();
             PrewarmPool();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
@@ -331,7 +344,8 @@ namespace DimensionBrawl.Combat
                 activePattern.ProjectileLifetimeSeconds,
                 activePattern.ProjectileRadius,
                 activePattern.DamageResponsePolicy,
-                activePattern.ControlLockPolicy);
+                activePattern.ControlLockPolicy,
+                impactAudioPool);
             return true;
         }
 
@@ -424,16 +438,31 @@ namespace DimensionBrawl.Combat
         {
             if (sourceHealth == null)
             {
+                InvalidateSourceBodyColliderCache();
                 return Array.Empty<Collider>();
             }
 
-            Collider[] colliders = sourceHealth.GetComponents<Collider>();
-            if (colliders != null && colliders.Length > 0)
+            if (sourceBodyCollidersCaptured && sourceBodyColliderOwner == sourceHealth)
             {
-                return colliders;
+                return sourceBodyColliders;
             }
 
-            return sourceHealth.GetComponentsInChildren<Collider>();
+            sourceBodyColliderOwner = sourceHealth;
+            sourceBodyColliders = sourceHealth.GetComponents<Collider>();
+            if (sourceBodyColliders.Length == 0)
+            {
+                sourceBodyColliders = sourceHealth.GetComponentsInChildren<Collider>();
+            }
+
+            sourceBodyCollidersCaptured = true;
+            return sourceBodyColliders;
+        }
+
+        private void InvalidateSourceBodyColliderCache()
+        {
+            sourceBodyColliders = Array.Empty<Collider>();
+            sourceBodyColliderOwner = null;
+            sourceBodyCollidersCaptured = false;
         }
 
         private BossBarragePatternProfile ResolveActivePattern()
@@ -547,6 +576,20 @@ namespace DimensionBrawl.Combat
                 projectile.Deactivate();
                 pool.Add(projectile);
             }
+        }
+
+        private void EnsureImpactAudioPool()
+        {
+            if (impactAudioPool == null)
+            {
+                impactAudioPool = GetComponent<SpatialOneShotAudioPool>();
+                if (impactAudioPool == null)
+                {
+                    impactAudioPool = gameObject.AddComponent<SpatialOneShotAudioPool>();
+                }
+            }
+
+            impactAudioPool.ConfigurePrewarmCount(Mathf.Clamp(prewarmCount, 4, 16));
         }
 
         private BossBarrageProjectile GetInactiveProjectile()

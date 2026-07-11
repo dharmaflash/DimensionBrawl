@@ -27,6 +27,7 @@ namespace DimensionBrawl.Combat
         private Material[][] baseSharedMaterials = new Material[0][];
         private ParticleSystem[] visualParticleSystems = System.Array.Empty<ParticleSystem>();
         private AudioSource[] audioSources = System.Array.Empty<AudioSource>();
+        private SpatialOneShotAudioPool impactAudioPool;
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 travelDirection = Vector3.back;
@@ -58,6 +59,7 @@ namespace DimensionBrawl.Combat
 
         private void Awake()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             EnsurePhysicsComponents();
             EnsurePresentationComponents();
         }
@@ -83,11 +85,13 @@ namespace DimensionBrawl.Combat
             float lifetimeSeconds,
             float radius,
             DamageResponsePolicy newResponsePolicy = DamageResponsePolicy.FlashOnly,
-            CombatControlLockPolicy newControlLockPolicy = CombatControlLockPolicy.None)
+            CombatControlLockPolicy newControlLockPolicy = CombatControlLockPolicy.None,
+            SpatialOneShotAudioPool newImpactAudioPool = null)
         {
             EnsurePhysicsComponents();
             sourceHealth = newSourceHealth;
             sourceTeam = newSourceTeam;
+            impactAudioPool = newImpactAudioPool;
             ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
             travelDirection = ResolveDirection(newTravelDirection);
@@ -234,7 +238,7 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            SummonPressureScreen hitPressureScreen = hitCollider.GetComponentInParent<SummonPressureScreen>();
+            SummonPressureScreen hitPressureScreen = SummonPressureScreen.ResolveFromCollider(hitCollider);
             if (hitPressureScreen != null)
             {
                 if (hitPressureScreen.TryIntercept(this))
@@ -251,7 +255,7 @@ namespace DimensionBrawl.Combat
                 return true;
             }
 
-            SummonFrontlineProxy targetProxy = hitCollider.GetComponentInParent<SummonFrontlineProxy>();
+            SummonFrontlineProxy targetProxy = SummonFrontlineProxy.ResolveFromCollider(hitCollider);
             if (targetProxy != null && !targetProxy.IsActive)
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredInactiveSummon, null, targetProxy);
@@ -259,8 +263,8 @@ namespace DimensionBrawl.Combat
             }
 
             CombatHealth targetHealth = targetProxy != null
-                ? targetProxy.Health ?? hitCollider.GetComponentInParent<CombatHealth>()
-                : hitCollider.GetComponentInParent<CombatHealth>();
+                ? targetProxy.Health ?? CombatHealth.ResolveFromCollider(hitCollider)
+                : CombatHealth.ResolveFromCollider(hitCollider);
             if (targetHealth == null)
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredMissingHealth, null, targetProxy);
@@ -347,7 +351,7 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            ActionCameraController cameraController = ActionCameraController.ActiveInstance;
             if (cameraController == null)
             {
                 return;
@@ -683,6 +687,22 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            float pitch = Random.Range(
+                Mathf.Min(impactSfxPitchRange.x, impactSfxPitchRange.y),
+                Mathf.Max(impactSfxPitchRange.x, impactSfxPitchRange.y));
+            if (impactAudioPool != null && impactAudioPool.Play(
+                    impactSfx,
+                    impactPoint,
+                    impactSfxVolume,
+                    pitch,
+                    0.62f,
+                    3f,
+                    28f,
+                    136))
+            {
+                return;
+            }
+
             GameObject audioObject = new GameObject("BossBarrageProjectileImpactAudio");
             audioObject.transform.position = impactPoint;
             AudioSource source = audioObject.AddComponent<AudioSource>();
@@ -690,9 +710,7 @@ namespace DimensionBrawl.Combat
             source.playOnAwake = false;
             source.loop = false;
             source.volume = Mathf.Clamp01(impactSfxVolume);
-            source.pitch = Random.Range(
-                Mathf.Min(impactSfxPitchRange.x, impactSfxPitchRange.y),
-                Mathf.Max(impactSfxPitchRange.x, impactSfxPitchRange.y));
+            source.pitch = pitch;
             source.spatialBlend = 0.62f;
             source.dopplerLevel = 0f;
             source.rolloffMode = AudioRolloffMode.Linear;

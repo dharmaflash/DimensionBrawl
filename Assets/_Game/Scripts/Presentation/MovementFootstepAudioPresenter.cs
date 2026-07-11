@@ -1,8 +1,93 @@
+using System.Collections.Generic;
 using DimensionBrawl.Player;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
+    [DisallowMultipleComponent]
+    public sealed class MovementFootstepAudioScheduler : MonoBehaviour
+    {
+        private static MovementFootstepAudioScheduler instance;
+
+        private readonly List<MovementFootstepAudioPresenter> presenters = new(8);
+
+        public static int RegisteredPresenterCount => instance != null ? instance.presenters.Count : 0;
+        public static bool IsTicking => instance != null && instance.enabled;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStatics()
+        {
+            instance = null;
+        }
+
+        public static void Register(MovementFootstepAudioPresenter presenter)
+        {
+            if (presenter == null)
+            {
+                return;
+            }
+
+            MovementFootstepAudioScheduler scheduler = EnsureInstance();
+            if (!scheduler.presenters.Contains(presenter))
+            {
+                scheduler.presenters.Add(presenter);
+            }
+
+            scheduler.enabled = scheduler.presenters.Count > 0;
+        }
+
+        public static void Unregister(MovementFootstepAudioPresenter presenter)
+        {
+            if (instance == null || presenter == null)
+            {
+                return;
+            }
+
+            instance.presenters.Remove(presenter);
+            instance.enabled = instance.presenters.Count > 0;
+        }
+
+        private static MovementFootstepAudioScheduler EnsureInstance()
+        {
+            if (instance != null)
+            {
+                return instance;
+            }
+
+            GameObject root = new("[MovementFootstepAudioScheduler]");
+            DontDestroyOnLoad(root);
+            instance = root.AddComponent<MovementFootstepAudioScheduler>();
+            return instance;
+        }
+
+        private void Update()
+        {
+            float deltaTime = Time.deltaTime;
+            int index = 0;
+            while (index < presenters.Count)
+            {
+                MovementFootstepAudioPresenter presenter = presenters[index];
+                if (presenter == null)
+                {
+                    presenters.RemoveAt(index);
+                    continue;
+                }
+
+                if (presenter.isActiveAndEnabled)
+                {
+                    presenter.Tick(deltaTime);
+                }
+
+                index++;
+            }
+
+            if (presenters.Count == 0)
+            {
+                enabled = false;
+            }
+        }
+    }
+
     [DisallowMultipleComponent]
     public sealed class MovementFootstepAudioPresenter : MonoBehaviour
     {
@@ -63,6 +148,12 @@ namespace DimensionBrawl.Presentation
         private void OnEnable()
         {
             ResetStepState();
+            MovementFootstepAudioScheduler.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            MovementFootstepAudioScheduler.Unregister(this);
         }
 
         public void Configure(
@@ -101,14 +192,13 @@ namespace DimensionBrawl.Presentation
             return clips[index];
         }
 
-        private void Update()
+        internal void Tick(float deltaTime)
         {
             if (source == null || trackedTransform == null || clips == null || clips.Length == 0)
             {
                 return;
             }
 
-            float deltaTime = Time.deltaTime;
             if (deltaTime <= 0f)
             {
                 return;

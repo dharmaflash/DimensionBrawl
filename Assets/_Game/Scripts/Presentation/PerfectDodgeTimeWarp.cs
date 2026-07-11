@@ -1,6 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
-using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
 using UnityEngine;
 
@@ -9,6 +9,18 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class PerfectDodgeTimeWarp : MonoBehaviour
     {
+        private sealed class ReceiverContext
+        {
+            public CombatTimeDilationReceiver Receiver;
+            public GameObject Owner;
+            public CombatHealth Health;
+            public BossBarrageProjectile BossProjectile;
+            public LaneActionProjectile LaneProjectile;
+            public BossLaserSummonPattern LaserPattern;
+            public SummonFrontlineProxy LaserProxy;
+            public bool IsHostileEmitter;
+        }
+
         [SerializeField] private PlayerActionController actionController;
         [SerializeField, Range(0.02f, 1f)] private float timeScale = 0.18f;
         [SerializeField, Min(0.01f)] private float durationSeconds = 3f;
@@ -20,6 +32,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0.02f)] private float receiverRefreshIntervalSeconds = 0.08f;
 
         private readonly HashSet<int> affectedReceivers = new HashSet<int>();
+        private readonly Dictionary<int, ReceiverContext> receiverContexts =
+            new Dictionary<int, ReceiverContext>(32);
         private float previousTimeScale = 1f;
         private float appliedTimeScale = 1f;
         private float timer;
@@ -31,6 +45,8 @@ namespace DimensionBrawl.Presentation
         private CombatHealth playerHealth;
         private int lastAffectedReceiverCount;
         private int receiverRefreshCount;
+        private int receiverContextBuildCount;
+        private Coroutine warpRoutine;
 
         private const float RestoreTolerance = 0.08f;
 
@@ -45,6 +61,8 @@ namespace DimensionBrawl.Presentation
         public float ReceiverRefreshIntervalSeconds => receiverRefreshIntervalSeconds;
         public int LastAffectedReceiverCount => lastAffectedReceiverCount;
         public int ReceiverRefreshCount => receiverRefreshCount;
+        public int ReceiverContextCacheCount => receiverContexts.Count;
+        public int ReceiverContextBuildCount => receiverContextBuildCount;
 
         private void Awake()
         {
@@ -68,6 +86,7 @@ namespace DimensionBrawl.Presentation
 
         private void OnDisable()
         {
+            StopWarpRoutine();
             if (actionController != null)
             {
                 actionController.PerfectDodgeTriggered -= HandlePerfectDodgeTriggered;
@@ -79,31 +98,45 @@ namespace DimensionBrawl.Presentation
             hitStopTimer = 0f;
             receiverRefreshTimer = 0f;
             hasLastDamageInfo = false;
+            receiverContexts.Clear();
         }
 
-        private void Update()
+        private IEnumerator RefreshWarpUntilSettled()
         {
-            float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
-            if (timer > 0f)
+            yield return null;
+
+            while (isActiveAndEnabled && IsWarpActive)
             {
-                timer = Mathf.Max(0f, timer - deltaTime);
-                RefreshActiveReceivers(deltaTime);
+                float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
+                if (timer > 0f)
+                {
+                    timer = Mathf.Max(0f, timer - deltaTime);
+                    RefreshActiveReceivers(deltaTime);
+                }
+
+                if (ownsGlobalHitStop)
+                {
+                    hitStopTimer = Mathf.Max(0f, hitStopTimer - deltaTime);
+                    if (hitStopTimer > 0f)
+                    {
+                        ApplyScale(appliedTimeScale);
+                    }
+                    else
+                    {
+                        RestoreIfStillOwner();
+                        ownsGlobalHitStop = false;
+                    }
+                }
+
+                if (!IsWarpActive)
+                {
+                    break;
+                }
+
+                yield return null;
             }
 
-            if (!ownsGlobalHitStop)
-            {
-                return;
-            }
-
-            hitStopTimer = Mathf.Max(0f, hitStopTimer - deltaTime);
-            if (hitStopTimer > 0f)
-            {
-                ApplyScale(appliedTimeScale);
-                return;
-            }
-
-            RestoreIfStillOwner();
-            ownsGlobalHitStop = false;
+            warpRoutine = null;
         }
 
         private void HandlePerfectDodgeTriggered(DamageInfo damageInfo)
@@ -119,6 +152,26 @@ namespace DimensionBrawl.Presentation
             receiverRefreshTimer = 0f;
             ApplyThreatTimeDilation(damageInfo);
             BeginGlobalHitStop();
+            StartWarpRoutineIfNeeded();
+        }
+
+        private void StartWarpRoutineIfNeeded()
+        {
+            if (warpRoutine == null && Application.isPlaying && isActiveAndEnabled && IsWarpActive)
+            {
+                warpRoutine = StartCoroutine(RefreshWarpUntilSettled());
+            }
+        }
+
+        private void StopWarpRoutine()
+        {
+            if (warpRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(warpRoutine);
+            warpRoutine = null;
         }
 
         private void RefreshActiveReceivers(float deltaTime)
@@ -152,15 +205,110 @@ namespace DimensionBrawl.Presentation
                 TryApplyReceiver(damageInfo.Source.gameObject, origin, 1f);
             }
 
-            ApplyToHostileHealthRoots(origin, playerTeam);
-            ApplyToBossProjectiles(origin, playerTeam);
-            ApplyToLaneProjectiles(origin, playerTeam);
-            ApplyToBasicSoldiers(origin, playerTeam);
-            ApplyToBossBarrageEmitters(origin, playerTeam);
-            ApplyToBossBasicFireEmitters(origin, playerTeam);
-            ApplyToEnemySummonPacingDirectors(origin, playerTeam);
-            ApplyToBossLaserSummonPatterns(origin, playerTeam);
+            ApplyToRegisteredReceivers(origin, playerTeam);
             lastAffectedReceiverCount = affectedReceivers.Count;
+        }
+
+        private void ApplyToRegisteredReceivers(Vector3 origin, DamageTeam playerTeam)
+        {
+            IReadOnlyList<CombatTimeDilationReceiver> receivers = CombatTimeDilationReceiver.ActiveInstances;
+            for (int i = 0; i < receivers.Count; i++)
+            {
+                CombatTimeDilationReceiver receiver = receivers[i];
+                if (!TryResolveHostileReceiverPosition(receiver, playerTeam, out Vector3 position))
+                {
+                    continue;
+                }
+
+                TryApplyReceiver(receiver.gameObject, origin, ResolveDistanceWeight(position, origin));
+            }
+        }
+
+        private bool TryResolveHostileReceiverPosition(
+            CombatTimeDilationReceiver receiver,
+            DamageTeam playerTeam,
+            out Vector3 position)
+        {
+            position = default;
+            if (receiver == null || !receiver.gameObject.activeInHierarchy || receiver.gameObject == gameObject)
+            {
+                return false;
+            }
+
+            GameObject owner = receiver.gameObject;
+            ReceiverContext context = ResolveReceiverContext(receiver);
+            if (context.Health != null)
+            {
+                position = context.Health.transform.position;
+                return context.Health.IsAlive
+                    && CombatTeamUtility.AreHostile(context.Health.Team, playerTeam);
+            }
+
+            if (context.BossProjectile != null)
+            {
+                position = context.BossProjectile.transform.position;
+                return context.BossProjectile.IsActive
+                    && CombatTeamUtility.AreHostile(context.BossProjectile.SourceTeam, playerTeam);
+            }
+
+            if (context.LaneProjectile != null)
+            {
+                position = context.LaneProjectile.transform.position;
+                return context.LaneProjectile.IsActive
+                    && CombatTeamUtility.AreHostile(context.LaneProjectile.SourceTeam, playerTeam);
+            }
+
+            if (context.LaserPattern != null)
+            {
+                position = context.LaserPattern.transform.position;
+                return context.LaserProxy != null
+                    ? context.LaserProxy.IsActive
+                        && CombatTeamUtility.AreHostile(context.LaserProxy.OwnerTeam, playerTeam)
+                    : context.Health == null
+                        || CombatTeamUtility.AreHostile(context.Health.Team, playerTeam);
+            }
+
+            if (!context.IsHostileEmitter)
+            {
+                return false;
+            }
+
+            position = owner.transform.position;
+            return context.Health == null || CombatTeamUtility.AreHostile(context.Health.Team, playerTeam);
+        }
+
+        private ReceiverContext ResolveReceiverContext(CombatTimeDilationReceiver receiver)
+        {
+            int id = receiver.GetInstanceID();
+            if (receiverContexts.TryGetValue(id, out ReceiverContext context)
+                && context != null
+                && context.Receiver == receiver
+                && context.Owner == receiver.gameObject)
+            {
+                return context;
+            }
+
+            GameObject owner = receiver.gameObject;
+            context = new ReceiverContext
+            {
+                Receiver = receiver,
+                Owner = owner,
+                Health = owner.GetComponent<CombatHealth>() ?? owner.GetComponentInParent<CombatHealth>(),
+                BossProjectile = owner.GetComponent<BossBarrageProjectile>(),
+                LaneProjectile = owner.GetComponent<LaneActionProjectile>(),
+                LaserPattern = owner.GetComponent<BossLaserSummonPattern>(),
+                IsHostileEmitter = owner.TryGetComponent<BossBarrageEmitter>(out _)
+                    || owner.TryGetComponent<BossBasicFireEmitter>(out _)
+                    || owner.TryGetComponent<EnemySummonPacingDirector>(out _)
+            };
+            if (context.LaserPattern != null)
+            {
+                context.LaserProxy = context.LaserPattern.GetComponent<SummonFrontlineProxy>();
+            }
+
+            receiverContexts[id] = context;
+            receiverContextBuildCount++;
+            return context;
         }
 
         private void BeginGlobalHitStop()
@@ -175,165 +323,6 @@ namespace DimensionBrawl.Presentation
             hitStopTimer = Mathf.Max(hitStopTimer, globalHitStopSeconds);
             ownsGlobalHitStop = true;
             ApplyScale(appliedTimeScale);
-        }
-
-        private void ApplyToHostileHealthRoots(Vector3 origin, DamageTeam playerTeam)
-        {
-            CombatHealth[] healths = UnityEngine.Object.FindObjectsByType<CombatHealth>(FindObjectsSortMode.None);
-            for (int i = 0; i < healths.Length; i++)
-            {
-                CombatHealth health = healths[i];
-                if (health == null
-                    || !health.IsAlive
-                    || !CombatTeamUtility.AreHostile(health.Team, playerTeam)
-                    || health.transform == transform)
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(health.gameObject, origin, ResolveDistanceWeight(health.transform.position, origin));
-            }
-        }
-
-        private void ApplyToBossProjectiles(Vector3 origin, DamageTeam playerTeam)
-        {
-            BossBarrageProjectile[] projectiles =
-                UnityEngine.Object.FindObjectsByType<BossBarrageProjectile>(FindObjectsSortMode.None);
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                BossBarrageProjectile projectile = projectiles[i];
-                if (projectile == null
-                    || !projectile.IsActive
-                    || !CombatTeamUtility.AreHostile(projectile.SourceTeam, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(projectile.gameObject, origin, ResolveDistanceWeight(projectile.transform.position, origin));
-            }
-        }
-
-        private void ApplyToLaneProjectiles(Vector3 origin, DamageTeam playerTeam)
-        {
-            LaneActionProjectile[] projectiles =
-                UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(FindObjectsSortMode.None);
-            for (int i = 0; i < projectiles.Length; i++)
-            {
-                LaneActionProjectile projectile = projectiles[i];
-                if (projectile == null
-                    || !projectile.IsActive
-                    || !CombatTeamUtility.AreHostile(projectile.SourceTeam, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(projectile.gameObject, origin, ResolveDistanceWeight(projectile.transform.position, origin));
-            }
-        }
-
-        private void ApplyToBasicSoldiers(Vector3 origin, DamageTeam playerTeam)
-        {
-            BasicSoldierEnemy[] soldiers =
-                UnityEngine.Object.FindObjectsByType<BasicSoldierEnemy>(FindObjectsSortMode.None);
-            for (int i = 0; i < soldiers.Length; i++)
-            {
-                BasicSoldierEnemy soldier = soldiers[i];
-                if (soldier == null
-                    || soldier.SelfHealth == null
-                    || !soldier.SelfHealth.IsAlive
-                    || !CombatTeamUtility.AreHostile(soldier.SelfHealth.Team, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(soldier.gameObject, origin, ResolveDistanceWeight(soldier.transform.position, origin));
-            }
-        }
-
-        private void ApplyToBossBarrageEmitters(Vector3 origin, DamageTeam playerTeam)
-        {
-            BossBarrageEmitter[] emitters =
-                UnityEngine.Object.FindObjectsByType<BossBarrageEmitter>(FindObjectsSortMode.None);
-            for (int i = 0; i < emitters.Length; i++)
-            {
-                BossBarrageEmitter emitter = emitters[i];
-                if (emitter == null || !IsHostileEmitterRoot(emitter.gameObject, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(emitter.gameObject, origin, ResolveDistanceWeight(emitter.transform.position, origin));
-            }
-        }
-
-        private void ApplyToBossBasicFireEmitters(Vector3 origin, DamageTeam playerTeam)
-        {
-            BossBasicFireEmitter[] emitters =
-                UnityEngine.Object.FindObjectsByType<BossBasicFireEmitter>(FindObjectsSortMode.None);
-            for (int i = 0; i < emitters.Length; i++)
-            {
-                BossBasicFireEmitter emitter = emitters[i];
-                if (emitter == null || !IsHostileEmitterRoot(emitter.gameObject, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(emitter.gameObject, origin, ResolveDistanceWeight(emitter.transform.position, origin));
-            }
-        }
-
-        private void ApplyToEnemySummonPacingDirectors(Vector3 origin, DamageTeam playerTeam)
-        {
-            EnemySummonPacingDirector[] directors =
-                UnityEngine.Object.FindObjectsByType<EnemySummonPacingDirector>(FindObjectsSortMode.None);
-            for (int i = 0; i < directors.Length; i++)
-            {
-                EnemySummonPacingDirector director = directors[i];
-                if (director == null || !IsHostileEmitterRoot(director.gameObject, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(director.gameObject, origin, ResolveDistanceWeight(director.transform.position, origin));
-            }
-        }
-
-        private void ApplyToBossLaserSummonPatterns(Vector3 origin, DamageTeam playerTeam)
-        {
-            BossLaserSummonPattern[] patterns =
-                UnityEngine.Object.FindObjectsByType<BossLaserSummonPattern>(FindObjectsSortMode.None);
-            for (int i = 0; i < patterns.Length; i++)
-            {
-                BossLaserSummonPattern pattern = patterns[i];
-                if (pattern == null || !IsHostileBossLaserPattern(pattern, playerTeam))
-                {
-                    continue;
-                }
-
-                TryApplyReceiver(pattern.gameObject, origin, ResolveDistanceWeight(pattern.transform.position, origin));
-            }
-        }
-
-        private bool IsHostileBossLaserPattern(BossLaserSummonPattern pattern, DamageTeam playerTeam)
-        {
-            if (pattern == null)
-            {
-                return false;
-            }
-
-            SummonFrontlineProxy proxy = pattern.GetComponent<SummonFrontlineProxy>();
-            if (proxy != null)
-            {
-                return proxy.IsActive && CombatTeamUtility.AreHostile(proxy.OwnerTeam, playerTeam);
-            }
-
-            return IsHostileEmitterRoot(pattern.gameObject, playerTeam);
-        }
-
-        private bool IsHostileEmitterRoot(GameObject owner, DamageTeam playerTeam)
-        {
-            CombatHealth source = owner != null ? owner.GetComponentInParent<CombatHealth>() : null;
-            return source == null || CombatTeamUtility.AreHostile(source.Team, playerTeam);
         }
 
         private void TryApplyReceiver(GameObject owner, Vector3 origin, float intensity01)

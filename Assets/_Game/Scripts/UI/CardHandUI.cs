@@ -32,9 +32,12 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private RectTransform handViewport;
         [SerializeField] private HorizontalLayoutGroup slotLayoutGroup;
         [SerializeField] private float mobileScrollClickSuppressionDuration = 0.16f;
+        [SerializeField, Range(2f, 30f)] private float tacticalAdviceRefreshRate = 10f;
 
         private readonly List<CardSlotUI> activeSlots = new();
         private readonly List<SummonData> curatedDrawDeck = new();
+        private CardAdvice[] adviceBuffer = System.Array.Empty<CardAdvice>();
+        private float nextTacticalAdviceRefreshTime;
         private bool isSubscribedToEnergy;
         private int nextDeckIndex;
         private int currentUnlockedSlots;
@@ -49,6 +52,7 @@ namespace IsekaiBrawl.Gameplay
 
         private void OnEnable()
         {
+            nextTacticalAdviceRefreshTime = 0f;
             TrySubscribe();
         }
 
@@ -87,7 +91,11 @@ namespace IsekaiBrawl.Gameplay
             EnsureResponsiveContainer();
             UpdateUnlockProgression();
             UpdateSlotInteractivity();
-            UpdateTacticalAdvice();
+            if (Time.unscaledTime >= nextTacticalAdviceRefreshTime)
+            {
+                nextTacticalAdviceRefreshTime = Time.unscaledTime + 1f / Mathf.Max(1f, tacticalAdviceRefreshRate);
+                UpdateTacticalAdvice();
+            }
             UpdateResponsiveLayout(forceRefresh: false);
         }
 
@@ -696,7 +704,10 @@ namespace IsekaiBrawl.Gameplay
             int bestIndex = -1;
             float bestScore = float.MinValue;
             string bestHint = string.Empty;
-            CardAdvice[] adviceBuffer = new CardAdvice[currentHand.Count];
+            if (adviceBuffer.Length < currentHand.Count)
+            {
+                adviceBuffer = new CardAdvice[currentHand.Count];
+            }
 
             for (int index = 0; index < currentHand.Count; index++)
             {
@@ -897,17 +908,7 @@ namespace IsekaiBrawl.Gameplay
 
         private static int CountActiveStructures()
         {
-            BattleStructure[] structures = FindObjectsByType<BattleStructure>(FindObjectsSortMode.None);
-            int activeCount = 0;
-            for (int index = 0; index < structures.Length; index++)
-            {
-                if (structures[index] != null && !structures[index].IsDestroyed)
-                {
-                    activeCount++;
-                }
-            }
-
-            return activeCount;
+            return BattleStructure.ActiveCount;
         }
     }
 

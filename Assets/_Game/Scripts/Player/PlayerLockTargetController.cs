@@ -220,7 +220,7 @@ namespace DimensionBrawl.Player
             targetSelector ??= GetComponent<PlayerCombatTargetSelector>();
             sourceHealth ??= GetComponent<CombatHealth>();
             selectionOrigin ??= transform;
-            cameraController ??= FindFirstObjectByType<ActionCameraController>();
+            cameraController ??= ActionCameraController.ActiveInstance;
         }
 
         private void OnEnable()

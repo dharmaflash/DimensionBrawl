@@ -8,7 +8,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Weapon_Rifle
-    second: {fileID: 2100000, guid: c03d6f01ed2b01e45a25498e1e7cdae3, type: 2}
+    second: {fileID: 2100000, guid: 104b3bc9314097044ac40d19e474a18b, type: 2}
   materials:
     materialImportMode: 0
     materialName: 0

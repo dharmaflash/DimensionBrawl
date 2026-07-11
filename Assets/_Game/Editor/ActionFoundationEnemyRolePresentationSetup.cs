@@ -23,6 +23,16 @@ namespace DimensionBrawl.Editor
         private const string PromotedCharacterRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers";
         private const string PromotedAnimationRoot = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/RoleVariants";
         private const string PromotedWeaponRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons";
+        private const string CanonicalSciFiSoldierModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
+        private const string CanonicalSciFiSoldierPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
+        private const string CanonicalSciFiSoldierMaterialPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Materials/M_SciFiSoldier_01.mat";
+        private const string CanonicalSciFiSoldierMaterialRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Materials";
+        private const string CanonicalSciFiSoldierTextureRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Textures";
         private const string SummonSignalName = "SummonIntentAnchor";
 
         private static readonly string[] VisualChildNamesToRemove =
@@ -70,19 +80,7 @@ namespace DimensionBrawl.Editor
                     "Therionide melee alien for committed lunge pressure.",
                     "Therionide melee set: melee idle/run, forward attacks, hit, death.",
                     TelegraphStyle.Lunge),
-                "SciFiSoldier.LineCaster" => CommonWeaponRole(
-                    roleId,
-                    "LineCaster",
-                    "SciFiSoldier01",
-                    ShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx",
-                    ShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab",
-                    ShooterRoot + "/SciFiSoldier_01/Materials/M_SciFiSoldier_01.mat",
-                    "GatlinGun",
-                    new[] { CommonWeapon("SK_SciFiLaserGatlinGun.FBX", "M_LaserGatlinGun.mat", "SK_SciFiLaserGatlinGun", "RefPosLaserGatlinGun_Action") },
-                    Vector3.one,
-                    "Laser-gatlin soldier kept as the clean line-pressure caster; no turret is layered on top.",
-                    "Gatlin-gun common humanoid set: aim idle, run, primary/secondary shots, line shot, retreat shot.",
-                    TelegraphStyle.Line),
+                "SciFiSoldier.LineCaster" => CanonicalLineCasterRole(roleId),
                 "SciFiSoldier.FanSuppressor" => CommonWeaponRole(
                     roleId,
                     "FanSuppressor",
@@ -166,6 +164,34 @@ namespace DimensionBrawl.Editor
                     TelegraphStyle.FinalStand),
                 _ => throw new InvalidOperationException($"No enemy role visual spec exists for {roleId}.")
             };
+        }
+
+        private static EnemyRoleVisualSpec CanonicalLineCasterRole(string roleId)
+        {
+            EnemyRoleVisualSpec spec = CommonWeaponRole(
+                roleId,
+                "LineCaster",
+                "SciFiSoldier01",
+                CanonicalSciFiSoldierModelPath,
+                CanonicalSciFiSoldierPrefabPath,
+                CanonicalSciFiSoldierMaterialPath,
+                "GatlinGun",
+                new[]
+                {
+                    CommonWeapon(
+                        "SK_SciFiLaserGatlinGun.FBX",
+                        "M_LaserGatlinGun.mat",
+                        "SK_SciFiLaserGatlinGun",
+                        "RefPosLaserGatlinGun_Action")
+                },
+                Vector3.one,
+                "Laser-gatlin soldier kept as the clean line-pressure caster; no turret is layered on top.",
+                "Gatlin-gun common humanoid set: aim idle, run, primary/secondary shots, line shot, retreat shot.",
+                TelegraphStyle.Line);
+            spec.TargetModelPath = CanonicalSciFiSoldierModelPath;
+            spec.MaterialRoot = CanonicalSciFiSoldierMaterialRoot;
+            spec.TextureRoot = CanonicalSciFiSoldierTextureRoot;
+            return spec;
         }
 
         public static GameObject LoadPromotedVisualSource(EnemyRoleVisualSpec spec)

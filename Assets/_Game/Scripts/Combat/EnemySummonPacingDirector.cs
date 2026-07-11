@@ -36,6 +36,7 @@ namespace DimensionBrawl.Combat
 
         private void OnEnable()
         {
+            CombatTimeDilationReceiver.Ensure(gameObject);
             ResetPacingTimer();
         }
 

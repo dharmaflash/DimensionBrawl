@@ -1,3 +1,4 @@
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using UnityEngine;
@@ -45,6 +46,7 @@ namespace DimensionBrawl.Presentation
         private Color lastMarkerColor;
         private bool countedCurrentWindup;
         private bool countedCurrentRelease;
+        private Coroutine refreshRoutine;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public SummonLaneSpace LaneSpace => laneSpace;
@@ -57,6 +59,7 @@ namespace DimensionBrawl.Presentation
         public BossBarragePatternProfile VisiblePattern => visiblePattern;
         public Vector3 LastMarkerScale => lastMarkerScale;
         public Color LastMarkerColor => lastMarkerColor;
+        public bool IsRefreshing => refreshRoutine != null;
 
         public void Configure(
             BossBarrageEmitter newEmitter,
@@ -65,6 +68,7 @@ namespace DimensionBrawl.Presentation
             Transform[] newMarkerTransforms,
             Renderer[] newMarkerRenderers)
         {
+            StopRefreshRoutine();
             Unsubscribe();
             bossBarrageEmitter = newEmitter;
             laneSpace = newLaneSpace;
@@ -74,6 +78,7 @@ namespace DimensionBrawl.Presentation
             EnsurePreviewBuffer();
             Subscribe();
             RefreshNow();
+            StartRefreshRoutineIfNeeded();
         }
 
         public void RefreshNow()
@@ -122,6 +127,7 @@ namespace DimensionBrawl.Presentation
             }
 
             visibleMarkerCount = count;
+            StartRefreshRoutineIfNeeded();
         }
 
         private void Awake()
@@ -139,22 +145,37 @@ namespace DimensionBrawl.Presentation
         {
             Subscribe();
             RefreshNow();
+            StartRefreshRoutineIfNeeded();
         }
 
         private void OnDisable()
         {
+            StopRefreshRoutine();
             Unsubscribe();
             HideMarkers();
         }
 
-        private void Update()
+        private IEnumerator RefreshWhileVisible()
         {
-            if (releaseFlashTimer > 0f)
+            yield return null;
+
+            while (isActiveAndEnabled)
             {
-                releaseFlashTimer = Mathf.Max(0f, releaseFlashTimer - Time.deltaTime);
+                if (releaseFlashTimer > 0f)
+                {
+                    releaseFlashTimer = Mathf.Max(0f, releaseFlashTimer - Time.deltaTime);
+                }
+
+                RefreshNow();
+                if (!ShouldAnimate())
+                {
+                    break;
+                }
+
+                yield return null;
             }
 
-            RefreshNow();
+            refreshRoutine = null;
         }
 
         private void HandleWindupStarted(BossBarrageEmitter emitter, BossBarragePatternProfile pattern)
@@ -163,6 +184,7 @@ namespace DimensionBrawl.Presentation
             lastPatternId = pattern != null ? pattern.PatternId : string.Empty;
             CountWindupRefreshOnce();
             RefreshNow();
+            StartRefreshRoutineIfNeeded();
         }
 
         private void CountWindupRefreshOnce()
@@ -184,6 +206,32 @@ namespace DimensionBrawl.Presentation
             releaseFlashCount++;
             countedCurrentRelease = true;
             RefreshNow();
+            StartRefreshRoutineIfNeeded();
+        }
+
+        private bool ShouldAnimate()
+        {
+            return bossBarrageEmitter != null
+                && (bossBarrageEmitter.IsWindupActive || releaseFlashTimer > 0f);
+        }
+
+        private void StartRefreshRoutineIfNeeded()
+        {
+            if (refreshRoutine == null && Application.isPlaying && isActiveAndEnabled && ShouldAnimate())
+            {
+                refreshRoutine = StartCoroutine(RefreshWhileVisible());
+            }
+        }
+
+        private void StopRefreshRoutine()
+        {
+            if (refreshRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(refreshRoutine);
+            refreshRoutine = null;
         }
 
         private void RefreshReleaseFlashFallback()

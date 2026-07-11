@@ -10,7 +10,23 @@ namespace DimensionBrawl.Combat
     [RequireComponent(typeof(Rigidbody))]
     public sealed class SummonPressureScreen : MonoBehaviour
     {
+        private readonly struct ColliderScreenBinding
+        {
+            public ColliderScreenBinding(Collider collider, SummonPressureScreen screen, int version)
+            {
+                Collider = collider;
+                Screen = screen;
+                Version = version;
+            }
+
+            public Collider Collider { get; }
+            public SummonPressureScreen Screen { get; }
+            public int Version { get; }
+        }
+
         private static readonly List<SummonPressureScreen> ActiveScreens = new List<SummonPressureScreen>(16);
+        private static readonly Dictionary<int, ColliderScreenBinding> ColliderScreenBindings = new(128);
+        private static int colliderScreenBindingVersion;
 
         [SerializeField] private DamageTeam ownerTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int defaultMaxIntercepts = 2;
@@ -39,6 +55,7 @@ namespace DimensionBrawl.Combat
         public float RemainingLifetimeSeconds => remainingLifetime;
         public float ActiveRadius => activeRadius > 0f ? activeRadius : defaultRadius;
         public DamageTeam OwnerTeam => ownerTeam;
+        public static int CachedColliderBindingCount => ColliderScreenBindings.Count;
 
         public event Action<SummonPressureScreen> Activated;
         public event Action<SummonPressureScreen, BossBarrageProjectile> Intercepted;
@@ -46,8 +63,40 @@ namespace DimensionBrawl.Combat
         public event Action<SummonPressureScreen> SkillBeamIntercepted;
         public event Action<SummonPressureScreen> Deactivated;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveScreens.Clear();
+            ColliderScreenBindings.Clear();
+            colliderScreenBindingVersion = 0;
+        }
+
+        public static SummonPressureScreen ResolveFromCollider(Collider collider)
+        {
+            if (collider == null)
+            {
+                return null;
+            }
+
+            int id = collider.GetInstanceID();
+            if (ColliderScreenBindings.TryGetValue(id, out ColliderScreenBinding binding)
+                && binding.Collider == collider
+                && binding.Version == colliderScreenBindingVersion)
+            {
+                return binding.Screen;
+            }
+
+            SummonPressureScreen screen = collider.GetComponentInParent<SummonPressureScreen>();
+            ColliderScreenBindings[id] = new ColliderScreenBinding(
+                collider,
+                screen,
+                colliderScreenBindingVersion);
+            return screen;
+        }
+
         private void Awake()
         {
+            InvalidateColliderBindings();
             EnsurePhysicsComponents();
             EnsureOverlapBuffer();
             Deactivate();
@@ -69,6 +118,7 @@ namespace DimensionBrawl.Combat
             float lifetimeSeconds,
             int tier)
         {
+            InvalidateColliderBindings();
             EnsurePhysicsComponents();
             ownerTeam = newOwnerTeam;
             maxIntercepts = Mathf.Max(0, newMaxIntercepts);
@@ -191,7 +241,7 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            ActionCameraController cameraController = FindFirstObjectByType<ActionCameraController>();
+            ActionCameraController cameraController = ActionCameraController.ActiveInstance;
             cameraController?.RequestShieldBlockFeedback(incomingDirection, Mathf.Clamp01(activeTier / 3f + 0.35f));
         }
 
@@ -224,7 +274,16 @@ namespace DimensionBrawl.Combat
 
         private void OnDestroy()
         {
+            InvalidateColliderBindings();
             UnregisterActiveScreen();
+        }
+
+        private static void InvalidateColliderBindings()
+        {
+            unchecked
+            {
+                colliderScreenBindingVersion++;
+            }
         }
 
         public static bool TryInterceptAnyOverlapping(
@@ -237,25 +296,12 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (TryInterceptAnyOverlapping(
+            return TryInterceptAnyOverlapping(
                 ActiveScreens,
                 projectile,
                 impactPoint,
                 extraRadius,
-                pruneInactive: true))
-            {
-                return true;
-            }
-
-            SummonPressureScreen[] sceneScreens = FindObjectsByType<SummonPressureScreen>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            return TryInterceptAnyOverlapping(
-                sceneScreens,
-                projectile,
-                impactPoint,
-                extraRadius,
-                pruneInactive: false);
+                pruneInactive: true);
         }
 
         private static bool TryInterceptAnyOverlapping(
@@ -283,9 +329,8 @@ namespace DimensionBrawl.Combat
                     continue;
                 }
 
-                float distance = Vector3.Distance(screen.transform.position, impactPoint);
                 float radius = screen.ActiveRadius + Mathf.Max(0f, extraRadius);
-                bool inRange = distance * distance <= radius * radius;
+                bool inRange = (screen.transform.position - impactPoint).sqrMagnitude <= radius * radius;
                 if (!inRange)
                 {
                     continue;
@@ -312,13 +357,8 @@ namespace DimensionBrawl.Combat
         {
             blockedBeamIndex = -1;
             blockedBeamDistance = float.PositiveInfinity;
-            Vector3[] directions =
-            {
-                ResolvePlanarDirection(forward, Vector3.forward),
-                ResolvePlanarDirection(right, Vector3.right),
-                ResolvePlanarDirection(-forward, Vector3.back),
-                ResolvePlanarDirection(-right, Vector3.left)
-            };
+            Vector3 forwardDirection = ResolvePlanarDirection(forward, Vector3.forward);
+            Vector3 rightDirection = ResolvePlanarDirection(right, Vector3.right);
 
             SummonPressureScreen closestScreen = null;
             for (int screenIndex = ActiveScreens.Count - 1; screenIndex >= 0; screenIndex--)
@@ -336,9 +376,15 @@ namespace DimensionBrawl.Combat
                 }
 
                 Vector3 offset = Vector3.ProjectOnPlane(screen.transform.position - origin, Vector3.up);
-                for (int directionIndex = 0; directionIndex < directions.Length; directionIndex++)
+                for (int directionIndex = 0; directionIndex < 4; directionIndex++)
                 {
-                    Vector3 direction = directions[directionIndex];
+                    Vector3 direction = directionIndex switch
+                    {
+                        0 => forwardDirection,
+                        1 => rightDirection,
+                        2 => -forwardDirection,
+                        _ => -rightDirection
+                    };
                     float forwardDistance = Vector3.Dot(offset, direction);
                     if (forwardDistance < 0f || forwardDistance > Mathf.Max(0f, maxDistance))
                     {

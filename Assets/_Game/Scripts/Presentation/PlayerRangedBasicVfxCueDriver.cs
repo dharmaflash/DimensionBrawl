@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
@@ -8,6 +9,15 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class PlayerRangedBasicVfxCueDriver : MonoBehaviour
     {
+        private sealed class PhysicalImpactVfxInstance
+        {
+            public GameObject Root;
+            public ParticleSystem[] Particles;
+            public Vector3 BaseScale;
+            public float ReleaseTime;
+            public bool Active;
+        }
+
         public const bool DefaultPlayImpactVfx = false;
         public const bool DefaultPlayImpactAudio = true;
         public const bool DefaultPlayPhysicalImpactVfx = true;
@@ -33,15 +43,22 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private GameObject physicalImpactVfxPrefab;
         [SerializeField, Min(0f)] private float physicalImpactVfxScale = DefaultPhysicalImpactVfxScale;
         [SerializeField, Min(0f)] private float physicalImpactVfxLifetimeSeconds = DefaultPhysicalImpactVfxLifetimeSeconds;
+        [SerializeField, Range(1, 16)] private int physicalImpactVfxPrewarmCount = 6;
 
         private readonly HashSet<LaneActionProjectile> watchedProjectiles = new HashSet<LaneActionProjectile>();
+        private readonly List<PhysicalImpactVfxInstance> physicalImpactVfxPool =
+            new List<PhysicalImpactVfxInstance>(8);
         private bool subscribed;
+        private int activePhysicalImpactVfxCount;
+        private Coroutine physicalImpactReleaseRoutine;
         private float lastCameraFireCueTime = float.NegativeInfinity;
         private int cameraFireCueRequestCount;
 
         public bool PlayImpactVfx => playImpactVfx;
         public bool PlayImpactAudio => playImpactAudio;
         public int CameraFireCueRequestCount => cameraFireCueRequestCount;
+        public int PhysicalImpactVfxPoolSize => physicalImpactVfxPool.Count;
+        public int ActivePhysicalImpactVfxCount => activePhysicalImpactVfxCount;
 
         private void Awake()
         {
@@ -57,7 +74,7 @@ namespace DimensionBrawl.Presentation
 
             if (cameraController == null)
             {
-                cameraController = FindFirstObjectByType<ActionCameraController>();
+                cameraController = ActionCameraController.ActiveInstance;
             }
 
             if (muzzleAnchor == null && rangedBasicAttackAction != null)
@@ -71,9 +88,32 @@ namespace DimensionBrawl.Presentation
             Subscribe();
         }
 
+        private void Start()
+        {
+            PrewarmPhysicalImpactVfx();
+        }
+
         private void OnDisable()
         {
+            StopPhysicalImpactReleaseRoutine();
             Unsubscribe();
+            ReleaseAllPhysicalImpactVfx();
+        }
+
+        private void OnDestroy()
+        {
+            StopPhysicalImpactReleaseRoutine();
+            for (int i = 0; i < physicalImpactVfxPool.Count; i++)
+            {
+                PhysicalImpactVfxInstance entry = physicalImpactVfxPool[i];
+                if (entry?.Root != null)
+                {
+                    Destroy(entry.Root);
+                }
+            }
+
+            physicalImpactVfxPool.Clear();
+            activePhysicalImpactVfxCount = 0;
         }
 
         public void Configure(
@@ -145,7 +185,7 @@ namespace DimensionBrawl.Presentation
 
             if (cameraController == null)
             {
-                cameraController = FindFirstObjectByType<ActionCameraController>();
+                cameraController = ActionCameraController.ActiveInstance;
                 if (cameraController == null)
                 {
                     return;
@@ -209,23 +249,198 @@ namespace DimensionBrawl.Presentation
                 ? impactDirection.normalized
                 : Vector3.forward;
             Quaternion rotation = Quaternion.LookRotation(-direction, Vector3.up);
-            GameObject instance = Instantiate(physicalImpactVfxPrefab, impactPoint, rotation);
-            instance.transform.localScale *= Mathf.Max(0f, physicalImpactVfxScale);
-
-            ParticleSystem[] particleSystems = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-            for (int i = 0; i < particleSystems.Length; i++)
+            PhysicalImpactVfxInstance entry = AcquirePhysicalImpactVfx();
+            if (entry == null || entry.Root == null)
             {
-                ParticleSystem particleSystem = particleSystems[i];
-                if (particleSystem == null)
+                return;
+            }
+
+            Transform instanceTransform = entry.Root.transform;
+            instanceTransform.SetParent(null, worldPositionStays: false);
+            instanceTransform.SetPositionAndRotation(impactPoint, rotation);
+            instanceTransform.localScale = entry.BaseScale * Mathf.Max(0f, physicalImpactVfxScale);
+            entry.Root.SetActive(true);
+            RestartParticles(entry.Particles);
+            entry.Active = true;
+            activePhysicalImpactVfxCount++;
+            entry.ReleaseTime = Time.time + Mathf.Max(0.05f, physicalImpactVfxLifetimeSeconds);
+            StartPhysicalImpactReleaseRoutineIfNeeded();
+        }
+
+        private IEnumerator ReleasePhysicalImpactsUntilIdle()
+        {
+            yield return null;
+
+            while (isActiveAndEnabled && activePhysicalImpactVfxCount > 0)
+            {
+                ReleaseExpiredPhysicalImpactVfx();
+                if (activePhysicalImpactVfxCount <= 0)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            physicalImpactReleaseRoutine = null;
+        }
+
+        private void StartPhysicalImpactReleaseRoutineIfNeeded()
+        {
+            if (physicalImpactReleaseRoutine == null
+                && Application.isPlaying
+                && isActiveAndEnabled
+                && activePhysicalImpactVfxCount > 0)
+            {
+                physicalImpactReleaseRoutine = StartCoroutine(ReleasePhysicalImpactsUntilIdle());
+            }
+        }
+
+        private void StopPhysicalImpactReleaseRoutine()
+        {
+            if (physicalImpactReleaseRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(physicalImpactReleaseRoutine);
+            physicalImpactReleaseRoutine = null;
+        }
+
+        private void PrewarmPhysicalImpactVfx()
+        {
+            if (!playPhysicalImpactVfx || physicalImpactVfxPrefab == null)
+            {
+                return;
+            }
+
+            int targetCount = Mathf.Max(1, physicalImpactVfxPrewarmCount);
+            while (physicalImpactVfxPool.Count < targetCount)
+            {
+                CreatePhysicalImpactVfxInstance();
+            }
+        }
+
+        private PhysicalImpactVfxInstance AcquirePhysicalImpactVfx()
+        {
+            ReleaseExpiredPhysicalImpactVfx();
+            for (int i = 0; i < physicalImpactVfxPool.Count; i++)
+            {
+                PhysicalImpactVfxInstance entry = physicalImpactVfxPool[i];
+                if (entry != null && entry.Root != null && !entry.Active)
+                {
+                    return entry;
+                }
+            }
+
+            return CreatePhysicalImpactVfxInstance();
+        }
+
+        private PhysicalImpactVfxInstance CreatePhysicalImpactVfxInstance()
+        {
+            if (physicalImpactVfxPrefab == null)
+            {
+                return null;
+            }
+
+            GameObject instance = Instantiate(physicalImpactVfxPrefab, transform);
+            instance.name = $"{physicalImpactVfxPrefab.name}_Pooled_{physicalImpactVfxPool.Count:00}";
+            PhysicalImpactVfxInstance entry = new PhysicalImpactVfxInstance
+            {
+                Root = instance,
+                Particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true),
+                BaseScale = instance.transform.localScale
+            };
+            instance.SetActive(false);
+            physicalImpactVfxPool.Add(entry);
+            return entry;
+        }
+
+        private void ReleaseExpiredPhysicalImpactVfx()
+        {
+            if (activePhysicalImpactVfxCount <= 0)
+            {
+                return;
+            }
+
+            float now = Time.time;
+            for (int i = 0; i < physicalImpactVfxPool.Count; i++)
+            {
+                PhysicalImpactVfxInstance entry = physicalImpactVfxPool[i];
+                if (entry != null && entry.Active && now >= entry.ReleaseTime)
+                {
+                    ReleasePhysicalImpactVfx(entry);
+                }
+            }
+        }
+
+        private void ReleaseAllPhysicalImpactVfx()
+        {
+            if (activePhysicalImpactVfxCount <= 0)
+            {
+                return;
+            }
+
+            for (int i = 0; i < physicalImpactVfxPool.Count; i++)
+            {
+                PhysicalImpactVfxInstance entry = physicalImpactVfxPool[i];
+                if (entry != null && entry.Active)
+                {
+                    ReleasePhysicalImpactVfx(entry);
+                }
+            }
+        }
+
+        private void ReleasePhysicalImpactVfx(PhysicalImpactVfxInstance entry)
+        {
+            if (entry == null || !entry.Active)
+            {
+                return;
+            }
+
+            entry.Active = false;
+            activePhysicalImpactVfxCount = Mathf.Max(0, activePhysicalImpactVfxCount - 1);
+            entry.ReleaseTime = 0f;
+            if (entry.Root == null)
+            {
+                return;
+            }
+
+            StopParticles(entry.Particles);
+            entry.Root.SetActive(false);
+            if (isActiveAndEnabled && gameObject.activeInHierarchy)
+            {
+                entry.Root.transform.SetParent(transform, worldPositionStays: false);
+            }
+
+            entry.Root.transform.localScale = entry.BaseScale;
+        }
+
+        private static void RestartParticles(ParticleSystem[] particles)
+        {
+            for (int i = 0; i < particles.Length; i++)
+            {
+                ParticleSystem particle = particles[i];
+                if (particle == null)
                 {
                     continue;
                 }
 
-                particleSystem.Clear(withChildren: true);
-                particleSystem.Play(withChildren: true);
+                particle.Clear(withChildren: true);
+                particle.Play(withChildren: true);
             }
+        }
 
-            Destroy(instance, Mathf.Max(0.05f, physicalImpactVfxLifetimeSeconds));
+        private static void StopParticles(ParticleSystem[] particles)
+        {
+            for (int i = 0; i < particles.Length; i++)
+            {
+                ParticleSystem particle = particles[i];
+                if (particle != null)
+                {
+                    particle.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+            }
         }
 
         private void UnsubscribeProjectiles()

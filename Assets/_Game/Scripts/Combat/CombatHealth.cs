@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -125,12 +126,17 @@ namespace DimensionBrawl.Combat
     {
         public DamageModificationContext(DamageInfo damageInfo)
         {
+            Reset(damageInfo);
+        }
+
+        public DamageInfo DamageInfo { get; private set; }
+        public float ModifiedAmount { get; private set; }
+
+        internal void Reset(DamageInfo damageInfo)
+        {
             DamageInfo = damageInfo;
             ModifiedAmount = damageInfo.Amount;
         }
-
-        public DamageInfo DamageInfo { get; }
-        public float ModifiedAmount { get; private set; }
 
         public void ScaleAmount(float multiplier)
         {
@@ -158,6 +164,21 @@ namespace DimensionBrawl.Combat
 
     public sealed class CombatHealth : MonoBehaviour
     {
+        private readonly struct ColliderHealthBinding
+        {
+            public ColliderHealthBinding(Collider collider, CombatHealth health)
+            {
+                Collider = collider;
+                Health = health;
+            }
+
+            public Collider Collider { get; }
+            public CombatHealth Health { get; }
+        }
+
+        private static readonly List<CombatHealth> ActiveHealth = new();
+        private static readonly Dictionary<int, ColliderHealthBinding> ColliderHealthBindings = new(128);
+
         [SerializeField] private DamageTeam team = DamageTeam.Neutral;
         [SerializeField, Min(1f)] private float maxHealth = 100f;
         [SerializeField] private bool startAtFullHealth = true;
@@ -167,11 +188,15 @@ namespace DimensionBrawl.Combat
         private float currentHealth;
         private float invulnerableUntilTime;
         private bool isDead;
+        private DamageModificationContext reusableDamageModificationContext;
+        private bool damageModificationInProgress;
 
         public event Action<DamageInfo> Damaged;
         public event Action<DamageModificationContext> DamageModifying;
         public event Action<DamageInfo> DamageBlockedByInvulnerability;
         public event Action Died;
+        public static event Action<CombatHealth> BecameActive;
+        public static event Action<CombatHealth> BecameInactive;
 
         public DamageTeam Team => team;
         public float CurrentHealth => currentHealth;
@@ -179,6 +204,45 @@ namespace DimensionBrawl.Combat
         public float HealthRatio => maxHealth > 0f ? currentHealth / maxHealth : 0f;
         public bool IsAlive => !isDead;
         public bool IsInvulnerable => Time.time < invulnerableUntilTime;
+        public static IReadOnlyList<CombatHealth> ActiveInstances => ActiveHealth;
+        public static int CachedColliderBindingCount => ColliderHealthBindings.Count;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveHealth.Clear();
+            ColliderHealthBindings.Clear();
+            BecameActive = null;
+            BecameInactive = null;
+        }
+
+        public static CombatHealth ResolveFromCollider(Collider collider)
+        {
+            if (collider == null)
+            {
+                return null;
+            }
+
+            int id = collider.GetInstanceID();
+            if (ColliderHealthBindings.TryGetValue(id, out ColliderHealthBinding binding)
+                && binding.Collider == collider
+                && binding.Health != null)
+            {
+                return binding.Health;
+            }
+
+            CombatHealth health = collider.GetComponentInParent<CombatHealth>();
+            if (health != null)
+            {
+                ColliderHealthBindings[id] = new ColliderHealthBinding(collider, health);
+            }
+            else
+            {
+                ColliderHealthBindings.Remove(id);
+            }
+
+            return health;
+        }
 
         public void ConfigureTeam(DamageTeam newTeam)
         {
@@ -210,6 +274,32 @@ namespace DimensionBrawl.Combat
             currentHealth = startAtFullHealth ? maxHealth : Mathf.Clamp(currentHealth, 0f, maxHealth);
         }
 
+        private void OnEnable()
+        {
+            CombatTimeDilationReceiver.Ensure(gameObject);
+            if (!ActiveHealth.Contains(this))
+            {
+                ActiveHealth.Add(this);
+                BecameActive?.Invoke(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (ActiveHealth.Remove(this))
+            {
+                BecameInactive?.Invoke(this);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (ActiveHealth.Remove(this))
+            {
+                BecameInactive?.Invoke(this);
+            }
+        }
+
         public void SetTemporaryInvulnerability(float seconds)
         {
             invulnerableUntilTime = Mathf.Max(invulnerableUntilTime, Time.time + Mathf.Max(0f, seconds));
@@ -238,14 +328,43 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            DamageModificationContext modificationContext = new DamageModificationContext(damageInfo);
-            DamageModifying?.Invoke(modificationContext);
-            if (modificationContext.ModifiedAmount <= 0f)
+            DamageInfo resolvedDamageInfo = damageInfo;
+            Action<DamageModificationContext> damageModifiers = DamageModifying;
+            if (damageModifiers != null)
             {
-                return false;
+                bool reuseContext = !damageModificationInProgress;
+                DamageModificationContext modificationContext;
+                if (reuseContext)
+                {
+                    reusableDamageModificationContext ??= new DamageModificationContext(damageInfo);
+                    reusableDamageModificationContext.Reset(damageInfo);
+                    modificationContext = reusableDamageModificationContext;
+                    damageModificationInProgress = true;
+                }
+                else
+                {
+                    modificationContext = new DamageModificationContext(damageInfo);
+                }
+
+                try
+                {
+                    damageModifiers.Invoke(modificationContext);
+                    if (modificationContext.ModifiedAmount <= 0f)
+                    {
+                        return false;
+                    }
+
+                    resolvedDamageInfo = modificationContext.ToResolvedDamageInfo();
+                }
+                finally
+                {
+                    if (reuseContext)
+                    {
+                        damageModificationInProgress = false;
+                    }
+                }
             }
 
-            DamageInfo resolvedDamageInfo = modificationContext.ToResolvedDamageInfo();
             currentHealth = Mathf.Max(0f, currentHealth - resolvedDamageInfo.Amount);
             Damaged?.Invoke(resolvedDamageInfo);
             onDamaged.Invoke();

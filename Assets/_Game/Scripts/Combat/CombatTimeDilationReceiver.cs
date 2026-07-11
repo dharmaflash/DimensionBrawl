@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -6,6 +8,8 @@ namespace DimensionBrawl.Combat
     [DisallowMultipleComponent]
     public sealed class CombatTimeDilationReceiver : MonoBehaviour
     {
+        private static readonly List<CombatTimeDilationReceiver> ActiveReceivers = new();
+
         [SerializeField, Range(0.02f, 1f)] private float currentTimeScale = 1f;
 
         private Animator[] animators = Array.Empty<Animator>();
@@ -16,9 +20,17 @@ namespace DimensionBrawl.Combat
         private float blendOutDuration;
         private bool active;
         private bool animatorsCaptured;
+        private Coroutine dilationRoutine;
 
         public bool IsDilationActive => active;
         public float CurrentTimeScale => active ? currentTimeScale : 1f;
+        public static IReadOnlyList<CombatTimeDilationReceiver> ActiveInstances => ActiveReceivers;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            ActiveReceivers.Clear();
+        }
 
         public static float ResolveTimeScale(Component owner)
         {
@@ -76,15 +88,40 @@ namespace DimensionBrawl.Combat
             blendOutTimer = blendOutDuration;
             active = true;
             ApplyAnimatorSpeed(currentTimeScale);
+            EnsureDilationRoutine();
         }
 
-        private void Update()
+        private void OnEnable()
         {
-            if (!active)
+            if (!ActiveReceivers.Contains(this))
+            {
+                ActiveReceivers.Add(this);
+            }
+        }
+
+        private void EnsureDilationRoutine()
+        {
+            if (!isActiveAndEnabled || !active || dilationRoutine != null)
             {
                 return;
             }
 
+            dilationRoutine = StartCoroutine(RunDilation());
+        }
+
+        private IEnumerator RunDilation()
+        {
+            while (active)
+            {
+                yield return null;
+                TickDilation();
+            }
+
+            dilationRoutine = null;
+        }
+
+        private void TickDilation()
+        {
             float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
             if (holdTimer > 0f)
             {
@@ -108,7 +145,14 @@ namespace DimensionBrawl.Combat
 
         private void OnDisable()
         {
+            ActiveReceivers.Remove(this);
+            dilationRoutine = null;
             Restore();
+        }
+
+        private void OnDestroy()
+        {
+            ActiveReceivers.Remove(this);
         }
 
         private void EnsureAnimatorsCaptured()

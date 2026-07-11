@@ -13,7 +13,6 @@ namespace DimensionBrawl.Presentation
     {
         private const float ReferenceWidth = 2560f;
         private const float ReferenceHeight = 1440f;
-        private const float RescanInterval = 0.35f;
         private const int InitialPoolSize = 24;
 
         private static CombatDamageNumberPresenter instance;
@@ -36,7 +35,6 @@ namespace DimensionBrawl.Presentation
         private Canvas canvas;
         private RectTransform canvasRect;
         private Camera cachedCamera;
-        private float rescanTimer;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -74,55 +72,35 @@ namespace DimensionBrawl.Presentation
         private void OnEnable()
         {
             SceneManager.sceneLoaded += HandleSceneLoaded;
-            RefreshSubscriptions();
+            CombatHealth.BecameActive += Subscribe;
+            CombatHealth.BecameInactive += Unsubscribe;
+            SubscribeActiveHealth();
         }
 
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            CombatHealth.BecameActive -= Subscribe;
+            CombatHealth.BecameInactive -= Unsubscribe;
             UnsubscribeAll();
         }
 
         private void Update()
         {
             EnsureCanvas();
-            rescanTimer -= Time.unscaledDeltaTime;
-            if (rescanTimer <= 0f)
-            {
-                RefreshSubscriptions();
-            }
-
             UpdateEntries();
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             cachedCamera = null;
-            rescanTimer = 0f;
-            RefreshSubscriptions();
+            SubscribeActiveHealth();
         }
 
-        private void RefreshSubscriptions()
+        private void SubscribeActiveHealth()
         {
-            rescanTimer = RescanInterval;
-            staleHealth.Clear();
-            foreach (CombatHealth health in damageHandlers.Keys)
-            {
-                if (health == null || !health.isActiveAndEnabled)
-                {
-                    staleHealth.Add(health);
-                }
-            }
-
-            for (int i = 0; i < staleHealth.Count; i++)
-            {
-                Unsubscribe(staleHealth[i]);
-            }
-
-            CombatHealth[] healthComponents = FindObjectsByType<CombatHealth>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < healthComponents.Length; i++)
+            IReadOnlyList<CombatHealth> healthComponents = CombatHealth.ActiveInstances;
+            for (int i = 0; i < healthComponents.Count; i++)
             {
                 Subscribe(healthComponents[i]);
             }

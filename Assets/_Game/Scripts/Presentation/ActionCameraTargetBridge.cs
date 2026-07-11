@@ -1,3 +1,4 @@
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using UnityEngine;
@@ -10,6 +11,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
         [SerializeField] private Transform followTarget;
+        [SerializeField, Min(0.02f)] private float targetRefreshIntervalSeconds = 0.12f;
+
+        private Coroutine targetRefreshRoutine;
 
         public ActionCameraController CameraController => cameraController;
         public PlayerCombatTargetSelector TargetSelector => targetSelector;
@@ -31,6 +35,7 @@ namespace DimensionBrawl.Presentation
             }
 
             ApplyTargets();
+            targetRefreshRoutine = StartCoroutine(RunTargetRefresh());
         }
 
         private void OnDisable()
@@ -39,16 +44,27 @@ namespace DimensionBrawl.Presentation
             {
                 targetSelector.TargetChanged -= HandleTargetChanged;
             }
-        }
 
-        private void LateUpdate()
-        {
-            ApplyTargets();
+            if (targetRefreshRoutine != null)
+            {
+                StopCoroutine(targetRefreshRoutine);
+                targetRefreshRoutine = null;
+            }
         }
 
         private void HandleTargetChanged(CombatHealth _)
         {
             ApplyTargets();
+        }
+
+        private IEnumerator RunTargetRefresh()
+        {
+            var wait = new WaitForSeconds(Mathf.Max(0.02f, targetRefreshIntervalSeconds));
+            while (true)
+            {
+                yield return wait;
+                ApplyTargets();
+            }
         }
 
         private void ApplyTargets()

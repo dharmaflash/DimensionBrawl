@@ -368,18 +368,12 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SciFiSoldier_01_Commando";
-        private const string BossProxyHumanoidImportedRoot =
-            "Assets/_Imported/AssetStore/Protofactor/Sci Fi";
-        private const string BossProxyHumanoidShooterRoot =
-            BossProxyHumanoidImportedRoot + "/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3";
-        private const string BossProxyHumanoidCommonWeaponRoot =
-            BossProxyHumanoidImportedRoot + "/Common/Weapons";
         private const string BossProxyHumanoidSourcePrefabPath =
-            BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
         private const string BossProxyHumanoidSourceModelPath =
-            BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
         private const string BossProxyHumanoidSourceAssaultRifleModelPath =
-            BossProxyHumanoidCommonWeaponRoot + "/FBX Files/SM_SciFiAssaultRifle_01.FBX";
+            ActionFoundationSciFiSoldier01VisualSetup.AssaultRifleModelPath;
         private const string BossProxyHumanoidSourceAssaultRifleName = "SM_SciFiAssaultRifle_01";
         private const string BossProxyLineCasterVariantModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
@@ -390,7 +384,7 @@ namespace DimensionBrawl.Editor
         private const string RangedPlayerWeaponName = ReviewRootPrefix + "RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = ReviewRootPrefix + "MeleeWeapons_CombatGirlSwordShield";
         private const string CinematicSupportDragonSourcePrefabPath =
-            "Assets/_Imported/AssetStore/HEROIC FANTASY CREATURES FULL PACK VOL3/Elemental Dragons Pack/Volcano Dragon/Prefabs/VolcanoDragon_PBR.prefab";
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_VolcanoDragon_CinematicSupportVisual.prefab";
         private const string CinematicSupportDragonAttackStateName = "FlyStationarySpitFireBall";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
@@ -11322,21 +11316,7 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateBossProxyCommandoVisualAsset(UnityEngine.Object asset, string label)
         {
-            if (asset == null)
-            {
-                throw new InvalidOperationException($"{label} must be assigned.");
-            }
-
-            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
-            bool isGameOwned = assetPath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
-                && !assetPath.Contains("/_Imported/", StringComparison.Ordinal);
-            bool isExactCommandoSource = assetPath.StartsWith(BossProxyHumanoidShooterRoot + "/SciFiSoldier_01/", StringComparison.Ordinal)
-                || assetPath.StartsWith(BossProxyHumanoidCommonWeaponRoot + "/", StringComparison.Ordinal);
-            if (!isGameOwned && !isExactCommandoSource)
-            {
-                throw new InvalidOperationException(
-                    $"{label} should reference the exact SciFiSoldier_01_Commando source or a promoted `_Game` asset, found {assetPath}.");
-            }
+            ValidateGameOwnedAsset(asset, label);
         }
 
         private static void ValidateGameOwnedAsset(UnityEngine.Object asset, string label)

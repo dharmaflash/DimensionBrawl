@@ -1082,7 +1082,7 @@ namespace DimensionBrawl.UI
                 return cameraController;
             }
 
-            cameraController = FindFirstObjectByType<ActionCameraController>();
+            cameraController = ActionCameraController.ActiveInstance;
             return cameraController;
         }
 

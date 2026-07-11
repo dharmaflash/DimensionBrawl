@@ -39,6 +39,7 @@ namespace DimensionBrawl.Editor
         private const string CombatHudCanvasRootName = ReviewRootPrefix + "CombatHudCanvas";
         private const string CombatHudEventSystemRootName = ReviewRootPrefix + "CombatHudEventSystem";
         private const string DimensionHudSkinRootName = "DimensionHudSkinRoot";
+        private const string BossHudRootName = "BossHudRoot";
         private static readonly Vector2 DimensionHudDesignResolution = new Vector2(2560f, 1440f);
         private static readonly Color CombatHudHealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
         private static readonly Color CombatHudResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
@@ -54,6 +55,16 @@ namespace DimensionBrawl.Editor
         public static void ReapplyBossBarrageCombatHudUiMenu()
         {
             CombatHudUiWriter.ReapplyToReviewScene();
+        }
+
+        internal static void NormalizeCombatHudInstanceToPrefabSkin(GameObject hudRoot)
+        {
+            if (hudRoot == null)
+            {
+                throw new ArgumentNullException(nameof(hudRoot));
+            }
+
+            ApplyDimensionHudSkin(hudRoot);
         }
 
         private static class CombatHudUiWriter
@@ -395,6 +406,8 @@ namespace DimensionBrawl.Editor
 
             Image bossHpFill = FindHudDescendant(canvasRoot.transform, "BossHpFill")?.GetComponent<Image>();
             Image bossCostFill = FindHudDescendant(canvasRoot.transform, "BossCostFill")?.GetComponent<Image>();
+            RectTransform bossHudRoot =
+                FindHudDescendant(canvasRoot.transform, BossHudRootName)?.GetComponent<RectTransform>();
             if (bossHpFill != null)
             {
                 bossHpFill.type = Image.Type.Filled;
@@ -413,6 +426,7 @@ namespace DimensionBrawl.Editor
                 MarkComponentDirty(bossCostFill);
             }
 
+            SetObjectReference(presenter, "bossHudRoot", bossHudRoot);
             SetObjectReference(presenter, "bossHealthFill", bossHpFill);
             SetObjectReference(presenter, "bossResourceFill", bossCostFill);
             SetObjectReference(presenter, "bossHealthText", null);
@@ -676,13 +690,14 @@ namespace DimensionBrawl.Editor
 
             Transform skinRoot = EnsureDimensionSkinRoot(hudRoot.transform);
             AddOrUpdateSkinImage(skinRoot, "TopLeftPanel", sprites["Hud_TopLeftPanel"], new Rect(45f, 36f, 571f, 165f));
-            AddOrUpdateSkinImage(skinRoot, "BossSymbol", sprites["Hud_BossSymbol"], new Rect(850f, 39f, 59f, 71f));
-            AddOrUpdateSkinImage(skinRoot, "BossNameArea", sprites["Hud_BossNameArea"], new Rect(930f, 51f, 745f, 48f), visible: false);
-            AddOrUpdateSkinImage(skinRoot, "BossHpBackground", sprites["Hud_BossHpBackground"], new Rect(925f, 109f, 782f, 31f));
-            Image bossHpFill = AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(941f, 113f, 749f, 24f));
+            Transform bossHudRoot = EnsureBossHudRoot(skinRoot);
+            AddOrUpdateSkinImage(bossHudRoot, "BossSymbol", sprites["Hud_BossSymbol"], new Rect(850f, 39f, 59f, 71f));
+            AddOrUpdateSkinImage(bossHudRoot, "BossNameArea", sprites["Hud_BossNameArea"], new Rect(930f, 51f, 745f, 48f), visible: false);
+            AddOrUpdateSkinImage(bossHudRoot, "BossHpBackground", sprites["Hud_BossHpBackground"], new Rect(925f, 109f, 782f, 31f));
+            Image bossHpFill = AddOrUpdateSkinImage(bossHudRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(941f, 113f, 749f, 24f));
             ConfigureHorizontalFillImage(bossHpFill, 1f);
-            AddOrUpdateSkinImage(skinRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(928f, 142f, 775f, 34f));
-            Image bossCostFill = AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(944f, 144f, 745f, 25f));
+            AddOrUpdateSkinImage(bossHudRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(928f, 142f, 775f, 34f));
+            Image bossCostFill = AddOrUpdateSkinImage(bossHudRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(944f, 144f, 745f, 25f));
             ConfigureHorizontalFillImage(bossCostFill, 1f);
             AddOrUpdateSkinImage(skinRoot, "PlayerSymbol", sprites["Hud_PlayerSymbol"], new Rect(916.5f, 1195f, 85f, 142f));
             AddOrUpdateSkinImage(skinRoot, "PlayerNameArea", sprites["Hud_PlayerNameArea"], new Rect(1013.5f, 1212f, 215f, 43f), visible: false);
@@ -780,24 +795,151 @@ namespace DimensionBrawl.Editor
                 progressRingSprite,
                 readyGlowSprite,
                 readySparkSprite);
+            CombatHudPresenter presenter = hudRoot.GetComponentInChildren<CombatHudPresenter>(includeInactive: true);
+            if (presenter != null)
+            {
+                SetObjectReference(presenter, "bossHudRoot", bossHudRoot.GetComponent<RectTransform>());
+                SetObjectReference(presenter, "bossHealthFill", bossHpFill);
+                SetObjectReference(presenter, "bossResourceFill", bossCostFill);
+                MarkComponentDirty(presenter);
+            }
+
             EditorUtility.SetDirty(hudRoot);
         }
 
         private static Transform EnsureDimensionSkinRoot(Transform hudRoot)
         {
-            Transform existing = hudRoot.Find(DimensionHudSkinRootName);
-            if (existing != null)
+            Transform root = null;
+            var duplicateRoots = new List<Transform>();
+            for (int i = 0; i < hudRoot.childCount; i++)
             {
-                existing.SetAsFirstSibling();
-                return existing;
+                Transform candidate = hudRoot.GetChild(i);
+                if (!string.Equals(candidate.name, DimensionHudSkinRootName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                bool candidateHasPrefabSource =
+                    PrefabUtility.GetCorrespondingObjectFromSource(candidate.gameObject) != null;
+                bool rootHasPrefabSource = root != null
+                    && PrefabUtility.GetCorrespondingObjectFromSource(root.gameObject) != null;
+                if (root == null || (candidateHasPrefabSource && !rootHasPrefabSource))
+                {
+                    if (root != null)
+                    {
+                        duplicateRoots.Add(root);
+                    }
+
+                    root = candidate;
+                }
+                else
+                {
+                    duplicateRoots.Add(candidate);
+                }
             }
 
-            GameObject root = new GameObject(DimensionHudSkinRootName, typeof(RectTransform));
-            root.transform.SetParent(hudRoot, worldPositionStays: false);
+            if (root == null)
+            {
+                root = new GameObject(DimensionHudSkinRootName, typeof(RectTransform)).transform;
+                root.SetParent(hudRoot, worldPositionStays: false);
+            }
+
+            for (int i = 0; i < duplicateRoots.Count; i++)
+            {
+                RemoveDuplicateAuthoredRoot(duplicateRoots[i]);
+            }
+
             RectTransform rectTransform = root.GetComponent<RectTransform>();
             Stretch(rectTransform);
-            root.transform.SetAsFirstSibling();
-            return root.transform;
+            root.SetAsFirstSibling();
+            return root;
+        }
+
+        private static Transform EnsureBossHudRoot(Transform skinRoot)
+        {
+            Transform root = null;
+            var duplicateRoots = new List<Transform>();
+            for (int i = 0; i < skinRoot.childCount; i++)
+            {
+                Transform candidate = skinRoot.GetChild(i);
+                if (!string.Equals(candidate.name, BossHudRootName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                bool candidateHasPrefabSource =
+                    PrefabUtility.GetCorrespondingObjectFromSource(candidate.gameObject) != null;
+                bool rootHasPrefabSource = root != null
+                    && PrefabUtility.GetCorrespondingObjectFromSource(root.gameObject) != null;
+                if (root == null || (candidateHasPrefabSource && !rootHasPrefabSource))
+                {
+                    if (root != null)
+                    {
+                        duplicateRoots.Add(root);
+                    }
+
+                    root = candidate;
+                }
+                else
+                {
+                    duplicateRoots.Add(candidate);
+                }
+            }
+
+            if (root == null)
+            {
+                root = new GameObject(BossHudRootName, typeof(RectTransform)).transform;
+                root.SetParent(skinRoot, worldPositionStays: false);
+            }
+
+            for (int i = 0; i < duplicateRoots.Count; i++)
+            {
+                RemoveDuplicateAuthoredRoot(duplicateRoots[i]);
+            }
+
+            RectTransform rectTransform = root.GetComponent<RectTransform>();
+            Stretch(rectTransform);
+            root.gameObject.SetActive(true);
+            root.SetSiblingIndex(Mathf.Min(1, skinRoot.childCount - 1));
+
+            string[] childNames =
+            {
+                "BossSymbol",
+                "BossNameArea",
+                "BossHpBackground",
+                "BossHpFill",
+                "BossCostBackground",
+                "BossCostFill"
+            };
+            for (int i = 0; i < childNames.Length; i++)
+            {
+                Transform existing = skinRoot.Find(childNames[i]);
+                if (existing != null)
+                {
+                    existing.SetParent(root, worldPositionStays: false);
+                }
+            }
+
+            EditorUtility.SetDirty(root.gameObject);
+            return root;
+        }
+
+        private static void RemoveDuplicateAuthoredRoot(Transform duplicate)
+        {
+            if (duplicate == null)
+            {
+                return;
+            }
+
+            if (PrefabUtility.IsAddedGameObjectOverride(duplicate.gameObject))
+            {
+                PrefabUtility.RevertAddedGameObject(
+                    duplicate.gameObject,
+                    InteractionMode.AutomatedAction);
+                return;
+            }
+
+            UnityEngine.Object.DestroyImmediate(duplicate.gameObject);
         }
 
         private static Image AddOrUpdateSkinImage(Transform parent, string name, Sprite sprite, Rect designRect, bool visible = true)
@@ -812,6 +954,7 @@ namespace DimensionBrawl.Editor
             RectTransform rectTransform = child.GetComponent<RectTransform>();
             ApplyDesignRect(rectTransform, designRect);
             Image image = child.GetComponent<Image>();
+            child.gameObject.SetActive(true);
             image.sprite = sprite;
             image.color = visible ? Color.white : Color.clear;
             image.raycastTarget = false;

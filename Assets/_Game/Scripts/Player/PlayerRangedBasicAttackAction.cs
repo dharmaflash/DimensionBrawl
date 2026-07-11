@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using UnityEngine;
@@ -92,6 +93,9 @@ namespace DimensionBrawl.Player
 
         private readonly PlayerRangedProjectilePool projectilePool = new PlayerRangedProjectilePool();
         private readonly RaycastHit[] cameraAimHits = new RaycastHit[16];
+        private readonly List<Collider> stableAimColliders = new List<Collider>(8);
+        private CombatHealth stableAimColliderTarget;
+        private Collider stableAimRootCollider;
         private bool actionEnabledHere;
         private bool queuedFire;
         private bool mobileFireHeld;
@@ -1228,7 +1232,7 @@ namespace DimensionBrawl.Player
             return new Vector3(hitPoint.x, stableY, hitPoint.z);
         }
 
-        private static bool TryResolveStableTargetAimY(CombatHealth targetHealth, out float stableY)
+        private bool TryResolveStableTargetAimY(CombatHealth targetHealth, out float stableY)
         {
             stableY = default;
             if (!TryResolveStableTargetAimPoint(targetHealth, out Vector3 stableAimPoint))
@@ -1240,7 +1244,7 @@ namespace DimensionBrawl.Player
             return true;
         }
 
-        private static bool TryResolveStableTargetAimPoint(CombatHealth targetHealth, out Vector3 stableAimPoint)
+        private bool TryResolveStableTargetAimPoint(CombatHealth targetHealth, out Vector3 stableAimPoint)
         {
             stableAimPoint = default;
             if (targetHealth == null)
@@ -1248,20 +1252,23 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            Collider rootCollider = targetHealth.GetComponent<Collider>();
-            if (IsUsableAimHeightCollider(rootCollider, targetHealth))
+            if (stableAimColliderTarget != targetHealth)
             {
-                stableAimPoint = rootCollider.bounds.center;
+                CacheStableAimColliders(targetHealth);
+            }
+
+            if (IsCachedAimHeightColliderActive(stableAimRootCollider))
+            {
+                stableAimPoint = stableAimRootCollider.bounds.center;
                 return true;
             }
 
-            Collider[] colliders = targetHealth.GetComponentsInChildren<Collider>();
             Bounds bounds = default;
             bool hasBounds = false;
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < stableAimColliders.Count; i++)
             {
-                Collider collider = colliders[i];
-                if (!IsUsableAimHeightCollider(collider, targetHealth))
+                Collider collider = stableAimColliders[i];
+                if (!IsCachedAimHeightColliderActive(collider))
                 {
                     continue;
                 }
@@ -1286,12 +1293,42 @@ namespace DimensionBrawl.Player
             return true;
         }
 
-        private static bool IsUsableAimHeightCollider(Collider collider, CombatHealth targetHealth)
+        private void CacheStableAimColliders(CombatHealth targetHealth)
+        {
+            stableAimColliderTarget = targetHealth;
+            stableAimRootCollider = null;
+            stableAimColliders.Clear();
+            if (targetHealth == null)
+            {
+                return;
+            }
+
+            Collider rootCollider = targetHealth.GetComponent<Collider>();
+            if (IsAimHeightColliderOwnedByTarget(rootCollider, targetHealth))
+            {
+                stableAimRootCollider = rootCollider;
+            }
+
+            targetHealth.GetComponentsInChildren(includeInactive: false, stableAimColliders);
+            for (int i = stableAimColliders.Count - 1; i >= 0; i--)
+            {
+                Collider collider = stableAimColliders[i];
+                if (collider == stableAimRootCollider || !IsAimHeightColliderOwnedByTarget(collider, targetHealth))
+                {
+                    stableAimColliders.RemoveAt(i);
+                }
+            }
+        }
+
+        private static bool IsCachedAimHeightColliderActive(Collider collider)
+        {
+            return collider != null && collider.enabled && collider.gameObject.activeInHierarchy;
+        }
+
+        private static bool IsAimHeightColliderOwnedByTarget(Collider collider, CombatHealth targetHealth)
         {
             return collider != null
-                && collider.enabled
-                && collider.gameObject.activeInHierarchy
-                && collider.GetComponentInParent<SummonPressureScreen>() == null
+                && SummonPressureScreen.ResolveFromCollider(collider) == null
                 && ResolveHitCombatHealth(collider) == targetHealth;
         }
 
@@ -1510,7 +1547,7 @@ namespace DimensionBrawl.Player
         {
             if (cameraController == null)
             {
-                cameraController = FindFirstObjectByType<ActionCameraController>();
+                cameraController = ActionCameraController.ActiveInstance;
                 if (cameraController == null)
                 {
                     return;
@@ -1705,7 +1742,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            if (hitCollider.GetComponentInParent<SummonPressureScreen>() != null)
+            if (SummonPressureScreen.ResolveFromCollider(hitCollider) != null)
             {
                 return false;
             }
@@ -1726,13 +1763,13 @@ namespace DimensionBrawl.Player
                 return null;
             }
 
-            SummonFrontlineProxy targetProxy = hitCollider.GetComponentInParent<SummonFrontlineProxy>();
+            SummonFrontlineProxy targetProxy = SummonFrontlineProxy.ResolveFromCollider(hitCollider);
             if (targetProxy != null)
             {
-                return targetProxy.Health ?? hitCollider.GetComponentInParent<CombatHealth>();
+                return targetProxy.Health ?? CombatHealth.ResolveFromCollider(hitCollider);
             }
 
-            return hitCollider.GetComponentInParent<CombatHealth>();
+            return CombatHealth.ResolveFromCollider(hitCollider);
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)

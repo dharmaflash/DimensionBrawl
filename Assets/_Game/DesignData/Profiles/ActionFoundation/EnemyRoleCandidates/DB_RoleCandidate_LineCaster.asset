@@ -15,7 +15,7 @@ MonoBehaviour:
   role: {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
   primaryArchetype: {fileID: 11400000, guid: c420a63d83b9fd04c90d9b8d0acd03b9, type: 2}
   rolePrefab: {fileID: 265289936863158558, guid: e09a5d8c588534f48ade9f96e532823f, type: 3}
-  promotedVisualSource: {fileID: 919132149155446097, guid: 08683623514947141859e56091ccca10, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
   optionalStaticTurretVisualPrefab: {fileID: 0}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   prefabStrategy: Dedicated line-caster prefab using the SciFiSoldier_01 rifleman

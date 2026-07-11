@@ -216,7 +216,6 @@ Material:
     - _Usecustomrandom: 0
     - _Usedepth: 1
     - _Useonlycolor: 0
-    - _XRMotionVectorsPass: 1
     - _ZTest: 4
     - _ZTestDepthEqualForOpaque: 4
     - _ZTestTransparent: 4

@@ -300,7 +300,7 @@ namespace DimensionBrawl.Presentation
         {
             if (cameraController == null)
             {
-                cameraController = FindFirstObjectByType<ActionCameraController>();
+                cameraController = ActionCameraController.ActiveInstance;
             }
 
             return cameraController;

@@ -19,24 +19,11 @@ namespace DimensionBrawl.Editor
             bool playOnAwake)
         {
             DestroyChildIfPresent(parent, childName);
-            EnsureFolderForAsset(HovlSciFiEffectsMaterialRoot + "/.keep");
-            EnsureFolderForAsset(HovlSciFiEffectsTextureRoot + "/.keep");
-            EnsureFolderForAsset(HovlSciFiEffectsShaderRoot + "/.keep");
-            EnsureFolderForAsset(HovlSciFiEffectsMeshRoot + "/.keep");
-
             GameObject sourcePrefab = LoadAsset<GameObject>(sourcePrefabPath);
             GameObject vfxInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
             if (vfxInstance == null)
             {
                 vfxInstance = UnityEngine.Object.Instantiate(sourcePrefab);
-            }
-
-            if (PrefabUtility.IsPartOfPrefabInstance(vfxInstance))
-            {
-                PrefabUtility.UnpackPrefabInstance(
-                    vfxInstance,
-                    PrefabUnpackMode.Completely,
-                    InteractionMode.AutomatedAction);
             }
 
             vfxInstance.name = childName;
@@ -45,14 +32,41 @@ namespace DimensionBrawl.Editor
             vfxInstance.transform.localRotation = Quaternion.Euler(localEuler);
             vfxInstance.transform.localScale = localScale;
 
-            UnpackNestedPrefabInstances(vfxInstance);
-            StripNonGameMonoBehaviours(vfxInstance);
-            RemoveHovlRuntimePhysics(vfxInstance);
-            RemoveHovlRuntimeAudio(vfxInstance);
-            ConfigurePromotedHovlSciFiParticles(vfxInstance, loopParticles, playOnAwake);
-            RemapPromotedHovlSciFiRendererDependencies(vfxInstance);
+            SanitizePromotedHovlSciFiVfx(vfxInstance, loopParticles, playOnAwake);
             EditorUtility.SetDirty(vfxInstance);
             return vfxInstance;
+        }
+
+        internal static void SanitizePromotedHovlSciFiVfx(
+            GameObject root,
+            bool? loopParticles,
+            bool playOnAwake)
+        {
+            if (root == null)
+            {
+                throw new ArgumentNullException(nameof(root));
+            }
+
+            EnsureFolderForAsset(HovlSciFiEffectsMaterialRoot + "/.keep");
+            EnsureFolderForAsset(HovlSciFiEffectsTextureRoot + "/.keep");
+            EnsureFolderForAsset(HovlSciFiEffectsShaderRoot + "/.keep");
+            EnsureFolderForAsset(HovlSciFiEffectsMeshRoot + "/.keep");
+
+            if (PrefabUtility.IsPartOfPrefabInstance(root))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    root,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            UnpackNestedPrefabInstances(root);
+            StripNonGameMonoBehaviours(root);
+            RemoveHovlRuntimePhysics(root);
+            RemoveHovlRuntimeAudio(root);
+            ConfigurePromotedHovlSciFiParticles(root, loopParticles, playOnAwake);
+            RemapPromotedHovlSciFiRendererDependencies(root);
+            EditorUtility.SetDirty(root);
         }
 
         private static void ConfigurePromotedHovlSciFiParticles(
@@ -111,6 +125,18 @@ namespace DimensionBrawl.Editor
 
         private static void RemapPromotedHovlSciFiRendererDependencies(GameObject root)
         {
+            ParticleSystem[] particleSystems =
+                root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem.ShapeModule shape = particleSystems[i].shape;
+                if (shape.mesh != null)
+                {
+                    shape.mesh = EnsurePromotedHovlSciFiMesh(shape.mesh);
+                    EditorUtility.SetDirty(particleSystems[i]);
+                }
+            }
+
             MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: true);
             for (int i = 0; i < meshFilters.Length; i++)
             {
@@ -254,6 +280,12 @@ namespace DimensionBrawl.Editor
         private static Material EnsurePromotedHovlSciFiMaterial(Material sourceMaterial)
         {
             string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial).Replace('\\', '/');
+            if (sourcePath.StartsWith(HovlSciFiEffectsMaterialRoot + "/", StringComparison.Ordinal))
+            {
+                RemapSerializedHovlSciFiTextures(sourceMaterial);
+                return sourceMaterial;
+            }
+
             if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
             {
                 return sourceMaterial;

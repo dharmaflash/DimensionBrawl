@@ -97,7 +97,7 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private float territoryCoverBreakPlayerMargin = 0.28f;
         [SerializeField] private float territoryBaseZoneStart = 11.5f;
         [SerializeField] private float territoryBaseZoneDamageBonus = 7f;
-        [SerializeField] private bool writeLeashDebugReport = true;
+        [SerializeField] private bool writeLeashDebugReport;
         [SerializeField] private float leashDebugReportWriteInterval = 1f;
 
         private Renderer[] playerBaseRenderers;
@@ -235,12 +235,16 @@ namespace IsekaiBrawl.Gameplay
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             HandlePerspectivePresetDebugInput();
+#endif
             UpdateCachedTerritoryState();
             UpdateTerritoryGuides();
             UpdateTerritoryWarnings();
             UpdatePlayerTerritoryPressure();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UpdateLeashDebugReport();
+#endif
         }
 
         public void RegisterPlayer(PlayerController controller)
@@ -687,7 +691,7 @@ namespace IsekaiBrawl.Gameplay
         private LaneRuntimeSnapshot CollectLaneRuntimeSnapshot(int laneIndex)
         {
             int resolvedLaneIndex = BattleLaneUtility.ClampLaneIndex(laneIndex, LaneCount);
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             BattleStructure frontlineStructure = BattleStructure.FindNearestRoleInLaneAlongAdvance(
                 resolvedLaneIndex,
                 isPlayerTeam: true,
@@ -708,7 +712,7 @@ namespace IsekaiBrawl.Gameplay
             int playerCount = 0;
             int enemyCount = 0;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive || summonUnit.AssignedLaneIndex != resolvedLaneIndex)
@@ -1034,7 +1038,7 @@ namespace IsekaiBrawl.Gameplay
             return TryBuildLeashedLaneCombatState(laneIndex, out state);
 
             int resolvedLaneIndex = BattleLaneUtility.ClampLaneIndex(laneIndex, LaneCount);
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             LaneAnchorSet laneAnchorSet = GetLaneAnchorSet(resolvedLaneIndex);
             BattleStructure frontlineStructure = BattleStructure.FindNearestRoleInLaneAlongAdvance(
                 resolvedLaneIndex,
@@ -1056,7 +1060,7 @@ namespace IsekaiBrawl.Gameplay
             int playerCount = 0;
             int enemyCount = 0;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive || summonUnit.AssignedLaneIndex != resolvedLaneIndex)
@@ -1395,13 +1399,13 @@ namespace IsekaiBrawl.Gameplay
 
         public bool TryGetFrontlineState(out FrontlineState state)
         {
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             float playerFrontZ = playerSpawnInset;
             float enemyClosestZ = laneLength - playerSpawnInset;
             int playerCount = 0;
             int enemyCount = 0;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive)
@@ -2044,9 +2048,9 @@ namespace IsekaiBrawl.Gameplay
 
         private bool HasAlliedPresenceInLane(int laneIndex)
         {
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             int resolvedLaneIndex = BattleLaneUtility.ClampLaneIndex(laneIndex, LaneCount);
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit != null &&

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using UnityEngine;
@@ -98,6 +99,8 @@ namespace DimensionBrawl.Player
         private float blockedHintTimer;
         private string lastBlockedReason;
         private bool cinematicInputLocked;
+        private InputAction subscribedSkillInputAction;
+        private Coroutine feedbackRoutine;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
@@ -137,23 +140,18 @@ namespace DimensionBrawl.Player
         private void OnEnable()
         {
             actionEnabledHere = EnableActionIfNeeded(skillAction);
+            SubscribeInput();
             PrewarmProjectiles();
+            EnsureFeedbackRoutine();
         }
 
         private void OnDisable()
         {
+            UnsubscribeInput();
             queued = false;
+            feedbackRoutine = null;
             DisableActionIfOwned(skillAction, actionEnabledHere);
             actionEnabledHere = false;
-        }
-
-        private void Update()
-        {
-            TickFeedback(Time.deltaTime);
-            if (ReadSkillPressed())
-            {
-                TryUseSkill1();
-            }
         }
 
         public void ConfigureReferences(
@@ -180,6 +178,7 @@ namespace DimensionBrawl.Player
             }
 
             queued = true;
+            ConsumeQueuedSkill();
         }
 
         public void SetCinematicInputLocked(bool locked)
@@ -219,16 +218,38 @@ namespace DimensionBrawl.Player
             lastBlockedReason = string.IsNullOrWhiteSpace(reason) ? "Unavailable" : reason;
             blockedHintTimer = useBlockedHintSeconds;
             Skill1UseBlocked?.Invoke();
+            EnsureFeedbackRoutine();
         }
 
-        private void TickFeedback(float deltaTime)
+        private void EnsureFeedbackRoutine()
+        {
+            if (!isActiveAndEnabled || feedbackRoutine != null || blockedHintTimer <= 0f)
+            {
+                return;
+            }
+
+            feedbackRoutine = StartCoroutine(RunFeedbackTimer());
+        }
+
+        private IEnumerator RunFeedbackTimer()
+        {
+            while (blockedHintTimer > 0f)
+            {
+                yield return null;
+                TickFeedback(Time.unscaledDeltaTime);
+            }
+
+            feedbackRoutine = null;
+        }
+
+        private void TickFeedback(float unscaledDeltaTime)
         {
             if (blockedHintTimer <= 0f)
             {
                 return;
             }
 
-            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - deltaTime);
+            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - unscaledDeltaTime);
             if (blockedHintTimer <= 0f)
             {
                 lastBlockedReason = null;
@@ -402,23 +423,49 @@ namespace DimensionBrawl.Player
             return count;
         }
 
-        private bool ReadSkillPressed()
+        private void SubscribeInput()
         {
-            if (cinematicInputLocked)
+            InputAction action = skillAction != null ? skillAction.action : null;
+            if (action == null)
             {
-                queued = false;
-                return false;
+                return;
             }
 
-            bool pressed = queued;
+            subscribedSkillInputAction = action;
+            subscribedSkillInputAction.performed += HandleSkillPerformed;
+        }
+
+        private void UnsubscribeInput()
+        {
+            if (subscribedSkillInputAction == null)
+            {
+                return;
+            }
+
+            subscribedSkillInputAction.performed -= HandleSkillPerformed;
+            subscribedSkillInputAction = null;
+        }
+
+        private void HandleSkillPerformed(InputAction.CallbackContext context)
+        {
+            if (CanAcceptQueuedInput())
+            {
+                TryUseSkill1();
+            }
+        }
+
+        private void ConsumeQueuedSkill()
+        {
+            if (!queued)
+            {
+                return;
+            }
+
             queued = false;
-
-            if (skillAction != null && skillAction.action != null)
+            if (CanAcceptQueuedInput())
             {
-                pressed |= skillAction.action.WasPressedThisFrame();
+                TryUseSkill1();
             }
-
-            return pressed;
         }
 
         private bool CanAcceptQueuedInput()

@@ -14,42 +14,42 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: 10 - Default
-    second: {fileID: 2100000, guid: bebe82df66b24f74399529db45cbed1c, type: 2}
+    second: {fileID: 2100000, guid: ceea25239c17dcb428dadb19f62abd7d, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Face
-    second: {fileID: 2100000, guid: a3e0c9850109e6c4fbdac864d05de9bb, type: 2}
+    second: {fileID: 2100000, guid: e72268ed69960f247862c122f19d8bd5, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Rifle_Body
-    second: {fileID: 2100000, guid: 94f4f4381613b804586c7ef1808d8f8f, type: 2}
+    second: {fileID: 2100000, guid: ceea25239c17dcb428dadb19f62abd7d, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Rifle_Cloth
-    second: {fileID: 2100000, guid: 63516f85eb3d4114c932b51925808d6b, type: 2}
+    second: {fileID: 2100000, guid: 5c7ffb378c63da44a9f65f2f3038a911, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Rifle_Hair
-    second: {fileID: 2100000, guid: 06ceb916a218d7642b3e028fd9dee249, type: 2}
+    second: {fileID: 2100000, guid: 273249ad35981a9449d878763dcefce4, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Rifle_Sportswear
-    second: {fileID: 2100000, guid: 092b63aacebbaa944833b107f09e40b2, type: 2}
+    second: {fileID: 2100000, guid: 0543288cd9ba32648969d8a8d471605c, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Weapon_Rifle
-    second: {fileID: 2100000, guid: c03d6f01ed2b01e45a25498e1e7cdae3, type: 2}
+    second: {fileID: 2100000, guid: 104b3bc9314097044ac40d19e474a18b, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: eye
-    second: {fileID: 2100000, guid: f81fa2f688f63eb4e97bb8f8f6ec0d9d, type: 2}
+    second: {fileID: 2100000, guid: 87eeb706d421d43459f09431053191fb, type: 2}
   materials:
     materialImportMode: 0
     materialName: 0

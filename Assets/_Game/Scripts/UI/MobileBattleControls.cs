@@ -17,6 +17,30 @@ namespace IsekaiBrawl.Gameplay
 
     public class MobileBattleControls : MonoBehaviour
     {
+        private enum SkillButtonReadoutKind
+        {
+            MissingController = 0,
+            Cooldown = 1,
+            EnergyShortage = 2,
+            Ready = 3
+        }
+
+        private enum LaneStatusReadoutKind
+        {
+            Placement = 0,
+            PlacementBreak = 1,
+            PlacementReward = 2,
+            RecommendSummon = 3,
+            Retreat = 4,
+            FocusEnemy = 5,
+            FocusBoss = 6,
+            FocusStructure = 7,
+            RecommendBlocker = 8,
+            RecommendReward = 9,
+            EscortJoin = 10,
+            EscortHold = 11
+        }
+
         public enum SummonPlacementFailureReason
         {
             None = 0,
@@ -36,6 +60,7 @@ namespace IsekaiBrawl.Gameplay
         [SerializeField] private MobileMoveInputMode defaultInputMode = MobileMoveInputMode.Joystick;
         [SerializeField] private float tapArrivalDistance = 0.32f;
         [SerializeField] private float tapCancelDistance = 0.42f;
+        [SerializeField, Range(15f, 60f)] private float visualRefreshRate = 30f;
 
         private RectTransform safeAreaRoot;
         private RectTransform moveTrayRoot;
@@ -151,9 +176,14 @@ namespace IsekaiBrawl.Gameplay
         private Rect lastSafeArea;
         private Vector2 lastRootSize;
         private int defaultDragThreshold = -1;
+        private bool uiInitialized;
+        private float nextVisualRefreshTime;
         private readonly List<Image> laneMarkerImages = new();
         private readonly List<Button> laneMarkerButtons = new();
         private readonly List<TMP_Text> laneMarkerTexts = new();
+        private readonly Dictionary<int, string> skillButtonReadoutCache = new(32);
+        private readonly Dictionary<int, string> laneStatusReadoutCache = new(32);
+        private readonly Dictionary<int, string> summonPlacementReadoutCache = new(12);
 
         public static MobileBattleControls Instance { get; private set; }
 
@@ -177,6 +207,7 @@ namespace IsekaiBrawl.Gameplay
 
         private void OnEnable()
         {
+            nextVisualRefreshTime = 0f;
             EnsureUi();
             ApplySafeAreaAndLayout(forceRefresh: true);
         }
@@ -219,6 +250,7 @@ namespace IsekaiBrawl.Gameplay
 
                 SetRootActiveState(isTouchLayoutActive);
                 ApplySafeAreaAndLayout(forceRefresh: true);
+                nextVisualRefreshTime = 0f;
             }
             else
             {
@@ -226,7 +258,12 @@ namespace IsekaiBrawl.Gameplay
             }
 
             UpdateDirectDodgeModeState();
-            UpdateButtonVisualState();
+            float unscaledTime = Time.unscaledTime;
+            if (unscaledTime >= nextVisualRefreshTime)
+            {
+                nextVisualRefreshTime = unscaledTime + 1f / Mathf.Max(1f, visualRefreshRate);
+                UpdateButtonVisualState();
+            }
             UpdateDragThreshold();
         }
 
@@ -1099,6 +1136,11 @@ namespace IsekaiBrawl.Gameplay
 
         private void EnsureUi()
         {
+            if (uiInitialized && safeAreaRoot != null)
+            {
+                return;
+            }
+
             RectTransform root = transform as RectTransform;
             if (root == null)
             {
@@ -1387,6 +1429,7 @@ namespace IsekaiBrawl.Gameplay
             }
 
             RuntimeUIFontUtility.ApplyRecursively(safeAreaRoot);
+            uiInitialized = true;
         }
 
         private void ApplySafeAreaAndLayout(bool forceRefresh)
@@ -1846,22 +1889,28 @@ namespace IsekaiBrawl.Gameplay
 
             if (moveModeButtonText != null)
             {
-                moveModeButtonText.text = currentInputMode == MobileMoveInputMode.TapAssist ? "TAP" : "STICK";
+                SetTextIfChanged(
+                    moveModeButtonText,
+                    currentInputMode == MobileMoveInputMode.TapAssist ? "TAP" : "STICK");
             }
 
             if (tapMovePadHintText != null)
             {
-                tapMovePadHintText.text = playerController != null && playerController.HasManualTargetLock
-                    ? "목표 고정"
-                    : "적 또는 목표를 눌러 고정";
+                SetTextIfChanged(
+                    tapMovePadHintText,
+                    playerController != null && playerController.HasManualTargetLock
+                        ? "목표 고정"
+                        : "적 또는 목표를 눌러 고정");
                 tapMovePadHintText.gameObject.SetActive(false);
             }
 
             if (directDodgeTitleText != null)
             {
-                directDodgeTitleText.text = HasAnyDirectProjectileDanger(out bool hasActiveProjectileDanger, out _) && hasActiveProjectileDanger
-                    ? "직격 위험"
-                    : "회피 준비";
+                SetTextIfChanged(
+                    directDodgeTitleText,
+                    HasAnyDirectProjectileDanger(out bool hasActiveProjectileDanger, out _) && hasActiveProjectileDanger
+                        ? "직격 위험"
+                        : "회피 준비");
             }
 
             if (actionTrayRoot != null)
@@ -1884,10 +1933,7 @@ namespace IsekaiBrawl.Gameplay
                 if (playerSkillController == null)
                 {
                     skillButtonImage.color = skillBlockedTint;
-                    if (skillButtonText != null)
-                    {
-                        skillButtonText.text = "버스트";
-                    }
+                    ApplySkillButtonReadout(SkillButtonReadoutKind.MissingController, 0);
                 }
                 else
                 {
@@ -1896,27 +1942,19 @@ namespace IsekaiBrawl.Gameplay
                     if (playerSkillController.CooldownRemaining > 0.01f)
                     {
                         skillButtonImage.color = skillCooldownTint;
-                        if (skillButtonText != null)
-                        {
-                            skillButtonText.text = $"버스트\n{playerSkillController.CooldownRemaining:0.0}s";
-                        }
+                        int cooldownTenths = Mathf.RoundToInt(playerSkillController.CooldownRemaining * 10f);
+                        ApplySkillButtonReadout(SkillButtonReadoutKind.Cooldown, cooldownTenths);
                     }
                     else if (currentEnergy < cost)
                     {
                         skillButtonImage.color = skillBlockedTint;
-                        if (skillButtonText != null)
-                        {
-                            float shortage = Mathf.Max(0f, cost - currentEnergy);
-                            skillButtonText.text = $"버스트\n+{Mathf.CeilToInt(shortage)}E";
-                        }
+                        int shortage = Mathf.CeilToInt(Mathf.Max(0f, cost - currentEnergy));
+                        ApplySkillButtonReadout(SkillButtonReadoutKind.EnergyShortage, shortage);
                     }
                     else
                     {
                         skillButtonImage.color = skillReadyTint;
-                        if (skillButtonText != null)
-                        {
-                            skillButtonText.text = "버스트\n준비";
-                        }
+                        ApplySkillButtonReadout(SkillButtonReadoutKind.Ready, 0);
                     }
                 }
             }
@@ -1928,7 +1966,7 @@ namespace IsekaiBrawl.Gameplay
 
             if (mapButtonText != null)
             {
-                mapButtonText.text = isOverviewMode ? "복귀" : "전황";
+                SetTextIfChanged(mapButtonText, isOverviewMode ? "복귀" : "전황");
             }
 
             if (overviewPadRoot != null)
@@ -2101,17 +2139,14 @@ namespace IsekaiBrawl.Gameplay
                 summonPlacementGuideMarkerImage.color = new Color(0.08f, 0.18f, 0.3f, Mathf.Clamp01(0.88f + (pulse * 0.08f)));
             }
 
-            string stateLabel = hasPreview
-                ? preview.PreviewState switch
-                {
-                    BattleManager.SummonLanePreviewState.Break => "돌파",
-                    BattleManager.SummonLanePreviewState.Reward => "보상",
-                    _ => "배치"
-                }
-                : "배치";
             if (summonPlacementPreviewText != null)
             {
-                summonPlacementPreviewText.text = $"소환: {laneIndex + 1}번 {stateLabel}";
+                BattleManager.SummonLanePreviewState previewState = hasPreview
+                    ? preview.PreviewState
+                    : default;
+                SetTextIfChanged(
+                    summonPlacementPreviewText,
+                    GetCachedSummonPlacementReadout(laneIndex, previewState));
                 summonPlacementPreviewText.fontSize = markerWidth >= 104f ? 14f : 12.5f;
             }
 
@@ -2517,68 +2552,73 @@ namespace IsekaiBrawl.Gameplay
             lockedLaneIndex = hasLockedTarget ? BattleLaneUtility.ClampLaneIndex(lockedLaneIndex) : -1;
 
             int recommendedLane = escortLane;
-            string ribbonText;
+            LaneStatusReadoutKind readoutKind;
             if (isSummonPlacementActive)
             {
                 recommendedLane = previewLane;
-                string previewStateLabel = "배치";
+                readoutKind = LaneStatusReadoutKind.Placement;
                 BattleManager currentBattleManager = BattleManager.Instance;
                 if (currentBattleManager != null &&
                     currentBattleManager.TryGetSummonLanePreview(previewLane, out BattleManager.SummonLanePreview preview))
                 {
-                    previewStateLabel = preview.PreviewState switch
+                    readoutKind = preview.PreviewState switch
                     {
-                        BattleManager.SummonLanePreviewState.Break => "돌파",
-                        BattleManager.SummonLanePreviewState.Reward => "보상",
-                        _ => "배치"
+                        BattleManager.SummonLanePreviewState.Break => LaneStatusReadoutKind.PlacementBreak,
+                        BattleManager.SummonLanePreviewState.Reward => LaneStatusReadoutKind.PlacementReward,
+                        _ => LaneStatusReadoutKind.Placement
                     };
                 }
-
-                ribbonText = $"배치: {previewLane + 1}번 {previewStateLabel}";
             }
             else if (playerController == null)
             {
                 recommendedLane = ResolveDefaultRecommendLane(summonLane);
-                ribbonText = $"추천: {recommendedLane + 1}번 소환";
+                readoutKind = LaneStatusReadoutKind.RecommendSummon;
             }
             else if (playerController.CurrentRetreatReason != PlayerRetreatReason.None)
             {
                 recommendedLane = escortLane;
-                ribbonText = $"후퇴: {escortLane + 1}번 이탈";
+                readoutKind = LaneStatusReadoutKind.Retreat;
             }
             else if (hasLockedTarget)
             {
                 recommendedLane = lockedLaneIndex;
-                ribbonText = $"집중: {lockedLaneIndex + 1}번 {ResolveLockedTargetLabel(lockedTargetKind)}";
+                readoutKind = lockedTargetKind switch
+                {
+                    ManualTargetLockKind.Boss => LaneStatusReadoutKind.FocusBoss,
+                    ManualTargetLockKind.Structure => LaneStatusReadoutKind.FocusStructure,
+                    _ => LaneStatusReadoutKind.FocusEnemy
+                };
             }
             else if (playerController.CurrentEscortPhase == BattleManager.EscortPhase.Ready)
             {
                 recommendedLane = ResolveDefaultRecommendLane(summonLane);
-                ribbonText = $"추천: {recommendedLane + 1}번 소환";
+                readoutKind = LaneStatusReadoutKind.RecommendSummon;
             }
             else if (BattleManager.Instance != null &&
                 BattleManager.Instance.TryGetLaneCombatState(escortLane, out BattleManager.LaneCombatState escortLaneState) &&
                 escortLaneState.EscortPhase == BattleManager.EscortPhase.BlockerHold)
             {
                 recommendedLane = escortLane;
-                ribbonText = $"추천: {escortLane + 1}번 차단 파괴";
+                readoutKind = LaneStatusReadoutKind.RecommendBlocker;
             }
             else if (TryFindRewardDirectiveLane(out int rewardLaneIndex))
             {
                 recommendedLane = rewardLaneIndex;
-                ribbonText = $"추천: {rewardLaneIndex + 1}번 보상";
+                readoutKind = LaneStatusReadoutKind.RecommendReward;
             }
             else
             {
                 recommendedLane = escortLane;
-                ribbonText = playerController.CurrentEscortPhase == BattleManager.EscortPhase.Join
-                    ? $"호위: {escortLane + 1}번 합류"
-                    : $"호위: {escortLane + 1}번 유지";
+                readoutKind = playerController.CurrentEscortPhase == BattleManager.EscortPhase.Join
+                    ? LaneStatusReadoutKind.EscortJoin
+                    : LaneStatusReadoutKind.EscortHold;
             }
 
             if (laneStatusText != null)
             {
-                laneStatusText.text = ribbonText;
+                SetTextIfChanged(
+                    laneStatusText,
+                    GetCachedLaneStatusReadout(readoutKind, recommendedLane));
                 laneStatusText.color = new Color(0.93f, 0.97f, 1f, 0.98f);
             }
 
@@ -2629,7 +2669,7 @@ namespace IsekaiBrawl.Gameplay
                 if (index < laneMarkerTexts.Count && laneMarkerTexts[index] != null)
                 {
                     TMP_Text markerText = laneMarkerTexts[index];
-                    markerText.text = (index + 1).ToString();
+                    SetTextIfChanged(markerText, ResolveLaneNumberLabel(index));
                     markerText.color = isLockedLane || isRecommendedLane
                         ? new Color(0.05f, 0.12f, 0.16f, 1f)
                         : isEscortLane
@@ -2637,6 +2677,100 @@ namespace IsekaiBrawl.Gameplay
                             : new Color(0.84f, 0.93f, 1f, 0.96f);
                     markerText.fontStyle = isLockedLane || isRecommendedLane ? FontStyles.Bold : FontStyles.Normal;
                 }
+            }
+        }
+
+        private void ApplySkillButtonReadout(SkillButtonReadoutKind kind, int value)
+        {
+            if (skillButtonText == null)
+            {
+                return;
+            }
+
+            int safeValue = Mathf.Max(0, value);
+            int cacheKey = ((int)kind << 16) | (safeValue & 0xffff);
+            if (!skillButtonReadoutCache.TryGetValue(cacheKey, out string readout))
+            {
+                readout = kind switch
+                {
+                    SkillButtonReadoutKind.Cooldown => $"버스트\n{safeValue / 10f:0.0}s",
+                    SkillButtonReadoutKind.EnergyShortage => $"버스트\n+{safeValue}E",
+                    SkillButtonReadoutKind.Ready => "버스트\n준비",
+                    _ => "버스트"
+                };
+                skillButtonReadoutCache.Add(cacheKey, readout);
+            }
+
+            SetTextIfChanged(skillButtonText, readout);
+        }
+
+        private string GetCachedSummonPlacementReadout(
+            int laneIndex,
+            BattleManager.SummonLanePreviewState previewState)
+        {
+            int safeLane = BattleLaneUtility.ClampLaneIndex(laneIndex);
+            int cacheKey = (safeLane << 8) | ((int)previewState & 0xff);
+            if (summonPlacementReadoutCache.TryGetValue(cacheKey, out string readout))
+            {
+                return readout;
+            }
+
+            string stateLabel = previewState switch
+            {
+                BattleManager.SummonLanePreviewState.Break => "돌파",
+                BattleManager.SummonLanePreviewState.Reward => "보상",
+                _ => "배치"
+            };
+            readout = $"소환: {safeLane + 1}번 {stateLabel}";
+            summonPlacementReadoutCache.Add(cacheKey, readout);
+            return readout;
+        }
+
+        private string GetCachedLaneStatusReadout(LaneStatusReadoutKind kind, int laneIndex)
+        {
+            int safeLane = BattleLaneUtility.ClampLaneIndex(laneIndex);
+            int cacheKey = ((int)kind << 8) | (safeLane & 0xff);
+            if (laneStatusReadoutCache.TryGetValue(cacheKey, out string readout))
+            {
+                return readout;
+            }
+
+            int displayedLane = safeLane + 1;
+            readout = kind switch
+            {
+                LaneStatusReadoutKind.PlacementBreak => $"배치: {displayedLane}번 돌파",
+                LaneStatusReadoutKind.PlacementReward => $"배치: {displayedLane}번 보상",
+                LaneStatusReadoutKind.RecommendSummon => $"추천: {displayedLane}번 소환",
+                LaneStatusReadoutKind.Retreat => $"후퇴: {displayedLane}번 이탈",
+                LaneStatusReadoutKind.FocusEnemy => $"집중: {displayedLane}번 적",
+                LaneStatusReadoutKind.FocusBoss => $"집중: {displayedLane}번 보스",
+                LaneStatusReadoutKind.FocusStructure => $"집중: {displayedLane}번 목표",
+                LaneStatusReadoutKind.RecommendBlocker => $"추천: {displayedLane}번 차단 파괴",
+                LaneStatusReadoutKind.RecommendReward => $"추천: {displayedLane}번 보상",
+                LaneStatusReadoutKind.EscortJoin => $"호위: {displayedLane}번 합류",
+                LaneStatusReadoutKind.EscortHold => $"호위: {displayedLane}번 유지",
+                _ => $"배치: {displayedLane}번 배치"
+            };
+            laneStatusReadoutCache.Add(cacheKey, readout);
+            return readout;
+        }
+
+        private static string ResolveLaneNumberLabel(int laneIndex)
+        {
+            return laneIndex switch
+            {
+                0 => "1",
+                1 => "2",
+                2 => "3",
+                _ => (laneIndex + 1).ToString()
+            };
+        }
+
+        private static void SetTextIfChanged(TMP_Text target, string value)
+        {
+            if (target != null && target.text != value)
+            {
+                target.text = value;
             }
         }
 

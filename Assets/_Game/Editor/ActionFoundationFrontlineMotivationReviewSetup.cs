@@ -101,6 +101,8 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponentOnRoot<BossBarrageLaneReviewMobileHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
@@ -148,6 +150,11 @@ namespace DimensionBrawl.Editor
             SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
             SetString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             SetString(overlayHud, "retryScenePath", ScenePath);
+            SetBool(hud, "showHud", false);
+            SetBool(mobileHud, "showHud", false);
+            SetBool(mobileHud, "drawHudVisuals", false);
+            mobileHud.enabled = false;
+            MarkDirty(mobileHud);
             ActionFoundationPromotedSummonReviewContractSetup.ApplyToActiveScene();
             EnsureEnemyHitFeedbackEnabled(scene);
 
@@ -199,6 +206,8 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponentOnRoot<BossBarrageLaneReviewMobileHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
@@ -208,6 +217,14 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateString(overlayHud, "retryScenePath", ScenePath);
+            ValidateBool(hud, "showHud", false);
+            ValidateBool(mobileHud, "showHud", false);
+            ValidateBool(mobileHud, "drawHudVisuals", false);
+            if (mobileHud.enabled)
+            {
+                throw new InvalidOperationException(
+                    "Frontline legacy mobile HUD must stay disabled under the canonical UGUI combat HUD.");
+            }
             if (pocketOwner.ObjectiveStepCount != profile.ObjectiveStepCount)
             {
                 throw new InvalidOperationException("Pocket owner objective count does not match the stage profile.");

@@ -270,7 +270,7 @@ namespace DimensionBrawl.Player
 
             private static void RequestSummonLandingCamera(Vector3 position, int tier)
             {
-                ActionCameraController cameraController = UnityEngine.Object.FindFirstObjectByType<ActionCameraController>();
+                ActionCameraController cameraController = ActionCameraController.ActiveInstance;
                 cameraController?.RequestExplosionFeedback(
                     position,
                     8f,

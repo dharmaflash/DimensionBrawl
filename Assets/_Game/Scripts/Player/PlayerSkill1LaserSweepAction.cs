@@ -31,8 +31,17 @@ namespace DimensionBrawl.Player
         [SerializeField] private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
 
         private readonly HashSet<CombatHealth> damagedThisTick = new HashSet<CombatHealth>();
+        private readonly List<CombatHealth> candidateBuffer = new List<CombatHealth>(32);
+        private readonly Dictionary<CombatHealth, Collider> targetColliderCache =
+            new Dictionary<CombatHealth, Collider>(32);
         private Coroutine activeRoutine;
+        private Coroutine effectReleaseRoutine;
         private GameObject activeEffect;
+        private GameObject pooledEffect;
+        private Transform pooledBeamSpace;
+        private ParticleSystem[] pooledParticles = new ParticleSystem[0];
+        private bool effectReleasePending;
+        private float effectReleaseTime;
 
         public bool HasActiveSweep => activeRoutine != null;
 
@@ -49,14 +58,29 @@ namespace DimensionBrawl.Player
             }
         }
 
+        private void OnEnable()
+        {
+            CombatHealth.BecameInactive += HandleHealthBecameInactive;
+            EnsurePooledEffect();
+        }
+
         private void OnDisable()
         {
+            CombatHealth.BecameInactive -= HandleHealthBecameInactive;
             StopActiveSweep();
+            candidateBuffer.Clear();
+            targetColliderCache.Clear();
         }
 
         private void OnDestroy()
         {
+            CombatHealth.BecameInactive -= HandleHealthBecameInactive;
             StopActiveSweep();
+            if (pooledEffect != null)
+            {
+                Destroy(pooledEffect);
+                pooledEffect = null;
+            }
         }
 
         public bool TryCastLaserSweep(int tier)
@@ -81,11 +105,14 @@ namespace DimensionBrawl.Player
             Vector3 origin = ResolveOrigin();
             Quaternion baseRotation = ResolveBaseRotation();
             Transform parent = effectRoot != null ? effectRoot : transform;
-            activeEffect = Instantiate(laserPrefab, origin, baseRotation, parent);
-            activeEffect.name = laserPrefab.name;
-            activeEffect.transform.localScale = Vector3.one * effectScale;
-            Transform beamSpace = FindDescendant(activeEffect.transform, "Rotator") ?? activeEffect.transform;
-            RestartParticles(activeEffect);
+            activeEffect = AcquirePooledEffect(origin, baseRotation, parent);
+            if (activeEffect == null)
+            {
+                activeRoutine = null;
+                yield break;
+            }
+
+            Transform beamSpace = pooledBeamSpace != null ? pooledBeamSpace : activeEffect.transform;
 
             float elapsed = 0f;
             float hitTimer = 0f;
@@ -136,14 +163,10 @@ namespace DimensionBrawl.Player
                 yield return null;
             }
 
-            StopParticles(activeEffect);
-            if (activeEffect != null)
-            {
-                Destroy(activeEffect, effectDestroyDelaySeconds);
-            }
-
+            StopParticles(pooledParticles);
             activeEffect = null;
             activeRoutine = null;
+            SchedulePooledEffectRelease();
         }
 
         private Vector3 ResolveOrigin()
@@ -199,14 +222,19 @@ namespace DimensionBrawl.Player
             }
 
             damagedThisTick.Clear();
-            CombatHealth[] candidates =
-                FindObjectsByType<CombatHealth>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            candidateBuffer.Clear();
+            IReadOnlyList<CombatHealth> activeHealth = CombatHealth.ActiveInstances;
+            for (int i = 0; i < activeHealth.Count; i++)
+            {
+                candidateBuffer.Add(activeHealth[i]);
+            }
+
             Vector3 forward = ResolvePlanarDirection(beamSpace.forward, Vector3.forward);
             Vector3 right = ResolvePlanarDirection(beamSpace.right, Vector3.right);
 
-            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            for (int candidateIndex = 0; candidateIndex < candidateBuffer.Count; candidateIndex++)
             {
-                CombatHealth candidate = candidates[candidateIndex];
+                CombatHealth candidate = candidateBuffer[candidateIndex];
                 if (!IsValidTarget(candidate))
                 {
                     continue;
@@ -322,9 +350,14 @@ namespace DimensionBrawl.Player
             return fallback.normalized;
         }
 
-        private static Vector3 ResolveTargetPosition(CombatHealth target)
+        private Vector3 ResolveTargetPosition(CombatHealth target)
         {
-            Collider collider = target.GetComponentInChildren<Collider>();
+            if (!targetColliderCache.TryGetValue(target, out Collider collider) || collider == null)
+            {
+                collider = target.GetComponentInChildren<Collider>();
+                targetColliderCache[target] = collider;
+            }
+
             return collider != null ? collider.bounds.center : target.transform.position;
         }
 
@@ -360,38 +393,128 @@ namespace DimensionBrawl.Player
                 activeRoutine = null;
             }
 
-            if (activeEffect != null)
+            if (effectReleaseRoutine != null)
             {
-                Destroy(activeEffect);
-                activeEffect = null;
+                StopCoroutine(effectReleaseRoutine);
+                effectReleaseRoutine = null;
             }
+
+            effectReleasePending = false;
+            if (pooledEffect != null)
+            {
+                StopParticles(pooledParticles);
+                pooledEffect.SetActive(false);
+            }
+
+            activeEffect = null;
         }
 
-        private static void RestartParticles(GameObject root)
+        private GameObject AcquirePooledEffect(Vector3 position, Quaternion rotation, Transform parent)
         {
-            if (root == null)
+            EnsurePooledEffect();
+            if (pooledEffect == null)
+            {
+                return null;
+            }
+
+            effectReleasePending = false;
+            Transform effectTransform = pooledEffect.transform;
+            if (effectTransform.parent != parent)
+            {
+                effectTransform.SetParent(parent, worldPositionStays: false);
+            }
+
+            effectTransform.SetPositionAndRotation(position, rotation);
+            effectTransform.localScale = Vector3.one * effectScale;
+            pooledEffect.SetActive(true);
+            RestartParticles(pooledParticles);
+            return pooledEffect;
+        }
+
+        private void EnsurePooledEffect()
+        {
+            if (pooledEffect != null || laserPrefab == null)
             {
                 return;
             }
 
-            ParticleSystem[] particles = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            Transform parent = effectRoot != null ? effectRoot : transform;
+            pooledEffect = Instantiate(laserPrefab, parent);
+            pooledEffect.name = laserPrefab.name;
+            pooledBeamSpace = FindDescendant(pooledEffect.transform, "Rotator") ?? pooledEffect.transform;
+            pooledParticles = pooledEffect.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            pooledEffect.SetActive(false);
+        }
+
+        private void SchedulePooledEffectRelease()
+        {
+            if (pooledEffect == null)
+            {
+                return;
+            }
+
+            if (effectDestroyDelaySeconds <= 0f)
+            {
+                ReleasePooledEffect();
+                return;
+            }
+
+            effectReleasePending = true;
+            effectReleaseTime = Time.time + effectDestroyDelaySeconds;
+            effectReleaseRoutine = StartCoroutine(ReleasePooledEffectAfterDelay());
+        }
+
+        private IEnumerator ReleasePooledEffectAfterDelay()
+        {
+            while (effectReleasePending && Time.time < effectReleaseTime)
+            {
+                yield return null;
+            }
+
+            ReleasePooledEffect();
+            effectReleaseRoutine = null;
+        }
+
+        private void ReleasePooledEffect()
+        {
+            effectReleasePending = false;
+            if (pooledEffect != null)
+            {
+                pooledEffect.SetActive(false);
+            }
+        }
+
+        private void HandleHealthBecameInactive(CombatHealth health)
+        {
+            if (health != null)
+            {
+                targetColliderCache.Remove(health);
+            }
+        }
+
+        private static void RestartParticles(ParticleSystem[] particles)
+        {
             for (int i = 0; i < particles.Length; i++)
             {
+                if (particles[i] == null)
+                {
+                    continue;
+                }
+
                 particles[i].Clear(withChildren: true);
                 particles[i].Play(withChildren: true);
             }
         }
 
-        private static void StopParticles(GameObject root)
+        private static void StopParticles(ParticleSystem[] particles)
         {
-            if (root == null)
-            {
-                return;
-            }
-
-            ParticleSystem[] particles = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             for (int i = 0; i < particles.Length; i++)
             {
+                if (particles[i] == null)
+                {
+                    continue;
+                }
+
                 particles[i].Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting);
             }
         }

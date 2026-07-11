@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
@@ -132,6 +133,7 @@ namespace IsekaiBrawl.Gameplay
         private int selectedSupportAnchorLaneIndex = BattleLaneUtility.DefaultLaneCount / 2;
         private Vector3 selectedSupportAnchor;
         private readonly float[] currentSupportAnchorScores = new float[3];
+        private readonly float[] supportAnchorScoreBuffer = new float[3];
         private float currentSupportAnchorScore;
         private string currentSupportAnchorLabel = "CENTER";
         private FocusLaneReason currentFocusLaneReason = FocusLaneReason.Hold;
@@ -149,6 +151,8 @@ namespace IsekaiBrawl.Gameplay
         private float slotTransitionCandidateSince;
         private float motionStateUntil;
         private bool recoveryForcesSupportCover;
+        private Transform cachedGroundVisualRoot;
+        private Renderer[] cachedGroundRenderers = Array.Empty<Renderer>();
         private float lastFriendlySummonTime = float.NegativeInfinity;
         private int lastFriendlySummonLaneIndex = BattleLaneUtility.DefaultLaneCount / 2;
         private float preferredLaneExpiresAt = float.NegativeInfinity;
@@ -1356,13 +1360,13 @@ namespace IsekaiBrawl.Gameplay
                 currentPosition,
                 out Vector3 supportAnchor,
                 out HeroFireDirective fireDirective,
-                out float[] supportScores,
+                supportAnchorScoreBuffer,
                 out float bestSupportScore);
             SetSelectedSupportAnchor(supportAnchorIndex, supportAnchor, laneState.LaneIndex);
             SetCurrentSupportAnchorScores(
-                supportScores.Length > 0 ? supportScores[0] : float.NegativeInfinity,
-                supportScores.Length > 1 ? supportScores[1] : float.NegativeInfinity,
-                supportScores.Length > 2 ? supportScores[2] : float.NegativeInfinity,
+                supportAnchorScoreBuffer[0],
+                supportAnchorScoreBuffer[1],
+                supportAnchorScoreBuffer[2],
                 bestSupportScore);
             resolvedAnchor = supportAnchor;
 
@@ -1390,11 +1394,15 @@ namespace IsekaiBrawl.Gameplay
             Vector3 currentPosition,
             out Vector3 bestAnchor,
             out HeroFireDirective bestDirective,
-            out float[] supportScores,
+            float[] supportScores,
             out float bestScore)
         {
             Vector3[] supportAnchors = laneContext.SupportAnchors;
-            supportScores = new float[3] { float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity };
+            for (int index = 0; index < supportScores.Length; index++)
+            {
+                supportScores[index] = float.NegativeInfinity;
+            }
+
             if (supportAnchors == null || supportAnchors.Length == 0)
             {
                 bestAnchor = ClampToMovementBounds(new Vector3(
@@ -1507,10 +1515,10 @@ namespace IsekaiBrawl.Gameplay
 
         private int CountNearbyAllies(int laneIndex, Vector3 anchor, float radius)
         {
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             float radiusSquared = radius * radius;
             int nearbyCount = 0;
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive || !summonUnit.IsPlayerTeam || summonUnit.AssignedLaneIndex != laneIndex)
@@ -1975,12 +1983,12 @@ namespace IsekaiBrawl.Gameplay
 
         private int ResolveCurrentLaneFrontline(ref float frontlineZ)
         {
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
             int alliedUnitCount = 0;
             float laneFrontZ = frontlineZ;
             int laneUnitCount = 0;
 
-            for (int index = 0; index < summonUnits.Length; index++)
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null || !summonUnit.IsAlive || !summonUnit.IsPlayerTeam)
@@ -2074,7 +2082,13 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            if (cachedGroundVisualRoot != visualRoot)
+            {
+                cachedGroundVisualRoot = visualRoot;
+                cachedGroundRenderers = visualRoot.GetComponentsInChildren<Renderer>(true);
+            }
+
+            Renderer[] renderers = cachedGroundRenderers;
             if (renderers == null || renderers.Length == 0)
             {
                 return;
@@ -2137,8 +2151,8 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            SummonUnit[] summonUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
-            for (int index = 0; index < summonUnits.Length; index++)
+            IReadOnlyList<SummonUnit> summonUnits = SummonUnit.ActiveUnits;
+            for (int index = 0; index < summonUnits.Count; index++)
             {
                 SummonUnit summonUnit = summonUnits[index];
                 if (summonUnit == null)

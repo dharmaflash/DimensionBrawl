@@ -1,3 +1,4 @@
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -22,6 +23,7 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float clashFeedbackSeconds = 0.28f;
         [SerializeField, Min(0.05f)] private float engageRadius = 0.95f;
         [SerializeField, Min(0f)] private float engageCenterHeight = 0.9f;
+        [SerializeField, Min(0.02f)] private float contactScanIntervalSeconds = 0.08f;
         [SerializeField, Range(0f, 1f)] private float playerBodyDamageMultiplier = 0.12f;
         [SerializeField, Min(0f)] private float playerBodyMaxDamagePerHit = 4f;
         [SerializeField, Range(0f, 1f)] private float hostileBodyDamageMultiplier = 1f;
@@ -34,11 +36,15 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.01f)] private float contactDamageVfxScale = 0.52f;
         [SerializeField, Min(0f)] private float contactDamageVfxHeightOffset = 0.55f;
         [SerializeField, Min(0.05f)] private float contactDamageVfxLifetimeSeconds = 0.72f;
+        [SerializeField, Range(1, 8)] private int contactDamageVfxPrewarmCount = 3;
 
         private readonly Collider[] contactBuffer = new Collider[12];
+        private SpatialOneShotVfxPool contactDamageVfxPool;
         private float nextDamageTime;
+        private float contactScanTimer;
         private float clashFeedbackTimer;
         private int totalClashCount;
+        private int contactScanCount;
         private int lastOpponentTier;
         private DamageTeam lastOpponentTeam = DamageTeam.Neutral;
         private float lastDamageAmount;
@@ -46,6 +52,7 @@ namespace DimensionBrawl.Combat
 
         public bool IsClashing => proxy != null && proxy.IsActive && clashFeedbackTimer > 0f;
         public int TotalClashCount => totalClashCount;
+        public int ContactScanCount => contactScanCount;
         public int LastOpponentTier => lastOpponentTier;
         public DamageTeam LastOpponentTeam => lastOpponentTeam;
         public float LastDamageAmount => lastDamageAmount;
@@ -57,10 +64,18 @@ namespace DimensionBrawl.Combat
         public float HostileBodyDamageMultiplier => hostileBodyDamageMultiplier;
         public float HostileBodyMaxDamagePerHit => hostileBodyMaxDamagePerHit;
         public float EngageRadius => engageRadius;
+        public float ContactScanIntervalSeconds => contactScanIntervalSeconds;
+        public int ContactDamageVfxPoolSize => contactDamageVfxPool != null
+            ? contactDamageVfxPool.GetPoolSize(contactDamageVfxPrefab)
+            : 0;
+        public int ActiveContactDamageVfxCount => contactDamageVfxPool != null
+            ? contactDamageVfxPool.GetActiveCount(contactDamageVfxPrefab)
+            : 0;
 
         private void Awake()
         {
             ResolveReferences();
+            PrewarmContactDamageVfxPool();
         }
 
         private void OnValidate()
@@ -72,6 +87,7 @@ namespace DimensionBrawl.Combat
         private void OnEnable()
         {
             nextDamageTime = 0f;
+            contactScanTimer = 0f;
             clashFeedbackTimer = 0f;
         }
 
@@ -133,7 +149,13 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            ScanNearbyContacts();
+            contactScanTimer -= deltaTime;
+            if (contactScanTimer <= 0f)
+            {
+                contactScanTimer = Mathf.Max(0.02f, contactScanIntervalSeconds);
+                ScanNearbyContacts();
+            }
+
             if (clashFeedbackTimer <= 0f)
             {
                 return;
@@ -179,7 +201,9 @@ namespace DimensionBrawl.Combat
             }
 
             float interval = Mathf.Max(0.05f, contactDamageIntervalSeconds);
-            float damageAmount = ResolveDamageAmount(interval, targetKind, otherHealth);
+            bool isPlayerBody = targetKind == SummonFrontlineClashTargetKind.HostileBody
+                && IsPlayerBody(otherHealth);
+            float damageAmount = ResolveDamageAmount(interval, targetKind, isPlayerBody);
             Vector3 hitPoint = other.ClosestPoint(transform.position);
             var damageInfo = new DamageInfo(
                 health,
@@ -188,8 +212,8 @@ namespace DimensionBrawl.Combat
                 hitPoint,
                 ResolveHitDirection(otherHealth, otherProxy),
                 0f,
-                ResolveResponsePolicy(targetKind, otherHealth),
-                ResolveControlLockPolicy(targetKind, otherHealth));
+                ResolveResponsePolicy(targetKind, isPlayerBody),
+                ResolveControlLockPolicy(targetKind, isPlayerBody));
 
             if (otherHealth.TryApplyDamage(damageInfo))
             {
@@ -216,6 +240,7 @@ namespace DimensionBrawl.Combat
             }
 
             Vector3 center = transform.position + Vector3.up * engageCenterHeight;
+            contactScanCount++;
             int count = Physics.OverlapSphereNonAlloc(
                 center,
                 engageRadius,
@@ -269,12 +294,12 @@ namespace DimensionBrawl.Combat
         private float ResolveDamageAmount(
             float interval,
             SummonFrontlineClashTargetKind targetKind,
-            CombatHealth targetHealth)
+            bool isPlayerBody)
         {
             int tier = proxy != null ? Mathf.Clamp(proxy.ActiveTier, 1, 3) : 1;
             float tierScale = 1f + (tier - 1) * tierDamageBonus;
             float amount = contactDamagePerSecond * interval * tierScale;
-            if (targetKind == SummonFrontlineClashTargetKind.HostileBody && IsPlayerBody(targetHealth))
+            if (targetKind == SummonFrontlineClashTargetKind.HostileBody && isPlayerBody)
             {
                 amount *= Mathf.Clamp01(playerBodyDamageMultiplier);
                 if (playerBodyMaxDamagePerHit > 0f)
@@ -296,18 +321,18 @@ namespace DimensionBrawl.Combat
 
         private static DamageResponsePolicy ResolveResponsePolicy(
             SummonFrontlineClashTargetKind targetKind,
-            CombatHealth targetHealth)
+            bool isPlayerBody)
         {
-            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || IsPlayerBody(targetHealth)
+            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || isPlayerBody
                 ? DamageResponsePolicy.FlashOnly
                 : DamageResponsePolicy.Default;
         }
 
         private static CombatControlLockPolicy ResolveControlLockPolicy(
             SummonFrontlineClashTargetKind targetKind,
-            CombatHealth targetHealth)
+            bool isPlayerBody)
         {
-            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || IsPlayerBody(targetHealth)
+            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || isPlayerBody
                 ? CombatControlLockPolicy.None
                 : CombatControlLockPolicy.InterruptAction;
         }
@@ -328,9 +353,26 @@ namespace DimensionBrawl.Combat
 
             Vector3 spawnPoint = hitPoint + Vector3.up * contactDamageVfxHeightOffset;
             Quaternion rotation = ResolveContactDamageVfxRotation(direction);
-            GameObject instance = Instantiate(contactDamageVfxPrefab, spawnPoint, rotation);
-            instance.transform.localScale *= Mathf.Max(0.01f, contactDamageVfxScale);
-            Destroy(instance, Mathf.Max(0.05f, contactDamageVfxLifetimeSeconds));
+            PrewarmContactDamageVfxPool();
+            contactDamageVfxPool?.Play(
+                contactDamageVfxPrefab,
+                spawnPoint,
+                rotation,
+                contactDamageVfxScale,
+                contactDamageVfxLifetimeSeconds);
+        }
+
+        private void PrewarmContactDamageVfxPool()
+        {
+            if (contactDamageVfxPrefab == null)
+            {
+                return;
+            }
+
+            contactDamageVfxPool ??= SpatialOneShotVfxPool.GetOrCreate(this);
+            contactDamageVfxPool.Prewarm(
+                contactDamageVfxPrefab,
+                Mathf.Max(1, contactDamageVfxPrewarmCount));
         }
 
         private Quaternion ResolveContactDamageVfxRotation(Vector3 direction)
@@ -366,20 +408,20 @@ namespace DimensionBrawl.Combat
             otherHealth = null;
             targetKind = SummonFrontlineClashTargetKind.None;
 
-            if (other == null || other.GetComponentInParent<SummonPressureScreen>() != null)
+            if (other == null || SummonPressureScreen.ResolveFromCollider(other) != null)
             {
                 return false;
             }
 
-            otherProxy = other.GetComponentInParent<SummonFrontlineProxy>();
+            otherProxy = SummonFrontlineProxy.ResolveFromCollider(other);
             if (otherProxy == proxy || (otherProxy != null && !otherProxy.IsActive))
             {
                 return false;
             }
 
             otherHealth = otherProxy != null
-                ? otherProxy.Health ?? other.GetComponentInParent<CombatHealth>()
-                : other.GetComponentInParent<CombatHealth>();
+                ? otherProxy.Health ?? CombatHealth.ResolveFromCollider(other)
+                : CombatHealth.ResolveFromCollider(other);
             if (otherHealth == null
                 || otherHealth == health
                 || !otherHealth.IsAlive

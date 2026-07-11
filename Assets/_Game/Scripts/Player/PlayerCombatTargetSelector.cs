@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using UnityEngine;
@@ -8,6 +9,12 @@ namespace DimensionBrawl.Player
     [DisallowMultipleComponent]
     public sealed class PlayerCombatTargetSelector : MonoBehaviour
     {
+        private sealed class TargetCandidateCache
+        {
+            public readonly List<Collider> Colliders = new List<Collider>(6);
+            public ICombatAiAgent Agent;
+        }
+
         [Header("Owner")]
         [SerializeField] private CombatHealth selfHealth;
         [SerializeField] private Transform selectionOrigin;
@@ -48,6 +55,8 @@ namespace DimensionBrawl.Player
         private CombatHealth currentTargetHealth;
         private Transform currentTarget;
         private float nextRetargetTime;
+        private readonly Dictionary<CombatHealth, TargetCandidateCache> targetCandidateCache =
+            new Dictionary<CombatHealth, TargetCandidateCache>();
 
         public CombatHealth SelfHealth => selfHealth;
         public Transform SelectionOrigin => selectionOrigin != null ? selectionOrigin : transform;
@@ -179,30 +188,30 @@ namespace DimensionBrawl.Player
             {
                 for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    ConsiderTargetCandidate(
-                        targetCandidates[i],
-                        candidate => ScoreLockTargetCandidate(
-                            candidate,
-                            originPosition,
-                            planarViewDirection,
-                            maxDistance,
-                            maxAngleDegrees,
-                            candidate == preferredTarget ? preferredTargetBonus : 0f),
-                        0f,
-                        ref bestTarget,
-                        ref bestScore);
+                    CombatHealth candidate = targetCandidates[i];
+                    if (!IsValidTarget(candidate))
+                    {
+                        continue;
+                    }
+
+                    float score = ScoreLockTargetCandidate(
+                        candidate,
+                        originPosition,
+                        planarViewDirection,
+                        maxDistance,
+                        maxAngleDegrees,
+                        candidate == preferredTarget ? preferredTargetBonus : 0f);
+                    ConsiderScoredCandidate(candidate, score, 0f, ref bestTarget, ref bestScore);
                 }
             }
 
-            ConsiderActiveSummonTargets(
-                candidate => ScoreLockTargetCandidate(
-                    candidate,
-                    originPosition,
-                    planarViewDirection,
-                    maxDistance,
-                    maxAngleDegrees,
-                    candidate == preferredTarget ? preferredTargetBonus : 0f),
-                activeSummonTargetBonus,
+            ConsiderActiveSummonLockTargets(
+                originPosition,
+                planarViewDirection,
+                maxDistance,
+                maxAngleDegrees,
+                preferredTarget,
+                preferredTargetBonus,
                 ref bestTarget,
                 ref bestScore);
 
@@ -252,6 +261,7 @@ namespace DimensionBrawl.Player
         public void ConfigureTargetCandidates(CombatHealth[] candidates, bool refreshNow = true)
         {
             targetCandidates = candidates ?? Array.Empty<CombatHealth>();
+            targetCandidateCache.Clear();
             SetCurrentTarget(null);
             nextRetargetTime = 0f;
             if (refreshNow && isActiveAndEnabled)
@@ -275,8 +285,22 @@ namespace DimensionBrawl.Player
 
         private void OnEnable()
         {
+            CombatHealth.BecameInactive += HandleCandidateInactive;
             nextRetargetTime = 0f;
             RefreshTarget();
+        }
+
+        private void OnDisable()
+        {
+            CombatHealth.BecameInactive -= HandleCandidateInactive;
+        }
+
+        private void HandleCandidateInactive(CombatHealth candidate)
+        {
+            if (!ReferenceEquals(candidate, null))
+            {
+                targetCandidateCache.Remove(candidate);
+            }
         }
 
         private bool ShouldRefreshTarget()
@@ -298,11 +322,17 @@ namespace DimensionBrawl.Player
             {
                 for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    ConsiderTargetCandidate(targetCandidates[i], ScoreCandidate, 0f, ref bestTarget, ref bestScore);
+                    CombatHealth candidate = targetCandidates[i];
+                    if (!IsValidTarget(candidate))
+                    {
+                        continue;
+                    }
+
+                    ConsiderScoredCandidate(candidate, ScoreCandidate(candidate), 0f, ref bestTarget, ref bestScore);
                 }
             }
 
-            ConsiderActiveSummonTargets(ScoreCandidate, activeSummonTargetBonus, ref bestTarget, ref bestScore);
+            ConsiderActiveSummonTargets(ref bestTarget, ref bestScore);
             return bestTarget;
         }
 
@@ -315,18 +345,20 @@ namespace DimensionBrawl.Player
             {
                 for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    ConsiderTargetCandidate(
-                        targetCandidates[i],
-                        candidate => ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance),
-                        0f,
-                        ref bestTarget,
-                        ref bestScore);
+                    CombatHealth candidate = targetCandidates[i];
+                    if (!IsValidTarget(candidate))
+                    {
+                        continue;
+                    }
+
+                    float score = ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance);
+                    ConsiderScoredCandidate(candidate, score, 0f, ref bestTarget, ref bestScore);
                 }
             }
 
-            ConsiderActiveSummonTargets(
-                candidate => ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance),
-                activeSummonTargetBonus,
+            ConsiderActiveSummonAttackTargets(
+                fallbackDirection,
+                preferredContactDistance,
                 ref bestTarget,
                 ref bestScore);
             return bestTarget;
@@ -349,31 +381,65 @@ namespace DimensionBrawl.Player
             {
                 for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    ConsiderTargetCandidate(
-                        targetCandidates[i],
-                        candidate => ScoreAimAssistCandidate(
-                            candidate,
-                            originPosition,
-                            rawAimDirection,
-                            maxDistance,
-                            maxAngleDegrees),
-                        0f,
-                        ref bestTarget,
-                        ref bestScore);
+                    CombatHealth candidate = targetCandidates[i];
+                    if (!IsValidTarget(candidate))
+                    {
+                        continue;
+                    }
+
+                    float score = ScoreAimAssistCandidate(
+                        candidate,
+                        originPosition,
+                        rawAimDirection,
+                        maxDistance,
+                        maxAngleDegrees);
+                    ConsiderScoredCandidate(candidate, score, 0f, ref bestTarget, ref bestScore);
                 }
             }
 
-            ConsiderActiveSummonTargets(
-                candidate => ScoreAimAssistCandidate(candidate, originPosition, rawAimDirection, maxDistance, maxAngleDegrees),
-                activeSummonTargetBonus,
+            ConsiderActiveSummonAimTargets(
+                originPosition,
+                rawAimDirection,
+                maxDistance,
+                maxAngleDegrees,
                 ref bestTarget,
                 ref bestScore);
             return bestTarget;
         }
 
-        private void ConsiderActiveSummonTargets(
-            Func<CombatHealth, float> scorer,
-            float scoreBonus,
+        private void ConsiderActiveSummonTargets(ref CombatHealth bestTarget, ref float bestScore)
+        {
+            if (!includeActiveHostileSummons)
+            {
+                return;
+            }
+
+            int count = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy))
+                {
+                    continue;
+                }
+
+                CombatHealth candidate = proxy.Health;
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                ConsiderScoredCandidate(
+                    candidate,
+                    ScoreCandidate(candidate),
+                    activeSummonTargetBonus,
+                    ref bestTarget,
+                    ref bestScore);
+            }
+        }
+
+        private void ConsiderActiveSummonAttackTargets(
+            Vector3 fallbackDirection,
+            float preferredContactDistance,
             ref CombatHealth bestTarget,
             ref float bestScore)
         {
@@ -390,23 +456,101 @@ namespace DimensionBrawl.Player
                     continue;
                 }
 
-                ConsiderTargetCandidate(proxy.Health, scorer, scoreBonus, ref bestTarget, ref bestScore);
+                CombatHealth candidate = proxy.Health;
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                float score = ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance);
+                ConsiderScoredCandidate(candidate, score, activeSummonTargetBonus, ref bestTarget, ref bestScore);
             }
         }
 
-        private void ConsiderTargetCandidate(
-            CombatHealth candidate,
-            Func<CombatHealth, float> scorer,
-            float scoreBonus,
+        private void ConsiderActiveSummonAimTargets(
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees,
             ref CombatHealth bestTarget,
             ref float bestScore)
         {
-            if (!IsValidTarget(candidate))
+            if (!includeActiveHostileSummons)
             {
                 return;
             }
 
-            float score = scorer(candidate);
+            int count = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy))
+                {
+                    continue;
+                }
+
+                CombatHealth candidate = proxy.Health;
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                float score = ScoreAimAssistCandidate(
+                    candidate,
+                    originPosition,
+                    rawAimDirection,
+                    maxDistance,
+                    maxAngleDegrees);
+                ConsiderScoredCandidate(candidate, score, activeSummonTargetBonus, ref bestTarget, ref bestScore);
+            }
+        }
+
+        private void ConsiderActiveSummonLockTargets(
+            Vector3 originPosition,
+            Vector3 viewDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            CombatHealth preferredTarget,
+            float preferredTargetBonus,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            if (!includeActiveHostileSummons)
+            {
+                return;
+            }
+
+            int count = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy))
+                {
+                    continue;
+                }
+
+                CombatHealth candidate = proxy.Health;
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                float score = ScoreLockTargetCandidate(
+                    candidate,
+                    originPosition,
+                    viewDirection,
+                    maxDistance,
+                    maxAngleDegrees,
+                    candidate == preferredTarget ? preferredTargetBonus : 0f);
+                ConsiderScoredCandidate(candidate, score, activeSummonTargetBonus, ref bestTarget, ref bestScore);
+            }
+        }
+
+        private static void ConsiderScoredCandidate(
+            CombatHealth candidate,
+            float score,
+            float scoreBonus,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
             if (float.IsNegativeInfinity(score))
             {
                 return;
@@ -574,7 +718,7 @@ namespace DimensionBrawl.Player
                 + Mathf.Max(0f, preferredBonus);
         }
 
-        private static bool TryResolveAimAssistPoint(
+        private bool TryResolveAimAssistPoint(
             CombatHealth candidate,
             Vector3 originPosition,
             Vector3 rawPlanarDirection,
@@ -605,7 +749,7 @@ namespace DimensionBrawl.Player
             return true;
         }
 
-        private static bool TryResolveCombatBounds(
+        private bool TryResolveCombatBounds(
             CombatHealth candidate,
             Vector3 originPosition,
             Vector3 rawPlanarDirection,
@@ -617,14 +761,14 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            Collider[] colliders = candidate.GetComponentsInChildren<Collider>();
+            TargetCandidateCache cache = GetOrCreateTargetCandidateCache(candidate);
             float bestMissDistance = float.PositiveInfinity;
             float bestCenterDistance = float.PositiveInfinity;
             bool hasBounds = false;
-            for (int i = 0; i < colliders.Length; i++)
+            for (int i = 0; i < cache.Colliders.Count; i++)
             {
-                Collider collider = colliders[i];
-                if (!IsUsableAimAssistCollider(collider, candidate))
+                Collider collider = cache.Colliders[i];
+                if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
                 {
                     continue;
                 }
@@ -646,13 +790,38 @@ namespace DimensionBrawl.Player
             return hasBounds;
         }
 
-        private static bool IsUsableAimAssistCollider(Collider collider, CombatHealth candidate)
+        private TargetCandidateCache GetOrCreateTargetCandidateCache(CombatHealth candidate)
         {
-            return collider != null
-                && collider.enabled
-                && collider.gameObject.activeInHierarchy
-                && collider.GetComponentInParent<SummonPressureScreen>() == null
-                && ResolveColliderCombatHealth(collider) == candidate;
+            if (targetCandidateCache.TryGetValue(candidate, out TargetCandidateCache cache))
+            {
+                return cache;
+            }
+
+            cache = new TargetCandidateCache();
+            candidate.GetComponentsInChildren(includeInactive: false, cache.Colliders);
+            for (int i = cache.Colliders.Count - 1; i >= 0; i--)
+            {
+                Collider collider = cache.Colliders[i];
+                if (collider == null
+                    || SummonPressureScreen.ResolveFromCollider(collider) != null
+                    || ResolveColliderCombatHealth(collider) != candidate)
+                {
+                    cache.Colliders.RemoveAt(i);
+                }
+            }
+
+            MonoBehaviour[] behaviours = candidate.GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is ICombatAiAgent agent)
+                {
+                    cache.Agent = agent;
+                    break;
+                }
+            }
+
+            targetCandidateCache.Add(candidate, cache);
+            return cache;
         }
 
         private static CombatHealth ResolveColliderCombatHealth(Collider collider)
@@ -662,13 +831,13 @@ namespace DimensionBrawl.Player
                 return null;
             }
 
-            SummonFrontlineProxy proxy = collider.GetComponentInParent<SummonFrontlineProxy>();
+            SummonFrontlineProxy proxy = SummonFrontlineProxy.ResolveFromCollider(collider);
             if (proxy != null)
             {
-                return proxy.Health ?? collider.GetComponentInParent<CombatHealth>();
+                return proxy.Health ?? CombatHealth.ResolveFromCollider(collider);
             }
 
-            return collider.GetComponentInParent<CombatHealth>();
+            return CombatHealth.ResolveFromCollider(collider);
         }
 
         private static float DistanceFromRayToBounds(Vector3 rayOrigin, Vector3 rayDirection, Bounds bounds)
@@ -710,9 +879,9 @@ namespace DimensionBrawl.Player
             return planarForward.sqrMagnitude > 0.0001f ? planarForward.normalized : Vector3.forward;
         }
 
-        private static float ResolveThreatScore(CombatHealth candidate)
+        private float ResolveThreatScore(CombatHealth candidate)
         {
-            ICombatAiAgent agent = ResolveAgent(candidate);
+            ICombatAiAgent agent = GetOrCreateTargetCandidateCache(candidate).Agent;
             if (agent == null)
             {
                 return 0f;
@@ -727,20 +896,6 @@ namespace DimensionBrawl.Player
                 CombatAiPatternState.Stagger => 0.05f,
                 _ => 0f
             };
-        }
-
-        private static ICombatAiAgent ResolveAgent(CombatHealth candidate)
-        {
-            MonoBehaviour[] behaviours = candidate.GetComponents<MonoBehaviour>();
-            for (int i = 0; i < behaviours.Length; i++)
-            {
-                if (behaviours[i] is ICombatAiAgent agent)
-                {
-                    return agent;
-                }
-            }
-
-            return null;
         }
 
         private bool IsValidTarget(CombatHealth candidate)

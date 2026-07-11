@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace IsekaiBrawl.Gameplay
@@ -6,6 +7,8 @@ namespace IsekaiBrawl.Gameplay
     [RequireComponent(typeof(Collider))]
     public class SummonUnit : MonoBehaviour
     {
+        private static readonly List<SummonUnit> RegisteredUnits = new();
+
         [SerializeField] private float destroyDelay = 0.2f;
         [SerializeField] private float hitFlashDuration = 0.08f;
         [SerializeField] private Color hitFlashColor = new(1f, 0.85f, 0.85f, 1f);
@@ -40,8 +43,6 @@ namespace IsekaiBrawl.Gameplay
         private BattleStructure currentStructureTarget;
         private Transform opposingBase;
         private Vector3 moveDirection;
-        private int opposingLayerMask;
-        private int friendlyLayerMask;
         private PlayerController currentHeroTarget;
         private Coroutine flashRoutine;
         private Coroutine attackPulseRoutine;
@@ -52,12 +53,38 @@ namespace IsekaiBrawl.Gameplay
         private Transform healthBarRoot;
         private Transform healthBarFill;
         private Renderer healthBarFillRenderer;
+        private Camera cachedMainCamera;
 
         public bool IsAlive => !isDying && currentHP > 0f;
         public bool IsPlayerTeam => isPlayerTeam;
         public float CurrentHP => currentHP;
         public float MaxHP => summonData != null ? summonData.maxHP : 0f;
         public int AssignedLaneIndex { get; private set; } = BattleLaneUtility.DefaultLaneCount / 2;
+        public static IReadOnlyList<SummonUnit> ActiveUnits => RegisteredUnits;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRegistry()
+        {
+            RegisteredUnits.Clear();
+        }
+
+        private void OnEnable()
+        {
+            if (!RegisteredUnits.Contains(this))
+            {
+                RegisteredUnits.Add(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            RegisteredUnits.Remove(this);
+        }
+
+        private void OnDestroy()
+        {
+            RegisteredUnits.Remove(this);
+        }
 
         private void Awake()
         {
@@ -83,8 +110,6 @@ namespace IsekaiBrawl.Gameplay
             currentHP = summonData != null ? summonData.maxHP : 0f;
             moveDirection = belongsToPlayerTeam ? Vector3.forward : Vector3.back;
             opposingBase = BattleManager.Instance != null ? BattleManager.Instance.GetOpposingBaseTransform(belongsToPlayerTeam) : null;
-            opposingLayerMask = LayerMask.GetMask(belongsToPlayerTeam ? "EnemySummon" : "PlayerSummon");
-            friendlyLayerMask = LayerMask.GetMask(belongsToPlayerTeam ? "PlayerSummon" : "EnemySummon");
 
             int layer = LayerMask.NameToLayer(belongsToPlayerTeam ? "PlayerSummon" : "EnemySummon");
             if (layer >= 0)
@@ -288,14 +313,15 @@ namespace IsekaiBrawl.Gameplay
 
         private SummonUnit AcquireTarget()
         {
-            Collider[] nearbyColliders = Physics.OverlapSphere(transform.position, summonData.attackRange, opposingLayerMask);
+            IReadOnlyList<SummonUnit> activeUnits = ActiveUnits;
+            float rangeSquared = summonData.attackRange * summonData.attackRange;
             float closestDistance = float.MaxValue;
             SummonUnit bestTarget = null;
 
-            for (int index = 0; index < nearbyColliders.Length; index++)
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                SummonUnit target = nearbyColliders[index].GetComponentInParent<SummonUnit>();
-                if (target == null || !target.IsAlive)
+                SummonUnit target = activeUnits[index];
+                if (target == null || target == this || !target.IsAlive || target.isPlayerTeam == isPlayerTeam)
                 {
                     continue;
                 }
@@ -306,7 +332,7 @@ namespace IsekaiBrawl.Gameplay
                 }
 
                 float sqrDistance = (target.transform.position - transform.position).sqrMagnitude;
-                if (sqrDistance >= closestDistance)
+                if (sqrDistance > rangeSquared || sqrDistance >= closestDistance)
                 {
                     continue;
                 }
@@ -404,14 +430,20 @@ namespace IsekaiBrawl.Gameplay
 
         private SummonUnit AcquireHealTarget()
         {
-            Collider[] nearbyColliders = Physics.OverlapSphere(transform.position, summonData.healRadius, friendlyLayerMask);
+            IReadOnlyList<SummonUnit> activeUnits = ActiveUnits;
+            float rangeSquared = summonData.healRadius * summonData.healRadius;
             float lowestHealthRatio = 1f;
             SummonUnit bestTarget = null;
 
-            for (int index = 0; index < nearbyColliders.Length; index++)
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                SummonUnit ally = nearbyColliders[index].GetComponentInParent<SummonUnit>();
-                if (ally == null || ally == this || !ally.IsAlive || ally.MaxHP <= 0f)
+                SummonUnit ally = activeUnits[index];
+                if (ally == null
+                    || ally == this
+                    || !ally.IsAlive
+                    || ally.isPlayerTeam != isPlayerTeam
+                    || ally.MaxHP <= 0f
+                    || (ally.transform.position - transform.position).sqrMagnitude > rangeSquared)
                 {
                     continue;
                 }
@@ -587,11 +619,16 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            Collider[] splashTargets = Physics.OverlapSphere(primaryTarget.transform.position, summonData.splashRadius, opposingLayerMask);
-            for (int index = 0; index < splashTargets.Length; index++)
+            IReadOnlyList<SummonUnit> activeUnits = ActiveUnits;
+            float splashRadiusSquared = summonData.splashRadius * summonData.splashRadius;
+            for (int index = 0; index < activeUnits.Count; index++)
             {
-                SummonUnit splashTarget = splashTargets[index].GetComponentInParent<SummonUnit>();
-                if (splashTarget == null || splashTarget == primaryTarget || !splashTarget.IsAlive)
+                SummonUnit splashTarget = activeUnits[index];
+                if (splashTarget == null
+                    || splashTarget == primaryTarget
+                    || !splashTarget.IsAlive
+                    || splashTarget.isPlayerTeam == isPlayerTeam
+                    || (splashTarget.transform.position - primaryTarget.transform.position).sqrMagnitude > splashRadiusSquared)
                 {
                     continue;
                 }
@@ -786,13 +823,13 @@ namespace IsekaiBrawl.Gameplay
         private bool TryGetFormationAnchor(out Vector3 anchorPosition)
         {
             anchorPosition = transform.position;
-            SummonUnit[] alliedUnits = FindObjectsByType<SummonUnit>(FindObjectsSortMode.None);
+            IReadOnlyList<SummonUnit> alliedUnits = ActiveUnits;
             bool foundFrontliner = false;
             float bestFrontZ = isPlayerTeam ? float.MinValue : float.MaxValue;
             float weightedX = 0f;
             float weightTotal = 0f;
 
-            for (int index = 0; index < alliedUnits.Length; index++)
+            for (int index = 0; index < alliedUnits.Count; index++)
             {
                 SummonUnit alliedUnit = alliedUnits[index];
                 if (alliedUnit == null || alliedUnit == this || !alliedUnit.IsAlive || alliedUnit.IsPlayerTeam != isPlayerTeam)
@@ -1043,12 +1080,20 @@ namespace IsekaiBrawl.Gameplay
 
         private void UpdateHealthBarFacing()
         {
-            if (healthBarRoot == null || Camera.main == null)
+            if (healthBarRoot == null)
             {
                 return;
             }
 
-            healthBarRoot.forward = Camera.main.transform.forward;
+            if (cachedMainCamera == null || !cachedMainCamera.isActiveAndEnabled)
+            {
+                cachedMainCamera = Camera.main;
+            }
+
+            if (cachedMainCamera != null)
+            {
+                healthBarRoot.forward = cachedMainCamera.transform.forward;
+            }
         }
     }
 }

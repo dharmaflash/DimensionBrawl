@@ -8,6 +8,26 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class BossBarrageLaneReviewCombatHudBinder : MonoBehaviour
     {
+        private enum SummonStateTextKind
+        {
+            Locked,
+            Cooldown,
+            Ready,
+            WaitingTier,
+            WaitingShortage,
+            WaitingShortageWithEta
+        }
+
+        private struct SummonStateTextCache
+        {
+            public bool Initialized;
+            public SummonStateTextKind Kind;
+            public int RequiredMana;
+            public int ValueA;
+            public int ValueB;
+            public string Text;
+        }
+
         [Header("UI")]
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
@@ -33,8 +53,42 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
 
+        [Header("Performance")]
+        [SerializeField, Range(15f, 60f)] private float hudRefreshRate = 30f;
+
         private bool tutorialMoveInputLocked;
         private CombatHealth subscribedPlayerDamageHealth;
+        private float nextHudRefreshTime;
+        private float lastPresentedPlayerHealth = float.NaN;
+        private float lastPresentedPlayerMaxHealth = float.NaN;
+        private float lastPresentedBossHealth = float.NaN;
+        private float lastPresentedBossMaxHealth = float.NaN;
+        private int cachedDodgeTenths = int.MinValue;
+        private string cachedDodgeLabel;
+        private bool ammoCacheInitialized;
+        private bool cachedAmmoVisible;
+        private bool cachedAmmoReloading;
+        private int cachedAmmoCurrent = int.MinValue;
+        private int cachedAmmoCapacity = int.MinValue;
+        private int cachedAmmoReloadTenths = int.MinValue;
+        private string cachedAmmoLabel;
+        private bool combatModeCacheInitialized;
+        private bool cachedCombatModeHasBoss;
+        private bool cachedCombatModeMelee;
+        private int cachedBossHealth = int.MinValue;
+        private int cachedBossMaxHealth = int.MinValue;
+        private string cachedCombatModeLabel;
+        private bool energyInputCacheInitialized;
+        private SummonEnergyRiskBand cachedEnergyRiskBand;
+        private bool cachedEnergyCanSpend;
+        private int cachedEnergyTier = int.MinValue;
+        private int cachedEnergyMultiplierTenths = int.MinValue;
+        private string cachedEnergyInputLabel;
+        private int cachedSkillTier = int.MinValue;
+        private string cachedSkillLabel;
+        private SummonStateTextCache primarySummonTextCache;
+        private SummonStateTextCache supportSummon2TextCache;
+        private SummonStateTextCache supportSummon3TextCache;
 
         private void Awake()
         {
@@ -69,7 +123,14 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
+            nextHudRefreshTime = 0f;
+            lastPresentedPlayerHealth = float.NaN;
+            lastPresentedPlayerMaxHealth = float.NaN;
+            lastPresentedBossHealth = float.NaN;
+            lastPresentedBossMaxHealth = float.NaN;
+            ResetTextCaches();
             BindTutorialGuide();
+            SyncBossHudVisibility();
 
             if (inputBridge != null)
             {
@@ -110,6 +171,18 @@ namespace DimensionBrawl.UI
                 return;
             }
 
+            SyncBossHudVisibility();
+            UpdateAimReticleReadout();
+            UpdateHealthReadouts();
+
+            float unscaledTime = Time.unscaledTime;
+            if (unscaledTime < nextHudRefreshTime)
+            {
+                return;
+            }
+
+            nextHudRefreshTime = unscaledTime + 1f / Mathf.Max(1f, hudRefreshRate);
+
             UpdatePrimaryReadouts();
             UpdateActionReadouts();
             UpdateSummonReadouts();
@@ -125,26 +198,12 @@ namespace DimensionBrawl.UI
                     : "Survive the boss lane.";
             hudPresenter.SetObjective(objective);
             hudPresenter.SetTimer(ResolveRemainingSeconds());
-            if (playerHealth != null)
-            {
-                hudPresenter.SetHealth(playerHealth.CurrentHealth, playerHealth.MaxHealth);
-            }
-
-            if (bossHealth != null)
-            {
-                hudPresenter.SetBossHealth(bossHealth.CurrentHealth, bossHealth.MaxHealth);
-            }
-
             if (bossCostLadder != null)
             {
                 hudPresenter.SetBossResource(
                     bossCostLadder.CurrentTierCost,
                     Mathf.Max(1f, bossCostLadder.CurrentTierTarget));
             }
-
-            bool rangedMode = combatModeController == null || combatModeController.IsRangedMode;
-            bool aimActive = rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive;
-            hudPresenter.SetAimReticleVisible(rangedMode, aimActive);
 
             if (energyLadder != null)
             {
@@ -160,6 +219,47 @@ namespace DimensionBrawl.UI
             hudPresenter.SetActionFeedbackText(feedback);
         }
 
+        private void UpdateAimReticleReadout()
+        {
+            bool rangedMode = combatModeController == null || combatModeController.IsRangedMode;
+            bool aimActive = rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive;
+            hudPresenter.SetAimReticleVisible(rangedMode, aimActive);
+        }
+
+        private void UpdateHealthReadouts()
+        {
+            if (playerHealth != null
+                && (HealthValueChanged(lastPresentedPlayerHealth, playerHealth.CurrentHealth)
+                    || HealthValueChanged(lastPresentedPlayerMaxHealth, playerHealth.MaxHealth)))
+            {
+                lastPresentedPlayerHealth = playerHealth.CurrentHealth;
+                lastPresentedPlayerMaxHealth = playerHealth.MaxHealth;
+                hudPresenter.SetHealth(playerHealth.CurrentHealth, playerHealth.MaxHealth);
+            }
+
+            if (bossHealth != null
+                && (HealthValueChanged(lastPresentedBossHealth, bossHealth.CurrentHealth)
+                    || HealthValueChanged(lastPresentedBossMaxHealth, bossHealth.MaxHealth)))
+            {
+                lastPresentedBossHealth = bossHealth.CurrentHealth;
+                lastPresentedBossMaxHealth = bossHealth.MaxHealth;
+                hudPresenter.SetBossHealth(bossHealth.CurrentHealth, bossHealth.MaxHealth);
+            }
+        }
+
+        private void SyncBossHudVisibility()
+        {
+            if (hudPresenter != null)
+            {
+                hudPresenter.SetBossHudVisible(bossHealth != null);
+            }
+        }
+
+        private static bool HealthValueChanged(float previous, float current)
+        {
+            return float.IsNaN(previous) || !Mathf.Approximately(previous, current);
+        }
+
         private void UpdateActionReadouts()
         {
             bool canSpend = energyLadder != null && energyLadder.CanSpend;
@@ -170,7 +270,10 @@ namespace DimensionBrawl.UI
                 ResolveDodgeCooldownFill01(),
                 ResolveDodgeLabel(),
                 actionController != null ? actionController.DodgeCooldownRemaining : -1f);
-            hudPresenter.SetSkillCooldown(CombatHudActionId.Skill1, canSpend ? 0f : 1f, tier > 0 ? $"SKILL LV{tier}" : "SKILL");
+            hudPresenter.SetSkillCooldown(
+                CombatHudActionId.Skill1,
+                canSpend ? 0f : 1f,
+                ResolveSkillLabel(tier));
             hudPresenter.SetSkillCooldown(CombatHudActionId.Ultimate, 0f, "SWAP");
         }
 
@@ -194,13 +297,13 @@ namespace DimensionBrawl.UI
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot2,
                 "S2",
-                ResolveSupportSummonState(summonSlot2Action),
+                ResolveSupportSummonState(summonSlot2Action, ref supportSummon2TextCache),
                 IsSupportSummonReady(summonSlot2Action),
                 ResolveSupportSummonAvailabilityFill01(summonSlot2Action));
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot3,
                 "S3",
-                ResolveSupportSummonState(summonSlot3Action),
+                ResolveSupportSummonState(summonSlot3Action, ref supportSummon3TextCache),
                 IsSupportSummonReady(summonSlot3Action),
                 ResolveSupportSummonAvailabilityFill01(summonSlot3Action));
         }
@@ -507,12 +610,19 @@ namespace DimensionBrawl.UI
 
         private string ResolveDodgeLabel()
         {
-            if (actionController == null || actionController.IsDodgeReady)
+            int displayedTenths = actionController == null || actionController.IsDodgeReady
+                ? -1
+                : Mathf.Max(0, Mathf.RoundToInt(actionController.DodgeCooldownRemaining * 10f));
+            if (displayedTenths == cachedDodgeTenths && cachedDodgeLabel != null)
             {
-                return "DODGE";
+                return cachedDodgeLabel;
             }
 
-            return $"DODGE\n{actionController.DodgeCooldownRemaining:0.0}s";
+            cachedDodgeTenths = displayedTenths;
+            cachedDodgeLabel = displayedTenths < 0
+                ? "DODGE"
+                : $"DODGE\n{displayedTenths * 0.1f:0.0}s";
+            return cachedDodgeLabel;
         }
 
         private float ResolveDodgeCooldownFill01()
@@ -527,30 +637,68 @@ namespace DimensionBrawl.UI
 
         private string ResolveAmmoReadout()
         {
-            if (combatModeController != null && combatModeController.IsMeleeMode)
+            bool visible = (combatModeController == null || !combatModeController.IsMeleeMode)
+                && rangedBasicAttackAction != null
+                && rangedBasicAttackAction.UsesMagazineReload;
+            bool reloading = visible && rangedBasicAttackAction.IsReloading;
+            int currentAmmo = visible ? rangedBasicAttackAction.CurrentAmmo : 0;
+            int capacity = visible ? rangedBasicAttackAction.MagazineSize : 0;
+            int reloadTenths = reloading
+                ? Mathf.Max(0, Mathf.RoundToInt(rangedBasicAttackAction.ReloadRemaining * 10f))
+                : -1;
+
+            if (ammoCacheInitialized
+                && cachedAmmoVisible == visible
+                && cachedAmmoReloading == reloading
+                && cachedAmmoCurrent == currentAmmo
+                && cachedAmmoCapacity == capacity
+                && cachedAmmoReloadTenths == reloadTenths)
             {
-                return string.Empty;
+                return cachedAmmoLabel;
             }
 
-            if (rangedBasicAttackAction == null || !rangedBasicAttackAction.UsesMagazineReload)
-            {
-                return string.Empty;
-            }
-
-            string ammo = $"{rangedBasicAttackAction.CurrentAmmo}/{rangedBasicAttackAction.MagazineSize}";
-            return rangedBasicAttackAction.IsReloading
-                ? $"{ammo} RLD {rangedBasicAttackAction.ReloadRemaining:0.0}"
-                : ammo;
+            ammoCacheInitialized = true;
+            cachedAmmoVisible = visible;
+            cachedAmmoReloading = reloading;
+            cachedAmmoCurrent = currentAmmo;
+            cachedAmmoCapacity = capacity;
+            cachedAmmoReloadTenths = reloadTenths;
+            cachedAmmoLabel = !visible
+                ? string.Empty
+                : reloading
+                    ? $"{currentAmmo}/{capacity} RLD {reloadTenths * 0.1f:0.0}"
+                    : $"{currentAmmo}/{capacity}";
+            return cachedAmmoLabel;
         }
 
         private string ResolveCombatModeLabel()
         {
-            if (bossHealth != null)
+            bool hasBoss = bossHealth != null;
+            bool meleeMode = combatModeController != null && combatModeController.IsMeleeMode;
+            int currentHealth = hasBoss
+                ? Mathf.CeilToInt(Mathf.Max(0f, bossHealth.CurrentHealth))
+                : 0;
+            int maxHealth = hasBoss
+                ? Mathf.CeilToInt(Mathf.Max(0f, bossHealth.MaxHealth))
+                : 0;
+            if (combatModeCacheInitialized
+                && cachedCombatModeHasBoss == hasBoss
+                && cachedCombatModeMelee == meleeMode
+                && cachedBossHealth == currentHealth
+                && cachedBossMaxHealth == maxHealth)
             {
-                return $"Boss {Mathf.CeilToInt(Mathf.Max(0f, bossHealth.CurrentHealth))}/{Mathf.CeilToInt(Mathf.Max(0f, bossHealth.MaxHealth))}";
+                return cachedCombatModeLabel;
             }
 
-            return combatModeController != null && combatModeController.IsMeleeMode ? "Melee" : "Ranged";
+            combatModeCacheInitialized = true;
+            cachedCombatModeHasBoss = hasBoss;
+            cachedCombatModeMelee = meleeMode;
+            cachedBossHealth = currentHealth;
+            cachedBossMaxHealth = maxHealth;
+            cachedCombatModeLabel = hasBoss
+                ? $"Boss {currentHealth}/{maxHealth}"
+                : meleeMode ? "Melee" : "Ranged";
+            return cachedCombatModeLabel;
         }
 
         private string ResolveEnergyInputModeLabel()
@@ -560,14 +708,46 @@ namespace DimensionBrawl.UI
                 return "EN";
             }
 
-            string band = energyLadder.CurrentRiskBand switch
+            SummonEnergyRiskBand riskBand = energyLadder.CurrentRiskBand;
+            bool canSpend = energyLadder.CanSpend;
+            int tier = canSpend ? energyLadder.AvailableTier : energyLadder.ChargingTier;
+            int multiplierTenths = Mathf.RoundToInt(energyLadder.CurrentGainMultiplier * 10f);
+            if (energyInputCacheInitialized
+                && cachedEnergyRiskBand == riskBand
+                && cachedEnergyCanSpend == canSpend
+                && cachedEnergyTier == tier
+                && cachedEnergyMultiplierTenths == multiplierTenths)
+            {
+                return cachedEnergyInputLabel;
+            }
+
+            energyInputCacheInitialized = true;
+            cachedEnergyRiskBand = riskBand;
+            cachedEnergyCanSpend = canSpend;
+            cachedEnergyTier = tier;
+            cachedEnergyMultiplierTenths = multiplierTenths;
+            string band = riskBand switch
             {
                 SummonEnergyRiskBand.ForwardRisk => "FRONT",
                 SummonEnergyRiskBand.MidCharge => "MID",
                 _ => "BACK"
             };
-            string tier = energyLadder.CanSpend ? $"READY LV{energyLadder.AvailableTier}" : $"EN LV{energyLadder.ChargingTier}";
-            return $"{band} {tier} x{energyLadder.CurrentGainMultiplier:0.0}";
+            cachedEnergyInputLabel = canSpend
+                ? $"{band} READY LV{tier} x{multiplierTenths * 0.1f:0.0}"
+                : $"{band} EN LV{tier} x{multiplierTenths * 0.1f:0.0}";
+            return cachedEnergyInputLabel;
+        }
+
+        private string ResolveSkillLabel(int tier)
+        {
+            if (tier == cachedSkillTier && cachedSkillLabel != null)
+            {
+                return cachedSkillLabel;
+            }
+
+            cachedSkillTier = tier;
+            cachedSkillLabel = tier > 0 ? $"SKILL LV{tier}" : "SKILL";
+            return cachedSkillLabel;
         }
 
         private bool IsPrimarySummonReady()
@@ -582,23 +762,42 @@ namespace DimensionBrawl.UI
         {
             if (summonSlot1Action == null || energyLadder == null)
             {
-                return "LOCKED";
+                return GetSummonStateText(
+                    ref primarySummonTextCache,
+                    SummonStateTextKind.Locked,
+                    0,
+                    0,
+                    0);
             }
 
+            int requiredMana = Mathf.CeilToInt(Mathf.Max(1f, summonSlot1Action.RequiredSummonMana));
             if (summonSlot1Action.IsSlotOnCooldown)
             {
-                return BuildSummonState(
-                    summonSlot1Action.RequiredSummonMana,
-                    $"CD {Mathf.Max(0f, summonSlot1Action.SlotCooldownRemaining):0.0}s");
+                int cooldownTenths = Mathf.Max(
+                    0,
+                    Mathf.RoundToInt(summonSlot1Action.SlotCooldownRemaining * 10f));
+                return GetSummonStateText(
+                    ref primarySummonTextCache,
+                    SummonStateTextKind.Cooldown,
+                    requiredMana,
+                    cooldownTenths,
+                    0);
             }
 
-            return IsPrimarySummonReady()
-                ? BuildSummonState(
-                    summonSlot1Action.RequiredSummonMana,
-                    $"READY LV{energyLadder.AvailableTier}")
-                : BuildSummonState(
-                    summonSlot1Action.RequiredSummonMana,
-                    BuildManaWaitText(summonSlot1Action.RequiredSummonMana));
+            if (IsPrimarySummonReady())
+            {
+                return GetSummonStateText(
+                    ref primarySummonTextCache,
+                    SummonStateTextKind.Ready,
+                    requiredMana,
+                    energyLadder.AvailableTier,
+                    0);
+            }
+
+            return ResolveWaitingSummonState(
+                ref primarySummonTextCache,
+                requiredMana,
+                summonSlot1Action.RequiredSummonMana);
         }
 
         private bool IsSupportSummonReady(PlayerSupportSummonSlotAction action)
@@ -610,27 +809,46 @@ namespace DimensionBrawl.UI
                 && energyLadder.CanSpendMana(action.RequiredSummonMana);
         }
 
-        private string ResolveSupportSummonState(PlayerSupportSummonSlotAction action)
+        private string ResolveSupportSummonState(
+            PlayerSupportSummonSlotAction action,
+            ref SummonStateTextCache textCache)
         {
             if (action == null || energyLadder == null)
             {
-                return "LOCKED";
+                return GetSummonStateText(
+                    ref textCache,
+                    SummonStateTextKind.Locked,
+                    0,
+                    0,
+                    0);
             }
 
+            int requiredMana = Mathf.CeilToInt(Mathf.Max(1f, action.RequiredSummonMana));
             if (action.IsSlotOnCooldown)
             {
-                return BuildSummonState(
-                    action.RequiredSummonMana,
-                    $"CD {Mathf.Max(0f, action.SlotCooldownRemaining):0.0}s");
+                int cooldownTenths = Mathf.Max(0, Mathf.RoundToInt(action.SlotCooldownRemaining * 10f));
+                return GetSummonStateText(
+                    ref textCache,
+                    SummonStateTextKind.Cooldown,
+                    requiredMana,
+                    cooldownTenths,
+                    0);
             }
 
-            return IsSupportSummonReady(action)
-                ? BuildSummonState(
-                    action.RequiredSummonMana,
-                    $"READY LV{energyLadder.AvailableTier}")
-                : BuildSummonState(
-                    action.RequiredSummonMana,
-                    BuildManaWaitText(ResolveSupportGateMana(action)));
+            if (IsSupportSummonReady(action))
+            {
+                return GetSummonStateText(
+                    ref textCache,
+                    SummonStateTextKind.Ready,
+                    requiredMana,
+                    energyLadder.AvailableTier,
+                    0);
+            }
+
+            return ResolveWaitingSummonState(
+                ref textCache,
+                requiredMana,
+                ResolveSupportGateMana(action));
         }
 
         private float ResolvePrimarySummonAvailabilityFill01()
@@ -678,22 +896,40 @@ namespace DimensionBrawl.UI
             return Mathf.Max(action.RequiredSummonMana, minimumTierMana);
         }
 
-        private string BuildManaWaitText(float requiredMana)
+        private string ResolveWaitingSummonState(
+            ref SummonStateTextCache textCache,
+            int displayedRequiredMana,
+            float requiredMana)
         {
-            if (energyLadder == null)
-            {
-                return "WAIT";
-            }
-
             float shortage = energyLadder.GetManaShortage(requiredMana);
             if (shortage <= 0.001f)
             {
-                return $"LV{energyLadder.ChargingTier}";
+                return GetSummonStateText(
+                    ref textCache,
+                    SummonStateTextKind.WaitingTier,
+                    displayedRequiredMana,
+                    energyLadder.ChargingTier,
+                    0);
             }
 
             float seconds = energyLadder.EstimateSecondsToMana(requiredMana);
-            string eta = seconds >= 0f ? $" / {Mathf.CeilToInt(seconds)}s" : string.Empty;
-            return $"+{Mathf.CeilToInt(shortage)}{eta}";
+            int displayedShortage = Mathf.CeilToInt(shortage);
+            if (seconds >= 0f)
+            {
+                return GetSummonStateText(
+                    ref textCache,
+                    SummonStateTextKind.WaitingShortageWithEta,
+                    displayedRequiredMana,
+                    displayedShortage,
+                    Mathf.CeilToInt(seconds));
+            }
+
+            return GetSummonStateText(
+                ref textCache,
+                SummonStateTextKind.WaitingShortage,
+                displayedRequiredMana,
+                displayedShortage,
+                0);
         }
 
         private float ResolveManaProgress01(float requiredMana)
@@ -716,9 +952,55 @@ namespace DimensionBrawl.UI
             return Mathf.Clamp01(1f - Mathf.Max(0f, cooldownRemaining) / cooldownSeconds);
         }
 
-        private static string BuildSummonState(float requiredMana, string status)
+        private static string GetSummonStateText(
+            ref SummonStateTextCache cache,
+            SummonStateTextKind kind,
+            int requiredMana,
+            int valueA,
+            int valueB)
         {
-            return $"{Mathf.CeilToInt(Mathf.Max(1f, requiredMana))}EN\n{status}";
+            if (cache.Initialized
+                && cache.Kind == kind
+                && cache.RequiredMana == requiredMana
+                && cache.ValueA == valueA
+                && cache.ValueB == valueB)
+            {
+                return cache.Text;
+            }
+
+            cache.Initialized = true;
+            cache.Kind = kind;
+            cache.RequiredMana = requiredMana;
+            cache.ValueA = valueA;
+            cache.ValueB = valueB;
+            cache.Text = kind switch
+            {
+                SummonStateTextKind.Locked => "LOCKED",
+                SummonStateTextKind.Cooldown => $"{requiredMana}EN\nCD {valueA * 0.1f:0.0}s",
+                SummonStateTextKind.Ready => $"{requiredMana}EN\nREADY LV{valueA}",
+                SummonStateTextKind.WaitingTier => $"{requiredMana}EN\nLV{valueA}",
+                SummonStateTextKind.WaitingShortage => $"{requiredMana}EN\n+{valueA}",
+                SummonStateTextKind.WaitingShortageWithEta => $"{requiredMana}EN\n+{valueA} / {valueB}s",
+                _ => "LOCKED"
+            };
+            return cache.Text;
+        }
+
+        private void ResetTextCaches()
+        {
+            cachedDodgeTenths = int.MinValue;
+            cachedDodgeLabel = null;
+            ammoCacheInitialized = false;
+            cachedAmmoLabel = null;
+            combatModeCacheInitialized = false;
+            cachedCombatModeLabel = null;
+            energyInputCacheInitialized = false;
+            cachedEnergyInputLabel = null;
+            cachedSkillTier = int.MinValue;
+            cachedSkillLabel = null;
+            primarySummonTextCache = default;
+            supportSummon2TextCache = default;
+            supportSummon3TextCache = default;
         }
     }
 }

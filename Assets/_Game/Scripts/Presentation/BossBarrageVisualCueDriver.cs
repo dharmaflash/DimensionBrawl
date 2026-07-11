@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using DimensionBrawl.Combat;
 using UnityEngine;
 
@@ -174,6 +175,8 @@ namespace DimensionBrawl.Presentation
         private float cueTimer;
         private float cueDuration = 0.01f;
         private float damageFlashTimer;
+        private bool pulseVisualActive;
+        private Coroutine visualRoutine;
         private bool subscribed;
         private bool pressureActionSubscribed;
         private bool damageFeedbackSubscribed;
@@ -496,24 +499,39 @@ namespace DimensionBrawl.Presentation
         private void OnEnable()
         {
             Subscribe();
+            StartVisualRoutineIfNeeded();
         }
 
         private void OnDisable()
         {
+            StopVisualRoutine();
             Unsubscribe();
             ResetPulse();
             ClearDamageFlash();
         }
 
-        private void Update()
+        private IEnumerator RefreshVisualsUntilSettled()
         {
-            if (cueTimer > 0f)
+            yield return null;
+
+            while (isActiveAndEnabled && HasActiveVisualTimer())
             {
-                cueTimer = Mathf.Max(0f, cueTimer - Time.deltaTime);
+                if (cueTimer > 0f)
+                {
+                    cueTimer = Mathf.Max(0f, cueTimer - Time.deltaTime);
+                }
+
+                RefreshPulse();
+                RefreshDamageFlash();
+                if (!HasActiveVisualTimer())
+                {
+                    break;
+                }
+
+                yield return null;
             }
 
-            RefreshPulse();
-            RefreshDamageFlash();
+            visualRoutine = null;
         }
 
         private void OnWindupStarted(BossBarrageEmitter emitter, BossBarragePatternProfile pattern)
@@ -733,8 +751,34 @@ namespace DimensionBrawl.Presentation
             activePulseScale = pulseScale;
             cueDuration = Mathf.Max(0.01f, duration);
             cueTimer = cueDuration;
+            pulseVisualActive = true;
             ApplyColor(cueColor);
             RefreshPulse();
+            StartVisualRoutineIfNeeded();
+        }
+
+        private bool HasActiveVisualTimer()
+        {
+            return cueTimer > 0f || damageFlashTimer > 0f;
+        }
+
+        private void StartVisualRoutineIfNeeded()
+        {
+            if (visualRoutine == null && Application.isPlaying && isActiveAndEnabled && HasActiveVisualTimer())
+            {
+                visualRoutine = StartCoroutine(RefreshVisualsUntilSettled());
+            }
+        }
+
+        private void StopVisualRoutine()
+        {
+            if (visualRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(visualRoutine);
+            visualRoutine = null;
         }
 
         private void RefreshPulse()
@@ -746,6 +790,12 @@ namespace DimensionBrawl.Presentation
 
             if (cueTimer <= 0f)
             {
+                if (!pulseVisualActive)
+                {
+                    return;
+                }
+
+                pulseVisualActive = false;
                 pulseRoot.localScale = baseScale;
                 ApplyColor(baseColor);
                 return;
@@ -761,6 +811,7 @@ namespace DimensionBrawl.Presentation
         private void ResetPulse()
         {
             cueTimer = 0f;
+            pulseVisualActive = false;
             if (pulseRoot != null)
             {
                 pulseRoot.localScale = baseScale;

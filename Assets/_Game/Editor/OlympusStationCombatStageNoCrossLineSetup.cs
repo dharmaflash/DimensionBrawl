@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -12,8 +13,10 @@ namespace DimensionBrawl.Editor
     {
         private const string ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string RootName = "OlympusStation_NoCrossCenterLine";
-        private const string RedCubeZonePrefabPath =
+        private const string SourceRedCubeZonePrefabPath =
             "Assets/_Imported/AssetStore/VFX/Hovl Studio/Sci-fi effects 2/Prefabs/Red cubes zone.prefab";
+        private const string CanonicalRedCubeZonePrefabPath =
+            "Assets/_Game/Prefabs/VFX/Environment/PF_OlympusStation_NoCrossRedCubeZone.prefab";
         private const float RedCubeZoneDepth = 0.22f;
 
         [MenuItem("DimensionBrawl/Stage/Olympus Station/Apply No-Cross Center Line")]
@@ -52,11 +55,7 @@ namespace DimensionBrawl.Editor
                 UnityEngine.Object.DestroyImmediate(existing);
             }
 
-            GameObject redCubeZonePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RedCubeZonePrefabPath);
-            if (redCubeZonePrefab == null)
-            {
-                throw new InvalidOperationException($"Could not load {RedCubeZonePrefabPath}.");
-            }
+            GameObject redCubeZonePrefab = EnsureCanonicalRedCubeZonePrefab(scene);
 
             Vector3 center = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, 0f);
             float halfWidth = laneSpace.HalfWidth;
@@ -84,6 +83,103 @@ namespace DimensionBrawl.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"Applied no-cross center line to {ScenePath}.");
+        }
+
+        private static GameObject EnsureCanonicalRedCubeZonePrefab(Scene scene)
+        {
+            GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SourceRedCubeZonePrefabPath);
+            if (sourcePrefab == null)
+            {
+                throw new InvalidOperationException($"Could not load {SourceRedCubeZonePrefabPath}.");
+            }
+
+            EnsureFolderForAsset(CanonicalRedCubeZonePrefabPath);
+            GameObject workingInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, scene) as GameObject;
+            if (workingInstance == null)
+            {
+                workingInstance = UnityEngine.Object.Instantiate(sourcePrefab);
+                SceneManager.MoveGameObjectToScene(workingInstance, scene);
+            }
+
+            try
+            {
+                workingInstance.name = "PF_OlympusStation_NoCrossRedCubeZone";
+                ActionFoundationBossBarrageLaneReviewSetup.SanitizePromotedHovlSciFiVfx(
+                    workingInstance,
+                    loopParticles: true,
+                    playOnAwake: true);
+
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(
+                    workingInstance,
+                    CanonicalRedCubeZonePrefabPath,
+                    out bool saveSucceeded);
+                if (!saveSucceeded || savedPrefab == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to save canonical no-cross VFX prefab at {CanonicalRedCubeZonePrefabPath}.");
+                }
+            }
+            finally
+            {
+                if (workingInstance != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(workingInstance);
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(CanonicalRedCubeZonePrefabPath, ImportAssetOptions.ForceUpdate);
+            ValidateNoImportedDependencies(CanonicalRedCubeZonePrefabPath);
+            GameObject canonicalPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(CanonicalRedCubeZonePrefabPath);
+            if (canonicalPrefab == null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not reload canonical no-cross VFX at {CanonicalRedCubeZonePrefabPath}.");
+            }
+
+            return canonicalPrefab;
+        }
+
+        private static void EnsureFolderForAsset(string assetPath)
+        {
+            string folder = System.IO.Path.GetDirectoryName(assetPath)?.Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(folder))
+            {
+                throw new InvalidOperationException($"Could not resolve folder for {assetPath}.");
+            }
+
+            string[] parts = folder.Split('/');
+            string current = parts[0];
+            for (int i = 1; i < parts.Length; i++)
+            {
+                string next = current + "/" + parts[i];
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    AssetDatabase.CreateFolder(current, parts[i]);
+                }
+
+                current = next;
+            }
+        }
+
+        private static void ValidateNoImportedDependencies(string assetPath)
+        {
+            string[] dependencies = AssetDatabase.GetDependencies(assetPath, recursive: true);
+            var importedDependencies = new List<string>();
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                if (dependencies[i].StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    importedDependencies.Add(dependencies[i]);
+                }
+            }
+
+            if (importedDependencies.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical no-cross VFX retains raw dependencies: {string.Join(", ", importedDependencies)}.");
+            }
         }
 
         private static void ConfigureRedCubeZone(GameObject instance, float lineWidth)

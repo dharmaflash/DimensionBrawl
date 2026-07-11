@@ -1746,6 +1746,7 @@ namespace IsekaiBrawl.Gameplay
         private float lifetime = 0.95f;
         private float elapsed;
         private Vector3 driftVelocity = new(0f, 1f, 0f);
+        private Camera cachedMainCamera;
 
         public static void Create(Vector3 worldPosition, string textValue, Color color, float fontSize, float duration)
         {
@@ -1783,10 +1784,14 @@ namespace IsekaiBrawl.Gameplay
             elapsed += Time.deltaTime;
             transform.position += driftVelocity * Time.deltaTime;
 
-            Camera cameraComponent = Camera.main;
-            if (cameraComponent != null)
+            if (cachedMainCamera == null || !cachedMainCamera.isActiveAndEnabled)
             {
-                transform.rotation = Quaternion.LookRotation(cameraComponent.transform.position - transform.position, Vector3.up);
+                cachedMainCamera = Camera.main;
+            }
+
+            if (cachedMainCamera != null)
+            {
+                transform.rotation = Quaternion.LookRotation(cachedMainCamera.transform.position - transform.position, Vector3.up);
             }
 
             if (textComponent != null)

@@ -465,7 +465,7 @@ namespace DimensionBrawl.Player
                     continue;
                 }
 
-                CombatHealth targetHealth = hitCollider.GetComponentInParent<CombatHealth>();
+                CombatHealth targetHealth = CombatHealth.ResolveFromCollider(hitCollider);
                 if (targetHealth == null || targetHealth == health)
                 {
                     continue;
