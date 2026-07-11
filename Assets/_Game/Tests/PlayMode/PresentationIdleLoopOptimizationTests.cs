@@ -61,6 +61,9 @@ namespace DimensionBrawl.Tests
                 typeof(DimensionBrawl.Player.PlayerSummonSlot1Action).GetMethod("Update", flags),
                 "The primary summon slot should use input callbacks and finite cooldown timers instead of idle polling.");
             Assert.IsNull(
+                typeof(DimensionBrawl.Player.PlayerCombatModeController).GetMethod("Update", flags),
+                "Combat mode swaps should use input callbacks instead of polling every frame.");
+            Assert.IsNull(
                 typeof(ActionCameraTargetBridge).GetMethod("LateUpdate", flags),
                 "Camera target binding should react immediately to target events and use low-frequency retargeting.");
             Assert.IsNull(
@@ -100,6 +103,36 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 reviewOverlayHud.GetMethod("Update", flags),
                 "Pause and result overlays should react to input and pocket result events.");
+        }
+
+        [UnityTest]
+        public IEnumerator CombatModeQueueExecutesImmediatelyAndHonorsCinematicLock()
+        {
+            GameObject root = new GameObject("EventDrivenCombatModeQueueTest");
+            try
+            {
+                DimensionBrawl.Player.PlayerCombatModeController controller =
+                    root.AddComponent<DimensionBrawl.Player.PlayerCombatModeController>();
+                Assert.IsTrue(controller.IsRangedMode);
+
+                controller.QueueCombatModeSwap();
+                Assert.IsTrue(controller.IsMeleeMode);
+
+                controller.SetCinematicInputLocked(true);
+                controller.QueueCombatModeSwap();
+                Assert.IsTrue(controller.IsMeleeMode);
+
+                controller.SetCinematicInputLocked(false);
+                controller.QueueCombatModeSwap();
+                Assert.IsTrue(controller.IsRangedMode);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]

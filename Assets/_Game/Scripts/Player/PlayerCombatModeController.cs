@@ -45,6 +45,8 @@ namespace DimensionBrawl.Player
         private bool actionEnabledHere;
         private bool queuedSwap;
         private bool cinematicInputLocked;
+        private InputAction subscribedSwapInputAction;
+        private InputAction keyboardFallbackAction;
 
         public PlayerCombatMode CurrentMode { get; private set; }
         public PlayerActionProfile CurrentActionProfile => CurrentMode == PlayerCombatMode.Melee
@@ -81,22 +83,16 @@ namespace DimensionBrawl.Player
         private void OnEnable()
         {
             actionEnabledHere = EnableActionIfNeeded(combatModeSwapAction);
+            SubscribeInput();
             ApplyMode(startingMode, true);
         }
 
         private void OnDisable()
         {
+            UnsubscribeInput();
             DisableActionIfOwned(combatModeSwapAction, actionEnabledHere);
             actionEnabledHere = false;
             queuedSwap = false;
-        }
-
-        private void Update()
-        {
-            if (ReadSwapPressed())
-            {
-                ToggleCombatMode();
-            }
         }
 
         public void QueueCombatModeSwap()
@@ -108,6 +104,7 @@ namespace DimensionBrawl.Player
             }
 
             queuedSwap = true;
+            ConsumeQueuedSwap();
         }
 
         public void SetCinematicInputLocked(bool locked)
@@ -225,30 +222,70 @@ namespace DimensionBrawl.Player
             }
         }
 
-        private bool ReadSwapPressed()
+        private void SubscribeInput()
         {
-            if (cinematicInputLocked)
+            InputAction action = combatModeSwapAction != null ? combatModeSwapAction.action : null;
+            if (action != null)
             {
-                queuedSwap = false;
-                return false;
+                subscribedSwapInputAction = action;
+                subscribedSwapInputAction.performed += HandleSwapPerformed;
+                return;
             }
 
-            bool pressed = queuedSwap;
+            if (!useKeyboardWhenActionMissing
+                || keyboardTestKey == Key.None
+                || Application.isMobilePlatform)
+            {
+                return;
+            }
+
+            keyboardFallbackAction = new InputAction(
+                "CombatModeSwap.KeyboardFallback",
+                InputActionType.Button,
+                $"<Keyboard>/{keyboardTestKey}");
+            keyboardFallbackAction.performed += HandleSwapPerformed;
+            keyboardFallbackAction.Enable();
+        }
+
+        private void UnsubscribeInput()
+        {
+            if (subscribedSwapInputAction != null)
+            {
+                subscribedSwapInputAction.performed -= HandleSwapPerformed;
+                subscribedSwapInputAction = null;
+            }
+
+            if (keyboardFallbackAction == null)
+            {
+                return;
+            }
+
+            keyboardFallbackAction.performed -= HandleSwapPerformed;
+            keyboardFallbackAction.Disable();
+            keyboardFallbackAction.Dispose();
+            keyboardFallbackAction = null;
+        }
+
+        private void HandleSwapPerformed(InputAction.CallbackContext context)
+        {
+            if (CanAcceptQueuedInput())
+            {
+                ToggleCombatMode();
+            }
+        }
+
+        private void ConsumeQueuedSwap()
+        {
+            if (!queuedSwap)
+            {
+                return;
+            }
+
             queuedSwap = false;
-
-            if (combatModeSwapAction != null && combatModeSwapAction.action != null)
+            if (CanAcceptQueuedInput())
             {
-                pressed |= combatModeSwapAction.action.WasPressedThisFrame();
+                ToggleCombatMode();
             }
-
-            if (pressed || !useKeyboardWhenActionMissing || !IsActionMissing(combatModeSwapAction))
-            {
-                return pressed;
-            }
-
-            return Keyboard.current != null
-                && Keyboard.current[keyboardTestKey] != null
-                && Keyboard.current[keyboardTestKey].wasPressedThisFrame;
         }
 
         private static void SetVisualRootActive(GameObject root, bool active)
@@ -276,11 +313,6 @@ namespace DimensionBrawl.Player
             {
                 actionReference.action.Disable();
             }
-        }
-
-        private static bool IsActionMissing(InputActionReference actionReference)
-        {
-            return actionReference == null || actionReference.action == null;
         }
 
         private bool CanAcceptQueuedInput()
