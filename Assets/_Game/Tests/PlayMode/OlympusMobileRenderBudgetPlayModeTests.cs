@@ -43,6 +43,13 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield";
         private const string CombatGirlControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private const string TmpSettingsPath = "Assets/TextMesh Pro/Resources/TMP Settings.asset";
+        private const string PretendardMediumFontPath =
+            "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_Medium_Dynamic.asset";
+        private const string PretendardSemiBoldFontPath =
+            "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_SemiBold_Dynamic.asset";
+        private const string CanonicalTmpMobileShaderPath =
+            "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader";
         private static readonly string[] ScenePaths =
         {
             "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
@@ -443,6 +450,74 @@ namespace DimensionBrawl.Tests
                 "Canonical scenes retain raw imported textures:\n" + string.Join("\n", importedTextures));
         }
 
+        [Test]
+        public void RuntimeTmpDefaultsHaveNoImportedFontDependencies()
+        {
+            UnityEngine.Object settings = AssetDatabase.LoadMainAssetAtPath(TmpSettingsPath);
+            UnityEngine.Object mediumFont = AssetDatabase.LoadMainAssetAtPath(PretendardMediumFontPath);
+            UnityEngine.Object semiBoldFont = AssetDatabase.LoadMainAssetAtPath(PretendardSemiBoldFontPath);
+
+            Assert.That(settings, Is.Not.Null);
+            Assert.That(mediumFont, Is.Not.Null);
+            Assert.That(semiBoldFont, Is.Not.Null);
+
+            var serializedSettings = new SerializedObject(settings);
+            SerializedProperty defaultFont = serializedSettings.FindProperty("m_defaultFontAsset");
+            SerializedProperty defaultFontPath = serializedSettings.FindProperty("m_defaultFontAssetPath");
+            SerializedProperty getFontFeaturesAtRuntime =
+                serializedSettings.FindProperty("m_GetFontFeaturesAtRuntime");
+            Assert.That(defaultFont, Is.Not.Null);
+            Assert.That(defaultFont.objectReferenceValue, Is.EqualTo(mediumFont));
+            Assert.That(defaultFontPath, Is.Not.Null);
+            Assert.That(defaultFontPath.stringValue, Is.Empty);
+            Assert.That(getFontFeaturesAtRuntime, Is.Not.Null);
+            Assert.That(getFontFeaturesAtRuntime.boolValue, Is.False);
+
+            var serializedMediumFont = new SerializedObject(mediumFont);
+            var serializedSemiBoldFont = new SerializedObject(semiBoldFont);
+            Assert.That(serializedMediumFont.FindProperty("m_GetFontFeatures").boolValue, Is.False);
+            Assert.That(serializedSemiBoldFont.FindProperty("m_GetFontFeatures").boolValue, Is.False);
+
+            Material mediumMaterial = LoadEmbeddedMaterial(PretendardMediumFontPath);
+            Material semiBoldMaterial = LoadEmbeddedMaterial(PretendardSemiBoldFontPath);
+            Assert.That(mediumMaterial, Is.Not.Null);
+            Assert.That(semiBoldMaterial, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(mediumMaterial.shader).Replace('\\', '/'),
+                Is.EqualTo(CanonicalTmpMobileShaderPath));
+            Assert.That(
+                AssetDatabase.GetAssetPath(semiBoldMaterial.shader).Replace('\\', '/'),
+                Is.EqualTo(CanonicalTmpMobileShaderPath));
+            Assert.That(
+                AssetDatabase.IsValidFolder("Assets/TextMesh Pro/Resources/Fonts & Materials"),
+                Is.False,
+                "Unused TMP starter fonts should not be packed through Resources.");
+
+            string[] runtimeTmpPaths =
+            {
+                TmpSettingsPath,
+                PretendardMediumFontPath,
+                PretendardSemiBoldFontPath
+            };
+            var importedDependencies = new HashSet<string>(StringComparer.Ordinal);
+            for (int pathIndex = 0; pathIndex < runtimeTmpPaths.Length; pathIndex++)
+            {
+                string[] dependencies = AssetDatabase.GetDependencies(runtimeTmpPaths[pathIndex], recursive: true);
+                for (int dependencyIndex = 0; dependencyIndex < dependencies.Length; dependencyIndex++)
+                {
+                    if (dependencies[dependencyIndex].StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                    {
+                        importedDependencies.Add(dependencies[dependencyIndex]);
+                    }
+                }
+            }
+
+            Assert.That(
+                importedDependencies,
+                Is.Empty,
+                "Runtime TMP defaults should not retain vendor font or shader dependencies.");
+        }
+
         [UnityTest]
         [Timeout(30000)]
         public IEnumerator CanonicalCorridorCombatGirlSourceUsesGameOwnedAssets()
@@ -666,6 +741,20 @@ namespace DimensionBrawl.Tests
             {
                 importedPaths.Add(normalizedPath);
             }
+        }
+
+        private static Material LoadEmbeddedMaterial(string assetPath)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Material material)
+                {
+                    return material;
+                }
+            }
+
+            return null;
         }
 
         [UnityTest]

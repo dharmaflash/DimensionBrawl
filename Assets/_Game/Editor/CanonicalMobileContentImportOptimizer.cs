@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using TMPro;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -26,6 +27,17 @@ namespace DimensionBrawl.Editor
             CombatGirlAnimationRoot + "/RuntimeClips";
         private const string CombatGirlControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private const string TmpSettingsPath = "Assets/TextMesh Pro/Resources/TMP Settings.asset";
+        private const string CanonicalTmpMobileShaderPath =
+            "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader";
+        private const string PretendardMediumFontPath =
+            "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_Medium_Dynamic.asset";
+
+        private static readonly string[] CanonicalPretendardFontPaths =
+        {
+            PretendardMediumFontPath,
+            "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_SemiBold_Dynamic.asset"
+        };
 
         private static readonly string[] RuntimeScriptEditorIconPaths =
         {
@@ -60,9 +72,9 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
         };
 
-        // Unity packs every Resources folder. These vendor sample roots are not loaded by game code,
-        // so preserve their GUIDs while removing the special folder-name behavior.
-        private static readonly ResourceFolderRelocation[] NonCanonicalDemoResourceFolders =
+        // Unity packs every Resources folder. These vendor samples and starter font assets are not
+        // loaded by game code, so preserve their GUIDs while removing the special folder behavior.
+        private static readonly ResourceFolderRelocation[] NonRuntimeResourceFolders =
         {
             new(
                 "Assets/_Imported/AssetStore/MagicaCloth2/Example (Can be deleted)/Common/Resources",
@@ -78,7 +90,19 @@ namespace DimensionBrawl.Editor
                 "Assets/_Imported/AssetStore/VFX/Vefects/Pixel Craft VFX/Demo/DemoResources"),
             new(
                 "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Demo/Resources",
-                "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Demo/DemoResources")
+                "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Demo/DemoResources"),
+            new(
+                "Assets/_Imported/AssetStore/FORGE3D/Resources",
+                "Assets/_Imported/AssetStore/FORGE3D/SourceResources"),
+            new(
+                "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/UI_&_environmental/TextMesh Pro/Resources",
+                "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/UI_&_environmental/TextMesh Pro/SourceResources"),
+            new(
+                "Assets/_Imported/AssetStore/VFX/ShapesFX_Pack/Resources",
+                "Assets/_Imported/AssetStore/VFX/ShapesFX_Pack/SourceResources"),
+            new(
+                "Assets/TextMesh Pro/Resources/Fonts & Materials",
+                "Assets/TextMesh Pro/Default Font Assets")
         };
 
         [MenuItem("DimensionBrawl/Performance/Apply Canonical Mobile Content Import Budgets")]
@@ -89,8 +113,9 @@ namespace DimensionBrawl.Editor
 
         public static void ApplyBatchOptimization()
         {
-            List<string> resourceRelocations = RelocateNonCanonicalDemoResources();
-            List<string> canonicalReferenceChanges = EnsureCombatGirlRuntimeAnimationClips();
+            List<string> canonicalReferenceChanges = EnsureCanonicalTmpRuntimeAssets();
+            List<string> resourceRelocations = RelocateNonRuntimeResources();
+            canonicalReferenceChanges.AddRange(EnsureCombatGirlRuntimeAnimationClips());
             canonicalReferenceChanges.AddRange(StripRuntimeScriptEditorIconDependencies());
             HashSet<string> dependencyPaths = CollectCanonicalDependencies(out int resourcesAssetCount);
             List<TextureDecision> textureDecisions = CollectTextureDecisions(dependencyPaths);
@@ -130,9 +155,94 @@ namespace DimensionBrawl.Editor
             WriteReport(report);
             Debug.Log(
                 $"Canonical mobile content import optimization complete. " +
-                $"Relocated {report.ResourceFolderRelocationCount} noncanonical Resources folder(s), " +
+                $"Relocated {report.ResourceFolderRelocationCount} non-runtime Resources folder(s), " +
                 $"Changed {report.ChangedTextureCount} texture(s) and {report.ChangedAudioCount} audio clip(s). " +
                 $"Report: {ReportPath}");
+        }
+
+        private static List<string> EnsureCanonicalTmpRuntimeAssets()
+        {
+            var changes = new List<string>();
+            Shader canonicalShader = AssetDatabase.LoadAssetAtPath<Shader>(CanonicalTmpMobileShaderPath);
+            if (canonicalShader == null)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical TMP mobile shader is missing: {CanonicalTmpMobileShaderPath}");
+            }
+
+            TMP_FontAsset mediumFont = null;
+            for (int i = 0; i < CanonicalPretendardFontPaths.Length; i++)
+            {
+                string fontPath = CanonicalPretendardFontPaths[i];
+                TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(fontPath);
+                if (fontAsset == null)
+                {
+                    throw new InvalidOperationException($"Canonical Pretendard font is missing: {fontPath}");
+                }
+
+                if (fontPath == PretendardMediumFontPath)
+                {
+                    mediumFont = fontAsset;
+                }
+
+                Material material = fontAsset.material;
+                if (material == null)
+                {
+                    throw new InvalidOperationException($"Canonical Pretendard font has no material: {fontPath}");
+                }
+
+                if (material.shader != canonicalShader)
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical Pretendard font must use {CanonicalTmpMobileShaderPath}: {fontPath}");
+                }
+
+                var serializedFont = new SerializedObject(fontAsset);
+                SerializedProperty getFontFeatures = serializedFont.FindProperty("m_GetFontFeatures");
+                if (getFontFeatures == null || getFontFeatures.boolValue)
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical Pretendard font must disable runtime font feature extraction: {fontPath}");
+                }
+            }
+
+            TMP_Settings settings = AssetDatabase.LoadAssetAtPath<TMP_Settings>(TmpSettingsPath);
+            if (settings == null || mediumFont == null)
+            {
+                throw new InvalidOperationException($"TMP runtime settings are incomplete: {TmpSettingsPath}");
+            }
+
+            var serializedSettings = new SerializedObject(settings);
+            SerializedProperty defaultFont = serializedSettings.FindProperty("m_defaultFontAsset");
+            SerializedProperty defaultFontPath = serializedSettings.FindProperty("m_defaultFontAssetPath");
+            SerializedProperty getFontFeaturesAtRuntime =
+                serializedSettings.FindProperty("m_GetFontFeaturesAtRuntime");
+            if (defaultFont == null || defaultFontPath == null || getFontFeaturesAtRuntime == null)
+            {
+                throw new InvalidOperationException("TMP Settings serialization contract changed.");
+            }
+
+            bool settingsChanged = defaultFont.objectReferenceValue != mediumFont
+                || !string.IsNullOrEmpty(defaultFontPath.stringValue)
+                || getFontFeaturesAtRuntime.boolValue;
+            if (settingsChanged)
+            {
+                defaultFont.objectReferenceValue = mediumFont;
+                defaultFontPath.stringValue = string.Empty;
+                getFontFeaturesAtRuntime.boolValue = false;
+                serializedSettings.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(settings);
+                changes.Add(
+                    $"TMP | runtime default assigned without vendor fallback or feature-table mutation | " +
+                    $"`{PretendardMediumFontPath}`");
+            }
+
+            if (changes.Count > 0)
+            {
+                AssetDatabase.SaveAssets();
+            }
+
+            return changes;
         }
 
         private static List<string> StripRuntimeScriptEditorIconDependencies()
@@ -408,12 +518,12 @@ namespace DimensionBrawl.Editor
             return sourcePath + "|" + clipName;
         }
 
-        private static List<string> RelocateNonCanonicalDemoResources()
+        private static List<string> RelocateNonRuntimeResources()
         {
             List<string> changes = new();
-            for (int i = 0; i < NonCanonicalDemoResourceFolders.Length; i++)
+            for (int i = 0; i < NonRuntimeResourceFolders.Length; i++)
             {
-                ResourceFolderRelocation relocation = NonCanonicalDemoResourceFolders[i];
+                ResourceFolderRelocation relocation = NonRuntimeResourceFolders[i];
                 bool sourceExists = AssetDatabase.IsValidFolder(relocation.SourcePath);
                 bool destinationExists = AssetDatabase.IsValidFolder(relocation.DestinationPath);
                 if (!sourceExists)
@@ -436,7 +546,7 @@ namespace DimensionBrawl.Editor
                 }
 
                 changes.Add(
-                    $"Resources | noncanonical vendor demo root relocated with GUIDs preserved | " +
+                    $"Resources | non-runtime root relocated with GUIDs preserved | " +
                     $"`{relocation.SourcePath}` -> `{relocation.DestinationPath}`");
             }
 
@@ -837,7 +947,7 @@ namespace DimensionBrawl.Editor
             builder.AppendLine($"- Unity: {report.UnityVersion}");
             builder.AppendLine($"- Canonical and runtime Resources dependencies: {report.DependencyCount:N0}");
             builder.AppendLine($"- Runtime Resources root assets: {report.ResourcesAssetCount:N0}");
-            builder.AppendLine($"- Noncanonical Resources folders relocated: {report.ResourceFolderRelocationCount:N0}");
+            builder.AppendLine($"- Non-runtime Resources folders relocated: {report.ResourceFolderRelocationCount:N0}");
             builder.AppendLine($"- Texture candidates: {report.TextureCandidateCount:N0}");
             builder.AppendLine($"- Textures changed: {report.ChangedTextureCount:N0}");
             builder.AppendLine($"- Textures already compliant: {report.CompliantTextureCount:N0}");

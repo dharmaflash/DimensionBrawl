@@ -91,7 +91,7 @@ namespace DimensionBrawl.Editor
 
             Debug.Log(
                 $"Android performance benchmark built: {ApkPath} " +
-                $"({summary.totalSize / (1024d * 1024d):N1} MiB). Runner: {RunnerScriptPath}");
+                $"({report.ApkBytes / (1024d * 1024d):N1} MiB). Runner: {RunnerScriptPath}");
         }
 
         private static void ValidateBuildEnvironment()
