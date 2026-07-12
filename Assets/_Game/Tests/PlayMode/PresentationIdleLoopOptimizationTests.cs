@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using DimensionBrawl.Debugging;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEngine;
@@ -84,6 +85,12 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController).GetMethod("Update", flags),
                 "Corridor flow should observe only its active intro, HUD reveal, and gameplay phases.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.SummonEnergyLadder).GetMethod("Update", flags),
+                "Summon energy should share the reviewed-rate combat resource scheduler.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.BossPressureCostLadder).GetMethod("Update", flags),
+                "Boss pressure cost should share the reviewed-rate combat resource scheduler.");
 
             System.Type combatHudBinder = System.Type.GetType(
                 "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder, Assembly-CSharp");
@@ -320,6 +327,66 @@ namespace DimensionBrawl.Tests
                 Object.DestroyImmediate(first);
                 Object.DestroyImmediate(second);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator CombatResourceLaddersShareSchedulerAndStopWhenDisabled()
+        {
+            int initialEnergyCount =
+                DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredEnergyLadderCount;
+            int initialBossCostCount =
+                DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredBossCostLadderCount;
+            bool initiallyTicking = DimensionBrawl.Combat.CombatResourceTickScheduler.IsTicking;
+            GameObject energyRoot = new GameObject("ScheduledEnergyLadderTest");
+            GameObject bossCostRoot = new GameObject("ScheduledBossCostLadderTest");
+            try
+            {
+                DimensionBrawl.Combat.SummonEnergyLadder energy =
+                    energyRoot.AddComponent<DimensionBrawl.Combat.SummonEnergyLadder>();
+                DimensionBrawl.Combat.BossPressureCostLadder bossCost =
+                    bossCostRoot.AddComponent<DimensionBrawl.Combat.BossPressureCostLadder>();
+
+                Assert.AreEqual(
+                    initialEnergyCount + 1,
+                    DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredEnergyLadderCount);
+                Assert.AreEqual(
+                    initialBossCostCount + 1,
+                    DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredBossCostLadderCount);
+                Assert.IsTrue(DimensionBrawl.Combat.CombatResourceTickScheduler.IsTicking);
+
+                var inventory = new MobilePerformanceSceneResult();
+                MobilePerformanceBenchmarkRunner.CaptureRuntimeInventory(inventory);
+                MobilePerformanceFrameLoopInventory schedulerLoop = inventory.FrameLoops.Find(
+                    loop => loop.TypeName == typeof(DimensionBrawl.Combat.CombatResourceTickScheduler).FullName);
+                Assert.IsNotNull(
+                    schedulerLoop,
+                    "Global combat resource scheduling should remain visible in runtime loop budgets.");
+                Assert.AreEqual(1, schedulerLoop.UpdateInstances);
+
+                yield return new WaitForSeconds(0.12f);
+                Assert.Greater(energy.CurrentMana, 0f);
+                Assert.Greater(bossCost.CurrentTierCost, 0f);
+
+                energy.enabled = false;
+                bossCost.enabled = false;
+                Assert.AreEqual(
+                    initialEnergyCount,
+                    DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredEnergyLadderCount);
+                Assert.AreEqual(
+                    initialBossCostCount,
+                    DimensionBrawl.Combat.CombatResourceTickScheduler.RegisteredBossCostLadderCount);
+                Assert.AreEqual(
+                    initiallyTicking,
+                    DimensionBrawl.Combat.CombatResourceTickScheduler.IsTicking);
+            }
+            finally
+            {
+                Object.DestroyImmediate(energyRoot);
+                Object.DestroyImmediate(bossCostRoot);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]

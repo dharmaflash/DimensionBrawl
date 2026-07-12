@@ -68,6 +68,26 @@ namespace DimensionBrawl.Combat
         public bool CanSpend => availableTier > 0;
         public bool IsCapped => currentMana >= MaxMana - 0.001f;
 
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            CombatResourceTickScheduler.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            CombatResourceTickScheduler.Unregister(this);
+        }
+
         private void OnValidate()
         {
             backSafetyMaxForwardRisk01 = Mathf.Clamp01(backSafetyMaxForwardRisk01);
@@ -189,7 +209,7 @@ namespace DimensionBrawl.Combat
 
         public void Tick(float deltaTime)
         {
-            if (!gainEnabled || deltaTime <= 0f || IsCapped)
+            if (deltaTime <= 0f)
             {
                 return;
             }
@@ -200,6 +220,11 @@ namespace DimensionBrawl.Combat
             if (currentRiskBand != previousRiskBand)
             {
                 RiskBandChanged?.Invoke(currentRiskBand);
+            }
+
+            if (!gainEnabled || IsCapped)
+            {
+                return;
             }
 
             ApplyEnergyAmount(baseEnergyPerSecond * currentGainMultiplier * deltaTime);
@@ -234,11 +259,6 @@ namespace DimensionBrawl.Combat
             availableTier = ResolveAvailableTier(currentMana);
             chargingTier = ResolveChargingTier(currentMana, availableTier);
             currentTierEnergy = ResolveCurrentTierEnergy(currentMana, chargingTier);
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime);
         }
 
         private float EvaluateGainMultiplier()

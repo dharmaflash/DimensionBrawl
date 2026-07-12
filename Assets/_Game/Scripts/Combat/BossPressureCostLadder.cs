@@ -57,6 +57,26 @@ namespace DimensionBrawl.Combat
         public bool CanSpend => availableTier > 0;
         public bool IsCapped => availableTier >= MaxTier && chargingTier >= MaxTier && CurrentTierFillRatio >= 1f;
 
+        private void OnEnable()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            CombatResourceTickScheduler.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            CombatResourceTickScheduler.Unregister(this);
+        }
+
         private void OnValidate()
         {
             backSafetyMaxBossForwardRisk01 = Mathf.Clamp01(backSafetyMaxBossForwardRisk01);
@@ -113,12 +133,17 @@ namespace DimensionBrawl.Combat
 
         public void Tick(float deltaTime)
         {
-            if (!gainEnabled || deltaTime <= 0f || IsCapped)
+            if (deltaTime <= 0f)
             {
                 return;
             }
 
             currentGainMultiplier = EvaluateGainMultiplier();
+            if (!gainEnabled || IsCapped)
+            {
+                return;
+            }
+
             ApplyCostAmount(baseCostPerSecond * currentGainMultiplier * deltaTime);
         }
 
@@ -132,11 +157,6 @@ namespace DimensionBrawl.Combat
             float laneZ = laneSpace.GetLaneCoordinates(worldPosition).y;
             float clampedZ = Mathf.Clamp(laneZ, laneSpace.ForwardBoundaryZ, laneSpace.BossProxyZ);
             return Mathf.Clamp01(Mathf.InverseLerp(laneSpace.BossProxyZ, laneSpace.ForwardBoundaryZ, clampedZ));
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private void ApplyCostAmount(float costAmount)

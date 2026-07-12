@@ -192,7 +192,7 @@ namespace DimensionBrawl.Tests
                 "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
                 "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
             };
-            int[] maximumFrameLoopCounts = { 20, 20, 19, 17 };
+            int[] maximumFrameLoopCounts = { 19, 20, 18, 16 };
             int[] expectedFootstepPresenterCounts = { 2, 0, 3, 3 };
 
             for (int sceneIndex = 0; sceneIndex < scenePaths.Length; sceneIndex++)

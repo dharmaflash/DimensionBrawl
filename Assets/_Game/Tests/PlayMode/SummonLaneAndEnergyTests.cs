@@ -102,6 +102,29 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnergyLadderKeepsRiskBandCurrentWhileGainIsDisabled()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+            energy.ConfigureReferences(lane, playerObject.transform);
+
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            energy.Tick(1f);
+            float manaBeforeDisable = energy.CurrentMana;
+            energy.SetGainEnabled(false);
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            energy.Tick(1f);
+
+            Assert.AreEqual(SummonEnergyRiskBand.ForwardRisk, energy.CurrentRiskBand);
+            Assert.AreEqual(manaBeforeDisable, energy.CurrentMana, 0.001f);
+
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void EnergyRewardPulseCanOpenCurrentTierSpend()
         {
             GameObject playerObject = new GameObject("Player");
@@ -3446,6 +3469,29 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, spentTier);
             Assert.AreEqual(0, bossCost.AvailableTier);
             Assert.AreEqual(1, bossCost.ChargingTier);
+
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureCostKeepsRiskBandCurrentWhileGainIsDisabled()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject bossObject = new GameObject("Boss");
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ);
+            bossCost.Tick(1f);
+            float costBeforeDisable = bossCost.CurrentTierCost;
+            bossCost.SetGainEnabled(false);
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.ForwardBoundaryZ);
+            bossCost.Tick(1f);
+
+            Assert.AreEqual(BossPressureRiskBand.ForwardCommit, bossCost.CurrentRiskBand);
+            Assert.AreEqual(costBeforeDisable, bossCost.CurrentTierCost, 0.001f);
 
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(laneObject);
