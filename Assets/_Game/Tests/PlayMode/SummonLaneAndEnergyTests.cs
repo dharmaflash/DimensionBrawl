@@ -6158,6 +6158,57 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerLaserSweepRestoresAuthoredBeamPoseBeforePoolReuse()
+        {
+            const string laserPrefabPath =
+                "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1_4SidesLaser_HOVL.prefab";
+            GameObject playerObject = new GameObject("LaserSweepPoolReusePlayer");
+            GameObject targetObject = null;
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                PlayerSkill1LaserSweepAction laserSweepAction =
+                    playerObject.AddComponent<PlayerSkill1LaserSweepAction>();
+                GameObject laserPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(laserPrefabPath);
+                Assert.IsNotNull(laserPrefab);
+                SetPrivateInstanceField(laserSweepAction, "laserPrefab", laserPrefab);
+
+                Assert.IsTrue(laserSweepAction.TryCastLaserSweep(1));
+                FieldInfo beamSpaceField = typeof(PlayerSkill1LaserSweepAction).GetField(
+                    "pooledBeamSpace",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.IsNotNull(beamSpaceField);
+                Transform pooledBeamSpace = beamSpaceField.GetValue(laserSweepAction) as Transform;
+                Assert.IsNotNull(pooledBeamSpace);
+                pooledBeamSpace.localRotation = Quaternion.Euler(0f, 30f, 0f);
+
+                targetObject = new GameObject("LaserSweepPoolReuseTarget");
+                targetObject.transform.position = Vector3.forward * 3f;
+                targetObject.AddComponent<SphereCollider>();
+                CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+                targetHealth.ConfigureTeam(DamageTeam.Enemy);
+                targetHealth.ResetHealthToFull();
+                float healthBeforeReuse = targetHealth.CurrentHealth;
+
+                Assert.IsTrue(laserSweepAction.TryCastLaserSweep(1));
+                Assert.Less(
+                    targetHealth.CurrentHealth,
+                    healthBeforeReuse,
+                    "A reused four-way laser must restart from its authored beam axes before its first damage tick.");
+            }
+            finally
+            {
+                if (targetObject != null)
+                {
+                    Object.DestroyImmediate(targetObject);
+                }
+
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void SummonPressureScreenScansOverlappingHostileProjectilesDuringTick()
         {
             GameObject screenObject = new GameObject("SummonPressureScreen");

@@ -122,8 +122,8 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 SourcePlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CenteredCombatCameraOffset = new Vector3(0f, 0.68f, -4.25f);
         private static readonly Vector3 CenteredCombatLookOffset = new Vector3(0f, 1.18f, 1.5f);
-        private static readonly Vector3 CenteredCombatAimCameraOffset = new Vector3(0f, 0.18f, 0.12f);
-        private static readonly Vector3 CenteredCombatAimFocusOffset = new Vector3(0f, 0.06f, 1.05f);
+        private static readonly Vector3 CombatShoulderAimCameraOffset = new Vector3(0.45f, 0.18f, 0.12f);
+        private static readonly Vector3 CombatShoulderAimFocusOffset = new Vector3(0.45f, 0.06f, 1.05f);
         private static readonly Vector3 CenteredCombatCameraLocalPosition =
             CenteredCombatLookOffset + CenteredCombatCameraOffset;
         private static readonly Vector3 CenteredCombatFocusLocalPosition =
@@ -1619,8 +1619,8 @@ namespace DimensionBrawl.Editor
             SetFloatProperty(serialized, "targetYawAssist", 0f);
             SetFloatProperty(serialized, "manualYawSpeedDegrees", 0f);
             SetFloatProperty(serialized, "mouseYawDegreesPerPixel", 0f);
-            SetVector3Property(serialized, "aimCameraOffset", CenteredCombatAimCameraOffset);
-            SetVector3Property(serialized, "aimFocusOffset", CenteredCombatAimFocusOffset);
+            SetVector3Property(serialized, "aimCameraOffset", CombatShoulderAimCameraOffset);
+            SetVector3Property(serialized, "aimFocusOffset", CombatShoulderAimFocusOffset);
             SetBoolProperty(serialized, "aimOrbitUsesInput", false);
             SetBoolProperty(serialized, "aimOrbitRotatesCameraPosition", false);
             SetBoolProperty(serialized, "aimAssistUsesYawTarget", false);

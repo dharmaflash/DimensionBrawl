@@ -273,8 +273,8 @@ MonoBehaviour:
   laserSustainFeedbackIntervalSeconds: 0.14
   shieldBlockFeedbackCooldownSeconds: 0.07
   liveFireFeedbackScale: 1
-  aimCameraOffset: {x: 0, y: 0.18, z: 0.12}
-  aimFocusOffset: {x: 0, y: 0.06, z: 1.05}
+  aimCameraOffset: {x: 0.45, y: 0.18, z: 0.12}
+  aimFocusOffset: {x: 0.45, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
   aimBlendInSpeed: 14
   aimBlendOutSpeed: 18

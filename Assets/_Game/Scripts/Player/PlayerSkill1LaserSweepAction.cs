@@ -39,6 +39,10 @@ namespace DimensionBrawl.Player
         private GameObject activeEffect;
         private GameObject pooledEffect;
         private Transform pooledBeamSpace;
+        private Vector3 pooledBeamLocalPosition;
+        private Quaternion pooledBeamLocalRotation = Quaternion.identity;
+        private Vector3 pooledBeamLocalScale = Vector3.one;
+        private bool hasPooledBeamLocalPose;
         private ParticleSystem[] pooledParticles = new ParticleSystem[0];
         private bool effectReleasePending;
         private float effectReleaseTime;
@@ -426,6 +430,7 @@ namespace DimensionBrawl.Player
 
             effectTransform.SetPositionAndRotation(position, rotation);
             effectTransform.localScale = Vector3.one * effectScale;
+            RestorePooledBeamLocalPose();
             pooledEffect.SetActive(true);
             RestartParticles(pooledParticles);
             return pooledEffect;
@@ -442,8 +447,37 @@ namespace DimensionBrawl.Player
             pooledEffect = Instantiate(laserPrefab, parent);
             pooledEffect.name = laserPrefab.name;
             pooledBeamSpace = FindDescendant(pooledEffect.transform, "Rotator") ?? pooledEffect.transform;
+            CapturePooledBeamLocalPose();
             pooledParticles = pooledEffect.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             pooledEffect.SetActive(false);
+        }
+
+        private void CapturePooledBeamLocalPose()
+        {
+            hasPooledBeamLocalPose = pooledEffect != null
+                && pooledBeamSpace != null
+                && pooledBeamSpace != pooledEffect.transform;
+            if (!hasPooledBeamLocalPose)
+            {
+                return;
+            }
+
+            pooledBeamLocalPosition = pooledBeamSpace.localPosition;
+            pooledBeamLocalRotation = pooledBeamSpace.localRotation;
+            pooledBeamLocalScale = pooledBeamSpace.localScale;
+        }
+
+        private void RestorePooledBeamLocalPose()
+        {
+            if (!hasPooledBeamLocalPose || pooledBeamSpace == null)
+            {
+                return;
+            }
+
+            pooledBeamSpace.SetLocalPositionAndRotation(
+                pooledBeamLocalPosition,
+                pooledBeamLocalRotation);
+            pooledBeamSpace.localScale = pooledBeamLocalScale;
         }
 
         private void SchedulePooledEffectRelease()
