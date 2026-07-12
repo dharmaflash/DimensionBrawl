@@ -25,6 +25,21 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ProjectManifestExcludesUnusedVisualScriptingRuntime()
+        {
+            string projectRoot = System.IO.Path.GetFullPath(
+                System.IO.Path.Combine(Application.dataPath, ".."));
+            string manifestPath = System.IO.Path.Combine(projectRoot, "Packages", "manifest.json");
+            Assert.That(System.IO.File.Exists(manifestPath), Is.True);
+
+            string manifest = System.IO.File.ReadAllText(manifestPath);
+            Assert.That(
+                manifest,
+                Does.Not.Contain("\"com.unity.visualscripting\""),
+                "Unused Visual Scripting runtime assemblies should stay out of the mobile player graph.");
+        }
+
+        [Test]
         public void MetricSummaryCalculatesStableNearestRankPercentiles()
         {
             double[] samples = { 1d, 2d, 3d, 4d, 100d };

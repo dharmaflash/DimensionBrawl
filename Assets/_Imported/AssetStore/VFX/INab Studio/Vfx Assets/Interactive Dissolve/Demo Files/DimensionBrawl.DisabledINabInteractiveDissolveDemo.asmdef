@@ -1,0 +1,16 @@
+{
+  "name": "DimensionBrawl.DisabledINabInteractiveDissolveDemo",
+  "rootNamespace": "INab.Demo",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "DIMENSIONBRAWL_INCLUDE_VENDOR_DEMOS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
