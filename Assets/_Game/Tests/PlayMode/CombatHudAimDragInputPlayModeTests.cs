@@ -165,6 +165,57 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator BossBarrageBinderRunsAndStopsReviewedRateRefreshRoutine()
+        {
+            GameObject binderObject = new("ReviewedRateCombatHudBinder", typeof(RectTransform));
+            binderObject.SetActive(false);
+            System.Type presenterType = System.Type.GetType(
+                "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp",
+                throwOnError: true);
+            System.Type binderType = System.Type.GetType(
+                "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder, Assembly-CSharp",
+                throwOnError: true);
+            Component presenter = binderObject.AddComponent(presenterType);
+            Behaviour binder = binderObject.AddComponent(binderType) as Behaviour;
+
+            try
+            {
+                Assert.IsNotNull(binder);
+                FieldInfo presenterField = binderType.GetField(
+                    "hudPresenter",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo refreshRoutineField = binderType.GetField(
+                    "hudRefreshRoutine",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo refreshNow = binderType.GetMethod(
+                    "RefreshHudNow",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(presenterField);
+                Assert.IsNotNull(refreshRoutineField);
+                Assert.IsNotNull(refreshNow);
+                Assert.IsNull(
+                    binderType.GetMethod(
+                        "Update",
+                        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly));
+
+                presenterField.SetValue(binder, presenter);
+                binderObject.SetActive(true);
+                Assert.IsNotNull(refreshRoutineField.GetValue(binder));
+                Assert.DoesNotThrow(() => refreshNow.Invoke(binder, null));
+
+                binder.enabled = false;
+                Assert.IsNull(refreshRoutineField.GetValue(binder));
+            }
+            finally
+            {
+                Object.DestroyImmediate(binderObject);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
         public IEnumerator LegacyMobileHudDisableIgnoresDestroyedMovementBinding()
         {
             GameObject movementObject = new("DestroyedLegacyHudMovementBinding", typeof(CharacterController));

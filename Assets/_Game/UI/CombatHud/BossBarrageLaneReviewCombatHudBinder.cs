@@ -1,3 +1,4 @@
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
@@ -57,8 +58,12 @@ namespace DimensionBrawl.UI
         [SerializeField, Range(15f, 60f)] private float hudRefreshRate = 30f;
 
         private bool tutorialMoveInputLocked;
+        private Coroutine hudRefreshRoutine;
+        private float lastTutorialTickTime;
         private CombatHealth subscribedPlayerDamageHealth;
-        private float nextHudRefreshTime;
+        private CombatHealth subscribedBossHealth;
+        private PlayerCombatModeController subscribedCombatModeController;
+        private PlayerRangedBasicAttackAction subscribedAimPreviewAction;
         private float lastPresentedPlayerHealth = float.NaN;
         private float lastPresentedPlayerMaxHealth = float.NaN;
         private float lastPresentedBossHealth = float.NaN;
@@ -123,14 +128,13 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
-            nextHudRefreshTime = 0f;
+            lastTutorialTickTime = Time.time;
             lastPresentedPlayerHealth = float.NaN;
             lastPresentedPlayerMaxHealth = float.NaN;
             lastPresentedBossHealth = float.NaN;
             lastPresentedBossMaxHealth = float.NaN;
             ResetTextCaches();
             BindTutorialGuide();
-            SyncBossHudVisibility();
 
             if (inputBridge != null)
             {
@@ -138,11 +142,15 @@ namespace DimensionBrawl.UI
                 inputBridge.ActionHoldChanged += HandleActionHoldChanged;
             }
 
-            SubscribePlayerDamageFeedback();
+            RefreshHudNow();
+            StartHudRefreshRoutine();
         }
 
         private void OnDisable()
         {
+            StopHudRefreshRoutine();
+            UnsubscribeImmediateReadoutEvents();
+            UnsubscribeBossHealthReadout();
             UnsubscribePlayerDamageFeedback();
 
             if (inputBridge != null)
@@ -158,14 +166,69 @@ namespace DimensionBrawl.UI
             ClearTutorialMovementInputLock();
         }
 
-        private void Update()
+        public void RefreshHudNow()
+        {
+            float scaledTime = Time.time;
+            float tutorialDeltaTime = Mathf.Max(0f, scaledTime - lastTutorialTickTime);
+            lastTutorialTickTime = scaledTime;
+            RefreshHudState(tutorialDeltaTime);
+        }
+
+        private void StartHudRefreshRoutine()
+        {
+            if (hudRefreshRoutine != null
+                || !isActiveAndEnabled
+                || (hudPresenter == null && tutorialGuide == null))
+            {
+                return;
+            }
+
+            hudRefreshRoutine = StartCoroutine(RefreshHudAtReviewedRate());
+        }
+
+        private void StopHudRefreshRoutine()
+        {
+            if (hudRefreshRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(hudRefreshRoutine);
+            hudRefreshRoutine = null;
+        }
+
+        private IEnumerator RefreshHudAtReviewedRate()
+        {
+            var refreshDelay = new WaitForSecondsRealtime(1f / Mathf.Max(1f, hudRefreshRate));
+            while (isActiveAndEnabled)
+            {
+                yield return refreshDelay;
+                if (!isActiveAndEnabled)
+                {
+                    break;
+                }
+
+                RefreshHudNow();
+            }
+
+            hudRefreshRoutine = null;
+        }
+
+        private void RefreshHudState(float tutorialDeltaTime)
         {
             if (tutorialGuide != null)
             {
-                tutorialGuide.TickTutorial(Time.deltaTime);
+                tutorialGuide.TickTutorial(tutorialDeltaTime);
             }
+
             UpdateTutorialMovementInputLock();
-            SubscribePlayerDamageFeedback();
+            if (isActiveAndEnabled)
+            {
+                SubscribePlayerDamageFeedback();
+                SubscribeBossHealthReadout();
+                SubscribeImmediateReadoutEvents();
+            }
+
             if (hudPresenter == null)
             {
                 return;
@@ -174,19 +237,79 @@ namespace DimensionBrawl.UI
             SyncBossHudVisibility();
             UpdateAimReticleReadout();
             UpdateHealthReadouts();
-
-            float unscaledTime = Time.unscaledTime;
-            if (unscaledTime < nextHudRefreshTime)
-            {
-                return;
-            }
-
-            nextHudRefreshTime = unscaledTime + 1f / Mathf.Max(1f, hudRefreshRate);
-
             UpdatePrimaryReadouts();
             UpdateActionReadouts();
             UpdateSummonReadouts();
             UpdateTutorialGuideReadouts();
+        }
+
+        private void SubscribeImmediateReadoutEvents()
+        {
+            if (subscribedCombatModeController != combatModeController)
+            {
+                if (subscribedCombatModeController != null)
+                {
+                    subscribedCombatModeController.CombatModeChanged -= HandleCombatModeChanged;
+                }
+
+                subscribedCombatModeController = combatModeController;
+                if (subscribedCombatModeController != null)
+                {
+                    subscribedCombatModeController.CombatModeChanged += HandleCombatModeChanged;
+                }
+            }
+
+            if (subscribedAimPreviewAction == rangedBasicAttackAction)
+            {
+                return;
+            }
+
+            if (subscribedAimPreviewAction != null)
+            {
+                subscribedAimPreviewAction.AimPreviewStateChanged -= HandleAimPreviewStateChanged;
+            }
+
+            subscribedAimPreviewAction = rangedBasicAttackAction;
+            if (subscribedAimPreviewAction != null)
+            {
+                subscribedAimPreviewAction.AimPreviewStateChanged += HandleAimPreviewStateChanged;
+            }
+        }
+
+        private void UnsubscribeImmediateReadoutEvents()
+        {
+            if (subscribedCombatModeController != null)
+            {
+                subscribedCombatModeController.CombatModeChanged -= HandleCombatModeChanged;
+            }
+
+            if (subscribedAimPreviewAction != null)
+            {
+                subscribedAimPreviewAction.AimPreviewStateChanged -= HandleAimPreviewStateChanged;
+            }
+
+            subscribedCombatModeController = null;
+            subscribedAimPreviewAction = null;
+        }
+
+        private void HandleCombatModeChanged(PlayerCombatMode _)
+        {
+            if (hudPresenter == null)
+            {
+                return;
+            }
+
+            UpdateAimReticleReadout();
+            UpdatePrimaryReadouts();
+            UpdateActionReadouts();
+        }
+
+        private void HandleAimPreviewStateChanged()
+        {
+            if (hudPresenter != null)
+            {
+                UpdateAimReticleReadout();
+            }
         }
 
         private void UpdatePrimaryReadouts()
@@ -228,6 +351,11 @@ namespace DimensionBrawl.UI
 
         private void UpdateHealthReadouts()
         {
+            if (hudPresenter == null)
+            {
+                return;
+            }
+
             if (playerHealth != null
                 && (HealthValueChanged(lastPresentedPlayerHealth, playerHealth.CurrentHealth)
                     || HealthValueChanged(lastPresentedPlayerMaxHealth, playerHealth.MaxHealth)))
@@ -474,12 +602,45 @@ namespace DimensionBrawl.UI
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)
         {
+            UpdateHealthReadouts();
             ShowPlayerDamageOverlayForHostileHit(damageInfo);
         }
 
         private void HandlePlayerDamageBlocked(DamageInfo damageInfo)
         {
             ShowPlayerDamageOverlayForHostileHit(damageInfo);
+        }
+
+        private void SubscribeBossHealthReadout()
+        {
+            if (subscribedBossHealth == bossHealth)
+            {
+                return;
+            }
+
+            UnsubscribeBossHealthReadout();
+            if (bossHealth == null)
+            {
+                return;
+            }
+
+            bossHealth.Damaged += HandleBossDamaged;
+            subscribedBossHealth = bossHealth;
+        }
+
+        private void UnsubscribeBossHealthReadout()
+        {
+            if (subscribedBossHealth != null)
+            {
+                subscribedBossHealth.Damaged -= HandleBossDamaged;
+            }
+
+            subscribedBossHealth = null;
+        }
+
+        private void HandleBossDamaged(DamageInfo _)
+        {
+            UpdateHealthReadouts();
         }
 
         private void ShowPlayerDamageOverlayForHostileHit(DamageInfo damageInfo)

@@ -82,6 +82,13 @@ namespace DimensionBrawl.Tests
                 typeof(OlympusTutorialOverlayPresenter).GetMethod("Update", flags),
                 "Tutorial overlay animation should run only while a finite transition is active.");
 
+            System.Type combatHudBinder = System.Type.GetType(
+                "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder, Assembly-CSharp");
+            Assert.IsNotNull(combatHudBinder);
+            Assert.IsNull(
+                combatHudBinder.GetMethod("Update", flags),
+                "Combat HUD polling should run at its reviewed refresh rate instead of every render frame.");
+
             System.Type combatHudPresenter = System.Type.GetType(
                 "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp");
             Assert.IsNotNull(combatHudPresenter);

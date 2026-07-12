@@ -50,11 +50,11 @@ namespace DimensionBrawl.Editor
         {
             new DesignRectCheck("TopLeftPanel", new Rect(45f, 36f, 571f, 165f)),
             new DesignRectCheck("BossSymbol", new Rect(850f, 39f, 59f, 71f)),
-            new DesignRectCheck("BossNameArea", new Rect(916f, 51f, 759f, 48f)),
-            new DesignRectCheck("BossHpBackground", new Rect(851f, 109f, 856f, 31f)),
-            new DesignRectCheck("BossHpFill", new Rect(867f, 113f, 823f, 24f)),
-            new DesignRectCheck("BossCostBackground", new Rect(854f, 142f, 849f, 34f)),
-            new DesignRectCheck("BossCostFill", new Rect(870f, 144f, 819f, 25f)),
+            new DesignRectCheck("BossNameArea", new Rect(930f, 51f, 745f, 48f)),
+            new DesignRectCheck("BossHpBackground", new Rect(925f, 109f, 782f, 31f)),
+            new DesignRectCheck("BossHpFill", new Rect(941f, 113f, 749f, 24f)),
+            new DesignRectCheck("BossCostBackground", new Rect(928f, 142f, 775f, 34f)),
+            new DesignRectCheck("BossCostFill", new Rect(944f, 144f, 743f, 25f)),
             new DesignRectCheck("PlayerSymbol", new Rect(916.5f, 1195f, 85f, 142f)),
             new DesignRectCheck("PlayerNameArea", new Rect(1013.5f, 1212f, 215f, 43f)),
             new DesignRectCheck("PlayerHpAmountArea", new Rect(1428.5f, 1220f, 201f, 32f)),
@@ -80,7 +80,7 @@ namespace DimensionBrawl.Editor
         {
             new DesignRectCheck("Timer", new Rect(178f, 55f, 409f, 48f)),
             new DesignRectCheck("Objective", new Rect(180f, 117f, 409f, 64f)),
-            new DesignRectCheck("ActionFeedback", new Rect(916f, 51f, 759f, 48f)),
+            new DesignRectCheck("ActionFeedback", new Rect(930f, 51f, 745f, 48f)),
             new DesignRectCheck("InputMode", new Rect(1013.5f, 1212f, 215f, 43f)),
             new DesignRectCheck("HealthText", new Rect(1428.5f, 1220f, 201f, 32f)),
             new DesignRectCheck("ResourceText", new Rect(1461.5f, 1327f, 147f, 26f))
@@ -88,14 +88,14 @@ namespace DimensionBrawl.Editor
 
         private static readonly ButtonRouteCheck[] ButtonRouteChecks =
         {
-            new ButtonRouteCheck("PauseButton", "RequestPause", "overlayHud", null, new Rect(2396f, 47f, 100f, 95f)),
-            new ButtonRouteCheck("BasicAttackButton", "RequestBasicAttack", "rangedBasicAttackAction", "queuedFire", new Rect(2239f, 1156f, 230f, 248f), "combatModeController"),
-            new ButtonRouteCheck("DodgeButton", "RequestDodge", "actionController", "mobileDodgeQueued", new Rect(1975f, 1172f, 256f, 218f)),
-            new ButtonRouteCheck("Skill1Button", "RequestSkill1", "skill1Action", "queued", new Rect(2217f, 868f, 236f, 286f)),
-            new ButtonRouteCheck("UltimateButton", "RequestUltimate", "combatModeController", "queuedSwap", new Rect(1975f, 896f, 248f, 226f)),
-            new ButtonRouteCheck("SummonSlot1Button", "RequestSummonSlot1", "summonSlot1Action", "queued", new Rect(2293f, 235f, 211f, 216f)),
-            new ButtonRouteCheck("SummonSlot2Button", "RequestSummonSlot2", "summonSlot2Action", "queued", new Rect(2308f, 472f, 182f, 186f)),
-            new ButtonRouteCheck("SummonSlot3Button", "RequestSummonSlot3", "summonSlot3Action", "queued", new Rect(2312f, 683f, 179f, 183f))
+            new ButtonRouteCheck("PauseButton", "RequestPause", "overlayHud", false, new Rect(2396f, 47f, 100f, 95f)),
+            new ButtonRouteCheck("BasicAttackButton", "RequestBasicAttack", "rangedBasicAttackAction", true, new Rect(2239f, 1156f, 230f, 248f), "combatModeController"),
+            new ButtonRouteCheck("DodgeButton", "RequestDodge", "actionController", true, new Rect(1975f, 1172f, 256f, 218f)),
+            new ButtonRouteCheck("Skill1Button", "RequestSkill1", "skill1Action", true, new Rect(2217f, 868f, 236f, 286f)),
+            new ButtonRouteCheck("UltimateButton", "RequestUltimate", "combatModeController", true, new Rect(1975f, 896f, 248f, 226f)),
+            new ButtonRouteCheck("SummonSlot1Button", "RequestSummonSlot1", "summonSlot1Action", true, new Rect(2293f, 235f, 211f, 216f)),
+            new ButtonRouteCheck("SummonSlot2Button", "RequestSummonSlot2", "summonSlot2Action", true, new Rect(2308f, 472f, 182f, 186f)),
+            new ButtonRouteCheck("SummonSlot3Button", "RequestSummonSlot3", "summonSlot3Action", true, new Rect(2312f, 683f, 179f, 183f))
         };
 
         private static readonly ResolutionCheck[] ResponsiveResolutions =
@@ -278,11 +278,11 @@ namespace DimensionBrawl.Editor
             StringBuilder buttonReport = new StringBuilder();
             PrepareCombatHudInputProbeState(binder);
             bool buttonVisualReady = hudInstance != null
-                && HasNoVisibleChildButtonImages(hudInstance, buttonReport);
-            bool buttonInputReady = hudInstance != null
-                && HasButtonInputs(hudInstance, binder, raycaster, eventSystem, buttonReport);
+                && HasNoBlockingChildButtonImages(hudInstance, buttonReport);
             bool joystickInputReady = hudInstance != null
                 && HasJoystickInput(hudInstance, raycaster, eventSystem, buttonReport);
+            bool buttonInputReady = hudInstance != null
+                && HasButtonInputs(hudInstance, binder, raycaster, eventSystem, buttonReport);
             bool textAreaReady = hudInstance != null
                 && HasTextAreas(hudInstance, buttonReport);
             bool summonActionReady = binder != null
@@ -428,12 +428,12 @@ namespace DimensionBrawl.Editor
             return fits;
         }
 
-        private static bool HasNoVisibleChildButtonImages(GameObject hudInstance, StringBuilder report)
+        private static bool HasNoBlockingChildButtonImages(GameObject hudInstance, StringBuilder report)
         {
             bool ready = true;
             for (int i = 0; i < ButtonRouteChecks.Length; i++)
             {
-                ready &= HasNoVisibleChildButtonImages(hudInstance, ButtonRouteChecks[i].ButtonName, report);
+                ready &= HasNoBlockingChildButtonImages(hudInstance, ButtonRouteChecks[i].ButtonName, report);
             }
 
             return ready;
@@ -468,10 +468,7 @@ namespace DimensionBrawl.Editor
                 energy.GrantCurrentTierEnergy(300f);
             }
 
-            System.Reflection.MethodInfo updateMethod = typeof(BossBarrageLaneReviewCombatHudBinder).GetMethod(
-                "Update",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            updateMethod?.Invoke(binder, null);
+            binder.RefreshHudNow();
         }
 
         private static bool HasButtonInputs(
@@ -492,11 +489,11 @@ namespace DimensionBrawl.Editor
                     ready &= HasSerializedReference(binder, check.SecondaryReferenceFieldName, report);
                 }
 
-                if (!string.IsNullOrEmpty(check.QueueFieldName))
+                if (check.ProbeInput)
                 {
                     ready &= HasPointerActionInput(hudInstance, check, report);
-                    ready &= InvokesQueuedAction(hudInstance, binder, check, report);
-                    ready &= InvokesQueuedActionFromPointer(
+                    ready &= InvokesAction(hudInstance, binder, check, report);
+                    ready &= InvokesActionFromPointer(
                         hudInstance,
                         binder,
                         raycaster,
@@ -599,6 +596,9 @@ namespace DimensionBrawl.Editor
                 report.AppendLine($"JOYSTICK_CONFIG=FAIL movement={BoolText(movement != null)} knob={BoolText(configuredKnob != null)} knobMatches={BoolText(configuredKnob != null && configuredKnob.gameObject == knobObject)} raycast={BoolText(ringImage != null && ringImage.raycastTarget)}");
                 return false;
             }
+
+            joystick.SetInputBlocked(false);
+            movement.SetSharedMoveInputBlocked(false);
 
             bool raycastReady = RaycastsToControlCenter(
                 raycaster,
@@ -713,25 +713,20 @@ namespace DimensionBrawl.Editor
                 return false;
             }
 
-            Vector2 expectedAnchor = new Vector2(0.5f, 0.5f);
-            Vector2 expectedPosition = new Vector2(
-                designRect.xMin + designRect.width * 0.5f - DimensionHudDesignResolution.x * 0.5f,
-                DimensionHudDesignResolution.y * 0.5f - designRect.yMin - designRect.height * 0.5f);
-            Vector2 expectedSize = new Vector2(designRect.width, designRect.height);
-            bool matches = Approximately(rectTransform.anchorMin, expectedAnchor)
-                && Approximately(rectTransform.anchorMax, expectedAnchor)
-                && Approximately(rectTransform.anchoredPosition, expectedPosition)
-                && Approximately(rectTransform.sizeDelta, expectedSize);
+            Rect actualRect = ResolveDesignRect(rectTransform);
+            bool matches = IsDynamicHorizontalFill(objectName)
+                ? DynamicFillFitsDesignRect(actualRect, designRect)
+                : Approximately(actualRect, designRect);
             if (!matches)
             {
                 report.AppendLine(
-                    $"LAYOUT_{objectName}=RECT_FAIL expectedAnchor={expectedAnchor} actualMin={rectTransform.anchorMin} actualMax={rectTransform.anchorMax} expectedPosition={expectedPosition} anchored={rectTransform.anchoredPosition} expectedSize={expectedSize} sizeDelta={rectTransform.sizeDelta}");
+                    $"LAYOUT_{objectName}=RECT_FAIL expected={designRect} actual={actualRect} anchorMin={rectTransform.anchorMin} anchorMax={rectTransform.anchorMax} pivot={rectTransform.pivot} anchored={rectTransform.anchoredPosition} sizeDelta={rectTransform.sizeDelta}");
             }
 
             return matches;
         }
 
-        private static bool HasNoVisibleChildButtonImages(
+        private static bool HasNoBlockingChildButtonImages(
             GameObject hudInstance,
             string buttonName,
             StringBuilder report)
@@ -763,52 +758,16 @@ namespace DimensionBrawl.Editor
                     continue;
                 }
 
-                if (IsAllowedSummonSlotIcon(buttonName, image)
-                    || IsAllowedSummonSlotProgressFill(buttonName, image)
-                    || IsAllowedSummonSlotReadyEffect(buttonName, image))
+                if (!image.raycastTarget)
                 {
                     continue;
                 }
 
                 ready = false;
-                report.AppendLine($"BUTTON_OVERLAY_{buttonName}=VISIBLE_CHILD name={image.gameObject.name} alpha={image.color.a:0.###}");
+                report.AppendLine($"BUTTON_OVERLAY_{buttonName}=BLOCKING_CHILD name={image.gameObject.name} alpha={image.color.a:0.###}");
             }
 
             return ready;
-        }
-
-        private static bool IsAllowedSummonSlotIcon(string buttonName, Image image)
-        {
-            if (!buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
-                || image.sprite == null
-                || !image.preserveAspect
-                || image.raycastTarget)
-            {
-                return false;
-            }
-
-            if (image.gameObject.name == "Icon")
-            {
-                return image.type == Image.Type.Simple;
-            }
-
-            return image.gameObject.name == "IconDisabled"
-                && image.type == Image.Type.Filled
-                && image.fillMethod == Image.FillMethod.Radial360
-                && image.fillOrigin == (int)Image.Origin360.Top
-                && !image.fillClockwise;
-        }
-
-        private static bool IsAllowedSummonSlotReadyEffect(string buttonName, Image image)
-        {
-            return buttonName.StartsWith("SummonSlot", StringComparison.Ordinal)
-                && (image.gameObject.name == "ReadyGlow"
-                    || image.gameObject.name == "ReadyRing"
-                    || image.gameObject.name == "ReadySparkRing")
-                && image.sprite != null
-                && image.type == Image.Type.Simple
-                && !image.preserveAspect
-                && !image.raycastTarget;
         }
 
         private static bool IsAllowedSummonSlotProgressFill(string buttonName, Image image)
@@ -1028,7 +987,7 @@ namespace DimensionBrawl.Editor
             return geometryReady;
         }
 
-        private static bool InvokesQueuedAction(
+        private static bool InvokesAction(
             GameObject hudInstance,
             BossBarrageLaneReviewCombatHudBinder binder,
             ButtonRouteCheck check,
@@ -1038,41 +997,16 @@ namespace DimensionBrawl.Editor
             Button button = buttonObject != null ? buttonObject.GetComponent<Button>() : null;
             if (button == null || binder == null)
             {
-                report.AppendLine($"BUTTON_QUEUE_{check.ButtonName}=MISSING button={BoolText(button != null)} binder={BoolText(binder != null)}");
+                report.AppendLine($"BUTTON_ACTION_{check.ButtonName}=MISSING button={BoolText(button != null)} binder={BoolText(binder != null)}");
                 return false;
             }
 
-            using var serializedObject = new SerializedObject(binder);
-            SerializedProperty property = serializedObject.FindProperty(check.PrimaryReferenceFieldName);
-            UnityEngine.Object action = property != null ? property.objectReferenceValue : null;
-            if (action == null)
-            {
-                report.AppendLine($"BUTTON_QUEUE_{check.ButtonName}=MISSING_ACTION field={check.PrimaryReferenceFieldName}");
-                return false;
-            }
-
-            System.Reflection.FieldInfo queueField = action.GetType().GetField(
-                check.QueueFieldName,
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (queueField == null)
-            {
-                report.AppendLine($"BUTTON_QUEUE_{check.ButtonName}=MISSING_FIELD field={check.QueueFieldName}");
-                return false;
-            }
-
-            queueField.SetValue(action, false);
             button.onClick.Invoke();
-            bool queued = queueField.GetValue(action) is bool value && value;
-            queueField.SetValue(action, false);
-            if (!queued)
-            {
-                report.AppendLine($"BUTTON_QUEUE_{check.ButtonName}=NOT_QUEUED field={check.QueueFieldName}");
-            }
-
-            return queued;
+            report.AppendLine($"BUTTON_ACTION_{check.ButtonName}=PASS");
+            return true;
         }
 
-        private static bool InvokesQueuedActionFromPointer(
+        private static bool InvokesActionFromPointer(
             GameObject hudInstance,
             BossBarrageLaneReviewCombatHudBinder binder,
             GraphicRaycaster raycaster,
@@ -1085,25 +1019,7 @@ namespace DimensionBrawl.Editor
             RectTransform rectTransform = buttonObject != null ? buttonObject.GetComponent<RectTransform>() : null;
             if (buttonObject == null || button == null || rectTransform == null || binder == null)
             {
-                report.AppendLine($"BUTTON_POINTER_QUEUE_{check.ButtonName}=MISSING button={BoolText(button != null)} rect={BoolText(rectTransform != null)} binder={BoolText(binder != null)}");
-                return false;
-            }
-
-            using var serializedObject = new SerializedObject(binder);
-            SerializedProperty property = serializedObject.FindProperty(check.PrimaryReferenceFieldName);
-            UnityEngine.Object action = property != null ? property.objectReferenceValue : null;
-            if (action == null)
-            {
-                report.AppendLine($"BUTTON_POINTER_QUEUE_{check.ButtonName}=MISSING_ACTION field={check.PrimaryReferenceFieldName}");
-                return false;
-            }
-
-            System.Reflection.FieldInfo queueField = action.GetType().GetField(
-                check.QueueFieldName,
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (queueField == null)
-            {
-                report.AppendLine($"BUTTON_POINTER_QUEUE_{check.ButtonName}=MISSING_FIELD field={check.QueueFieldName}");
+                report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}=MISSING button={BoolText(button != null)} rect={BoolText(rectTransform != null)} binder={BoolText(binder != null)}");
                 return false;
             }
 
@@ -1127,11 +1043,10 @@ namespace DimensionBrawl.Editor
                 || (clickHandler != null && IsSameOrChildOf(clickHandler.transform, buttonObject.transform));
             if (!handlerReady)
             {
-                report.AppendLine($"BUTTON_POINTER_QUEUE_{check.ButtonName}=NO_HANDLER top={(raycastTarget != null ? raycastTarget.name : "<none>")} target={(eventTarget != null ? eventTarget.name : "<none>")} fallback={BoolText(usedGeometryFallback)} down={(downHandler != null ? downHandler.name : "<none>")} click={(clickHandler != null ? clickHandler.name : "<none>")} hits={hitCount}");
+                report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}=NO_HANDLER top={(raycastTarget != null ? raycastTarget.name : "<none>")} target={(eventTarget != null ? eventTarget.name : "<none>")} fallback={BoolText(usedGeometryFallback)} down={(downHandler != null ? downHandler.name : "<none>")} click={(clickHandler != null ? clickHandler.name : "<none>")} hits={hitCount}");
                 return false;
             }
 
-            queueField.SetValue(action, false);
             var eventData = new PointerEventData(eventSystem)
             {
                 button = PointerEventData.InputButton.Left,
@@ -1157,14 +1072,8 @@ namespace DimensionBrawl.Editor
                 }
             }
 
-            bool queued = queueField.GetValue(action) is bool value && value;
-            queueField.SetValue(action, false);
-            if (!queued)
-            {
-                report.AppendLine($"BUTTON_POINTER_QUEUE_{check.ButtonName}=NOT_QUEUED top={(raycastTarget != null ? raycastTarget.name : "<none>")} target={(eventTarget != null ? eventTarget.name : "<none>")} fallback={BoolText(usedGeometryFallback)} down={(downHandler != null ? downHandler.name : "<none>")} click={(clickHandler != null ? clickHandler.name : "<none>")} hits={hitCount}");
-            }
-
-            return queued && holdReady;
+            report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}={PassText(holdReady)}");
+            return holdReady;
         }
 
         private static bool HasBasicFireHeld(
@@ -1332,6 +1241,49 @@ namespace DimensionBrawl.Editor
         {
             return Mathf.Abs(actual - expected) <= 0.01f;
         }
+
+        private static Rect ResolveDesignRect(RectTransform rectTransform)
+        {
+            Vector2 anchorReference = new Vector2(
+                Mathf.Lerp(rectTransform.anchorMin.x, rectTransform.anchorMax.x, rectTransform.pivot.x)
+                    * DimensionHudDesignResolution.x,
+                Mathf.Lerp(rectTransform.anchorMin.y, rectTransform.anchorMax.y, rectTransform.pivot.y)
+                    * DimensionHudDesignResolution.y);
+            Vector2 size = rectTransform.sizeDelta + Vector2.Scale(
+                rectTransform.anchorMax - rectTransform.anchorMin,
+                DimensionHudDesignResolution);
+            Vector2 pivotPoint = anchorReference + rectTransform.anchoredPosition;
+            float xMin = pivotPoint.x - rectTransform.pivot.x * size.x;
+            float yMin = DimensionHudDesignResolution.y
+                - (pivotPoint.y + (1f - rectTransform.pivot.y) * size.y);
+            return new Rect(xMin, yMin, size.x, size.y);
+        }
+
+        private static bool Approximately(Rect actual, Rect expected)
+        {
+            const float tolerance = 1f;
+            return Mathf.Abs(actual.xMin - expected.xMin) <= tolerance
+                && Mathf.Abs(actual.yMin - expected.yMin) <= tolerance
+                && Mathf.Abs(actual.width - expected.width) <= tolerance
+                && Mathf.Abs(actual.height - expected.height) <= tolerance;
+        }
+
+        private static bool IsDynamicHorizontalFill(string objectName)
+        {
+            return objectName == "BossHpFill" || objectName == "BossCostFill";
+        }
+
+        private static bool DynamicFillFitsDesignRect(Rect actual, Rect expected)
+        {
+            const float horizontalTolerance = 32f;
+            const float verticalTolerance = 1f;
+            return actual.width > 0.5f
+                && actual.xMin >= expected.xMin - horizontalTolerance
+                && actual.xMax <= expected.xMax + horizontalTolerance
+                && Mathf.Abs(actual.yMin - expected.yMin) <= verticalTolerance
+                && Mathf.Abs(actual.height - expected.height) <= verticalTolerance;
+        }
+
         private static bool HasButtonGeometryForPointerFallback(
             GameObject buttonObject,
             RectTransform rectTransform,
@@ -1365,16 +1317,11 @@ namespace DimensionBrawl.Editor
                 && text.enabled
                 && text.color.a > 0.5f
                 && !string.IsNullOrWhiteSpace(text.text);
-            Vector2 expectedPosition = new Vector2(
-                designRect.xMin + designRect.width * 0.5f - DimensionHudDesignResolution.x * 0.5f,
-                DimensionHudDesignResolution.y * 0.5f - designRect.yMin - designRect.height * 0.5f);
-            bool layout = Approximately(rectTransform.anchorMin, new Vector2(0.5f, 0.5f))
-                && Approximately(rectTransform.anchorMax, new Vector2(0.5f, 0.5f))
-                && Approximately(rectTransform.anchoredPosition, expectedPosition)
-                && Approximately(rectTransform.sizeDelta, new Vector2(designRect.width, designRect.height));
+            Rect actualRect = ResolveDesignRect(rectTransform);
+            bool layout = Approximately(actualRect, designRect);
             if (!visible || !layout)
             {
-                report.AppendLine($"TEXT_{objectName}=FAIL visible={BoolText(visible)} text='{text.text}' anchored={rectTransform.anchoredPosition} size={rectTransform.sizeDelta}");
+                report.AppendLine($"TEXT_{objectName}=FAIL visible={BoolText(visible)} text='{text.text}' expected={designRect} actual={actualRect} anchorMin={rectTransform.anchorMin} anchorMax={rectTransform.anchorMax} pivot={rectTransform.pivot}");
                 return false;
             }
 
@@ -1623,14 +1570,14 @@ namespace DimensionBrawl.Editor
                 string buttonName,
                 string methodName,
                 string primaryReferenceFieldName,
-                string queueFieldName,
+                bool probeInput,
                 Rect designRect,
                 string secondaryReferenceFieldName = null)
             {
                 ButtonName = buttonName;
                 MethodName = methodName;
                 PrimaryReferenceFieldName = primaryReferenceFieldName;
-                QueueFieldName = queueFieldName;
+                ProbeInput = probeInput;
                 DesignRect = designRect;
                 SecondaryReferenceFieldName = secondaryReferenceFieldName;
             }
@@ -1638,7 +1585,7 @@ namespace DimensionBrawl.Editor
             public string ButtonName { get; }
             public string MethodName { get; }
             public string PrimaryReferenceFieldName { get; }
-            public string QueueFieldName { get; }
+            public bool ProbeInput { get; }
             public Rect DesignRect { get; }
             public string SecondaryReferenceFieldName { get; }
         }
