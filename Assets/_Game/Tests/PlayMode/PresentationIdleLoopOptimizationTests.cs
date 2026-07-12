@@ -81,6 +81,9 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(OlympusTutorialOverlayPresenter).GetMethod("Update", flags),
                 "Tutorial overlay animation should run only while a finite transition is active.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController).GetMethod("Update", flags),
+                "Corridor flow should observe only its active intro, HUD reveal, and gameplay phases.");
 
             System.Type combatHudBinder = System.Type.GetType(
                 "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder, Assembly-CSharp");
@@ -178,9 +181,17 @@ namespace DimensionBrawl.Tests
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             GameObject overlayRoot = new GameObject("LateBoundStageClearOverlayTest");
             GameObject bossRoot = null;
+            GameObject existingBossRoot = GameObject.Find(
+                "BossBarrageLaneReview_BossProxy_NeedleLock");
+            bool existingBossWasActive = existingBossRoot != null && existingBossRoot.activeSelf;
             float previousTimeScale = Time.timeScale;
             try
             {
+                if (existingBossRoot != null)
+                {
+                    existingBossRoot.SetActive(false);
+                }
+
                 overlayRoot.SetActive(false);
                 var overlay = overlayRoot.AddComponent<
                     DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay>();
@@ -221,6 +232,11 @@ namespace DimensionBrawl.Tests
                 if (bossRoot != null)
                 {
                     Object.DestroyImmediate(bossRoot);
+                }
+
+                if (existingBossRoot != null)
+                {
+                    existingBossRoot.SetActive(existingBossWasActive);
                 }
 
                 Time.timeScale = previousTimeScale;

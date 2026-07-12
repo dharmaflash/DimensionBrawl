@@ -192,7 +192,7 @@ namespace DimensionBrawl.Tests
                 "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
                 "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
             };
-            int[] maximumFrameLoopCounts = { 20, 21, 19, 17 };
+            int[] maximumFrameLoopCounts = { 20, 20, 19, 17 };
             int[] expectedFootstepPresenterCounts = { 2, 0, 3, 3 };
 
             for (int sceneIndex = 0; sceneIndex < scenePaths.Length; sceneIndex++)
@@ -253,7 +253,7 @@ namespace DimensionBrawl.Tests
                         + FormatFrameLoops(postHandoffResult));
                     Assert.That(
                         postHandoffResult.ActiveFrameLoopBehaviourCount,
-                        Is.LessThanOrEqualTo(13),
+                        Is.LessThanOrEqualTo(12),
                         "Olympus corridor gameplay handoff exceeded its reviewed runtime callback budget. "
                         + FormatFrameLoops(postHandoffResult));
                     Assert.That(

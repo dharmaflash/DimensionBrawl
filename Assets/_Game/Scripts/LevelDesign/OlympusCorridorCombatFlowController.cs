@@ -1,3 +1,4 @@
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -21,6 +22,7 @@ namespace DimensionBrawl.LevelDesign
         private const string CombatHudInstanceName = "PF_UI_CombatHud";
         private const string TutorialCombatSceneName = "OlympusStationCombatStage";
         private const string TutorialCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const float ActivePhasePollIntervalSeconds = 0.05f;
 
         private enum FlowPhase
         {
@@ -99,6 +101,9 @@ namespace DimensionBrawl.LevelDesign
         private GUIStyle introSkipButtonStyle;
         private AudioSource runtimeTutorialOverlayAudioSource;
         private bool tutorialCombatSceneLoadStarted;
+        private Coroutine introHandoffRoutine;
+        private Coroutine hudRevealRoutine;
+        private Coroutine activePhaseRoutine;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -186,6 +191,7 @@ namespace DimensionBrawl.LevelDesign
             mobileHud = newMobileHud;
             hudRevealDelaySeconds = Mathf.Max(0f, newHudRevealDelaySeconds);
             hudRevealDurationSeconds = Mathf.Max(0.01f, newHudRevealDurationSeconds);
+            ResumePhaseRoutines();
         }
 
         private void Awake()
@@ -207,10 +213,12 @@ namespace DimensionBrawl.LevelDesign
 
             RegisterIntroDirectorStoppedHandler();
             PrepareInitialState();
+            ResumePhaseRoutines();
         }
 
         private void OnDisable()
         {
+            StopPhaseRoutines();
             SetPlayerCombatInputLocked(false);
             UnregisterIntroDirectorStoppedHandler();
             UnregisterTutorialCompletedHandler();
@@ -218,25 +226,157 @@ namespace DimensionBrawl.LevelDesign
             UnregisterCorridorClearTargetHandlers();
         }
 
-        private void Update()
+        private void ResumePhaseRoutines()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || !isActiveAndEnabled)
             {
                 return;
             }
 
-            UpdateHudReveal();
-            UpdateIntroDirectorPlaybackObservation();
-            UpdateIntroSkipInput();
+            if (phase == FlowPhase.WaitingForIntroHandoff)
+            {
+                EnsureIntroHandoffRoutine();
+                return;
+            }
 
+            EnsureHudRevealRoutine();
+            if (phase != FlowPhase.StageCleared)
+            {
+                EnsureActivePhaseRoutine();
+            }
+        }
+
+        private void StopPhaseRoutines()
+        {
+            StopRoutine(ref introHandoffRoutine);
+            StopRoutine(ref hudRevealRoutine);
+            StopRoutine(ref activePhaseRoutine);
+        }
+
+        private void StopRoutine(ref Coroutine routine)
+        {
+            if (routine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(routine);
+            routine = null;
+        }
+
+        private void EnsureIntroHandoffRoutine()
+        {
+            if (introHandoffRoutine != null || phase != FlowPhase.WaitingForIntroHandoff)
+            {
+                return;
+            }
+
+            introHandoffRoutine = StartCoroutine(WatchIntroHandoff());
+        }
+
+        private IEnumerator WatchIntroHandoff()
+        {
+            yield return null;
+            while (isActiveAndEnabled && phase == FlowPhase.WaitingForIntroHandoff)
+            {
+                UpdateIntroDirectorPlaybackObservation();
+                UpdateIntroSkipInput();
+                if (phase != FlowPhase.WaitingForIntroHandoff)
+                {
+                    break;
+                }
+
+                if (IsIntroHandoffReady() || HasIntroDirectorStoppedAfterObservedPlayback())
+                {
+                    BeginPostIntroHandoffGameplay();
+                    break;
+                }
+
+                yield return null;
+            }
+
+            introHandoffRoutine = null;
+        }
+
+        private void EnsureHudRevealRoutine()
+        {
+            if (hudRevealRoutine != null || phase == FlowPhase.WaitingForIntroHandoff)
+            {
+                return;
+            }
+
+            if (hudRevealTimer >= hudRevealDurationSeconds)
+            {
+                SetHudOpacity(1f);
+                return;
+            }
+
+            hudRevealRoutine = StartCoroutine(RevealHudUntilVisible());
+        }
+
+        private IEnumerator RevealHudUntilVisible()
+        {
+            yield return null;
+            while (isActiveAndEnabled
+                && phase != FlowPhase.WaitingForIntroHandoff
+                && hudRevealTimer < hudRevealDurationSeconds)
+            {
+                UpdateHudReveal();
+                if (hudRevealTimer >= hudRevealDurationSeconds)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (isActiveAndEnabled
+                && phase != FlowPhase.WaitingForIntroHandoff
+                && hudRevealTimer >= hudRevealDurationSeconds)
+            {
+                SetHudOpacity(1f);
+            }
+
+            hudRevealRoutine = null;
+        }
+
+        private void EnsureActivePhaseRoutine()
+        {
+            if (activePhaseRoutine != null
+                || phase == FlowPhase.WaitingForIntroHandoff
+                || phase == FlowPhase.StageCleared)
+            {
+                return;
+            }
+
+            activePhaseRoutine = StartCoroutine(ObserveActivePhaseUntilTerminal());
+        }
+
+        private IEnumerator ObserveActivePhaseUntilTerminal()
+        {
+            var pollDelay = new WaitForSeconds(ActivePhasePollIntervalSeconds);
+            yield return null;
+            while (isActiveAndEnabled
+                && phase != FlowPhase.WaitingForIntroHandoff
+                && phase != FlowPhase.StageCleared
+                && !tutorialCombatSceneLoadStarted)
+            {
+                EvaluateActivePhase();
+                if (phase == FlowPhase.StageCleared || tutorialCombatSceneLoadStarted)
+                {
+                    break;
+                }
+
+                yield return pollDelay;
+            }
+
+            activePhaseRoutine = null;
+        }
+
+        private void EvaluateActivePhase()
+        {
             switch (phase)
             {
-                case FlowPhase.WaitingForIntroHandoff:
-                    if (IsIntroHandoffReady() || HasIntroDirectorStoppedAfterObservedPlayback())
-                    {
-                        BeginPostIntroHandoffGameplay();
-                    }
-                    break;
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
@@ -244,10 +384,7 @@ namespace DimensionBrawl.LevelDesign
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
-                    if (IntroGateCleared)
-                    {
-                        BeginWaitingForStairEntry();
-                    }
+                    TryAdvanceFromIntroSwordGate();
                     break;
                 case FlowPhase.WaitingForStairEntry:
                     ReleasePlayerMovementLocksForGameplay();
@@ -258,14 +395,7 @@ namespace DimensionBrawl.LevelDesign
                     }
                     break;
                 case FlowPhase.CorridorCombat:
-                    if (CorridorCleared)
-                    {
-                        BeginStageCleared();
-                    }
-                    break;
-                case FlowPhase.StageCleared:
-                    ReleasePlayerMovementLocksForGameplay();
-                    SetPlayerLaneConstraintEnabled(false);
+                    TryAdvanceFromCorridorCombat();
                     break;
             }
         }
@@ -446,6 +576,7 @@ namespace DimensionBrawl.LevelDesign
             SetCollidersEnabled(stairBlockers, true);
             ConfigureTargetCandidates(introSwordEnemies);
             TryAdvanceFromIntroSwordGate();
+            ResumePhaseRoutines();
         }
 
         private void BeginTutorial()
@@ -512,6 +643,8 @@ namespace DimensionBrawl.LevelDesign
             {
                 LoadTutorialCombatScene();
             }
+
+            ResumePhaseRoutines();
         }
 
         private void BeginPostIntroHandoffGameplay()
@@ -640,6 +773,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            ResumePhaseRoutines();
         }
 
         private void BeginCorridorCombat()
@@ -659,6 +793,7 @@ namespace DimensionBrawl.LevelDesign
             ConfigureTargetCandidates(corridorTargets);
             RegisterCorridorClearTargetHandlers();
             TryAdvanceFromCorridorCombat();
+            ResumePhaseRoutines();
         }
 
         private void BeginStageCleared()
@@ -672,6 +807,7 @@ namespace DimensionBrawl.LevelDesign
             SetCombatHealthRootCollidersEnabled(corridorTargets, false);
             SetCombatHealthRootCollidersEnabled(corridorClearTargets, false);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            ResumePhaseRoutines();
         }
 
         private void RegisterIntroSwordEnemyHandlers()
