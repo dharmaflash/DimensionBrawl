@@ -26,6 +26,8 @@ namespace DimensionBrawl.LevelDesign
         private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
         private const string BossObjectName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string StageClearPresenterTypeName = "DimensionBrawl.UI.StageClear.UIStageClearTestPresenter";
+        private const int ReferenceResolveAttemptLimit = 40;
+        private const float ReferenceResolveIntervalSeconds = 0.1f;
         private static readonly string[] CombatHudExitRootNames =
         {
             "BossBarrageLaneReview_CombatHudCanvas",
@@ -44,6 +46,7 @@ namespace DimensionBrawl.LevelDesign
 
         private BossBarragePocketReviewOwner subscribedOwner;
         private CombatHealth subscribedBossHealth;
+        private Coroutine referenceResolveRoutine;
         private Coroutine stageClearRoutine;
         private bool shown;
         private bool combatLocked;
@@ -77,35 +80,31 @@ namespace DimensionBrawl.LevelDesign
             new GameObject(nameof(OlympusStationStageClearOverlay)).AddComponent<OlympusStationStageClearOverlay>();
         }
 
-        private void Awake()
-        {
-            ResolveReferences();
-            Subscribe();
-        }
-
         private void OnEnable()
         {
-            ResolveReferences();
-            Subscribe();
+            BindAndEvaluateClearState();
+            StartReferenceResolveRoutineIfNeeded();
         }
 
         private void OnDisable()
         {
+            StopReferenceResolveRoutine();
             Unsubscribe();
             RestoreCombatTimeScale();
         }
 
-        private void Update()
+        private void BindAndEvaluateClearState()
+        {
+            ResolveReferences();
+            Subscribe();
+            EvaluateClearState();
+        }
+
+        private void EvaluateClearState()
         {
             if (shown)
             {
                 return;
-            }
-
-            if (pocketReviewOwner == null || bossHealth == null)
-            {
-                ResolveReferences();
-                Subscribe();
             }
 
             if (pocketReviewOwner != null && pocketReviewOwner.IsCleared)
@@ -118,6 +117,50 @@ namespace DimensionBrawl.LevelDesign
             {
                 ShowClearOverlay();
             }
+        }
+
+        private void StartReferenceResolveRoutineIfNeeded()
+        {
+            if (shown
+                || referenceResolveRoutine != null
+                || (pocketReviewOwner != null && bossHealth != null))
+            {
+                return;
+            }
+
+            referenceResolveRoutine = StartCoroutine(ResolveReferencesWhenReady());
+        }
+
+        private IEnumerator ResolveReferencesWhenReady()
+        {
+            var retryDelay = new WaitForSecondsRealtime(ReferenceResolveIntervalSeconds);
+            for (int attempt = 0; attempt < ReferenceResolveAttemptLimit && !shown; attempt++)
+            {
+                yield return retryDelay;
+                if (shown)
+                {
+                    break;
+                }
+
+                BindAndEvaluateClearState();
+                if (pocketReviewOwner != null && bossHealth != null)
+                {
+                    break;
+                }
+            }
+
+            referenceResolveRoutine = null;
+        }
+
+        private void StopReferenceResolveRoutine()
+        {
+            if (referenceResolveRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(referenceResolveRoutine);
+            referenceResolveRoutine = null;
         }
 
         private void ResolveReferences()

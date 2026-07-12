@@ -75,6 +75,9 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(SpatialOneShotVfxPool).GetMethod("Update", flags),
                 "Spatial VFX pools should scan release times only while effects are active.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay).GetMethod("Update", flags),
+                "Station clear presentation should react to pocket-clear and boss-death events.");
 
             System.Type combatHudPresenter = System.Type.GetType(
                 "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp");
@@ -103,6 +106,64 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 reviewOverlayHud.GetMethod("Update", flags),
                 "Pause and result overlays should react to input and pocket result events.");
+        }
+
+        [UnityTest]
+        public IEnumerator StageClearOverlayBindsLateBossAndReactsToDeathEvent()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            GameObject overlayRoot = new GameObject("LateBoundStageClearOverlayTest");
+            GameObject bossRoot = null;
+            float previousTimeScale = Time.timeScale;
+            try
+            {
+                overlayRoot.SetActive(false);
+                var overlay = overlayRoot.AddComponent<
+                    DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay>();
+                overlayRoot.SetActive(true);
+                yield return null;
+
+                bossRoot = new GameObject("BossBarrageLaneReview_BossProxy_NeedleLock");
+                DimensionBrawl.Combat.CombatHealth bossHealth =
+                    bossRoot.AddComponent<DimensionBrawl.Combat.CombatHealth>();
+                bossHealth.ConfigureTeam(DimensionBrawl.Combat.DamageTeam.Enemy);
+                bossHealth.ConfigureMaxHealth(100f);
+
+                FieldInfo bossHealthField = overlay.GetType().GetField("bossHealth", flags);
+                Assert.IsNotNull(bossHealthField);
+                float timeoutAt = Time.realtimeSinceStartup + 1f;
+                while (bossHealthField.GetValue(overlay) != bossHealth
+                    && Time.realtimeSinceStartup < timeoutAt)
+                {
+                    yield return null;
+                }
+
+                Assert.AreSame(bossHealth, bossHealthField.GetValue(overlay));
+                Assert.IsTrue(bossHealth.TryApplyDamage(new DimensionBrawl.Combat.DamageInfo(
+                    source: null,
+                    sourceTeam: DimensionBrawl.Combat.DamageTeam.Player,
+                    amount: bossHealth.MaxHealth,
+                    point: bossRoot.transform.position,
+                    direction: Vector3.forward,
+                    hitStopSeconds: 0f)));
+
+                FieldInfo shownField = overlay.GetType().GetField("shown", flags);
+                Assert.IsNotNull(shownField);
+                Assert.IsTrue((bool)shownField.GetValue(overlay));
+            }
+            finally
+            {
+                Object.DestroyImmediate(overlayRoot);
+                if (bossRoot != null)
+                {
+                    Object.DestroyImmediate(bossRoot);
+                }
+
+                Time.timeScale = previousTimeScale;
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
