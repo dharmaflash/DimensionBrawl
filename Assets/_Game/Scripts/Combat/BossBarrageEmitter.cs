@@ -181,6 +181,22 @@ namespace DimensionBrawl.Combat
                 && queuedPriorityPattern == null;
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Register(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Unregister(this);
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             if (sourceHealth != null && sourceHealth.IsAlive == false)
@@ -297,11 +313,6 @@ namespace DimensionBrawl.Combat
             PrewarmPool();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX, float targetLaneZ)

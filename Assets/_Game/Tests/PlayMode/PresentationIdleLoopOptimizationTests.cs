@@ -91,6 +91,18 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(DimensionBrawl.Combat.BossPressureCostLadder).GetMethod("Update", flags),
                 "Boss pressure cost should share the reviewed-rate combat resource scheduler.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.BossBasicFireEmitter).GetMethod("Update", flags),
+                "Boss basic fire cadence should use the shared boss combat scheduler.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.BossPressureActionDirector).GetMethod("Update", flags),
+                "Boss pressure decisions should use the shared boss combat scheduler.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.BossBarrageEmitter).GetMethod("Update", flags),
+                "Boss barrage cadence should use the shared boss combat scheduler.");
+            Assert.IsNull(
+                typeof(DimensionBrawl.Combat.EnemySummonPacingDirector).GetMethod("Update", flags),
+                "Enemy summon pacing should use the shared boss combat scheduler.");
 
             System.Type combatHudBinder = System.Type.GetType(
                 "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder, Assembly-CSharp");
@@ -383,6 +395,80 @@ namespace DimensionBrawl.Tests
             {
                 Object.DestroyImmediate(energyRoot);
                 Object.DestroyImmediate(bossCostRoot);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator BossCadenceDriversShareSchedulerAndStopWhenDisabled()
+        {
+            int initialBasicFireCount =
+                DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBasicFireEmitterCount;
+            int initialActionDirectorCount =
+                DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredActionDirectorCount;
+            int initialBarrageCount =
+                DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBarrageEmitterCount;
+            int initialPacingCount =
+                DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredSummonPacingDirectorCount;
+            bool initiallyTicking = DimensionBrawl.Combat.BossCombatCadenceScheduler.IsTicking;
+            GameObject root = new GameObject("ScheduledBossCadenceTest");
+            try
+            {
+                DimensionBrawl.Combat.BossBasicFireEmitter basicFire =
+                    root.AddComponent<DimensionBrawl.Combat.BossBasicFireEmitter>();
+                DimensionBrawl.Combat.BossPressureActionDirector actionDirector =
+                    root.AddComponent<DimensionBrawl.Combat.BossPressureActionDirector>();
+                DimensionBrawl.Combat.BossBarrageEmitter barrage =
+                    root.AddComponent<DimensionBrawl.Combat.BossBarrageEmitter>();
+                DimensionBrawl.Combat.EnemySummonPacingDirector pacing =
+                    root.AddComponent<DimensionBrawl.Combat.EnemySummonPacingDirector>();
+
+                Assert.AreEqual(
+                    initialBasicFireCount + 1,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBasicFireEmitterCount);
+                Assert.AreEqual(
+                    initialActionDirectorCount + 1,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredActionDirectorCount);
+                Assert.AreEqual(
+                    initialBarrageCount + 1,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBarrageEmitterCount);
+                Assert.AreEqual(
+                    initialPacingCount + 1,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredSummonPacingDirectorCount);
+                Assert.IsTrue(DimensionBrawl.Combat.BossCombatCadenceScheduler.IsTicking);
+
+                var inventory = new MobilePerformanceSceneResult();
+                MobilePerformanceBenchmarkRunner.CaptureRuntimeInventory(inventory);
+                MobilePerformanceFrameLoopInventory schedulerLoop = inventory.FrameLoops.Find(
+                    loop => loop.TypeName == typeof(DimensionBrawl.Combat.BossCombatCadenceScheduler).FullName);
+                Assert.IsNotNull(
+                    schedulerLoop,
+                    "Global boss cadence scheduling should remain visible in runtime loop budgets.");
+                Assert.AreEqual(1, schedulerLoop.UpdateInstances);
+
+                basicFire.enabled = false;
+                actionDirector.enabled = false;
+                barrage.enabled = false;
+                pacing.enabled = false;
+                Assert.AreEqual(
+                    initialBasicFireCount,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBasicFireEmitterCount);
+                Assert.AreEqual(
+                    initialActionDirectorCount,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredActionDirectorCount);
+                Assert.AreEqual(
+                    initialBarrageCount,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredBarrageEmitterCount);
+                Assert.AreEqual(
+                    initialPacingCount,
+                    DimensionBrawl.Combat.BossCombatCadenceScheduler.RegisteredSummonPacingDirectorCount);
+                Assert.AreEqual(initiallyTicking, DimensionBrawl.Combat.BossCombatCadenceScheduler.IsTicking);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
             }
 
             yield return null;

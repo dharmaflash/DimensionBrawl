@@ -233,10 +233,19 @@ namespace DimensionBrawl.Combat
         private void OnEnable()
         {
             SubscribeBasicFireEmitter();
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Register(this);
+            }
         }
 
         private void OnDisable()
         {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Unregister(this);
+            }
+
             UnsubscribeBasicFireEmitter();
         }
 
@@ -464,11 +473,6 @@ namespace DimensionBrawl.Combat
             perSlotTimers[slotIndex] = Mathf.Max(perSlotTimers[slotIndex], slot.MinimumIntervalSeconds);
             ActionQueued?.Invoke(this, lastActionKind, lastQueuedPattern, lastSpentTier);
             return true;
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private void ApplyActionDeckProfile()

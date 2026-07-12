@@ -38,6 +38,18 @@ namespace DimensionBrawl.Combat
         {
             CombatTimeDilationReceiver.Ensure(gameObject);
             ResetPacingTimer();
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Register(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Unregister(this);
+            }
         }
 
         private void OnValidate()
@@ -138,11 +150,6 @@ namespace DimensionBrawl.Combat
             AdvanceSummonTierSequence();
             lastReleaseAgeSeconds = 0f;
             nextReleaseTimer = respawnIntervalSeconds;
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private bool CanReleasePacedSummon()

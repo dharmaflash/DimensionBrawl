@@ -159,6 +159,22 @@ namespace DimensionBrawl.Combat
             cooldownTimer = Mathf.Max(cooldownTimer, resumeCooldownAfterSuppressionSeconds);
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Register(this);
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (Application.isPlaying)
+            {
+                BossCombatCadenceScheduler.Unregister(this);
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             if (sourceHealth != null && !sourceHealth.IsAlive)
@@ -244,11 +260,6 @@ namespace DimensionBrawl.Combat
             EnsureImpactAudioPool();
             PrewarmPool();
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
-        }
-
-        private void Update()
-        {
-            Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
         private bool TryFireProjectile(float targetLateralX, float targetLaneZ)

@@ -833,6 +833,7 @@ namespace DimensionBrawl.Debugging
 
             return behaviour is DimensionBrawl.Presentation.MovementFootstepAudioScheduler
                 || behaviour is CombatResourceTickScheduler
+                || behaviour is BossCombatCadenceScheduler
                 || behaviour is MobilePerformanceGovernor;
         }
 
