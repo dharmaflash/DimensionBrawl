@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -105,6 +106,7 @@ namespace DimensionBrawl.Presentation
         private int progressStepIndex;
         private int progressStepCount;
         private string phaseLabel = string.Empty;
+        private Coroutine animationRoutine;
 
         public bool Visible => visible;
         public FocusKind CurrentFocusKind => focusKind;
@@ -188,11 +190,13 @@ namespace DimensionBrawl.Presentation
                 dialogueSfxVolume,
                 dialogueSfxDelaySeconds,
                 isOpeningPanel);
+            EnsureAnimationRoutine();
         }
 
         public void Hide()
         {
             visible = false;
+            StopAnimationRoutine();
             dialogue = string.Empty;
             inputLabel = string.Empty;
             focusKind = FocusKind.None;
@@ -230,16 +234,76 @@ namespace DimensionBrawl.Presentation
             guideState = newGuideState;
         }
 
-        private void Update()
+        private void OnEnable()
         {
-            if (!visible)
+            EnsureAnimationRoutine();
+        }
+
+        private void OnDisable()
+        {
+            StopAnimationRoutine();
+        }
+
+        private void EnsureAnimationRoutine()
+        {
+            if (animationRoutine != null
+                || !isActiveAndEnabled
+                || !visible
+                || !HasAnimationWork())
             {
                 return;
             }
 
-            transitionTimer = Mathf.Min(transitionTimer + Time.unscaledDeltaTime, transitionSeconds);
-            dialogueRevealTimer += Time.unscaledDeltaTime;
-            warningBootTimer += Time.unscaledDeltaTime;
+            animationRoutine = StartCoroutine(RunAnimation());
+        }
+
+        private void StopAnimationRoutine()
+        {
+            if (animationRoutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(animationRoutine);
+            animationRoutine = null;
+        }
+
+        private IEnumerator RunAnimation()
+        {
+            while (visible && HasAnimationWork())
+            {
+                yield return null;
+                if (!visible)
+                {
+                    break;
+                }
+
+                AdvanceAnimation(Time.unscaledDeltaTime);
+            }
+
+            animationRoutine = null;
+        }
+
+        private bool HasAnimationWork()
+        {
+            bool dialogueRevealPending = dialogueCharactersPerSecond > 0f
+                && !string.IsNullOrEmpty(dialogue)
+                && dialogueRevealTimer * dialogueCharactersPerSecond < dialogue.Length;
+            bool warningBootPending = useCommunicatorPanel
+                && warningBootSeconds > 0.001f
+                && warningBootTimer < warningBootSeconds;
+            return hasOutgoingCue
+                || transitionTimer < transitionSeconds
+                || dialogueRevealPending
+                || warningBootPending
+                || pendingDialogueSfx != null;
+        }
+
+        private void AdvanceAnimation(float unscaledDeltaTime)
+        {
+            transitionTimer = Mathf.Min(transitionTimer + unscaledDeltaTime, transitionSeconds);
+            dialogueRevealTimer += unscaledDeltaTime;
+            warningBootTimer += unscaledDeltaTime;
             UpdatePendingDialogueSfx();
             if (hasOutgoingCue && transitionTimer >= transitionSeconds)
             {

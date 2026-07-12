@@ -253,7 +253,7 @@ namespace DimensionBrawl.Tests
                         + FormatFrameLoops(postHandoffResult));
                     Assert.That(
                         postHandoffResult.ActiveFrameLoopBehaviourCount,
-                        Is.LessThanOrEqualTo(15),
+                        Is.LessThanOrEqualTo(14),
                         "Olympus corridor gameplay handoff exceeded its reviewed runtime callback budget. "
                         + FormatFrameLoops(postHandoffResult));
                     Assert.That(

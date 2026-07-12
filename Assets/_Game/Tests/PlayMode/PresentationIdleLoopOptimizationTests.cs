@@ -78,6 +78,9 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay).GetMethod("Update", flags),
                 "Station clear presentation should react to pocket-clear and boss-death events.");
+            Assert.IsNull(
+                typeof(OlympusTutorialOverlayPresenter).GetMethod("Update", flags),
+                "Tutorial overlay animation should run only while a finite transition is active.");
 
             System.Type combatHudPresenter = System.Type.GetType(
                 "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp");
@@ -106,6 +109,60 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 reviewOverlayHud.GetMethod("Update", flags),
                 "Pause and result overlays should react to input and pocket result events.");
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialOverlayFiniteAnimationResumesAfterReenableAndSettles()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            GameObject root = new GameObject("FiniteTutorialOverlayTest");
+            try
+            {
+                OlympusTutorialOverlayPresenter presenter =
+                    root.AddComponent<OlympusTutorialOverlayPresenter>();
+                presenter.GetType().GetField("transitionSeconds", flags)?.SetValue(presenter, 0.05f);
+                presenter.GetType().GetField("warningBootSeconds", flags)?.SetValue(presenter, 0.05f);
+                presenter.GetType().GetField("dialogueCharactersPerSecond", flags)?.SetValue(presenter, 200f);
+
+                FieldInfo animationRoutineField = presenter.GetType().GetField("animationRoutine", flags);
+                FieldInfo transitionTimerField = presenter.GetType().GetField("transitionTimer", flags);
+                FieldInfo warningBootTimerField = presenter.GetType().GetField("warningBootTimer", flags);
+                Assert.IsNotNull(animationRoutineField);
+                Assert.IsNotNull(transitionTimerField);
+                Assert.IsNotNull(warningBootTimerField);
+
+                presenter.Show(
+                    "OPERATOR",
+                    "Move.",
+                    "MOVE",
+                    OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
+                    new Vector2(0.16f, 0.16f));
+                Assert.IsNotNull(animationRoutineField.GetValue(presenter));
+
+                yield return null;
+                presenter.enabled = false;
+                Assert.IsNull(animationRoutineField.GetValue(presenter));
+                presenter.enabled = true;
+                Assert.IsNotNull(animationRoutineField.GetValue(presenter));
+
+                float timeoutAt = Time.realtimeSinceStartup + 1f;
+                while (animationRoutineField.GetValue(presenter) != null
+                    && Time.realtimeSinceStartup < timeoutAt)
+                {
+                    yield return null;
+                }
+
+                Assert.IsNull(animationRoutineField.GetValue(presenter));
+                Assert.That((float)transitionTimerField.GetValue(presenter), Is.EqualTo(0.05f).Within(0.001f));
+                Assert.That((float)warningBootTimerField.GetValue(presenter), Is.GreaterThanOrEqualTo(0.05f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
