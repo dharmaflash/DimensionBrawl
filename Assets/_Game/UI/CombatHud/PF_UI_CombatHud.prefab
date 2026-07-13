@@ -120,19 +120,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6621567413535496108}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestPause
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &292960376565597403
 GameObject:
   m_ObjectHideFlags: 0
@@ -814,19 +802,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4804544984278972721}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestSummonSlot2
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &8464035283567142928
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1632,19 +1608,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5756717049702816846}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestDodge
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &767123450760833344
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -4445,19 +4409,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1253479575630756170}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestSkill1
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &7287341190591890484
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -4897,19 +4849,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 9207186531740888459}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestBasicAttack
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &6066459032832793121
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -7143,19 +7083,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 6768418161951259002}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestSummonSlot1
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &6442806660483326779
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -8573,19 +8501,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 9117214623022392823}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestSummonSlot3
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &3342753037659160715
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -9125,19 +9041,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 730105525700213134}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4679977080220803428}
-        m_TargetAssemblyTypeName: DimensionBrawl.UI.CombatHudInputBridge, Assembly-CSharp
-        m_MethodName: RequestUltimate
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!225 &4672339862039304324
 CanvasGroup:
   m_ObjectHideFlags: 0

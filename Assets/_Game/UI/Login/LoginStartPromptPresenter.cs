@@ -8,6 +8,8 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class LoginStartPromptPresenter : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerClickHandler
     {
+        private const int NoPointerId = int.MinValue;
+
         [SerializeField] private Graphic promptGraphic;
         [SerializeField] private Graphic glowGraphic;
         [SerializeField] private RectTransform[] scaleTargets = Array.Empty<RectTransform>();
@@ -27,6 +29,7 @@ namespace DimensionBrawl.UI
         private Vector3[] baseScales = Array.Empty<Vector3>();
         private bool cached;
         private bool pointerHeld;
+        private int activePointerId = NoPointerId;
         private float confirmTimer;
 
         private void Reset()
@@ -44,11 +47,14 @@ namespace DimensionBrawl.UI
         {
             CacheBaseState();
             pointerHeld = false;
+            activePointerId = NoPointerId;
             confirmTimer = 0f;
         }
 
         private void OnDisable()
         {
+            pointerHeld = false;
+            activePointerId = NoPointerId;
             RestoreBaseState();
         }
 
@@ -85,23 +91,48 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || pointerHeld)
+            {
+                return;
+            }
+
             pointerHeld = true;
+            activePointerId = eventData.pointerId;
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            pointerHeld = false;
+            ReleasePointer(eventData);
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            pointerHeld = false;
+            ReleasePointer(eventData);
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            if (eventData == null || eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
             pointerHeld = false;
+            activePointerId = NoPointerId;
             confirmTimer = Mathf.Max(0.01f, confirmSeconds);
+        }
+
+        private void ReleasePointer(PointerEventData eventData)
+        {
+            if (!pointerHeld || eventData == null || eventData.pointerId != activePointerId)
+            {
+                return;
+            }
+
+            pointerHeld = false;
+            activePointerId = NoPointerId;
         }
 
         private void CacheBaseState()

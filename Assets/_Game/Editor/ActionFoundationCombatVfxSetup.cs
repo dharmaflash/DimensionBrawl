@@ -1339,7 +1339,8 @@ namespace DimensionBrawl.Editor
                 Vector3.one,
                 0f,
                 0f,
-                0f);
+                0f,
+                overrideRendererColors: false);
         }
 
         private static void ValidatePromotedHovlSciFiCuePrefab(
@@ -1366,9 +1367,16 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{name} should expose promoted Hovl renderers.");
             }
 
-            if (prefab.GetComponent<CombatVfxCueVisual>() == null)
+            CombatVfxCueVisual visual = prefab.GetComponent<CombatVfxCueVisual>();
+            if (visual == null)
             {
                 throw new InvalidOperationException($"{name} should include a stable CombatVfxCueVisual controller.");
+            }
+
+            if (visual.OverridesRendererColors)
+            {
+                throw new InvalidOperationException(
+                    $"{name} should preserve the authored colors of its promoted renderers.");
             }
 
             if (prefab.GetComponentInChildren<Collider>(includeInactive: true) != null
@@ -3829,7 +3837,8 @@ namespace DimensionBrawl.Editor
             Vector3 endScale,
             float spinDegreesPerSecond,
             float verticalLift,
-            float forwardTravelDistance)
+            float forwardTravelDistance,
+            bool overrideRendererColors = true)
         {
             SerializedObject serializedObject = new SerializedObject(visual);
             SerializedProperty rendererArray = RequireProperty(serializedObject, "renderers");
@@ -3839,6 +3848,7 @@ namespace DimensionBrawl.Editor
                 rendererArray.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
             }
 
+            RequireProperty(serializedObject, "overrideRendererColors").boolValue = overrideRendererColors;
             RequireProperty(serializedObject, "startColor").colorValue = startColor;
             RequireProperty(serializedObject, "endColor").colorValue = endColor;
             RequireProperty(serializedObject, "startScale").vector3Value = startScale;

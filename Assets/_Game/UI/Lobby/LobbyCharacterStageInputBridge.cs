@@ -8,6 +8,8 @@ namespace DimensionBrawl.UI
     [RequireComponent(typeof(Graphic))]
     public sealed class LobbyCharacterStageInputBridge : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
+        private const int NoPointerId = int.MinValue;
+
         [SerializeField] private LobbyCharacterStageInputChannel inputChannel;
         [SerializeField, Min(0f)] private float tapMaxDragPixels = 18f;
         [SerializeField, Min(0f)] private float dragDeadZonePixels = 2f;
@@ -15,6 +17,7 @@ namespace DimensionBrawl.UI
         private Vector2 pointerDownPosition;
         private float dragDistance;
         private bool isPointerHeld;
+        private int activePointerId = NoPointerId;
 
         private void Reset()
         {
@@ -27,16 +30,24 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || isPointerHeld)
+            {
+                return;
+            }
+
             pointerDownPosition = eventData.position;
             dragDistance = 0f;
             isPointerHeld = true;
+            activePointerId = eventData.pointerId;
 
             inputChannel?.RaiseBeginInteraction();
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!isPointerHeld || inputChannel == null)
+            if (!IsActivePointer(eventData) || inputChannel == null)
             {
                 return;
             }
@@ -52,23 +63,42 @@ namespace DimensionBrawl.UI
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (!isPointerHeld)
+            if (!IsActivePointer(eventData))
             {
                 return;
             }
 
-            isPointerHeld = false;
+            EndInteraction(allowTap: true);
+        }
 
-            if (inputChannel == null)
+        private void OnDisable()
+        {
+            EndInteraction(allowTap: false);
+        }
+
+        private void EndInteraction(bool allowTap)
+        {
+            bool wasHeld = isPointerHeld;
+            isPointerHeld = false;
+            activePointerId = NoPointerId;
+
+            if (!wasHeld || inputChannel == null)
             {
                 return;
             }
 
             inputChannel.RaiseEndInteraction();
-            if (dragDistance <= tapMaxDragPixels)
+            if (allowTap && dragDistance <= tapMaxDragPixels)
             {
                 inputChannel.RaiseTap();
             }
+        }
+
+        private bool IsActivePointer(PointerEventData eventData)
+        {
+            return isPointerHeld
+                && eventData != null
+                && eventData.pointerId == activePointerId;
         }
     }
 }

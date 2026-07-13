@@ -1,4 +1,5 @@
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -9,10 +10,14 @@ namespace DimensionBrawl.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class CombatHudAimDragInput : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerExitHandler
     {
+        private const int NoPointerId = int.MinValue;
+        private const float ReferenceInputHeight = 1440f;
+
         [SerializeField] private PlayerMovementController movementController;
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private PlayerRangedAimController aimController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
+        [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private bool routeAimToMovementLook;
         [SerializeField] private bool keyboardPeekControlsAim = true;
         [SerializeField] private bool keyboardPeekRequiresActiveAim = true;
@@ -22,6 +27,8 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0.0001f)] private float dragSensitivity = 0.00435f;
 
         private bool pointerHeld;
+        private bool inputBlocked;
+        private int activePointerId = NoPointerId;
         private bool keyboardAimActive;
         private Vector2 pointerAimInput;
         private Vector2 keyboardPeekInput;
@@ -33,6 +40,7 @@ namespace DimensionBrawl.UI
         public Vector2 CurrentAimInput { get; private set; }
         public bool IsPointerHeld => pointerHeld;
         public bool IsKeyboardAimActive => keyboardAimActive;
+        public bool IsInputBlocked => inputBlocked;
 
         public void Configure(
             PlayerMovementController newMovementController,
@@ -58,6 +66,11 @@ namespace DimensionBrawl.UI
             }
         }
 
+        public void SetCameraController(ActionCameraController newCameraController)
+        {
+            cameraController = newCameraController;
+        }
+
         private void OnEnable()
         {
             SubscribeStateEvents();
@@ -72,11 +85,17 @@ namespace DimensionBrawl.UI
             keyboardPeekInput = Vector2.zero;
             keyboardAimActive = false;
             ReleasePointerAim();
-            ApplyAim(Vector2.zero, holdAim: false);
         }
 
         private void RefreshKeyboardAim()
         {
+            if (inputBlocked)
+            {
+                keyboardAimActive = false;
+                ApplyAim(Vector2.zero, holdAim: false);
+                return;
+            }
+
             if (pointerHeld)
             {
                 return;
@@ -92,7 +111,16 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (inputBlocked
+                || pointerHeld
+                || eventData == null
+                || eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
             pointerHeld = true;
+            activePointerId = eventData.pointerId;
             keyboardAimActive = false;
             pointerAimInput = Vector2.zero;
             ApplyPointerDrag(pointerAimInput);
@@ -100,41 +128,65 @@ namespace DimensionBrawl.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!pointerHeld || eventData == null)
+            if (!IsActivePointer(eventData) || inputBlocked)
             {
                 return;
             }
 
+            float screenHeight = Screen.height > 0 ? Screen.height : ReferenceInputHeight;
+            float resolutionScale = ReferenceInputHeight / screenHeight;
             pointerAimInput = Vector2.ClampMagnitude(
-                pointerAimInput + new Vector2(eventData.delta.x, -eventData.delta.y) * dragSensitivity,
+                pointerAimInput
+                    + new Vector2(eventData.delta.x, -eventData.delta.y) * dragSensitivity * resolutionScale,
                 1f);
-            Vector2 resolvedInput = pointerAimInput.sqrMagnitude >= dragDeadZone * dragDeadZone
-                ? pointerAimInput
-                : Vector2.zero;
-            ApplyPointerDrag(resolvedInput);
+            ApplyPointerDrag(ResolvePointerDragInput());
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            ReleasePointerAim();
+            if (IsActivePointer(eventData))
+            {
+                ReleasePointerAim();
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            ReleasePointerAim();
+            if (IsActivePointer(eventData))
+            {
+                ReleasePointerAim();
+            }
         }
 
-        private void ReleasePointerAim()
+        public void SetInputBlocked(bool blocked)
         {
-            if (!pointerHeld)
+            if (inputBlocked == blocked)
             {
                 return;
             }
 
-            pointerHeld = false;
-            pointerAimInput = Vector2.zero;
-            ApplyAim(Vector2.zero, holdAim: false);
+            inputBlocked = blocked;
+            if (inputBlocked)
+            {
+                ReleasePointerAim();
+                ApplyAim(Vector2.zero, holdAim: false);
+                return;
+            }
+
             RefreshKeyboardAim();
+        }
+
+        private void ReleasePointerAim()
+        {
+            bool refreshKeyboard = pointerHeld;
+            pointerHeld = false;
+            activePointerId = NoPointerId;
+            pointerAimInput = Vector2.zero;
+            ReleasePointerView();
+            if (refreshKeyboard)
+            {
+                RefreshKeyboardAim();
+            }
         }
 
         private void ApplyPointerDrag(Vector2 input)
@@ -142,6 +194,13 @@ namespace DimensionBrawl.UI
             Vector2 resolvedInput = Vector2.ClampMagnitude(input, 1f);
             if (ShouldRoutePointerDragToAim())
             {
+                ResolveCameraController()?.SetLookPeekInput(Vector2.zero);
+                if (movementController != null)
+                {
+                    movementController.SetSharedFacingRequestsBlocked(false);
+                    movementController.SetSharedLookActionBlocked(false);
+                }
+
                 ApplyAim(resolvedInput, holdAim: true);
                 return;
             }
@@ -149,7 +208,9 @@ namespace DimensionBrawl.UI
             CurrentAimInput = Vector2.zero;
             if (movementController != null)
             {
-                movementController.SetLookInput(resolvedInput);
+                movementController.SetSharedFacingRequestsBlocked(true);
+                movementController.SetSharedLookActionBlocked(true);
+                movementController.SetLookInput(Vector2.zero);
             }
 
             if (rangedBasicAttackAction != null)
@@ -161,6 +222,19 @@ namespace DimensionBrawl.UI
             {
                 aimController.SetAimInput(Vector2.zero);
                 aimController.SetAimHeld(false);
+            }
+
+            ResolveCameraController()?.SetLookPeekInput(resolvedInput);
+        }
+
+        private void ReleasePointerView()
+        {
+            ResolveCameraController()?.SetLookPeekInput(Vector2.zero);
+            ApplyAim(Vector2.zero, holdAim: false);
+            if (movementController != null)
+            {
+                movementController.SetSharedLookActionBlocked(false);
+                movementController.SetSharedFacingRequestsBlocked(false);
             }
         }
 
@@ -213,6 +287,30 @@ namespace DimensionBrawl.UI
             return CanAim()
                 && rangedBasicAttackAction != null
                 && rangedBasicAttackAction.IsFireHeld;
+        }
+
+        private Vector2 ResolvePointerDragInput()
+        {
+            return pointerAimInput.sqrMagnitude >= dragDeadZone * dragDeadZone
+                ? pointerAimInput
+                : Vector2.zero;
+        }
+
+        private ActionCameraController ResolveCameraController()
+        {
+            if (cameraController == null)
+            {
+                cameraController = ActionCameraController.ActiveInstance;
+            }
+
+            return cameraController;
+        }
+
+        private bool IsActivePointer(PointerEventData eventData)
+        {
+            return pointerHeld
+                && eventData != null
+                && eventData.pointerId == activePointerId;
         }
 
         private void EnableKeyboardPeekAction()
@@ -318,16 +416,27 @@ namespace DimensionBrawl.UI
 
         private void HandleCombatModeChanged(PlayerCombatMode combatMode)
         {
-            RefreshKeyboardAim();
+            RefreshActiveInputRoute();
         }
 
         private void HandleAimModeChanged(bool isAiming)
         {
-            RefreshKeyboardAim();
+            RefreshActiveInputRoute();
         }
 
         private void HandleAimPreviewStateChanged()
         {
+            RefreshActiveInputRoute();
+        }
+
+        private void RefreshActiveInputRoute()
+        {
+            if (pointerHeld)
+            {
+                ApplyPointerDrag(ResolvePointerDragInput());
+                return;
+            }
+
             RefreshKeyboardAim();
         }
 

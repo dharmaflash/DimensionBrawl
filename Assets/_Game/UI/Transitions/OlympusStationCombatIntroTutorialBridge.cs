@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -21,7 +22,9 @@ namespace DimensionBrawl.LevelDesign
 
         [SerializeField] private SceneEntryNoticeOverlay noticeOverlay;
         [SerializeField] private OlympusTutorialOverlayPresenter overlayPresenter;
-        [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
+        [SerializeField] private CombatHudAimDragInput combatHudAimDragInput;
+        [SerializeField] private CombatHudVirtualJoystick combatHudMoveJoystick;
+        [SerializeField] private CombatHudPointerActionInput[] combatHudPointerActions = Array.Empty<CombatHudPointerActionInput>();
         [SerializeField, Min(0f)] private float minimumReadSeconds = 0.18f;
         [SerializeField, Min(0f)] private float confirmedFlashSeconds = 0.14f;
         [SerializeField] private string advanceInputLabel = "계속";
@@ -40,6 +43,7 @@ namespace DimensionBrawl.LevelDesign
         private PlayerSummonSlot1Action summonSlot1Action;
         private PlayerSupportSummonSlotAction[] supportSummonActions;
         private bool played;
+        private bool gameplayInputLocked;
 
         private void Reset()
         {
@@ -62,6 +66,13 @@ namespace DimensionBrawl.LevelDesign
             {
                 noticeOverlay.BeforeGameplayPauseReleased -= PlayGuideBeforeGameplayRelease;
             }
+
+            if (gameplayInputLocked)
+            {
+                SetGameplayInputLocked(false);
+            }
+
+            overlayPresenter?.Hide();
         }
 
         private IEnumerator PlayGuideBeforeGameplayRelease()
@@ -140,30 +151,40 @@ namespace DimensionBrawl.LevelDesign
 
         private Vector2 ResolveSummonSlotsAnchor()
         {
-            ResolveMobileHud();
-            if (mobileHud == null)
+            ResolveCombatHudInputs();
+            bool hasBounds = false;
+            Rect screenBounds = default;
+            for (int i = 0; i < combatHudPointerActions.Length; i++)
+            {
+                CombatHudPointerActionInput pointerAction = combatHudPointerActions[i];
+                if (pointerAction == null || !IsSummonAction(pointerAction.ActionId))
+                {
+                    continue;
+                }
+
+                if (!TryGetScreenRect(pointerAction.transform as RectTransform, out Rect screenRect))
+                {
+                    continue;
+                }
+
+                screenBounds = hasBounds ? Encapsulate(screenBounds, screenRect) : screenRect;
+                hasBounds = true;
+            }
+
+            if (!hasBounds || Screen.width <= 0 || Screen.height <= 0)
             {
                 return new Vector2(0.89f, 0.54f);
             }
 
-            Rect unionRect = mobileHud.SummonSlot1GuiRect;
-            if (!IsValidRect(unionRect))
-            {
-                return new Vector2(0.89f, 0.54f);
-            }
-
-            if (!mobileHud.UseSingleSummonButton)
-            {
-                unionRect = Encapsulate(unionRect, mobileHud.SummonSlot2GuiRect);
-                unionRect = Encapsulate(unionRect, mobileHud.SummonSlot3GuiRect);
-            }
-
-            return GuiPointToScreenAnchor(unionRect.center);
+            return new Vector2(
+                Mathf.Clamp01(screenBounds.center.x / Screen.width),
+                Mathf.Clamp01(screenBounds.center.y / Screen.height));
         }
 
         private void SetGameplayInputLocked(bool locked)
         {
             ResolveReferences();
+            gameplayInputLocked = locked;
             if (movement != null)
             {
                 if (locked)
@@ -183,7 +204,13 @@ namespace DimensionBrawl.LevelDesign
             skill1Action?.SetCinematicInputLocked(locked);
             summonSlot1Action?.SetCinematicInputLocked(locked);
             rangedBasicAttackAction?.SetCinematicInputLocked(locked);
-            mobileHud?.SetTutorialInputBlocked(locked);
+            combatHudAimDragInput?.SetInputBlocked(locked);
+            combatHudMoveJoystick?.SetInputBlocked(locked);
+            for (int i = 0; i < combatHudPointerActions.Length; i++)
+            {
+                combatHudPointerActions[i]?.SetInputBlocked(locked);
+            }
+
             if (locked && rangedBasicAttackAction != null)
             {
                 rangedBasicAttackAction.SetFireHeld(false);
@@ -215,7 +242,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             overlayPresenter?.ConfigureCommunicatorAudio(ResolveVoiceAudioSource(), null, 0f);
-            ResolveMobileHud();
+            ResolveCombatHudInputs();
             movement ??= FindFirstObjectByType<PlayerMovementController>();
             if (movement != null)
             {
@@ -229,6 +256,18 @@ namespace DimensionBrawl.LevelDesign
             supportSummonActions ??= FindObjectsByType<PlayerSupportSummonSlotAction>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
+        }
+
+        private void ResolveCombatHudInputs()
+        {
+            combatHudAimDragInput ??= FindFirstObjectByType<CombatHudAimDragInput>(FindObjectsInactive.Include);
+            combatHudMoveJoystick ??= FindFirstObjectByType<CombatHudVirtualJoystick>(FindObjectsInactive.Include);
+            if (combatHudPointerActions == null || combatHudPointerActions.Length == 0)
+            {
+                combatHudPointerActions = FindObjectsByType<CombatHudPointerActionInput>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            }
         }
 
         private void ResolveNoticeOverlay()
@@ -257,12 +296,11 @@ namespace DimensionBrawl.LevelDesign
             return voiceAudioSource;
         }
 
-        private void ResolveMobileHud()
+        private static bool IsSummonAction(CombatHudActionId actionId)
         {
-            if (mobileHud == null)
-            {
-                mobileHud = FindFirstObjectByType<BossBarrageLaneReviewMobileHud>();
-            }
+            return actionId == CombatHudActionId.SummonSlot1
+                || actionId == CombatHudActionId.SummonSlot2
+                || actionId == CombatHudActionId.SummonSlot3;
         }
 
         private static bool WasAdvancePressedThisFrame()
@@ -313,16 +351,31 @@ namespace DimensionBrawl.LevelDesign
             return false;
         }
 
-        private static Vector2 GuiPointToScreenAnchor(Vector2 guiPoint)
+        private static bool TryGetScreenRect(RectTransform rectTransform, out Rect screenRect)
         {
-            if (Screen.width <= 0 || Screen.height <= 0)
+            if (rectTransform == null || !rectTransform.gameObject.activeInHierarchy)
             {
-                return Vector2.zero;
+                screenRect = default;
+                return false;
             }
 
-            return new Vector2(
-                Mathf.Clamp01(guiPoint.x / Screen.width),
-                Mathf.Clamp01(1f - guiPoint.y / Screen.height));
+            Canvas canvas = rectTransform.GetComponentInParent<Canvas>();
+            Camera eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+            Vector2 minimum = RectTransformUtility.WorldToScreenPoint(eventCamera, corners[0]);
+            Vector2 maximum = minimum;
+            for (int i = 1; i < corners.Length; i++)
+            {
+                Vector2 point = RectTransformUtility.WorldToScreenPoint(eventCamera, corners[i]);
+                minimum = Vector2.Min(minimum, point);
+                maximum = Vector2.Max(maximum, point);
+            }
+
+            screenRect = Rect.MinMaxRect(minimum.x, minimum.y, maximum.x, maximum.y);
+            return screenRect.width > 0.01f && screenRect.height > 0.01f;
         }
 
         private static Rect Encapsulate(Rect rect, Rect other)

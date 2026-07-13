@@ -927,13 +927,15 @@ namespace IsekaiBrawl.Gameplay
         }
     }
 
-    public class CardHandScrollGuard : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class CardHandScrollGuard : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private const float DragThresholdPixels = 14f;
+        private const int NoPointerId = int.MinValue;
 
         private Vector2 pointerDownPosition;
         private bool dragSuppressedThisGesture;
         private float suppressionDuration = 0.16f;
+        private int activePointerId = NoPointerId;
 
         public void Configure(float duration)
         {
@@ -942,26 +944,69 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != NoPointerId)
+            {
+                return;
+            }
+
+            activePointerId = eventData.pointerId;
             pointerDownPosition = eventData.position;
             dragSuppressedThisGesture = false;
         }
 
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (IsActivePointer(eventData) && !dragSuppressedThisGesture)
+            {
+                activePointerId = NoPointerId;
+            }
+        }
+
         public void OnBeginDrag(PointerEventData eventData)
         {
+            if (!IsActivePointer(eventData))
+            {
+                return;
+            }
+
             SuppressIfNeeded(eventData.position, force: true);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
+            if (!IsActivePointer(eventData))
+            {
+                return;
+            }
+
             SuppressIfNeeded(eventData.position, force: false);
         }
 
         public void OnEndDrag(PointerEventData eventData)
         {
+            if (!IsActivePointer(eventData))
+            {
+                return;
+            }
+
+            activePointerId = NoPointerId;
             if (dragSuppressedThisGesture)
             {
                 CardHandTouchCoordinator.SuppressClicks(suppressionDuration);
             }
+        }
+
+        private void OnDisable()
+        {
+            activePointerId = NoPointerId;
+            dragSuppressedThisGesture = false;
+        }
+
+        private bool IsActivePointer(PointerEventData eventData)
+        {
+            return eventData != null && eventData.pointerId == activePointerId;
         }
 
         private void SuppressIfNeeded(Vector2 currentPosition, bool force)

@@ -8,6 +8,8 @@ namespace DimensionBrawl.UI
     [RequireComponent(typeof(RectTransform))]
     public sealed class CombatHudVirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
+        private const int NoPointerId = int.MinValue;
+
         [SerializeField] private PlayerMovementController movementController;
         [SerializeField] private RectTransform knob;
         [SerializeField, Range(0f, 0.5f)] private float deadZone = 0.08f;
@@ -22,8 +24,11 @@ namespace DimensionBrawl.UI
         private bool hasKnobRestPosition;
         private bool pointerHeld;
         private bool inputBlocked;
+        private int activePointerId = NoPointerId;
 
         public Vector2 CurrentInput { get; private set; }
+        public bool IsPointerHeld => pointerHeld;
+        public bool IsInputBlocked => inputBlocked;
 
         public void Configure(PlayerMovementController newMovementController, RectTransform newKnob)
         {
@@ -57,19 +62,22 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (inputBlocked)
+            if (inputBlocked
+                || pointerHeld
+                || eventData == null
+                || eventData.button != PointerEventData.InputButton.Left)
             {
-                ClearInput();
                 return;
             }
 
             pointerHeld = true;
+            activePointerId = eventData.pointerId;
             UpdateInput(eventData);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!pointerHeld || inputBlocked)
+            if (!IsActivePointer(eventData) || inputBlocked)
             {
                 return;
             }
@@ -79,6 +87,11 @@ namespace DimensionBrawl.UI
 
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (!IsActivePointer(eventData))
+            {
+                return;
+            }
+
             ClearInput();
         }
 
@@ -164,6 +177,7 @@ namespace DimensionBrawl.UI
         private void ClearInput()
         {
             pointerHeld = false;
+            activePointerId = NoPointerId;
             CurrentInput = Vector2.zero;
             if (movementController != null)
             {
@@ -180,6 +194,13 @@ namespace DimensionBrawl.UI
             }
 
             knob.anchoredPosition = knobRestPosition;
+        }
+
+        private bool IsActivePointer(PointerEventData eventData)
+        {
+            return pointerHeld
+                && eventData != null
+                && eventData.pointerId == activePointerId;
         }
 
         private void CaptureKnobRestPosition()

@@ -88,14 +88,14 @@ namespace DimensionBrawl.Editor
 
         private static readonly ButtonRouteCheck[] ButtonRouteChecks =
         {
-            new ButtonRouteCheck("PauseButton", "RequestPause", "overlayHud", false, new Rect(2396f, 47f, 100f, 95f)),
-            new ButtonRouteCheck("BasicAttackButton", "RequestBasicAttack", "rangedBasicAttackAction", true, new Rect(2239f, 1156f, 230f, 248f), "combatModeController"),
-            new ButtonRouteCheck("DodgeButton", "RequestDodge", "actionController", true, new Rect(1975f, 1172f, 256f, 218f)),
-            new ButtonRouteCheck("Skill1Button", "RequestSkill1", "skill1Action", true, new Rect(2217f, 868f, 236f, 286f)),
-            new ButtonRouteCheck("UltimateButton", "RequestUltimate", "combatModeController", true, new Rect(1975f, 896f, 248f, 226f)),
-            new ButtonRouteCheck("SummonSlot1Button", "RequestSummonSlot1", "summonSlot1Action", true, new Rect(2293f, 235f, 211f, 216f)),
-            new ButtonRouteCheck("SummonSlot2Button", "RequestSummonSlot2", "summonSlot2Action", true, new Rect(2308f, 472f, 182f, 186f)),
-            new ButtonRouteCheck("SummonSlot3Button", "RequestSummonSlot3", "summonSlot3Action", true, new Rect(2312f, 683f, 179f, 183f))
+            new ButtonRouteCheck("PauseButton", "overlayHud", false, new Rect(2396f, 47f, 100f, 95f)),
+            new ButtonRouteCheck("BasicAttackButton", "rangedBasicAttackAction", true, new Rect(2239f, 1156f, 230f, 248f), "combatModeController"),
+            new ButtonRouteCheck("DodgeButton", "actionController", true, new Rect(1975f, 1172f, 256f, 218f)),
+            new ButtonRouteCheck("Skill1Button", "skill1Action", true, new Rect(2217f, 868f, 236f, 286f)),
+            new ButtonRouteCheck("UltimateButton", "combatModeController", true, new Rect(1975f, 896f, 248f, 226f)),
+            new ButtonRouteCheck("SummonSlot1Button", "summonSlot1Action", true, new Rect(2293f, 235f, 211f, 216f)),
+            new ButtonRouteCheck("SummonSlot2Button", "summonSlot2Action", true, new Rect(2308f, 472f, 182f, 186f)),
+            new ButtonRouteCheck("SummonSlot3Button", "summonSlot3Action", true, new Rect(2312f, 683f, 179f, 183f))
         };
 
         private static readonly ResolutionCheck[] ResponsiveResolutions =
@@ -482,7 +482,8 @@ namespace DimensionBrawl.Editor
             for (int i = 0; i < ButtonRouteChecks.Length; i++)
             {
                 ButtonRouteCheck check = ButtonRouteChecks[i];
-                ready &= HasButtonClickRoute(hudInstance, check.ButtonName, check.MethodName, report);
+                ready &= HasSinglePointerRoute(hudInstance, check.ButtonName, report);
+                ready &= HasPointerActionInput(hudInstance, check, report);
                 ready &= HasSerializedReference(binder, check.PrimaryReferenceFieldName, report);
                 if (!string.IsNullOrEmpty(check.SecondaryReferenceFieldName))
                 {
@@ -491,8 +492,6 @@ namespace DimensionBrawl.Editor
 
                 if (check.ProbeInput)
                 {
-                    ready &= HasPointerActionInput(hudInstance, check, report);
-                    ready &= InvokesAction(hudInstance, binder, check, report);
                     ready &= InvokesActionFromPointer(
                         hudInstance,
                         binder,
@@ -782,10 +781,9 @@ namespace DimensionBrawl.Editor
                 && !image.raycastTarget;
         }
 
-        private static bool HasButtonClickRoute(
+        private static bool HasSinglePointerRoute(
             GameObject hudInstance,
             string buttonName,
-            string expectedMethodName,
             StringBuilder report)
         {
             GameObject buttonObject = FindChild(hudInstance.transform, buttonName);
@@ -796,20 +794,11 @@ namespace DimensionBrawl.Editor
                 return false;
             }
 
-            bool hasRoute = false;
-            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
-            {
-                if (string.Equals(button.onClick.GetPersistentMethodName(i), expectedMethodName, StringComparison.Ordinal))
-                {
-                    hasRoute = true;
-                    break;
-                }
-            }
-
+            int persistentCount = button.onClick.GetPersistentEventCount();
             bool interactable = button.interactable && button.IsInteractable();
-            if (!hasRoute || !interactable)
+            if (persistentCount != 0 || !interactable)
             {
-                report.AppendLine($"BUTTON_ROUTE_{buttonName}=FAIL hasRoute={BoolText(hasRoute)} interactable={BoolText(interactable)} persistentCount={button.onClick.GetPersistentEventCount()}");
+                report.AppendLine($"BUTTON_ROUTE_{buttonName}=FAIL pointerOwnsAction={BoolText(persistentCount == 0)} interactable={BoolText(interactable)} persistentCount={persistentCount}");
                 return false;
             }
 
@@ -850,6 +839,7 @@ namespace DimensionBrawl.Editor
                 "SummonSlot1Button" => CombatHudActionId.SummonSlot1,
                 "SummonSlot2Button" => CombatHudActionId.SummonSlot2,
                 "SummonSlot3Button" => CombatHudActionId.SummonSlot3,
+                "PauseButton" => CombatHudActionId.Pause,
                 _ => CombatHudActionId.None
             };
         }
@@ -987,25 +977,6 @@ namespace DimensionBrawl.Editor
             return geometryReady;
         }
 
-        private static bool InvokesAction(
-            GameObject hudInstance,
-            BossBarrageLaneReviewCombatHudBinder binder,
-            ButtonRouteCheck check,
-            StringBuilder report)
-        {
-            GameObject buttonObject = FindChild(hudInstance.transform, check.ButtonName);
-            Button button = buttonObject != null ? buttonObject.GetComponent<Button>() : null;
-            if (button == null || binder == null)
-            {
-                report.AppendLine($"BUTTON_ACTION_{check.ButtonName}=MISSING button={BoolText(button != null)} binder={BoolText(binder != null)}");
-                return false;
-            }
-
-            button.onClick.Invoke();
-            report.AppendLine($"BUTTON_ACTION_{check.ButtonName}=PASS");
-            return true;
-        }
-
         private static bool InvokesActionFromPointer(
             GameObject hudInstance,
             BossBarrageLaneReviewCombatHudBinder binder,
@@ -1054,26 +1025,53 @@ namespace DimensionBrawl.Editor
                 position = screenPoint,
                 pressPosition = screenPoint
             };
-            bool holdReady = true;
-            ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerDownHandler);
-            if (check.ButtonName == "BasicAttackButton")
+            CombatHudInputBridge inputBridge = buttonObject.GetComponentInParent<CombatHudInputBridge>();
+            if (inputBridge == null)
             {
-                holdReady &= HasBasicFireHeld(binder, expected: true, report, "DOWN");
+                report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}=MISSING_INPUT_BRIDGE");
+                return false;
             }
 
-            ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerClickHandler);
-            ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerUpHandler);
+            CombatHudActionId expectedAction = ResolvePointerActionId(check.ButtonName);
+            int requestCount = 0;
+            CombatHudActionId requestedAction = CombatHudActionId.None;
+            Action<CombatHudActionId> requestHandler = actionId =>
+            {
+                requestCount++;
+                requestedAction = actionId;
+            };
+            inputBridge.ActionRequested += requestHandler;
+            bool holdReady = true;
+            try
+            {
+                ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerDownHandler);
+                if (check.ButtonName == "BasicAttackButton")
+                {
+                    holdReady &= HasBasicFireHeld(binder, expected: true, report, "DOWN");
+                }
+
+                ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerClickHandler);
+                ExecuteEvents.ExecuteHierarchy(eventTarget, eventData, ExecuteEvents.pointerUpHandler);
+            }
+            finally
+            {
+                inputBridge.ActionRequested -= requestHandler;
+            }
+
+            bool singleRequestReady = requestCount == 1 && requestedAction == expectedAction;
             if (check.ButtonName == "BasicAttackButton")
             {
                 holdReady &= HasBasicFireHeld(binder, expected: false, report, "UP");
-                if (holdReady)
-                {
-                    report.AppendLine("BASIC_FIRE_HOLD=PASS");
-                }
             }
 
-            report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}={PassText(holdReady)}");
-            return holdReady;
+            if (!singleRequestReady)
+            {
+                report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}=FAIL requests={requestCount} requested={requestedAction} expected={expectedAction}");
+            }
+
+            bool ready = holdReady && singleRequestReady;
+            report.AppendLine($"BUTTON_POINTER_ACTION_{check.ButtonName}={PassText(ready)}");
+            return ready;
         }
 
         private static bool HasBasicFireHeld(
@@ -1568,14 +1566,12 @@ namespace DimensionBrawl.Editor
         {
             public ButtonRouteCheck(
                 string buttonName,
-                string methodName,
                 string primaryReferenceFieldName,
                 bool probeInput,
                 Rect designRect,
                 string secondaryReferenceFieldName = null)
             {
                 ButtonName = buttonName;
-                MethodName = methodName;
                 PrimaryReferenceFieldName = primaryReferenceFieldName;
                 ProbeInput = probeInput;
                 DesignRect = designRect;
@@ -1583,7 +1579,6 @@ namespace DimensionBrawl.Editor
             }
 
             public string ButtonName { get; }
-            public string MethodName { get; }
             public string PrimaryReferenceFieldName { get; }
             public bool ProbeInput { get; }
             public Rect DesignRect { get; }

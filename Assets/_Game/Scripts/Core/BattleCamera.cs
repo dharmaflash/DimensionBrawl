@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -156,14 +157,17 @@ namespace IsekaiBrawl.Gameplay
 
             if (Mouse.current != null)
             {
-                if (Mouse.current.rightButton.isPressed || Mouse.current.middleButton.isPressed)
+                bool pointerOverUi = EventSystem.current != null
+                    && EventSystem.current.IsPointerOverGameObject();
+                if (!pointerOverUi
+                    && (Mouse.current.rightButton.isPressed || Mouse.current.middleButton.isPressed))
                 {
                     Vector2 dragDelta = Mouse.current.delta.ReadValue();
                     overviewFocusPosition += new Vector3(-dragDelta.x, 0f, -dragDelta.y) * overviewDragSensitivity;
                 }
 
                 float scrollValue = Mouse.current.scroll.ReadValue().y;
-                if (Mathf.Abs(scrollValue) > 0.01f)
+                if (!pointerOverUi && Mathf.Abs(scrollValue) > 0.01f)
                 {
                     ApplyOverviewZoom(scrollValue * 0.01f);
                 }

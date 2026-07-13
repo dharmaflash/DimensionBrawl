@@ -1214,7 +1214,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge
   noticeOverlay: {fileID: 3315606629749477696}
   overlayPresenter: {fileID: 0}
-  mobileHud: {fileID: 0}
+  combatHudAimDragInput: {fileID: 0}
+  combatHudMoveJoystick: {fileID: 0}
+  combatHudPointerActions: []
   minimumReadSeconds: 0.18
   confirmedFlashSeconds: 0.14
   advanceInputLabel: 계속

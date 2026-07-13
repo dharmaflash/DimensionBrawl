@@ -288,8 +288,6 @@ MonoBehaviour:
   aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
-  lookPeekHorizontalOffset: 1.15
-  lookPeekVerticalOffset: 0.55
   aimAssistUsesYawTarget: 1
   aimAssistMaxYawBlend: 0.85
   aimAssistYawSpeedDegrees: 420

@@ -14741,6 +14741,7 @@ MonoBehaviour:
   - {fileID: 7707616090908398493}
   - {fileID: 8233156977976651216}
   - {fileID: 3745222030800126135}
+  overrideRendererColors: 0
   startColor: {r: 1, g: 1, b: 1, a: 1}
   endColor: {r: 1, g: 1, b: 1, a: 1}
   startScale: {x: 1, y: 1, z: 1}

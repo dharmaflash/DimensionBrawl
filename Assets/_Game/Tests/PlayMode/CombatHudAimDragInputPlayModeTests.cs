@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Reflection;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Tests
@@ -107,6 +109,121 @@ namespace DimensionBrawl.Tests
             finally
             {
                 Object.DestroyImmediate(inputObject);
+                Object.DestroyImmediate(playerObject);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator PointerDragUsesCameraOnlyOrbitUntilRangedFireIsHeld()
+        {
+            GameObject playerObject = new("CameraOnlyDragPlayer", typeof(CharacterController));
+            PlayerMovementController movementController = playerObject.AddComponent<PlayerMovementController>();
+            PlayerCombatModeController combatModeController = playerObject.AddComponent<PlayerCombatModeController>();
+            PlayerRangedAimController aimController = playerObject.AddComponent<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+            GameObject cameraObject = new("CameraOnlyDragCamera", typeof(Camera), typeof(ActionCameraController));
+            Camera controlledCamera = cameraObject.GetComponent<Camera>();
+            controlledCamera.tag = "MainCamera";
+            cameraObject.transform.SetPositionAndRotation(new Vector3(0f, 2f, -4f), Quaternion.identity);
+            ActionCameraController cameraController = cameraObject.GetComponent<ActionCameraController>();
+            cameraController.ConfigureTargets(playerObject.transform, null);
+            GameObject inputObject = new("CameraOnlyCombatHudAimDragInput", typeof(RectTransform));
+            System.Type aimDragInputType = System.Type.GetType(
+                "DimensionBrawl.UI.CombatHudAimDragInput, Assembly-CSharp",
+                throwOnError: true);
+            Component aimDragInput = inputObject.AddComponent(aimDragInputType);
+            GameObject eventSystemObject = new("CameraOnlyDragEventSystem", typeof(EventSystem));
+
+            try
+            {
+                combatModeController.SetRangedMode();
+                aimController.ConfigureReferences(combatModeController, cameraController, null, movementController);
+                rangedAction.ConfigureReferences(
+                    combatModeController,
+                    aimController,
+                    movementController,
+                    null,
+                    null,
+                    cameraController,
+                    null);
+
+                MethodInfo configure = aimDragInputType.GetMethod(
+                    "Configure",
+                    BindingFlags.Instance | BindingFlags.Public);
+                MethodInfo setCameraController = aimDragInputType.GetMethod(
+                    "SetCameraController",
+                    BindingFlags.Instance | BindingFlags.Public);
+                PropertyInfo currentAimInput = aimDragInputType.GetProperty(
+                    "CurrentAimInput",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.IsNotNull(configure);
+                Assert.IsNotNull(setCameraController);
+                Assert.IsNotNull(currentAimInput);
+                configure.Invoke(
+                    aimDragInput,
+                    new object[] { movementController, combatModeController, aimController, rangedAction });
+                setCameraController.Invoke(aimDragInput, new object[] { cameraController });
+
+                PointerEventData pointerDown = new(EventSystem.current) { position = new Vector2(400f, 300f) };
+                PointerEventData pointerDrag = new(EventSystem.current)
+                {
+                    position = new Vector2(560f, 300f),
+                    delta = new Vector2(160f, 0f)
+                };
+                Quaternion playerRotationBeforeDrag = playerObject.transform.rotation;
+
+                ((IPointerDownHandler)aimDragInput).OnPointerDown(pointerDown);
+                ((IDragHandler)aimDragInput).OnDrag(pointerDrag);
+
+                Assert.Greater(cameraController.LookPeekInput.x, 0.1f);
+                Assert.AreEqual(Vector2.zero, (Vector2)currentAimInput.GetValue(aimDragInput));
+                Assert.AreEqual(Vector2.zero, aimController.AimInput);
+                Assert.AreEqual(Vector2.zero, rangedAction.AimInput);
+                Assert.AreEqual(
+                    Vector2.zero,
+                    GetPrivateField<Vector2>(movementController, "mobileLookInput"));
+                Assert.IsTrue(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+
+                yield return null;
+                yield return null;
+
+                Assert.Less(
+                    Quaternion.Angle(playerRotationBeforeDrag, playerObject.transform.rotation),
+                    0.5f,
+                    "Empty-screen camera drag should not rotate the player outside ranged fire.");
+                Assert.Greater(
+                    cameraController.LookPeekYawOffsetDegrees,
+                    0.1f,
+                    "Camera-only drag should rotate the camera rig within its bounded orbit.");
+
+                ((IPointerUpHandler)aimDragInput).OnPointerUp(pointerDrag);
+                Assert.AreEqual(Vector2.zero, cameraController.LookPeekInput);
+                Assert.IsFalse(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+
+                rangedAction.SetFireHeld(true);
+                Assert.IsTrue(rangedAction.IsFireHeld);
+                ((IPointerDownHandler)aimDragInput).OnPointerDown(pointerDown);
+                ((IDragHandler)aimDragInput).OnDrag(pointerDrag);
+
+                Vector2 routedAimInput = (Vector2)currentAimInput.GetValue(aimDragInput);
+                Assert.Greater(routedAimInput.x, 0.1f);
+                Assert.AreEqual(routedAimInput.x, aimController.AimInput.x, 0.001f);
+                Assert.AreEqual(routedAimInput.x, rangedAction.AimInput.x, 0.001f);
+                Assert.AreEqual(routedAimInput.x, cameraController.AimOrbitInput.x, 0.001f);
+                Assert.AreEqual(Vector2.zero, cameraController.LookPeekInput);
+                Assert.IsFalse(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+
+                ((IPointerUpHandler)aimDragInput).OnPointerUp(pointerDrag);
+                rangedAction.SetFireHeld(false);
+            }
+            finally
+            {
+                Object.DestroyImmediate(eventSystemObject);
+                Object.DestroyImmediate(inputObject);
+                Object.DestroyImmediate(cameraObject);
                 Object.DestroyImmediate(playerObject);
             }
 
@@ -236,6 +353,15 @@ namespace DimensionBrawl.Tests
 
             Object.Destroy(hudObject);
             yield return null;
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Missing private field {fieldName} on {target.GetType().Name}.");
+            return (T)field.GetValue(target);
         }
     }
 }

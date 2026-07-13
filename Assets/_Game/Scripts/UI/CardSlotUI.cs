@@ -6,8 +6,10 @@ using UnityEngine.UI;
 
 namespace IsekaiBrawl.Gameplay
 {
-    public class CardSlotUI : MonoBehaviour, IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class CardSlotUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
+        private const int NoPointerId = int.MinValue;
+
         [SerializeField] private Image cardImage;
         [SerializeField] private TMP_Text nameText;
         [SerializeField] private TMP_Text costText;
@@ -38,6 +40,7 @@ namespace IsekaiBrawl.Gameplay
         private bool usesMobileLayout;
         private bool usesCompactMobileLayout;
         private bool isDraggingForLanePlacement;
+        private int activePointerId = NoPointerId;
         private float layoutFitScale = 1f;
         private Vector2 currentBaseSize = new(126f, 138f);
 
@@ -78,10 +81,16 @@ namespace IsekaiBrawl.Gameplay
 
         private void OnDestroy()
         {
+            CancelActiveDrag();
             if (buttonComponent != null)
             {
                 buttonComponent.onClick.RemoveListener(HandleClick);
             }
+        }
+
+        private void OnDisable()
+        {
+            CancelActiveDrag();
         }
 
         private void Update()
@@ -120,6 +129,7 @@ namespace IsekaiBrawl.Gameplay
 
         public void Init(SummonData data, Action onClickCallback, Action<int> onLanePlayCallback = null)
         {
+            CancelActiveDrag();
             EnsureVisualChildren();
             summonData = data;
             onClick = onClickCallback;
@@ -279,12 +289,28 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != NoPointerId)
+            {
+                return;
+            }
+
+            activePointerId = eventData.pointerId;
             isDraggingForLanePlacement = false;
+        }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            if (IsActivePointer(eventData) && !isDraggingForLanePlacement)
+            {
+                activePointerId = NoPointerId;
+            }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (!CanBeginLanePlacement())
+            if (!IsActivePointer(eventData) || !CanBeginLanePlacement())
             {
                 return;
             }
@@ -298,7 +324,7 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!isDraggingForLanePlacement)
+            if (!IsActivePointer(eventData) || !isDraggingForLanePlacement)
             {
                 return;
             }
@@ -308,6 +334,12 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnEndDrag(PointerEventData eventData)
         {
+            if (!IsActivePointer(eventData))
+            {
+                return;
+            }
+
+            activePointerId = NoPointerId;
             if (!isDraggingForLanePlacement)
             {
                 return;
@@ -328,6 +360,23 @@ namespace IsekaiBrawl.Gameplay
         private bool CanBeginLanePlacement()
         {
             return summonData != null && isInteractableVisual && onLanePlay != null;
+        }
+
+        private bool IsActivePointer(PointerEventData eventData)
+        {
+            return eventData != null && eventData.pointerId == activePointerId;
+        }
+
+        private void CancelActiveDrag()
+        {
+            activePointerId = NoPointerId;
+            if (!isDraggingForLanePlacement)
+            {
+                return;
+            }
+
+            isDraggingForLanePlacement = false;
+            MobileBattleControls.CancelSummonPlacement();
         }
 
         private void EnsureVisualChildren()

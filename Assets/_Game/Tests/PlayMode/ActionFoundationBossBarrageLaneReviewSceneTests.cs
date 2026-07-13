@@ -1711,25 +1711,31 @@ namespace DimensionBrawl.Tests
                 0f,
                 GetVector2Property(aimDragInput, "CurrentAimInput").sqrMagnitude,
                 0.001f,
-                "UGUI empty-screen drag should preserve free look until ranged fire is held.");
+                "UGUI empty-screen drag should stay camera-only until ranged fire is held.");
             Assert.Greater(
-                GetVector2(player, "mobileLookInput").x,
+                cameraController.LookPeekInput.x,
                 0.1f,
-                "UGUI empty-screen drag should feed the player look route outside fire hold.");
+                "UGUI empty-screen drag should feed the bounded camera-only orbit route.");
+            Assert.AreEqual(0f, GetVector2(player, "mobileLookInput").sqrMagnitude, 0.001f);
+            Assert.IsTrue((bool)RequirePrivateField(player, "sharedFacingRequestsBlocked").GetValue(player));
             Assert.AreEqual(0f, rangedAimController.AimInput.sqrMagnitude, 0.001f);
             Assert.AreEqual(0f, rangedBasicAttackAction.AimInput.sqrMagnitude, 0.001f);
             ((IPointerUpHandler)aimDragInput).OnPointerUp(aimDrag);
             Assert.AreEqual(0f, GetVector2Property(aimDragInput, "CurrentAimInput").sqrMagnitude, 0.001f);
             Assert.AreEqual(0f, GetVector2(player, "mobileLookInput").sqrMagnitude, 0.001f);
+            Assert.AreEqual(0f, cameraController.LookPeekInput.sqrMagnitude, 0.001f);
+            Assert.IsFalse((bool)RequirePrivateField(player, "sharedFacingRequestsBlocked").GetValue(player));
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", true);
             Assert.IsTrue(rangedBasicAttackAction.HasExternalFireHeldInput, "UGUI fire hold should reach ranged basic fire.");
             ((IPointerDownHandler)aimDragInput).OnPointerDown(aimDown);
             ((IDragHandler)aimDragInput).OnDrag(aimDrag);
             Vector2 currentAimInput = GetVector2Property(aimDragInput, "CurrentAimInput");
-            Assert.Greater(currentAimInput.x, 0.1f, "UGUI drag should feed target-bias aim input while ranged fire is held.");
+            Assert.Greater(currentAimInput.x, 0.1f, "UGUI drag should preserve gun aim while ranged fire is held.");
             Assert.AreEqual(currentAimInput.x, rangedAimController.AimInput.x, 0.001f);
             Assert.AreEqual(currentAimInput.x, rangedBasicAttackAction.AimInput.x, 0.001f);
+            Assert.AreEqual(0f, cameraController.LookPeekInput.sqrMagnitude, 0.001f);
             Assert.AreEqual(0f, GetVector2(player, "mobileLookInput").sqrMagnitude, 0.001f);
+            Assert.IsFalse((bool)RequirePrivateField(player, "sharedFacingRequestsBlocked").GetValue(player));
             ((IPointerUpHandler)aimDragInput).OnPointerUp(aimDrag);
             InvokeCombatHudActionHold(inputBridge, "BasicAttack", false);
             Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);

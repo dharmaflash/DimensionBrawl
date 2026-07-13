@@ -470,6 +470,8 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 aimController,
                 rangedBasicAttackAction);
+            aimDragInput.SetCameraController(
+                UnityEngine.Object.FindFirstObjectByType<ActionCameraController>(FindObjectsInactive.Exclude));
             SetBehaviourEnabled(aimDragInput, true);
             MarkComponentDirty(aimDragInput);
             EditorUtility.SetDirty(aimArea.gameObject);
@@ -559,16 +561,13 @@ namespace DimensionBrawl.Editor
             Button button = target.GetComponent<Button>();
             if (button != null)
             {
-                ConfigurePersistentCombatHudButtonRoute(button, inputBridge, actionId);
+                ClearPersistentCombatHudButtonRoutes(button);
             }
         }
 
-        private static void ConfigurePersistentCombatHudButtonRoute(
-            Button button,
-            CombatHudInputBridge inputBridge,
-            CombatHudActionId actionId)
+        private static void ClearPersistentCombatHudButtonRoutes(Button button)
         {
-            if (button == null || inputBridge == null)
+            if (button == null)
             {
                 return;
             }
@@ -576,34 +575,6 @@ namespace DimensionBrawl.Editor
             for (int i = button.onClick.GetPersistentEventCount() - 1; i >= 0; i--)
             {
                 UnityEventTools.RemovePersistentListener(button.onClick, i);
-            }
-
-            switch (actionId)
-            {
-                case CombatHudActionId.BasicAttack:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestBasicAttack);
-                    break;
-                case CombatHudActionId.Dodge:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestDodge);
-                    break;
-                case CombatHudActionId.Skill1:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSkill1);
-                    break;
-                case CombatHudActionId.Ultimate:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestUltimate);
-                    break;
-                case CombatHudActionId.SummonSlot1:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot1);
-                    break;
-                case CombatHudActionId.SummonSlot2:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot2);
-                    break;
-                case CombatHudActionId.SummonSlot3:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestSummonSlot3);
-                    break;
-                case CombatHudActionId.Pause:
-                    UnityEventTools.AddPersistentListener(button.onClick, inputBridge.RequestPause);
-                    break;
             }
 
             MarkComponentDirty(button);

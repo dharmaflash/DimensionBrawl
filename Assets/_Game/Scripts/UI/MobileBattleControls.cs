@@ -176,6 +176,7 @@ namespace IsekaiBrawl.Gameplay
         private Rect lastSafeArea;
         private Vector2 lastRootSize;
         private int defaultDragThreshold = -1;
+        private EventSystem dragThresholdEventSystem;
         private bool uiInitialized;
         private float nextVisualRefreshTime;
         private readonly List<Image> laneMarkerImages = new();
@@ -214,17 +215,13 @@ namespace IsekaiBrawl.Gameplay
 
         private void OnDisable()
         {
-            moveVector = Vector2.zero;
-            ClearTapMoveDestination();
-            pendingSkillPress = false;
-            pendingMapTogglePress = false;
-            pendingOverviewCenterPress = false;
-            pendingOverviewZoomStep = 0f;
-            pendingOverviewDragDelta = Vector2.zero;
+            ResetTransientInputState();
+            RestoreDragThreshold();
         }
 
         private void OnDestroy()
         {
+            RestoreDragThreshold();
             if (Instance == this)
             {
                 Instance = null;
@@ -241,11 +238,7 @@ namespace IsekaiBrawl.Gameplay
                 isTouchLayoutActive = shouldUseTouchLayout;
                 if (!isTouchLayoutActive)
                 {
-                    ClearTapMoveDestination();
-                    pendingSkillPress = false;
-                    pendingMapTogglePress = false;
-                    pendingOverviewCenterPress = false;
-                    pendingOverviewZoomStep = 0f;
+                    ResetTransientInputState();
                 }
 
                 SetRootActiveState(isTouchLayoutActive);
@@ -466,32 +459,32 @@ namespace IsekaiBrawl.Gameplay
             hasTapMoveDestination = true;
         }
 
-        internal void HandleBattlefieldTapRelease(PointerEventData eventData, Vector2 pointerDownScreenPosition)
+        internal bool HandleBattlefieldTapRelease(PointerEventData eventData, Vector2 pointerDownScreenPosition)
         {
             if (!isTouchLayoutActive || isSummonPlacementActive || isDirectDodgeModeActive)
             {
-                return;
+                return false;
             }
 
             if (battleCamera != null && battleCamera.IsOverviewMode)
             {
-                return;
+                return false;
             }
 
             if ((eventData.position - pointerDownScreenPosition).sqrMagnitude > 28f * 28f)
             {
-                return;
+                return false;
             }
 
             ResolveReferences();
             if (playerController == null)
             {
-                return;
+                return false;
             }
 
             if (!TryResolveLockableTargetAtScreenPosition(eventData.position, out SummonUnit summonTarget, out EnemyAI bossTarget, out BattleStructure structureTarget))
             {
-                return;
+                return false;
             }
 
             bool changed = summonTarget != null
@@ -503,6 +496,8 @@ namespace IsekaiBrawl.Gameplay
             {
                 CardHandTouchCoordinator.SuppressClicks(0.08f);
             }
+
+            return changed;
         }
 
         private Vector2 ResolveMoveInput()
@@ -2924,14 +2919,43 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
-            if (defaultDragThreshold < 0)
+            if (dragThresholdEventSystem != EventSystem.current)
             {
+                RestoreDragThreshold();
+                dragThresholdEventSystem = EventSystem.current;
                 defaultDragThreshold = EventSystem.current.pixelDragThreshold;
             }
 
             EventSystem.current.pixelDragThreshold = isTouchLayoutActive
                 ? Mathf.Max(defaultDragThreshold, 24)
                 : defaultDragThreshold;
+        }
+
+        private void RestoreDragThreshold()
+        {
+            if (dragThresholdEventSystem != null && defaultDragThreshold >= 0)
+            {
+                dragThresholdEventSystem.pixelDragThreshold = defaultDragThreshold;
+            }
+
+            dragThresholdEventSystem = null;
+            defaultDragThreshold = -1;
+        }
+
+        private void ResetTransientInputState()
+        {
+            moveVector = Vector2.zero;
+            ClearTapMoveDestination();
+            pendingSkillPress = false;
+            pendingMapTogglePress = false;
+            pendingOverviewCenterPress = false;
+            pendingOverviewZoomStep = 0f;
+            pendingOverviewDragDelta = Vector2.zero;
+            pendingDirectDodgeDirection = 0f;
+            pendingFocusLaneIndex = -1;
+            isDirectDodgeModeActive = false;
+            CancelSummonPlacementInternal();
+            RefreshStickVisual();
         }
 
         private static RectTransform EnsureRect(string name, RectTransform parent)
@@ -2997,6 +3021,11 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (!CanCapturePointer(eventData, activePointerId))
+            {
+                return;
+            }
+
             activePointerId = eventData.pointerId;
             UpdateStick(eventData);
         }
@@ -3018,6 +3047,16 @@ namespace IsekaiBrawl.Gameplay
                 return;
             }
 
+            activePointerId = int.MinValue;
+            owner?.ClearMoveVector();
+            if (knobRect != null)
+            {
+                knobRect.anchoredPosition = Vector2.zero;
+            }
+        }
+
+        private void OnDisable()
+        {
             activePointerId = int.MinValue;
             owner?.ClearMoveVector();
             if (knobRect != null)
@@ -3049,6 +3088,13 @@ namespace IsekaiBrawl.Gameplay
             Vector2 normalized = Vector2.ClampMagnitude(localPoint / radius, 1f);
             owner.SetMoveVector(normalized);
         }
+
+        private static bool CanCapturePointer(PointerEventData eventData, int currentPointerId)
+        {
+            return eventData != null
+                && eventData.button == PointerEventData.InputButton.Left
+                && currentPointerId == int.MinValue;
+        }
     }
 
     public class MobileTapMovePad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
@@ -3064,6 +3110,13 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != int.MinValue)
+            {
+                return;
+            }
+
             activePointerId = eventData.pointerId;
             pointerDownScreenPosition = eventData.position;
         }
@@ -3080,7 +3133,15 @@ namespace IsekaiBrawl.Gameplay
             }
 
             activePointerId = int.MinValue;
-            owner?.HandleBattlefieldTapRelease(eventData, pointerDownScreenPosition);
+            if (owner != null && !owner.HandleBattlefieldTapRelease(eventData, pointerDownScreenPosition))
+            {
+                owner.HandleTapMovePointer(eventData);
+            }
+        }
+
+        private void OnDisable()
+        {
+            activePointerId = int.MinValue;
         }
     }
 
@@ -3097,6 +3158,13 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != int.MinValue)
+            {
+                return;
+            }
+
             activePointerId = eventData.pointerId;
             pointerDownScreenPosition = eventData.position;
         }
@@ -3115,6 +3183,11 @@ namespace IsekaiBrawl.Gameplay
             activePointerId = int.MinValue;
             owner?.HandleDirectDodgeRelease(eventData, pointerDownScreenPosition);
         }
+
+        private void OnDisable()
+        {
+            activePointerId = int.MinValue;
+        }
     }
 
     public class MobileLaneSwipePad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
@@ -3130,6 +3203,13 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != int.MinValue)
+            {
+                return;
+            }
+
             activePointerId = eventData.pointerId;
             pointerDownScreenPosition = eventData.position;
         }
@@ -3148,6 +3228,11 @@ namespace IsekaiBrawl.Gameplay
             activePointerId = int.MinValue;
             owner?.HandleLaneSwipeRelease(eventData, pointerDownScreenPosition);
         }
+
+        private void OnDisable()
+        {
+            activePointerId = int.MinValue;
+        }
     }
 
     public class MobileOverviewPad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
@@ -3162,6 +3247,13 @@ namespace IsekaiBrawl.Gameplay
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (eventData == null
+                || eventData.button != PointerEventData.InputButton.Left
+                || activePointerId != int.MinValue)
+            {
+                return;
+            }
+
             activePointerId = eventData.pointerId;
         }
 
@@ -3181,6 +3273,11 @@ namespace IsekaiBrawl.Gameplay
             {
                 activePointerId = int.MinValue;
             }
+        }
+
+        private void OnDisable()
+        {
+            activePointerId = int.MinValue;
         }
     }
 }

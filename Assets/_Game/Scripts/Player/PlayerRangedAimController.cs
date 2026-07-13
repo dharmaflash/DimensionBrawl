@@ -1,6 +1,7 @@
 using System;
 using DimensionBrawl.Presentation;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.Player
@@ -200,6 +201,7 @@ namespace DimensionBrawl.Player
 
             return (allowMouseAimFallback
                     && Mouse.current != null
+                    && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject())
                     && Mouse.current.rightButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.ReadValue() > 0.5f);
         }
@@ -226,6 +228,7 @@ namespace DimensionBrawl.Player
 
             return (allowMouseAimFallback
                     && Mouse.current != null
+                    && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject())
                     && Mouse.current.rightButton.wasPressedThisFrame)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame);
         }

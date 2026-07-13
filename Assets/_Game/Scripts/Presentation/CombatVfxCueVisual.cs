@@ -9,6 +9,7 @@ namespace DimensionBrawl.Presentation
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         [SerializeField] private Renderer[] renderers = System.Array.Empty<Renderer>();
+        [SerializeField] private bool overrideRendererColors = true;
         [SerializeField] private Color startColor = Color.white;
         [SerializeField] private Color endColor = new Color(1f, 1f, 1f, 0f);
         [SerializeField] private Vector3 startScale = Vector3.one;
@@ -25,9 +26,10 @@ namespace DimensionBrawl.Presentation
         private float elapsedSeconds;
         private bool isPlaying;
 
+        public bool OverridesRendererColors => overrideRendererColors;
+
         private void Awake()
         {
-            propertyBlock ??= new MaterialPropertyBlock();
             CaptureAuthoredTransform();
             if (renderers == null || renderers.Length == 0)
             {
@@ -92,6 +94,12 @@ namespace DimensionBrawl.Presentation
                 + Vector3.up * verticalLift * eased
                 + authoredLocalRotation * Vector3.forward * forwardTravelDistance * eased;
 
+            if (!overrideRendererColors)
+            {
+                return;
+            }
+
+            propertyBlock ??= new MaterialPropertyBlock();
             Color color = Color.Lerp(startColor, endColor, eased);
             for (int i = 0; i < renderers.Length; i++)
             {

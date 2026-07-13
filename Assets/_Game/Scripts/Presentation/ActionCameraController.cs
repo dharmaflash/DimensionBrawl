@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 
 namespace DimensionBrawl.Presentation
 {
@@ -102,11 +103,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float aimOrbitYawSpeedDegrees = 360f;
         [SerializeField, Min(0f)] private float aimOrbitReturnSpeedDegrees = 420f;
 
-        [Header("Look Peek")]
-        [Tooltip("Screen-space camera pan used by mobile free-look drags outside fire. This never changes aim yaw or player facing.")]
-        [SerializeField, Min(0f)] private float lookPeekHorizontalOffset = 1.15f;
-        [SerializeField, Min(0f)] private float lookPeekVerticalOffset = 0.55f;
-
         [Header("Aim Assist")]
         [SerializeField] private bool aimAssistUsesYawTarget = true;
         [SerializeField, Range(0f, 1f)] private float aimAssistMaxYawBlend = 0.85f;
@@ -128,8 +124,8 @@ namespace DimensionBrawl.Presentation
         private float aimWeight;
         private Vector2 aimOrbitInput;
         private Vector2 lookPeekInput;
-        private float lookPeekTargetWeight;
-        private float lookPeekWeight;
+        private float lookPeekYawOffsetDegrees;
+        private float lookPeekPitchOffsetDegrees;
         private float aimYawOffsetDegrees;
         private float aimPitchOffsetDegrees;
         private bool hasAimAssistYawTarget;
@@ -164,6 +160,8 @@ namespace DimensionBrawl.Presentation
         public float AimWeight => aimWeight;
         public Vector2 AimOrbitInput => aimOrbitInput;
         public Vector2 LookPeekInput => lookPeekInput;
+        public float LookPeekYawOffsetDegrees => lookPeekYawOffsetDegrees;
+        public float LookPeekPitchOffsetDegrees => lookPeekPitchOffsetDegrees;
         public float AimYawOffsetDegrees => aimYawOffsetDegrees;
         public float AimPitchOffsetDegrees => aimPitchOffsetDegrees;
         public float AimAssistYawOffsetDegrees => aimAssistYawOffsetDegrees;
@@ -253,7 +251,6 @@ namespace DimensionBrawl.Presentation
         public void SetLookPeekInput(Vector2 input)
         {
             lookPeekInput = Vector2.ClampMagnitude(input, 1f);
-            lookPeekTargetWeight = lookPeekInput.sqrMagnitude > 0.0001f ? 1f : 0f;
             RecordManualViewIntentIfNeeded(lookPeekInput);
         }
 
@@ -386,6 +383,9 @@ namespace DimensionBrawl.Presentation
             aimTargetWeight = 0f;
             aimWeight = 0f;
             aimOrbitInput = Vector2.zero;
+            lookPeekInput = Vector2.zero;
+            lookPeekYawOffsetDegrees = 0f;
+            lookPeekPitchOffsetDegrees = 0f;
             aimYawOffsetDegrees = 0f;
             aimPitchOffsetDegrees = 0f;
             hasAimAssistYawTarget = false;
@@ -656,26 +656,37 @@ namespace DimensionBrawl.Presentation
 
             float cueWeight = UpdateCueWeight(deltaTime);
             UpdateAimWeight(deltaTime);
-            UpdateLookPeekWeight(deltaTime);
+            UpdateLookPeekOrbitOffsets(deltaTime);
             UpdateAimOrbitOffsets(deltaTime);
             UpdateAimAssistYawOffset(deltaTime);
             float totalAimYawOffsetDegrees = ResolveTotalAimYawOffset();
             float totalAimPitchOffsetDegrees = ResolveTotalAimPitchOffset();
+            float totalViewYawOffsetDegrees = Mathf.Clamp(
+                lookPeekYawOffsetDegrees + totalAimYawOffsetDegrees,
+                -aimOrbitYawLimitDegrees,
+                aimOrbitYawLimitDegrees);
+            float totalViewPitchOffsetDegrees = Mathf.Clamp(
+                lookPeekPitchOffsetDegrees + totalAimPitchOffsetDegrees * aimWeight,
+                -aimOrbitPitchLimitDegrees,
+                aimOrbitPitchLimitDegrees);
             Quaternion baseRotation = Quaternion.Euler(
                 0f,
                 NormalizeYaw(orbitYawDegrees),
                 0f);
+            Quaternion lookPeekRotation = Quaternion.Euler(
+                0f,
+                NormalizeYaw(orbitYawDegrees + lookPeekYawOffsetDegrees),
+                0f);
             Quaternion aimRotation = Quaternion.Euler(
                 0f,
-                NormalizeYaw(orbitYawDegrees + totalAimYawOffsetDegrees),
+                NormalizeYaw(orbitYawDegrees + totalViewYawOffsetDegrees),
                 0f);
-            Quaternion cameraPositionRotation = aimOrbitRotatesCameraPosition ? aimRotation : baseRotation;
+            Quaternion cameraPositionRotation = aimOrbitRotatesCameraPosition ? aimRotation : lookPeekRotation;
             Vector3 baseFocus = BuildFocusPoint()
-                + Vector3.up * (cueFocusHeightDelta * cueWeight)
-                + ResolveLookPeekOffset(baseRotation);
+                + Vector3.up * (cueFocusHeightDelta * cueWeight);
             Vector3 cueCameraOffset = Vector3.forward * (cueCameraDistanceDelta * cueWeight);
             Vector3 basePosition = baseFocus
-                + baseRotation * (cameraOffset + cueCameraOffset)
+                + lookPeekRotation * (cameraOffset + cueCameraOffset)
                 + cueOffset * cueWeight;
             Vector3 aimFocus = baseFocus
                 + (aimOrbitRotatesCameraPosition ? aimRotation : baseRotation) * (aimFocusOffset * aimWeight);
@@ -702,7 +713,7 @@ namespace DimensionBrawl.Presentation
                 focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, totalAimYawOffsetDegrees * aimWeight);
             }
 
-            focus = RotateFocusPitchAroundAnchor(desiredPosition, focus, totalAimPitchOffsetDegrees * aimWeight);
+            focus = RotateFocusPitchAroundAnchor(desiredPosition, focus, totalViewPitchOffsetDegrees);
             UpdateFieldOfView(deltaTime, cueWeight);
 
             bool aimFollowActive = aimWeight > 0.5f;
@@ -773,8 +784,8 @@ namespace DimensionBrawl.Presentation
             DisableActionIfOwned(orbitAction, enabledOrbitAction);
             aimOrbitInput = Vector2.zero;
             lookPeekInput = Vector2.zero;
-            lookPeekTargetWeight = 0f;
-            lookPeekWeight = 0f;
+            lookPeekYawOffsetDegrees = 0f;
+            lookPeekPitchOffsetDegrees = 0f;
             aimYawOffsetDegrees = 0f;
             aimPitchOffsetDegrees = 0f;
             hasAimAssistYawTarget = false;
@@ -840,25 +851,6 @@ namespace DimensionBrawl.Presentation
             focus = rigOrigin
                 + aimRotation * (lookOffset + aimFocusOffset)
                 + Vector3.up * (activeCueFocusHeightDelta * cueWeight);
-        }
-
-        private Vector3 ResolveLookPeekOffset(Quaternion baseRotation)
-        {
-            float weight = aimWeight <= 0.001f ? lookPeekWeight : 0f;
-            if (weight <= 0.001f)
-            {
-                return Vector3.zero;
-            }
-
-            Vector2 input = ApplyDeadZone(lookPeekInput);
-            if (input.sqrMagnitude <= 0f)
-            {
-                return Vector3.zero;
-            }
-
-            Vector3 right = baseRotation * Vector3.right;
-            return (right * (input.x * lookPeekHorizontalOffset)
-                + Vector3.up * (input.y * lookPeekVerticalOffset)) * weight;
         }
 
         private float ResolveFixedRearYaw()
@@ -952,7 +944,9 @@ namespace DimensionBrawl.Presentation
 
         private static Vector2 ReadMouseOrbitDelta()
         {
-            if (Mouse.current == null || !Mouse.current.rightButton.isPressed)
+            if (Mouse.current == null
+                || !Mouse.current.rightButton.isPressed
+                || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()))
             {
                 return Vector2.zero;
             }
@@ -1076,17 +1070,30 @@ namespace DimensionBrawl.Presentation
             aimWeight = Mathf.Lerp(aimWeight, aimTargetWeight, step);
         }
 
-        private void UpdateLookPeekWeight(float deltaTime)
+        private void UpdateLookPeekOrbitOffsets(float deltaTime)
         {
-            float speed = lookPeekTargetWeight > lookPeekWeight ? aimBlendInSpeed : aimBlendOutSpeed;
+            Vector2 input = ApplyDeadZone(lookPeekInput);
+            float targetYawOffset = input.x * aimOrbitYawLimitDegrees;
+            float targetPitchOffset = aimOrbitUsesPitchInput
+                ? input.y * aimOrbitPitchLimitDegrees
+                : 0f;
+            bool shouldReturnToCenter = input.sqrMagnitude <= 0f;
+            float speed = shouldReturnToCenter ? aimOrbitReturnSpeedDegrees : aimOrbitYawSpeedDegrees;
             if (speed <= 0f)
             {
-                lookPeekWeight = lookPeekTargetWeight;
+                lookPeekYawOffsetDegrees = targetYawOffset;
+                lookPeekPitchOffsetDegrees = targetPitchOffset;
                 return;
             }
 
-            float step = 1f - Mathf.Exp(-speed * deltaTime);
-            lookPeekWeight = Mathf.Lerp(lookPeekWeight, lookPeekTargetWeight, step);
+            lookPeekYawOffsetDegrees = Mathf.MoveTowards(
+                lookPeekYawOffsetDegrees,
+                targetYawOffset,
+                speed * deltaTime);
+            lookPeekPitchOffsetDegrees = Mathf.MoveTowards(
+                lookPeekPitchOffsetDegrees,
+                targetPitchOffset,
+                speed * deltaTime);
         }
 
         private void UpdateAimOrbitOffsets(float deltaTime)
