@@ -487,7 +487,6 @@ Use these instead of inventing parallel systems:
 - `BossPressureCostLadder`
 - `BossPressureActionDirector`
 - `BossBarragePocketReviewOwner`
-- `BossBarrageLaneReviewHud`
 - `BossBarrageLaneReviewCombatHudBinder`
 - `CombatHudPresenter`
 - `CombatHudInputBridge`

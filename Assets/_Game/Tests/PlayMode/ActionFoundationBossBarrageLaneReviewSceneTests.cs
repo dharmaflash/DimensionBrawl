@@ -323,8 +323,6 @@ namespace DimensionBrawl.Tests
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCinematicCueDirector cinematicCueDirector =
                 RequireComponent<ActionCinematicCueDirector>(
@@ -336,9 +334,7 @@ namespace DimensionBrawl.Tests
                     "pocket camera cue bridge");
 
             Assert.AreSame(stageProfile, pocketOwner.StageProfile);
-            Assert.AreSame(stageProfile, reviewHud.StageProfileForReview);
             Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(pocketOwner, "stageProfile"));
-            Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(reviewHud, "stageProfile"));
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
             Assert.AreEqual(3, stageProfile.ObjectiveStepCount);
             Assert.AreEqual("Survive", stageProfile.StepPrefix);
@@ -355,12 +351,6 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(stageProfile.ObjectiveStepCount, pocketOwner.ObjectiveStepCount);
             Assert.IsTrue(pocketOwner.IsRouteStabilityActive);
             Assert.AreEqual(stageProfile.RouteStabilityStart01, pocketOwner.RouteStability01, 0.002f);
-            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Survive boss pressure"));
-            Assert.That(reviewHud.CompactStageBriefingReadout, Does.Contain("Stay alive"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.StartWith("Survive 1/3"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("pressure 62%"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
-
             Assert.IsTrue(pocketCameraCueBridge.enabled);
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
             Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
@@ -715,8 +705,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedReloadSfxDriver>(player.gameObject, "player ranged reload SFX driver");
             SummonEnergyVfxCuePresenter energyVfxCuePresenter =
                 RequireComponent<SummonEnergyVfxCuePresenter>(player.gameObject, "summon energy VFX cue presenter");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             BossBarrageLaneReviewOverlayHud overlayHud =
@@ -1578,23 +1566,12 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.EnemyClosePunishActive,
                 GetEnum<CombatVfxCueId>(pocketVfxCueBridge, "pocketFailAccentCueId"));
             Assert.AreEqual(1.18f, pocketVfxCueBridge.HitIntensity, 0.001f);
-            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
-            Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
-            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(pocketOwner, "bossHealth"));
             Assert.AreEqual(
                 ReviewBossMaxHealth,
                 bossHealth.MaxHealth,
                 0.001f,
                 "The review boss proxy should stay durable enough for an exchange, but Skill1 follow-up hits must visibly move the HP bar.");
-            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(reviewHud, "energyLadder"));
-            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(reviewHud, "laneSpace"));
-            Assert.AreSame(player.transform, GetObjectReference<Transform>(reviewHud, "player"));
-            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(reviewHud, "combatModeController"));
-            Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(reviewHud, "rangedAimController"));
-            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(reviewHud, "rangedBasicAttackAction"));
-            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(reviewHud, "skill1Action"));
-            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
             Assert.AreSame(summonSlot1Profile, summonSlot1Action.SummonActionProfile);
             Assert.IsTrue(summonSlot1Action.HasSummonActionProfile);
             Assert.AreEqual("SummonSlot1.ChargeBruiser", summonSlot1Profile.ActionId);
@@ -1620,35 +1597,7 @@ namespace DimensionBrawl.Tests
                 "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                 "Save for the exchange where one big arrival has to change the screen immediately.",
                 "Fast ground rush, three shock bolts, large forward impact, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
-            Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
-            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(reviewHud, "bossBasicFireEmitter"));
-            Assert.AreSame(
-                bossPressureCost,
-                GetObjectReference<BossPressureCostLadder>(reviewHud, "bossPressureCostLadder"));
-            Assert.AreSame(
-                bossPressurePosition,
-                GetObjectReference<BossPressurePositionController>(reviewHud, "bossPressurePositionController"));
-            Assert.AreSame(
-                bossPressureActionDirector,
-                GetObjectReference<BossPressureActionDirector>(reviewHud, "bossPressureActionDirector"));
-            Assert.AreSame(
-                bossSummonPressureAction,
-                GetObjectReference<BossSummonPressureAction>(reviewHud, "bossSummonPressureAction"));
-            Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(reviewHud, "pocketReviewOwner"));
-            Assert.IsFalse(GetBool(reviewHud, "showHud"), "Legacy IMGUI review HUD should stay hidden under the UGUI combat HUD.");
-            Assert.IsTrue(GetBool(reviewHud, "showCenterReticle"), "The review contract should keep a center reticle source available when the combat HUD owns the visible crosshair.");
-            Assert.IsTrue(GetBool(reviewHud, "showResultBanner"));
-            Assert.AreEqual(540f, GetFloat(reviewHud, "resultBannerWidth"), 0.001f);
-            Assert.AreEqual(82f, GetFloat(reviewHud, "resultBannerHeight"), 0.001f);
-            Assert.AreEqual(112f, GetFloat(reviewHud, "resultBannerBottomOffset"), 0.001f);
-            Assert.IsFalse(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual(string.Empty, reviewHud.ResultBannerTitle);
-            Assert.That(
-                reviewHud.CompactObjectiveReadout,
-                Does.StartWith("Survive 1/3"),
-                "The compact review objective should expose a stage-style checklist instead of a flat debug goal.");
             Assert.AreSame(pocketOwner, overlayHud.PocketReviewOwner);
-            Assert.AreSame(reviewHud, overlayHud.ReviewHud);
             Assert.AreSame(screenCuePresenter, overlayHud.ScreenCuePresenter);
             Assert.AreEqual("ActionFoundationBossBarrageLaneReview", overlayHud.RetrySceneName);
             Assert.AreEqual("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", overlayHud.RetryScenePath);
@@ -4166,8 +4115,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
                     "pocket VFX cue bridge");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             Assert.IsTrue(emitter.IsFiringEnabled);
             int summonBlockOpportunityCueCountBefore = pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount;
@@ -4213,15 +4160,6 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV1 Charge Break"),
                 "The summon-block opportunity should name the current SummonSlot1 tier readout instead of only saying SummonSlot1.");
-            Assert.That(
-                reviewHud.CompactObjectiveReadout,
-                Does.Contain("Open summon cover"),
-                "The compact HUD goal should preserve the summon-cover cue during the block-opportunity beat.");
-            Assert.That(
-                reviewHud.CompactObjectiveReadout,
-                Does.StartWith("Survive 2/3"),
-                "After the close threat falls, the compact HUD should advance to the summon-block checklist step.");
-
             pocketOwner.Tick(1.34f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
             Assert.IsFalse(emitter.IsFiringEnabled);
@@ -4248,11 +4186,6 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV1 Charge Break"),
                 "After the cue beat ends, the pocket objective should still identify the current summon tier answer.");
-            Assert.That(
-                reviewHud.CompactObjectiveReadout,
-                Does.Contain("LV1 Charge Break block NOW"),
-                "After the cue beat, the compact HUD goal should call out the tiered summon block answer.");
-
             yield return null;
         }
 
@@ -4454,8 +4387,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
 
             FillEnergyToTier(energyLadder, 2);
@@ -4497,10 +4428,6 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV2 Heavy Charge"),
                 "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
-            Assert.That(
-                reviewHud.CompactObjectiveReadout,
-                Does.Contain($"Skill1 LV{BossBarrageSummonReviewContract.Slot3MinimumTier}"),
-                "The compact HUD goal should name the rewarded follow-up Skill tier instead of only saying Fire Skill1.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
                 Is.EqualTo(3.7f).Within(0.001f),
@@ -4673,12 +4600,6 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 screenCuePresenter.HasActiveCue,
                 "Pocket clear should keep a readable result edge cue long enough for a short mobile capture.");
-            Assert.IsTrue(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual("PRESSURE BROKEN", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Skill1 follow-up landed"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive 3/3"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("/90.0s"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("3/3"));
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -5279,8 +5200,6 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             int pocketFailVfxCueCountBefore = pocketVfxCueBridge.PocketFailCueRequestCount;
@@ -5325,13 +5244,6 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 screenCuePresenter.HasActiveCue,
                 "Pocket failure should keep a readable defeat edge cue long enough for a short mobile capture.");
-            Assert.IsTrue(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual("PLAYER DOWN", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player HP reached zero"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("/90.0s"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("MISSION FAILED"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(

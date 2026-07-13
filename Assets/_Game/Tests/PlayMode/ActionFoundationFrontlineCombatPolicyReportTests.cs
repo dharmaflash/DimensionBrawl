@@ -466,7 +466,7 @@ namespace DimensionBrawl.Tests
                     "The report should distinguish shared EN cost lockout from per-slot cooldown lockout before UI/coaster polish.");
                 Assert.IsTrue(
                     markdown.Contains("## Summon HUD Readiness Readout Matrix"),
-                    "The report should prove the review HUD/coaster readout follows shared EN cost and per-slot cooldown gates.");
+                    "The report should prove the canonical combat HUD readout follows shared EN cost and per-slot cooldown gates.");
                 Assert.IsTrue(
                     markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
                     "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
@@ -1612,10 +1612,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(
                     hudRoot,
                     "action screen cue presenter");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(
-                    hudRoot,
-                    "boss barrage review HUD");
             BossBarrageLaneReviewOverlayHud reviewOverlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(
                     hudRoot,
@@ -1647,7 +1643,6 @@ namespace DimensionBrawl.Tests
                 cinematicCueDirector,
                 cinematicSequenceBridge,
                 screenCuePresenter,
-                reviewHud,
                 reviewOverlayHud,
                 RequireComponent<CombatHealth>(player.gameObject, "player health"),
                 bossHealth,
@@ -4018,10 +4013,6 @@ namespace DimensionBrawl.Tests
                 CombatHudSummonReadoutFormatter.ResolvePrimarySummonFill01(
                     context.EnergyLadder,
                     context.SummonSlot1Action);
-            context.Metrics.SupportComboOverlayHudReadoutBeforeSlot1 =
-                context.ReviewHud != null
-                    ? context.ReviewHud.SummonReadinessReadout
-                    : string.Empty;
         }
 
         private static string ResolveSupportHudSlotLabel(PlayerSupportSummonSlotAction supportAction)
@@ -6788,8 +6779,6 @@ namespace DimensionBrawl.Tests
                 + FormatHudLabelAndFill(
                     result.SupportComboHudSlot1LabelBeforeAttempt,
                     result.SupportComboHudSlot1FillBeforeAttempt)
-                + "; overlay "
-                + ResolveCoverageValue(result.SupportComboOverlayHudReadoutBeforeSlot1)
                 + "; forecast "
                 + ResolveCoverageValue(result.SupportChoiceForecastReadoutBeforeSupport);
         }
@@ -7155,9 +7144,9 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> results)
         {
             builder.AppendLine("## Summon HUD Readiness Readout Matrix");
-            builder.AppendLine("- ArkData/Blue Archive lens: the review HUD/coaster readout should expose the same shared EN bank and per-slot cooldown gates that the route simulation proves.");
-            builder.AppendLine("| Choice | Mobile support HUD before Slot1 | Mobile Slot1 HUD before attempt | Overlay HUD before Slot1 | Support pulse | Slot1 pulse | Read |");
-            builder.AppendLine("|---|---|---|---|---:|---:|---|");
+            builder.AppendLine("- ArkData/Blue Archive lens: the canonical combat HUD readout should expose the same shared EN bank and per-slot cooldown gates that the route simulation proves.");
+            builder.AppendLine("| Choice | Support slot before Slot1 | Slot1 before attempt | Support pulse | Slot1 pulse | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|");
             AppendSummonHudReadinessReadoutRow(
                 builder,
                 "Slot2 full-bank combo",
@@ -7191,8 +7180,6 @@ namespace DimensionBrawl.Tests
             builder.Append(EscapeTable(FormatHudLabelAndFill(
                 result.SupportComboHudSlot1LabelBeforeAttempt,
                 result.SupportComboHudSlot1FillBeforeAttempt)));
-            builder.Append(" | ");
-            builder.Append(EscapeTable(result.SupportComboOverlayHudReadoutBeforeSlot1));
             builder.Append(" | ");
             builder.Append(FormatReadyPulse(result.SupportComboHudSupportFillBeforeSlot1));
             builder.Append(" | ");
@@ -10522,7 +10509,7 @@ namespace DimensionBrawl.Tests
         {
             Assert.That(
                 FormatSupportUpgradeDecisionHudState("Slot2 LV2 now", slot2DelayedRecovery),
-                Does.Contain("S2 CD").And.Contain("S1 ready 200EN"),
+                Does.Contain("S2").And.Contain("CD").And.Contain("READY LV2"),
                 "The current Slot2 readout should show the slot cooldown and promoted Slot1 readiness before the next spend.");
             Assert.That(
                 slot2DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
@@ -10534,7 +10521,7 @@ namespace DimensionBrawl.Tests
                 "At a full bank, the live route incentive should keep both support choices visible instead of making S3 a universal upgrade.");
             Assert.That(
                 FormatSupportUpgradeDecisionHudState("Slot3 LV3 payoff", slot3DelayedRecovery),
-                Does.Contain("S3").And.Contain("CD").And.Contain("S1 ready 200EN"),
+                Does.Contain("S3").And.Contain("CD").And.Contain("READY LV2"),
                 "The Slot3 payoff readout should preserve slot cooldown plus promoted Slot1 readiness instead of reading as a global cooldown.");
             Assert.That(
                 slot3DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
@@ -10717,10 +10704,6 @@ namespace DimensionBrawl.Tests
                 slot2Combo.SupportComboHudSlot1LabelBeforeAttempt,
                 Does.Contain("READY LV2"),
                 "Slot1 should visibly read ready while Slot2's own cooldown is still active.");
-            Assert.That(
-                slot2Combo.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S2 CD").And.Contain("S1 ready"),
-                "The review overlay should not collapse Slot2 cooldown and Slot1 readiness into a global summon readout.");
             Assert.Less(
                 slot2Combo.SupportComboHudSupportFillBeforeSlot1,
                 0.995f,
@@ -10738,10 +10721,6 @@ namespace DimensionBrawl.Tests
                 slot3Blocked.SupportComboHudSlot1LabelBeforeAttempt,
                 Does.Not.Contain("CD"),
                 "Slot1 should not look globally cooled down after Slot3 fires.");
-            Assert.That(
-                slot3Blocked.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S3 CD").And.Contain("S1 +200EN/200"),
-                "The review overlay should name Slot3 cooldown while showing Slot1 is resource-empty, not globally cooling down.");
             Assert.Less(
                 slot3Blocked.SupportComboHudSlot1FillBeforeAttempt,
                 0.05f,
@@ -10754,10 +10733,6 @@ namespace DimensionBrawl.Tests
             Assert.That(
                 slot2DelayedRecovery.SupportComboHudSlot1LabelBeforeAttempt,
                 Does.Contain("READY LV2"));
-            Assert.That(
-                slot2DelayedRecovery.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S2 CD").And.Contain("S1 ready 200EN"),
-                "Slot2 delayed recovery should read as slot cooldown while Slot1 is ready.");
             Assert.GreaterOrEqual(
                 slot2DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,
                 0.995f);
@@ -10769,10 +10744,6 @@ namespace DimensionBrawl.Tests
             Assert.That(
                 slot3DelayedRecovery.SupportComboHudSlot1LabelBeforeAttempt,
                 Does.Contain("READY LV2"));
-            Assert.That(
-                slot3DelayedRecovery.SupportComboOverlayHudReadoutBeforeSlot1,
-                Does.Contain("S3 CD").And.Contain("S1 ready 200EN"),
-                "Slot3 delayed recovery should read as slot cooldown while Slot1 is ready.");
             Assert.GreaterOrEqual(
                 slot3DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,
                 0.995f);
@@ -12199,7 +12170,6 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"slot1LabelBeforeAttempt\": \"{JsonEscape(result.SupportComboHudSlot1LabelBeforeAttempt)}\",");
             builder.AppendLine($"      \"slot1FillBeforeAttempt\": {result.SupportComboHudSlot1FillBeforeAttempt:0.###},");
             builder.AppendLine($"      \"slot1ReadyPulseBeforeAttempt\": {JsonBool(result.SupportComboHudSlot1FillBeforeAttempt >= 0.995f)},");
-            builder.AppendLine($"      \"overlayReadoutBeforeSlot1\": \"{JsonEscape(result.SupportComboOverlayHudReadoutBeforeSlot1)}\",");
             builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSummonHudReadinessRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
@@ -13397,7 +13367,6 @@ namespace DimensionBrawl.Tests
                 ActionCinematicCueDirector cinematicCueDirector,
                 ActionCinematicSequenceBridge cinematicSequenceBridge,
                 ActionScreenCuePresenter screenCuePresenter,
-                BossBarrageLaneReviewHud reviewHud,
                 BossBarrageLaneReviewOverlayHud reviewOverlayHud,
                 CombatHealth playerHealth,
                 CombatHealth bossHealth,
@@ -13425,7 +13394,6 @@ namespace DimensionBrawl.Tests
                 CinematicCueDirector = cinematicCueDirector;
                 CinematicSequenceBridge = cinematicSequenceBridge;
                 ScreenCuePresenter = screenCuePresenter;
-                ReviewHud = reviewHud;
                 ReviewOverlayHud = reviewOverlayHud;
                 PlayerHealth = playerHealth;
                 BossHealth = bossHealth;
@@ -13485,7 +13453,6 @@ namespace DimensionBrawl.Tests
             public ActionCinematicCueDirector CinematicCueDirector { get; }
             public ActionCinematicSequenceBridge CinematicSequenceBridge { get; }
             public ActionScreenCuePresenter ScreenCuePresenter { get; }
-            public BossBarrageLaneReviewHud ReviewHud { get; }
             public BossBarrageLaneReviewOverlayHud ReviewOverlayHud { get; }
             public CombatHealth PlayerHealth { get; }
             public CombatHealth BossHealth { get; }
@@ -14697,7 +14664,6 @@ namespace DimensionBrawl.Tests
             public float SupportComboHudSupportFillBeforeSlot1 { get; set; } = -1f;
             public string SupportComboHudSlot1LabelBeforeAttempt { get; set; } = string.Empty;
             public float SupportComboHudSlot1FillBeforeAttempt { get; set; } = -1f;
-            public string SupportComboOverlayHudReadoutBeforeSlot1 { get; set; } = string.Empty;
             public int SupportBodyHitsBeforeSupport { get; set; } = -1;
             public int SupportBodyHitsBeforeMainAnswer { get; set; } = -1;
             public int SupportBodyHitsFinal { get; set; } = -1;

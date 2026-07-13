@@ -88,7 +88,7 @@ namespace DimensionBrawl.Editor
 
             private static void ApplyToOpenReviewScene(Scene scene)
             {
-                EnsureExistingReviewHudVisualPolicy(scene);
+                EnsureExistingOverlayVisualPolicy(scene);
                 EnsureCombatHudCanvasForOpenScene(scene);
             }
 
@@ -117,7 +117,7 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewOverlayHud overlayHud)
         {
             CombatHudUiWriter.EnsureUiAssets();
-            EnsureExistingReviewHudVisualPolicy(scene);
+            EnsureExistingOverlayVisualPolicy(scene);
             GameObject canvasRoot = EnsureCombatHudCanvasForOpenScene(scene);
             ConfigureCombatHudBinder(
                 canvasRoot,
@@ -135,19 +135,12 @@ namespace DimensionBrawl.Editor
                 overlayHud);
         }
 
-        private static void EnsureExistingReviewHudVisualPolicy(Scene scene)
+        private static void EnsureExistingOverlayVisualPolicy(Scene scene)
         {
             GameObject hudRoot = FindRoot(scene, HudRootName);
             if (hudRoot == null)
             {
                 return;
-            }
-
-            BossBarrageLaneReviewHud reviewHud = hudRoot.GetComponent<BossBarrageLaneReviewHud>();
-            if (reviewHud != null)
-            {
-                SetBool(reviewHud, "showHud", false);
-                SetBool(reviewHud, "showCenterReticle", true);
             }
 
             BossBarrageLaneReviewOverlayHud overlayHud = hudRoot.GetComponent<BossBarrageLaneReviewOverlayHud>();

@@ -19457,7 +19457,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1831336407}
-  - component: {fileID: 1831336406}
   - component: {fileID: 1831336404}
   - component: {fileID: 1831336403}
   m_Layer: 0
@@ -19480,7 +19479,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud
   pocketReviewOwner: {fileID: 439529094}
-  reviewHud: {fileID: 1831336406}
   screenCuePresenter: {fileID: 1831336404}
   inputLockBehaviours:
   - {fileID: 1248464261}
@@ -19598,69 +19596,6 @@ MonoBehaviour:
   followupMissedColor: {r: 0.68, g: 0.74, b: 0.82, a: 1}
   pocketClearColor: {r: 0.22, g: 1, b: 0.42, a: 1}
   pocketFailColor: {r: 1, g: 0.18, b: 0.12, a: 1}
---- !u!114 &1831336406
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1831336402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c04f7d879586d349b8aed9949d1d720, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageLaneReviewHud
-  playerHealth: {fileID: 4003}
-  closeThreatHealth: {fileID: 1532735416}
-  bossHealth: {fileID: 1932639513}
-  energyLadder: {fileID: 4019}
-  laneSpace: {fileID: 6555123}
-  player: {fileID: 4001}
-  combatModeController: {fileID: 4014}
-  rangedAimController: {fileID: 4013}
-  rangedBasicAttackAction: {fileID: 4012}
-  skill1Action: {fileID: 4018}
-  summonSlot1Action: {fileID: 4017}
-  summonSlot2Action: {fileID: 4016}
-  summonSlot3Action: {fileID: 4015}
-  bossBarrageEmitter: {fileID: 1932639512}
-  bossBasicFireEmitter: {fileID: 1932639518}
-  bossPressureCostLadder: {fileID: 1932639515}
-  bossPressurePositionController: {fileID: 1932639519}
-  bossPressureActionDirector: {fileID: 1932639516}
-  bossSummonPressureAction: {fileID: 1932639517}
-  pocketReviewOwner: {fileID: 439529094}
-  duelReviewOwner: {fileID: 0}
-  stageProfile: {fileID: 11400000, guid: 7101edc08c522e741a112d90661ee230, type: 2}
-  showHud: 0
-  hudOpacity: 1
-  showDetailedTelemetry: 0
-  width: 390
-  height: 230
-  margin: 18
-  showCenterReticle: 1
-  usePremiumCompactHud: 1
-  showPremiumBossBarOnly: 0
-  stageEpisodeLabel: EP 03 Survival Pressure
-  objectiveBadgeLabel: HP
-  bossDisplayName: Dimensional Rift Guardian
-  playerDisplayName: Player
-  showResultBanner: 1
-  resultBannerWidth: 540
-  resultBannerHeight: 82
-  resultBannerBottomOffset: 112
-  resultClearBackColor: {r: 0.08, g: 0.54, b: 0.28, a: 0.82}
-  resultFailBackColor: {r: 0.66, g: 0.08, b: 0.08, a: 0.86}
-  resultBannerTextColor: {r: 1, g: 1, b: 1, a: 1}
-  showResourceBars: 1
-  resourceBarHeight: 18
-  resourceBarGap: 3
-  resourceBarBackColor: {r: 0.02, g: 0.025, b: 0.035, a: 0.82}
-  playerHealthColor: {r: 0.25, g: 1, b: 0.46, a: 1}
-  bossHealthColor: {r: 1, g: 0.22, b: 0.32, a: 1}
-  threatHealthColor: {r: 1, g: 0.76, b: 0.24, a: 1}
-  resourceTextColor: {r: 1, g: 1, b: 1, a: 1}
-  resourceReadyTextColor: {r: 0.84, g: 1, b: 0.42, a: 1}
 --- !u!4 &1831336407
 Transform:
   m_ObjectHideFlags: 0

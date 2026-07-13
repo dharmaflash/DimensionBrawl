@@ -233,7 +233,6 @@ namespace DimensionBrawl.Editor
                 canvasRoot != null ? canvasRoot.GetComponentInChildren<CombatHudInputBridge>(includeInactive: true) : null;
             BossBarrageLaneReviewCombatHudBinder binder =
                 canvasRoot != null ? canvasRoot.GetComponent<BossBarrageLaneReviewCombatHudBinder>() : null;
-            BossBarrageLaneReviewHud reviewHud = FindSceneObjectOrNull<BossBarrageLaneReviewHud>(activeScene);
             BossBarrageLaneReviewOverlayHud overlayHud = FindSceneObjectOrNull<BossBarrageLaneReviewOverlayHud>(activeScene);
 
             int activeDimensionSpriteCount = CountActiveDimensionHudSprites(hudInstance);
@@ -260,9 +259,7 @@ namespace DimensionBrawl.Editor
             bool dimensionSpritesReady = skinRoot != null
                 && skinRoot.activeInHierarchy
                 && activeDimensionSpriteCount >= 20;
-            bool hudOwnershipReady = reviewHud != null
-                && overlayHud != null
-                && !ReadBool(reviewHud, "showHud", true)
+            bool hudOwnershipReady = overlayHud != null
                 && ReadBool(overlayHud, "showOverlay", false)
                 && !ReadBool(overlayHud, "drawIdleButton", true);
             StringBuilder layoutReport = new StringBuilder();
@@ -296,8 +293,7 @@ namespace DimensionBrawl.Editor
             report.AppendLine($"EVENT_SYSTEM_POINTER_ACTIONS={PassText(inputModulePointerReady)}");
             report.AppendLine($"CANVAS_REFERENCE={canvasScaler?.referenceResolution.ToString() ?? "<null>"}");
             report.AppendLine($"CANVAS_MATCH_HEIGHT={canvasScaler?.matchWidthOrHeight.ToString("0.###") ?? "<null>"}");
-            report.AppendLine($"LEGACY_REVIEW_HUD_VISIBLE={BoolText(ReadBool(reviewHud, "showHud", true))}");
-            report.AppendLine($"LEGACY_IDLE_BUTTON_VISIBLE={BoolText(ReadBool(overlayHud, "drawIdleButton", true))}");
+            report.AppendLine($"OVERLAY_IDLE_BUTTON_VISIBLE={BoolText(ReadBool(overlayHud, "drawIdleButton", true))}");
             report.AppendLine($"SCREEN={Screen.width}x{Screen.height}");
             report.AppendLine($"CURRENT_FRAME={Time.frameCount}");
             report.AppendLine($"CANVAS_OUTPUT={PassText(canvasReady)}");

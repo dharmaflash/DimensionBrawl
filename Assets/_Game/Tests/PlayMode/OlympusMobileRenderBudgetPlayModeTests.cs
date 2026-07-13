@@ -181,7 +181,6 @@ namespace DimensionBrawl.Tests
 
         private static void AssertCanonicalStationHudOwnership()
         {
-            Behaviour legacyReviewHud = null;
             Behaviour combatHudPresenter = null;
             Behaviour combatHudBinder = null;
             Behaviour[] behaviours = UnityEngine.Object.FindObjectsByType<Behaviour>(
@@ -197,9 +196,6 @@ namespace DimensionBrawl.Tests
 
                 switch (behaviour.GetType().FullName)
                 {
-                    case "DimensionBrawl.Presentation.BossBarrageLaneReviewHud":
-                        legacyReviewHud = behaviour;
-                        break;
                     case "DimensionBrawl.UI.CombatHudPresenter":
                         combatHudPresenter = behaviour;
                         break;
@@ -209,8 +205,6 @@ namespace DimensionBrawl.Tests
                 }
             }
 
-            Assert.That(legacyReviewHud, Is.Not.Null, "Station should retain the legacy HUD as a data source.");
-            Assert.That(legacyReviewHud.enabled, Is.False, "The legacy IMGUI HUD must not render under UGUI.");
             Assert.That(combatHudPresenter, Is.Not.Null);
             Assert.That(combatHudPresenter.isActiveAndEnabled, Is.True, "UGUI should own the visible combat HUD.");
             Assert.That(combatHudBinder, Is.Not.Null);

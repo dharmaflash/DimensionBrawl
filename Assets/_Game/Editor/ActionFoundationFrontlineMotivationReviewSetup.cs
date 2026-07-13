@@ -98,7 +98,6 @@ namespace DimensionBrawl.Editor
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
-            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
@@ -134,21 +133,14 @@ namespace DimensionBrawl.Editor
             pocketOwner.ConfigureSupportSummonActions(summonSlot2Action, summonSlot3Action);
             SetObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
-            SetObjectReference(hud, "stageProfile", profile);
             cameraCueBridge.enabled = true;
             pocketOwner.AssignStageProfileForReview(profile);
-            hud.AssignStageProfileForReview(profile);
             MarkDirty(pocketOwner);
-            MarkDirty(hud);
             MarkDirty(cameraCueBridge);
             MarkDirty(enemySummonPacingDirector);
             MarkDirty(skill1Action);
-            SetString(hud, "stageEpisodeLabel", profile.StageEpisodeLabel);
-            SetString(hud, "objectiveBadgeLabel", profile.ObjectiveBadgeLabel);
-            SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
             SetString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             SetString(overlayHud, "retryScenePath", ScenePath);
-            SetBool(hud, "showHud", false);
             ActionFoundationPromotedSummonReviewContractSetup.ApplyToActiveScene();
             EnsureEnemyHitFeedbackEnabled(scene);
 
@@ -197,7 +189,6 @@ namespace DimensionBrawl.Editor
 
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
-            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
@@ -207,9 +198,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
             ValidateObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(hud, "stageProfile", profile);
             ValidateString(overlayHud, "retryScenePath", ScenePath);
-            ValidateBool(hud, "showHud", false);
             if (pocketOwner.ObjectiveStepCount != profile.ObjectiveStepCount)
             {
                 throw new InvalidOperationException("Pocket owner objective count does not match the stage profile.");
@@ -227,7 +216,6 @@ namespace DimensionBrawl.Editor
         {
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
-            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
@@ -242,10 +230,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
             ValidateObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(hud, "stageProfile", profile);
             ValidateObjectReference(pocketOwner, "bossPressureActionDirector", bossPressureActionDirector);
-            ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
-            ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(enemySummonPacingDirector, "summonPressureAction", bossSummonPressureAction);
             if (!enemySummonPacingDirector.PacingEnabled)
@@ -259,11 +244,6 @@ namespace DimensionBrawl.Editor
             if (pocketOwner.StageProfile != profile)
             {
                 throw new InvalidOperationException($"{pocketOwner.name}.StageProfile is not bound to {profile.name}.");
-            }
-
-            if (hud.StageProfileForReview != profile)
-            {
-                throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {profile.name}.");
             }
 
             if (!cameraCueBridge.enabled)

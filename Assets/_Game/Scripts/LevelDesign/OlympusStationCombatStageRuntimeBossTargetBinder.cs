@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEngine;
@@ -107,14 +106,6 @@ namespace DimensionBrawl.LevelDesign
                 SetField(pocketOwner, "playerHealth", playerHealth);
                 SetField(pocketOwner, "closeThreatHealth", null);
                 SetField(pocketOwner, "bossHealth", bossHealth);
-            }
-
-            BossBarrageLaneReviewHud reviewHud = FindFirstObjectByType<BossBarrageLaneReviewHud>();
-            if (reviewHud != null)
-            {
-                SetField(reviewHud, "playerHealth", playerHealth);
-                SetField(reviewHud, "closeThreatHealth", null);
-                SetField(reviewHud, "bossHealth", bossHealth);
             }
 
             MonoBehaviour combatHudBinder = FindFirstBehaviourByTypeName("BossBarrageLaneReviewCombatHudBinder");

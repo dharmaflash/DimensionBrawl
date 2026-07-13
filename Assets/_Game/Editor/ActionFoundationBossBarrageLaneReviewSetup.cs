@@ -942,13 +942,6 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(pocketOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
             }
 
-            GameObject hudRoot = FindRoot(scene, HudRootName);
-            if (hudRoot != null
-                && hudRoot.TryGetComponent(out BossBarrageLaneReviewHud reviewHud))
-            {
-                SetObjectReference(reviewHud, "bossBasicFireEmitter", bossBasicFireEmitter);
-            }
-
             if (!EditorSceneManager.SaveScene(scene, scenePath))
             {
                 throw new InvalidOperationException($"Failed to save boss basic fire bindings in {scenePath}.");
@@ -1271,29 +1264,21 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction);
-            CreateReviewHud(
+            CreateCombatPresentation(
                 scene,
                 playerHealth,
-                closeThreatHealth,
                 bossHealth,
                 energyLadder,
-                laneSpace,
                 player.transform,
                 combatModeController,
-                rangedAimController,
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,
                 summonSlot3Action,
                 bossBarrageEmitter,
-                bossBasicFireEmitter,
                 pocketOwner,
-                stageProfile,
-                bossPressureCost,
-                RequireComponent<BossPressurePositionController>(bossBarrageEmitter.gameObject, "boss pressure position controller"),
-                bossPressureActionDirector,
-                bossSummonPressureAction);
+                bossPressureActionDirector);
             ConfigureActionCameraCueDriver(
                 cameraController,
                 playerActionController,
@@ -1388,8 +1373,6 @@ namespace DimensionBrawl.Editor
                 RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
             ActionCameraCueDriver actionCameraCueDriver =
@@ -1681,30 +1664,6 @@ namespace DimensionBrawl.Editor
                 playerVfxCueDriver,
                 playerCuePlayer,
                 bossProxy.transform);
-            ValidateReviewHud(
-                reviewHud,
-                playerHealth,
-                closeThreatHealth,
-                bossHealth,
-                energyLadder,
-                laneSpace,
-                player.transform,
-                combatModeController,
-                rangedAimController,
-                rangedBasicAttackAction,
-                lockTargetController,
-                skill1Action,
-                summonSlot1Action,
-                emitter,
-                bossBasicFireEmitter,
-                pocketOwner,
-                stageProfile,
-                bossPressureCost,
-                bossPressurePosition,
-                bossPressureActionDirector,
-                bossSummonPressureAction,
-                summonSlot2Action,
-                summonSlot3Action);
             ValidateActionScreenCuePresenter(
                 screenCuePresenter,
                 playerActionController,
@@ -6378,64 +6337,23 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(vfxBridge);
         }
 
-        private static void CreateReviewHud(
+        private static void CreateCombatPresentation(
             Scene scene,
             CombatHealth playerHealth,
-            CombatHealth closeThreatHealth,
             CombatHealth bossHealth,
             SummonEnergyLadder energyLadder,
-            SummonLaneSpace laneSpace,
             Transform player,
             PlayerCombatModeController combatModeController,
-            PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
-            BossBasicFireEmitter bossBasicFireEmitter,
             BossBarragePocketReviewOwner pocketOwner,
-            FrontlineWaveStageProfile stageProfile,
-            BossPressureCostLadder bossPressureCost,
-            BossPressurePositionController bossPressurePosition,
-            BossPressureActionDirector bossPressureActionDirector,
-            BossSummonPressureAction bossSummonPressureAction)
+            BossPressureActionDirector bossPressureActionDirector)
         {
             GameObject hudRoot = CreateRoot(scene, HudRootName);
-            BossBarrageLaneReviewHud hud = hudRoot.AddComponent<BossBarrageLaneReviewHud>();
-            hud.Configure(
-                playerHealth,
-                closeThreatHealth,
-                bossHealth,
-                energyLadder,
-                laneSpace,
-                player,
-                combatModeController,
-                rangedAimController,
-                rangedBasicAttackAction,
-                skill1Action,
-                summonSlot1Action,
-                bossBarrageEmitter,
-                pocketOwner,
-                bossPressureCost,
-                bossPressurePosition,
-                bossPressureActionDirector,
-                bossSummonPressureAction,
-                summonSlot2Action,
-                summonSlot3Action,
-                bossBasicFireEmitter);
-            SetObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
-            SetObjectReference(hud, "duelReviewOwner", null);
-            SetObjectReference(hud, "stageProfile", stageProfile);
-            hud.AssignStageProfileForReview(stageProfile);
-            SetBool(hud, "showCenterReticle", true);
-            SetBool(hud, "showResultBanner", true);
-            SetString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
-            SetString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
-            SetFloat(hud, "resultBannerWidth", 540f);
-            SetFloat(hud, "resultBannerHeight", 82f);
-            SetFloat(hud, "resultBannerBottomOffset", 112f);
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
             screenCuePresenter.Configure(
                 player.GetComponent<PlayerActionController>(),
@@ -6481,10 +6399,8 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewOverlayHud overlayHud = hudRoot.AddComponent<BossBarrageLaneReviewOverlayHud>();
             overlayHud.Configure(
                 pocketOwner,
-                hud,
                 screenCuePresenter);
             ConfigureOverlayRoutes(overlayHud);
-            SetBool(hud, "showHud", false);
             SetBool(overlayHud, "drawIdleButton", false);
             CreateCombatHudCanvas(
                 scene,
@@ -6500,7 +6416,6 @@ namespace DimensionBrawl.Editor
                 summonSlot3Action,
                 pocketOwner,
                 overlayHud);
-            EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(screenCuePresenter);
             EditorUtility.SetDirty(overlayHud);
         }
@@ -11310,67 +11225,6 @@ namespace DimensionBrawl.Editor
             ValidateFloat(vfxBridge, "pocketFailIntensity", 1.02f);
             ValidateEnum(vfxBridge, "pocketFailAccentCueId", (int)CombatVfxCueId.EnemyClosePunishActive);
             ValidateFloat(vfxBridge, "pocketFailAccentIntensity", 0.88f);
-        }
-
-        private static void ValidateReviewHud(
-            BossBarrageLaneReviewHud hud,
-            CombatHealth playerHealth,
-            CombatHealth closeThreatHealth,
-            CombatHealth bossHealth,
-            SummonEnergyLadder energyLadder,
-            SummonLaneSpace laneSpace,
-            Transform player,
-            PlayerCombatModeController combatModeController,
-            PlayerRangedAimController rangedAimController,
-            PlayerRangedBasicAttackAction rangedBasicAttackAction,
-            PlayerLockTargetController lockTargetController,
-            PlayerSkill1Action skill1Action,
-            PlayerSummonSlot1Action summonSlot1Action,
-            BossBarrageEmitter bossBarrageEmitter,
-            BossBasicFireEmitter bossBasicFireEmitter,
-            BossBarragePocketReviewOwner pocketOwner,
-            FrontlineWaveStageProfile stageProfile,
-            BossPressureCostLadder bossPressureCost,
-            BossPressurePositionController bossPressurePosition,
-            BossPressureActionDirector bossPressureActionDirector,
-            BossSummonPressureAction bossSummonPressureAction,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            PlayerSupportSummonSlotAction summonSlot3Action)
-        {
-            ValidateObjectReference(hud, "playerHealth", playerHealth);
-            ValidateObjectReference(hud, "closeThreatHealth", closeThreatHealth);
-            ValidateObjectReference(hud, "bossHealth", bossHealth);
-            ValidateObjectReference(hud, "energyLadder", energyLadder);
-            ValidateObjectReference(hud, "laneSpace", laneSpace);
-            ValidateObjectReference(hud, "player", player);
-            ValidateObjectReference(hud, "combatModeController", combatModeController);
-            ValidateObjectReference(hud, "rangedAimController", rangedAimController);
-            ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
-            ValidateObjectReference(hud, "skill1Action", skill1Action);
-            ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
-            ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(hud, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
-            ValidateObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
-            ValidateObjectReference(hud, "bossPressureCostLadder", bossPressureCost);
-            ValidateObjectReference(hud, "bossPressurePositionController", bossPressurePosition);
-            ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
-            ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
-            ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
-            ValidateObjectReference(hud, "duelReviewOwner", null);
-            ValidateObjectReference(hud, "stageProfile", stageProfile);
-            if (hud.StageProfileForReview != stageProfile)
-            {
-                throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {stageProfile.name}.");
-            }
-
-            ValidateBool(hud, "showCenterReticle", true);
-            ValidateBool(hud, "showResultBanner", true);
-            ValidateString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
-            ValidateString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
-            ValidateFloat(hud, "resultBannerWidth", 540f);
-            ValidateFloat(hud, "resultBannerHeight", 82f);
-            ValidateFloat(hud, "resultBannerBottomOffset", 112f);
         }
 
         private static void ValidateActionScreenCuePresenter(

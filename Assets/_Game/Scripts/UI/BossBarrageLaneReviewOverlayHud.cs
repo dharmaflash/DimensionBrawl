@@ -25,7 +25,6 @@ namespace DimensionBrawl.UI
 
         [Header("References")]
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
-        [SerializeField] private BossBarrageLaneReviewHud reviewHud;
         [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
         [SerializeField] private Behaviour[] inputLockBehaviours = new Behaviour[0];
 
@@ -58,7 +57,6 @@ namespace DimensionBrawl.UI
         private bool hasCapturedControlState;
         private bool[] inputLockEnabledBeforeOverlay = new bool[0];
         private float previousTimeScale = 1f;
-        private bool telemetryVisible;
         private bool screenCuesVisible = true;
         private GUIStyle titleStyle;
         private GUIStyle bodyStyle;
@@ -72,7 +70,6 @@ namespace DimensionBrawl.UI
         private bool resultControlsLocked;
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
-        public BossBarrageLaneReviewHud ReviewHud => reviewHud;
         public ActionScreenCuePresenter ScreenCuePresenter => screenCuePresenter;
         public string RetrySceneName => retrySceneName;
         public string RetryScenePath => retryScenePath;
@@ -91,12 +88,10 @@ namespace DimensionBrawl.UI
 
         public void Configure(
             BossBarragePocketReviewOwner newPocketReviewOwner,
-            BossBarrageLaneReviewHud newReviewHud,
             ActionScreenCuePresenter newScreenCuePresenter)
         {
             UnsubscribePocketResult();
             pocketReviewOwner = newPocketReviewOwner;
-            reviewHud = newReviewHud;
             screenCuePresenter = newScreenCuePresenter;
             CaptureSettings();
             if (isActiveAndEnabled)
@@ -175,11 +170,6 @@ namespace DimensionBrawl.UI
 
         private void Awake()
         {
-            if (reviewHud == null)
-            {
-                reviewHud = GetComponent<BossBarrageLaneReviewHud>();
-            }
-
             if (screenCuePresenter == null)
             {
                 screenCuePresenter = GetComponent<ActionScreenCuePresenter>();
@@ -396,13 +386,6 @@ namespace DimensionBrawl.UI
         private void DrawSettingsOverlay()
         {
             Rect panel = BeginModal("SETTINGS", "Review tuning");
-            bool newTelemetry = GUILayout.Toggle(telemetryVisible, "Detailed Telemetry", bodyStyle);
-            if (newTelemetry != telemetryVisible)
-            {
-                telemetryVisible = newTelemetry;
-                reviewHud?.SetDetailedTelemetryVisible(telemetryVisible);
-            }
-
             bool newScreenCues = GUILayout.Toggle(screenCuesVisible, "Screen Cues", bodyStyle);
             if (newScreenCues != screenCuesVisible)
             {
@@ -744,12 +727,7 @@ namespace DimensionBrawl.UI
 
         private FrontlineWaveStageProfile ResolveActiveStageProfile()
         {
-            if (pocketReviewOwner != null && pocketReviewOwner.StageProfile != null)
-            {
-                return pocketReviewOwner.StageProfile;
-            }
-
-            return reviewHud != null ? reviewHud.StageProfileForReview : null;
+            return pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
         }
 
         private bool IsCounterRecoveryClear()
@@ -771,7 +749,6 @@ namespace DimensionBrawl.UI
 
         private void CaptureSettings()
         {
-            telemetryVisible = reviewHud != null && reviewHud.ShowDetailedTelemetry;
             screenCuesVisible = screenCuePresenter == null || screenCuePresenter.ShowScreenCues;
         }
 
