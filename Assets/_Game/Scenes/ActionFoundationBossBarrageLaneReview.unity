@@ -2359,7 +2359,7 @@ GameObject:
   - component: {fileID: 6001}
   - component: {fileID: 6002}
   m_Layer: 0
-  m_Name: ActionFoundationTestEncounter
+  m_Name: CombatEncounter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6000,7 +6000,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 195573a44d3b84a448c1c22ea8e868f0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketReviewOwner
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarrageEncounterController
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 1532735416}
   bossHealth: {fileID: 1932639513}
@@ -6069,8 +6069,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a7c6d2f4db64e0f94566f910abbcd1a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketVfxCueBridge
-  pocketReviewOwner: {fileID: 439529094}
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarragePocketVfxCueBridge
+  encounterController: {fileID: 439529094}
   cuePlayer: {fileID: 4010}
   followupWindowAnchor: {fileID: 85052602}
   followupHitAnchor: {fileID: 1932639514}
@@ -6107,8 +6107,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f0d5ee2af4340f7b9e6f2f12b2e4a45, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
-  pocketReviewOwner: {fileID: 439529094}
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarragePocketCameraCueBridge
+  encounterController: {fileID: 439529094}
   summonSlot1Action: {fileID: 4017}
   cameraCueDriver: {fileID: 1005}
   cinematicCueDirector: {fileID: 1008}
@@ -19478,7 +19478,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef0bf0b1949263746b2e530813c06605, type: 3}
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud
-  pocketReviewOwner: {fileID: 439529094}
+  encounterController: {fileID: 439529094}
   screenCuePresenter: {fileID: 1831336404}
   inputLockBehaviours:
   - {fileID: 1248464261}
@@ -19532,7 +19532,7 @@ MonoBehaviour:
   summonSlot3Action: {fileID: 4015}
   bossBarrageEmitter: {fileID: 1932639512}
   bossPressureActionDirector: {fileID: 1932639516}
-  pocketReviewOwner: {fileID: 439529094}
+  encounterController: {fileID: 439529094}
   duelReviewOwner: {fileID: 0}
   showScreenCues: 1
   showEventColorCues: 0
@@ -20153,7 +20153,7 @@ MonoBehaviour:
   overlayHud: {fileID: 1831336403}
   tutorialGuide: {fileID: 0}
   useSingleSummonPresentation: 0
-  pocketReviewOwner: {fileID: 439529094}
+  encounterController: {fileID: 439529094}
   playerHealth: {fileID: 4003}
   bossHealth: {fileID: 1932639513}
   energyLadder: {fileID: 4019}

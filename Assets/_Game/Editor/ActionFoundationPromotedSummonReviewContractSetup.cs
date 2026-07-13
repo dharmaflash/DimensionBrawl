@@ -1,6 +1,6 @@
 using System;
+using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -25,34 +25,34 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponentInScope<PlayerSummonSlot1Action>(playerRoot, "player SummonSlot1 action");
             PlayerSupportSummonSlotAction summonSlot2Action =
-                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
+                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot2ActionName);
             PlayerSupportSummonSlotAction summonSlot3Action =
-                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
+                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot3ActionName);
 
-            summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot1RequiredMana);
-            summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot1CooldownSeconds);
+            summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot1RequiredMana);
+            summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot1CooldownSeconds);
             summonSlot1Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot1ActionProfilePath));
             MarkDirty(summonSlot1Action);
 
             summonSlot2Action.ConfigureSlot(
-                BossBarrageSummonReviewContract.Slot2ActionName,
+                BossBarrageSummonBalance.Slot2ActionName,
                 Key.Digit2,
                 new Vector2(-1.55f, 0.35f));
-            summonSlot2Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot2RequiredMana);
-            summonSlot2Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot2MinimumTier);
-            summonSlot2Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot2CooldownSeconds);
+            summonSlot2Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot2RequiredMana);
+            summonSlot2Action.ConfigureMinimumSummonTier(BossBarrageSummonBalance.Slot2MinimumTier);
+            summonSlot2Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot2CooldownSeconds);
             summonSlot2Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ActionProfilePath));
             MarkDirty(summonSlot2Action);
 
             summonSlot3Action.ConfigureSlot(
-                BossBarrageSummonReviewContract.Slot3ActionName,
+                BossBarrageSummonBalance.Slot3ActionName,
                 Key.Digit3,
                 new Vector2(1.55f, 0.55f));
-            summonSlot3Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot3RequiredMana);
-            summonSlot3Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot3MinimumTier);
-            summonSlot3Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot3CooldownSeconds);
+            summonSlot3Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot3RequiredMana);
+            summonSlot3Action.ConfigureMinimumSummonTier(BossBarrageSummonBalance.Slot3MinimumTier);
+            summonSlot3Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot3CooldownSeconds);
             summonSlot3Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot3ActionProfilePath));
             MarkDirty(summonSlot3Action);
@@ -64,18 +64,18 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponentInScope<PlayerSummonSlot1Action>(playerRoot, "player SummonSlot1 action");
             PlayerSupportSummonSlotAction summonSlot2Action =
-                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
+                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot2ActionName);
             PlayerSupportSummonSlotAction summonSlot3Action =
-                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
+                RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot3ActionName);
 
             ValidateFloat(
                 summonSlot1Action,
                 "requiredSummonMana",
-                BossBarrageSummonReviewContract.Slot1RequiredMana);
+                BossBarrageSummonBalance.Slot1RequiredMana);
             ValidateFloat(
                 summonSlot1Action,
                 "slotCooldownSeconds",
-                BossBarrageSummonReviewContract.Slot1CooldownSeconds);
+                BossBarrageSummonBalance.Slot1CooldownSeconds);
             ValidateObjectReference(
                 summonSlot1Action,
                 "summonActionProfile",
@@ -83,18 +83,18 @@ namespace DimensionBrawl.Editor
 
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,
-                BossBarrageSummonReviewContract.Slot2,
+                BossBarrageSummonBalance.Slot2,
                 ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ActionProfilePath);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
-                BossBarrageSummonReviewContract.Slot3,
+                BossBarrageSummonBalance.Slot3,
                 ActionFoundationBossBarrageLaneReviewSetup.SummonSlot3ActionProfilePath);
 
         }
 
         private static void ValidateSupportSummonSlotAction(
             PlayerSupportSummonSlotAction action,
-            BossBarrageSummonSlotReviewContract contract,
+            BossBarrageSummonSlotBalance contract,
             string actionProfilePath)
         {
             ValidateString(action, "slotActionName", contract.ActionName);

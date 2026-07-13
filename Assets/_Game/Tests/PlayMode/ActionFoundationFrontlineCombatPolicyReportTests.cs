@@ -9,7 +9,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
@@ -1582,8 +1581,8 @@ namespace DimensionBrawl.Tests
                 closeThreatEnemy.enabled = false;
             }
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(
                     RequireRoot(PocketOwnerRootName),
                     "pocket review owner");
             Assert.AreSame(
@@ -4006,7 +4005,7 @@ namespace DimensionBrawl.Tests
                     supportAction);
             context.Metrics.SupportComboHudSlot1LabelBeforeAttempt =
                 CombatHudSummonReadoutFormatter.BuildPrimarySummonLabel(
-                    BossBarrageSummonReviewContract.Slot1HudLabel,
+                    BossBarrageSummonBalance.Slot1HudLabel,
                     context.EnergyLadder,
                     context.SummonSlot1Action);
             context.Metrics.SupportComboHudSlot1FillBeforeAttempt =
@@ -4018,8 +4017,8 @@ namespace DimensionBrawl.Tests
         private static string ResolveSupportHudSlotLabel(PlayerSupportSummonSlotAction supportAction)
         {
             return supportAction != null && supportAction.SlotActionName == "SummonSlot3"
-                ? BossBarrageSummonReviewContract.Slot3HudLabel
-                : BossBarrageSummonReviewContract.Slot2HudLabel;
+                ? BossBarrageSummonBalance.Slot3HudLabel
+                : BossBarrageSummonBalance.Slot2HudLabel;
         }
 
         private static void RecordSkillUse(CombatPolicyContext context)
@@ -9135,7 +9134,7 @@ namespace DimensionBrawl.Tests
                         return "support_vanguard_clear";
                     }
 
-                    if (result.ResultRecordTokenId == "review.clear.lv3_suppress")
+                    if (result.ResultRecordTokenId == "route.clear.lv3_suppress")
                     {
                         return "high_tier_suppress_clear";
                     }
@@ -9808,27 +9807,27 @@ namespace DimensionBrawl.Tests
                 "Vanguard support clear should preserve the Slot3 route motivation.");
             AssertResultToken(
                 noSummonFail,
-                "review.failure.hp_pressure",
+                "route.failure.hp_pressure",
                 "next.practice.hp_protection");
             AssertResultToken(
                 gunOnlyFail,
-                "review.failure.hp_pressure",
+                "route.failure.hp_pressure",
                 "next.practice.hp_protection");
             AssertResultToken(
                 cleanPhysical,
-                "review.clear.clean_followup",
+                "route.clear.clean_followup",
                 "next.practice.clean_followup_confirm");
             AssertResultToken(
                 counterRecovery,
-                "review.clear.counter_recovery",
+                "route.clear.counter_recovery",
                 "next.practice.counter_answer_timing");
             AssertResultToken(
                 marksmanClear,
-                "review.clear.marksman_combo",
+                "route.clear.marksman_combo",
                 "next.practice.slot2_full_bank_combo");
             AssertResultToken(
                 vanguardClear,
-                "review.clear.vanguard_payoff",
+                "route.clear.vanguard_payoff",
                 "next.practice.slot3_vanguard_payoff");
             Assert.IsTrue(IsReviewOnlyResultHook(noSummonFail));
             Assert.IsTrue(IsReviewOnlyResultHook(gunOnlyFail));
@@ -12222,7 +12221,7 @@ namespace DimensionBrawl.Tests
                 ResolveEnergyTargetDuration(result),
                 0f,
                 $"{result.Policy} should record the target-tier ready time.");
-            if (expectedTier < BossBarrageSummonReviewContract.Slot1MinimumTier)
+            if (expectedTier < BossBarrageSummonBalance.Slot1MinimumTier)
             {
                 Assert.AreEqual(
                     0,
@@ -12243,7 +12242,7 @@ namespace DimensionBrawl.Tests
                 return;
             }
 
-            int expectedSpentTier = BossBarrageSummonReviewContract.Slot1MinimumTier;
+            int expectedSpentTier = BossBarrageSummonBalance.Slot1MinimumTier;
             Assert.AreEqual(
                 expectedSpentTier,
                 result.HighestSummonSpentTier,
@@ -12284,7 +12283,7 @@ namespace DimensionBrawl.Tests
                 ResolveEnergyTargetDuration(result),
                 0f,
                 $"{result.Policy} should record the target-tier ready time.");
-            if (expectedTier < BossBarrageSummonReviewContract.Slot1MinimumTier)
+            if (expectedTier < BossBarrageSummonBalance.Slot1MinimumTier)
             {
                 Assert.AreEqual(
                     0,
@@ -12305,7 +12304,7 @@ namespace DimensionBrawl.Tests
                 return;
             }
 
-            int expectedSpentTier = BossBarrageSummonReviewContract.Slot1MinimumTier;
+            int expectedSpentTier = BossBarrageSummonBalance.Slot1MinimumTier;
             Assert.AreEqual(
                 expectedSpentTier,
                 result.HighestSummonSpentTier,
@@ -12659,7 +12658,7 @@ namespace DimensionBrawl.Tests
 
         private static bool IsEnergyDecisionRouteRepeatabilityPass(PolicyMetrics result, int expectedTier)
         {
-            if (expectedTier < BossBarrageSummonReviewContract.Slot1MinimumTier)
+            if (expectedTier < BossBarrageSummonBalance.Slot1MinimumTier)
             {
                 return result.ResultKind == "Running"
                     && result.EnergyProbeTargetTier == expectedTier
@@ -12670,7 +12669,7 @@ namespace DimensionBrawl.Tests
                     && result.ResultRecords == 0;
             }
 
-            int expectedSpentTier = BossBarrageSummonReviewContract.Slot1MinimumTier;
+            int expectedSpentTier = BossBarrageSummonBalance.Slot1MinimumTier;
             return result.ResultKind == "Running"
                 && result.EnergyProbeTargetTier == expectedTier
                 && ResolveEnergyTargetDuration(result) >= 0f
@@ -12685,7 +12684,7 @@ namespace DimensionBrawl.Tests
 
         private static bool IsEnergyRecoveryRouteRepeatabilityPass(PolicyMetrics result, int expectedTier)
         {
-            if (expectedTier < BossBarrageSummonReviewContract.Slot1MinimumTier)
+            if (expectedTier < BossBarrageSummonBalance.Slot1MinimumTier)
             {
                 return result.ResultKind == "Running"
                     && result.EnergyProbeTargetTier == expectedTier
@@ -12700,7 +12699,7 @@ namespace DimensionBrawl.Tests
             {
                 return result.EnergyProbeTargetTier == expectedTier
                     && ResolveEnergyTargetDuration(result) >= 0f
-                    && result.HighestSummonSpentTier == BossBarrageSummonReviewContract.Slot1MinimumTier
+                    && result.HighestSummonSpentTier == BossBarrageSummonBalance.Slot1MinimumTier
                     && result.SummonUses >= 1
                     && result.PhysicalBarragePlayerHits == 0
                     && result.SkillProjectileHits > 0
@@ -12798,8 +12797,8 @@ namespace DimensionBrawl.Tests
             int expectedTargetTier)
         {
             int expectedSupportTier = expectedSlotId == "SummonSlot2"
-                ? BossBarrageSummonReviewContract.Slot2MinimumTier
-                : BossBarrageSummonReviewContract.Slot3MinimumTier;
+                ? BossBarrageSummonBalance.Slot2MinimumTier
+                : BossBarrageSummonBalance.Slot3MinimumTier;
             bool supportOpenedMainAnswer = result.SummonBlocks > 0
                 || (expectedTargetTier >= 3
                     && result.BossScreenSuppressedByFollowup
@@ -12842,8 +12841,8 @@ namespace DimensionBrawl.Tests
             bool expectBossScreenSuppress)
         {
             int expectedSupportTier = expectedSlotId == "SummonSlot2"
-                ? BossBarrageSummonReviewContract.Slot2MinimumTier
-                : BossBarrageSummonReviewContract.Slot3MinimumTier;
+                ? BossBarrageSummonBalance.Slot2MinimumTier
+                : BossBarrageSummonBalance.Slot3MinimumTier;
             bool supportOpenedMainAnswer = result.SummonBlocks > 0
                 || (expectBossScreenSuppress
                     && result.BossScreenSuppressedByFollowup
@@ -13361,7 +13360,7 @@ namespace DimensionBrawl.Tests
                 SummonLaneSpace laneSpace,
                 BossBarrageEmitter bossEmitter,
                 BossSummonPressureAction bossSummonPressureAction,
-                BossBarragePocketReviewOwner pocketOwner,
+                BossBarrageEncounterController pocketOwner,
                 BossBarragePocketVfxCueBridge pocketVfxCueBridge,
                 ActionCameraCueDriver cameraCueDriver,
                 ActionCinematicCueDirector cinematicCueDirector,
@@ -13447,7 +13446,7 @@ namespace DimensionBrawl.Tests
             public SummonLaneSpace LaneSpace { get; }
             public BossBarrageEmitter BossEmitter { get; }
             public BossSummonPressureAction BossSummonPressureAction { get; }
-            public BossBarragePocketReviewOwner PocketOwner { get; }
+            public BossBarrageEncounterController PocketOwner { get; }
             public BossBarragePocketVfxCueBridge PocketVfxCueBridge { get; }
             public ActionCameraCueDriver CameraCueDriver { get; }
             public ActionCinematicCueDirector CinematicCueDirector { get; }
@@ -14482,7 +14481,7 @@ namespace DimensionBrawl.Tests
                 }
             }
 
-            private void OnCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
+            private void OnCounterWaveObserved(BossBarrageEncounterController.CounterWaveSource source)
             {
                 Metrics.CounterWaves++;
                 Metrics.LastCounterWaveSource = source.ToString();
@@ -14501,7 +14500,7 @@ namespace DimensionBrawl.Tests
                 }
             }
 
-            private void OnResultRecordCommitted(BossBarragePocketReviewOwner.RouteResultRecord record)
+            private void OnResultRecordCommitted(BossBarrageEncounterController.RouteResultRecord record)
             {
                 Metrics.ResultRecords++;
                 Metrics.ResultKind = record.ResultKind.ToString();

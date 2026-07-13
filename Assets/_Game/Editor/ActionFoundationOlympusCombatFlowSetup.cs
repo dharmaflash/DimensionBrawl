@@ -8,7 +8,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -606,9 +605,9 @@ namespace DimensionBrawl.Editor
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(playerRoot, "combat mode controller");
             GameObject introSwordGateRoot = RequireChildObject(packageRoot.transform, IntroSwordGateRootName);
-            GameObject canonicalEncounterRoot = RequireChildObject(packageRoot.transform, "ActionFoundationTestEncounter");
-            ActionFoundationTestEncounter canonicalEncounter =
-                RequireComponent<ActionFoundationTestEncounter>(
+            GameObject canonicalEncounterRoot = RequireChildObject(packageRoot.transform, "CombatEncounter");
+            CombatEncounterController canonicalEncounter =
+                RequireComponent<CombatEncounterController>(
                     canonicalEncounterRoot,
                     "canonical corridor encounter");
             GameObject corridorBoundsRoot = RequireChildObject(packageRoot.transform, CorridorBoundsRootName);
@@ -810,7 +809,7 @@ namespace DimensionBrawl.Editor
             report.Add($"  {SourcePlayerRootName} activeAfterHandoff={playerRootActiveAfterHandoff}");
             report.Add($"  {SourcePlayerRootName} activeAfterDirectorStop={playerRootActiveAfterDirectorStop}");
             report.Add($"  {IntroSwordGateRootName} activeSelf={introSwordGateRoot.activeSelf} activeInHierarchy={introSwordGateRoot.activeInHierarchy}");
-            report.Add($"  ActionFoundationTestEncounter activeInHierarchy={canonicalEncounterRoot.activeInHierarchy}");
+            report.Add($"  CombatEncounter activeInHierarchy={canonicalEncounterRoot.activeInHierarchy}");
             report.Add($"  {CorridorBoundsRootName} activeInHierarchy={corridorBoundsRoot.activeInHierarchy}");
             report.Add($"  {IntroGatePodRuntimePayloadRootName} activeInHierarchy={handoffPayloadKeptActive}");
             report.Add($"  {FirstPersonResidualVisualRootName} hiddenBeforeHandoff={firstPersonResidualHiddenBeforeHandoff}");
@@ -1027,7 +1026,7 @@ namespace DimensionBrawl.Editor
 
             report.Add($"  {SourcePlayerRootName} activeSelf={playerRoot.activeSelf} activeInHierarchy={playerRoot.activeInHierarchy}");
             report.Add($"  {IntroSwordGateRootName} activeSelf={introSwordGateRoot.activeSelf} activeInHierarchy={introSwordGateRoot.activeInHierarchy}");
-            report.Add($"  ActionFoundationTestEncounter activeInHierarchy={canonicalEncounterRoot.activeInHierarchy}");
+            report.Add($"  CombatEncounter activeInHierarchy={canonicalEncounterRoot.activeInHierarchy}");
             report.Add($"  {CorridorBoundsRootName} activeInHierarchy={corridorBoundsRoot.activeInHierarchy}");
             report.Add($"  {SourceArenaVfxRootName} inactiveInCorridor={corridorArenaVfxInactive}");
             report.Add($"  {SourceArenaGridRootName} inactiveInCorridor={corridorArenaGridInactive}");
@@ -1541,7 +1540,7 @@ namespace DimensionBrawl.Editor
         {
             return string.Equals(rootName, SourceMainCameraRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourcePlayerRootName, StringComparison.Ordinal)
-                || string.Equals(rootName, "ActionFoundationTestEncounter", StringComparison.Ordinal)
+                || string.Equals(rootName, "CombatEncounter", StringComparison.Ordinal)
                 || string.Equals(rootName, "WIN_MARKER_SoldierDefeated", StringComparison.Ordinal)
                 || string.Equals(rootName, "FAIL_MARKER_PlayerDefeated", StringComparison.Ordinal)
                 || string.Equals(rootName, SourceArenaVfxRootName, StringComparison.Ordinal)

@@ -1,10 +1,9 @@
-﻿using DimensionBrawl.Combat;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Events;
 
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Combat
 {
-    public sealed class ActionFoundationTestEncounter : MonoBehaviour
+    public sealed class CombatEncounterController : MonoBehaviour
     {
         private enum EncounterState
         {

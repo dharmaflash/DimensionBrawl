@@ -7,7 +7,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
@@ -321,8 +320,8 @@ namespace DimensionBrawl.Tests
         public IEnumerator BossBarrageLaneReviewScenePreservesFrontlineStageProfileParity()
         {
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCinematicCueDirector cinematicCueDirector =
                 RequireComponent<ActionCinematicCueDirector>(
@@ -341,7 +340,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
             Assert.AreEqual(0.22f, stageProfile.CounterWaveStabilizeRouteBonus01, 0.001f);
             Assert.AreEqual(
-                BossBarrageSummonReviewContract.Slot3RequiredMana,
+                BossBarrageSummonBalance.Slot3RequiredMana,
                 stageProfile.CleanFollowupEnergyPulseOverride,
                 0.001f);
             Assert.AreEqual(205f, stageProfile.CounterWaveAnswerEnergyPulseOverride, 0.001f);
@@ -352,7 +351,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsRouteStabilityActive);
             Assert.AreEqual(stageProfile.RouteStabilityStart01, pocketOwner.RouteStability01, 0.002f);
             Assert.IsTrue(pocketCameraCueBridge.enabled);
-            Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
+            Assert.AreSame(pocketOwner, pocketCameraCueBridge.EncounterController);
             Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
             Assert.IsTrue(GetBool(cinematicCueDirector, "allowCuePlayback"));
             Assert.IsFalse(GetBool(cinematicCueDirector, "allowSequenceBridgePlayback"));
@@ -681,8 +680,8 @@ namespace DimensionBrawl.Tests
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
             GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             SummonOpportunityWindowProfile summonOpportunity =
                 LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath);
             BossBarragePocketCameraCueBridge pocketCameraCueBridge =
@@ -1537,10 +1536,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(125f, summonOpportunity.ResolveFollowupEnergyPulse(1), 0.001f);
             Assert.AreEqual(240f, summonOpportunity.ResolveFollowupEnergyPulse(3), 0.001f);
             Assert.AreEqual(0.75f, GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds"), 0.001f);
-            Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
+            Assert.AreSame(pocketOwner, pocketCameraCueBridge.EncounterController);
             Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
             Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
-            Assert.AreSame(pocketOwner, pocketVfxCueBridge.PocketReviewOwner);
+            Assert.AreSame(pocketOwner, pocketVfxCueBridge.EncounterController);
             Assert.AreSame(playerCuePlayer, pocketVfxCueBridge.CuePlayer);
             Assert.AreSame(
                 GetObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"),
@@ -1597,7 +1596,7 @@ namespace DimensionBrawl.Tests
                 "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                 "Save for the exchange where one big arrival has to change the screen immediately.",
                 "Fast ground rush, three shock bolts, large forward impact, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
-            Assert.AreSame(pocketOwner, overlayHud.PocketReviewOwner);
+            Assert.AreSame(pocketOwner, overlayHud.EncounterController);
             Assert.AreSame(screenCuePresenter, overlayHud.ScreenCuePresenter);
             Assert.AreEqual("ActionFoundationBossBarrageLaneReview", overlayHud.RetrySceneName);
             Assert.AreEqual("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", overlayHud.RetryScenePath);
@@ -1619,7 +1618,7 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<PlayerSupportSummonSlotAction>(screenCuePresenter, "summonSlot3Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(screenCuePresenter, "bossBarrageEmitter"));
             Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(screenCuePresenter, "bossPressureActionDirector"));
-            Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(screenCuePresenter, "pocketReviewOwner"));
+            Assert.AreSame(pocketOwner, GetObjectReference<BossBarrageEncounterController>(screenCuePresenter, "encounterController"));
             Component combatHudPresenter = RequireObjectByTypeName("DimensionBrawl.UI.CombatHudPresenter");
             Component combatHudBinder = RequireObjectByTypeName("DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder");
             Component inputBridge = RequireObjectByTypeName("DimensionBrawl.UI.CombatHudInputBridge");
@@ -1856,8 +1855,8 @@ namespace DimensionBrawl.Tests
                 LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath);
             SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             PlayerSummonSlot1Action.SummonTierSettings[] summonTiers = summonSlot1Profile.CopyTierSettings();
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
 
@@ -4109,8 +4108,8 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -4216,8 +4215,8 @@ namespace DimensionBrawl.Tests
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
 
             FillEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
@@ -4315,7 +4314,7 @@ namespace DimensionBrawl.Tests
                 0.001f,
                 "A missed follow-up counter should refresh SummonSlot1 cooldown for the fresh answer.");
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed,
+                BossBarrageEncounterController.CounterWaveSource.FollowupMissed,
                 pocketOwner.CounterWaveObservedSource);
 
             pocketOwner.Tick(1.05f);
@@ -4383,8 +4382,8 @@ namespace DimensionBrawl.Tests
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
@@ -4484,9 +4483,9 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
-            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(BossBarrageSummonBalance.Slot3MinimumTier, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
-            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonBalance.Slot3MinimumTier, pocketOwner.HighestSkill1FollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketOwner.Skill1FollowupDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio,
@@ -4495,7 +4494,7 @@ namespace DimensionBrawl.Tests
                 followupHitCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
-            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonBalance.Slot3MinimumTier, cameraCueDriver.LastSummonFollowupHitTier);
             Assert.AreEqual(
                 summonFollowupHitCinematicCountBefore + 1,
                 cinematicCueDirector.SummonFollowupHitPlayCount,
@@ -4505,7 +4504,7 @@ namespace DimensionBrawl.Tests
                 cinematicCueDirector.SummonFollowupHitFrameOverlayCount,
                 "The follow-up hit should still register its frame overlay even when LV3 Skill1 also plays the ultimate cut-in.");
             Assert.AreEqual(
-                BossBarrageSummonReviewContract.Slot3MinimumTier,
+                BossBarrageSummonBalance.Slot3MinimumTier,
                 cinematicCueDirector.LastSummonFollowupHitTier);
             Assert.IsNotEmpty(cinematicCueDirector.LastSummonFollowupHitCueId);
             Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
@@ -4516,7 +4515,7 @@ namespace DimensionBrawl.Tests
                 followupHitVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should also produce a follow-up hit VFX cue.");
-            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketVfxCueBridge.LastFollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonBalance.Slot3MinimumTier, pocketVfxCueBridge.LastFollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketVfxCueBridge.LastFollowupHitDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio);
@@ -4563,7 +4562,7 @@ namespace DimensionBrawl.Tests
                 pocketClearCameraCueCountBefore + 1,
                 cameraCueDriver.PocketClearCueRequestCount,
                 "Pocket clear should still request a result camera cue even when the LV3 cut-in keeps the cinematic lane.");
-            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, cameraCueDriver.LastPocketClearTier);
+            Assert.AreEqual(BossBarrageSummonBalance.Slot3MinimumTier, cameraCueDriver.LastPocketClearTier);
             if (cinematicCueDirector.TotalPlayCount > cinematicCueCountBeforeClear)
             {
                 Assert.AreEqual(ActionCinematicCueProfile.CueKind.PocketClear, cinematicCueDirector.LastPlayedKind);
@@ -4668,8 +4667,8 @@ namespace DimensionBrawl.Tests
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
             BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
 
             if (closeThreatEnemy != null)
             {
@@ -4810,8 +4809,8 @@ namespace DimensionBrawl.Tests
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
             BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePatternProfile linePressurePattern =
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
 
@@ -5074,8 +5073,8 @@ namespace DimensionBrawl.Tests
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
 
             FillEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
@@ -5101,7 +5100,7 @@ namespace DimensionBrawl.Tests
             int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
             pocketOwner.Tick(0f);
 
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.SummonFollowup, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
             Assert.AreEqual(2, pocketOwner.HighestSummonTier);
@@ -5111,7 +5110,7 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.LastSummonFollowupWindowDuration, Is.EqualTo(2.7f).Within(0.001f));
             Assert.That(
                 pocketOwner.SummonFollowupEnergyPulse,
-                Is.EqualTo(BossBarrageSummonReviewContract.Slot3RequiredMana).Within(0.001f));
+                Is.EqualTo(BossBarrageSummonBalance.Slot3RequiredMana).Within(0.001f));
             Assert.AreEqual(
                 followupWindowCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupWindowCueRequestCount,
@@ -5166,11 +5165,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSkill1FollowupClearCountdownActive);
 
             pocketOwner.Tick(0.74f);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.SummonFollowup, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.IsSkill1FollowupClearCountdownActive);
 
             pocketOwner.Tick(0.02f);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.Cleared, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
         }
@@ -5192,8 +5191,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -5755,8 +5754,8 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
@@ -5821,8 +5820,8 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
 
             Assert.AreSame(
                 bossSummonPressureAction,
@@ -5883,7 +5882,7 @@ namespace DimensionBrawl.Tests
                 pocketOwner.BossBlockedSkill1Followup,
                 "A boss summon pressure screen blocking the follow-up shot should be a readable pocket state, not a silent generic miss.");
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                BossBarrageEncounterController.CounterWaveSource.BossScreenBlock,
                 pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("boss_screen", pocketOwner.CounterWaveSourceReadout);
             Assert.AreEqual(1, pocketOwner.BossPressureBlocksDuringSummonFollowup);
@@ -5962,8 +5961,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
 
             Assert.AreSame(
@@ -6015,7 +6014,7 @@ namespace DimensionBrawl.Tests
                 "The first blocked laser should leave one intercept on the durable LV2 boss screen before recovery.");
             Assert.AreEqual(1, enemyScreen.RemainingIntercepts);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                BossBarrageEncounterController.CounterWaveSource.BossScreenBlock,
                 pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("boss_screen", pocketOwner.CounterWaveSourceReadout);
             Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
@@ -6128,11 +6127,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
-            BossBarragePocketReviewOwner.RouteResultRecord result = pocketOwner.LastResultRecord;
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteResultKind.CounterRecoveryClear, result.ResultKind);
+            BossBarrageEncounterController.RouteResultRecord result = pocketOwner.LastResultRecord;
+            Assert.AreEqual(BossBarrageEncounterController.RouteResultKind.CounterRecoveryClear, result.ResultKind);
             Assert.IsTrue(result.IsClear);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                BossBarrageEncounterController.CounterWaveSource.BossScreenBlock,
                 result.CounterWaveSource);
             Assert.AreEqual("PRESSURE BROKEN", result.Title);
             Assert.That(result.Summary, Does.Contain("Counter pressure held"));

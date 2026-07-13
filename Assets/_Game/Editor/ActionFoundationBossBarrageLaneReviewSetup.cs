@@ -6,7 +6,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -937,7 +936,7 @@ namespace DimensionBrawl.Editor
 
             GameObject pocketRoot = FindRoot(scene, PocketOwnerRootName);
             if (pocketRoot != null
-                && pocketRoot.TryGetComponent(out BossBarragePocketReviewOwner pocketOwner))
+                && pocketRoot.TryGetComponent(out BossBarrageEncounterController pocketOwner))
             {
                 SetObjectReference(pocketOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
             }
@@ -1105,7 +1104,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
             ActionCameraController cameraController = RequireObject<ActionCameraController>(scene, "action camera");
             ActionCameraTargetBridge cameraTargetBridge = RequireObject<ActionCameraTargetBridge>(scene, "action camera target bridge");
-            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
+            CombatEncounterController encounter = RequireObject<CombatEncounterController>(scene, "combat encounter");
 
             SummonLaneSpace laneSpace = CreateLaneSpace(scene);
             player.transform.SetPositionAndRotation(PlayerStartPosition, Quaternion.LookRotation(Vector3.forward, Vector3.up));
@@ -1184,7 +1183,7 @@ namespace DimensionBrawl.Editor
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
             FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
-            BossBarragePocketReviewOwner pocketOwner = CreatePocketOwner(
+            BossBarrageEncounterController pocketOwner = CreatePocketOwner(
                 scene,
                 playerHealth,
                 closeThreatHealth,
@@ -1332,7 +1331,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
             ActionCameraController cameraController = RequireObject<ActionCameraController>(scene, "action camera");
-            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
+            CombatEncounterController encounter = RequireObject<CombatEncounterController>(scene, "combat encounter");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(scene, LaneRootName), "lane space");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
@@ -1371,8 +1370,8 @@ namespace DimensionBrawl.Editor
                 RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action =
                 RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
             ActionCameraCueDriver actionCameraCueDriver =
@@ -1486,7 +1485,7 @@ namespace DimensionBrawl.Editor
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,
-                BossBarrageSummonReviewContract.Slot2ActionName,
+                BossBarrageSummonBalance.Slot2ActionName,
                 energyLadder,
                 playerHealth,
                 targetSelector,
@@ -1496,8 +1495,8 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorPrefabPath,
                 SummonSlot2ActorVisualName,
                 SummonSlot2ActionProfilePath,
-                BossBarrageSummonReviewContract.Slot2MinimumTier,
-                BossBarrageSummonReviewContract.Slot2RequiredMana,
+                BossBarrageSummonBalance.Slot2MinimumTier,
+                BossBarrageSummonBalance.Slot2RequiredMana,
                 170f,
                 false,
                 0.18f,
@@ -1505,7 +1504,7 @@ namespace DimensionBrawl.Editor
                 3);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
-                BossBarrageSummonReviewContract.Slot3ActionName,
+                BossBarrageSummonBalance.Slot3ActionName,
                 energyLadder,
                 playerHealth,
                 targetSelector,
@@ -1515,8 +1514,8 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorPrefabPath,
                 SummonSlot3ActorVisualName,
                 SummonSlot3ActionProfilePath,
-                BossBarrageSummonReviewContract.Slot3MinimumTier,
-                BossBarrageSummonReviewContract.Slot3RequiredMana,
+                BossBarrageSummonBalance.Slot3MinimumTier,
+                BossBarrageSummonBalance.Slot3RequiredMana,
                 520f,
                 false,
                 0.65f,
@@ -4664,7 +4663,7 @@ namespace DimensionBrawl.Editor
         }
 
         private static void ConfigureEncounter(
-            ActionFoundationTestEncounter encounter,
+            CombatEncounterController encounter,
             CombatHealth playerHealth,
             CombatHealth enemyHealth)
         {
@@ -6204,7 +6203,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "forwardRiskCueCooldownSeconds", 0.75f);
         }
 
-        private static BossBarragePocketReviewOwner CreatePocketOwner(
+        private static BossBarrageEncounterController CreatePocketOwner(
             Scene scene,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
@@ -6222,7 +6221,7 @@ namespace DimensionBrawl.Editor
             SummonLaneSpace laneSpace)
         {
             GameObject root = CreateRoot(scene, PocketOwnerRootName);
-            BossBarragePocketReviewOwner owner = root.AddComponent<BossBarragePocketReviewOwner>();
+            BossBarrageEncounterController owner = root.AddComponent<BossBarrageEncounterController>();
             GameObject clearMarker = CreateResultMarker(
                 root.transform,
                 PocketClearMarkerName,
@@ -6255,7 +6254,7 @@ namespace DimensionBrawl.Editor
                 "summonPressureBlockOpportunity",
                 LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath));
             SetObjectReference(owner, "stageProfile", stageProfile);
-            owner.AssignStageProfileForReview(stageProfile);
+            owner.AssignStageProfile(stageProfile);
             SetFloat(owner, "skill1FollowupClearDelaySeconds", 0.75f);
             EditorUtility.SetDirty(owner);
             return owner;
@@ -6302,7 +6301,7 @@ namespace DimensionBrawl.Editor
         }
 
         private static void ConfigurePocketCueBridges(
-            BossBarragePocketReviewOwner pocketOwner,
+            BossBarrageEncounterController pocketOwner,
             PlayerSummonSlot1Action summonSlot1Action,
             ActionCameraCueDriver cameraCueDriver,
             ActionCinematicCueDirector cinematicCueDirector,
@@ -6313,14 +6312,14 @@ namespace DimensionBrawl.Editor
             BossBarragePocketCameraCueBridge cameraBridge =
                 EnsureComponent<BossBarragePocketCameraCueBridge>(pocketOwner.gameObject);
             SetBehaviourEnabled(cameraBridge, true);
-            SetObjectReference(cameraBridge, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(cameraBridge, "encounterController", pocketOwner);
             SetObjectReference(cameraBridge, "summonSlot1Action", summonSlot1Action);
             SetObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
             SetObjectReference(cameraBridge, "cinematicCueDirector", cinematicCueDirector);
 
             BossBarragePocketVfxCueBridge vfxBridge =
                 EnsureComponent<BossBarragePocketVfxCueBridge>(pocketOwner.gameObject);
-            SetObjectReference(vfxBridge, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(vfxBridge, "encounterController", pocketOwner);
             SetObjectReference(vfxBridge, "cuePlayer", cuePlayer);
             SetObjectReference(vfxBridge, "followupWindowAnchor", ReadObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"));
             SetObjectReference(vfxBridge, "followupHitAnchor", directionTarget);
@@ -6350,7 +6349,7 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
-            BossBarragePocketReviewOwner pocketOwner,
+            BossBarrageEncounterController pocketOwner,
             BossPressureActionDirector bossPressureActionDirector)
         {
             GameObject hudRoot = CreateRoot(scene, HudRootName);
@@ -6531,21 +6530,21 @@ namespace DimensionBrawl.Editor
             SetInt(summonSlot1Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
-            summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot1RequiredMana);
-            summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot1CooldownSeconds);
+            summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot1RequiredMana);
+            summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot1CooldownSeconds);
             summonSlot1Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
             EditorUtility.SetDirty(summonSlot1Action);
 
             PlayerSupportSummonSlotAction summonSlot2Action =
-                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
+                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot2ActionName);
             summonSlot2Action.ConfigureSlot(
-                BossBarrageSummonReviewContract.Slot2ActionName,
+                BossBarrageSummonBalance.Slot2ActionName,
                 Key.Digit2,
                 new Vector2(-1.55f, 0.35f));
-            summonSlot2Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot2RequiredMana);
-            summonSlot2Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot2MinimumTier);
-            summonSlot2Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot2CooldownSeconds);
+            summonSlot2Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot2RequiredMana);
+            summonSlot2Action.ConfigureMinimumSummonTier(BossBarrageSummonBalance.Slot2MinimumTier);
+            summonSlot2Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot2CooldownSeconds);
             SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.1f);
@@ -6569,14 +6568,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(summonSlot2Action);
 
             PlayerSupportSummonSlotAction summonSlot3Action =
-                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
+                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonBalance.Slot3ActionName);
             summonSlot3Action.ConfigureSlot(
-                BossBarrageSummonReviewContract.Slot3ActionName,
+                BossBarrageSummonBalance.Slot3ActionName,
                 Key.Digit3,
                 new Vector2(1.55f, 0.55f));
-            summonSlot3Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot3RequiredMana);
-            summonSlot3Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot3MinimumTier);
-            summonSlot3Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot3CooldownSeconds);
+            summonSlot3Action.ConfigureRequiredSummonMana(BossBarrageSummonBalance.Slot3RequiredMana);
+            summonSlot3Action.ConfigureMinimumSummonTier(BossBarrageSummonBalance.Slot3MinimumTier);
+            summonSlot3Action.ConfigureSlotCooldown(BossBarrageSummonBalance.Slot3CooldownSeconds);
             SetInt(summonSlot3Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot3Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
@@ -8765,7 +8764,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(
                 summonSlot1Action,
                 "requiredSummonMana",
-                BossBarrageSummonReviewContract.Slot1RequiredMana);
+                BossBarrageSummonBalance.Slot1RequiredMana);
             SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ValidateObjectReference(
                 summonSlot1Action,
@@ -11131,7 +11130,7 @@ namespace DimensionBrawl.Editor
         }
 
         private static void ValidatePocketOwner(
-            BossBarragePocketReviewOwner owner,
+            BossBarrageEncounterController owner,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
             CombatHealth bossHealth,
@@ -11185,7 +11184,7 @@ namespace DimensionBrawl.Editor
 
 
         private static void ValidatePocketCueBridges(
-            BossBarragePocketReviewOwner owner,
+            BossBarrageEncounterController owner,
             PlayerSummonSlot1Action summonSlot1Action,
             ActionCameraCueDriver cameraCueDriver,
             ActionCinematicCueDirector cinematicCueDirector,
@@ -11196,14 +11195,14 @@ namespace DimensionBrawl.Editor
             BossBarragePocketCameraCueBridge cameraBridge =
                 RequireComponent<BossBarragePocketCameraCueBridge>(owner.gameObject, "pocket camera cue bridge");
             ValidateBehaviourEnabled(cameraBridge, true);
-            ValidateObjectReference(cameraBridge, "pocketReviewOwner", owner);
+            ValidateObjectReference(cameraBridge, "encounterController", owner);
             ValidateObjectReference(cameraBridge, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
             ValidateObjectReference(cameraBridge, "cinematicCueDirector", cinematicCueDirector);
 
             BossBarragePocketVfxCueBridge vfxBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(owner.gameObject, "pocket VFX cue bridge");
-            ValidateObjectReference(vfxBridge, "pocketReviewOwner", owner);
+            ValidateObjectReference(vfxBridge, "encounterController", owner);
             ValidateObjectReference(vfxBridge, "cuePlayer", cuePlayer);
             ValidateObjectReference(
                 vfxBridge,
@@ -11239,7 +11238,7 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossPressureActionDirector bossPressureActionDirector,
-            BossBarragePocketReviewOwner pocketOwner)
+            BossBarrageEncounterController pocketOwner)
         {
             ValidateObjectReference(presenter, "actionController", actionController);
             ValidateObjectReference(presenter, "playerHealth", playerHealth);
@@ -11251,7 +11250,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(presenter, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
-            ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
+            ValidateObjectReference(presenter, "encounterController", pocketOwner);
             ValidateObjectReference(presenter, "duelReviewOwner", null);
             ValidateBool(presenter, "showScreenCues", true);
             ValidateBool(presenter, "showEventColorCues", false);

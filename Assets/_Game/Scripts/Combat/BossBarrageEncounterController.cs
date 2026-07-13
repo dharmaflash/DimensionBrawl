@@ -1,15 +1,14 @@
 using System;
-using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using UnityEngine;
 
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Combat
 {
-    // Review-only orchestration for the boss barrage lane slice; production encounter flow should use a separate owner.
-    public sealed class BossBarragePocketReviewOwner : MonoBehaviour
+    // Owns boss barrage encounter progression, route results, and stage-level combat events.
+    public sealed class BossBarrageEncounterController : MonoBehaviour
     {
-        public enum ReviewPhase
+        public enum EncounterPhase
         {
             ThreatDefense,
             SummonBlock,
@@ -127,7 +126,7 @@ namespace DimensionBrawl.Test
                 string state,
                 string readout,
                 string incentiveCue,
-                ReviewPhase phase,
+                EncounterPhase phase,
                 int stageBeatIndex,
                 string completionReadout)
             {
@@ -142,7 +141,7 @@ namespace DimensionBrawl.Test
             public string State { get; }
             public string Readout { get; }
             public string IncentiveCue { get; }
-            public ReviewPhase Phase { get; }
+            public EncounterPhase Phase { get; }
             public int StageBeatIndex { get; }
             public string CompletionReadout { get; }
         }
@@ -201,7 +200,7 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float counterWaveAllyHoldSeconds = 0.45f;
         [SerializeField, Min(0f)] private float summonFollowupSkillImpactGraceSeconds = 0.75f;
 
-        [Header("Frontline Stage Review")]
+        [Header("Frontline Stage")]
         [SerializeField] private FrontlineWaveStageProfile stageProfile;
 
         [Header("Result Pace")]
@@ -438,21 +437,21 @@ namespace DimensionBrawl.Test
         public int CurrentPressureSlotIndex => ResolveCurrentPressureSlotIndex();
         public string CurrentPressureSlotLabel => ResolveCurrentPressureSlotLabel();
         public float CurrentRoutePressureWeight => ResolveCurrentRoutePressureWeight();
-        public ReviewPhase CurrentPhase
+        public EncounterPhase CurrentPhase
         {
             get
             {
                 return state switch
                 {
-                    PocketState.Cleared => ReviewPhase.Cleared,
-                    PocketState.Failed => ReviewPhase.Failed,
-                    _ when IsSkill1FollowupClearCountdownActive => ReviewPhase.SummonFollowup,
-                    _ when counterWaveObserved && !counterWaveStabilized => ReviewPhase.CounterWave,
-                    _ when pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
-                    _ when pressurePacing.IsSummonPressureBreakActive => ReviewPhase.PressureBreak,
-                    _ when counterWaveObserved => ReviewPhase.CounterWave,
-                    _ when closeThreatDefeated => ReviewPhase.SummonBlock,
-                    _ => ReviewPhase.ThreatDefense
+                    PocketState.Cleared => EncounterPhase.Cleared,
+                    PocketState.Failed => EncounterPhase.Failed,
+                    _ when IsSkill1FollowupClearCountdownActive => EncounterPhase.SummonFollowup,
+                    _ when counterWaveObserved && !counterWaveStabilized => EncounterPhase.CounterWave,
+                    _ when pressurePacing.IsSummonFollowupWindowActive => EncounterPhase.SummonFollowup,
+                    _ when pressurePacing.IsSummonPressureBreakActive => EncounterPhase.PressureBreak,
+                    _ when counterWaveObserved => EncounterPhase.CounterWave,
+                    _ when closeThreatDefeated => EncounterPhase.SummonBlock,
+                    _ => EncounterPhase.ThreatDefense
                 };
             }
         }
@@ -559,7 +558,7 @@ namespace DimensionBrawl.Test
         }
 
 #if UNITY_EDITOR
-        public void AssignStageProfileForReview(FrontlineWaveStageProfile newStageProfile)
+        public void AssignStageProfile(FrontlineWaveStageProfile newStageProfile)
         {
             stageProfile = newStageProfile;
         }
@@ -2692,14 +2691,14 @@ namespace DimensionBrawl.Test
             return resultKind switch
             {
                 RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail =>
-                    "review.failure.hp_pressure",
+                    "route.failure.hp_pressure",
                 RouteResultKind.CounterRecoveryClear =>
-                    "review.clear.counter_recovery",
+                    "route.clear.counter_recovery",
                 RouteResultKind.CleanFollowupClear =>
                     ResolveCleanFollowupTokenId(),
                 RouteResultKind.PressureSuppressionClear =>
-                    "review.clear.pressure_suppression",
-                _ => "review.pending"
+                    "route.clear.pressure_suppression",
+                _ => "route.pending"
             };
         }
 
@@ -2787,20 +2786,20 @@ namespace DimensionBrawl.Test
         {
             if (lastSupportSummonUseSlotId == "SummonSlot2")
             {
-                return "review.clear.marksman_combo";
+                return "route.clear.marksman_combo";
             }
 
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
-                return "review.clear.vanguard_payoff";
+                return "route.clear.vanguard_payoff";
             }
 
             if (IsDirectHighTierSuppressCleanFollowup())
             {
-                return "review.clear.lv3_suppress";
+                return "route.clear.lv3_suppress";
             }
 
-            return "review.clear.clean_followup";
+            return "route.clear.clean_followup";
         }
 
         private string ResolveCleanFollowupNextObjective()

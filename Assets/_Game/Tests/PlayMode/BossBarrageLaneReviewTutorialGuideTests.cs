@@ -1,6 +1,6 @@
 using System;
 using System.Reflection;
-using DimensionBrawl.Test;
+using DimensionBrawl.Combat;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -135,7 +135,7 @@ namespace DimensionBrawl.Tests
             SetPrivateField(profile, "steps", CreateStepArray(steps));
 
             var ownerObject = new GameObject("TutorialGuideTest_PocketOwner");
-            BossBarragePocketReviewOwner owner = ownerObject.AddComponent<BossBarragePocketReviewOwner>();
+            BossBarrageEncounterController owner = ownerObject.AddComponent<BossBarrageEncounterController>();
 
             Type guideType = RequireType(GuideTypeName);
             var guideObject = new GameObject("TutorialGuideTest_Guide");
@@ -297,7 +297,7 @@ namespace DimensionBrawl.Tests
                 ScriptableObject profile,
                 GameObject ownerObject,
                 GameObject guideObject,
-                BossBarragePocketReviewOwner pocketOwner,
+                BossBarrageEncounterController pocketOwner,
                 Component guide)
             {
                 this.profile = profile;
@@ -307,7 +307,7 @@ namespace DimensionBrawl.Tests
                 Guide = guide;
             }
 
-            public BossBarragePocketReviewOwner PocketOwner { get; }
+            public BossBarrageEncounterController PocketOwner { get; }
             public Component Guide { get; }
 
             public void Destroy()

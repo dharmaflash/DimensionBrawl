@@ -1,9 +1,10 @@
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
@@ -24,7 +25,8 @@ namespace DimensionBrawl.UI
         }
 
         [Header("References")]
-        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [FormerlySerializedAs("pocketReviewOwner")]
+        [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
         [SerializeField] private Behaviour[] inputLockBehaviours = new Behaviour[0];
 
@@ -65,11 +67,11 @@ namespace DimensionBrawl.UI
         private GUIStyle smallButtonStyle;
         private Texture2D solidTexture;
         private float cachedStyleScale = -1f;
-        private BossBarragePocketReviewOwner subscribedPocketReviewOwner;
+        private BossBarrageEncounterController subscribedEncounterController;
         private InputAction pauseAction;
         private bool resultControlsLocked;
 
-        public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
+        public BossBarrageEncounterController EncounterController => encounterController;
         public ActionScreenCuePresenter ScreenCuePresenter => screenCuePresenter;
         public string RetrySceneName => retrySceneName;
         public string RetryScenePath => retryScenePath;
@@ -87,11 +89,11 @@ namespace DimensionBrawl.UI
         public string ResultRouteReadout => HasResult ? ResolveResultRouteLabel() : string.Empty;
 
         public void Configure(
-            BossBarragePocketReviewOwner newPocketReviewOwner,
+            BossBarrageEncounterController newEncounterController,
             ActionScreenCuePresenter newScreenCuePresenter)
         {
             UnsubscribePocketResult();
-            pocketReviewOwner = newPocketReviewOwner;
+            encounterController = newEncounterController;
             screenCuePresenter = newScreenCuePresenter;
             CaptureSettings();
             if (isActiveAndEnabled)
@@ -165,8 +167,8 @@ namespace DimensionBrawl.UI
             RestoreGameplayControls();
         }
 
-        private bool HasResult => pocketReviewOwner != null
-            && (pocketReviewOwner.IsCleared || pocketReviewOwner.IsFailed);
+        private bool HasResult => encounterController != null
+            && (encounterController.IsCleared || encounterController.IsFailed);
 
         private void Awake()
         {
@@ -262,32 +264,32 @@ namespace DimensionBrawl.UI
 
         private void SubscribePocketResult()
         {
-            if (subscribedPocketReviewOwner == pocketReviewOwner)
+            if (subscribedEncounterController == encounterController)
             {
                 return;
             }
 
             UnsubscribePocketResult();
-            subscribedPocketReviewOwner = pocketReviewOwner;
-            if (subscribedPocketReviewOwner == null)
+            subscribedEncounterController = encounterController;
+            if (subscribedEncounterController == null)
             {
                 return;
             }
 
-            subscribedPocketReviewOwner.PocketCleared += HandlePocketResult;
-            subscribedPocketReviewOwner.PocketFailed += HandlePocketResult;
+            subscribedEncounterController.PocketCleared += HandlePocketResult;
+            subscribedEncounterController.PocketFailed += HandlePocketResult;
         }
 
         private void UnsubscribePocketResult()
         {
-            if (subscribedPocketReviewOwner == null)
+            if (subscribedEncounterController == null)
             {
                 return;
             }
 
-            subscribedPocketReviewOwner.PocketCleared -= HandlePocketResult;
-            subscribedPocketReviewOwner.PocketFailed -= HandlePocketResult;
-            subscribedPocketReviewOwner = null;
+            subscribedEncounterController.PocketCleared -= HandlePocketResult;
+            subscribedEncounterController.PocketFailed -= HandlePocketResult;
+            subscribedEncounterController = null;
         }
 
         private void HandlePocketResult()
@@ -409,19 +411,19 @@ namespace DimensionBrawl.UI
 
         private void DrawResultOverlay()
         {
-            bool cleared = pocketReviewOwner != null && pocketReviewOwner.IsCleared;
+            bool cleared = encounterController != null && encounterController.IsCleared;
             string title = ResolveResultTitle();
             string summary = ResolveResultSummary();
             Color resultAccent = cleared ? clearAccentColor : failAccentColor;
             bool hasCommittedRecord = TryGetCommittedResultRecord(
-                out BossBarragePocketReviewOwner.RouteResultRecord resultRecord);
+                out BossBarrageEncounterController.RouteResultRecord resultRecord);
 
             Rect panel = BeginModal(title, summary, resultAccent);
-            float resultSeconds = hasCommittedRecord ? resultRecord.ElapsedSeconds : pocketReviewOwner.ResultElapsedSeconds;
+            float resultSeconds = hasCommittedRecord ? resultRecord.ElapsedSeconds : encounterController.ResultElapsedSeconds;
             int completedObjectives = hasCommittedRecord
                 ? resultRecord.CompletedObjectiveStepCount
-                : pocketReviewOwner.CompletedObjectiveStepCount;
-            int objectiveSteps = hasCommittedRecord ? resultRecord.ObjectiveStepCount : pocketReviewOwner.ObjectiveStepCount;
+                : encounterController.CompletedObjectiveStepCount;
+            int objectiveSteps = hasCommittedRecord ? resultRecord.ObjectiveStepCount : encounterController.ObjectiveStepCount;
             GUILayout.Label(ResolveResultLine("Time", $"{resultSeconds:0.0}s"), bodyStyle);
             GUILayout.Label(
                 ResolveResultLine(
@@ -528,24 +530,24 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultTitle()
         {
-            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+            if (TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
                 && !string.IsNullOrWhiteSpace(resultRecord.Title))
             {
                 return resultRecord.Title;
             }
 
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            if (pocketReviewOwner.IsCleared)
+            if (encounterController.IsCleared)
             {
                 return ResolveStageText(profile?.ClearTitle, "PRESSURE BROKEN");
             }
 
-            if (pocketReviewOwner.IsFailed)
+            if (encounterController.IsFailed)
             {
                 return ResolveStageText(profile?.FailTitle, "PLAYER DOWN");
             }
@@ -555,19 +557,19 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultSummary()
         {
-            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+            if (TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
                 && !string.IsNullOrWhiteSpace(resultRecord.Summary))
             {
                 return resultRecord.Summary;
             }
 
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            if (pocketReviewOwner.IsCleared)
+            if (encounterController.IsCleared)
             {
                 if (IsCounterRecoveryClear())
                 {
@@ -576,7 +578,7 @@ namespace DimensionBrawl.UI
                         "Counter pressure held; final follow-up confirmed");
                 }
 
-                if (pocketReviewOwner.Skill1FollowupHitConfirmed)
+                if (encounterController.Skill1FollowupHitConfirmed)
                 {
                     return ResolveStageText(
                         profile?.ClearFollowupDetail,
@@ -588,9 +590,9 @@ namespace DimensionBrawl.UI
                     "Boss curtain suppressed; survival answer recorded");
             }
 
-            if (pocketReviewOwner.IsFailed)
+            if (encounterController.IsFailed)
             {
-                if (pocketReviewOwner.FailedFromRouteStabilityCollapse)
+                if (encounterController.FailedFromRouteStabilityCollapse)
                 {
                     return ResolveStageText(
                         profile?.RouteCollapseFailDetail,
@@ -607,19 +609,19 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultRewardHook()
         {
-            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+            if (TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
                 && !string.IsNullOrWhiteSpace(resultRecord.RewardHook))
             {
                 return resultRecord.RewardHook;
             }
 
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            if (pocketReviewOwner.IsFailed)
+            if (encounterController.IsFailed)
             {
                 return ResolveStageText(
                     profile?.FailedRouteRewardHook,
@@ -633,7 +635,7 @@ namespace DimensionBrawl.UI
                     "Counter recovery logged: summon absorbed pressure and reopened the final strike window.");
             }
 
-            if (pocketReviewOwner.IsCleared && pocketReviewOwner.Skill1FollowupHitConfirmed)
+            if (encounterController.IsCleared && encounterController.Skill1FollowupHitConfirmed)
             {
                 return ResolveStageText(
                     profile?.CleanRouteRewardHook,
@@ -647,19 +649,19 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultNextObjective()
         {
-            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+            if (TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
                 && !string.IsNullOrWhiteSpace(resultRecord.NextObjective))
             {
                 return resultRecord.NextObjective;
             }
 
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            if (pocketReviewOwner.IsFailed)
+            if (encounterController.IsFailed)
             {
                 return ResolveStageText(
                     profile?.FailedRouteNextObjective,
@@ -673,7 +675,7 @@ namespace DimensionBrawl.UI
                     "Next run: answer counter pressure earlier so recovery becomes a clean survival answer.");
             }
 
-            if (pocketReviewOwner.IsCleared)
+            if (encounterController.IsCleared)
             {
                 return ResolveStageText(
                     profile?.CleanRouteNextObjective,
@@ -685,20 +687,20 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultRouteLabel()
         {
-            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+            if (TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
                 && !string.IsNullOrWhiteSpace(resultRecord.RouteLabel))
             {
                 return resultRecord.RouteLabel;
             }
 
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return "-";
             }
 
-            if (pocketReviewOwner.IsFailed)
+            if (encounterController.IsFailed)
             {
-                return pocketReviewOwner.FailedFromRouteStabilityCollapse
+                return encounterController.FailedFromRouteStabilityCollapse
                     ? "Pressure control zero"
                     : "Player down";
             }
@@ -708,16 +710,16 @@ namespace DimensionBrawl.UI
                 return "Counter recovery";
             }
 
-            return pocketReviewOwner.Skill1FollowupHitConfirmed
+            return encounterController.Skill1FollowupHitConfirmed
                 ? "Clean summon follow-up"
                 : "Pressure suppression";
         }
 
-        private bool TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+        private bool TryGetCommittedResultRecord(out BossBarrageEncounterController.RouteResultRecord resultRecord)
         {
-            if (pocketReviewOwner != null && pocketReviewOwner.HasCommittedResultRecord)
+            if (encounterController != null && encounterController.HasCommittedResultRecord)
             {
-                resultRecord = pocketReviewOwner.LastResultRecord;
+                resultRecord = encounterController.LastResultRecord;
                 return true;
             }
 
@@ -727,14 +729,14 @@ namespace DimensionBrawl.UI
 
         private FrontlineWaveStageProfile ResolveActiveStageProfile()
         {
-            return pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
+            return encounterController != null ? encounterController.StageProfile : null;
         }
 
         private bool IsCounterRecoveryClear()
         {
-            return pocketReviewOwner != null
-                && pocketReviewOwner.Skill1FollowupHitConfirmed
-                && (pocketReviewOwner.IsCounterWaveStabilized || pocketReviewOwner.IsCounterWaveFinalWindowOpened);
+            return encounterController != null
+                && encounterController.Skill1FollowupHitConfirmed
+                && (encounterController.IsCounterWaveStabilized || encounterController.IsCounterWaveFinalWindowOpened);
         }
 
         private static string ResolveStageText(string profileText, string fallback)

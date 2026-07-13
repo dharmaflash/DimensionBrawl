@@ -6,7 +6,6 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
 using UnityEditor;
@@ -215,8 +214,8 @@ namespace DimensionBrawl.Editor
                 SetBool(cameraController, "aimAssistUsesYawTarget", true);
             }
 
-            ActionFoundationTestEncounter encounter =
-                RequireSceneComponent<ActionFoundationTestEncounter>(scene, "test encounter");
+            CombatEncounterController encounter =
+                RequireSceneComponent<CombatEncounterController>(scene, "combat encounter");
             SetObjectReference(encounter, "playerHealth", playerHealth);
             SetObjectReference(encounter, "enemyHealth", bossHealth);
 
@@ -233,7 +232,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(supportSummons[i], "frontlineTargetHealth", bossHealth);
             }
 
-            BossBarragePocketReviewOwner pocketOwner = FirstSceneComponent<BossBarragePocketReviewOwner>(scene);
+            BossBarrageEncounterController pocketOwner = FirstSceneComponent<BossBarrageEncounterController>(scene);
             if (pocketOwner != null)
             {
                 SetObjectReference(pocketOwner, "playerHealth", playerHealth);
@@ -279,8 +278,8 @@ namespace DimensionBrawl.Editor
             CombatHealth bossHealth = ResolveBossHealth(scene);
             PlayerCombatTargetSelector targetSelector =
                 RequireSceneComponent<PlayerCombatTargetSelector>(scene, "player target selector");
-            ActionFoundationTestEncounter encounter =
-                RequireSceneComponent<ActionFoundationTestEncounter>(scene, "test encounter");
+            CombatEncounterController encounter =
+                RequireSceneComponent<CombatEncounterController>(scene, "combat encounter");
 
             ValidateArrayReference(targetSelector, "targetCandidates", 0, bossHealth, expectedSize: 1);
             ValidateObjectReference(encounter, "enemyHealth", bossHealth);
@@ -901,7 +900,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatTargetSelector targetSelector,
             PlayerLockTargetController lockTargetController,
             PlayerRangedBasicAttackAction rangedBasicAttack,
-            ActionFoundationTestEncounter encounter)
+            CombatEncounterController encounter)
         {
             GameObject root = FindRoot(scene, RuntimeBinderRootName);
             if (root == null)

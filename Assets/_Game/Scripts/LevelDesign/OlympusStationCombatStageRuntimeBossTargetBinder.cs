@@ -2,7 +2,6 @@ using System;
 using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,7 +19,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
         [SerializeField] private PlayerLockTargetController lockTargetController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
-        [SerializeField] private ActionFoundationTestEncounter encounter;
+        [SerializeField] private CombatEncounterController encounter;
 
         private CombatHealth subscribedBossHealth;
         private bool bindingLogged;
@@ -100,7 +99,7 @@ namespace DimensionBrawl.LevelDesign
                 SetField(supportSummons[i], "frontlineTargetHealth", bossHealth);
             }
 
-            BossBarragePocketReviewOwner pocketOwner = FindFirstObjectByType<BossBarragePocketReviewOwner>();
+            BossBarrageEncounterController pocketOwner = FindFirstObjectByType<BossBarrageEncounterController>();
             if (pocketOwner != null)
             {
                 SetField(pocketOwner, "playerHealth", playerHealth);
@@ -173,7 +172,7 @@ namespace DimensionBrawl.LevelDesign
             targetSelector ??= FindFirstObjectByType<PlayerCombatTargetSelector>();
             lockTargetController ??= FindFirstObjectByType<PlayerLockTargetController>();
             rangedBasicAttackAction ??= FindFirstObjectByType<PlayerRangedBasicAttackAction>();
-            encounter ??= FindFirstObjectByType<ActionFoundationTestEncounter>();
+            encounter ??= FindFirstObjectByType<CombatEncounterController>();
 
             if (playerHealth == null && targetSelector != null)
             {

@@ -5,7 +5,6 @@ using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -1094,22 +1093,22 @@ namespace DimensionBrawl.Editor
             bool ready = true;
             ready &= HasSummonSlot1Config(
                 slot1,
-                BossBarrageSummonReviewContract.Slot1RequiredMana,
-                BossBarrageSummonReviewContract.Slot1CooldownSeconds,
+                BossBarrageSummonBalance.Slot1RequiredMana,
+                BossBarrageSummonBalance.Slot1CooldownSeconds,
                 report);
             ready &= HasSupportSummonConfig(
                 "SUMMON_S2",
                 slot2,
-                BossBarrageSummonReviewContract.Slot2MinimumTier,
-                BossBarrageSummonReviewContract.Slot2RequiredMana,
-                BossBarrageSummonReviewContract.Slot2CooldownSeconds,
+                BossBarrageSummonBalance.Slot2MinimumTier,
+                BossBarrageSummonBalance.Slot2RequiredMana,
+                BossBarrageSummonBalance.Slot2CooldownSeconds,
                 report);
             ready &= HasSupportSummonConfig(
                 "SUMMON_S3",
                 slot3,
-                BossBarrageSummonReviewContract.Slot3MinimumTier,
-                BossBarrageSummonReviewContract.Slot3RequiredMana,
-                BossBarrageSummonReviewContract.Slot3CooldownSeconds,
+                BossBarrageSummonBalance.Slot3MinimumTier,
+                BossBarrageSummonBalance.Slot3RequiredMana,
+                BossBarrageSummonBalance.Slot3CooldownSeconds,
                 report);
             if (energy == null)
             {

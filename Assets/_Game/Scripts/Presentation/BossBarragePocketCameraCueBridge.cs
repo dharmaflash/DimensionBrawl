@@ -1,19 +1,21 @@
+using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Presentation;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Presentation
 {
     public sealed class BossBarragePocketCameraCueBridge : MonoBehaviour
     {
-        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [FormerlySerializedAs("pocketReviewOwner")]
+        [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private ActionCameraCueDriver cameraCueDriver;
         [SerializeField] private ActionCinematicCueDirector cinematicCueDirector;
 
         private int bossScreenSuppressCueRequestCount;
 
-        public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
+        public BossBarrageEncounterController EncounterController => encounterController;
         public PlayerSummonSlot1Action SummonSlot1Action => summonSlot1Action;
         public ActionCameraCueDriver CameraCueDriver => cameraCueDriver;
         public ActionCinematicCueDirector CinematicCueDirector => cinematicCueDirector;
@@ -21,9 +23,9 @@ namespace DimensionBrawl.Test
 
         private void Awake()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
-                pocketReviewOwner = GetComponent<BossBarragePocketReviewOwner>();
+                encounterController = GetComponent<BossBarrageEncounterController>();
             }
 
             if (summonSlot1Action == null)
@@ -34,34 +36,34 @@ namespace DimensionBrawl.Test
 
         private void OnEnable()
         {
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
-                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
-                pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
-                pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
-                pocketReviewOwner.PocketCleared += HandlePocketCleared;
-                pocketReviewOwner.PocketFailed += HandlePocketFailed;
+                encounterController.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
+                encounterController.SummonFollowupMissed += HandleSummonFollowupMissed;
+                encounterController.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
+                encounterController.CounterWaveObserved += HandleCounterWaveObserved;
+                encounterController.CounterWaveStabilized += HandleCounterWaveStabilized;
+                encounterController.PocketCleared += HandlePocketCleared;
+                encounterController.PocketFailed += HandlePocketFailed;
             }
 
         }
 
         private void OnDisable()
         {
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
-                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
-                pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
-                pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
-                pocketReviewOwner.PocketCleared -= HandlePocketCleared;
-                pocketReviewOwner.PocketFailed -= HandlePocketFailed;
+                encounterController.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
+                encounterController.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                encounterController.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
+                encounterController.CounterWaveObserved -= HandleCounterWaveObserved;
+                encounterController.CounterWaveStabilized -= HandleCounterWaveStabilized;
+                encounterController.PocketCleared -= HandlePocketCleared;
+                encounterController.PocketFailed -= HandlePocketFailed;
             }
 
         }
@@ -125,7 +127,7 @@ namespace DimensionBrawl.Test
             RequestCinematic(ActionCinematicCueProfile.CueKind.BossPressureBreak, tier);
         }
 
-        private void HandleCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
+        private void HandleCounterWaveObserved(BossBarrageEncounterController.CounterWaveSource source)
         {
             cameraCueDriver?.RequestCounterWaveCue(ResolveCounterWaveCueTier(source));
         }
@@ -152,10 +154,10 @@ namespace DimensionBrawl.Test
             return cinematicCueDirector != null && cinematicCueDirector.TryPlay(kind, tier);
         }
 
-        private static int ResolveCounterWaveCueTier(BossBarragePocketReviewOwner.CounterWaveSource source)
+        private static int ResolveCounterWaveCueTier(BossBarrageEncounterController.CounterWaveSource source)
         {
-            return source == BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease
-                || source == BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed
+            return source == BossBarrageEncounterController.CounterWaveSource.BossSummonRelease
+                || source == BossBarrageEncounterController.CounterWaveSource.FollowupMissed
                 ? 2
                 : 1;
         }

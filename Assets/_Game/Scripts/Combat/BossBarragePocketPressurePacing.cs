@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Combat
 {
     internal sealed class BossBarragePocketPressurePacing
     {

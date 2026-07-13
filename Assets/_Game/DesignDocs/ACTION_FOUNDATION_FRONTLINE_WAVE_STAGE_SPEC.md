@@ -486,7 +486,7 @@ Use these instead of inventing parallel systems:
 - `BossBarrageEmitter`
 - `BossPressureCostLadder`
 - `BossPressureActionDirector`
-- `BossBarragePocketReviewOwner`
+- `BossBarrageEncounterController`
 - `BossBarrageLaneReviewCombatHudBinder`
 - `CombatHudPresenter`
 - `CombatHudInputBridge`
@@ -796,7 +796,7 @@ Local anchors from the current project investigation:
 - `COMBAT_V1_SPEC.md`: warns not to hide a weak EN/summon loop with art, enemies, or buttons.
 - `LINEAR_STAGE_DESIGN_FOUNDATION.md`: says old route names are stage-design promises only and the current pivot should focus on fixed-rear boss-barrage plus `SummonSlot1`.
 - `DB_BossPressureActionDeck_PocketReview.asset`: already defines role/answer data for LV1, LV2, and LV3 boss pressure.
-- `BossBarragePocketReviewOwner`: already requires local defense, summon pressure block, and confirmed follow-up hit for pocket clear.
+- `BossBarrageEncounterController`: already requires local defense, summon pressure block, and confirmed follow-up hit for pocket clear.
 - `SummonLaneSpace`: already separates clamped player space from battlefield coordinates used by summons.
 - PGR tutorial/stage reference data: successful reference games tie stage nodes, guide steps, combat overlays, and rewards together instead of leaving combat prompts as isolated debug reads.
 - NIKKE `stage-wave-join.csv`: campaign stage rows keep stage type/category, theme, scenario hooks, reward IDs, wave groups, monster slots, close/mid/far counts, and target lists together.

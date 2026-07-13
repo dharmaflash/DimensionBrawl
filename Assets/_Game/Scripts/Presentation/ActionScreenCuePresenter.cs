@@ -3,6 +3,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DimensionBrawl.Presentation
 {
@@ -33,7 +34,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
-        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [FormerlySerializedAs("pocketReviewOwner")]
+        [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private BossSummonDuelReviewOwner duelReviewOwner;
 
         [Header("Display")]
@@ -167,11 +169,11 @@ namespace DimensionBrawl.Presentation
         private int lastEnergyCueTier;
         private int lastFrontlineBeatIndex = -1;
         private string lastFrontlineBeatLabel = string.Empty;
-        private BossBarragePocketReviewOwner.CounterWaveSource lastCounterWaveSource =
-            BossBarragePocketReviewOwner.CounterWaveSource.None;
+        private BossBarrageEncounterController.CounterWaveSource lastCounterWaveSource =
+            BossBarrageEncounterController.CounterWaveSource.None;
         private string lastCounterWaveAnswer = string.Empty;
-        private BossBarragePocketReviewOwner.RouteStabilityBand lastFrontlineStabilityBand =
-            BossBarragePocketReviewOwner.RouteStabilityBand.Stable;
+        private BossBarrageEncounterController.RouteStabilityBand lastFrontlineStabilityBand =
+            BossBarrageEncounterController.RouteStabilityBand.Stable;
         private float lastFrontlineStability01 = 1f;
         private float lastFollowupWindowRouteScale = 1f;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
@@ -248,9 +250,9 @@ namespace DimensionBrawl.Presentation
         public int LastEnergyCueTier => lastEnergyCueTier;
         public int LastFrontlineBeatIndex => lastFrontlineBeatIndex;
         public string LastFrontlineBeatLabel => lastFrontlineBeatLabel;
-        public BossBarragePocketReviewOwner.CounterWaveSource LastCounterWaveSource => lastCounterWaveSource;
+        public BossBarrageEncounterController.CounterWaveSource LastCounterWaveSource => lastCounterWaveSource;
         public string LastCounterWaveAnswer => lastCounterWaveAnswer;
-        public BossBarragePocketReviewOwner.RouteStabilityBand LastFrontlineStabilityBand => lastFrontlineStabilityBand;
+        public BossBarrageEncounterController.RouteStabilityBand LastFrontlineStabilityBand => lastFrontlineStabilityBand;
         public float LastFrontlineStability01 => lastFrontlineStability01;
         public float LastFollowupWindowRouteScale => lastFollowupWindowRouteScale;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
@@ -297,7 +299,7 @@ namespace DimensionBrawl.Presentation
             PlayerSupportSummonSlotAction newSummonSlot3Action,
             BossBarrageEmitter newBossBarrageEmitter,
             BossPressureActionDirector newBossPressureActionDirector,
-            BossBarragePocketReviewOwner newPocketReviewOwner,
+            BossBarrageEncounterController newEncounterController,
             BossSummonDuelReviewOwner newDuelReviewOwner = null)
         {
             Unsubscribe();
@@ -311,7 +313,7 @@ namespace DimensionBrawl.Presentation
             summonSlot3Action = newSummonSlot3Action;
             bossBarrageEmitter = newBossBarrageEmitter;
             bossPressureActionDirector = newBossPressureActionDirector;
-            pocketReviewOwner = newPocketReviewOwner;
+            encounterController = newEncounterController;
             duelReviewOwner = newDuelReviewOwner;
             Subscribe();
         }
@@ -553,22 +555,22 @@ namespace DimensionBrawl.Presentation
         }
 
         private void HandleRouteStabilityBandChanged(
-            BossBarragePocketReviewOwner.RouteStabilityBand band,
+            BossBarrageEncounterController.RouteStabilityBand band,
             float stability01)
         {
             lastFrontlineStabilityBand = band;
             lastFrontlineStability01 = Mathf.Clamp01(stability01);
-            if (band == BossBarragePocketReviewOwner.RouteStabilityBand.Stable)
+            if (band == BossBarrageEncounterController.RouteStabilityBand.Stable)
             {
                 return;
             }
 
             frontlineStabilityCueRequestCount++;
-            Color color = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical
+            Color color = band == BossBarrageEncounterController.RouteStabilityBand.Critical
                 ? pocketFailColor
                 : frontlineWarningColor;
-            float intensity = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical ? 0.96f : 0.68f;
-            float duration = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical ? 0.36f : 0.24f;
+            float intensity = band == BossBarrageEncounterController.RouteStabilityBand.Critical ? 0.96f : 0.68f;
+            float duration = band == BossBarrageEncounterController.RouteStabilityBand.Critical ? 0.36f : 0.24f;
             RequestScreenCue(
                 $"FrontlineStability.{band}",
                 color,
@@ -577,12 +579,12 @@ namespace DimensionBrawl.Presentation
                 ScreenCueCategory.Frontline);
         }
 
-        private void HandleCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
+        private void HandleCounterWaveObserved(BossBarrageEncounterController.CounterWaveSource source)
         {
             lastCounterWaveSource = source;
             counterWaveCueRequestCount++;
-            bool heavyCounterCue = source == BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease
-                || source == BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed;
+            bool heavyCounterCue = source == BossBarrageEncounterController.CounterWaveSource.BossSummonRelease
+                || source == BossBarrageEncounterController.CounterWaveSource.FollowupMissed;
             float intensity = heavyCounterCue ? 0.86f : 0.72f;
             RequestScreenCue(
                 $"Frontline.CounterWave.{source}",
@@ -611,8 +613,8 @@ namespace DimensionBrawl.Presentation
 
         private void HandleSummonFollowupWindowOpened(int tier)
         {
-            lastFollowupWindowRouteScale = pocketReviewOwner != null
-                ? Mathf.Clamp(pocketReviewOwner.LastCounterWaveFinalWindowRouteScale, 0.1f, 1f)
+            lastFollowupWindowRouteScale = encounterController != null
+                ? Mathf.Clamp(encounterController.LastCounterWaveFinalWindowRouteScale, 0.1f, 1f)
                 : 1f;
             bool compressedWindow = lastFollowupWindowRouteScale < 0.999f;
             float compression01 = 1f - lastFollowupWindowRouteScale;
@@ -998,19 +1000,19 @@ namespace DimensionBrawl.Presentation
         private string ResolveFrontlineBeatId(int beatIndex, out string beatLabel)
         {
             beatLabel = $"Beat {beatIndex + 1}";
-            if (pocketReviewOwner == null || pocketReviewOwner.StageProfile == null)
+            if (encounterController == null || encounterController.StageProfile == null)
             {
                 return $"B{Mathf.Max(0, beatIndex)}";
             }
 
-            int beatCount = pocketReviewOwner.StageProfile.BeatCount;
+            int beatCount = encounterController.StageProfile.BeatCount;
             if (beatCount <= 0)
             {
                 return $"B{Mathf.Max(0, beatIndex)}";
             }
 
             int safeBeatIndex = Mathf.Clamp(beatIndex, 0, beatCount - 1);
-            var beat = pocketReviewOwner.StageProfile.GetBeat(safeBeatIndex);
+            var beat = encounterController.StageProfile.GetBeat(safeBeatIndex);
             beatLabel = string.IsNullOrWhiteSpace(beat.Label) ? beatLabel : beat.Label;
             return string.IsNullOrWhiteSpace(beat.BeatId) ? beatLabel : beat.BeatId;
         }
@@ -1067,19 +1069,19 @@ namespace DimensionBrawl.Presentation
                 bossPressureActionDirector.ActionQueued += HandleBossPressureActionQueued;
             }
 
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.StageBeatChanged += HandleStageBeatChanged;
-                pocketReviewOwner.RouteStabilityBandChanged += HandleRouteStabilityBandChanged;
-                pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
-                pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
-                pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
-                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
-                pocketReviewOwner.PocketCleared += HandlePocketCleared;
-                pocketReviewOwner.PocketFailed += HandlePocketFailed;
+                encounterController.StageBeatChanged += HandleStageBeatChanged;
+                encounterController.RouteStabilityBandChanged += HandleRouteStabilityBandChanged;
+                encounterController.CounterWaveObserved += HandleCounterWaveObserved;
+                encounterController.CounterWaveStabilized += HandleCounterWaveStabilized;
+                encounterController.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
+                encounterController.SummonFollowupMissed += HandleSummonFollowupMissed;
+                encounterController.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
+                encounterController.PocketCleared += HandlePocketCleared;
+                encounterController.PocketFailed += HandlePocketFailed;
             }
 
             if (duelReviewOwner != null)
@@ -1142,19 +1144,19 @@ namespace DimensionBrawl.Presentation
                 bossPressureActionDirector.ActionQueued -= HandleBossPressureActionQueued;
             }
 
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.StageBeatChanged -= HandleStageBeatChanged;
-                pocketReviewOwner.RouteStabilityBandChanged -= HandleRouteStabilityBandChanged;
-                pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
-                pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
-                pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
-                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
-                pocketReviewOwner.PocketCleared -= HandlePocketCleared;
-                pocketReviewOwner.PocketFailed -= HandlePocketFailed;
+                encounterController.StageBeatChanged -= HandleStageBeatChanged;
+                encounterController.RouteStabilityBandChanged -= HandleRouteStabilityBandChanged;
+                encounterController.CounterWaveObserved -= HandleCounterWaveObserved;
+                encounterController.CounterWaveStabilized -= HandleCounterWaveStabilized;
+                encounterController.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
+                encounterController.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                encounterController.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
+                encounterController.PocketCleared -= HandlePocketCleared;
+                encounterController.PocketFailed -= HandlePocketFailed;
             }
 
             if (duelReviewOwner != null)

@@ -1,8 +1,8 @@
 using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DimensionBrawl.UI
 {
@@ -38,7 +38,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool useSingleSummonPresentation;
 
         [Header("Combat State")]
-        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [FormerlySerializedAs("pocketReviewOwner")]
+        [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private SummonEnergyLadder energyLadder;
@@ -316,8 +317,8 @@ namespace DimensionBrawl.UI
         {
             string objective = tutorialGuide != null && tutorialGuide.HasReadoutOverride
                 ? tutorialGuide.CurrentObjective
-                : pocketReviewOwner != null
-                    ? pocketReviewOwner.ObjectiveCue
+                : encounterController != null
+                    ? encounterController.ObjectiveCue
                     : "Survive the boss lane.";
             hudPresenter.SetObjective(objective);
             hudPresenter.SetTimer(ResolveRemainingSeconds());
@@ -561,7 +562,7 @@ namespace DimensionBrawl.UI
             }
 
             tutorialGuide.BindRuntimeContext(
-                pocketReviewOwner,
+                encounterController,
                 energyLadder,
                 actionController,
                 rangedBasicAttackAction,
@@ -753,15 +754,15 @@ namespace DimensionBrawl.UI
 
         private float ResolveRemainingSeconds()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return 0f;
             }
 
-            float target = pocketReviewOwner.StageProfile != null
-                ? pocketReviewOwner.StageProfile.TargetDurationSeconds
+            float target = encounterController.StageProfile != null
+                ? encounterController.StageProfile.TargetDurationSeconds
                 : 90f;
-            return Mathf.Max(0f, target - pocketReviewOwner.ElapsedSeconds);
+            return Mathf.Max(0f, target - encounterController.ElapsedSeconds);
         }
 
         private string ResolveBasicAttackLabel()

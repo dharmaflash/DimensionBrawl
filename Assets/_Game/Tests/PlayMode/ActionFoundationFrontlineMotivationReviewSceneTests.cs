@@ -6,7 +6,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
@@ -81,7 +80,7 @@ namespace DimensionBrawl.Tests
             Assert.That(stageProfile.UnansweredBossHitRoutePenalty01, Is.InRange(0.04f, 0.12f));
             Assert.That(
                 stageProfile.CleanFollowupEnergyPulseOverride,
-                Is.EqualTo(BossBarrageSummonReviewContract.Slot3RequiredMana).Within(0.001f));
+                Is.EqualTo(BossBarrageSummonBalance.Slot3RequiredMana).Within(0.001f));
             Assert.That(stageProfile.CounterWaveAnswerEnergyPulseOverride, Is.InRange(200f, 220f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(
@@ -103,8 +102,8 @@ namespace DimensionBrawl.Tests
             Assert.That(closeProbeSlot.WavePathPattern, Does.Contain("path_grd"));
             Assert.Greater(closeProbeSlot.RoutePressureWeight, 0f);
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             ActionScreenCuePresenter screenCuePresenter =
@@ -140,7 +139,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("survive", pocketOwner.LastRouteDecisionSnapshot.State);
             Assert.AreEqual("keep_hp", pocketOwner.LastRouteDecisionSnapshot.Readout);
             Assert.AreEqual(pocketOwner.RouteIncentiveCue, pocketOwner.LastRouteDecisionSnapshot.IncentiveCue);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.ThreatDefense, pocketOwner.LastRouteDecisionSnapshot.Phase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.ThreatDefense, pocketOwner.LastRouteDecisionSnapshot.Phase);
             Assert.AreEqual(4, pocketOwner.RouteProofStepCount);
             Assert.AreEqual(0, pocketOwner.CompletedRouteProofStepCount);
             Assert.AreEqual("pending", pocketOwner.RouteProofState);
@@ -195,14 +194,14 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
 
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Stable, pocketOwner.CurrentRouteStabilityBand);
+            Assert.AreEqual(BossBarrageEncounterController.RouteStabilityBand.Stable, pocketOwner.CurrentRouteStabilityBand);
             int routeDecisionEventCount = 0;
-            BossBarragePocketReviewOwner.RouteDecisionSnapshot lastRouteDecisionEvent = default;
+            BossBarrageEncounterController.RouteDecisionSnapshot lastRouteDecisionEvent = default;
             pocketOwner.RouteDecisionChanged += snapshot =>
             {
                 routeDecisionEventCount++;
@@ -214,10 +213,10 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0.1f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Unstable, pocketOwner.CurrentRouteStabilityBand);
+            Assert.AreEqual(BossBarrageEncounterController.RouteStabilityBand.Unstable, pocketOwner.CurrentRouteStabilityBand);
             Assert.Greater(screenCuePresenter.FrontlineStabilityCueRequestCount, stabilityCueCountBeforeUnstable);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteStabilityBand.Unstable,
+                BossBarrageEncounterController.RouteStabilityBand.Unstable,
                 screenCuePresenter.LastFrontlineStabilityBand);
             Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Unstable"));
 
@@ -226,10 +225,10 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0.1f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Critical, pocketOwner.CurrentRouteStabilityBand);
+            Assert.AreEqual(BossBarrageEncounterController.RouteStabilityBand.Critical, pocketOwner.CurrentRouteStabilityBand);
             Assert.Greater(screenCuePresenter.FrontlineStabilityCueRequestCount, stabilityCueCountBeforeCritical);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteStabilityBand.Critical,
+                BossBarrageEncounterController.RouteStabilityBand.Critical,
                 screenCuePresenter.LastFrontlineStabilityBand);
             Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Critical"));
             Assert.AreEqual(1, routeDecisionEventCount);
@@ -245,8 +244,8 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
 
             Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
             Assert.AreEqual(0, pocketOwner.ActiveEnemyFrontlineProxyCount);
@@ -283,8 +282,8 @@ namespace DimensionBrawl.Tests
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
             Assert.NotNull(player, "Frontline hit penalty test needs the scene player.");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
@@ -320,8 +319,8 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             ActionScreenCuePresenter screenCuePresenter =
@@ -350,7 +349,7 @@ namespace DimensionBrawl.Tests
 
             Assert.IsFalse(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("pending", pocketOwner.CounterWaveRecordState);
-            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.None, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual(BossBarrageEncounterController.CounterWaveSource.None, pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("none", pocketOwner.CounterWaveSourceReadout);
             Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
             Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
@@ -383,7 +382,7 @@ namespace DimensionBrawl.Tests
             int counterCameraCueCountBeforeEnemy = cameraCueDriver.CounterWaveCueRequestCount;
             float stabilityBeforeCounterWave = pocketOwner.RouteStability01;
             int routeDecisionCountBeforeCounter = pocketOwner.RouteDecisionChangeCount;
-            BossBarragePocketReviewOwner.RouteDecisionSnapshot lastRouteDecisionEvent = default;
+            BossBarrageEncounterController.RouteDecisionSnapshot lastRouteDecisionEvent = default;
             pocketOwner.RouteDecisionChanged += snapshot => lastRouteDecisionEvent = snapshot;
             pocketOwner.Tick(0f);
 
@@ -398,7 +397,7 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
-            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual(BossBarrageEncounterController.CounterWaveSource.FollowupMissed, pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("followup_miss", pocketOwner.CounterWaveSourceReadout);
             Assert.AreEqual(stageProfile.CounterWaveEntryRoutePenalty01, pocketOwner.LastCounterWaveEntryPenalty, 0.001f);
             Assert.Less(pocketOwner.RouteStability01, stabilityBeforeCounterWave);
@@ -408,7 +407,7 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
             Assert.AreEqual("pending", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("awaiting_answer", pocketOwner.CounterWaveFinalWindowReadout);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.CounterWave, pocketOwner.CurrentPhase);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter pressure"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(followup_miss)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
@@ -423,11 +422,11 @@ namespace DimensionBrawl.Tests
             Assert.That(lastRouteDecisionEvent.IncentiveCue, Does.Contain("summon pressure held"));
             Assert.Greater(screenCuePresenter.CounterWaveCueRequestCount, counterCueCountBeforeEnemy);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed,
+                BossBarrageEncounterController.CounterWaveSource.FollowupMissed,
                 screenCuePresenter.LastCounterWaveSource);
             Assert.Greater(pocketVfxCueBridge.CounterWaveCueRequestCount, counterVfxCueCountBeforeEnemy);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed,
+                BossBarrageEncounterController.CounterWaveSource.FollowupMissed,
                 pocketVfxCueBridge.LastCounterWaveSource);
             Assert.AreEqual(CombatVfxCueId.EnemyLinePressureActive, pocketVfxCueBridge.CounterWaveCueId);
             Assert.AreEqual(counterCameraCueCountBeforeEnemy + 1, cameraCueDriver.CounterWaveCueRequestCount);
@@ -547,7 +546,7 @@ namespace DimensionBrawl.Tests
                 unstableStabilityBeforeAnswer + stageProfile.CounterWaveStabilizeRouteBonus01);
             Assert.Greater(pocketOwner.LastCounterWaveFinalWindowDuration, 0f);
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.SummonFollowup, pocketOwner.CurrentPhase);
             Assert.Greater(pocketOwner.RouteStability01, unstableStabilityBeforeAnswer);
             Assert.GreaterOrEqual(
                 pocketOwner.RouteStability01,
@@ -594,7 +593,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0, skill1Action.LastFiredProjectileCount);
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFinalHit);
             int counterRecoveryRecordEventCount = 0;
-            BossBarragePocketReviewOwner.RouteResultRecord counterRecoveryEventRecord = default;
+            BossBarrageEncounterController.RouteResultRecord counterRecoveryEventRecord = default;
             pocketOwner.ResultRecordCommitted += record =>
             {
                 counterRecoveryRecordEventCount++;
@@ -604,16 +603,16 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsTrue(pocketOwner.IsCleared);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.Cleared, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
             Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
             Assert.AreEqual(1, counterRecoveryRecordEventCount);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteResultKind.CounterRecoveryClear,
+                BossBarrageEncounterController.RouteResultKind.CounterRecoveryClear,
                 pocketOwner.LastResultRecord.ResultKind);
             Assert.IsTrue(pocketOwner.LastResultRecord.IsClear);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed,
+                BossBarrageEncounterController.CounterWaveSource.FollowupMissed,
                 pocketOwner.LastResultRecord.CounterWaveSource);
             Assert.AreEqual("recovery_clear", pocketOwner.LastResultRecord.DecisionState);
             Assert.AreEqual("counter_recovery", pocketOwner.LastResultRecord.DecisionReadout);
@@ -643,8 +642,8 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
@@ -667,7 +666,7 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
-            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual(BossBarrageEncounterController.CounterWaveSource.BossSummonRelease, pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("boss_summon", pocketOwner.CounterWaveSourceReadout);
             Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
             Assert.AreEqual("pending", pocketOwner.CounterWaveAnswerState);
@@ -675,18 +674,18 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
             Assert.AreEqual("pending", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("awaiting_answer", pocketOwner.CounterWaveFinalWindowReadout);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.CounterWave, pocketOwner.CurrentPhase);
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(boss_summon)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_window:pending(awaiting_answer)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
             Assert.Greater(screenCuePresenter.CounterWaveCueRequestCount, counterCueCountBeforeRelease);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
+                BossBarrageEncounterController.CounterWaveSource.BossSummonRelease,
                 screenCuePresenter.LastCounterWaveSource);
             Assert.Greater(pocketVfxCueBridge.CounterWaveCueRequestCount, counterVfxCueCountBeforeRelease);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
+                BossBarrageEncounterController.CounterWaveSource.BossSummonRelease,
                 pocketVfxCueBridge.LastCounterWaveSource);
             Assert.AreEqual(counterCameraCueCountBeforeRelease + 1, cameraCueDriver.CounterWaveCueRequestCount);
             Assert.AreEqual(2, cameraCueDriver.LastCounterWaveTier);
@@ -899,8 +898,8 @@ namespace DimensionBrawl.Tests
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
             BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
 
             SetField(summonSlot1Action, "summonActorSpawnDelaySeconds", 0f);
 
@@ -993,7 +992,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(pocketOwner.Skill1FollowupDamage, 0f);
 
             int cleanRecordEventCount = 0;
-            BossBarragePocketReviewOwner.RouteResultRecord cleanEventRecord = default;
+            BossBarrageEncounterController.RouteResultRecord cleanEventRecord = default;
             pocketOwner.ResultRecordCommitted += record =>
             {
                 cleanRecordEventCount++;
@@ -1009,15 +1008,15 @@ namespace DimensionBrawl.Tests
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
             Assert.That(guidedSuccessSeconds, Is.InRange(14f, 22f));
             Assert.IsTrue(pocketOwner.IsCleared);
-            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.AreEqual(BossBarrageEncounterController.EncounterPhase.Cleared, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
             Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
             Assert.AreEqual(1, cleanRecordEventCount);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteResultKind.CleanFollowupClear,
+                BossBarrageEncounterController.RouteResultKind.CleanFollowupClear,
                 pocketOwner.LastResultRecord.ResultKind);
             Assert.IsTrue(pocketOwner.LastResultRecord.IsClear);
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.None, pocketOwner.LastResultRecord.FailureReason);
+            Assert.AreEqual(BossBarrageEncounterController.RouteFailureReason.None, pocketOwner.LastResultRecord.FailureReason);
             Assert.AreEqual("clean_clear", pocketOwner.LastResultRecord.DecisionState);
             Assert.AreEqual("clean_followup", pocketOwner.LastResultRecord.DecisionReadout);
             Assert.That(pocketOwner.LastResultRecord.Title, Does.Contain("PRESSURE BROKEN"));
@@ -1053,8 +1052,8 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
@@ -1069,7 +1068,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsFalse(pocketOwner.IsFailed);
             Assert.IsFalse(pocketOwner.FailedFromRouteStabilityCollapse);
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.None, pocketOwner.FailureReason);
+            Assert.AreEqual(BossBarrageEncounterController.RouteFailureReason.None, pocketOwner.FailureReason);
             Assert.IsTrue(playerHealth.IsAlive, "HP, not route stability, should be the actual fail state.");
             Assert.AreEqual(string.Empty, overlayHud.ResultTitleReadout);
         }
@@ -1080,8 +1079,8 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
@@ -1089,9 +1088,9 @@ namespace DimensionBrawl.Tests
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
 
             int failRecordEventCount = 0;
-            BossBarragePocketReviewOwner.RouteResultRecord failEventRecord = default;
+            BossBarrageEncounterController.RouteResultRecord failEventRecord = default;
             int routeDecisionCountBeforeFail = pocketOwner.RouteDecisionChangeCount;
-            BossBarragePocketReviewOwner.RouteDecisionSnapshot failDecisionEvent = default;
+            BossBarrageEncounterController.RouteDecisionSnapshot failDecisionEvent = default;
             pocketOwner.ResultRecordCommitted += record =>
             {
                 failRecordEventCount++;
@@ -1108,12 +1107,12 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsFailed);
-            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
+            Assert.AreEqual(BossBarrageEncounterController.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
             Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
             Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
             Assert.AreEqual(1, failRecordEventCount);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteResultKind.PlayerDownFail,
+                BossBarrageEncounterController.RouteResultKind.PlayerDownFail,
                 pocketOwner.LastResultRecord.ResultKind);
             Assert.Greater(pocketOwner.RouteDecisionChangeCount, routeDecisionCountBeforeFail);
             Assert.AreEqual("failed", failDecisionEvent.State);
@@ -1121,7 +1120,7 @@ namespace DimensionBrawl.Tests
             Assert.That(failDecisionEvent.IncentiveCue, Does.Contain("Failure analysis"));
             Assert.IsFalse(pocketOwner.LastResultRecord.IsClear);
             Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown,
+                BossBarrageEncounterController.RouteFailureReason.PlayerDown,
                 pocketOwner.LastResultRecord.FailureReason);
             Assert.AreEqual("failed", pocketOwner.LastResultRecord.DecisionState);
             Assert.AreEqual("player_down", pocketOwner.LastResultRecord.DecisionReadout);
@@ -1271,9 +1270,9 @@ namespace DimensionBrawl.Tests
             return field.GetValue(target) as T;
         }
 
-        private static void ForcePocketState(BossBarragePocketReviewOwner owner, string stateName)
+        private static void ForcePocketState(BossBarrageEncounterController owner, string stateName)
         {
-            Type stateType = typeof(BossBarragePocketReviewOwner).GetNestedType(
+            Type stateType = typeof(BossBarrageEncounterController).GetNestedType(
                 "PocketState",
                 BindingFlags.NonPublic);
             Assert.NotNull(stateType, "PocketState enum is missing.");

@@ -1,8 +1,8 @@
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Combat
 {
-    public readonly struct BossBarrageSummonSlotReviewContract
+    public readonly struct BossBarrageSummonSlotBalance
     {
-        public BossBarrageSummonSlotReviewContract(
+        public BossBarrageSummonSlotBalance(
             string actionName,
             string hudLabel,
             int minimumTier,
@@ -23,7 +23,7 @@ namespace DimensionBrawl.Test
         public float CooldownSeconds { get; }
     }
 
-    public static class BossBarrageSummonReviewContract
+    public static class BossBarrageSummonBalance
     {
         public const bool UseSingleSummonButton = false;
         public const string LockedSummonLabel = "NEXT";
@@ -46,24 +46,24 @@ namespace DimensionBrawl.Test
         public const float Slot3RequiredMana = 300f;
         public const float Slot3CooldownSeconds = 15f;
 
-        public static BossBarrageSummonSlotReviewContract Slot1 =>
-            new BossBarrageSummonSlotReviewContract(
+        public static BossBarrageSummonSlotBalance Slot1 =>
+            new BossBarrageSummonSlotBalance(
                 Slot1ActionName,
                 Slot1HudLabel,
                 Slot1MinimumTier,
                 Slot1RequiredMana,
                 Slot1CooldownSeconds);
 
-        public static BossBarrageSummonSlotReviewContract Slot2 =>
-            new BossBarrageSummonSlotReviewContract(
+        public static BossBarrageSummonSlotBalance Slot2 =>
+            new BossBarrageSummonSlotBalance(
                 Slot2ActionName,
                 Slot2HudLabel,
                 Slot2MinimumTier,
                 Slot2RequiredMana,
                 Slot2CooldownSeconds);
 
-        public static BossBarrageSummonSlotReviewContract Slot3 =>
-            new BossBarrageSummonSlotReviewContract(
+        public static BossBarrageSummonSlotBalance Slot3 =>
+            new BossBarrageSummonSlotBalance(
                 Slot3ActionName,
                 Slot3HudLabel,
                 Slot3MinimumTier,

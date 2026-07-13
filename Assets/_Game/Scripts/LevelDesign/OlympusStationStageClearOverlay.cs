@@ -3,10 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using DimensionBrawl.Combat;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
@@ -36,7 +36,8 @@ namespace DimensionBrawl.LevelDesign
             "PF_UI_CombatHudPresentation"
         };
 
-        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [FormerlySerializedAs("pocketReviewOwner")]
+        [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private int sortOrder = 7000;
@@ -44,7 +45,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0f)] private float postBossDefeatHoldSeconds = 1.1f;
         [SerializeField, Min(0f)] private float hudExitSlidePixels = 128f;
 
-        private BossBarragePocketReviewOwner subscribedOwner;
+        private BossBarrageEncounterController subscribedOwner;
         private CombatHealth subscribedBossHealth;
         private Coroutine referenceResolveRoutine;
         private Coroutine stageClearRoutine;
@@ -107,7 +108,7 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
-            if (pocketReviewOwner != null && pocketReviewOwner.IsCleared)
+            if (encounterController != null && encounterController.IsCleared)
             {
                 ShowClearOverlay();
                 return;
@@ -123,7 +124,7 @@ namespace DimensionBrawl.LevelDesign
         {
             if (shown
                 || referenceResolveRoutine != null
-                || (pocketReviewOwner != null && bossHealth != null))
+                || (encounterController != null && bossHealth != null))
             {
                 return;
             }
@@ -143,7 +144,7 @@ namespace DimensionBrawl.LevelDesign
                 }
 
                 BindAndEvaluateClearState();
-                if (pocketReviewOwner != null && bossHealth != null)
+                if (encounterController != null && bossHealth != null)
                 {
                     break;
                 }
@@ -165,9 +166,9 @@ namespace DimensionBrawl.LevelDesign
 
         private void ResolveReferences()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
-                pocketReviewOwner = FindFirstObjectByType<BossBarragePocketReviewOwner>();
+                encounterController = FindFirstObjectByType<BossBarrageEncounterController>();
             }
 
             if (bossHealth == null)
@@ -222,14 +223,14 @@ namespace DimensionBrawl.LevelDesign
 
         private void Subscribe()
         {
-            if (pocketReviewOwner != null && subscribedOwner != pocketReviewOwner)
+            if (encounterController != null && subscribedOwner != encounterController)
             {
                 if (subscribedOwner != null)
                 {
                     subscribedOwner.PocketCleared -= HandlePocketCleared;
                 }
 
-                subscribedOwner = pocketReviewOwner;
+                subscribedOwner = encounterController;
                 subscribedOwner.PocketCleared -= HandlePocketCleared;
                 subscribedOwner.PocketCleared += HandlePocketCleared;
             }
@@ -606,7 +607,7 @@ namespace DimensionBrawl.LevelDesign
 
         private static void DisableEncounterFailureHooks()
         {
-            ActionFoundationTestEncounter[] encounters = FindObjectsByType<ActionFoundationTestEncounter>(
+            CombatEncounterController[] encounters = FindObjectsByType<CombatEncounterController>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
             for (int i = 0; i < encounters.Length; i++)

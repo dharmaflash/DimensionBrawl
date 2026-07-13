@@ -6,7 +6,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -96,8 +95,8 @@ namespace DimensionBrawl.Editor
             EnsureSceneAsset();
 
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageEncounterController pocketOwner =
+                RequireComponentOnRoot<BossBarrageEncounterController>(PocketOwnerRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
@@ -134,7 +133,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
             cameraCueBridge.enabled = true;
-            pocketOwner.AssignStageProfileForReview(profile);
+            pocketOwner.AssignStageProfile(profile);
             MarkDirty(pocketOwner);
             MarkDirty(cameraCueBridge);
             MarkDirty(enemySummonPacingDirector);
@@ -187,8 +186,8 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Invalid review scene: {ScenePath}.");
             }
 
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageEncounterController pocketOwner =
+                RequireComponentOnRoot<BossBarrageEncounterController>(PocketOwnerRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
@@ -214,8 +213,8 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateSceneBindings(FrontlineWaveStageProfile profile)
         {
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageEncounterController pocketOwner =
+                RequireComponentOnRoot<BossBarrageEncounterController>(PocketOwnerRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
@@ -411,7 +410,7 @@ namespace DimensionBrawl.Editor
             SetFloat(
                 serializedObject,
                 "cleanFollowupEnergyPulseOverride",
-                BossBarrageSummonReviewContract.Slot3RequiredMana);
+                BossBarrageSummonBalance.Slot3RequiredMana);
             SetFloat(serializedObject, "counterWaveAnswerEnergyPulseOverride", 205f);
             SetInt(serializedObject, "objectiveStepCount", 3);
             SetString(serializedObject, "stepPrefix", "Survive");

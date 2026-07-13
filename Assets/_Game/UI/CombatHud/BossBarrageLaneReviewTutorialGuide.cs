@@ -1,6 +1,5 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using UnityEngine;
 
 namespace DimensionBrawl.UI
@@ -14,7 +13,7 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0f)] private float minimumStepReadSeconds = 0.85f;
         [SerializeField, Min(0f)] private float completionHoldSeconds = 0.85f;
 
-        private BossBarragePocketReviewOwner pocketReviewOwner;
+        private BossBarrageEncounterController encounterController;
         private SummonEnergyLadder energyLadder;
         private PlayerActionController actionController;
         private PlayerRangedBasicAttackAction rangedBasicAttackAction;
@@ -101,7 +100,7 @@ namespace DimensionBrawl.UI
         }
 
         private bool IsTutorialEnabled => profile != null && profile.TutorialEnabled && profile.StepCount > 0;
-        private bool IsPocketReadyForGuide => pocketReviewOwner != null && pocketReviewOwner.isActiveAndEnabled;
+        private bool IsPocketReadyForGuide => encounterController != null && encounterController.isActiveAndEnabled;
         private BossBarrageLaneReviewTutorialProfile.Step CurrentStep => profile != null ? profile.GetStep(stepIndex) : null;
 
         private static bool StepBlocksMoveInput(BossBarrageLaneReviewTutorialProfile.Step step)
@@ -127,14 +126,14 @@ namespace DimensionBrawl.UI
         }
 
         public void BindRuntimeContext(
-            BossBarragePocketReviewOwner newPocketReviewOwner,
+            BossBarrageEncounterController newEncounterController,
             SummonEnergyLadder newEnergyLadder,
             PlayerActionController newActionController,
             PlayerRangedBasicAttackAction newRangedBasicAttackAction,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action)
         {
-            bool changed = pocketReviewOwner != newPocketReviewOwner
+            bool changed = encounterController != newEncounterController
                 || energyLadder != newEnergyLadder
                 || actionController != newActionController
                 || rangedBasicAttackAction != newRangedBasicAttackAction
@@ -146,7 +145,7 @@ namespace DimensionBrawl.UI
             }
 
             Unsubscribe();
-            pocketReviewOwner = newPocketReviewOwner;
+            encounterController = newEncounterController;
             energyLadder = newEnergyLadder;
             actionController = newActionController;
             rangedBasicAttackAction = newRangedBasicAttackAction;
@@ -237,13 +236,13 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.PocketCleared += HandlePocketCleared;
-                pocketReviewOwner.PocketFailed += HandlePocketFailed;
+                encounterController.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
+                encounterController.PocketCleared += HandlePocketCleared;
+                encounterController.PocketFailed += HandlePocketFailed;
             }
 
             if (energyLadder != null)
@@ -284,13 +283,13 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
-                pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
-                pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
-                pocketReviewOwner.PocketCleared -= HandlePocketCleared;
-                pocketReviewOwner.PocketFailed -= HandlePocketFailed;
+                encounterController.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+                encounterController.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
+                encounterController.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
+                encounterController.PocketCleared -= HandlePocketCleared;
+                encounterController.PocketFailed -= HandlePocketFailed;
             }
 
             if (energyLadder != null)
@@ -326,9 +325,9 @@ namespace DimensionBrawl.UI
 
         private void CaptureTerminalState()
         {
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                failed |= pocketReviewOwner.IsFailed;
+                failed |= encounterController.IsFailed;
             }
         }
 
@@ -372,8 +371,8 @@ namespace DimensionBrawl.UI
                 case BossBarrageLaneReviewTutorialCondition.SummonBlockOpportunityOpened:
                     ObserveSustainedCondition(
                         HasStepPassedCueRead
-                            && pocketReviewOwner != null
-                            && pocketReviewOwner.CloseThreatDefeated,
+                            && encounterController != null
+                            && encounterController.CloseThreatDefeated,
                         deltaTime,
                         ref summonBlockOpportunityObserved);
                     break;
@@ -402,32 +401,32 @@ namespace DimensionBrawl.UI
                 case BossBarrageLaneReviewTutorialCondition.SummonSlot1PressureBlocked:
                     ObserveSustainedCondition(
                         HasStepPassedCueRead
-                            && pocketReviewOwner != null
-                            && pocketReviewOwner.BlockedBossPressureWithSummon,
+                            && encounterController != null
+                            && encounterController.BlockedBossPressureWithSummon,
                         deltaTime,
                         ref summonSlot1PressureBlockedObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.SummonFollowupWindowOpened:
                     ObserveSustainedCondition(
                         HasStepPassedCueRead
-                            && pocketReviewOwner != null
-                            && pocketReviewOwner.IsSummonFollowupWindowActive,
+                            && encounterController != null
+                            && encounterController.IsSummonFollowupWindowActive,
                         deltaTime,
                         ref summonFollowupWindowObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.Skill1FollowupHit:
                     ObserveSustainedCondition(
                         HasStepPassedCueRead
-                            && pocketReviewOwner != null
-                            && pocketReviewOwner.Skill1FollowupHitConfirmed,
+                            && encounterController != null
+                            && encounterController.Skill1FollowupHitConfirmed,
                         deltaTime,
                         ref skill1FollowupHitObserved);
                     break;
                 case BossBarrageLaneReviewTutorialCondition.PocketCleared:
                     ObserveSustainedCondition(
                         HasStepPassedCueRead
-                            && pocketReviewOwner != null
-                            && pocketReviewOwner.IsCleared,
+                            && encounterController != null
+                            && encounterController.IsCleared,
                         deltaTime,
                         ref pocketClearedObserved);
                     break;
@@ -623,14 +622,14 @@ namespace DimensionBrawl.UI
 
         private string ResolveCompletedObjective()
         {
-            if (pocketReviewOwner != null && pocketReviewOwner.HasCommittedResultRecord)
+            if (encounterController != null && encounterController.HasCommittedResultRecord)
             {
-                return pocketReviewOwner.LastResultRecord.Title;
+                return encounterController.LastResultRecord.Title;
             }
 
-            if (pocketReviewOwner != null && pocketReviewOwner.IsCleared)
+            if (encounterController != null && encounterController.IsCleared)
             {
-                return pocketReviewOwner.ObjectiveCue;
+                return encounterController.ObjectiveCue;
             }
 
             return profile.ClearObjective;
@@ -638,14 +637,14 @@ namespace DimensionBrawl.UI
 
         private string ResolveCompletedPrompt()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return profile.ClearObjective;
             }
 
-            if (pocketReviewOwner.HasCommittedResultRecord)
+            if (encounterController.HasCommittedResultRecord)
             {
-                BossBarragePocketReviewOwner.RouteResultRecord record = pocketReviewOwner.LastResultRecord;
+                BossBarrageEncounterController.RouteResultRecord record = encounterController.LastResultRecord;
                 return CombineReadouts(
                     record.Summary,
                     ResolveShortPocketRecordReadout());
@@ -656,9 +655,9 @@ namespace DimensionBrawl.UI
 
         private string ResolveFailedObjective()
         {
-            if (pocketReviewOwner != null)
+            if (encounterController != null)
             {
-                return pocketReviewOwner.ObjectiveCue;
+                return encounterController.ObjectiveCue;
             }
 
             return profile.FailObjective;
@@ -666,14 +665,14 @@ namespace DimensionBrawl.UI
 
         private string ResolveFailedPrompt()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return profile.FailObjective;
             }
 
-            if (pocketReviewOwner.HasCommittedResultRecord)
+            if (encounterController.HasCommittedResultRecord)
             {
-                BossBarragePocketReviewOwner.RouteResultRecord record = pocketReviewOwner.LastResultRecord;
+                BossBarrageEncounterController.RouteResultRecord record = encounterController.LastResultRecord;
                 return CombineReadouts(
                     record.Summary,
                     ResolveShortPocketRecordReadout());
@@ -770,24 +769,24 @@ namespace DimensionBrawl.UI
 
         private string ResolvePocketRecordReadout()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            return CombineReadouts(pocketReviewOwner.ObjectiveCue, ResolveShortPocketRecordReadout());
+            return CombineReadouts(encounterController.ObjectiveCue, ResolveShortPocketRecordReadout());
         }
 
         private string ResolveShortPocketRecordReadout()
         {
-            if (pocketReviewOwner == null)
+            if (encounterController == null)
             {
                 return string.Empty;
             }
 
-            return $"RECORD close:{ResolveRecordMark(pocketReviewOwner.IsCloseProbeCompletionRecorded)} "
-                + $"summon:{ResolveRecordMark(pocketReviewOwner.IsSummonRouteCompletionRecorded)} "
-                + $"followup:{ResolveRecordMark(pocketReviewOwner.IsFollowupCompletionRecorded)}";
+            return $"RECORD close:{ResolveRecordMark(encounterController.IsCloseProbeCompletionRecorded)} "
+                + $"summon:{ResolveRecordMark(encounterController.IsSummonRouteCompletionRecorded)} "
+                + $"followup:{ResolveRecordMark(encounterController.IsFollowupCompletionRecorded)}";
         }
 
         private static string ResolveRecordMark(bool recorded)

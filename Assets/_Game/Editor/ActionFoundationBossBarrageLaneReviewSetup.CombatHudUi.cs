@@ -4,7 +4,6 @@ using System.IO;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.Events;
@@ -113,7 +112,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
-            BossBarragePocketReviewOwner pocketOwner,
+            BossBarrageEncounterController pocketOwner,
             BossBarrageLaneReviewOverlayHud overlayHud)
         {
             CombatHudUiWriter.EnsureUiAssets();
@@ -231,7 +230,7 @@ namespace DimensionBrawl.Editor
                 playerHealth != null ? playerHealth.GetComponent<PlayerSummonSlot1Action>() : null,
                 FindSupportSummonAction(playerHealth, "SummonSlot2"),
                 FindSupportSummonAction(playerHealth, "SummonSlot3"),
-                FirstSceneComponent<BossBarragePocketReviewOwner>(scene),
+                FirstSceneComponent<BossBarrageEncounterController>(scene),
                 FirstSceneComponent<BossBarrageLaneReviewOverlayHud>(scene));
         }
 
@@ -274,7 +273,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
-            BossBarragePocketReviewOwner pocketOwner,
+            BossBarrageEncounterController pocketOwner,
             BossBarrageLaneReviewOverlayHud overlayHud)
         {
             BossBarrageLaneReviewCombatHudBinder binder =
@@ -285,7 +284,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(binder, "hudPresenter", presenter);
             SetObjectReference(binder, "inputBridge", inputBridge);
             SetObjectReference(binder, "overlayHud", overlayHud);
-            SetObjectReference(binder, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(binder, "encounterController", pocketOwner);
             SetObjectReference(binder, "playerHealth", playerHealth);
             SetObjectReference(binder, "bossHealth", bossHealth);
             SetObjectReference(binder, "energyLadder", energyLadder);

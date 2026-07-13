@@ -205,22 +205,22 @@ namespace DimensionBrawl.Tests
                 StringAssert.Contains(
                     "READY LV1",
                     CombatHudSummonReadoutFormatter.BuildPrimarySummonLabel(
-                        BossBarrageSummonReviewContract.Slot1HudLabel,
+                        BossBarrageSummonBalance.Slot1HudLabel,
                         energy,
                         slot1));
                 StringAssert.Contains(
                     "NEED +100 EN",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
-                        BossBarrageSummonReviewContract.Slot2HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot2HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED +200 EN",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
-                        BossBarrageSummonReviewContract.Slot3HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot3HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
@@ -241,15 +241,15 @@ namespace DimensionBrawl.Tests
                     "READY LV2",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
-                        BossBarrageSummonReviewContract.Slot2HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot2HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED +100 EN",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
-                        BossBarrageSummonReviewContract.Slot3HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot3HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
@@ -266,8 +266,8 @@ namespace DimensionBrawl.Tests
                     "CD 0.8s",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
-                        BossBarrageSummonReviewContract.Slot2HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot2HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f - 0.8f / 1.5f,
@@ -277,8 +277,8 @@ namespace DimensionBrawl.Tests
                     "NEED +100 EN",
                     CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
-                        BossBarrageSummonReviewContract.Slot3HudLabel,
-                        BossBarrageSummonReviewContract.LockedSummonLabel,
+                        BossBarrageSummonBalance.Slot3HudLabel,
+                        BossBarrageSummonBalance.LockedSummonLabel,
                         energy),
                     "Slot2 cooldown must not make Slot3 look globally locked or ready.");
             }
@@ -303,7 +303,7 @@ namespace DimensionBrawl.Tests
                 slot3.ConfigureRequiredSummonMana(300f);
                 slot3.ConfigureMinimumSummonTier(3);
 
-                BossBarragePocketReviewOwner owner = ownerObject.AddComponent<BossBarragePocketReviewOwner>();
+                BossBarrageEncounterController owner = ownerObject.AddComponent<BossBarrageEncounterController>();
                 SetPrivateInstanceField(owner, "energyLadder", energy);
                 SetPrivateInstanceField(owner, "summonSlot2Action", slot2);
                 SetPrivateInstanceField(owner, "summonSlot3Action", slot3);

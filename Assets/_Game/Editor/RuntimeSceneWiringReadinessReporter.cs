@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using DimensionBrawl.Test;
+using DimensionBrawl.Combat;
 using DimensionBrawl.UI;
 using IsekaiBrawl.Gameplay;
 using UnityEditor;
@@ -214,7 +214,7 @@ namespace DimensionBrawl.Editor
 
         private static void CheckBossBarrageReviewContract(SceneExpectation expectation, ReportBuilder report)
         {
-            RequireSingle<BossBarragePocketReviewOwner>(expectation, report);
+            RequireSingle<BossBarrageEncounterController>(expectation, report);
             RequireSingle<CombatHudPresenter>(expectation, report);
             RequireSingle<CombatHudInputBridge>(expectation, report);
             RequireSingle<BossBarrageLaneReviewCombatHudBinder>(expectation, report);

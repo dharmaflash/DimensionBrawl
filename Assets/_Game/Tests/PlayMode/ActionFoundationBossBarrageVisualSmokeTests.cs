@@ -3,7 +3,6 @@ using System.IO;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.Test;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -162,11 +161,11 @@ namespace DimensionBrawl.Tests
                 bossVisualCueDriver.ReleaseWorldVfxCueRequestCount,
                 "Boss release should fire an in-world VFX cue alongside the projectile wave.");
 
-            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot1RequiredMana);
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonBalance.Slot1RequiredMana);
             Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV2 energy for a visible actor/state read.");
-            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot2RequiredMana);
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonBalance.Slot2RequiredMana);
             Assert.IsTrue(summonSlot2.TryUseSummon(), "SummonSlot2 should spend LV1 energy for a visible laser soldier actor/volley read.");
-            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot3RequiredMana);
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonBalance.Slot3RequiredMana);
             Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV3 energy for a visible fire dragon actor/breath read.");
 
             if (bossSummonPressure != null)
@@ -252,14 +251,14 @@ namespace DimensionBrawl.Tests
             BossBarrageEmitter bossBarrage = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
 
-            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot1RequiredMana);
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonBalance.Slot1RequiredMana);
             Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should be usable at LV2 to create the result flow.");
             closeThreatHealth.TryApplyDamage(new DamageInfo(
                 playerHealth,
@@ -320,8 +319,8 @@ namespace DimensionBrawl.Tests
             Camera camera = RequireGameplayCamera();
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
-            BossBarragePocketReviewOwner pocketOwner =
-                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageEncounterController pocketOwner =
+                RequireComponent<BossBarrageEncounterController>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
             ActionScreenCuePresenter screenCuePresenter =
