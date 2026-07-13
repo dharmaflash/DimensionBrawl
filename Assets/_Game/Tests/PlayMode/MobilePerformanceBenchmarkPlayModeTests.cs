@@ -16,7 +16,6 @@ namespace DimensionBrawl.Tests
             CollectionAssert.AreEqual(
                 new[]
                 {
-                    "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
                     "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
                     "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
                     "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
@@ -96,8 +95,8 @@ namespace DimensionBrawl.Tests
         {
             MobilePerformanceSceneResult scene = new()
             {
-                Label = "Olympus Station Combat",
-                ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
+                Label = "Olympus Corridor Combat",
+                ScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
                 SceneLoadSeconds = 2.75f,
                 MaximumThermalStatus = 4,
                 ThermalStatusSampleCount = 6,
@@ -187,13 +186,12 @@ namespace DimensionBrawl.Tests
         {
             string[] scenePaths =
             {
-                "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
                 "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
                 "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
                 "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
             };
-            int[] maximumFrameLoopCounts = { 16, 20, 15, 13 };
-            int[] expectedFootstepPresenterCounts = { 2, 0, 3, 3 };
+            int[] maximumFrameLoopCounts = { 20, 15, 13 };
+            int[] expectedFootstepPresenterCounts = { 0, 3, 3 };
 
             for (int sceneIndex = 0; sceneIndex < scenePaths.Length; sceneIndex++)
             {
@@ -228,7 +226,7 @@ namespace DimensionBrawl.Tests
                     Is.EqualTo(expectedFootstepPresenterCounts[sceneIndex]));
                 Assert.That(result.ActiveFixedUpdateBehaviourCount, Is.Zero);
 
-                if (sceneIndex == 1)
+                if (sceneIndex == 0)
                 {
                     DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController flowController =
                         Object.FindFirstObjectByType<DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController>();
@@ -253,9 +251,29 @@ namespace DimensionBrawl.Tests
                         + FormatFrameLoops(postHandoffResult));
                     Assert.That(
                         postHandoffResult.ActiveFrameLoopBehaviourCount,
-                        Is.LessThanOrEqualTo(12),
+                        Is.LessThanOrEqualTo(14),
                         "Olympus corridor gameplay handoff exceeded its reviewed runtime callback budget. "
                         + FormatFrameLoops(postHandoffResult));
+                    MobilePerformanceFrameLoopInventory lockTargetLoop = FindFrameLoop(
+                        postHandoffResult,
+                        "DimensionBrawl.Player.PlayerLockTargetController");
+                    MobilePerformanceFrameLoopInventory lockTargetVisualLoop = FindFrameLoop(
+                        postHandoffResult,
+                        "DimensionBrawl.Presentation.PlayerLockTargetVisualPresenter");
+                    Assert.That(
+                        lockTargetLoop,
+                        Is.Not.Null,
+                        "The feature-complete corridor player must retain canonical lock targeting.");
+                    Assert.That(lockTargetLoop.UpdateInstances, Is.EqualTo(1));
+                    Assert.That(lockTargetLoop.LateUpdateInstances, Is.Zero);
+                    Assert.That(lockTargetLoop.FixedUpdateInstances, Is.Zero);
+                    Assert.That(
+                        lockTargetVisualLoop,
+                        Is.Not.Null,
+                        "The feature-complete corridor player must retain canonical lock target visuals.");
+                    Assert.That(lockTargetVisualLoop.UpdateInstances, Is.Zero);
+                    Assert.That(lockTargetVisualLoop.LateUpdateInstances, Is.EqualTo(1));
+                    Assert.That(lockTargetVisualLoop.FixedUpdateInstances, Is.Zero);
                     Assert.That(
                         FindFrameLoop(postHandoffResult, "Unity.Cinemachine.CinemachineCamera"),
                         Is.Null,

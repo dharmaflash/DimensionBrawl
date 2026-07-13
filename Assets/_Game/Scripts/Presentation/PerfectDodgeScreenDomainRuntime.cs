@@ -26,7 +26,7 @@ namespace DimensionBrawl.Presentation
         private static readonly int DomainCenterId = Shader.PropertyToID("_DomainCenter");
 
         private static bool active;
-        private static Color domainColor = new Color(0.025f, 0.035f, 0.045f, 1f);
+        private static Color domainColor = new Color(0.035f, 0.045f, 0.055f, 1f);
         private static Color edgeColor = new Color(0.08f, 0.95f, 1f, 1f);
         private static Color invertColor = new Color(0.92f, 1f, 1f, 1f);
         private static float domainAlpha;

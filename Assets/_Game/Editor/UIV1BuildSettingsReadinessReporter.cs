@@ -126,10 +126,6 @@ namespace DimensionBrawl.Editor
             AddStageCatalogScenes(routeScenes, stageCatalog);
             AddUniqueRouteScene(
                 routeScenes,
-                "CombatContinuation",
-                OlympusStationCombatStageBuildSettings.ScenePath);
-            AddUniqueRouteScene(
-                routeScenes,
                 "StageClear",
                 StageClearUiBuildSettings.ScenePath);
             return routeScenes;

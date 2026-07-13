@@ -15,6 +15,16 @@ namespace DimensionBrawl.Presentation
         private SceneBgmSettings settings;
         private string currentSceneName;
 
+        public static void PlayStagePhase(AudioClip clip, float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            EnsureInstance().PlayClip(clip, Mathf.Clamp01(volume), restart: true);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
@@ -120,5 +130,28 @@ namespace DimensionBrawl.Presentation
                 source.Play();
             }
         }
+
+        private void PlayClip(AudioClip clip, float volume, bool restart)
+        {
+            bool clipChanged = source.clip != clip;
+            source.outputAudioMixerGroup = null;
+            source.volume = volume;
+            source.loop = true;
+            source.spatialBlend = 0f;
+            source.priority = 16;
+
+            if (clipChanged || restart)
+            {
+                source.clip = clip;
+                source.Play();
+                return;
+            }
+
+            if (!source.isPlaying)
+            {
+                source.Play();
+            }
+        }
+
     }
 }

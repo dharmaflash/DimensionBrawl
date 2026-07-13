@@ -7,12 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-
-#if UNITY_EDITOR
-using UnityEditor.SceneManagement;
-#endif
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -20,8 +15,6 @@ namespace DimensionBrawl.LevelDesign
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
         private const string CombatHudInstanceName = "PF_UI_CombatHud";
-        private const string TutorialCombatSceneName = "OlympusStationCombatStage";
-        private const string TutorialCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const float ActivePhasePollIntervalSeconds = 0.05f;
 
         private enum FlowPhase
@@ -81,6 +74,13 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private CombatHealth[] corridorTargets = System.Array.Empty<CombatHealth>();
         [SerializeField] private CombatHealth[] corridorClearTargets = System.Array.Empty<CombatHealth>();
 
+        [Header("Stage Clear")]
+        [SerializeField] private OlympusStageClearOverlay stageClearOverlay;
+
+        [Header("Combat Phase Audio")]
+        [SerializeField] private AudioClip combatPhaseBgmClip;
+        [SerializeField, Range(0f, 1f)] private float combatPhaseBgmVolume = 0.34f;
+
         [Header("Player")]
         [SerializeField] private PlayerMovementController player;
         [SerializeField] private PlayerCombatModeController combatModeController;
@@ -98,7 +98,6 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
         private AudioSource runtimeTutorialOverlayAudioSource;
-        private bool tutorialCombatSceneLoadStarted;
         private Coroutine introHandoffRoutine;
         private Coroutine hudRevealRoutine;
         private Coroutine activePhaseRoutine;
@@ -111,6 +110,7 @@ namespace DimensionBrawl.LevelDesign
         public bool CorridorCleared => HasAny(corridorClearTargets) && CountAlive(corridorClearTargets) == 0;
         public bool CorridorCombatStarted => phase == FlowPhase.CorridorCombat;
         public bool StageCleared => phase == FlowPhase.StageCleared;
+        public bool StageClearOverlayShown => stageClearOverlay != null && stageClearOverlay.IsShown;
 
         public void Configure(
             PlayableDirector newIntroDirector,
@@ -190,6 +190,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void Awake()
         {
+            ResolveStageClearOverlay();
             if (!Application.isPlaying)
             {
                 return;
@@ -352,11 +353,10 @@ namespace DimensionBrawl.LevelDesign
             yield return null;
             while (isActiveAndEnabled
                 && phase != FlowPhase.WaitingForIntroHandoff
-                && phase != FlowPhase.StageCleared
-                && !tutorialCombatSceneLoadStarted)
+                && phase != FlowPhase.StageCleared)
             {
                 EvaluateActivePhase();
-                if (phase == FlowPhase.StageCleared || tutorialCombatSceneLoadStarted)
+                if (phase == FlowPhase.StageCleared)
                 {
                     break;
                 }
@@ -374,7 +374,7 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        LoadTutorialCombatScene();
+                        BeginWaitingForStairEntry(realignPlayerToEntry: true);
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -412,11 +412,13 @@ namespace DimensionBrawl.LevelDesign
         private void Reset()
         {
             EnsureTutorialDialogueAudioCueSlots();
+            ResolveStageClearOverlay();
         }
 
         private void OnValidate()
         {
             EnsureTutorialDialogueAudioCueSlots();
+            ResolveStageClearOverlay();
         }
 
         private void EnsureTutorialDialogueAudioCueSlots()
@@ -634,7 +636,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                LoadTutorialCombatScene();
+                BeginWaitingForStairEntry(realignPlayerToEntry: true);
             }
 
             ResumePhaseRoutines();
@@ -765,6 +767,10 @@ namespace DimensionBrawl.LevelDesign
                 SnapPlayerToStairEntryAnchor();
             }
 
+            if (Application.isPlaying)
+            {
+                SceneBgmController.PlayStagePhase(combatPhaseBgmClip, combatPhaseBgmVolume);
+            }
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
             ResumePhaseRoutines();
         }
@@ -800,7 +806,25 @@ namespace DimensionBrawl.LevelDesign
             SetCombatHealthRootCollidersEnabled(corridorTargets, false);
             SetCombatHealthRootCollidersEnabled(corridorClearTargets, false);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            ResolveStageClearOverlay();
+            if (stageClearOverlay != null && Application.isPlaying)
+            {
+                stageClearOverlay.Show();
+            }
+            else if (stageClearOverlay == null)
+            {
+                Debug.LogError($"[{nameof(OlympusCorridorCombatFlowController)}] Missing {nameof(OlympusStageClearOverlay)} on the canonical flow root.", this);
+            }
+
             ResumePhaseRoutines();
+        }
+
+        private void ResolveStageClearOverlay()
+        {
+            if (stageClearOverlay == null)
+            {
+                stageClearOverlay = GetComponent<OlympusStageClearOverlay>();
+            }
         }
 
         private void RegisterIntroSwordEnemyHandlers()
@@ -899,26 +923,8 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                LoadTutorialCombatScene();
+                BeginWaitingForStairEntry(realignPlayerToEntry: true);
             }
-        }
-
-        private void LoadTutorialCombatScene()
-        {
-            if (tutorialCombatSceneLoadStarted)
-            {
-                return;
-            }
-
-            tutorialCombatSceneLoadStarted = true;
-            UnregisterTutorialCompletedHandler();
-#if UNITY_EDITOR
-            EditorSceneManager.LoadSceneInPlayMode(
-                TutorialCombatScenePath,
-                new LoadSceneParameters(LoadSceneMode.Single));
-#else
-            SceneManager.LoadScene(TutorialCombatSceneName, LoadSceneMode.Single);
-#endif
         }
 
         private bool ShouldRunTutorial()

@@ -41,7 +41,6 @@ namespace DimensionBrawl.Debugging
 
         private static readonly BenchmarkScene[] Scenes =
         {
-            new("Olympus Station Combat", "Assets/_Game/Scenes/OlympusStationCombatStage.unity"),
             new("Olympus Corridor", "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"),
             new("Boss Barrage", "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity"),
             new("Frontline Motivation", "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity")

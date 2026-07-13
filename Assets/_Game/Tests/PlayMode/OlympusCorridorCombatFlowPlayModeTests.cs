@@ -54,7 +54,7 @@ namespace DimensionBrawl.Tests
             OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
                 OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
-            Assert.That(cues.Length, Is.EqualTo(13));
+            Assert.That(cues.Length, Is.EqualTo(15));
             Assert.That(cues[0].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SoldierChallenge));
             Assert.That(cues[1].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeCue));
             Assert.That(cues[2].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveCue));
@@ -68,6 +68,8 @@ namespace DimensionBrawl.Tests
             Assert.That(cues[10].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireConfirm));
             Assert.That(cues[11].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeConfirm));
             Assert.That(cues[12].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsConfirm));
+            Assert.That(cues[13].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ReplicaGrantCue));
+            Assert.That(cues[14].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SummonGuideCue));
         }
 
         [Test]
@@ -315,12 +317,15 @@ namespace DimensionBrawl.Tests
             GameObject boundsRoot = RequireSceneObject("OlympusCorridor_CorridorCombatBounds");
             GameObject stairTrigger = RequireSceneObject("OlympusCorridor_StairToCorridorCombatTrigger");
             GameObject traversalSupport = RequireSceneObject("OlympusCorridor_IntroStairTraversalSupport");
-            GameObject stageClearExit = RequireSceneObject("StageClear_CorridorExit");
             GameObject[] boundsRoots = ReadPrivateField<GameObject[]>(flowController, "corridorBoundsRoots");
             CombatHealth[] targets = ReadPrivateField<CombatHealth[]>(flowController, "corridorTargets");
             CombatHealth[] clearTargets = ReadPrivateField<CombatHealth[]>(flowController, "corridorClearTargets");
             Transform stairTriggerCenter = ReadPrivateField<Transform>(flowController, "stairTriggerCenter");
             float stairTriggerRadius = ReadPrivateField<float>(flowController, "stairTriggerRadius");
+            OlympusStageClearOverlay stageClearOverlay =
+                ReadPrivateField<OlympusStageClearOverlay>(flowController, "stageClearOverlay");
+            AudioClip combatPhaseBgmClip =
+                ReadPrivateField<AudioClip>(flowController, "combatPhaseBgmClip");
 
             Assert.That(boundsRoots, Has.Length.EqualTo(1));
             Assert.AreSame(boundsRoot, boundsRoots[0]);
@@ -333,12 +338,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(DamageTeam.Enemy, targets[1].Team);
             Assert.AreSame(stairTrigger.transform, stairTriggerCenter);
             Assert.That(stairTriggerRadius, Is.EqualTo(2.75f).Within(0.001f));
+            Assert.IsNotNull(stageClearOverlay);
+            Assert.AreSame(flowController.gameObject, stageClearOverlay.gameObject);
+            Assert.IsNotNull(combatPhaseBgmClip);
             Assert.IsTrue(stairTrigger.GetComponent<SphereCollider>().isTrigger);
             Assert.IsNotNull(traversalSupport.GetComponent<BoxCollider>());
-            Assert.IsTrue(stageClearExit.activeInHierarchy);
-            Assert.That(
-                stageClearExit.transform.position.y,
-                Is.EqualTo(stairTrigger.transform.position.y).Within(0.001f));
             yield return null;
         }
 
@@ -357,16 +361,19 @@ namespace DimensionBrawl.Tests
                     flowController,
                     "tutorialOverlayDialogueAudioCues");
 
-            Assert.That(cues.Length, Is.EqualTo(13));
+            Assert.That(cues.Length, Is.EqualTo(15));
             for (int i = 0; i <= 6; i++)
             {
                 Assert.IsNotNull(cues[i].Clip, $"Tutorial instruction voice cue {cues[i].CueId} should be assigned.");
             }
 
-            for (int i = 7; i < cues.Length; i++)
+            for (int i = 7; i <= 12; i++)
             {
                 Assert.IsNull(cues[i].Clip, $"Fast confirmation cue {cues[i].CueId} should stay silent.");
             }
+
+            Assert.IsNotNull(cues[13].Clip, "Replica grant voice cue should be assigned.");
+            Assert.IsNotNull(cues[14].Clip, "Summon guide voice cue should be assigned.");
         }
 
         [UnityTest]
@@ -700,7 +707,13 @@ namespace DimensionBrawl.Tests
                     DamageResponsePolicy.DamageOnly));
             }
 
-            yield return WaitForStep(tutorialDirector, "Completed", 4f, report);
+            yield return WaitForStep(tutorialDirector, "ReplicaGrant", 4f, report);
+            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
+            tutorialDirector.AdvanceGuide();
+            yield return WaitForStep(tutorialDirector, "SummonGuide", 2f, report);
+            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
+            tutorialDirector.AdvanceGuide();
+            yield return WaitForStep(tutorialDirector, "Completed", 2f, report);
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 if (tutorialTargets[i] != null)

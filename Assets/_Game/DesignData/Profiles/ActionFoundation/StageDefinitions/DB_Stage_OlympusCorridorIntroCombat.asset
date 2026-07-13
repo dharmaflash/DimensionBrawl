@@ -80,11 +80,6 @@ MonoBehaviour:
     expectedPosition: {x: 15.3, y: 0, z: 0}
     expectedEuler: {x: 0, y: 0, z: 0}
     purpose: Runtime PositionId for boss center.
-  - anchorId: StageClear_CorridorExit
-    groupId: RuntimeStateAnchors
-    expectedPosition: {x: 27, y: 0, z: 0}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Runtime clear/exit state hook.
   spawns:
   - spawnId: player-start
     spawnKind: 0
@@ -167,9 +162,9 @@ MonoBehaviour:
   - stateId: state-stage-clear
     stateKind: 2
     positionId: 9001
-    anchorId: StageClear_CorridorExit
+    anchorId:
     conditionId: boss-defeated
-    note: Clear state hook; reward payout remains out of scope.
+    note: Authored additive stage-clear UI is presented immediately after the boss-defeated condition.
   sourceReferences:
   - sourceId: ark-pgr-stage-layout
     sourcePath: arkdata:PGR_Tutorial_Stage_Data_2026-06-19

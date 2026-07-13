@@ -352,7 +352,6 @@ namespace DimensionBrawl.Core
         private static bool IsMonitoredCombatScene(string sceneName)
         {
             return sceneName == "OlympusCorridorInvasionStage"
-                || sceneName == "OlympusStationCombatStage"
                 || sceneName == "ActionFoundationBossBarrageLaneReview"
                 || sceneName == "ActionFoundationFrontlineMotivationReview";
         }

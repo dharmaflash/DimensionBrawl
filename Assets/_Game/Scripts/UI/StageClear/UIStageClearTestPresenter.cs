@@ -20,8 +20,8 @@ namespace DimensionBrawl.UI.StageClear
         [SerializeField] private AudioSource clearBgmSource;
         [SerializeField] private AudioClip clearBgmClip;
         [SerializeField, Range(0f, 1f)] private float clearBgmVolume = 0.9f;
-        [SerializeField] private string retrySceneName = "OlympusStationCombatStage";
-        [SerializeField] private string retryScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        [SerializeField] private string retrySceneName = "OlympusCorridorInvasionStage";
+        [SerializeField] private string retryScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         [SerializeField] private string lobbySceneName = "UI_LobbyTest";
         [SerializeField] private string lobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
         [SerializeField] private bool playEntranceOnEnable = true;

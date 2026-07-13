@@ -7,6 +7,7 @@ using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
+using DimensionBrawl.UI.StageClear;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
@@ -22,7 +23,8 @@ namespace DimensionBrawl.LevelDesign
             "C:/tmp/DimensionBrawl-OlympusCombatFlow-PlayMode.txt";
         [SerializeField, Min(1f)] private float routeTimeoutSeconds = 45f;
 
-        private const string StageClearExitAnchorName = "StageClear_CorridorExit";
+        private const string CombatSceneName = "OlympusCorridorInvasionStage";
+        private const string ClearUiSceneName = "UI_StageClearTest";
         private const float InputRouteTolerance = 0.8f;
         private const float InputRouteMinimumProgress = 0.02f;
         private const float InputRouteStallSeconds = 2.25f;
@@ -139,6 +141,16 @@ namespace DimensionBrawl.LevelDesign
                 preCorridorGateSatisfied = introDamageApplied && flow.IntroGateCleared;
             }
 
+            AudioClip expectedCombatPhaseBgm = GetField<AudioClip>(flow, "combatPhaseBgmClip");
+            SceneBgmController sceneBgmController = FindFirstObjectByType<SceneBgmController>();
+            AudioSource sceneBgmSource = sceneBgmController != null
+                ? sceneBgmController.GetComponent<AudioSource>()
+                : null;
+            bool combatPhaseBgmActive = expectedCombatPhaseBgm != null
+                && sceneBgmSource != null
+                && sceneBgmSource.clip == expectedCombatPhaseBgm
+                && sceneBgmSource.isPlaying;
+            report.AppendLine($"combatPhaseBgmActive={combatPhaseBgmActive}");
             report.AppendLine($"laneConstraintAfterIntroClear={player.LaneConstraintEnabled}");
             AppendMovementState(player, "afterIntroClear", report);
 
@@ -210,10 +222,16 @@ namespace DimensionBrawl.LevelDesign
             report.AppendLine($"laneConstraintAfterStageClear={player.LaneConstraintEnabled}");
             AppendMovementState(player, "afterStageClear", report);
 
-            yield return MovePlayerWithInputToSceneObject(
-                player,
-                StageClearExitAnchorName,
+            yield return WaitFor(
+                () => flow.StageClearOverlayShown,
                 deadline,
+                "stage clear overlay shown by corridor flow",
+                report,
+                result);
+            yield return WaitFor(
+                () => SceneManager.GetSceneByName(ClearUiSceneName).isLoaded,
+                deadline,
+                "authored stage clear UI loaded additively",
                 report,
                 result);
             if (result.Failed)
@@ -222,13 +240,31 @@ namespace DimensionBrawl.LevelDesign
                 yield break;
             }
 
+            UIStageClearTestPresenter clearPresenter =
+                FindFirstObjectByType<UIStageClearTestPresenter>(FindObjectsInactive.Include);
+            bool corridorSceneStillLoaded = SceneManager.GetSceneByName(CombatSceneName).isLoaded;
+            bool clearPresenterFound = clearPresenter != null;
+            string clearRetryScene = clearPresenterFound
+                ? GetField<string>(clearPresenter, "retrySceneName")
+                : string.Empty;
+            bool clearRetryTargetsCorridor = clearRetryScene == CombatSceneName;
+            report.AppendLine($"corridorSceneStillLoaded={corridorSceneStillLoaded}");
+            report.AppendLine($"stageClearPresenterFound={clearPresenterFound}");
+            report.AppendLine($"stageClearRetryScene={clearRetryScene}");
+            report.AppendLine($"stageClearRetryTargetsCorridor={clearRetryTargetsCorridor}");
+
             bool passed =
                 preCorridorGateSatisfied
+                && combatPhaseBgmActive
                 && flow.StageCleared
+                && flow.StageClearOverlayShown
                 && clearDamageApplied
                 && corridorClearTargetsAliveAfterClear == 0
                 && nonClearCandidateStillAlive
-                && boundsInactive;
+                && boundsInactive
+                && corridorSceneStillLoaded
+                && clearPresenterFound
+                && clearRetryTargetsCorridor;
             Finish(passed, report, passed ? "PASS" : "One or more Play Mode checks failed.");
         }
 
@@ -453,9 +489,40 @@ namespace DimensionBrawl.LevelDesign
                 report.AppendLine($"tutorialClearDamageApplied={tutorialClearDamageApplied}");
 
                 yield return WaitFor(
+                    () => tutorialDirector.CurrentStepId == "ReplicaGrant",
+                    deadline,
+                    "post-tutorial replica grant guide started",
+                    report,
+                    result);
+                if (result.Failed)
+                {
+                    yield break;
+                }
+
+                yield return WaitFor(
+                    () => tutorialDirector.IsAwaitingGuideAdvance,
+                    deadline,
+                    "replica grant guide accepted advance input",
+                    report,
+                    result);
+                tutorialDirector.AdvanceGuide();
+                yield return WaitFor(
+                    () => tutorialDirector.CurrentStepId == "SummonGuide",
+                    deadline,
+                    "summon guide started",
+                    report,
+                    result);
+                yield return WaitFor(
+                    () => tutorialDirector.IsAwaitingGuideAdvance,
+                    deadline,
+                    "summon guide accepted advance input",
+                    report,
+                    result);
+                tutorialDirector.AdvanceGuide();
+                yield return WaitFor(
                     () => flow.TutorialCompleted,
                     deadline,
-                    "tutorial completed after all tutorial targets defeated",
+                    "tutorial and post-tutorial guide completed",
                     report,
                     result);
                 if (result.Failed)

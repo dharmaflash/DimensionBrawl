@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
+using DimensionBrawl.LevelDesign;
 using NUnit.Framework;
 using Unity.Profiling;
 using UnityEditor.SceneManagement;
@@ -25,17 +27,19 @@ namespace DimensionBrawl.Tests
         private static readonly ProfileTarget[] Targets =
         {
             new(
-                "Olympus Station Combat",
-                "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
-                "Direct combat scene",
+                "Olympus Corridor Combat",
+                "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
+                "Canonical in-stage combat phase",
                 4f,
-                12f),
+                12f,
+                true),
             new(
                 "Olympus Corridor Startup",
                 "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
                 "Natural intro/startup path",
                 4f,
-                8f)
+                8f,
+                false)
         };
 
         private static readonly MetricSpec[] RecorderMetrics =
@@ -86,6 +90,7 @@ namespace DimensionBrawl.Tests
                         new LoadSceneParameters(LoadSceneMode.Single));
                     yield return null;
                     yield return null;
+                    yield return PrepareTarget(target);
                     QualitySettings.vSyncCount = 0;
                     Application.targetFrameRate = -1;
 
@@ -132,6 +137,39 @@ namespace DimensionBrawl.Tests
                 Assert.That(report.Scenes[i].Metrics.Count, Is.GreaterThan(0));
                 AssertPerformanceBudget(report.Scenes[i]);
             }
+        }
+
+        private static IEnumerator PrepareTarget(ProfileTarget target)
+        {
+            if (!target.EnterCombatPhase)
+            {
+                yield break;
+            }
+
+            OlympusCorridorCombatFlowController flow =
+                UnityEngine.Object.FindFirstObjectByType<OlympusCorridorCombatFlowController>();
+            Assert.That(flow, Is.Not.Null);
+
+            flow.SkipIntroCutscene();
+            yield return null;
+            OlympusCorridorTutorialDirector tutorial =
+                UnityEngine.Object.FindFirstObjectByType<OlympusCorridorTutorialDirector>();
+            Assert.That(tutorial, Is.Not.Null);
+            InvokePrivate(tutorial, "CompleteTutorial");
+            yield return null;
+            InvokePrivate(flow, "BeginCorridorCombat");
+            yield return null;
+
+            Assert.That(flow.CorridorCombatStarted, Is.True);
+        }
+
+        private static void InvokePrivate(object target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, $"Missing private method {methodName}.");
+            method.Invoke(target, null);
         }
 
         private static void AssertPerformanceBudget(SceneProfileResult scene)
@@ -735,13 +773,15 @@ namespace DimensionBrawl.Tests
                 string scenePath,
                 string captureRole,
                 float mainThreadP95BudgetMilliseconds,
-                float gcAllocatedAverageBudgetKibibytes)
+                float gcAllocatedAverageBudgetKibibytes,
+                bool enterCombatPhase)
             {
                 Label = label;
                 ScenePath = scenePath;
                 CaptureRole = captureRole;
                 MainThreadP95BudgetMilliseconds = mainThreadP95BudgetMilliseconds;
                 GcAllocatedAverageBudgetKibibytes = gcAllocatedAverageBudgetKibibytes;
+                EnterCombatPhase = enterCombatPhase;
             }
 
             public string Label { get; }
@@ -749,6 +789,7 @@ namespace DimensionBrawl.Tests
             public string CaptureRole { get; }
             public float MainThreadP95BudgetMilliseconds { get; }
             public float GcAllocatedAverageBudgetKibibytes { get; }
+            public bool EnterCombatPhase { get; }
         }
 
         private readonly struct MetricSpec

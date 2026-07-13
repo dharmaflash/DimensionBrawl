@@ -1,0 +1,481 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using DimensionBrawl.Combat;
+using DimensionBrawl.UI;
+using DimensionBrawl.UI.StageClear;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
+
+namespace DimensionBrawl.LevelDesign
+{
+    [DefaultExecutionOrder(1600)]
+    [DisallowMultipleComponent]
+    public sealed class OlympusStageClearOverlay : MonoBehaviour
+    {
+        private const string RetrySceneName = "OlympusCorridorInvasionStage";
+        private const string RetryScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string ClearUiSceneName = "UI_StageClearTest";
+        private const string ClearUiScenePath = "Assets/_Game/Scenes/Experiments/UI_StageClearTest.unity";
+        private const string LobbySceneName = "UI_LobbyTest";
+        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
+
+        private static readonly string[] CombatHudExitRootNames =
+        {
+            "BossBarrageLaneReview_CombatHudCanvas",
+            "PF_UI_CombatHud",
+            "BossBarrageLaneReview_DebugHud",
+            "PF_UI_CombatHudPresentation"
+        };
+
+        [SerializeField] private int sortOrder = 7000;
+        [SerializeField, Min(0f)] private float combatHudExitSeconds = 0.42f;
+        [SerializeField, Min(0f)] private float postBossDefeatHoldSeconds = 1.1f;
+        [SerializeField, Min(0f)] private float hudExitSlidePixels = 128f;
+
+        private Coroutine stageClearRoutine;
+        private bool shown;
+        private bool combatLocked;
+        private float previousTimeScale = 1f;
+
+        public bool IsShown => shown;
+
+        private void OnDisable()
+        {
+            stageClearRoutine = null;
+            RestoreCombatTimeScale();
+        }
+
+        public void Show()
+        {
+            if (shown)
+            {
+                return;
+            }
+
+            shown = true;
+            LockCombatAfterClear();
+            if (isActiveAndEnabled)
+            {
+                stageClearRoutine = StartCoroutine(ShowAuthoredStageClearSceneRoutine());
+            }
+        }
+
+        private IEnumerator ShowAuthoredStageClearSceneRoutine()
+        {
+            yield return PlayCombatHudExitRoutine();
+
+            if (postBossDefeatHoldSeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(postBossDefeatHoldSeconds);
+            }
+
+            bool sceneLoadRequested = false;
+            try
+            {
+                Scene clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
+                if (!clearScene.IsValid() || !clearScene.isLoaded)
+                {
+#if UNITY_EDITOR
+                    EditorSceneManager.LoadSceneInPlayMode(
+                        ClearUiScenePath,
+                        new LoadSceneParameters(LoadSceneMode.Additive));
+#else
+                    SceneManager.LoadScene(ClearUiSceneName, LoadSceneMode.Additive);
+#endif
+                    sceneLoadRequested = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Failed to load authored clear UI scene: {exception.Message}");
+                stageClearRoutine = null;
+                yield break;
+            }
+
+            if (sceneLoadRequested)
+            {
+                yield return null;
+            }
+
+            bool configured = false;
+            float timeoutAt = Time.realtimeSinceStartup + 2f;
+            while (Time.realtimeSinceStartup <= timeoutAt)
+            {
+                configured = ConfigureStageClearPresenters(
+                    SceneManager.GetSceneByName(ClearUiSceneName),
+                    sortOrder);
+                if (configured)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (!configured)
+            {
+                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Authored stage clear scene loaded without a {nameof(UIStageClearTestPresenter)}.");
+            }
+
+            stageClearRoutine = null;
+        }
+
+        private IEnumerator PlayCombatHudExitRoutine()
+        {
+            List<UiExitTarget> targets = CollectCombatHudExitTargets();
+            if (targets.Count == 0)
+            {
+                HideCombatHudRootsImmediate();
+                yield break;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
+            {
+                targets[i].SetInteractive(false);
+            }
+
+            float duration = Mathf.Max(0.01f, combatHudExitSeconds);
+            if (combatHudExitSeconds <= 0f)
+            {
+                ApplyHudExit(targets, 1f);
+                HideCombatHudRootsImmediate();
+                yield break;
+            }
+
+            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            {
+                ApplyHudExit(targets, EaseOutCubic(elapsed / duration));
+                yield return null;
+            }
+
+            ApplyHudExit(targets, 1f);
+            HideCombatHudRootsImmediate();
+        }
+
+        private static void ApplyHudExit(List<UiExitTarget> targets, float progress)
+        {
+            for (int i = 0; i < targets.Count; i++)
+            {
+                targets[i].Apply(progress);
+            }
+        }
+
+        private List<UiExitTarget> CollectCombatHudExitTargets()
+        {
+            var targets = new List<UiExitTarget>(8);
+            var seen = new HashSet<Transform>();
+            for (int i = 0; i < CombatHudExitRootNames.Length; i++)
+            {
+                GameObject root = GameObject.Find(CombatHudExitRootNames[i]);
+                AddUiExitTarget(root != null ? root.transform : null, targets, seen);
+            }
+
+            BossBarrageLaneReviewOverlayHud[] overlayHuds = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < overlayHuds.Length; i++)
+            {
+                AddUiExitTarget(overlayHuds[i] != null ? overlayHuds[i].transform : null, targets, seen);
+            }
+
+            return targets;
+        }
+
+        private void AddUiExitTarget(
+            Transform target,
+            List<UiExitTarget> targets,
+            HashSet<Transform> seen)
+        {
+            if (target is not RectTransform rectTransform || !seen.Add(target))
+            {
+                return;
+            }
+
+            CanvasGroup canvasGroup = target.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+            {
+                canvasGroup = target.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(null, rectTransform.position);
+            Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            Vector2 direction = screenPoint - center;
+            if (direction.sqrMagnitude < 16f)
+            {
+                direction = Vector2.down;
+            }
+            else
+            {
+                direction.Normalize();
+            }
+
+            if (Mathf.Abs(direction.x) < 0.18f)
+            {
+                direction.x = 0f;
+            }
+
+            if (Mathf.Abs(direction.y) < 0.18f)
+            {
+                direction.y = screenPoint.y >= center.y ? 0.22f : -0.22f;
+            }
+
+            targets.Add(new UiExitTarget(
+                canvasGroup,
+                rectTransform,
+                direction.normalized * Mathf.Max(0f, hudExitSlidePixels)));
+        }
+
+        private static void HideCombatHudRootsImmediate()
+        {
+            for (int i = 0; i < CombatHudExitRootNames.Length; i++)
+            {
+                GameObject root = GameObject.Find(CombatHudExitRootNames[i]);
+                if (root == null)
+                {
+                    continue;
+                }
+
+                Canvas[] canvases = root.GetComponentsInChildren<Canvas>(true);
+                for (int canvasIndex = 0; canvasIndex < canvases.Length; canvasIndex++)
+                {
+                    if (canvases[canvasIndex] != null)
+                    {
+                        canvases[canvasIndex].enabled = false;
+                    }
+                }
+
+                root.SetActive(false);
+            }
+        }
+
+        private static bool ConfigureStageClearPresenters(Scene clearScene, int resolvedSortOrder)
+        {
+            if (!clearScene.IsValid() || !clearScene.isLoaded)
+            {
+                return false;
+            }
+
+            bool configuredAny = false;
+            GameObject[] roots = clearScene.GetRootGameObjects();
+            PromoteCanvases(roots, resolvedSortOrder);
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                UIStageClearTestPresenter[] presenters =
+                    roots[rootIndex].GetComponentsInChildren<UIStageClearTestPresenter>(true);
+                for (int presenterIndex = 0; presenterIndex < presenters.Length; presenterIndex++)
+                {
+                    UIStageClearTestPresenter presenter = presenters[presenterIndex];
+                    presenter.ConfigureRoutes(
+                        RetrySceneName,
+                        RetryScenePath,
+                        LobbySceneName,
+                        LobbyScenePath);
+                    presenter.PlayEntrance();
+                    configuredAny = true;
+                }
+            }
+
+            return configuredAny;
+        }
+
+        private static void PromoteCanvases(GameObject[] roots, int resolvedSortOrder)
+        {
+            int canvasIndex = 0;
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Canvas[] canvases = roots[rootIndex].GetComponentsInChildren<Canvas>(true);
+                for (int i = 0; i < canvases.Length; i++)
+                {
+                    Canvas canvas = canvases[i];
+                    if (canvas == null)
+                    {
+                        continue;
+                    }
+
+                    canvas.overrideSorting = true;
+                    canvas.sortingOrder = resolvedSortOrder + canvasIndex;
+                    canvasIndex++;
+                }
+            }
+        }
+
+        private void LockCombatAfterClear()
+        {
+            if (combatLocked)
+            {
+                return;
+            }
+
+            combatLocked = true;
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+
+            CombatHealth playerHealth = FindHealthByTeam(DamageTeam.Player);
+            playerHealth?.SetInvulnerableUntil(Time.time + 3600f);
+            DisableCombatResultOverlays();
+            DisableEncounterFailureHooks();
+            StopHostileCombat();
+        }
+
+        private void RestoreCombatTimeScale()
+        {
+            if (!combatLocked)
+            {
+                return;
+            }
+
+            Time.timeScale = previousTimeScale;
+            combatLocked = false;
+        }
+
+        private static CombatHealth FindHealthByTeam(DamageTeam team)
+        {
+            CombatHealth[] healthComponents = FindObjectsByType<CombatHealth>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < healthComponents.Length; i++)
+            {
+                if (healthComponents[i] != null && healthComponents[i].Team == team)
+                {
+                    return healthComponents[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static void DisableCombatResultOverlays()
+        {
+            BossBarrageLaneReviewOverlayHud[] overlays = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < overlays.Length; i++)
+            {
+                if (overlays[i] != null)
+                {
+                    overlays[i].enabled = false;
+                }
+            }
+        }
+
+        private static void DisableEncounterFailureHooks()
+        {
+            CombatEncounterController[] encounters = FindObjectsByType<CombatEncounterController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < encounters.Length; i++)
+            {
+                if (encounters[i] != null)
+                {
+                    encounters[i].enabled = false;
+                }
+            }
+        }
+
+        private static void StopHostileCombat()
+        {
+            BossBarrageEmitter[] barrageEmitters = FindObjectsByType<BossBarrageEmitter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < barrageEmitters.Length; i++)
+            {
+                barrageEmitters[i]?.SetFiringEnabled(false);
+            }
+
+            BossBasicFireEmitter[] basicFireEmitters = FindObjectsByType<BossBasicFireEmitter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < basicFireEmitters.Length; i++)
+            {
+                basicFireEmitters[i]?.SetFiringEnabled(false);
+            }
+
+            BossPressureActionDirector[] actionDirectors = FindObjectsByType<BossPressureActionDirector>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < actionDirectors.Length; i++)
+            {
+                actionDirectors[i]?.SetActionsEnabled(false);
+            }
+
+            BossPressurePositionController[] positionControllers = FindObjectsByType<BossPressurePositionController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < positionControllers.Length; i++)
+            {
+                positionControllers[i]?.SetMovementEnabled(false);
+            }
+
+            EnemySummonPacingDirector[] pacingDirectors = FindObjectsByType<EnemySummonPacingDirector>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pacingDirectors.Length; i++)
+            {
+                pacingDirectors[i]?.SetPacingEnabled(false);
+            }
+
+            BossPressureCostLadder[] costLadders = FindObjectsByType<BossPressureCostLadder>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < costLadders.Length; i++)
+            {
+                costLadders[i]?.SetGainEnabled(false);
+            }
+        }
+
+        private static float EaseOutCubic(float value)
+        {
+            float t = Mathf.Clamp01(value);
+            return 1f - Mathf.Pow(1f - t, 3f);
+        }
+
+        private sealed class UiExitTarget
+        {
+            private readonly CanvasGroup canvasGroup;
+            private readonly RectTransform rectTransform;
+            private readonly Vector2 startPosition;
+            private readonly Vector2 endPosition;
+
+            public UiExitTarget(
+                CanvasGroup canvasGroup,
+                RectTransform rectTransform,
+                Vector2 exitOffset)
+            {
+                this.canvasGroup = canvasGroup;
+                this.rectTransform = rectTransform;
+                startPosition = rectTransform != null ? rectTransform.anchoredPosition : Vector2.zero;
+                endPosition = startPosition + exitOffset;
+            }
+
+            public void SetInteractive(bool interactive)
+            {
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                canvasGroup.interactable = interactive;
+                canvasGroup.blocksRaycasts = interactive;
+            }
+
+            public void Apply(float progress)
+            {
+                float t = Mathf.Clamp01(progress);
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = 1f - t;
+                }
+
+                if (rectTransform != null)
+                {
+                    rectTransform.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, t);
+                }
+            }
+        }
+    }
+}

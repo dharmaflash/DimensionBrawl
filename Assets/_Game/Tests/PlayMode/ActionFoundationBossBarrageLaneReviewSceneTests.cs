@@ -23,6 +23,8 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationBossBarrageLaneReviewSceneTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        private const string PerfectDodgeScreenDomainMaterialPath =
+            "Assets/_Game/Art/VFX/CombatCues/Materials/DB_PerfectDodgeScreenDomain.mat";
         private const string StageProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
         private const float ReviewBossMaxHealth = 2400f;
@@ -283,6 +285,23 @@ namespace DimensionBrawl.Tests
         public IEnumerator ResetTimeScale()
         {
             Time.timeScale = 1f;
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PerfectDodgeScreenDomainRetainsReviewedBluePalette()
+        {
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(PerfectDodgeScreenDomainMaterialPath);
+            Assert.That(material, Is.Not.Null);
+
+            Color domain = material.GetColor("_DomainColor");
+            Color edge = material.GetColor("_EdgeColor");
+            Assert.That(domain.r, Is.EqualTo(0.035f).Within(0.0001f));
+            Assert.That(domain.g, Is.EqualTo(0.045f).Within(0.0001f));
+            Assert.That(domain.b, Is.EqualTo(0.055f).Within(0.0001f));
+            Assert.That(edge.r, Is.EqualTo(0.12f).Within(0.0001f));
+            Assert.That(edge.g, Is.EqualTo(0.96f).Within(0.0001f));
+            Assert.That(edge.b, Is.EqualTo(1f).Within(0.0001f));
             yield return null;
         }
 

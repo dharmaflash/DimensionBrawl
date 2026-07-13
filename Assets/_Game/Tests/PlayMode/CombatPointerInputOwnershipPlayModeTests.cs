@@ -84,24 +84,21 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator CanonicalInputsKeepTheirPointerAndTutorialLockReleasesThem()
+        public IEnumerator CanonicalInputsKeepTheirPointerAndExplicitBlockReleasesThem()
         {
             GameObject eventSystemObject = new("CanonicalInputEventSystem", typeof(EventSystem));
             GameObject aimObject = new("AimDrag", typeof(RectTransform));
             GameObject joystickObject = new("Joystick", typeof(RectTransform));
             GameObject actionObject = new("Action", typeof(RectTransform), typeof(Button));
-            GameObject tutorialObject = new("TutorialBridge");
             Type aimType = RequireType("DimensionBrawl.UI.CombatHudAimDragInput");
             Type joystickType = RequireType("DimensionBrawl.UI.CombatHudVirtualJoystick");
             Type bridgeType = RequireType("DimensionBrawl.UI.CombatHudInputBridge");
             Type pointerActionType = RequireType("DimensionBrawl.UI.CombatHudPointerActionInput");
             Type actionIdType = RequireType("DimensionBrawl.UI.CombatHudActionId");
-            Type tutorialType = RequireType("DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge");
             Component aimDrag = aimObject.AddComponent(aimType);
             Component joystick = joystickObject.AddComponent(joystickType);
             Component inputBridge = actionObject.AddComponent(bridgeType);
             Component pointerAction = actionObject.AddComponent(pointerActionType);
-            Component tutorial = tutorialObject.AddComponent(tutorialType);
             InvokePublic(
                 pointerAction,
                 "Configure",
@@ -127,19 +124,22 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(GetPublicProperty<bool>(joystick, "IsPointerHeld"));
                 Assert.IsTrue(GetPublicProperty<bool>(pointerAction, "IsPointerHeld"));
 
-                InvokePrivate(tutorial, "SetGameplayInputLocked", true);
+                InvokePublic(aimDrag, "SetInputBlocked", true);
+                InvokePublic(joystick, "SetInputBlocked", true);
+                InvokePublic(pointerAction, "SetInputBlocked", true);
                 AssertInputBlockedAndReleased(aimDrag);
                 AssertInputBlockedAndReleased(joystick);
                 AssertInputBlockedAndReleased(pointerAction);
 
-                InvokePrivate(tutorial, "SetGameplayInputLocked", false);
+                InvokePublic(aimDrag, "SetInputBlocked", false);
+                InvokePublic(joystick, "SetInputBlocked", false);
+                InvokePublic(pointerAction, "SetInputBlocked", false);
                 Assert.IsFalse(GetPublicProperty<bool>(aimDrag, "IsInputBlocked"));
                 Assert.IsFalse(GetPublicProperty<bool>(joystick, "IsInputBlocked"));
                 Assert.IsFalse(GetPublicProperty<bool>(pointerAction, "IsInputBlocked"));
             }
             finally
             {
-                Object.DestroyImmediate(tutorialObject);
                 Object.DestroyImmediate(actionObject);
                 Object.DestroyImmediate(joystickObject);
                 Object.DestroyImmediate(aimObject);

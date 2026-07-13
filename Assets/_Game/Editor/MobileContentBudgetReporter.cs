@@ -17,7 +17,6 @@ namespace DimensionBrawl.Editor
         private static readonly SceneTarget[] SceneTargets =
         {
             new("Olympus Corridor", "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"),
-            new("Olympus Station", "Assets/_Game/Scenes/OlympusStationCombatStage.unity"),
             new("Boss Barrage", "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity"),
             new("Frontline Motivation", "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity")
         };

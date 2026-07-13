@@ -33,9 +33,4 @@ MonoBehaviour:
     volume: 0.4
     restartWhenSceneLoads: 1
     outputMixerGroup: {fileID: 0}
-  - sceneName: OlympusStationCombatStage
-    bgmClip: {fileID: 8300000, guid: d90eaceb174ef1643a01881dc76e8bd7, type: 3}
-    volume: 0.34
-    restartWhenSceneLoads: 1
-    outputMixerGroup: {fileID: 0}
   stopWhenSceneIsUnlisted: 1

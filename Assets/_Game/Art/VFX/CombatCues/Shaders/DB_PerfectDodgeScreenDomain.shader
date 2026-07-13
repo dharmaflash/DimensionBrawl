@@ -2,7 +2,7 @@ Shader "DimensionBrawl/CombatCues/PerfectDodgeScreenDomain"
 {
     Properties
     {
-        _DomainColor ("Domain Color", Color) = (0.025, 0.035, 0.045, 1)
+        _DomainColor ("Domain Color", Color) = (0.035, 0.045, 0.055, 1)
         _EdgeColor ("Edge Color", Color) = (0.08, 0.95, 1, 1)
         _InvertColor ("Invert Color", Color) = (0.92, 1, 1, 1)
         _DomainAlpha ("Domain Alpha", Range(0, 1)) = 0.42

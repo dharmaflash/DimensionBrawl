@@ -18,8 +18,7 @@ namespace DimensionBrawl.Editor
 
         private static readonly SceneExpectation[] MinimumSceneExpectations =
         {
-            new("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", SceneContractKind.CanonicalCombat),
-            new("Assets/_Game/Scenes/OlympusStationCombatStage.unity", SceneContractKind.CanonicalCombat)
+            new("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", SceneContractKind.CanonicalCombat)
         };
 
         [MenuItem("DimensionBrawl/Reports/Runtime Scene Wiring Readiness")]

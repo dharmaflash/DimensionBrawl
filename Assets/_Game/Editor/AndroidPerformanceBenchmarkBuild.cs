@@ -21,7 +21,6 @@ namespace DimensionBrawl.Editor
 
         private static readonly string[] BenchmarkScenes =
         {
-            "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
             "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"

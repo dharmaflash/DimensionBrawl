@@ -11741,7 +11741,7 @@ namespace DimensionBrawl.Editor
 
             material.shader = shader;
             material.renderQueue = (int)RenderQueue.Overlay;
-            SetMaterialColorIfPresent(material, "_DomainColor", new Color(0.025f, 0.035f, 0.045f, 1f));
+            SetMaterialColorIfPresent(material, "_DomainColor", new Color(0.035f, 0.045f, 0.055f, 1f));
             SetMaterialColorIfPresent(material, "_EdgeColor", new Color(0.12f, 0.96f, 1f, 1f));
             SetMaterialColorIfPresent(material, "_InvertColor", new Color(0.92f, 1f, 1f, 1f));
             SetMaterialFloatIfPresent(material, "_DomainAlpha", 0f);

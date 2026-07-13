@@ -45,11 +45,6 @@ namespace DimensionBrawl.Tests
                 typeof(DimensionBrawl.Player.PlayerSkill1LaserSweepAction).GetMethod("Update", flags),
                 "Laser-sweep VFX should return through its finite tail routine instead of an idle poll.");
             Assert.IsNull(
-                typeof(DimensionBrawl.LevelDesign.OlympusStationCombatStageRuntimeBossTargetBinder).GetMethod(
-                    "LateUpdate",
-                    flags),
-                "The Station boss binder should finish in Awake, OnEnable, and Start without a permanent empty callback.");
-            Assert.IsNull(
                 typeof(MovementFootstepAudioPresenter).GetMethod("Update", flags),
                 "Footstep presenters should share one scheduler instead of each crossing the native Update boundary.");
             Assert.IsNull(
@@ -77,8 +72,8 @@ namespace DimensionBrawl.Tests
                 typeof(SpatialOneShotVfxPool).GetMethod("Update", flags),
                 "Spatial VFX pools should scan release times only while effects are active.");
             Assert.IsNull(
-                typeof(DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay).GetMethod("Update", flags),
-                "Station clear presentation should react to pocket-clear and boss-death events.");
+                typeof(DimensionBrawl.LevelDesign.OlympusStageClearOverlay).GetMethod("Update", flags),
+                "Stage clear presentation should run only after the canonical flow signals completion.");
             Assert.IsNull(
                 typeof(OlympusTutorialOverlayPresenter).GetMethod("Update", flags),
                 "Tutorial overlay animation should run only while a finite transition is active.");
@@ -124,13 +119,6 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 combatHudAimDragInput.GetMethod("Update", flags),
                 "Combat HUD aim drag should react to pointer and input-action events instead of polling every frame.");
-
-            System.Type sceneEntryNoticeOverlay = System.Type.GetType(
-                "DimensionBrawl.UI.SceneEntryNoticeOverlay, Assembly-CSharp");
-            Assert.IsNotNull(sceneEntryNoticeOverlay);
-            Assert.IsNull(
-                sceneEntryNoticeOverlay.GetMethod("Update", flags),
-                "Scene-entry notice animation should stay inside its finite playback routine.");
 
             System.Type reviewOverlayHud = System.Type.GetType(
                 "DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud, DimensionBrawl.Runtime");
@@ -195,69 +183,29 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator StageClearOverlayBindsLateBossAndReactsToDeathEvent()
+        public IEnumerator StageClearOverlayWaitsForExplicitFlowSignal()
         {
-            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-            GameObject overlayRoot = new GameObject("LateBoundStageClearOverlayTest");
-            GameObject bossRoot = null;
-            GameObject existingBossRoot = GameObject.Find(
-                "BossBarrageLaneReview_BossProxy_NeedleLock");
-            bool existingBossWasActive = existingBossRoot != null && existingBossRoot.activeSelf;
+            GameObject overlayRoot = new GameObject("ExplicitStageClearOverlayTest");
             float previousTimeScale = Time.timeScale;
             try
             {
-                if (existingBossRoot != null)
-                {
-                    existingBossRoot.SetActive(false);
-                }
-
                 overlayRoot.SetActive(false);
                 var overlay = overlayRoot.AddComponent<
-                    DimensionBrawl.LevelDesign.OlympusStationStageClearOverlay>();
+                    DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
                 overlayRoot.SetActive(true);
                 yield return null;
 
-                bossRoot = new GameObject("BossBarrageLaneReview_BossProxy_NeedleLock");
-                DimensionBrawl.Combat.CombatHealth bossHealth =
-                    bossRoot.AddComponent<DimensionBrawl.Combat.CombatHealth>();
-                bossHealth.ConfigureTeam(DimensionBrawl.Combat.DamageTeam.Enemy);
-                bossHealth.ConfigureMaxHealth(100f);
+                Assert.IsFalse(overlay.IsShown);
+                Assert.AreEqual(previousTimeScale, Time.timeScale);
 
-                FieldInfo bossHealthField = overlay.GetType().GetField("bossHealth", flags);
-                Assert.IsNotNull(bossHealthField);
-                float timeoutAt = Time.realtimeSinceStartup + 1f;
-                while (bossHealthField.GetValue(overlay) != bossHealth
-                    && Time.realtimeSinceStartup < timeoutAt)
-                {
-                    yield return null;
-                }
+                overlay.Show();
 
-                Assert.AreSame(bossHealth, bossHealthField.GetValue(overlay));
-                Assert.IsTrue(bossHealth.TryApplyDamage(new DimensionBrawl.Combat.DamageInfo(
-                    source: null,
-                    sourceTeam: DimensionBrawl.Combat.DamageTeam.Player,
-                    amount: bossHealth.MaxHealth,
-                    point: bossRoot.transform.position,
-                    direction: Vector3.forward,
-                    hitStopSeconds: 0f)));
-
-                FieldInfo shownField = overlay.GetType().GetField("shown", flags);
-                Assert.IsNotNull(shownField);
-                Assert.IsTrue((bool)shownField.GetValue(overlay));
+                Assert.IsTrue(overlay.IsShown);
+                Assert.AreEqual(0f, Time.timeScale);
             }
             finally
             {
                 Object.DestroyImmediate(overlayRoot);
-                if (bossRoot != null)
-                {
-                    Object.DestroyImmediate(bossRoot);
-                }
-
-                if (existingBossRoot != null)
-                {
-                    existingBossRoot.SetActive(existingBossWasActive);
-                }
-
                 Time.timeScale = previousTimeScale;
             }
 

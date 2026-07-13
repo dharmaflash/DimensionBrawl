@@ -56,7 +56,7 @@ Do not create a single catch-all UI folder with unrelated prefabs, sprites, data
 
 Other-PC UI work may extend the scene-flow shell if route ownership stays UI-owned:
 
-- Canonical route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> OlympusCorridorInvasionStage -> OlympusStationCombatStage -> UI_StageClearTest`.
+- Canonical route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> OlympusCorridorInvasionStage -> UI_StageClearTest`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
 - Loading cards are conditional presentation for routes with a real wait reason. Immediate UI-to-UI routes should use a short fade without a card/progress layer.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.

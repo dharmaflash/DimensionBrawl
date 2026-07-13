@@ -50,7 +50,6 @@ namespace DimensionBrawl.Editor
         private const string StairEntryAnchorName = "OlympusCorridor_StairEntryAnchor";
         private const string StairTraversalSupportName = "OlympusCorridor_IntroStairTraversalSupport";
         private const string CorridorBoundsRootName = "OlympusCorridor_CorridorCombatBounds";
-        private const string StageClearExitAnchorName = "StageClear_CorridorExit";
         private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
         private const float OlympusCorridorGameplayYawDegrees = 90f;
 
@@ -74,6 +73,8 @@ namespace DimensionBrawl.Editor
         private const string SourceMarkersRootName = "BossBarrageLaneReview_Markers";
         private const string SourceAmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
         private const string SourceTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
+        private const string TutorialOverlayOpenSfxGuid = "480de4e28dbc0da4e9a1bdffcbca163d";
+        private const string CombatPhaseBgmGuid = "d90eaceb174ef1643a01881dc76e8bd7";
         private const string IntroGatePodRuntimePayloadRootName = "IntroGatePodPortPayload_CutsceneRuntime";
         private const string CombatStartVisualPlacementName = "IntroGatePodReview_CombatStartInoriPlacement";
         private const string FirstPersonResidualVisualRootName = "IntroGatePodReview_InoriPlacement";
@@ -117,6 +118,25 @@ namespace DimensionBrawl.Editor
             1.25f,
             -2.5f,
             2.5f
+        };
+
+        private static readonly string[] TutorialDialogueAudioCueGuids =
+        {
+            "45d0ab70b510fc1429f62da5d87a018c",
+            "b0a3622e69d4a7146b30823ea1b54486",
+            "b3ef5028dd48eeb408f3987ae9f31a6b",
+            "d7c29acd956f308458ffeb87f9442609",
+            "ef8c373d013abb2459cb21dd44ed49e3",
+            "6f02ae920a319ed4194a2b863a8146c6",
+            "ca681da2050eadc4994aa91abe8099d4",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "bc6a3152c5df4fc3b4a9d49650c1a601",
+            "df58e67c949b4628a9c8f92d1af92547"
         };
 
         private static readonly Vector3 SourcePlayerStartPosition = new Vector3(0f, 0f, -8.5f);
@@ -256,26 +276,6 @@ namespace DimensionBrawl.Editor
                     introSwordGateRoot.transform,
                     stairEntryAnchor.transform.position,
                     corridorStartMarker.position);
-            }
-
-            GameObject stageClearExit = FindRootOrDescendant(scene, StageClearExitAnchorName);
-            Vector3 stageClearExitPosition =
-                packageRoot.transform.TransformPoint(new Vector3(0f, 0f, 60f));
-            stageClearExitPosition.y = corridorStartMarker.position.y;
-            if (stageClearExit == null)
-            {
-                stageClearExit = CreateRoot(
-                    scene,
-                    StageClearExitAnchorName,
-                    stageClearExitPosition,
-                    packageRoot.transform.rotation);
-            }
-            else
-            {
-                stageClearExit.transform.SetPositionAndRotation(
-                    stageClearExitPosition,
-                    packageRoot.transform.rotation);
-                EditorUtility.SetDirty(stageClearExit.transform);
             }
 
             GameObject bossRoot = RequireChildObject(packageRoot.transform, SourceBossRootName);
@@ -594,6 +594,8 @@ namespace DimensionBrawl.Editor
 
             OlympusCorridorCombatFlowController flowController =
                 RequireComponent<OlympusCorridorCombatFlowController>(flowRoot, "Olympus corridor combat flow controller");
+            OlympusStageClearOverlay stageClearOverlay =
+                RequireComponent<OlympusStageClearOverlay>(flowRoot, "canonical stage clear overlay");
             CharacterController playerController =
                 RequireComponent<CharacterController>(playerRoot, "Olympus validation player controller");
             GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
@@ -604,6 +606,37 @@ namespace DimensionBrawl.Editor
             GameObject combatCameraRoot = RequireChildObject(packageRoot.transform, CombatCameraName);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(playerRoot, "combat mode controller");
+            PlayerCombatVfxCueDriver combatVfxCueDriver =
+                RequireComponent<PlayerCombatVfxCueDriver>(playerRoot, "canonical player combat VFX cues");
+            PerfectDodgeVfxDirector perfectDodgeVfxDirector =
+                RequireComponent<PerfectDodgeVfxDirector>(playerRoot, "canonical perfect dodge VFX");
+            RequireComponent<PerfectDodgeTimeWarp>(playerRoot, "canonical perfect dodge time warp");
+            RequireComponent<PlayerRangedReloadSfxDriver>(playerRoot, "canonical ranged reload audio");
+            RequireComponent<PlayerDamageReactionAnimator>(playerRoot, "canonical player damage reaction");
+            PlayerLockTargetController lockTargetController =
+                RequireComponent<PlayerLockTargetController>(playerRoot, "canonical player lock targeting");
+            PlayerLockTargetVisualPresenter lockTargetVisualPresenter =
+                RequireComponent<PlayerLockTargetVisualPresenter>(playerRoot, "canonical lock target visuals");
+            PlayerSkill1LaserSweepAction laserSweepAction =
+                RequireComponent<PlayerSkill1LaserSweepAction>(playerRoot, "canonical Skill 1 laser sweep");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(playerRoot, "canonical ranged basic attack");
+            PlayerSkill1Action skill1Action =
+                RequireComponent<PlayerSkill1Action>(playerRoot, "canonical Skill 1 action");
+            GameObject bossRoot = RequireChildObject(packageRoot.transform, SourceBossRootName);
+            RequireComponent<EnemySummonPacingDirector>(bossRoot, "canonical boss summon pacing");
+            bool canonicalCombatFeatureBindingsValid =
+                combatVfxCueDriver.PerfectDodgeVfxDirector == perfectDodgeVfxDirector
+                && GetObjectReferenceProperty(
+                    new SerializedObject(rangedBasicAttackAction),
+                    "lockTargetController") == lockTargetController
+                && lockTargetVisualPresenter.LockTargetController == lockTargetController
+                && GetObjectReferenceProperty(
+                    new SerializedObject(skill1Action),
+                    "laserSweepAction") == laserSweepAction
+                && GetBoolProperty(
+                    new SerializedObject(skill1Action),
+                    "useLaserSweepActionWhenAvailable");
             GameObject introSwordGateRoot = RequireChildObject(packageRoot.transform, IntroSwordGateRootName);
             GameObject canonicalEncounterRoot = RequireChildObject(packageRoot.transform, "CombatEncounter");
             CombatEncounterController canonicalEncounter =
@@ -635,9 +668,6 @@ namespace DimensionBrawl.Editor
                 CountEnabledSolidColliders(corridorCombatStartMarker);
             bool corridorCombatStartMarkerNonBlocking =
                 corridorCombatStartMarker != null && corridorCombatStartMarkerEnabledSolidColliders == 0;
-            GameObject stageClearExitAnchor = FindRootOrDescendant(stageScene, StageClearExitAnchorName);
-            Vector3 stageClearExitPosition =
-                stageClearExitAnchor != null ? stageClearExitAnchor.transform.position : default;
             GameObject runtimePayloadRoot = FindRootOrDescendant(stageScene, IntroGatePodRuntimePayloadRootName);
             GameObject firstPersonResidualRoot = FindRootOrDescendant(stageScene, FirstPersonResidualVisualRootName);
             GameObject arenaVfxRoot = FindDirectChildObject(packageRoot.transform, SourceArenaVfxRootName);
@@ -857,6 +887,11 @@ namespace DimensionBrawl.Editor
                 playerRoot);
 
             SerializedObject flowSerialized = new SerializedObject(flowController);
+            OlympusStageClearOverlay configuredStageClearOverlay =
+                GetObjectReferenceProperty(flowSerialized, "stageClearOverlay") as OlympusStageClearOverlay;
+            bool stageClearOverlayBound = configuredStageClearOverlay == stageClearOverlay;
+            bool canonicalStagePresentationBound =
+                ValidateCanonicalStagePresentationBindings(flowSerialized, stageClearOverlay);
             Transform stairEntryAnchor =
                 ResolveTransformReference(GetObjectReferenceProperty(flowSerialized, "stairEntryAnchor"));
             bool stairEntryAnchorResolved = stairEntryAnchor != null;
@@ -1090,33 +1125,6 @@ namespace DimensionBrawl.Editor
                 CountEnabledSolidColliders(corridorClearTargetHealthsForClearSample);
             bool corridorTargetCollisionDisabledAfterStageClear =
                 corridorEnabledSolidCollidersAfterStageClear == 0;
-            Vector3 stageClearTraversalStart = stairGravityTraversalSample.Passed
-                ? stairGravityTraversalSample.FinalPosition
-                : stairTraversalEndPosition;
-            GravityTraversalSnapshot stageClearExitTraversal =
-                stageClearExitAnchor != null
-                    ? CaptureGravityTraversalSample(
-                        stageScene,
-                        playerRoot,
-                        playerController,
-                        stageClearTraversalStart,
-                        stageClearExitPosition)
-                    : new GravityTraversalSnapshot(
-                        false,
-                        false,
-                        false,
-                        false,
-                        false,
-                        0,
-                        0f,
-                        stageClearTraversalStart,
-                        stageClearTraversalStart,
-                        stageClearTraversalStart,
-                        stageClearTraversalStart.y,
-                        float.PositiveInfinity,
-                        0f,
-                        $"{StageClearExitAnchorName} is missing.",
-                        new List<string>());
             report.Add("Corridor combat completion sample:");
             report.Add($"  enemyHealthResolved={corridorEndEnemyResolved}");
             report.Add($"  winMarkerResolved={corridorEndWinMarkerResolved} active={corridorWinMarker != null && corridorWinMarker.activeSelf}");
@@ -1125,9 +1133,9 @@ namespace DimensionBrawl.Editor
             report.Add($"  encounterWon={canonicalEncounter.IsWon} encounterFailed={canonicalEncounter.IsFailed}");
             report.Add($"  corridorCombatEndedAsWin={corridorCombatEndedAsWin}");
 
-            report.Add("Stage clear exit sample:");
-            report.Add(
-                $"  {StageClearExitAnchorName} found={stageClearExitAnchor != null} world={FormatVector3(stageClearExitPosition)}");
+            report.Add("Stage clear presentation sample:");
+            report.Add($"  stageClearOverlayResolved={stageClearOverlay != null}");
+            report.Add($"  stageClearOverlayBound={stageClearOverlayBound}");
             report.Add($"  corridorClearTargetHealthsResolved={corridorClearTargetHealthsResolvedForClearSample}");
             report.Add($"  corridorAliveBeforeStageClear={corridorAliveBeforeStageClear}");
             report.Add($"  corridorClearDamageAppliedByEncounter={corridorEndDamageApplied}");
@@ -1139,21 +1147,9 @@ namespace DimensionBrawl.Editor
                 $"  corridorEnabledSolidCollidersAfterStageClear={corridorEnabledSolidCollidersAfterStageClear}");
             report.Add(
                 $"  corridorTargetCollisionDisabledAfterStageClear={corridorTargetCollisionDisabledAfterStageClear}");
-            report.Add(
-                $"  exitTraversal valid={stageClearExitTraversal.IsValid} pass={stageClearExitTraversal.Passed}");
-            report.Add(
-                $"  exitTraversal reachedTarget={stageClearExitTraversal.ReachedTarget} stayedAboveFloor={stageClearExitTraversal.StayedAboveFloor} supportStable={stageClearExitTraversal.SupportStable} hadGrounding={stageClearExitTraversal.HadGrounding}");
-            report.Add(
-                $"  exitTraversal frames={stageClearExitTraversal.Frames} from={FormatVector3(stageClearExitTraversal.From)} to={FormatVector3(stageClearExitTraversal.To)} final={FormatVector3(stageClearExitTraversal.FinalPosition)}");
-            report.Add(
-                $"  exitTraversal finalPlanarDistance={stageClearExitTraversal.FinalPlanarDistance:0.###} minY={stageClearExitTraversal.MinY:0.###} maxUnsupportedSeconds={stageClearExitTraversal.MaxUnsupportedSeconds:0.###}");
-            report.Add($"  exitTraversal failureReason={stageClearExitTraversal.FailureReason}");
-            for (int i = 0; i < stageClearExitTraversal.SampleSummaries.Count; i++)
-            {
-                report.Add($"  {i + 1:00}. {stageClearExitTraversal.SampleSummaries[i]}");
-            }
-
             report.Add("Timeline handoff coverage:");
+            report.Add($"Canonical combat feature bindings valid={canonicalCombatFeatureBindingsValid}");
+            report.Add($"Canonical stage presentation bound={canonicalStagePresentationBound}");
             report.Add($"  Director duration={directorDuration:0.###}");
             report.Add($"  {RevealShotId} end={revealClipEnd:0.###}");
             report.Add($"  {RevealAnimationTrackName} end={revealAnimationClipEnd:0.###}");
@@ -1204,7 +1200,7 @@ namespace DimensionBrawl.Editor
                 && introCameraSnapshot.CombatCameraCentersPlayer
                 && introCameraSnapshot.CombatCameraCentersPlayerRenderer
                 && introCameraPrediction.BaseCentersPlayer
-                && introCameraPrediction.FullAimCentersPlayer
+                && introCameraPrediction.FullAimKeepsPlayerInSafeFrame
                 && introEnemyHealthsResolvedForClearSample
                 && stairBlockerEnabledAtIntroGate
                 && introAliveBeforeClearSample > 0
@@ -1233,12 +1229,14 @@ namespace DimensionBrawl.Editor
                 && corridorCameraSnapshot.CombatCameraCentersPlayer
                 && corridorCameraSnapshot.CombatCameraCentersPlayerRenderer
                 && corridorCameraPrediction.BaseCentersPlayer
-                && corridorCameraPrediction.FullAimCentersPlayer
+                && corridorCameraPrediction.FullAimKeepsPlayerInSafeFrame
                 && corridorEndEnemyResolved
                 && corridorEndWinMarkerResolved
                 && corridorEndFailMarkerResolved
                 && corridorCombatEndedAsWin
-                && stageClearExitAnchor != null
+                && canonicalCombatFeatureBindingsValid
+                && canonicalStagePresentationBound
+                && stageClearOverlayBound
                 && corridorClearTargetHealthsResolvedForClearSample
                 && corridorEndDamageApplied
                 && corridorAliveAfterStageClear == 0
@@ -1246,7 +1244,6 @@ namespace DimensionBrawl.Editor
                 && stageClearedAfterClearTargets
                 && corridorBoundsInactiveAfterStageClear
                 && corridorTargetCollisionDisabledAfterStageClear
-                && stageClearExitTraversal.Passed
                 && finalHandoffBinding.ObsoleteCombatStartVisualRemoved
                 && finalHandoffBinding.BodyTrackBoundToCombatPlayer
                 && finalHandoffBinding.ActivationTrackBoundToCombatPlayer
@@ -1412,6 +1409,8 @@ namespace DimensionBrawl.Editor
             CombatHealth[] corridorTargets = { closeThreatHealth, bossHealth };
             CombatHealth[] corridorClearTargets = { closeThreatHealth };
 
+            OlympusStageClearOverlay stageClearOverlay =
+                flowRoot.AddComponent<OlympusStageClearOverlay>();
             OlympusCorridorCombatFlowController flowController =
                 flowRoot.AddComponent<OlympusCorridorCombatFlowController>();
             flowController.Configure(
@@ -1445,6 +1444,7 @@ namespace DimensionBrawl.Editor
                 supportSummons,
                 HudRevealDelaySeconds,
                 HudRevealDurationSeconds);
+            ConfigureCanonicalStagePresentation(flowController, stageClearOverlay);
 
             flowController.enabled = true;
             ApplyAuthoringInitialState(
@@ -1456,6 +1456,7 @@ namespace DimensionBrawl.Editor
                 boundsRoots,
                 new[] { stairBlocker });
             SetObjectActive(playerRoot, false);
+            EditorUtility.SetDirty(stageClearOverlay);
             EditorUtility.SetDirty(flowController);
             EditorUtility.SetDirty(flowRoot);
             EditorUtility.SetDirty(packageRoot);
@@ -3236,7 +3237,7 @@ namespace DimensionBrawl.Editor
             public readonly Vector3 FullAimLocalToPackage;
             public readonly Vector3 FullAimPlayerBodyViewport;
             public readonly bool BaseCentersPlayer;
-            public readonly bool FullAimCentersPlayer;
+            public readonly bool FullAimKeepsPlayerInSafeFrame;
 
             public ActionCameraPosePrediction(
                 bool hasPrediction,
@@ -3246,7 +3247,7 @@ namespace DimensionBrawl.Editor
                 Vector3 fullAimLocalToPackage,
                 Vector3 fullAimPlayerBodyViewport,
                 bool baseCentersPlayer,
-                bool fullAimCentersPlayer)
+                bool fullAimKeepsPlayerInSafeFrame)
             {
                 HasPrediction = hasPrediction;
                 YawDegrees = yawDegrees;
@@ -3255,7 +3256,7 @@ namespace DimensionBrawl.Editor
                 FullAimLocalToPackage = fullAimLocalToPackage;
                 FullAimPlayerBodyViewport = fullAimPlayerBodyViewport;
                 BaseCentersPlayer = baseCentersPlayer;
-                FullAimCentersPlayer = fullAimCentersPlayer;
+                FullAimKeepsPlayerInSafeFrame = fullAimKeepsPlayerInSafeFrame;
             }
         }
 
@@ -3536,8 +3537,11 @@ namespace DimensionBrawl.Editor
                 : aimPosition;
             bool baseCentersPlayer =
                 predictedBaseViewport.z > 0f && Math.Abs(predictedBaseViewport.x - 0.5f) <= 0.055f;
-            bool fullAimCentersPlayer =
-                predictedAimViewport.z > 0f && Math.Abs(predictedAimViewport.x - 0.5f) <= 0.055f;
+            bool fullAimKeepsPlayerInSafeFrame = predictedAimViewport.z > 0f
+                && predictedAimViewport.x >= 0.12f
+                && predictedAimViewport.x <= 0.88f
+                && predictedAimViewport.y >= 0.08f
+                && predictedAimViewport.y <= 0.92f;
 
             return new ActionCameraPosePrediction(
                 true,
@@ -3547,7 +3551,7 @@ namespace DimensionBrawl.Editor
                 aimLocalToPackage,
                 predictedAimViewport,
                 baseCentersPlayer,
-                fullAimCentersPlayer);
+                fullAimKeepsPlayerInSafeFrame);
         }
 
         private static void AppendCameraPhaseSnapshot(
@@ -3610,7 +3614,7 @@ namespace DimensionBrawl.Editor
             report.Add(
                 $"  {cameraName} predictedBase yaw={prediction.YawDegrees:0.###} localToPackage={prediction.BaseLocalToPackage:F3} playerBodyViewport={prediction.BasePlayerBodyViewport:F3} centersPlayer={prediction.BaseCentersPlayer}");
             report.Add(
-                $"  {cameraName} predictedFullAim localToPackage={prediction.FullAimLocalToPackage:F3} playerBodyViewport={prediction.FullAimPlayerBodyViewport:F3} centersPlayer={prediction.FullAimCentersPlayer}");
+                $"  {cameraName} predictedFullAim localToPackage={prediction.FullAimLocalToPackage:F3} playerBodyViewport={prediction.FullAimPlayerBodyViewport:F3} safeFrame={prediction.FullAimKeepsPlayerInSafeFrame}");
         }
 
         private static void AppendCameraDiagnostics(
@@ -5830,6 +5834,106 @@ namespace DimensionBrawl.Editor
             }
 
             return asset;
+        }
+
+        private static T LoadRequiredByGuid<T>(string guid) where T : UnityEngine.Object
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                throw new InvalidOperationException($"Missing required asset GUID: {guid}");
+            }
+
+            return LoadRequired<T>(assetPath);
+        }
+
+        private static void ConfigureCanonicalStagePresentation(
+            OlympusCorridorCombatFlowController flowController,
+            OlympusStageClearOverlay stageClearOverlay)
+        {
+            SerializedObject serialized = new SerializedObject(flowController);
+            SerializedProperty overlayProperty = serialized.FindProperty("stageClearOverlay")
+                ?? throw new InvalidOperationException("Missing stage clear overlay binding property.");
+            SerializedProperty openSfxProperty = serialized.FindProperty("tutorialOverlayOpenSfx")
+                ?? throw new InvalidOperationException("Missing tutorial open SFX binding property.");
+            SerializedProperty openSfxVolumeProperty = serialized.FindProperty("tutorialOverlayOpenSfxVolume")
+                ?? throw new InvalidOperationException("Missing tutorial open SFX volume property.");
+            SerializedProperty dialogueCuesProperty = serialized.FindProperty("tutorialOverlayDialogueAudioCues")
+                ?? throw new InvalidOperationException("Missing tutorial dialogue cue binding property.");
+            SerializedProperty phaseBgmProperty = serialized.FindProperty("combatPhaseBgmClip")
+                ?? throw new InvalidOperationException("Missing combat phase BGM binding property.");
+            SerializedProperty phaseBgmVolumeProperty = serialized.FindProperty("combatPhaseBgmVolume")
+                ?? throw new InvalidOperationException("Missing combat phase BGM volume property.");
+
+            overlayProperty.objectReferenceValue = stageClearOverlay;
+            openSfxProperty.objectReferenceValue = LoadRequiredByGuid<AudioClip>(TutorialOverlayOpenSfxGuid);
+            openSfxVolumeProperty.floatValue = 0.82f;
+            phaseBgmProperty.objectReferenceValue = LoadRequiredByGuid<AudioClip>(CombatPhaseBgmGuid);
+            phaseBgmVolumeProperty.floatValue = 0.34f;
+
+            dialogueCuesProperty.arraySize = TutorialDialogueAudioCueGuids.Length;
+            for (int i = 0; i < TutorialDialogueAudioCueGuids.Length; i++)
+            {
+                SerializedProperty cue = dialogueCuesProperty.GetArrayElementAtIndex(i);
+                cue.FindPropertyRelative("cueId").intValue = i + 1;
+                string clipGuid = TutorialDialogueAudioCueGuids[i];
+                cue.FindPropertyRelative("clip").objectReferenceValue = string.IsNullOrWhiteSpace(clipGuid)
+                    ? null
+                    : LoadRequiredByGuid<AudioClip>(clipGuid);
+                cue.FindPropertyRelative("volume").floatValue = 1f;
+                cue.FindPropertyRelative("delaySeconds").floatValue = 0f;
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(flowController);
+        }
+
+        private static bool ValidateCanonicalStagePresentationBindings(
+            SerializedObject flowSerialized,
+            OlympusStageClearOverlay stageClearOverlay)
+        {
+            if (GetObjectReferenceProperty(flowSerialized, "stageClearOverlay") != stageClearOverlay
+                || GetObjectReferenceProperty(flowSerialized, "tutorialOverlayOpenSfx")
+                    != LoadRequiredByGuid<AudioClip>(TutorialOverlayOpenSfxGuid)
+                || GetObjectReferenceProperty(flowSerialized, "combatPhaseBgmClip")
+                    != LoadRequiredByGuid<AudioClip>(CombatPhaseBgmGuid)
+                || Mathf.Abs(GetFloatProperty(flowSerialized, "tutorialOverlayOpenSfxVolume") - 0.82f) > 0.0001f
+                || Mathf.Abs(GetFloatProperty(flowSerialized, "combatPhaseBgmVolume") - 0.34f) > 0.0001f)
+            {
+                return false;
+            }
+
+            SerializedProperty dialogueCues = flowSerialized.FindProperty("tutorialOverlayDialogueAudioCues");
+            if (dialogueCues == null || dialogueCues.arraySize != TutorialDialogueAudioCueGuids.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < TutorialDialogueAudioCueGuids.Length; i++)
+            {
+                SerializedProperty cue = dialogueCues.GetArrayElementAtIndex(i);
+                SerializedProperty cueId = cue.FindPropertyRelative("cueId");
+                SerializedProperty clip = cue.FindPropertyRelative("clip");
+                SerializedProperty volume = cue.FindPropertyRelative("volume");
+                SerializedProperty delay = cue.FindPropertyRelative("delaySeconds");
+                string clipGuid = TutorialDialogueAudioCueGuids[i];
+                AudioClip expectedClip = string.IsNullOrWhiteSpace(clipGuid)
+                    ? null
+                    : LoadRequiredByGuid<AudioClip>(clipGuid);
+                if (cueId == null
+                    || clip == null
+                    || volume == null
+                    || delay == null
+                    || cueId.intValue != i + 1
+                    || clip.objectReferenceValue != expectedClip
+                    || Mathf.Abs(volume.floatValue - 1f) > 0.0001f
+                    || Mathf.Abs(delay.floatValue) > 0.0001f)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static T RequireComponent<T>(GameObject root, string label) where T : Component

@@ -1357,8 +1357,8 @@ MonoBehaviour:
   clearBgmSource: {fileID: 0}
   clearBgmClip: {fileID: 8300000, guid: e55ff22a828ced04ab9a3b5e2418dd38, type: 3}
   clearBgmVolume: 0.9
-  retrySceneName: OlympusStationCombatStage
-  retryScenePath: Assets/_Game/Scenes/OlympusStationCombatStage.unity
+  retrySceneName: OlympusCorridorInvasionStage
+  retryScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
   lobbySceneName: UI_LobbyTest
   lobbyScenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
   playEntranceOnEnable: 1
