@@ -1,7 +1,6 @@
 using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
-using DimensionBrawl.Test;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -36,7 +35,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [FormerlySerializedAs("pocketReviewOwner")]
         [SerializeField] private BossBarrageEncounterController encounterController;
-        [SerializeField] private BossSummonDuelReviewOwner duelReviewOwner;
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
@@ -155,7 +153,6 @@ namespace DimensionBrawl.Presentation
         private int frontlineStabilityCueRequestCount;
         private int counterWaveCueRequestCount;
         private int counterWaveAnswerCueRequestCount;
-        private int duelPhaseCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
@@ -177,7 +174,6 @@ namespace DimensionBrawl.Presentation
         private float lastFrontlineStability01 = 1f;
         private float lastFollowupWindowRouteScale = 1f;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
-        private BossSummonDuelReviewOwner.DuelPhase lastDuelPhase = BossSummonDuelReviewOwner.DuelPhase.BuildPressure;
 
         public bool ShowScreenCues => showScreenCues;
         public bool ShowEventColorCues => showEventColorCues;
@@ -236,7 +232,6 @@ namespace DimensionBrawl.Presentation
         public int FrontlineStabilityCueRequestCount => frontlineStabilityCueRequestCount;
         public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
         public int CounterWaveAnswerCueRequestCount => counterWaveAnswerCueRequestCount;
-        public int DuelPhaseCueRequestCount => duelPhaseCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
@@ -256,7 +251,6 @@ namespace DimensionBrawl.Presentation
         public float LastFrontlineStability01 => lastFrontlineStability01;
         public float LastFollowupWindowRouteScale => lastFollowupWindowRouteScale;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
-        public BossSummonDuelReviewOwner.DuelPhase LastDuelPhase => lastDuelPhase;
 
         public void SetScreenCuesVisible(bool visible)
         {
@@ -299,8 +293,7 @@ namespace DimensionBrawl.Presentation
             PlayerSupportSummonSlotAction newSummonSlot3Action,
             BossBarrageEmitter newBossBarrageEmitter,
             BossPressureActionDirector newBossPressureActionDirector,
-            BossBarrageEncounterController newEncounterController,
-            BossSummonDuelReviewOwner newDuelReviewOwner = null)
+            BossBarrageEncounterController newEncounterController)
         {
             Unsubscribe();
             actionController = newActionController;
@@ -314,7 +307,6 @@ namespace DimensionBrawl.Presentation
             bossBarrageEmitter = newBossBarrageEmitter;
             bossPressureActionDirector = newBossPressureActionDirector;
             encounterController = newEncounterController;
-            duelReviewOwner = newDuelReviewOwner;
             Subscribe();
         }
 
@@ -664,20 +656,6 @@ namespace DimensionBrawl.Presentation
             RequestScreenCue("Pocket.Failed", pocketFailColor, 0.86f, 1.02f, ScreenCueCategory.Result);
         }
 
-        private void HandleDuelPhaseChanged(
-            BossSummonDuelReviewOwner.DuelPhase previousPhase,
-            BossSummonDuelReviewOwner.DuelPhase currentPhase)
-        {
-            lastDuelPhase = currentPhase;
-            duelPhaseCueRequestCount++;
-            RequestScreenCue(
-                $"Duel.{currentPhase}",
-                ResolveDuelPhaseColor(currentPhase),
-                ResolveDuelPhaseDuration(currentPhase, previousPhase),
-                ResolveDuelPhaseIntensity(currentPhase),
-                ResolveDuelPhaseCategory(currentPhase));
-        }
-
         private void RequestScreenCue(
             string cueId,
             Color cueColor,
@@ -927,76 +905,6 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private Color ResolveDuelPhaseColor(BossSummonDuelReviewOwner.DuelPhase phase)
-        {
-            switch (phase)
-            {
-                case BossSummonDuelReviewOwner.DuelPhase.BossPressureAction:
-                case BossSummonDuelReviewOwner.DuelPhase.BossResponse:
-                    return bossPressureColor;
-                case BossSummonDuelReviewOwner.DuelPhase.SummonExchange:
-                    return summonColor;
-                case BossSummonDuelReviewOwner.DuelPhase.SkillResponse:
-                    return followupWindowColor;
-                case BossSummonDuelReviewOwner.DuelPhase.CounterDamage:
-                    return followupHitColor;
-                case BossSummonDuelReviewOwner.DuelPhase.Cleared:
-                    return pocketClearColor;
-                case BossSummonDuelReviewOwner.DuelPhase.Failed:
-                    return pocketFailColor;
-                default:
-                    return frontlineBeatColor;
-            }
-        }
-
-        private static float ResolveDuelPhaseDuration(
-            BossSummonDuelReviewOwner.DuelPhase phase,
-            BossSummonDuelReviewOwner.DuelPhase previousPhase)
-        {
-            if (phase == BossSummonDuelReviewOwner.DuelPhase.Cleared
-                || phase == BossSummonDuelReviewOwner.DuelPhase.Failed)
-            {
-                return 0.72f;
-            }
-
-            return phase == previousPhase ? 0.18f : 0.26f;
-        }
-
-        private static float ResolveDuelPhaseIntensity(BossSummonDuelReviewOwner.DuelPhase phase)
-        {
-            switch (phase)
-            {
-                case BossSummonDuelReviewOwner.DuelPhase.SummonExchange:
-                case BossSummonDuelReviewOwner.DuelPhase.SkillResponse:
-                    return 0.86f;
-                case BossSummonDuelReviewOwner.DuelPhase.CounterDamage:
-                    return 0.92f;
-                case BossSummonDuelReviewOwner.DuelPhase.Cleared:
-                case BossSummonDuelReviewOwner.DuelPhase.Failed:
-                    return 1.02f;
-                default:
-                    return 0.68f;
-            }
-        }
-
-        private static ScreenCueCategory ResolveDuelPhaseCategory(BossSummonDuelReviewOwner.DuelPhase phase)
-        {
-            switch (phase)
-            {
-                case BossSummonDuelReviewOwner.DuelPhase.Cleared:
-                case BossSummonDuelReviewOwner.DuelPhase.Failed:
-                    return ScreenCueCategory.Result;
-                case BossSummonDuelReviewOwner.DuelPhase.SkillResponse:
-                case BossSummonDuelReviewOwner.DuelPhase.CounterDamage:
-                    return ScreenCueCategory.Followup;
-                case BossSummonDuelReviewOwner.DuelPhase.BossPressureAction:
-                case BossSummonDuelReviewOwner.DuelPhase.BossResponse:
-                    return ScreenCueCategory.Boss;
-                default:
-                    return ScreenCueCategory.Frontline;
-            }
-        }
-
         private string ResolveFrontlineBeatId(int beatIndex, out string beatLabel)
         {
             beatLabel = $"Beat {beatIndex + 1}";
@@ -1084,11 +992,6 @@ namespace DimensionBrawl.Presentation
                 encounterController.PocketFailed += HandlePocketFailed;
             }
 
-            if (duelReviewOwner != null)
-            {
-                duelReviewOwner.DuelPhaseChanged += HandleDuelPhaseChanged;
-            }
-
             subscribed = true;
         }
 
@@ -1157,11 +1060,6 @@ namespace DimensionBrawl.Presentation
                 encounterController.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
                 encounterController.PocketCleared -= HandlePocketCleared;
                 encounterController.PocketFailed -= HandlePocketFailed;
-            }
-
-            if (duelReviewOwner != null)
-            {
-                duelReviewOwner.DuelPhaseChanged -= HandleDuelPhaseChanged;
             }
 
             subscribed = false;

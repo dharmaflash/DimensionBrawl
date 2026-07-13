@@ -6366,7 +6366,6 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 bossPressureActionDirector,
                 pocketOwner);
-            SetObjectReference(screenCuePresenter, "duelReviewOwner", null);
             SetBool(screenCuePresenter, "showScreenCues", true);
             SetBool(screenCuePresenter, "showEventColorCues", false);
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
@@ -11251,7 +11250,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "encounterController", pocketOwner);
-            ValidateObjectReference(presenter, "duelReviewOwner", null);
             ValidateBool(presenter, "showScreenCues", true);
             ValidateBool(presenter, "showEventColorCues", false);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);

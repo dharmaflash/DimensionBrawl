@@ -19533,7 +19533,6 @@ MonoBehaviour:
   bossBarrageEmitter: {fileID: 1932639512}
   bossPressureActionDirector: {fileID: 1932639516}
   encounterController: {fileID: 439529094}
-  duelReviewOwner: {fileID: 0}
   showScreenCues: 1
   showEventColorCues: 0
   maxFullScreenAlpha: 0.1
