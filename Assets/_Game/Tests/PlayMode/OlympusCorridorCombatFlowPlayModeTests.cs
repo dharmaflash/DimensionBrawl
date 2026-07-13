@@ -139,7 +139,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator LoadOlympusCorridorScene()
         {
             Time.timeScale = 1f;
-            ExpectKnownMissingSupportDragonPrefabLogs();
+            ExpectKnownMissingScenePrefabLogs();
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
         }
@@ -1285,15 +1285,12 @@ namespace DimensionBrawl.Tests
             return (T)fieldInfo.GetValue(target);
         }
 
-        private static void ExpectKnownMissingSupportDragonPrefabLogs()
+        private static void ExpectKnownMissingScenePrefabLogs()
         {
-            const string supportDragonGuid = "eb1e983e7185682438ea67300bb11fcd";
             const string humanoidBossGuid = "d405ed8ecd0740748a4c4f82842ebd49";
-            bool missingSupportDragon = string.IsNullOrWhiteSpace(
-                UnityEditor.AssetDatabase.GUIDToAssetPath(supportDragonGuid));
             bool missingHumanoidBoss = string.IsNullOrWhiteSpace(
                 UnityEditor.AssetDatabase.GUIDToAssetPath(humanoidBossGuid));
-            if (!missingSupportDragon && !missingHumanoidBoss)
+            if (!missingHumanoidBoss)
             {
                 return;
             }
@@ -1301,19 +1298,9 @@ namespace DimensionBrawl.Tests
             LogAssert.Expect(
                 LogType.Error,
                 new Regex("Problem detected while opening the Scene file: 'Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity'"));
-            if (missingHumanoidBoss)
-            {
-                LogAssert.Expect(
-                    LogType.Error,
-                    new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando"));
-            }
-
-            if (missingSupportDragon)
-            {
-                LogAssert.Expect(
-                    LogType.Error,
-                    new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_CinematicSupportDragon_Volcano"));
-            }
+            LogAssert.Expect(
+                LogType.Error,
+                new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando"));
         }
     }
 }

@@ -1399,10 +1399,6 @@ namespace DimensionBrawl.Tests
                     0,
                     gunOnly.FollowupHitCinematicCueRequests,
                     "Gun-only boss chip should not trigger a follow-up hit cinematic cue.");
-                Assert.AreEqual(
-                    0,
-                    gunOnly.FollowupHitSequenceBridgeRequests,
-                    "Gun-only boss chip should not play the follow-up hit cinematic sequence bridge.");
                 Assert.Greater(
                     intended.FollowupHitCameraCueRequests,
                     0,
@@ -1423,10 +1419,6 @@ namespace DimensionBrawl.Tests
                     intended.FollowupHitCinematicFrameOverlayCount,
                     0,
                     "A clean Skill1 follow-up punish should activate the short frame overlay while the micro-cinematic cue is playing.");
-                Assert.AreEqual(
-                    0,
-                    intended.FollowupHitSequenceBridgeRequests,
-                    "The current Frontline pass should keep full cinematic sequence playback disabled; only the micro-cue director path is in scope.");
                 Assert.Greater(
                     forwardRiskSlot3Delayed.FollowupHitCinematicCueRequests,
                     0,
@@ -1435,10 +1427,6 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot3Delayed.FollowupHitCinematicFrameOverlayCount,
                     0,
                     "The Slot3 delayed suppress route should keep the final hit frame overlay instead of letting the LV3 cut-in swallow the hit confirm.");
-                Assert.AreEqual(
-                    0,
-                    forwardRiskSlot3Delayed.FollowupHitSequenceBridgeRequests,
-                    "The Slot3 suppress payoff should still stay on the micro-cue director path, not full cinematic sequence playback.");
                 Assert.Greater(
                     blockedFollowup.FollowupMissedCameraCueRequests,
                     0,
@@ -1478,11 +1466,7 @@ namespace DimensionBrawl.Tests
                 Assert.Greater(
                     blockedRecovery.FollowupHitCinematicFrameOverlayCount,
                     0,
-                    "Counter recovery follow-up hit should activate the short frame overlay without requiring a full sequence bridge.");
-                Assert.AreEqual(
-                    0,
-                    blockedRecovery.FollowupHitSequenceBridgeRequests,
-                    "Counter recovery should keep full sequence bridge playback disabled while the micro-cue director path is active.");
+                    "Counter recovery follow-up hit should activate the short frame overlay on the canonical micro-cue path.");
             }
             finally
             {
@@ -1602,10 +1586,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionCinematicCueDirector>(
                     cameraCueDriver.gameObject,
                     "action cinematic cue director");
-            ActionCinematicSequenceBridge cinematicSequenceBridge =
-                RequireComponent<ActionCinematicSequenceBridge>(
-                    cinematicCueDirector.gameObject,
-                    "action cinematic sequence bridge");
             GameObject hudRoot = RequireRoot(HudRootName);
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(
@@ -1640,7 +1620,6 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge,
                 cameraCueDriver,
                 cinematicCueDirector,
-                cinematicSequenceBridge,
                 screenCuePresenter,
                 reviewOverlayHud,
                 RequireComponent<CombatHealth>(player.gameObject, "player health"),
@@ -4841,9 +4820,9 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
-            builder.AppendLine("## Follow-up Cinematic Bridge");
-            builder.AppendLine("| Policy | Director window/hit/miss | Sequence window/hit/miss | Hit frame overlays | Hit tier director/sequence | Hit cue/profile |");
-            builder.AppendLine("|---|---:|---:|---:|---:|---|");
+            builder.AppendLine("## Follow-up Micro-Cinematic");
+            builder.AppendLine("| Policy | Director window/hit/miss | Hit frame overlays | Hit tier | Hit cue |");
+            builder.AppendLine("|---|---:|---:|---:|---|");
             for (int i = 0; i < results.Count; i++)
             {
                 PolicyMetrics result = results[i];
@@ -4852,14 +4831,11 @@ namespace DimensionBrawl.Tests
                 builder.Append(" | ");
                 builder.Append($"{result.FollowupWindowCinematicCueRequests}/{result.FollowupHitCinematicCueRequests}/{result.FollowupMissedCinematicCueRequests}");
                 builder.Append(" | ");
-                builder.Append($"{result.FollowupWindowSequenceBridgeRequests}/{result.FollowupHitSequenceBridgeRequests}/{result.FollowupMissedSequenceBridgeRequests}");
-                builder.Append(" | ");
                 builder.Append(result.FollowupHitCinematicFrameOverlayCount);
                 builder.Append(" | ");
-                builder.Append($"{result.LastFollowupHitCinematicTier}/{result.LastFollowupHitSequenceTier}");
+                builder.Append(result.LastFollowupHitCinematicTier);
                 builder.Append(" | ");
-                builder.Append(EscapeTable(
-                    $"{result.LastFollowupHitCinematicCueId}/{result.LastFollowupHitSequenceProfile}"));
+                builder.Append(EscapeTable(result.LastFollowupHitCinematicCueId));
                 builder.AppendLine(" |");
             }
 
@@ -4992,9 +4968,9 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
             builder.AppendLine($"- Follow-up presentation bridge: gun-only hit cues screen/camera/VFX {gunOnly.FollowupHitScreenCueRequests}/{gunOnly.FollowupHitCameraCueRequests}/{gunOnly.FollowupHitVfxCueRequests}, intended {intended.FollowupHitScreenCueRequests}/{intended.FollowupHitCameraCueRequests}/{intended.FollowupHitVfxCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitScreenCueRequests}/{blockedRecovery.FollowupHitCameraCueRequests}/{blockedRecovery.FollowupHitVfxCueRequests}, Slot3 suppress {forwardRiskSlot3Delayed.FollowupSuppressScreenCueRequests}/{forwardRiskSlot3Delayed.FollowupSuppressCameraCueRequests}/{forwardRiskSlot3Delayed.FollowupSuppressVfxCueRequests}.");
-            builder.AppendLine($"- Follow-up micro-cinematic bridge: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}, Slot3 suppress {forwardRiskSlot3Delayed.FollowupHitCinematicCueRequests}/{forwardRiskSlot3Delayed.FollowupHitSequenceBridgeRequests}; frame overlays intended/Slot3 {intended.FollowupHitCinematicFrameOverlayCount}/{forwardRiskSlot3Delayed.FollowupHitCinematicFrameOverlayCount}.");
+            builder.AppendLine($"- Follow-up micro-cinematic director: gun-only hit {gunOnly.FollowupHitCinematicCueRequests}, intended {intended.FollowupHitCinematicCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}, Slot3 suppress {forwardRiskSlot3Delayed.FollowupHitCinematicCueRequests}; frame overlays intended/Slot3 {intended.FollowupHitCinematicFrameOverlayCount}/{forwardRiskSlot3Delayed.FollowupHitCinematicFrameOverlayCount}.");
             builder.AppendLine($"- Blocked follow-up presentation: boss-screen blocked route has miss cues screen/camera/VFX {blockedFollowup.FollowupMissedScreenCueRequests}/{blockedFollowup.FollowupMissedCameraCueRequests}/{blockedFollowup.FollowupMissedVfxCueRequests} and hit cues {blockedFollowup.FollowupHitScreenCueRequests}/{blockedFollowup.FollowupHitCameraCueRequests}/{blockedFollowup.FollowupHitVfxCueRequests}.");
-            builder.AppendLine($"- Blocked follow-up cinematic: boss-screen blocked route has miss director/sequence {blockedFollowup.FollowupMissedCinematicCueRequests}/{blockedFollowup.FollowupMissedSequenceBridgeRequests} and hit director/sequence {blockedFollowup.FollowupHitCinematicCueRequests}/{blockedFollowup.FollowupHitSequenceBridgeRequests}.");
+            builder.AppendLine($"- Blocked follow-up cinematic: boss-screen blocked route has miss director requests {blockedFollowup.FollowupMissedCinematicCueRequests} and hit director requests {blockedFollowup.FollowupHitCinematicCueRequests}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
             builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
             builder.AppendLine($"- Boss-screen ignored branch: `{ignoredRecovery.ResultKind}` for {FormatSeconds(ignoredRecovery.ElapsedSeconds)} with enemy clashes {ignoredRecovery.EnemyFrontlineClashes}, body hits {ignoredRecovery.EnemyFrontlineBodyHits}, and player damage {ignoredRecovery.PlayerDamageTaken:0.0}.");
@@ -5024,8 +5000,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Policy Repeatability Gate");
             builder.AppendLine($"Repeated sample count: `{RepeatabilityProbeRuns}` per selected policy. Required gate rows must preserve structural direction; CHECK rows outside the required set remain diagnostic.");
-            builder.AppendLine("| Policy | Runs | Result set | HP lost min/avg/max | Boss dmg min/avg/max | Player hits min/max | Blocks min/max | Support proj min/max | Skill1 min/max | Micro hit min/max | Seq hit min/max | Verdict |");
-            builder.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|");
+            builder.AppendLine("| Policy | Runs | Result set | HP lost min/avg/max | Boss dmg min/avg/max | Player hits min/max | Blocks min/max | Support proj min/max | Skill1 min/max | Micro hit min/max | Verdict |");
+            builder.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|");
             for (int i = 0; i < RepeatabilityPolicyOrder.Length; i++)
             {
                 AppendPolicyRepeatabilityRow(builder, repeatabilityResults, RepeatabilityPolicyOrder[i]);
@@ -5073,10 +5049,6 @@ namespace DimensionBrawl.Tests
             builder.Append(FormatMinMax(
                 MinMetric(repeatabilityResults, policy, result => result.FollowupHitCinematicCueRequests),
                 MaxMetric(repeatabilityResults, policy, result => result.FollowupHitCinematicCueRequests)));
-            builder.Append(" | ");
-            builder.Append(FormatMinMax(
-                MinMetric(repeatabilityResults, policy, result => result.FollowupHitSequenceBridgeRequests),
-                MaxMetric(repeatabilityResults, policy, result => result.FollowupHitSequenceBridgeRequests)));
             builder.Append(" | ");
             builder.Append(ResolveRepeatabilityVerdict(repeatabilityResults, policy));
             builder.AppendLine(" |");
@@ -8601,10 +8573,8 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonPunish.BossNonLockingDamageEvents > 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents == 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
-                && forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount > 0
-                && forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests == 0;
-            bool v1ScopeHeld = forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
-                && forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests == 0;
+                && forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount > 0;
+            bool v1ScopeHeld = forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0;
 
             builder.AppendLine("## ArkData Coverage Summary");
             builder.AppendLine("| Reference lens | Status | Current evidence | Boundary kept |");
@@ -8632,7 +8602,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| V1 scope guardrail | "
                 + $"{FormatCoverageStatus(v1ScopeHeld)} | "
-                + $"report scene `{ScenePath}`; micro-cinematic director/sequence hit counts {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests}; physical clean route still clears `{forwardRiskPhysicalSummonPunish.ResultKind}` | "
+                + $"report scene `{ScenePath}`; micro-cinematic director hit count {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}; physical clean route still clears `{forwardRiskPhysicalSummonPunish.ResultKind}` | "
                 + "No new canonical scene, full sequence playback, broad VFX/audio restoration, roster, reward economy, or stage-select work. |");
         }
 
@@ -11354,11 +11324,6 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"followupHitCinematicFrameOverlayCount\": {result.FollowupHitCinematicFrameOverlayCount},");
                 builder.AppendLine($"      \"lastFollowupHitCinematicTier\": {result.LastFollowupHitCinematicTier},");
                 builder.AppendLine($"      \"lastFollowupHitCinematicCueId\": \"{JsonEscape(result.LastFollowupHitCinematicCueId)}\",");
-                builder.AppendLine($"      \"followupWindowSequenceBridgeRequests\": {result.FollowupWindowSequenceBridgeRequests},");
-                builder.AppendLine($"      \"followupHitSequenceBridgeRequests\": {result.FollowupHitSequenceBridgeRequests},");
-                builder.AppendLine($"      \"followupMissedSequenceBridgeRequests\": {result.FollowupMissedSequenceBridgeRequests},");
-                builder.AppendLine($"      \"lastFollowupHitSequenceTier\": {result.LastFollowupHitSequenceTier},");
-                builder.AppendLine($"      \"lastFollowupHitSequenceProfile\": \"{JsonEscape(result.LastFollowupHitSequenceProfile)}\",");
                 builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
                 builder.AppendLine($"      \"stageWaveBeatOutcome\": \"{JsonEscape(ResolveStageWaveBeatOutcome(result))}\",");
                 builder.AppendLine($"      \"stageWaveFirstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
@@ -11816,7 +11781,6 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
                 builder.AppendLine($"      \"unansweredPressureBurdenShare01\": {result.UnansweredPressureBurdenShare01:0.###},");
                 builder.AppendLine($"      \"followupHitCinematicCueRequests\": {result.FollowupHitCinematicCueRequests},");
-                builder.AppendLine($"      \"followupHitSequenceBridgeRequests\": {result.FollowupHitSequenceBridgeRequests},");
                 builder.AppendLine($"      \"firstPlayerDownAtSeconds\": {JsonNullableSeconds(result.FirstPlayerDownAtSeconds)},");
                 builder.AppendLine($"      \"firstBossDownAtSeconds\": {JsonNullableSeconds(result.FirstBossDownAtSeconds)},");
                 builder.AppendLine($"      \"enemyFrontlineBodyHits\": {result.EnemyFrontlineBodyHits},");
@@ -12188,13 +12152,6 @@ namespace DimensionBrawl.Tests
                     $"Repeatability policy {policy} should preserve the expected structural outcome. Results: {BuildResultKindSet(repeatabilityResults, policy)}");
             }
 
-            Assert.LessOrEqual(
-                MaxMetric(
-                    repeatabilityResults,
-                    PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
-                    result => result.FollowupHitSequenceBridgeRequests),
-                0f,
-                "Repeated physical punish runs should keep the full sequence bridge disabled; only the micro-cinematic cue is in scope.");
             Assert.Greater(
                 MinMetric(
                     repeatabilityResults,
@@ -12202,13 +12159,6 @@ namespace DimensionBrawl.Tests
                     result => result.FollowupHitCinematicCueRequests),
                 0f,
                 "Repeated Slot3 delayed payoff runs should preserve the follow-up hit micro-cinematic after the high-cost cut-in.");
-            Assert.LessOrEqual(
-                MaxMetric(
-                    repeatabilityResults,
-                    PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
-                    result => result.FollowupHitSequenceBridgeRequests),
-                0f,
-                "Repeated Slot3 delayed payoff runs should stay on the director micro-cue path instead of full sequence playback.");
         }
 
         private static void AssertEnergyDecisionRoute(PolicyMetrics result, int expectedTier)
@@ -12598,7 +12548,6 @@ namespace DimensionBrawl.Tests
                         && result.SummonBlocks > 0
                         && result.SkillProjectileHits > 0
                         && result.FollowupHitCinematicCueRequests > 0
-                        && result.FollowupHitSequenceBridgeRequests == 0
                         && result.BossDamagePlayerShare01 >= 0.6f;
                 case PolicyKind.IntendedRoute:
                     return result.ResultKind == "CleanFollowupClear"
@@ -12648,7 +12597,6 @@ namespace DimensionBrawl.Tests
                     return result.ResultKind == "CounterRecoveryClear"
                         && result.SkillProjectileHits > 0
                         && result.FollowupHitCinematicCueRequests > 0
-                        && result.FollowupHitSequenceBridgeRequests == 0
                         && ignoredBossScreenDamageMin > 0f
                         && result.PlayerDamageTaken < ignoredBossScreenDamageMin;
                 default:
@@ -12734,7 +12682,6 @@ namespace DimensionBrawl.Tests
                 && result.SkillProjectileHits > 0
                 && result.FollowupHitCinematicCueRequests > 0
                 && result.FollowupHitCinematicFrameOverlayCount > 0
-                && result.FollowupHitSequenceBridgeRequests == 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
         }
@@ -13364,7 +13311,6 @@ namespace DimensionBrawl.Tests
                 BossBarragePocketVfxCueBridge pocketVfxCueBridge,
                 ActionCameraCueDriver cameraCueDriver,
                 ActionCinematicCueDirector cinematicCueDirector,
-                ActionCinematicSequenceBridge cinematicSequenceBridge,
                 ActionScreenCuePresenter screenCuePresenter,
                 BossBarrageLaneReviewOverlayHud reviewOverlayHud,
                 CombatHealth playerHealth,
@@ -13391,7 +13337,6 @@ namespace DimensionBrawl.Tests
                 PocketVfxCueBridge = pocketVfxCueBridge;
                 CameraCueDriver = cameraCueDriver;
                 CinematicCueDirector = cinematicCueDirector;
-                CinematicSequenceBridge = cinematicSequenceBridge;
                 ScreenCuePresenter = screenCuePresenter;
                 ReviewOverlayHud = reviewOverlayHud;
                 PlayerHealth = playerHealth;
@@ -13413,7 +13358,6 @@ namespace DimensionBrawl.Tests
                 observedScreenPlayerDamageCueRequestCount = screenCuePresenter.PlayerDamageCueRequestCount;
                 observedDamageFeedbackRequestCount = screenCuePresenter.DamageFeedbackRequestCount;
                 observedCinematicPlayCount = cinematicCueDirector.TotalPlayCount;
-                observedSequenceBridgePlayCount = cinematicSequenceBridge.TotalPlayCount;
 
                 PlayerHealth.Damaged += OnPlayerDamaged;
                 BossHealth.Damaged += OnBossDamaged;
@@ -13450,7 +13394,6 @@ namespace DimensionBrawl.Tests
             public BossBarragePocketVfxCueBridge PocketVfxCueBridge { get; }
             public ActionCameraCueDriver CameraCueDriver { get; }
             public ActionCinematicCueDirector CinematicCueDirector { get; }
-            public ActionCinematicSequenceBridge CinematicSequenceBridge { get; }
             public ActionScreenCuePresenter ScreenCuePresenter { get; }
             public BossBarrageLaneReviewOverlayHud ReviewOverlayHud { get; }
             public CombatHealth PlayerHealth { get; }
@@ -13997,7 +13940,6 @@ namespace DimensionBrawl.Tests
             private int observedScreenPlayerDamageCueRequestCount;
             private int observedDamageFeedbackRequestCount;
             private int observedCinematicPlayCount;
-            private int observedSequenceBridgePlayCount;
 
             private void SamplePlayerDamagePresentationBridge()
             {
@@ -14210,42 +14152,6 @@ namespace DimensionBrawl.Tests
                 }
 
                 observedCinematicPlayCount = CinematicCueDirector.TotalPlayCount;
-
-                int sequenceDelta = CinematicSequenceBridge.TotalPlayCount - observedSequenceBridgePlayCount;
-                if (sequenceDelta > 0)
-                {
-                    RecordSequenceBridgeCue(
-                        CinematicSequenceBridge.LastPlayedKind,
-                        CinematicSequenceBridge.LastPlayedTier,
-                        CinematicSequenceBridge.LastPlayedProfile != null
-                            ? CinematicSequenceBridge.LastPlayedProfile.name
-                            : string.Empty,
-                        sequenceDelta);
-                }
-
-                observedSequenceBridgePlayCount = CinematicSequenceBridge.TotalPlayCount;
-            }
-
-            private void RecordSequenceBridgeCue(
-                ActionCinematicCueProfile.CueKind cueKind,
-                int tier,
-                string profileName,
-                int count)
-            {
-                switch (cueKind)
-                {
-                    case ActionCinematicCueProfile.CueKind.BossPressureBreak:
-                        Metrics.FollowupWindowSequenceBridgeRequests += count;
-                        break;
-                    case ActionCinematicCueProfile.CueKind.SummonFollowupHit:
-                        Metrics.FollowupHitSequenceBridgeRequests += count;
-                        Metrics.LastFollowupHitSequenceTier = tier;
-                        Metrics.LastFollowupHitSequenceProfile = profileName ?? string.Empty;
-                        break;
-                    case ActionCinematicCueProfile.CueKind.SummonRecall:
-                        Metrics.FollowupMissedSequenceBridgeRequests += count;
-                        break;
-                }
             }
 
             public void Complete()
@@ -14904,11 +14810,6 @@ namespace DimensionBrawl.Tests
             public int FollowupHitCinematicFrameOverlayCount { get; set; }
             public int LastFollowupHitCinematicTier { get; set; }
             public string LastFollowupHitCinematicCueId { get; set; } = string.Empty;
-            public int FollowupWindowSequenceBridgeRequests { get; set; }
-            public int FollowupHitSequenceBridgeRequests { get; set; }
-            public int FollowupMissedSequenceBridgeRequests { get; set; }
-            public int LastFollowupHitSequenceTier { get; set; }
-            public string LastFollowupHitSequenceProfile { get; set; } = string.Empty;
             public float RouteStability01 { get; set; }
             public float MinRouteStability01 { get; set; } = 1f;
             public string RouteStabilityBand { get; set; } = "Unknown";

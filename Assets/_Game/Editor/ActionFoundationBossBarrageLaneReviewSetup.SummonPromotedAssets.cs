@@ -293,7 +293,7 @@ namespace DimensionBrawl.Editor
                 dragonAvatar);
             AnimatorController controller = EnsureSummonDragonAnimatorController();
 
-            GameObject sourcePrefab = LoadAsset<GameObject>(CinematicSupportDragonSourcePrefabPath);
+            GameObject sourcePrefab = LoadAsset<GameObject>(SummonDragonSourcePrefabPath);
             GameObject instance = PrefabUtility.InstantiatePrefab(sourcePrefab) as GameObject;
             if (instance == null)
             {

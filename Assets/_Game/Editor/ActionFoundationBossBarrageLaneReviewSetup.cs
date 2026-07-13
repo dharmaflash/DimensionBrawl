@@ -376,15 +376,13 @@ namespace DimensionBrawl.Editor
         private const string BossProxyHumanoidSourceAssaultRifleName = "SM_SciFiAssaultRifle_01";
         private const string BossProxyLineCasterVariantModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
-        private const string CinematicSupportDragonRootName = ReviewRootPrefix + "CinematicSupportDragon_Volcano";
         private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
         private const string RetiredRifleGirlRangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
         private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_Inori";
         private const string RangedPlayerWeaponName = ReviewRootPrefix + "RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = ReviewRootPrefix + "MeleeWeapons_CombatGirlSwordShield";
-        private const string CinematicSupportDragonSourcePrefabPath =
+        private const string SummonDragonSourcePrefabPath =
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_VolcanoDragon_CinematicSupportVisual.prefab";
-        private const string CinematicSupportDragonAttackStateName = "FlyStationarySpitFireBall";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
         private const string InoriSourcePrefabPath =
@@ -393,36 +391,12 @@ namespace DimensionBrawl.Editor
             ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath;
         private const string InoriRifleAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/Inori/DB_Inori_Rifle_ActionFoundation.controller";
-        private const string InoriCinematicAnimatorControllerPath =
-            "Assets/_Game/Art/Animations/Cinematics/Inori/DB_Inori_CinematicP0.controller";
         private const string CinematicProfileRoot =
             "Assets/_Game/DesignData/Profiles/Cinematics";
         private const string CinematicQteAssistProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_QTEAssist.asset";
-        private const string CinematicUltimateProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_UltimateCutIn.asset";
-        private const string CinematicDangerProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_DangerCue.asset";
-        private const string CinematicBossIntroProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_BossIntro.asset";
-        private const string CinematicPhaseTransitionProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_PhaseTransition.asset";
         private const string CinematicBreakProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_BreakMoment.asset";
-        private const string CinematicDialogueReactionBeatProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_DialogueReactionBeat.asset";
-        private const string CinematicBossSummonPressureProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_BossSummonPressure.asset";
-        private const string CinematicResultProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_ResultBridge.asset";
-        private const string CinematicSummonProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_SummonEntry.asset";
-        private const string CinematicSummonFollowupProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset";
-        private const string CinematicSummonEmpowerProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_SummonEmpower.asset";
-        private const string CinematicSummonRecallProfilePath =
-            CinematicProfileRoot + "/DB_Cinematic_SummonRecall.asset";
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string MagicaClothRuntimeScriptPrefix =
@@ -1141,9 +1115,6 @@ namespace DimensionBrawl.Editor
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             GameObject closeThreat = CreateCloseThreat(scene, laneSpace, player.transform, playerHealth, cameraController);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
-            GameObject cinematicSupportDragon = CreateCinematicSupportDragon(scene, laneSpace);
-            Animator cinematicSupportDragonAnimator =
-                cinematicSupportDragon.GetComponentInChildren<Animator>(includeInactive: true);
             ConfigureLocalDefenseProfile(playerActionController, localDefenseProfile);
             ConfigurePlayerEnergyActions(
                 player.gameObject,
@@ -1287,8 +1258,6 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 playerCuePlayer,
                 combatModeVisuals.RangedAnimator,
-                cinematicSupportDragonAnimator,
-                cinematicSupportDragon.transform,
                 cinematicCueProfile);
             ConfigurePocketCueBridges(
                 pocketOwner,
@@ -1388,11 +1357,6 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "player ranged basic VFX cue driver");
             PlayerRangedReloadSfxDriver rangedReloadSfxDriver =
                 RequireComponent<PlayerRangedReloadSfxDriver>(player.gameObject, "player ranged reload SFX driver");
-            GameObject cinematicSupportDragon = RequireRoot(scene, CinematicSupportDragonRootName);
-            Animator cinematicSupportDragonAnimator =
-                cinematicSupportDragon.GetComponentInChildren<Animator>(includeInactive: true)
-                ?? throw new InvalidOperationException("Boss barrage cinematic support dragon is missing an Animator.");
-
             ValidateObjectReference(player, "laneSpace", laneSpace);
             ValidateObjectReference(playerActionController, "actionProfile", LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath));
             ValidateCombatModeController(
@@ -1618,9 +1582,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 rangedBasicAttackAction,
                 playerCuePlayer,
-                rangedAnimator,
-                cinematicSupportDragonAnimator,
-                cinematicSupportDragon.transform);
+                rangedAnimator);
             ValidateBossBarrageCameraCueDriver(
                 RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver"),
                 cameraController,
@@ -3822,38 +3784,6 @@ namespace DimensionBrawl.Editor
             SetFloat(closeThreatHealth, "maxHealth", 72f);
             ConfigureCloseThreatBodyHitbox(closeThreat);
             return closeThreat;
-        }
-
-        private static GameObject CreateCinematicSupportDragon(Scene scene, SummonLaneSpace laneSpace)
-        {
-            GameObject prefab = LoadAsset<GameObject>(CinematicSupportDragonSourcePrefabPath);
-            GameObject dragon = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
-            if (dragon == null)
-            {
-                throw new InvalidOperationException($"Could not instantiate cinematic support dragon prefab {CinematicSupportDragonSourcePrefabPath}.");
-            }
-
-            dragon.name = CinematicSupportDragonRootName;
-            Vector3 position = laneSpace.GetBattlefieldWorldPoint(4.85f, laneSpace.SummonEntryZ + 0.85f, 2.08f);
-            dragon.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 236f, 0f));
-            dragon.transform.localScale = Vector3.one * 0.18f;
-            Animator animator = dragon.GetComponentInChildren<Animator>(includeInactive: true);
-            if (animator == null)
-            {
-                throw new InvalidOperationException("Cinematic support dragon must expose an Animator.");
-            }
-
-            animator.applyRootMotion = false;
-            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            if (animator.runtimeAnimatorController != null)
-            {
-                animator.Play(CinematicSupportDragonAttackStateName, 0, 0.18f);
-            }
-
-            dragon.SetActive(false);
-            EditorUtility.SetDirty(animator);
-            EditorUtility.SetDirty(dragon);
-            return dragon;
         }
 
         private static void ConfigureCloseThreatBodyHitbox(GameObject closeThreat)
@@ -6953,8 +6883,6 @@ namespace DimensionBrawl.Editor
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             CombatVfxCuePlayer playerCuePlayer,
             Animator cueAnimator,
-            Animator cinematicSupportAnimator,
-            Transform cinematicSupportAnchor,
             ActionCinematicCueProfile cinematicCueProfile)
         {
             ActionCinematicCueDirector cinematicCueDirector =
@@ -6968,8 +6896,6 @@ namespace DimensionBrawl.Editor
                     rangedBasicAttackAction,
                     playerCuePlayer,
                     cueAnimator,
-                    cinematicSupportAnimator,
-                    cinematicSupportAnchor,
                     cinematicCueProfile);
             ActionCameraCueDriver cueDriver = EnsureComponent<ActionCameraCueDriver>(cameraController.gameObject);
             SetBehaviourEnabled(cueDriver, true);
@@ -6992,8 +6918,6 @@ namespace DimensionBrawl.Editor
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             CombatVfxCuePlayer playerCuePlayer,
             Animator cueAnimator,
-            Animator cinematicSupportAnimator,
-            Transform cinematicSupportAnchor,
             ActionCinematicCueProfile cinematicCueProfile)
         {
             ActionCinematicCueDirector cueDirector =
@@ -7010,181 +6934,13 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cueDirector, "cuePlayer", playerCuePlayer);
             SetObjectReference(cueDirector, "vfxAnchor", cueSpace);
             SetObjectReference(cueDirector, "cueAnimator", cueAnimator);
-            CinematicSequenceRunner cinematicSequenceRunner =
-                ConfigureBuildResubmissionCinematicSequenceRunner(
-                    cameraController,
-                    cueSpace,
-                    playerCuePlayer,
-                    cueAnimator,
-                    cinematicSupportAnimator,
-                    cinematicSupportAnchor);
-            ActionCinematicSequenceBridge sequenceBridge =
-                ConfigureBuildResubmissionActionCinematicSequenceBridge(
-                    cameraController,
-                    cinematicSequenceRunner);
-            SetObjectReference(cueDirector, "sequenceBridge", sequenceBridge);
             SetBool(cueDirector, "allowCuePlayback", true);
-            SetBool(cueDirector, "allowSequenceBridgePlayback", false);
             SetBool(cueDirector, "useUnscaledClock", true);
             SetBool(cueDirector, "drawCinematicBars", false);
             SetFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             SetFloat(cueDirector, "maxBarAlpha", 0.62f);
             EditorUtility.SetDirty(cueDirector);
             return cueDirector;
-        }
-
-        private static CinematicSequenceRunner ConfigureBuildResubmissionCinematicSequenceRunner(
-            ActionCameraController cameraController,
-            Transform cueSpace,
-            CombatVfxCuePlayer playerCuePlayer,
-            Animator cueAnimator,
-            Animator cinematicSupportAnimator,
-            Transform cinematicSupportAnchor)
-        {
-            CinematicSequenceRunner runner = EnsureComponent<CinematicSequenceRunner>(cameraController.gameObject);
-            SetBehaviourEnabled(runner, false);
-            CinematicTutorialPromptPresenter promptPresenter =
-                EnsureComponent<CinematicTutorialPromptPresenter>(cameraController.gameObject);
-            SetBehaviourEnabled(promptPresenter, false);
-            Camera camera = cameraController.GetComponent<Camera>();
-            if (camera != null)
-            {
-                SetObjectReference(promptPresenter, "targetCamera", camera);
-            }
-
-            CinematicBlendShapeExpressionPlayer expressionPlayer = null;
-            if (cueAnimator != null)
-            {
-                expressionPlayer =
-                    EnsureComponent<CinematicBlendShapeExpressionPlayer>(cueAnimator.gameObject);
-                expressionPlayer.Configure(CreateBuildResubmissionInoriExpressionPresets());
-                EditorUtility.SetDirty(expressionPlayer);
-            }
-
-            SerializedObject serializedRunner = new SerializedObject(runner);
-            RequireProperty(serializedRunner, "sequenceProfile").objectReferenceValue =
-                LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath);
-            RequireProperty(serializedRunner, "bodyControllerOverride").objectReferenceValue =
-                LoadAsset<RuntimeAnimatorController>(InoriCinematicAnimatorControllerPath);
-            RequireProperty(serializedRunner, "cameraController").objectReferenceValue = cameraController;
-            RequireProperty(serializedRunner, "cinematicCamera").objectReferenceValue = camera;
-            RequireProperty(serializedRunner, "driveCameraTransformFromProfile").boolValue = true;
-            RequireProperty(serializedRunner, "disableActionCameraControllerDuringPoseDrive").boolValue = true;
-            RequireProperty(serializedRunner, "combatVfxCuePlayer").objectReferenceValue = playerCuePlayer;
-            RequireProperty(serializedRunner, "tutorialPromptPresenter").objectReferenceValue = promptPresenter;
-            RequireProperty(serializedRunner, "cueSpace").objectReferenceValue = cueSpace;
-
-            SerializedProperty bindings = RequireProperty(serializedRunner, "actorBindings");
-            bindings.arraySize = cinematicSupportAnimator != null ? 2 : 1;
-            SerializedProperty binding = bindings.GetArrayElementAtIndex(0);
-            binding.FindPropertyRelative("role").enumValueIndex =
-                (int)CinematicSequenceProfile.ActorRole.Inori;
-            binding.FindPropertyRelative("bodyAnimator").objectReferenceValue = cueAnimator;
-            binding.FindPropertyRelative("faceAnimator").objectReferenceValue = null;
-            binding.FindPropertyRelative("expressionPlayer").objectReferenceValue = expressionPlayer;
-            binding.FindPropertyRelative("anchor").objectReferenceValue =
-                cueAnimator != null ? cueAnimator.transform : cueSpace;
-            if (cinematicSupportAnimator != null)
-            {
-                SerializedProperty supportBinding = bindings.GetArrayElementAtIndex(1);
-                supportBinding.FindPropertyRelative("role").enumValueIndex =
-                    (int)CinematicSequenceProfile.ActorRole.Environment;
-                supportBinding.FindPropertyRelative("bodyAnimator").objectReferenceValue = cinematicSupportAnimator;
-                supportBinding.FindPropertyRelative("faceAnimator").objectReferenceValue = null;
-                supportBinding.FindPropertyRelative("expressionPlayer").objectReferenceValue = null;
-                supportBinding.FindPropertyRelative("anchor").objectReferenceValue =
-                    cinematicSupportAnchor != null ? cinematicSupportAnchor : cinematicSupportAnimator.transform;
-            }
-
-            serializedRunner.ApplyModifiedPropertiesWithoutUndo();
-
-            EditorUtility.SetDirty(promptPresenter);
-            EditorUtility.SetDirty(runner);
-            return runner;
-        }
-
-        private static ActionCinematicSequenceBridge ConfigureBuildResubmissionActionCinematicSequenceBridge(
-            ActionCameraController cameraController,
-            CinematicSequenceRunner runner)
-        {
-            ActionCinematicSequenceBridge bridge =
-                EnsureComponent<ActionCinematicSequenceBridge>(cameraController.gameObject);
-            SetBehaviourEnabled(bridge, false);
-            SetObjectReference(bridge, "runner", runner);
-            SetBool(bridge, "blockLegacyCameraShotsWhenPlayed", true);
-            SetBool(bridge, "blockLegacySignalsWhenPlayed", true);
-            SetFloat(bridge, "minimumLockSeconds", 0.12f);
-            SetObjectReference(bridge, "skillCutInProfile", null);
-            SetObjectReference(bridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonProfilePath));
-            SetObjectReference(bridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
-            SetObjectReference(bridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(CinematicBossSummonPressureProfilePath));
-            SetObjectReference(bridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
-            SetObjectReference(bridge, "summonEmpowerProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonEmpowerProfilePath));
-            SetObjectReference(bridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
-            SetObjectReference(bridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
-            SetObjectReference(bridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
-            SetObjectReference(bridge, "bossIntroProfile", LoadAsset<CinematicSequenceProfile>(CinematicBossIntroProfilePath));
-            SetObjectReference(bridge, "phaseTransitionProfile", LoadAsset<CinematicSequenceProfile>(CinematicPhaseTransitionProfilePath));
-            SetObjectReference(
-                bridge,
-                "dialogueReactionBeatProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicDialogueReactionBeatProfilePath));
-            EditorUtility.SetDirty(bridge);
-            return bridge;
-        }
-
-        private static CinematicBlendShapeExpressionPlayer.ExpressionPreset[]
-            CreateBuildResubmissionInoriExpressionPresets()
-        {
-            return new[]
-            {
-                Preset("Surprised",
-                    Shape("browInnerUpSurprised", 80f),
-                    Shape("vrc.v_oh", 70f),
-                    Shape("eyeWideRight", 82f),
-                    Shape("eyeWideLeft", 82f),
-                    Shape("jawOpen", 48f),
-                    Shape("mouthStretchLeft", 24f),
-                    Shape("mouthStretchRight", 24f)),
-                Preset("Confused",
-                    Shape("browInnerUpSurprised", 46f),
-                    Shape("vrc.v_ou", 42f),
-                    Shape("jawOpen", 15f)),
-                Preset("Angry",
-                    Shape("browDownRight", 70f),
-                    Shape("browDownLeft", 70f),
-                    Shape("noseSneerRight", 42f),
-                    Shape("noseSneerLeft", 42f),
-                    Shape("mouthFrownRight", 56f),
-                    Shape("mouthFrownLeft", 56f)),
-                Preset("CalmEye",
-                    Shape("eyeBlinkRight", 14f),
-                    Shape("eyeBlinkLeft", 14f)),
-                Preset("Smile",
-                    Shape("mouthSmileRight", 64f),
-                    Shape("mouthSmileLeft", 64f),
-                    Shape("eyeBlinkRight", 10f),
-                    Shape("eyeBlinkLeft", 10f)),
-                Preset("Joy",
-                    Shape("eyeBlinkRight", 28f),
-                    Shape("eyeBlinkLeft", 28f),
-                    Shape("cheekSquintRight", 42f),
-                    Shape("cheekSquintLeft", 42f),
-                    Shape("mouthSmileRight", 78f),
-                    Shape("mouthSmileLeft", 78f))
-            };
-        }
-
-        private static CinematicBlendShapeExpressionPlayer.ExpressionPreset Preset(
-            string expressionName,
-            params CinematicBlendShapeExpressionPlayer.ShapeWeight[] shapes)
-        {
-            return new CinematicBlendShapeExpressionPlayer.ExpressionPreset(expressionName, shapes);
-        }
-
-        private static CinematicBlendShapeExpressionPlayer.ShapeWeight Shape(string shapeName, float weight)
-        {
-            return new CinematicBlendShapeExpressionPlayer.ShapeWeight(shapeName, weight);
         }
 
         private static void ConfigureBossBarrageCameraCueDriver(
@@ -7384,9 +7140,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             CombatVfxCuePlayer playerCuePlayer,
-            Animator cueAnimator,
-            Animator cinematicSupportAnimator,
-            Transform cinematicSupportAnchor)
+            Animator cueAnimator)
         {
             ActionCinematicCueProfile profile =
                 LoadAsset<ActionCinematicCueProfile>(ActionFoundationProfileSetup.CinematicCueProfilePath);
@@ -7402,104 +7156,26 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cueDirector, "cuePlayer", playerCuePlayer);
             ValidateObjectReference(cueDirector, "vfxAnchor", cueSpace);
             ValidateObjectReference(cueDirector, "cueAnimator", cueAnimator);
-            CinematicSequenceRunner cinematicSequenceRunner =
-                RequireComponent<CinematicSequenceRunner>(
-                    cueDirector.gameObject,
-                    "build-resubmission cinematic sequence runner");
-            ActionCinematicSequenceBridge sequenceBridge =
-                RequireComponent<ActionCinematicSequenceBridge>(
-                    cueDirector.gameObject,
-                    "build-resubmission action cinematic sequence bridge");
-            ValidateObjectReference(cueDirector, "sequenceBridge", sequenceBridge);
             ValidateBool(cueDirector, "allowCuePlayback", true);
-            ValidateBool(cueDirector, "allowSequenceBridgePlayback", false);
-            ValidateBool(cueDirector, "drawCinematicBars", false);
-            ValidateBehaviourEnabled(cinematicSequenceRunner, false);
-            ValidateObjectReference(
-                cinematicSequenceRunner,
-                "sequenceProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
-            ValidateObjectReference(
-                cinematicSequenceRunner,
-                "bodyControllerOverride",
-                LoadAsset<RuntimeAnimatorController>(InoriCinematicAnimatorControllerPath));
-            ValidateObjectReference(cinematicSequenceRunner, "cameraController", cameraController);
-            ValidateObjectReference(cinematicSequenceRunner, "cinematicCamera", cameraController.GetComponent<Camera>());
-            ValidateBool(cinematicSequenceRunner, "driveCameraTransformFromProfile", true);
-            ValidateBool(cinematicSequenceRunner, "disableActionCameraControllerDuringPoseDrive", true);
-            ValidateObjectReference(cinematicSequenceRunner, "combatVfxCuePlayer", playerCuePlayer);
-            CinematicTutorialPromptPresenter promptPresenter =
-                ValidateAssignedObjectReference<CinematicTutorialPromptPresenter>(
-                    cinematicSequenceRunner,
-                    "tutorialPromptPresenter");
-            ValidateBehaviourEnabled(promptPresenter, false);
-            ValidateObjectReference(cinematicSequenceRunner, "cueSpace", cueSpace);
-            ValidateRunnerActorBinding(
-                cinematicSequenceRunner,
-                CinematicSequenceProfile.ActorRole.Environment,
-                cinematicSupportAnimator,
-                cinematicSupportAnchor);
-            ValidateBehaviourEnabled(sequenceBridge, false);
-            ValidateObjectReference(sequenceBridge, "runner", cinematicSequenceRunner);
-            ValidateBool(sequenceBridge, "blockLegacyCameraShotsWhenPlayed", true);
-            ValidateBool(sequenceBridge, "blockLegacySignalsWhenPlayed", true);
-            ValidateObjectReference(sequenceBridge, "skillCutInProfile", null);
-            ValidateObjectReference(
-                sequenceBridge,
-                "summonEntryProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicSummonProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "ultimateCutInProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "bossPressureBreakProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicBossSummonPressureProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "summonFollowupHitProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "summonEmpowerProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicSummonEmpowerProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "summonRecallProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "pocketClearProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "pocketFailProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "bossIntroProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicBossIntroProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "phaseTransitionProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicPhaseTransitionProfilePath));
-            ValidateObjectReference(
-                sequenceBridge,
-                "dialogueReactionBeatProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicDialogueReactionBeatProfilePath));
-            ValidateAssignedObjectReference(cueAnimator, "m_Controller");
-            CinematicBlendShapeExpressionPlayer expressionPlayer =
-                RequireComponent<CinematicBlendShapeExpressionPlayer>(
-                    cueAnimator.gameObject,
-                    "build-resubmission Inori expression player");
-            SerializedProperty presets =
-                RequireProperty(new SerializedObject(expressionPlayer), "presets");
-            if (presets.arraySize < 6)
+            if (cueDirector.TryGetComponent<CinematicSequenceRunner>(out _))
             {
-                throw new InvalidOperationException("Build-resubmission Inori expression player must expose at least six presets.");
+                throw new InvalidOperationException(
+                    "Action cinematic cue director should not own the retired full sequence runner.");
             }
 
+            if (cueDirector.TryGetComponent<CinematicTutorialPromptPresenter>(out _))
+            {
+                throw new InvalidOperationException(
+                    "Action cinematic cue director should not own the retired tutorial prompt presenter.");
+            }
+
+            if (cueAnimator.TryGetComponent<CinematicBlendShapeExpressionPlayer>(out _))
+            {
+                throw new InvalidOperationException(
+                    "Action cinematic cue animator should not own the retired sequence-only expression player.");
+            }
+
+            ValidateAssignedObjectReference(cueAnimator, "m_Controller");
             ValidateBool(cueDirector, "useUnscaledClock", true);
             ValidateBool(cueDirector, "drawCinematicBars", false);
             ValidateFloat(cueDirector, "maxBarScreenRatio", 0.085f);
@@ -7590,44 +7266,6 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Ultimate-style cut-in must author lock and charge/impact signals.");
             }
-        }
-
-        private static void ValidateRunnerActorBinding(
-            CinematicSequenceRunner runner,
-            CinematicSequenceProfile.ActorRole expectedRole,
-            Animator expectedBodyAnimator,
-            Transform expectedAnchor)
-        {
-            SerializedProperty bindings = RequireProperty(new SerializedObject(runner), "actorBindings");
-            for (int i = 0; i < bindings.arraySize; i++)
-            {
-                SerializedProperty binding = bindings.GetArrayElementAtIndex(i);
-                if (binding.FindPropertyRelative("role").enumValueIndex != (int)expectedRole)
-                {
-                    continue;
-                }
-
-                UnityEngine.Object bodyAnimator =
-                    binding.FindPropertyRelative("bodyAnimator").objectReferenceValue;
-                UnityEngine.Object anchor =
-                    binding.FindPropertyRelative("anchor").objectReferenceValue;
-                if (bodyAnimator != expectedBodyAnimator)
-                {
-                    throw new InvalidOperationException(
-                        $"Cinematic runner {runner.name} binds {expectedRole} to {bodyAnimator}, expected {expectedBodyAnimator}.");
-                }
-
-                if (anchor != expectedAnchor)
-                {
-                    throw new InvalidOperationException(
-                        $"Cinematic runner {runner.name} binds {expectedRole} anchor to {anchor}, expected {expectedAnchor}.");
-                }
-
-                return;
-            }
-
-            throw new InvalidOperationException(
-                $"Cinematic runner {runner.name} is missing an actor binding for {expectedRole}.");
         }
 
         private static void ValidateCinematicCueContract(

@@ -354,11 +354,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.EncounterController);
             Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
             Assert.IsTrue(GetBool(cinematicCueDirector, "allowCuePlayback"));
-            Assert.IsFalse(GetBool(cinematicCueDirector, "allowSequenceBridgePlayback"));
             Assert.IsFalse(cinematicCueDirector.DrawCinematicBars);
-            ActionCinematicSequenceBridge sequenceBridge =
-                GetObjectReference<ActionCinematicSequenceBridge>(cinematicCueDirector, "sequenceBridge");
-            Assert.IsFalse(sequenceBridge.enabled);
 
             yield return null;
         }
@@ -1489,6 +1485,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(cinematicCueDirector, "cuePlayer"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cinematicCueDirector, "vfxAnchor"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(cinematicCueDirector, "cueAnimator"));
+            Assert.IsNull(cameraController.GetComponent<CinematicSequenceRunner>());
+            Assert.IsNull(cameraController.GetComponent<CinematicTutorialPromptPresenter>());
+            Assert.IsNull(rangedAnimator.GetComponent<CinematicBlendShapeExpressionPlayer>());
             Assert.IsFalse(cinematicCueDirector.DrawCinematicBars);
             ActionCinematicCueProfile.CueSequence summonEntry = cinematicCueDirector.CueProfile.SummonEntry;
             Assert.AreEqual(ActionCinematicCueProfile.CueTier.MicroCinematic, summonEntry.tier);
