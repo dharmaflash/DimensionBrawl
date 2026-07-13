@@ -144,7 +144,6 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Range(0f, 1f)] private float overlayOpenSfxVolume = 0.82f;
         [SerializeField] private DialogueAudioCue[] overlayDialogueAudioCues =
             CreateDefaultDialogueAudioCueSlots();
-        [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private PlayerMovementController player;
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private PlayerCombatModeController combatModeController;
@@ -234,7 +233,6 @@ namespace DimensionBrawl.LevelDesign
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             PlayerSupportSummonSlotAction[] newSupportSummonActions,
-            BossBarrageLaneReviewMobileHud newMobileHud,
             CinematicTutorialPromptPresenter newPromptPresenter,
             CombatHealth[] newTutorialTargets,
             Behaviour[] newTutorialEnemyGameplayBehaviours,
@@ -252,7 +250,6 @@ namespace DimensionBrawl.LevelDesign
             summonSlot1Action = newSummonSlot1Action != null ? newSummonSlot1Action : summonSlot1Action;
             supportSummonActions =
                 newSupportSummonActions ?? supportSummonActions ?? Array.Empty<PlayerSupportSummonSlotAction>();
-            mobileHud = newMobileHud != null ? newMobileHud : mobileHud;
             promptPresenter = newPromptPresenter != null ? newPromptPresenter : promptPresenter;
             tutorialTargets = newTutorialTargets ?? tutorialTargets ?? Array.Empty<CombatHealth>();
             tutorialEnemyGameplayBehaviours =
@@ -983,25 +980,7 @@ namespace DimensionBrawl.LevelDesign
                 return combatHudAnchor;
             }
 
-            if (mobileHud == null)
-            {
-                return fallbackAnchor;
-            }
-
-            switch (focusKind)
-            {
-                case OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack:
-                case OlympusTutorialOverlayPresenter.FocusKind.RangedAttack:
-                    return mobileHud.BasicButtonScreenAnchor;
-                case OlympusTutorialOverlayPresenter.FocusKind.Dodge:
-                    return mobileHud.DodgeButtonScreenAnchor;
-                case OlympusTutorialOverlayPresenter.FocusKind.MoveStick:
-                    return mobileHud.MoveJoystickScreenAnchor;
-                case OlympusTutorialOverlayPresenter.FocusKind.SwapMode:
-                    return mobileHud.SwapButtonScreenAnchor;
-                default:
-                    return fallbackAnchor;
-            }
+            return fallbackAnchor;
         }
 
         private int ResolveTutorialStepIndex()
@@ -1450,11 +1429,6 @@ namespace DimensionBrawl.LevelDesign
             }
 
             ApplyOverlayPresentationBindings();
-
-            if (mobileHud == null)
-            {
-                mobileHud = FindFirst<BossBarrageLaneReviewMobileHud>();
-            }
         }
 
         private void ApplyOverlayPresentationBindings()

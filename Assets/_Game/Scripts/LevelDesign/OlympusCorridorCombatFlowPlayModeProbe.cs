@@ -326,7 +326,6 @@ namespace DimensionBrawl.LevelDesign
                 player.GetComponent<Player.PlayerRangedBasicAttackAction>();
             GameObject combatHudRoot = FindSceneObject("BossBarrageLaneReview_CombatHudCanvas")
                 ?? FindSceneObject("PF_UI_CombatHud");
-            BossBarrageLaneReviewMobileHud mobileHud = FindFirst<BossBarrageLaneReviewMobileHud>();
             OlympusTutorialOverlayPresenter overlayPresenter = FindFirst<OlympusTutorialOverlayPresenter>();
             if (actionController == null)
             {
@@ -341,7 +340,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             yield return null;
-            AppendTutorialUiDiagnostics("tutorialUi_Melee", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialUiDiagnostics("tutorialUi_Melee", tutorialDirector, combatHudRoot, overlayPresenter, report);
 
             yield return QueueBasicAttackUntilStep(
                 flow,
@@ -357,7 +356,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             yield return null;
-            AppendTutorialUiDiagnostics("tutorialUi_Move", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialUiDiagnostics("tutorialUi_Move", tutorialDirector, combatHudRoot, overlayPresenter, report);
 
             yield return MoveTutorialUntilStep(
                 flow,
@@ -384,7 +383,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             yield return null;
-            AppendTutorialUiDiagnostics("tutorialUi_SwapToRanged", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialUiDiagnostics("tutorialUi_SwapToRanged", tutorialDirector, combatHudRoot, overlayPresenter, report);
 
             yield return QueueSwapUntilStep(
                 flow,
@@ -400,7 +399,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             yield return null;
-            AppendTutorialUiDiagnostics("tutorialUi_Fire", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialUiDiagnostics("tutorialUi_Fire", tutorialDirector, combatHudRoot, overlayPresenter, report);
             AppendTutorialFireDiagnostics("tutorialFireBeforeInput", player, rangedBasicAttackAction, tutorialTargets, report);
 
             yield return QueueFireUntilStep(
@@ -419,7 +418,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             yield return null;
-            AppendTutorialUiDiagnostics("tutorialUi_Dodge", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialUiDiagnostics("tutorialUi_Dodge", tutorialDirector, combatHudRoot, overlayPresenter, report);
 
             int dodgeQueueFrames = 0;
             while (tutorialDirector.CurrentStepId != "ClearTargets" && !flow.TutorialCompleted)
@@ -447,7 +446,7 @@ namespace DimensionBrawl.LevelDesign
             if (!flow.TutorialCompleted)
             {
                 yield return null;
-                AppendTutorialUiDiagnostics("tutorialUi_ClearTargets", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+                AppendTutorialUiDiagnostics("tutorialUi_ClearTargets", tutorialDirector, combatHudRoot, overlayPresenter, report);
                 int tutorialTargetsAliveBeforeClear = CountActiveAlive(tutorialTargets);
                 bool tutorialClearDamageApplied = ApplyLethalDamageToAll(tutorialTargets, DamageTeam.Player);
                 report.AppendLine($"tutorialTargetsAliveBeforeClear={tutorialTargetsAliveBeforeClear}");
@@ -693,7 +692,6 @@ namespace DimensionBrawl.LevelDesign
             string label,
             OlympusCorridorTutorialDirector tutorialDirector,
             GameObject combatHudRoot,
-            BossBarrageLaneReviewMobileHud mobileHud,
             OlympusTutorialOverlayPresenter overlayPresenter,
             StringBuilder report)
         {
@@ -709,22 +707,6 @@ namespace DimensionBrawl.LevelDesign
                 AppendCombatHudRect(label, "Basic", combatHudRoot, "BasicAttackButton", report);
                 AppendCombatHudRect(label, "Dodge", combatHudRoot, "DodgeButton", report);
                 AppendCombatHudRect(label, "Swap", combatHudRoot, "UltimateButton", report);
-            }
-
-            if (mobileHud == null)
-            {
-                report.AppendLine($"{label}MobileHud=<null>");
-            }
-            else
-            {
-                report.AppendLine(
-                    $"{label}MobileHudMoveRect={FormatRect(mobileHud.MoveJoystickGuiRect)} anchor={FormatVector2(mobileHud.MoveJoystickScreenAnchor)}");
-                report.AppendLine(
-                    $"{label}MobileHudBasicRect={FormatRect(mobileHud.BasicButtonGuiRect)} anchor={FormatVector2(mobileHud.BasicButtonScreenAnchor)}");
-                report.AppendLine(
-                    $"{label}MobileHudDodgeRect={FormatRect(mobileHud.DodgeButtonGuiRect)} anchor={FormatVector2(mobileHud.DodgeButtonScreenAnchor)}");
-                report.AppendLine(
-                    $"{label}MobileHudSwapRect={FormatRect(mobileHud.SwapButtonGuiRect)} anchor={FormatVector2(mobileHud.SwapButtonScreenAnchor)}");
             }
 
             if (overlayPresenter == null)
@@ -751,19 +733,6 @@ namespace DimensionBrawl.LevelDesign
                 report.AppendLine($"{label}OverlayToCombatHudDistance=<n/a>");
             }
 
-            if (TryResolveMobileHudRectForFocus(
-                    mobileHud,
-                    overlayPresenter.CurrentFocusKind,
-                    out Rect mobileHudRect))
-            {
-                float mobileHudDistance = Vector2.Distance(overlayCenter, mobileHudRect.center);
-                report.AppendLine(
-                    $"{label}OverlayToMobileHudDistance={mobileHudDistance:0.###} mobileHudCenter={FormatVector2(mobileHudRect.center)}");
-            }
-            else
-            {
-                report.AppendLine($"{label}OverlayToMobileHudDistance=<n/a>");
-            }
         }
 
         private static void AppendCombatHudRect(
@@ -831,38 +800,6 @@ namespace DimensionBrawl.LevelDesign
                 : FindSceneObject(objectName);
             RectTransform rectTransform = target != null ? target.GetComponent<RectTransform>() : null;
             return TryGetGuiRect(rectTransform, out rect);
-        }
-
-        private static bool TryResolveMobileHudRectForFocus(
-            BossBarrageLaneReviewMobileHud mobileHud,
-            OlympusTutorialOverlayPresenter.FocusKind focusKind,
-            out Rect rect)
-        {
-            if (mobileHud == null)
-            {
-                rect = default;
-                return false;
-            }
-
-            switch (focusKind)
-            {
-                case OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack:
-                case OlympusTutorialOverlayPresenter.FocusKind.RangedAttack:
-                    rect = mobileHud.BasicButtonGuiRect;
-                    return true;
-                case OlympusTutorialOverlayPresenter.FocusKind.Dodge:
-                    rect = mobileHud.DodgeButtonGuiRect;
-                    return true;
-                case OlympusTutorialOverlayPresenter.FocusKind.MoveStick:
-                    rect = mobileHud.MoveJoystickGuiRect;
-                    return true;
-                case OlympusTutorialOverlayPresenter.FocusKind.SwapMode:
-                    rect = mobileHud.SwapButtonGuiRect;
-                    return true;
-                default:
-                    rect = default;
-                    return false;
-            }
         }
 
         private static IEnumerator MovePlayerWithInputToPosition(

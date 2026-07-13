@@ -68,8 +68,6 @@ namespace DimensionBrawl.LevelDesign
             OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
         [Header("Handoff UI Reveal")]
-        [SerializeField] private BossBarrageLaneReviewHud reviewHud;
-        [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private CanvasGroup combatHudCanvasGroup;
         [SerializeField, Min(0f)] private float hudRevealDelaySeconds = 0.08f;
         [SerializeField, Min(0.01f)] private float hudRevealDurationSeconds = 0.18f;
@@ -143,8 +141,6 @@ namespace DimensionBrawl.LevelDesign
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             PlayerSupportSummonSlotAction[] newSupportSummonActions,
-            BossBarrageLaneReviewHud newReviewHud,
-            BossBarrageLaneReviewMobileHud newMobileHud,
             float newHudRevealDelaySeconds,
             float newHudRevealDurationSeconds)
         {
@@ -187,8 +183,6 @@ namespace DimensionBrawl.LevelDesign
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             supportSummonActions = newSupportSummonActions ?? System.Array.Empty<PlayerSupportSummonSlotAction>();
-            reviewHud = newReviewHud;
-            mobileHud = newMobileHud;
             hudRevealDelaySeconds = Mathf.Max(0f, newHudRevealDelaySeconds);
             hudRevealDurationSeconds = Mathf.Max(0.01f, newHudRevealDurationSeconds);
             ResumePhaseRoutines();
@@ -631,7 +625,6 @@ namespace DimensionBrawl.LevelDesign
                 skill1Action,
                 summonSlot1Action,
                 supportSummonActions,
-                mobileHud,
                 ResolveTutorialPromptPresenter(),
                 introSwordEnemies,
                 introSwordEnemyGameplayBehaviours,
@@ -1122,10 +1115,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetHudOpacity(float opacity)
         {
-            float resolvedOpacity = Mathf.Clamp01(opacity);
-            reviewHud?.SetHudOpacity(resolvedOpacity);
-            mobileHud?.SetHudOpacity(resolvedOpacity);
-            SetCombatHudCanvasGroupOpacity(resolvedOpacity);
+            SetCombatHudCanvasGroupOpacity(Mathf.Clamp01(opacity));
         }
 
         private void SetCombatHudCanvasGroupOpacity(float opacity)

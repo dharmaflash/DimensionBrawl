@@ -59,6 +59,7 @@ namespace DimensionBrawl.Editor
         private const string SourceMainCameraRootName = "Main Camera";
         private const string SourceHudRootName = "BossBarrageLaneReview_DebugHud";
         private const string SourceCombatHudCanvasRootName = "BossBarrageLaneReview_CombatHudCanvas";
+        private const string CombatHudInstanceName = "PF_UI_CombatHud";
         private const string SourceCombatHudEventSystemRootName = "BossBarrageLaneReview_CombatHudEventSystem";
         private const string SourceCombatVfxRootName = "ActionFoundation_CombatVfxPool";
         private const string SourceArenaVfxRootName = "ActionFoundation_ArenaVfx";
@@ -597,11 +598,10 @@ namespace DimensionBrawl.Editor
             CharacterController playerController =
                 RequireComponent<CharacterController>(playerRoot, "Olympus validation player controller");
             GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(hudRoot, "Olympus validation review HUD");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "Olympus validation mobile HUD");
             ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
+            CanvasGroup combatHudCanvasGroup = RequireComponent<CanvasGroup>(
+                RequireObjectInScene(stageScene, CombatHudInstanceName),
+                "canonical combat HUD canvas group");
             GameObject combatCameraRoot = RequireChildObject(packageRoot.transform, CombatCameraName);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(playerRoot, "combat mode controller");
@@ -767,7 +767,7 @@ namespace DimensionBrawl.Editor
             bool handoffPlayerNotSunk =
                 playerGroundAfterHandoff.IsValid && playerGroundAfterHandoff.IsWithinGroundTolerance;
             bool handoffHudStartsHiddenForReveal =
-                reviewHud.HudOpacity <= 0.001f && mobileHud.HudOpacity <= 0.001f;
+                combatHudCanvasGroup.alpha <= 0.001f;
             PlayerSwordOnlySnapshot swordOnlySnapshot =
                 CapturePlayerSwordOnlySnapshot(playerRoot, combatModeController);
             bool combatPackageAlignedToCorridor = packageYawDeltaDegrees <= 0.25f;
@@ -1400,10 +1400,6 @@ namespace DimensionBrawl.Editor
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "canonical boss health");
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "canonical close threat health");
             GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
-            BossBarrageLaneReviewHud reviewHud =
-                RequireComponent<BossBarrageLaneReviewHud>(hudRoot, "Olympus handoff review HUD");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "Olympus handoff mobile HUD");
             ActionFoundationPromotedSummonReviewContractSetup.ApplyToRoots(playerRoot, hudRoot);
             ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
             Camera[] introCameras = FindIntroCamerasToDisable(stageScene, packageRoot.transform);
@@ -1448,8 +1444,6 @@ namespace DimensionBrawl.Editor
                 skill1,
                 summonSlot1,
                 supportSummons,
-                reviewHud,
-                mobileHud,
                 HudRevealDelaySeconds,
                 HudRevealDurationSeconds);
 

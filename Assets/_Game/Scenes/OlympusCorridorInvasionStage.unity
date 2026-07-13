@@ -255857,8 +255857,6 @@ MonoBehaviour:
     clip: {fileID: 0}
     volume: 1
     delaySeconds: 0
-  reviewHud: {fileID: 242798373}
-  mobileHud: {fileID: 242798372}
   combatHudCanvasGroup: {fileID: 0}
   hudRevealDelaySeconds: 0.08
   hudRevealDurationSeconds: 0.18

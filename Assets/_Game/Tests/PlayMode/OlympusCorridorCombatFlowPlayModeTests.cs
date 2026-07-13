@@ -36,6 +36,19 @@ namespace DimensionBrawl.Tests
         private const float ExpectedMinimumTutorialStepSeconds = 0.85f;
 
         [Test]
+        public void CorridorFlowAndTutorialDoNotRetainLegacyHudFallbackFields()
+        {
+            const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+
+            Assert.IsNull(
+                typeof(OlympusCorridorCombatFlowController).GetField("reviewHud", PrivateInstance));
+            Assert.IsNull(
+                typeof(OlympusCorridorCombatFlowController).GetField("mobileHud", PrivateInstance));
+            Assert.IsNull(
+                typeof(OlympusCorridorTutorialDirector).GetField("mobileHud", PrivateInstance));
+        }
+
+        [Test]
         public void TutorialDialogueAudioCueDefaultsCoverEveryGuideLine()
         {
             OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
