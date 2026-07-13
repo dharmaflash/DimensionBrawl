@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.IO;
@@ -6,7 +7,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using UnityEngine;
 
-namespace DimensionBrawl.Test
+namespace DimensionBrawl.Verification
 {
     [DisallowMultipleComponent]
     public sealed class CombatCameraFeedbackProbe : MonoBehaviour
@@ -167,3 +168,4 @@ namespace DimensionBrawl.Test
         }
     }
 }
+#endif
