@@ -10,7 +10,6 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
-using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -23,7 +22,6 @@ namespace DimensionBrawl.Tests
     {
         private const string ScenePath =
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity";
-        private const string HudRootName = "BossBarrageLaneReview_DebugHud";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
@@ -106,8 +104,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
             SummonLaneSpace laneSpace =
                 RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "summon lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
@@ -136,7 +132,6 @@ namespace DimensionBrawl.Tests
                 rangedBasicAttackAction,
                 targetSelector,
                 cameraController,
-                mobileHud,
                 laneSpace,
                 bossRoot,
                 bossHealth,
@@ -263,7 +258,7 @@ namespace DimensionBrawl.Tests
             bool hasDirection = action.TryGetAimPreviewDirection(out Vector3 direction);
             bool hasAssistViewport = action.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewport);
             Vector2 inputViewport = ResolveInputViewport(action);
-            Vector2 hudViewport = ResolveHudViewport(context.MobileHud, hasActionViewport, actionViewport);
+            Vector2 hudViewport = ResolveHudViewport(hasActionViewport, actionViewport);
             CombatHealth targetHealth = action.AimAssistTargetHealth;
             bool hasTargetViewport = TryResolveTargetViewport(
                 context.CameraController,
@@ -315,16 +310,8 @@ namespace DimensionBrawl.Tests
                 Mathf.Clamp01(0.5f + input.y * GetFloat(action, "aimInputViewportOffsetY")));
         }
 
-        private static Vector2 ResolveHudViewport(
-            BossBarrageLaneReviewMobileHud mobileHud,
-            bool hasActionViewport,
-            Vector2 actionViewport)
+        private static Vector2 ResolveHudViewport(bool hasActionViewport, Vector2 actionViewport)
         {
-            if (GetBool(mobileHud, "fireAimReticleUsesScreenCenter"))
-            {
-                return new Vector2(0.5f, 0.5f);
-            }
-
             return hasActionViewport ? actionViewport : new Vector2(0.5f, 0.5f);
         }
 
@@ -779,7 +766,6 @@ namespace DimensionBrawl.Tests
                 PlayerRangedBasicAttackAction rangedBasicAttackAction,
                 PlayerCombatTargetSelector targetSelector,
                 ActionCameraController cameraController,
-                BossBarrageLaneReviewMobileHud mobileHud,
                 SummonLaneSpace laneSpace,
                 GameObject bossRoot,
                 CombatHealth bossHealth,
@@ -793,7 +779,6 @@ namespace DimensionBrawl.Tests
                 RangedBasicAttackAction = rangedBasicAttackAction;
                 TargetSelector = targetSelector;
                 CameraController = cameraController;
-                MobileHud = mobileHud;
                 LaneSpace = laneSpace;
                 BossRoot = bossRoot;
                 BossHealth = bossHealth;
@@ -808,7 +793,6 @@ namespace DimensionBrawl.Tests
             public PlayerRangedBasicAttackAction RangedBasicAttackAction { get; }
             public PlayerCombatTargetSelector TargetSelector { get; }
             public ActionCameraController CameraController { get; }
-            public BossBarrageLaneReviewMobileHud MobileHud { get; }
             public SummonLaneSpace LaneSpace { get; }
             public GameObject BossRoot { get; }
             public CombatHealth BossHealth { get; }

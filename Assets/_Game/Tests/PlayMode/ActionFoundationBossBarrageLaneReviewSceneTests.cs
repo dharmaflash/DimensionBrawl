@@ -134,8 +134,6 @@ namespace DimensionBrawl.Tests
         private const string SummonActorAttackTrigger = "Attack";
         private const string SummonActorHitTrigger = "Hit";
         private const string SummonActorDeathTrigger = "Death";
-        private const int InputSystemKeyE = 19;
-        private const int InputSystemKeyQ = 31;
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
         private const string InoriRifleAnimatorControllerPath =
@@ -676,6 +674,10 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot3");
             SummonSlotActionProfile summonSlot1Profile =
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             SummonPresentationCandidateProfile summonSlot1PresentationCandidate =
@@ -715,8 +717,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<SummonEnergyVfxCuePresenter>(player.gameObject, "summon energy VFX cue presenter");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             BossBarrageLaneReviewOverlayHud overlayHud =
@@ -1647,21 +1647,8 @@ namespace DimensionBrawl.Tests
                 reviewHud.CompactObjectiveReadout,
                 Does.StartWith("Survive 1/3"),
                 "The compact review objective should expose a stage-style checklist instead of a flat debug goal.");
-            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
-            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(mobileHud, "actionController"));
-            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(mobileHud, "combatModeController"));
-            Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(mobileHud, "aimController"));
-            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(mobileHud, "rangedBasicAttackAction"));
-            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(mobileHud, "skill1Action"));
-            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
-            Assert.IsFalse(mobileHud.enabled, "The legacy IMGUI mobile HUD should stay disabled while UGUI owns combat input.");
-            Assert.IsFalse(GetBool(mobileHud, "useSingleSummonButton"));
-            Assert.AreEqual("SUMMON", GetString(mobileHud, "summonSlot1Label"));
-            Assert.AreEqual(0.42f, GetFloat(mobileHud, "summonButtonGroupCenterY01"), 0.001f);
-            Assert.AreEqual(1.05f, GetFloat(mobileHud, "summonButtonGapMultiplier"), 0.001f);
             Assert.AreSame(pocketOwner, overlayHud.PocketReviewOwner);
             Assert.AreSame(reviewHud, overlayHud.ReviewHud);
-            Assert.AreSame(mobileHud, overlayHud.MobileHud);
             Assert.AreSame(screenCuePresenter, overlayHud.ScreenCuePresenter);
             Assert.AreEqual("ActionFoundationBossBarrageLaneReview", overlayHud.RetrySceneName);
             Assert.AreEqual("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", overlayHud.RetryScenePath);
@@ -1676,10 +1663,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(screenCuePresenter, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(screenCuePresenter, "summonSlot1Action"));
             Assert.AreSame(
-                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot2Action"),
+                summonSlot2Action,
                 GetObjectReference<PlayerSupportSummonSlotAction>(screenCuePresenter, "summonSlot2Action"));
             Assert.AreSame(
-                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot3Action"),
+                summonSlot3Action,
                 GetObjectReference<PlayerSupportSummonSlotAction>(screenCuePresenter, "summonSlot3Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(screenCuePresenter, "bossBarrageEmitter"));
             Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(screenCuePresenter, "bossPressureActionDirector"));
@@ -1831,39 +1818,6 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual(0, screenCuePresenter.PlayerDamageCueRequestCount);
             Assert.AreEqual(0, screenCuePresenter.EnergyCueRequestCount);
-            Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
-            Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
-            Assert.AreEqual("Dodge", GetString(mobileHud, "dodgeActionName"));
-            Assert.AreEqual("Skill1", GetString(mobileHud, "skill1ActionName"));
-            Assert.AreEqual("SummonSlot1", GetString(mobileHud, "summonSlot1ActionName"));
-            Assert.AreEqual("RangedAim", GetString(mobileHud, "rangedAimActionName"));
-            Assert.AreEqual("WeaponSwap", GetString(mobileHud, "weaponSwapActionName"));
-            Assert.IsTrue(GetBool(mobileHud, "screenDragControlsAim"));
-            Assert.IsFalse(GetBool(mobileHud, "rightMouseDragControlsAim"));
-            Assert.IsTrue(GetBool(mobileHud, "leftMouseDragControlsAim"));
-            Assert.IsFalse(GetBool(mobileHud, "routeAimToMovementLook"));
-            Assert.IsTrue(GetBool(mobileHud, "keyboardPeekControlsAim"));
-            Assert.AreEqual(InputSystemKeyQ, GetEnumIndex(mobileHud, "keyboardPeekLeftKey"));
-            Assert.AreEqual(InputSystemKeyE, GetEnumIndex(mobileHud, "keyboardPeekRightKey"));
-            Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
-            Assert.IsFalse(
-                GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
-                "The legacy fire reticle should follow the resolved aim preview or assist point.");
-            Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
-            Assert.AreEqual(0.00435f, GetFloat(mobileHud, "lookAimDragSensitivity"), 0.00001f);
-            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookAimDragRadius");
-            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookAimKnobSize");
-            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookPointerStartGuiPoint");
-            Assert.AreEqual(0f, GetFloat(mobileHud, "lookAimScreenMinX"), 0.001f);
-            Assert.IsTrue(GetBool(mobileHud, "showFireAimReticle"));
-            Assert.Greater(GetFloat(mobileHud, "fireAimReticleSize"), 0f);
-            Assert.Greater(GetFloat(mobileHud, "fireAimReticleGap"), 0f);
-            Assert.Greater(GetFloat(mobileHud, "fireAimReticleThickness"), 0f);
-            Assert.Greater(GetFloat(mobileHud, "fireAimAssistGapTighten"), 0f);
-            Assert.Greater(GetFloat(mobileHud, "fireAimAssistSizeBoost"), 0f);
-            Assert.Greater(GetFloat(mobileHud, "fireAimAssistThicknessBoost"), 0f);
-            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
-            Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             Assert.IsTrue(bossHealth.TryApplyDamage(new DamageInfo(
                 playerHealth,
@@ -2932,10 +2886,7 @@ namespace DimensionBrawl.Tests
             PlayerRangedAimController aimController =
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
 
-            mobileHud.enabled = false;
             combatModeController.SetRangedMode();
             aimController.SetAimHeld(true);
             aimController.SetAimInput(Vector2.zero);
@@ -2957,7 +2908,6 @@ namespace DimensionBrawl.Tests
 
             player.SetMoveInput(Vector2.zero);
             aimController.SetAimHeld(false);
-            mobileHud.enabled = true;
             yield return null;
         }
 
@@ -3363,108 +3313,14 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator MobileHudFireButtonHoldDoesNotRouteAimOrRotateStandingPlayerRoot()
+        public IEnumerator ReviewOverlayPauseStopsTimeAndDisablesCanonicalControls()
         {
-            PlayerMovementController player = RequireObject<PlayerMovementController>();
-            PlayerCombatModeController combatModeController =
-                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
-            PlayerRangedBasicAttackAction rangedBasicAttackAction =
-                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
-            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
-
-            combatModeController.SetRangedMode();
-            player.transform.SetPositionAndRotation(
-                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y),
-                Quaternion.LookRotation(Vector3.forward, Vector3.up));
-            Physics.SyncTransforms();
-            yield return null;
-
-            Quaternion rootRotationBefore = player.transform.rotation;
-            rangedBasicAttackAction.ClearAimInput();
-            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirectionBefore));
-
-            SetPrivateField(mobileHud, "firePointerHeld", true);
-            InvokePrivateMethod(mobileHud, "UpdateHudLookAim");
-
-            Assert.Less(
-                GetVector2(player, "mobileLookInput").sqrMagnitude,
-                0.0001f,
-                "Fire-button hold should not be routed into movement look/facing input.");
-            Assert.Less(
-                rangedBasicAttackAction.AimInput.sqrMagnitude,
-                0.0001f,
-                "Fire-button hold should not create a manual ranged aim input.");
-            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
-            Assert.Less(
-                Vector3.Angle(previewDirectionBefore, previewDirection),
-                0.5f,
-                "Fire-button hold should stay a fire gesture, not a joystick-style ranged aim input.");
-            yield return null;
-            yield return null;
-            Assert.Less(
-                Quaternion.Angle(rootRotationBefore, player.transform.rotation),
-                0.5f,
-                "Fire-button hold should not spin the player root.");
-
-            SetPrivateField(mobileHud, "firePointerHeld", false);
-            InvokePrivateMethod(mobileHud, "ReleaseHudLookAim");
-            yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator HiddenMobileHudReleasesReviewInputInsteadOfDrivingInvisibleControls()
-        {
-            PlayerMovementController player = RequireObject<PlayerMovementController>();
-            PlayerRangedAimController aimController =
-                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
-            PlayerRangedBasicAttackAction rangedBasicAttackAction =
-                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
-
-            player.SetMoveInput(Vector2.right);
-            player.SetLookInput(Vector2.left);
-            rangedBasicAttackAction.SetFireHeld(true);
-            rangedBasicAttackAction.SetAimInput(Vector2.right);
-            aimController.SetAimInput(Vector2.right);
-            aimController.SetAimHeld(true);
-            SetPrivateField(mobileHud, "showHud", false);
-            SetPrivateField(mobileHud, "firePointerHeld", true);
-            SetPrivateField(mobileHud, "movePointerHeld", true);
-            SetPrivateField(mobileHud, "lookPointerHeld", true);
-            SetPrivateField(mobileHud, "hudLookAimActive", true);
-            SetPrivateField(mobileHud, "previousBasicHeld", true);
-
-            InvokePrivateMethod(mobileHud, "Update");
-
-            Assert.IsFalse(mobileHud.HasActiveReviewPointerInput);
-            Assert.IsFalse(mobileHud.IsReviewLookAimActive);
-            Assert.Less(GetVector2(player, "mobileMoveInput").sqrMagnitude, 0.0001f);
-            Assert.Less(GetVector2(player, "mobileLookInput").sqrMagnitude, 0.0001f);
-            Assert.Less(rangedBasicAttackAction.AimInput.sqrMagnitude, 0.0001f);
-            Assert.Less(aimController.AimInput.sqrMagnitude, 0.0001f);
-            Assert.IsFalse(aimController.HasExternalAimHeldInput);
-            Assert.IsFalse(mobileHud.WasBasicFireHeldLastFrame);
-            Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);
-
-            SetPrivateField(mobileHud, "showHud", true);
-            yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator ReviewOverlayPauseStopsTimeAndDisablesMobileControls()
-        {
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             RequireObjectByTypeName("DimensionBrawl.UI.CombatHudInputBridge");
             RequireObjectByTypeName("DimensionBrawl.UI.CombatHudAimDragInput");
 
             Time.timeScale = 1f;
-            Assert.IsFalse(mobileHud.enabled);
             AssertBehaviourArrayEnabled(overlayHud, "inputLockBehaviours", true);
 
             overlayHud.OpenPauseMenu();
@@ -3472,7 +3328,6 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(overlayHud.IsPauseMenuVisible);
             Assert.AreEqual(0f, Time.timeScale, 0.001f);
-            Assert.IsFalse(mobileHud.enabled);
             AssertBehaviourArrayEnabled(overlayHud, "inputLockBehaviours", false);
 
             overlayHud.OpenSettings();
@@ -3480,7 +3335,6 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(overlayHud.IsSettingsVisible);
             Assert.AreEqual(0f, Time.timeScale, 0.001f);
-            Assert.IsFalse(mobileHud.enabled);
             AssertBehaviourArrayEnabled(overlayHud, "inputLockBehaviours", false);
 
             overlayHud.Resume();
@@ -3489,7 +3343,6 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(overlayHud.IsPauseMenuVisible);
             Assert.IsFalse(overlayHud.IsSettingsVisible);
             Assert.AreEqual(1f, Time.timeScale, 0.001f);
-            Assert.IsFalse(mobileHud.enabled);
             AssertBehaviourArrayEnabled(overlayHud, "inputLockBehaviours", true);
         }
 
@@ -9116,11 +8969,6 @@ namespace DimensionBrawl.Tests
         {
             int value = RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
             return (T)System.Enum.ToObject(typeof(T), value);
-        }
-
-        private static int GetEnumIndex(Object target, string propertyName)
-        {
-            return RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
         }
 
         private static string GetString(Object target, string propertyName)

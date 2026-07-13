@@ -215,12 +215,6 @@ namespace DimensionBrawl.Editor
                 SetBool(cameraController, "aimAssistUsesYawTarget", true);
             }
 
-            BossBarrageLaneReviewMobileHud mobileHud = FirstSceneComponent<BossBarrageLaneReviewMobileHud>(scene);
-            if (mobileHud != null)
-            {
-                SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
-            }
-
             ActionFoundationTestEncounter encounter =
                 RequireSceneComponent<ActionFoundationTestEncounter>(scene, "test encounter");
             SetObjectReference(encounter, "playerHealth", playerHealth);
@@ -783,16 +777,8 @@ namespace DimensionBrawl.Editor
         {
             AssetDatabase.Refresh();
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireSceneComponent<BossBarrageLaneReviewMobileHud>(scene, "mobile review HUD");
             ActionCameraController cameraController =
                 RequireSceneComponent<ActionCameraController>(scene, "action camera controller");
-
-            if (GetSerializedBool(mobileHud, "fireAimReticleUsesScreenCenter"))
-            {
-                throw new InvalidOperationException(
-                    "Mobile HUD fire reticle is still pinned to raw screen center instead of ranged fire preview.");
-            }
 
             Vector3 aimFocusOffset = GetSerializedVector3(cameraController, "aimFocusOffset");
             if ((aimFocusOffset - CombatAimFocusOffset).sqrMagnitude > 0.0001f)
@@ -803,7 +789,7 @@ namespace DimensionBrawl.Editor
             }
 
             Debug.Log(
-                "Verified OlympusStation aim reticle presentation uses ranged fire preview and centered aim focus. " +
+                "Verified OlympusStation aim presentation uses the centered combat-camera focus. " +
                 $"aimFocusOffset={aimFocusOffset}.");
         }
 

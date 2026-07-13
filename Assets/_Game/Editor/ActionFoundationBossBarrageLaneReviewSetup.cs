@@ -649,17 +649,6 @@ namespace DimensionBrawl.Editor
             PlayerLockTargetVisualPresenter lockTargetVisualPresenter =
                 RequireComponent<PlayerLockTargetVisualPresenter>(player.gameObject, "player lock target visual presenter");
 
-            GameObject hudRoot = RequireRoot(scene, HudRootName);
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile review HUD");
-            mobileHud.SetLockTargetController(lockTargetController);
-            SetObjectReference(mobileHud, "lockTargetController", lockTargetController);
-            SetBool(mobileHud, "showLockTargetMarker", true);
-            SetFloat(mobileHud, "lockTargetMarkerSize", 52f);
-            SetFloat(mobileHud, "lockTargetMarkerGap", 12f);
-            SetFloat(mobileHud, "lockTargetMarkerThickness", 3f);
-            EditorUtility.SetDirty(mobileHud);
-
             ValidatePlayerLockTargeting(
                 lockTargetController,
                 lockTargetVisualPresenter,
@@ -668,7 +657,6 @@ namespace DimensionBrawl.Editor
                 playerHealth,
                 cameraController,
                 player.transform);
-            ValidateObjectReference(mobileHud, "lockTargetController", lockTargetController);
 
             if (!EditorSceneManager.SaveScene(scene))
             {
@@ -701,7 +689,6 @@ namespace DimensionBrawl.Editor
             EnsureSummonSlot3ActorPrefab();
             EnsureSupportSummonActionProfiles();
             EnsureSummonPresentationCandidateProfiles();
-            EnsurePlayerSummonReviewHudBindings(ReviewScenePath);
             Debug.Log("Reapplied ActionFoundation player summon presentation assets.");
         }
 
@@ -1295,7 +1282,6 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction,
-                lockTargetController,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,
@@ -1404,8 +1390,6 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(scene, HudRootName), "boss barrage mobile review HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
             ActionCameraCueDriver actionCameraCueDriver =
@@ -1721,19 +1705,6 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureAction,
                 summonSlot2Action,
                 summonSlot3Action);
-            ValidateMobileReviewHud(
-                mobileHud,
-                player,
-                playerActionController,
-                combatModeController,
-                rangedAimController,
-                rangedBasicAttackAction,
-                lockTargetController,
-                skill1Action,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action,
-                energyLadder);
             ValidateActionScreenCuePresenter(
                 screenCuePresenter,
                 playerActionController,
@@ -1869,37 +1840,6 @@ namespace DimensionBrawl.Editor
 
             // Boss bullets intentionally use the exact FORGE3D missile mesh for silhouette readability.
             // Materials and runtime tinting stay game-owned and are validated on the projectile prefab.
-        }
-
-
-        private static void EnsurePlayerSummonReviewHudBindings(string scenePath)
-        {
-            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
-            {
-                return;
-            }
-
-            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
-            SummonEnergyLadder energyLadder =
-                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(
-                    RequireRoot(scene, HudRootName),
-                    "boss barrage mobile review HUD");
-
-            SetObjectReference(mobileHud, "energyLadder", energyLadder);
-            SetBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
-            SetString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
-            SetString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
-            SetString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
-            SetString(mobileHud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
-            EditorUtility.SetDirty(mobileHud);
-
-            if (!EditorSceneManager.SaveScene(scene, scenePath))
-            {
-                throw new InvalidOperationException($"Failed to save player summon review HUD bindings at {scenePath}.");
-            }
         }
 
 
@@ -6449,7 +6389,6 @@ namespace DimensionBrawl.Editor
             PlayerCombatModeController combatModeController,
             PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
-            PlayerLockTargetController lockTargetController,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
@@ -6497,60 +6436,6 @@ namespace DimensionBrawl.Editor
             SetFloat(hud, "resultBannerWidth", 540f);
             SetFloat(hud, "resultBannerHeight", 82f);
             SetFloat(hud, "resultBannerBottomOffset", 112f);
-            BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
-            mobileHud.Configure(
-                player.GetComponent<PlayerMovementController>(),
-                player.GetComponent<PlayerActionController>(),
-                combatModeController,
-                rangedAimController,
-                rangedBasicAttackAction,
-                skill1Action,
-                summonSlot1Action,
-                energyLadder,
-                summonSlot2Action,
-                summonSlot3Action);
-            mobileHud.SetLockTargetController(lockTargetController);
-            SetObjectReference(mobileHud, "lockTargetController", lockTargetController);
-            SetObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
-            SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
-            SetString(mobileHud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
-            SetString(mobileHud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
-            SetBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
-            SetString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
-            SetString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
-            SetString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
-            SetFloat(mobileHud, "buttonSize", 168f);
-            SetFloat(mobileHud, "buttonGap", 38f);
-            SetFloat(mobileHud, "margin", 72f);
-            SetFloat(mobileHud, "minimumActionButtonSize", 124f);
-            SetFloat(mobileHud, "minimumButtonGap", 30f);
-            SetFloat(mobileHud, "minimumTouchEdgeInset", 64f);
-            SetFloat(mobileHud, "summonButtonGroupCenterY01", 0.42f);
-            SetFloat(mobileHud, "summonButtonGapMultiplier", 1.05f);
-            SetFloat(mobileHud, "moveJoystickRadius", 154f);
-            SetFloat(mobileHud, "moveJoystickKnobSize", 64f);
-            SetFloat(mobileHud, "moveJoystickTouchRadiusScale", 1.45f);
-            SetFloat(mobileHud, "minimumMoveJoystickRadius", 118f);
-            SetFloat(mobileHud, "minimumMoveJoystickKnobSize", 52f);
-            SetBool(mobileHud, "screenDragControlsAim", true);
-            SetBool(mobileHud, "rightMouseDragControlsAim", false);
-            SetBool(mobileHud, "leftMouseDragControlsAim", true);
-            SetBool(mobileHud, "routeAimToMovementLook", false);
-            SetBool(mobileHud, "keyboardPeekControlsAim", true);
-            SetEnum(mobileHud, "keyboardPeekLeftKey", (int)Key.Q);
-            SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
-            SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
-            SetFloat(mobileHud, "lookAimDragSensitivity", 0.00435f);
-            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
-            SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
-            SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
-            SetBool(mobileHud, "showLockTargetMarker", true);
-            SetFloat(mobileHud, "lockTargetMarkerSize", 52f);
-            SetFloat(mobileHud, "lockTargetMarkerGap", 12f);
-            SetFloat(mobileHud, "lockTargetMarkerThickness", 3f);
-            SetFloat(mobileHud, "lockTargetCoreDotSize", 15f);
-            SetFloat(mobileHud, "lockTargetCoreHaloSize", 40f);
-
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
             screenCuePresenter.Configure(
                 player.GetComponent<PlayerActionController>(),
@@ -6597,11 +6482,9 @@ namespace DimensionBrawl.Editor
             overlayHud.Configure(
                 pocketOwner,
                 hud,
-                mobileHud,
                 screenCuePresenter);
             ConfigureOverlayRoutes(overlayHud);
             SetBool(hud, "showHud", false);
-            SetBool(mobileHud, "drawHudVisuals", false);
             SetBool(overlayHud, "drawIdleButton", false);
             CreateCombatHudCanvas(
                 scene,
@@ -6617,9 +6500,7 @@ namespace DimensionBrawl.Editor
                 summonSlot3Action,
                 pocketOwner,
                 overlayHud);
-            // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
-            EditorUtility.SetDirty(mobileHud);
             EditorUtility.SetDirty(screenCuePresenter);
             EditorUtility.SetDirty(overlayHud);
         }
@@ -11490,78 +11371,6 @@ namespace DimensionBrawl.Editor
             ValidateFloat(hud, "resultBannerWidth", 540f);
             ValidateFloat(hud, "resultBannerHeight", 82f);
             ValidateFloat(hud, "resultBannerBottomOffset", 112f);
-        }
-
-        private static void ValidateMobileReviewHud(
-            BossBarrageLaneReviewMobileHud hud,
-            PlayerMovementController movement,
-            PlayerActionController actionController,
-            PlayerCombatModeController combatModeController,
-            PlayerRangedAimController rangedAimController,
-            PlayerRangedBasicAttackAction rangedBasicAttackAction,
-            PlayerLockTargetController lockTargetController,
-            PlayerSkill1Action skill1Action,
-            PlayerSummonSlot1Action summonSlot1Action,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            PlayerSupportSummonSlotAction summonSlot3Action,
-            SummonEnergyLadder energyLadder)
-        {
-            ValidateObjectReference(hud, "movement", movement);
-            ValidateObjectReference(hud, "actionController", actionController);
-            ValidateObjectReference(hud, "combatModeController", combatModeController);
-            ValidateObjectReference(hud, "aimController", rangedAimController);
-            ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
-            ValidateObjectReference(hud, "lockTargetController", lockTargetController);
-            ValidateObjectReference(hud, "skill1Action", skill1Action);
-            ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
-            ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(hud, "summonSlot3Action", summonSlot3Action);
-            ValidateObjectReference(hud, "energyLadder", energyLadder);
-            ValidateString(hud, "moveActionName", "Move");
-            ValidateString(hud, "basicDefenseActionName", "BasicDefenseAttack");
-            ValidateString(hud, "dodgeActionName", "Dodge");
-            ValidateString(hud, "skill1ActionName", "Skill1");
-            ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
-            ValidateString(hud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
-            ValidateString(hud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
-            ValidateString(hud, "rangedAimActionName", "RangedAim");
-            ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
-            ValidateBool(hud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
-            ValidateString(hud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
-            ValidateString(hud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
-            ValidateString(hud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
-            ValidateString(hud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
-            ValidateFloat(hud, "buttonSize", 168f);
-            ValidateFloat(hud, "buttonGap", 38f);
-            ValidateFloat(hud, "margin", 72f);
-            ValidateFloat(hud, "minimumActionButtonSize", 124f);
-            ValidateFloat(hud, "minimumButtonGap", 30f);
-            ValidateFloat(hud, "minimumTouchEdgeInset", 64f);
-            ValidateFloat(hud, "summonButtonGroupCenterY01", 0.42f);
-            ValidateFloat(hud, "summonButtonGapMultiplier", 1.05f);
-            ValidateFloat(hud, "moveJoystickRadius", 154f);
-            ValidateFloat(hud, "moveJoystickKnobSize", 64f);
-            ValidateFloat(hud, "moveJoystickTouchRadiusScale", 1.45f);
-            ValidateFloat(hud, "minimumMoveJoystickRadius", 118f);
-            ValidateFloat(hud, "minimumMoveJoystickKnobSize", 52f);
-            ValidateBool(hud, "screenDragControlsAim", true);
-            ValidateBool(hud, "rightMouseDragControlsAim", false);
-            ValidateBool(hud, "leftMouseDragControlsAim", true);
-            ValidateBool(hud, "routeAimToMovementLook", false);
-            ValidateBool(hud, "keyboardPeekControlsAim", true);
-            ValidateEnum(hud, "keyboardPeekLeftKey", (int)Key.Q);
-            ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
-            ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
-            ValidateFloat(hud, "lookAimDragSensitivity", 0.00435f);
-            ValidateBool(hud, "fireAimReticleUsesScreenCenter", false);
-            ValidateBool(hud, "fireAimReticleFollowsAssist", true);
-            ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
-            ValidateBool(hud, "showLockTargetMarker", true);
-            ValidateFloat(hud, "lockTargetMarkerSize", 52f);
-            ValidateFloat(hud, "lockTargetMarkerGap", 12f);
-            ValidateFloat(hud, "lockTargetMarkerThickness", 3f);
-            ValidateFloat(hud, "lockTargetCoreDotSize", 15f);
-            ValidateFloat(hud, "lockTargetCoreHaloSize", 40f);
         }
 
         private static void ValidateActionScreenCuePresenter(

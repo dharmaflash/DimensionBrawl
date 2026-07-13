@@ -90,7 +90,7 @@ Current review-scene control split:
 Current stabilization debt:
 
 - `ActionFoundationBossBarrageLaneReviewSetup` is an editor-only review scene seeding/validation tool. It must not become a runtime scene builder or production content generator.
-- `BossBarrageLaneReviewMobileHud` is a temporary review HUD built for fast control verification. Production mobile UI should be authored with the UI stack, not extended through the review IMGUI surface.
+- The temporary `BossBarrageLaneReviewMobileHud` IMGUI input surface is retired. `PF_UI_CombatHud` and its `CombatHudInputBridge`, `CombatHudAimDragInput`, and `CombatHudVirtualJoystick` components are the sole combat pointer-input path.
 - `PlayerRangedBasicAttackAction` may keep the first local-defense ranged slice, but new weapon/magic variants should split aim resolving, fire input, projectile emission, and presentation feedback before the class grows further.
 
 ## Player Requirements

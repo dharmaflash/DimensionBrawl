@@ -4000,22 +4000,22 @@ namespace DimensionBrawl.Tests
             }
 
             context.Metrics.SupportComboHudSupportLabelBeforeSlot1 =
-                BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                     supportAction,
                     ResolveSupportHudSlotLabel(supportAction),
                     "NEXT",
                     context.EnergyLadder);
             context.Metrics.SupportComboHudSupportFillBeforeSlot1 =
-                BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
+                CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(
                     context.EnergyLadder,
                     supportAction);
             context.Metrics.SupportComboHudSlot1LabelBeforeAttempt =
-                BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
+                CombatHudSummonReadoutFormatter.BuildPrimarySummonLabel(
                     BossBarrageSummonReviewContract.Slot1HudLabel,
                     context.EnergyLadder,
                     context.SummonSlot1Action);
             context.Metrics.SupportComboHudSlot1FillBeforeAttempt =
-                BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(
+                CombatHudSummonReadoutFormatter.ResolvePrimarySummonFill01(
                     context.EnergyLadder,
                     context.SummonSlot1Action);
             context.Metrics.SupportComboOverlayHudReadoutBeforeSlot1 =

@@ -268076,7 +268076,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1831336407}
   - component: {fileID: 1831336406}
-  - component: {fileID: 1831336405}
   - component: {fileID: 1831336404}
   - component: {fileID: 1831336403}
   m_Layer: 0
@@ -268100,7 +268099,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud
   pocketReviewOwner: {fileID: 439529094}
   reviewHud: {fileID: 1831336406}
-  mobileHud: {fileID: 1831336405}
   screenCuePresenter: {fileID: 1831336404}
   inputLockBehaviours:
   - {fileID: 1248464261}
@@ -268217,108 +268215,6 @@ MonoBehaviour:
   followupMissedColor: {r: 0.68, g: 0.74, b: 0.82, a: 1}
   pocketClearColor: {r: 0.22, g: 1, b: 0.42, a: 1}
   pocketFailColor: {r: 1, g: 0.18, b: 0.12, a: 1}
---- !u!114 &1831336405
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1831336402}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 73a58b6f8dc54c8da48a9016d94d3f14, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewMobileHud
-  movement: {fileID: 4004}
-  actionController: {fileID: 4005}
-  combatModeController: {fileID: 4014}
-  aimController: {fileID: 4013}
-  rangedBasicAttackAction: {fileID: 4012}
-  cameraController: {fileID: 0}
-  lockTargetController: {fileID: 4025}
-  skill1Action: {fileID: 4018}
-  summonSlot1Action: {fileID: 4017}
-  summonSlot2Action: {fileID: 4016}
-  summonSlot3Action: {fileID: 4015}
-  energyLadder: {fileID: 4019}
-  moveActionName: Move
-  basicDefenseActionName: BasicDefenseAttack
-  dodgeActionName: Dodge
-  skill1ActionName: Skill1
-  summonSlot1ActionName: SummonSlot1
-  summonSlot2ActionName: SummonSlot2
-  summonSlot3ActionName: SummonSlot3
-  rangedAimActionName: RangedAim
-  weaponSwapActionName: WeaponSwap
-  showHud: 0
-  drawHudVisuals: 0
-  tutorialInputBlocked: 0
-  useSingleSummonButton: 0
-  hudOpacity: 1
-  buttonSize: 168
-  buttonGap: 38
-  margin: 96
-  minimumActionButtonSize: 124
-  minimumButtonGap: 30
-  minimumTouchEdgeInset: 96
-  summonButtonGroupCenterY01: 0.42
-  summonButtonGapMultiplier: 1.05
-  scale: 1
-  buttonColor: {r: 0.04, g: 0.11, b: 0.16, a: 0.58}
-  heldButtonColor: {r: 0.18, g: 0.84, b: 1, a: 0.72}
-  pendingButtonColor: {r: 0.04, g: 0.08, b: 0.11, a: 0.44}
-  actionTextColor: {r: 1, g: 1, b: 1, a: 1}
-  summonSlot1Label: SUMMON
-  summonSlot2Label: S2 LASER
-  summonSlot3Label: S3 DRAGON
-  lockedSummonLabel: NEXT
-  summonReadyPulseSeconds: 0.85
-  fireAccentColor: {r: 1, g: 0.74, b: 0.34, a: 1}
-  dodgeAccentColor: {r: 0.38, g: 0.9, b: 1, a: 1}
-  skillAccentColor: {r: 1, g: 0.86, b: 0.46, a: 1}
-  summonSlot1AccentColor: {r: 1, g: 0.78, b: 0.36, a: 1}
-  summonSlot2AccentColor: {r: 0.42, g: 0.9, b: 1, a: 1}
-  summonSlot3AccentColor: {r: 0.78, g: 0.72, b: 1, a: 1}
-  moveJoystickRadius: 236
-  moveJoystickKnobSize: 98
-  moveJoystickDeadZone: 0.12
-  moveJoystickTouchRadiusScale: 1.18
-  minimumMoveJoystickRadius: 180
-  minimumMoveJoystickKnobSize: 76
-  screenDragControlsAim: 1
-  rightMouseDragControlsAim: 0
-  leftMouseDragControlsAim: 1
-  routeAimToMovementLook: 0
-  keyboardPeekControlsAim: 1
-  keyboardPeekLeftKey: 31
-  keyboardPeekRightKey: 19
-  keyboardPeekRequiresActiveAim: 1
-  lookAimDragDeadZone: 0.08
-  lookAimDragSensitivity: 0.00435
-  lookAimScreenMinX: 0
-  showFireAimReticle: 1
-  fireAimReticleUsesScreenCenter: 0
-  fireAimReticleSize: 34
-  fireAimReticleGap: 9
-  fireAimReticleThickness: 2
-  fireAimReticleColor: {r: 0.82, g: 0.96, b: 1, a: 0.88}
-  fireAimAssistReticleColor: {r: 0.38, g: 1, b: 0.72, a: 0.96}
-  fireAimAssistGapTighten: 0.35
-  fireAimAssistSizeBoost: 0.22
-  fireAimAssistThicknessBoost: 0.45
-  fireAimReticleFollowsAssist: 1
-  fireAimAssistReticleMaxOffset: 0
-  showLockTargetMarker: 1
-  lockTargetMarkerSize: 52
-  lockTargetMarkerGap: 12
-  lockTargetMarkerThickness: 3
-  lockTargetMarkerColor: {r: 0.62, g: 0.98, b: 1, a: 0.96}
-  hardLockTargetMarkerColor: {r: 1, g: 0.86, b: 0.32, a: 1}
-  lockTargetMarkerPulseBoost: 0.18
-  lockTargetCoreDotSize: 13
-  lockTargetCoreHaloSize: 34
-  lockTargetCoreColor: {r: 1, g: 0.08, b: 0.04, a: 1}
-  hardLockTargetCoreColor: {r: 1, g: 0.2, b: 0.06, a: 1}
 --- !u!114 &1831336406
 MonoBehaviour:
   m_ObjectHideFlags: 0

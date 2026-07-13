@@ -332,29 +332,6 @@ namespace DimensionBrawl.Tests
             LogAssert.NoUnexpectedReceived();
         }
 
-        [UnityTest]
-        public IEnumerator LegacyMobileHudDisableIgnoresDestroyedMovementBinding()
-        {
-            GameObject movementObject = new("DestroyedLegacyHudMovementBinding", typeof(CharacterController));
-            PlayerMovementController movementController = movementObject.AddComponent<PlayerMovementController>();
-            GameObject hudObject = new("BossBarrageLaneReviewMobileHud");
-            BossBarrageLaneReviewMobileHud mobileHud = hudObject.AddComponent<BossBarrageLaneReviewMobileHud>();
-            FieldInfo movementField = typeof(BossBarrageLaneReviewMobileHud).GetField(
-                "movement",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(movementField);
-            movementField.SetValue(mobileHud, movementController);
-
-            Object.Destroy(movementObject);
-            yield return null;
-
-            Assert.DoesNotThrow(() => hudObject.SetActive(false));
-            LogAssert.NoUnexpectedReceived();
-
-            Object.Destroy(hudObject);
-            yield return null;
-        }
-
         private static T GetPrivateField<T>(object target, string fieldName)
         {
             FieldInfo field = target.GetType().GetField(

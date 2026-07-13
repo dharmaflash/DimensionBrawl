@@ -234,7 +234,6 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewCombatHudBinder binder =
                 canvasRoot != null ? canvasRoot.GetComponent<BossBarrageLaneReviewCombatHudBinder>() : null;
             BossBarrageLaneReviewHud reviewHud = FindSceneObjectOrNull<BossBarrageLaneReviewHud>(activeScene);
-            BossBarrageLaneReviewMobileHud mobileHud = FindSceneObjectOrNull<BossBarrageLaneReviewMobileHud>(activeScene);
             BossBarrageLaneReviewOverlayHud overlayHud = FindSceneObjectOrNull<BossBarrageLaneReviewOverlayHud>(activeScene);
 
             int activeDimensionSpriteCount = CountActiveDimensionHudSprites(hudInstance);
@@ -261,13 +260,9 @@ namespace DimensionBrawl.Editor
             bool dimensionSpritesReady = skinRoot != null
                 && skinRoot.activeInHierarchy
                 && activeDimensionSpriteCount >= 20;
-            bool legacyVisualPolicyReady = reviewHud != null
-                && mobileHud != null
+            bool hudOwnershipReady = reviewHud != null
                 && overlayHud != null
                 && !ReadBool(reviewHud, "showHud", true)
-                && !mobileHud.enabled
-                && !ReadBool(mobileHud, "showHud", true)
-                && !ReadBool(mobileHud, "drawHudVisuals", true)
                 && ReadBool(overlayHud, "showOverlay", false)
                 && !ReadBool(overlayHud, "drawIdleButton", true);
             StringBuilder layoutReport = new StringBuilder();
@@ -302,9 +297,6 @@ namespace DimensionBrawl.Editor
             report.AppendLine($"CANVAS_REFERENCE={canvasScaler?.referenceResolution.ToString() ?? "<null>"}");
             report.AppendLine($"CANVAS_MATCH_HEIGHT={canvasScaler?.matchWidthOrHeight.ToString("0.###") ?? "<null>"}");
             report.AppendLine($"LEGACY_REVIEW_HUD_VISIBLE={BoolText(ReadBool(reviewHud, "showHud", true))}");
-            report.AppendLine($"LEGACY_MOBILE_HUD_ENABLED={BoolText(mobileHud != null && mobileHud.enabled)}");
-            report.AppendLine($"LEGACY_MOBILE_HUD_VISIBLE={BoolText(ReadBool(mobileHud, "showHud", true))}");
-            report.AppendLine($"LEGACY_MOBILE_VISUALS_VISIBLE={BoolText(ReadBool(mobileHud, "drawHudVisuals", true))}");
             report.AppendLine($"LEGACY_IDLE_BUTTON_VISIBLE={BoolText(ReadBool(overlayHud, "drawIdleButton", true))}");
             report.AppendLine($"SCREEN={Screen.width}x{Screen.height}");
             report.AppendLine($"CURRENT_FRAME={Time.frameCount}");
@@ -329,7 +321,7 @@ namespace DimensionBrawl.Editor
             }
 
             report.AppendLine($"EVENT_SYSTEM={PassText(eventSystemReady)}");
-            report.AppendLine($"LEGACY_VISUAL_POLICY={PassText(legacyVisualPolicyReady)}");
+            report.AppendLine($"HUD_OWNERSHIP={PassText(hudOwnershipReady)}");
 
             bool passed = canvasReady
                 && combatHudReady
@@ -342,7 +334,7 @@ namespace DimensionBrawl.Editor
                 && textAreaReady
                 && summonActionReady
                 && eventSystemReady
-                && legacyVisualPolicyReady;
+                && hudOwnershipReady;
             report.AppendLine($"RESULT={(passed ? "PASS" : "FAIL")}");
 
             return new VerificationSnapshot(passed, report.ToString());

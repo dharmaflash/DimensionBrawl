@@ -218,7 +218,6 @@ namespace DimensionBrawl.Editor
             RequireSingle<CombatHudPresenter>(expectation, report);
             RequireSingle<CombatHudInputBridge>(expectation, report);
             RequireSingle<BossBarrageLaneReviewCombatHudBinder>(expectation, report);
-            RequireAtLeastOne<BossBarrageLaneReviewMobileHud>(expectation, report);
             RequireAtLeastOne<BossBarrageLaneReviewOverlayHud>(expectation, report);
         }
 

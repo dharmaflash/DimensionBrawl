@@ -204,78 +204,78 @@ namespace DimensionBrawl.Tests
 
                 StringAssert.Contains(
                     "READY LV1",
-                    BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildPrimarySummonLabel(
                         BossBarrageSummonReviewContract.Slot1HudLabel,
                         energy,
                         slot1));
                 StringAssert.Contains(
                     "NEED +100 EN",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
                         BossBarrageSummonReviewContract.Slot2HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED +200 EN",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(energy, slot1),
+                    CombatHudSummonReadoutFormatter.ResolvePrimarySummonFill01(energy, slot1),
                     0.001f);
                 Assert.AreEqual(
                     0.5f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(energy, slot2),
                     0.001f);
                 Assert.AreEqual(
                     1f / 3f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot3),
+                    CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(energy, slot3),
                     0.001f);
 
                 energy.GrantCurrentTierEnergy(100f);
 
                 StringAssert.Contains(
                     "READY LV2",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
                         BossBarrageSummonReviewContract.Slot2HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED +100 EN",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(energy, slot2),
                     0.001f);
                 Assert.AreEqual(
                     2f / 3f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot3),
+                    CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(energy, slot3),
                     0.001f);
 
                 SetPrivateInstanceField(slot2, "slotCooldownRemaining", 0.8f);
 
                 StringAssert.Contains(
                     "CD 0.8s",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot2,
                         BossBarrageSummonReviewContract.Slot2HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f - 0.8f / 1.5f,
-                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    CombatHudSummonReadoutFormatter.ResolveSupportSummonFill01(energy, slot2),
                     0.001f);
                 StringAssert.Contains(
                     "NEED +100 EN",
-                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    CombatHudSummonReadoutFormatter.BuildSupportSummonLabel(
                         slot3,
                         BossBarrageSummonReviewContract.Slot3HudLabel,
                         BossBarrageSummonReviewContract.LockedSummonLabel,
@@ -285,31 +285,6 @@ namespace DimensionBrawl.Tests
             finally
             {
                 Object.DestroyImmediate(playerObject);
-            }
-        }
-
-        [Test]
-        public void MobileHudDefaultsToThreeSummonButtonLayout()
-        {
-            GameObject hudObject = new GameObject("MobileHud");
-            try
-            {
-                BossBarrageLaneReviewMobileHud hud = hudObject.AddComponent<BossBarrageLaneReviewMobileHud>();
-
-                Assert.IsFalse(hud.UseSingleSummonButton);
-                Assert.Greater(hud.SummonSlot1GuiRect.width, 0f);
-                Assert.Greater(hud.SummonSlot2GuiRect.width, 0f);
-                Assert.Greater(hud.SummonSlot3GuiRect.width, 0f);
-
-                SetPrivateInstanceField(hud, "useSingleSummonButton", true);
-
-                Assert.IsTrue(hud.UseSingleSummonButton);
-                Assert.AreEqual(Rect.zero, hud.SummonSlot2GuiRect);
-                Assert.AreEqual(Rect.zero, hud.SummonSlot3GuiRect);
-            }
-            finally
-            {
-                Object.DestroyImmediate(hudObject);
             }
         }
 

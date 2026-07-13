@@ -598,7 +598,7 @@ namespace DimensionBrawl.Editor
             CharacterController playerController =
                 RequireComponent<CharacterController>(playerRoot, "Olympus validation player controller");
             GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
-            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoot(playerRoot);
             CanvasGroup combatHudCanvasGroup = RequireComponent<CanvasGroup>(
                 RequireObjectInScene(stageScene, CombatHudInstanceName),
                 "canonical combat HUD canvas group");
@@ -1399,9 +1399,9 @@ namespace DimensionBrawl.Editor
             GameObject closeThreatRoot = RequireChildObject(packageRoot.transform, SourceCloseThreatRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "canonical boss health");
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "canonical close threat health");
-            GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
-            ActionFoundationPromotedSummonReviewContractSetup.ApplyToRoots(playerRoot, hudRoot);
-            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
+            RequireChildObject(packageRoot.transform, SourceHudRootName);
+            ActionFoundationPromotedSummonReviewContractSetup.ApplyToRoot(playerRoot);
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoot(playerRoot);
             Camera[] introCameras = FindIntroCamerasToDisable(stageScene, packageRoot.transform);
             AudioListener[] introAudioListeners = FindIntroAudioListenersToDisable(stageScene, packageRoot.transform);
             Behaviour[] cutsceneBehaviours = FindCutsceneBehavioursToDisableOnHandoff(stageScene);

@@ -1,7 +1,6 @@
 using System;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
-using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -13,15 +12,15 @@ namespace DimensionBrawl.Editor
     {
         public static void ApplyToActiveScene()
         {
-            ApplyToRoots(null, null);
+            ApplyToRoot(null);
         }
 
         public static void ValidateActiveScene()
         {
-            ValidateRoots(null, null);
+            ValidateRoot(null);
         }
 
-        public static void ApplyToRoots(GameObject playerRoot, GameObject hudRoot)
+        public static void ApplyToRoot(GameObject playerRoot)
         {
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponentInScope<PlayerSummonSlot1Action>(playerRoot, "player SummonSlot1 action");
@@ -29,8 +28,6 @@ namespace DimensionBrawl.Editor
                 RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
             PlayerSupportSummonSlotAction summonSlot3Action =
                 RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponentInScope<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile review HUD");
 
             summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot1RequiredMana);
             summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot1CooldownSeconds);
@@ -60,21 +57,9 @@ namespace DimensionBrawl.Editor
                 LoadAsset<SummonSlotActionProfile>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot3ActionProfilePath));
             MarkDirty(summonSlot3Action);
 
-            SetObjectReference(mobileHud, "summonSlot1Action", summonSlot1Action);
-            SetObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
-            SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
-            SetString(mobileHud, "summonSlot1ActionName", BossBarrageSummonReviewContract.Slot1ActionName);
-            SetString(mobileHud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
-            SetString(mobileHud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
-            SetBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
-            SetString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
-            SetString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
-            SetString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
-            SetString(mobileHud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
-            MarkDirty(mobileHud);
         }
 
-        public static void ValidateRoots(GameObject playerRoot, GameObject hudRoot)
+        public static void ValidateRoot(GameObject playerRoot)
         {
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponentInScope<PlayerSummonSlot1Action>(playerRoot, "player SummonSlot1 action");
@@ -82,8 +67,6 @@ namespace DimensionBrawl.Editor
                 RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
             PlayerSupportSummonSlotAction summonSlot3Action =
                 RequireSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponentInScope<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile review HUD");
 
             ValidateFloat(
                 summonSlot1Action,
@@ -107,17 +90,6 @@ namespace DimensionBrawl.Editor
                 BossBarrageSummonReviewContract.Slot3,
                 ActionFoundationBossBarrageLaneReviewSetup.SummonSlot3ActionProfilePath);
 
-            ValidateObjectReference(mobileHud, "summonSlot1Action", summonSlot1Action);
-            ValidateObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
-            ValidateString(mobileHud, "summonSlot1ActionName", BossBarrageSummonReviewContract.Slot1ActionName);
-            ValidateString(mobileHud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
-            ValidateString(mobileHud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
-            ValidateBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
-            ValidateString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
-            ValidateString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
-            ValidateString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
-            ValidateString(mobileHud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
         }
 
         private static void ValidateSupportSummonSlotAction(
@@ -196,30 +168,6 @@ namespace DimensionBrawl.Editor
             return asset;
         }
 
-        private static void SetObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object value)
-        {
-            SerializedObject serializedObject = new SerializedObject(target);
-            RequireProperty(serializedObject, propertyName).objectReferenceValue = value;
-            serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            MarkDirty(target);
-        }
-
-        private static void SetString(UnityEngine.Object target, string propertyName, string value)
-        {
-            SerializedObject serializedObject = new SerializedObject(target);
-            RequireProperty(serializedObject, propertyName).stringValue = value;
-            serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            MarkDirty(target);
-        }
-
-        private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
-        {
-            SerializedObject serializedObject = new SerializedObject(target);
-            RequireProperty(serializedObject, propertyName).boolValue = value;
-            serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            MarkDirty(target);
-        }
-
         private static void ValidateObjectReference(
             UnityEngine.Object target,
             string propertyName,
@@ -239,16 +187,6 @@ namespace DimensionBrawl.Editor
         {
             string actual = RequireProperty(new SerializedObject(target), propertyName).stringValue;
             if (!string.Equals(actual, expected, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"{target.name}.{propertyName} expected {expected}, found {actual}.");
-            }
-        }
-
-        private static void ValidateBool(UnityEngine.Object target, string propertyName, bool expected)
-        {
-            bool actual = RequireProperty(new SerializedObject(target), propertyName).boolValue;
-            if (actual != expected)
             {
                 throw new InvalidOperationException(
                     $"{target.name}.{propertyName} expected {expected}, found {actual}.");

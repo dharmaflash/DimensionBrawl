@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DimensionBrawl.UI
 {
-    public static class BossBarrageLaneReviewMobileHudLabels
+    public static class CombatHudSummonReadoutFormatter
     {
         public static string BuildPrimarySummonLabel(
             string slotLabel,

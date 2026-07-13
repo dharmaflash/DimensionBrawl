@@ -488,7 +488,11 @@ Use these instead of inventing parallel systems:
 - `BossPressureActionDirector`
 - `BossBarragePocketReviewOwner`
 - `BossBarrageLaneReviewHud`
-- `BossBarrageLaneReviewMobileHud`
+- `BossBarrageLaneReviewCombatHudBinder`
+- `CombatHudPresenter`
+- `CombatHudInputBridge`
+- `CombatHudAimDragInput`
+- `CombatHudVirtualJoystick`
 - `ActionScreenCuePresenter`
 - `BossBarragePocketVfxCueBridge`
 - `BossBarragePocketCameraCueBridge`

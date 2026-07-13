@@ -26,7 +26,6 @@ namespace DimensionBrawl.UI
         [Header("References")]
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
-        [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
         [SerializeField] private Behaviour[] inputLockBehaviours = new Behaviour[0];
 
@@ -57,10 +56,8 @@ namespace DimensionBrawl.UI
         private OverlayMode mode;
         private bool hasPausedTime;
         private bool hasCapturedControlState;
-        private bool mobileHudEnabledBeforeOverlay;
         private bool[] inputLockEnabledBeforeOverlay = new bool[0];
         private float previousTimeScale = 1f;
-        private float hudScale = 1f;
         private bool telemetryVisible;
         private bool screenCuesVisible = true;
         private GUIStyle titleStyle;
@@ -76,7 +73,6 @@ namespace DimensionBrawl.UI
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
         public BossBarrageLaneReviewHud ReviewHud => reviewHud;
-        public BossBarrageLaneReviewMobileHud MobileHud => mobileHud;
         public ActionScreenCuePresenter ScreenCuePresenter => screenCuePresenter;
         public string RetrySceneName => retrySceneName;
         public string RetryScenePath => retryScenePath;
@@ -96,13 +92,11 @@ namespace DimensionBrawl.UI
         public void Configure(
             BossBarragePocketReviewOwner newPocketReviewOwner,
             BossBarrageLaneReviewHud newReviewHud,
-            BossBarrageLaneReviewMobileHud newMobileHud,
             ActionScreenCuePresenter newScreenCuePresenter)
         {
             UnsubscribePocketResult();
             pocketReviewOwner = newPocketReviewOwner;
             reviewHud = newReviewHud;
-            mobileHud = newMobileHud;
             screenCuePresenter = newScreenCuePresenter;
             CaptureSettings();
             if (isActiveAndEnabled)
@@ -184,11 +178,6 @@ namespace DimensionBrawl.UI
             if (reviewHud == null)
             {
                 reviewHud = GetComponent<BossBarrageLaneReviewHud>();
-            }
-
-            if (mobileHud == null)
-            {
-                mobileHud = GetComponent<BossBarrageLaneReviewMobileHud>();
             }
 
             if (screenCuePresenter == null)
@@ -406,17 +395,7 @@ namespace DimensionBrawl.UI
 
         private void DrawSettingsOverlay()
         {
-            float scale = ResolveScale();
             Rect panel = BeginModal("SETTINGS", "Review tuning");
-            GUILayout.Label($"HUD Scale {hudScale:0.00}", bodyStyle);
-            float newScale = GUILayout.HorizontalSlider(hudScale, 0.8f, 1.35f);
-            if (!Mathf.Approximately(newScale, hudScale))
-            {
-                hudScale = newScale;
-                mobileHud?.SetHudScale(hudScale);
-            }
-
-            GUILayout.Space(12f * scale);
             bool newTelemetry = GUILayout.Toggle(telemetryVisible, "Detailed Telemetry", bodyStyle);
             if (newTelemetry != telemetryVisible)
             {
@@ -792,7 +771,6 @@ namespace DimensionBrawl.UI
 
         private void CaptureSettings()
         {
-            hudScale = mobileHud != null ? mobileHud.HudScale : 1f;
             telemetryVisible = reviewHud != null && reviewHud.ShowDetailedTelemetry;
             screenCuesVisible = screenCuePresenter == null || screenCuePresenter.ShowScreenCues;
         }
@@ -857,18 +835,9 @@ namespace DimensionBrawl.UI
             hasPausedTime = false;
         }
 
-        private void SetMobileControlsEnabled(bool enabled)
-        {
-            if (mobileHud != null && mobileHud.enabled != enabled)
-            {
-                mobileHud.enabled = enabled;
-            }
-        }
-
         private void DisableGameplayControls()
         {
             CaptureControlState();
-            SetMobileControlsEnabled(false);
             SetInputLockBehavioursEnabled(false);
         }
 
@@ -878,8 +847,6 @@ namespace DimensionBrawl.UI
             {
                 return;
             }
-
-            SetMobileControlsEnabled(mobileHudEnabledBeforeOverlay);
 
             int lockCount = inputLockBehaviours != null ? inputLockBehaviours.Length : 0;
             for (int i = 0; i < lockCount; i++)
@@ -898,7 +865,6 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            mobileHudEnabledBeforeOverlay = mobileHud != null && mobileHud.enabled;
             int lockCount = inputLockBehaviours != null ? inputLockBehaviours.Length : 0;
             if (inputLockEnabledBeforeOverlay == null || inputLockEnabledBeforeOverlay.Length != lockCount)
             {
