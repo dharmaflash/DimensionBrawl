@@ -6,6 +6,6 @@ namespace DimensionBrawl.UI
         Login = 10,
         Lobby = 20,
         StageSelect = 30,
-        CombatHud = 40
+        Combat = 40
     }
 }

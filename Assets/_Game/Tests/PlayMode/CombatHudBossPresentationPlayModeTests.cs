@@ -72,14 +72,6 @@ namespace DimensionBrawl.Tests
                 hudRect.offsetMax = Vector2.zero;
                 hudRect.localScale = Vector3.one;
 
-                Behaviour mockPresenter = FindComponentByTypeName(
-                    hudInstance,
-                    "DimensionBrawl.UI.CombatHudMockFlowPresenter") as Behaviour;
-                if (mockPresenter != null)
-                {
-                    mockPresenter.enabled = false;
-                }
-
                 Component presenter = FindComponentByTypeName(
                     hudInstance,
                     "DimensionBrawl.UI.CombatHudPresenter");

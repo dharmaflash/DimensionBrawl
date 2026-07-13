@@ -17,24 +17,24 @@ namespace DimensionBrawl.Editor
             ReportCurrentReadiness();
         }
 
-        [MenuItem("DimensionBrawl/UI V1/Apply UI Test Build Settings")]
+        [MenuItem("DimensionBrawl/UI V1/Apply Product Build Settings")]
         public static void ApplyMenu()
         {
-            ApplyUiTestBuildSettings();
+            ApplyProductBuildSettings();
         }
 
-        public static void ApplyUiTestBuildSettings()
+        public static void ApplyProductBuildSettings()
         {
             UIScreenRouteTable routeTable = AssetDatabase.LoadAssetAtPath<UIScreenRouteTable>(RouteTablePath);
             if (routeTable == null)
             {
-                throw new System.InvalidOperationException($"UI V1 build settings apply could not find route table at {RouteTablePath}.");
+                throw new System.InvalidOperationException($"Product build settings apply could not find route table at {RouteTablePath}.");
             }
 
             List<RouteScene> routeScenes = CollectBuildRouteScenes(routeTable);
             if (routeScenes.Count == 0)
             {
-                throw new System.InvalidOperationException("UI V1 route table must contain at least one buildable route scene.");
+                throw new System.InvalidOperationException("Product route must contain at least one buildable scene.");
             }
 
             EditorBuildSettingsScene[] buildScenes = new EditorBuildSettingsScene[routeScenes.Count];
@@ -43,7 +43,7 @@ namespace DimensionBrawl.Editor
                 string scenePath = routeScenes[i].ScenePath;
                 if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
                 {
-                    throw new System.InvalidOperationException($"UI V1 route scene is missing: {scenePath}");
+                    throw new System.InvalidOperationException($"Product route scene is missing: {scenePath}");
                 }
 
                 buildScenes[i] = new EditorBuildSettingsScene(scenePath, true);
@@ -51,7 +51,7 @@ namespace DimensionBrawl.Editor
 
             EditorBuildSettings.scenes = buildScenes;
             AssetDatabase.SaveAssets();
-            Debug.Log($"UI V1 build settings applied. {routeScenes.Count} route scene(s) are enabled, starting at {routeScenes[0].ScenePath}.");
+            Debug.Log($"Product build settings applied. {routeScenes.Count} canonical scene(s) are enabled, starting at {routeScenes[0].ScenePath}.");
         }
 
         public static void ReportCurrentReadiness()
@@ -64,24 +64,34 @@ namespace DimensionBrawl.Editor
             }
 
             List<RouteScene> routeScenes = CollectBuildRouteScenes(routeTable);
-            HashSet<string> enabledBuildScenes = CollectEnabledBuildScenes();
-            string firstEnabledBuildScene = GetFirstEnabledBuildScene();
+            List<string> enabledBuildScenes = CollectEnabledBuildScenes();
+            HashSet<string> enabledBuildSceneSet = new HashSet<string>(enabledBuildScenes);
             List<RouteScene> missingScenes = new List<RouteScene>();
 
             for (int i = 0; i < routeScenes.Count; i++)
             {
-                if (!enabledBuildScenes.Contains(routeScenes[i].ScenePath))
+                if (!enabledBuildSceneSet.Contains(routeScenes[i].ScenePath))
                 {
                     missingScenes.Add(routeScenes[i]);
                 }
             }
 
-            bool firstSceneMatchesRouteStart = routeScenes.Count > 0
-                && string.Equals(firstEnabledBuildScene, routeScenes[0].ScenePath, System.StringComparison.Ordinal);
-
-            if (missingScenes.Count == 0 && firstSceneMatchesRouteStart)
+            bool routeOrderMatches = enabledBuildScenes.Count == routeScenes.Count;
+            if (routeOrderMatches)
             {
-                Debug.Log($"UI V1 build settings readiness passed. {routeScenes.Count} route scene(s) are enabled in Build Settings and the first scene is {firstEnabledBuildScene}.");
+                for (int i = 0; i < routeScenes.Count; i++)
+                {
+                    if (!string.Equals(enabledBuildScenes[i], routeScenes[i].ScenePath, System.StringComparison.Ordinal))
+                    {
+                        routeOrderMatches = false;
+                        break;
+                    }
+                }
+            }
+
+            if (missingScenes.Count == 0 && routeOrderMatches)
+            {
+                Debug.Log($"Product build settings readiness passed. {routeScenes.Count} canonical scene(s) are enabled in exact route order.");
                 return;
             }
 
@@ -90,23 +100,20 @@ namespace DimensionBrawl.Editor
             builder.Append(missingScenes.Count);
             builder.Append('/');
             builder.Append(routeScenes.Count);
-            builder.AppendLine(" route scene(s) are not enabled in Build Settings.");
-            builder.AppendLine("ProjectSettings were not modified by this report. Apply the UI test Build Settings in a reviewed settings pass:");
+            builder.AppendLine(" canonical scene(s) are not enabled in Build Settings.");
+            builder.AppendLine("ProjectSettings were not modified by this report. Apply Product Build Settings in a reviewed settings pass:");
 
             for (int i = 0; i < missingScenes.Count; i++)
             {
                 builder.Append("- ");
-                builder.Append(missingScenes[i].RouteId);
+                builder.Append(missingScenes[i].Label);
                 builder.Append(": ");
                 builder.AppendLine(missingScenes[i].ScenePath);
             }
 
-            if (!firstSceneMatchesRouteStart && routeScenes.Count > 0)
+            if (!routeOrderMatches)
             {
-                builder.Append("First enabled build scene should be ");
-                builder.Append(routeScenes[0].ScenePath);
-                builder.Append(", found ");
-                builder.AppendLine(string.IsNullOrWhiteSpace(firstEnabledBuildScene) ? "<none>" : firstEnabledBuildScene);
+                builder.AppendLine("Enabled Build Settings scenes do not exactly match canonical product route order.");
             }
 
             Debug.LogWarning(builder.ToString());
@@ -117,6 +124,14 @@ namespace DimensionBrawl.Editor
             List<RouteScene> routeScenes = CollectRouteScenes(routeTable);
             UIStageCatalog stageCatalog = AssetDatabase.LoadAssetAtPath<UIStageCatalog>(StageCatalogPath);
             AddStageCatalogScenes(routeScenes, stageCatalog);
+            AddUniqueRouteScene(
+                routeScenes,
+                "CombatContinuation",
+                OlympusStationCombatStageBuildSettings.ScenePath);
+            AddUniqueRouteScene(
+                routeScenes,
+                "StageClear",
+                StageClearUiBuildSettings.ScenePath);
             return routeScenes;
         }
 
@@ -139,7 +154,7 @@ namespace DimensionBrawl.Editor
 
                 if (routeId != UIRouteId.None && !string.IsNullOrWhiteSpace(scenePath))
                 {
-                    AddUniqueRouteScene(routeScenes, routeId, scenePath);
+                    AddUniqueRouteScene(routeScenes, routeId.ToString(), scenePath);
                 }
             }
 
@@ -158,12 +173,12 @@ namespace DimensionBrawl.Editor
                 UIStageCatalog.StageEntry stage = stageCatalog.GetStage(i);
                 if (stage.HasSceneRoute)
                 {
-                    AddUniqueRouteScene(routeScenes, UIRouteId.CombatHud, stage.ScenePath);
+                    AddUniqueRouteScene(routeScenes, UIRouteId.Combat.ToString(), stage.ScenePath);
                 }
             }
         }
 
-        private static void AddUniqueRouteScene(List<RouteScene> routeScenes, UIRouteId routeId, string scenePath)
+        private static void AddUniqueRouteScene(List<RouteScene> routeScenes, string label, string scenePath)
         {
             string normalizedPath = scenePath.Replace('\\', '/');
             for (int i = 0; i < routeScenes.Count; i++)
@@ -174,12 +189,12 @@ namespace DimensionBrawl.Editor
                 }
             }
 
-            routeScenes.Add(new RouteScene(routeId, normalizedPath));
+            routeScenes.Add(new RouteScene(label, normalizedPath));
         }
 
-        private static HashSet<string> CollectEnabledBuildScenes()
+        private static List<string> CollectEnabledBuildScenes()
         {
-            HashSet<string> scenePaths = new HashSet<string>();
+            List<string> scenePaths = new List<string>();
             EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
             for (int i = 0; i < scenes.Length; i++)
             {
@@ -192,29 +207,15 @@ namespace DimensionBrawl.Editor
             return scenePaths;
         }
 
-        private static string GetFirstEnabledBuildScene()
-        {
-            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
-            for (int i = 0; i < scenes.Length; i++)
-            {
-                if (scenes[i].enabled && !string.IsNullOrWhiteSpace(scenes[i].path))
-                {
-                    return scenes[i].path.Replace('\\', '/');
-                }
-            }
-
-            return string.Empty;
-        }
-
         private readonly struct RouteScene
         {
-            public RouteScene(UIRouteId routeId, string scenePath)
+            public RouteScene(string label, string scenePath)
             {
-                RouteId = routeId;
+                Label = label;
                 ScenePath = scenePath;
             }
 
-            public UIRouteId RouteId { get; }
+            public string Label { get; }
             public string ScenePath { get; }
         }
     }

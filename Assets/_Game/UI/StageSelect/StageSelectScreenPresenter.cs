@@ -39,7 +39,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Button startButton;
         [SerializeField] private Button backButton;
         [SerializeField] private UISceneFlowRouter router;
-        [SerializeField] private UIRouteId startRoute = UIRouteId.CombatHud;
+        [SerializeField] private UIRouteId startRoute = UIRouteId.Combat;
         [SerializeField] private UIRouteId backRoute = UIRouteId.Lobby;
         [SerializeField] private UnityEvent startRequested = new UnityEvent();
         [SerializeField] private UnityEvent backRequested = new UnityEvent();

@@ -37,17 +37,16 @@ namespace DimensionBrawl.Editor
         private const string ToastCatalogPath = "Assets/_Game/DesignData/UI/DB_UIToasts.asset";
         private const string TooltipCatalogPath = "Assets/_Game/DesignData/UI/DB_UITooltips.asset";
         private const string DialogCatalogPath = "Assets/_Game/DesignData/UI/DB_UIDialogs.asset";
-        private const string ResultPreviewCatalogPath = "Assets/_Game/DesignData/UI/DB_UIResultPreviews.asset";
         private const string LoginVideoProfilePath = "Assets/_Game/DesignData/UI/DB_LoginBackgroundVideo.asset";
         private const string LoginScreenPrefabPath = "Assets/_Game/UI/Login/PF_UI_LoginScreen.prefab";
         private const string LoginVideoRoot = "Assets/_Game/UI/Login/Art/Videos/";
         private const string LoginAccountServerToastId = "Login.AccountServerNotice";
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
         private const string ImportedRoot = "Assets/_Imported/";
-        private const string BossBarrageReviewScenePath =
-            "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        private const string CanonicalCombatScenePath =
+            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
 
-        [MenuItem("DimensionBrawl/UI V1/Validate UI Test Assets")]
+        [MenuItem("DimensionBrawl/UI V1/Validate UI Assets")]
         public static void ValidateMenu()
         {
             ValidateUiAssets();
@@ -78,7 +77,6 @@ namespace DimensionBrawl.Editor
             RequireAsset<UIToastCatalog>(ToastCatalogPath);
             RequireAsset<UITooltipCatalog>(TooltipCatalogPath);
             RequireAsset<UIDialogCatalog>(DialogCatalogPath);
-            RequireAsset<UIResultPreviewCatalog>(ResultPreviewCatalogPath);
             ValidateLoginVideoProfile(RequireAsset<LoginVideoBackgroundProfile>(LoginVideoProfilePath));
 
             HashSet<string> loadingCardIds = CollectStringKeys(LoadingDeckPath, "cards", "id");
@@ -119,8 +117,7 @@ namespace DimensionBrawl.Editor
                 StateMessageCatalogPath,
                 ToastCatalogPath,
                 TooltipCatalogPath,
-                DialogCatalogPath,
-                ResultPreviewCatalogPath);
+                DialogCatalogPath);
             HashSet<string> textKeys = CollectStringKeys(TextCatalogPath, "entries", "key");
             ValidateTextKeyReferences(textKeys, AccessibilityCatalogPath, "entries", "readableLabelKey", "narrationKey");
             ValidateTextKeyReferences(textKeys, ButtonStateCatalogPath, "states", "labelKey", "tooltipTextKey");
@@ -129,7 +126,6 @@ namespace DimensionBrawl.Editor
             ValidateTextKeyReferences(textKeys, ToastCatalogPath, "toasts", "messageTextKey");
             ValidateTextKeyReferences(textKeys, TooltipCatalogPath, "tooltips", "titleTextKey", "bodyTextKey");
             ValidateTextKeyReferences(textKeys, DialogCatalogPath, "dialogs", "titleTextKey", "bodyTextKey", "confirmTextKey", "cancelTextKey");
-            ValidateTextKeyReferences(textKeys, ResultPreviewCatalogPath, "results", "titleTextKey", "summaryTextKey", "primaryActionTextKey", "secondaryActionTextKey");
             HashSet<string> iconKeys = CollectStringKeys(IconCatalogPath, "icons", "key");
             ValidateKnownStringReferences(iconKeys, InputPromptCatalogPath, "prompts", "iconKey");
             ValidateKnownStringReferences(iconKeys, StateMessageCatalogPath, "states", "iconKey");
@@ -141,14 +137,12 @@ namespace DimensionBrawl.Editor
             ValidateRouteMotionReferences(motionIds);
             ValidateCueMotionReferences(motionIds);
             HashSet<string> cueIds = CollectStringKeys(CueBundleCatalogPath, "cueBundles", "id");
-            ValidateKnownStringReferences(cueIds, ResultPreviewCatalogPath, "results", "cueId");
             HashSet<string> toastIds = CollectStringKeys(ToastCatalogPath, "toasts", "id");
-            HashSet<string> resultIds = CollectStringKeys(ResultPreviewCatalogPath, "results", "id");
             HashSet<string> panelIds = CollectStringKeys(PanelCatalogPath, "panels", "panelId");
             ValidatePanelRoots(panelIds);
             ValidatePanelRouters(panelIds);
             ValidatePanelRequestButtons(panelIds);
-            ValidateKnownPrefabs(themeColorKeys, themeTextStyleKeys, motionIds, cueIds, loadingCardIds, toastIds, resultIds, routeIds, textKeys);
+            ValidateKnownPrefabs(themeColorKeys, themeTextStyleKeys, motionIds, cueIds, loadingCardIds, toastIds, routeIds, textKeys);
             ValidateUiScenes(routeIds, toastIds, textKeys);
             UIV1BuildSettingsReadinessReporter.ReportCurrentReadiness();
             Debug.Log("UI V1 asset validation passed.");
@@ -161,7 +155,7 @@ namespace DimensionBrawl.Editor
             SerializedProperty routes = serializedObject.FindProperty("routes");
             if (routes == null || !routes.isArray || routes.arraySize < 4)
             {
-                throw new InvalidOperationException("UI route table must contain Login, Lobby, StageSelect, and CombatHud routes.");
+                throw new InvalidOperationException("UI route table must contain Login, Lobby, StageSelect, and Combat routes.");
             }
 
             HashSet<UIRouteId> foundRoutes = new HashSet<UIRouteId>();
@@ -189,7 +183,7 @@ namespace DimensionBrawl.Editor
                 RequireScenePath(
                     scenePath,
                     $"{RouteTablePath}.routes[{i}].scenePath",
-                    routeId == UIRouteId.CombatHud);
+                    routeId == UIRouteId.Combat);
                 RequireSceneNameMatchesPath(sceneName, scenePath, $"{RouteTablePath}.routes[{i}]");
                 ValidateRouteLoadingPolicy(
                     routeId,
@@ -203,7 +197,7 @@ namespace DimensionBrawl.Editor
             RequireRoute(foundRoutes, UIRouteId.Login);
             RequireRoute(foundRoutes, UIRouteId.Lobby);
             RequireRoute(foundRoutes, UIRouteId.StageSelect);
-            RequireRoute(foundRoutes, UIRouteId.CombatHud);
+            RequireRoute(foundRoutes, UIRouteId.Combat);
             return foundRoutes;
         }
 
@@ -215,7 +209,7 @@ namespace DimensionBrawl.Editor
             HashSet<string> loadingCardIds,
             string label)
         {
-            bool isCombatHandoff = routeId == UIRouteId.CombatHud;
+            bool isCombatHandoff = routeId == UIRouteId.Combat;
             if (isCombatHandoff)
             {
                 RequireNonEmpty(loadingCardId, $"{label}.loadingCardId");
@@ -811,9 +805,9 @@ namespace DimensionBrawl.Editor
             HashSet<string> textKeys)
         {
             string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { UiSceneRoot });
-            if (sceneGuids.Length < 4)
+            if (sceneGuids.Length < 3)
             {
-                throw new InvalidOperationException($"{UiSceneRoot} must contain the Login, Lobby, StageSelect, and CombatHud UI test scenes.");
+                throw new InvalidOperationException($"{UiSceneRoot} must contain the Login, Lobby, and StageSelect UI scenes.");
             }
 
             string[] scenePaths = new string[sceneGuids.Length];
@@ -1086,12 +1080,6 @@ namespace DimensionBrawl.Editor
                 return true;
             }
 
-            if (scenePath.EndsWith("UI_CombatHudTest.unity", StringComparison.Ordinal))
-            {
-                routeId = UIRouteId.CombatHud;
-                return true;
-            }
-
             routeId = UIRouteId.None;
             return false;
         }
@@ -1132,18 +1120,6 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            if (scenePath.EndsWith("UI_CombatHudTest.unity", StringComparison.Ordinal))
-            {
-                CombatHudPresenter presenter = RequireSingleSceneComponent<CombatHudPresenter>(scenePath, roots);
-                CombatHudInputBridge inputBridge = RequireSingleSceneComponent<CombatHudInputBridge>(scenePath, roots);
-                RequireSingleSceneComponent<CombatHudMockFlowPresenter>(scenePath, roots);
-                SerializedObject bridgeObject = new SerializedObject(inputBridge);
-                RequireObjectReference(bridgeObject, "presenter", $"{scenePath} combat HUD input bridge presenter");
-                if (bridgeObject.FindProperty("presenter").objectReferenceValue != presenter)
-                {
-                    throw new InvalidOperationException($"{scenePath} combat HUD input bridge must reference the scene CombatHudPresenter.");
-                }
-            }
         }
 
         private static void ValidateSceneLobbyGuideConditionControls(
@@ -1259,7 +1235,6 @@ namespace DimensionBrawl.Editor
             HashSet<string> cueIds,
             HashSet<string> loadingCardIds,
             HashSet<string> toastIds,
-            HashSet<string> resultIds,
             HashSet<UIRouteId> routeIds,
             HashSet<string> textKeys)
         {
@@ -1279,9 +1254,7 @@ namespace DimensionBrawl.Editor
                     throw new InvalidOperationException($"{path} has {missingScriptCount} missing script reference(s).");
                 }
 
-                ValidateResultPreviewPresenters(path, prefab, resultIds);
                 ValidateCombatHudPresenters(path, prefab);
-                ValidateCombatHudMockFlowPresenters(path, prefab, toastIds, resultIds, textKeys);
                 ValidateSceneFlowRouters(path, prefab);
                 ValidateFlowStatusPresenters(path, prefab);
                 ValidateFlowNoticePresenters(path, prefab, toastIds);
@@ -1512,28 +1485,6 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ValidateResultPreviewPresenters(
-            string prefabPath,
-            GameObject prefab,
-            HashSet<string> resultIds)
-        {
-            UIResultPreviewPresenter[] presenters = prefab.GetComponentsInChildren<UIResultPreviewPresenter>(true);
-            for (int i = 0; i < presenters.Length; i++)
-            {
-                SerializedObject serializedObject = new SerializedObject(presenters[i]);
-                RequireObjectReference(serializedObject, "catalog", $"{prefabPath} result preview catalog");
-                RequireObjectReference(serializedObject, "textCatalog", $"{prefabPath} result preview text catalog");
-                RequireObjectReference(serializedObject, "canvasGroup", $"{prefabPath} result preview canvas group");
-                RequireObjectReference(serializedObject, "accentImage", $"{prefabPath} result preview accent image");
-                RequireObjectReference(serializedObject, "titleText", $"{prefabPath} result preview title text");
-                RequireObjectReference(serializedObject, "summaryText", $"{prefabPath} result preview summary text");
-                RequireObjectReference(serializedObject, "primaryActionText", $"{prefabPath} result preview primary action text");
-                RequireObjectReference(serializedObject, "secondaryActionText", $"{prefabPath} result preview secondary action text");
-                RequireKnownKey(resultIds, serializedObject.FindProperty("winResultId").stringValue, $"{prefabPath}.UIResultPreviewPresenter[{i}].winResultId");
-                RequireKnownKey(resultIds, serializedObject.FindProperty("failResultId").stringValue, $"{prefabPath}.UIResultPreviewPresenter[{i}].failResultId");
-            }
-        }
-
         private static void ValidateCombatHudPresenters(string prefabPath, GameObject prefab)
         {
             CombatHudPresenter[] presenters = prefab.GetComponentsInChildren<CombatHudPresenter>(true);
@@ -1551,98 +1502,6 @@ namespace DimensionBrawl.Editor
                 RequireObjectReferencePath(serializedObject, "actionCatalog", CombatHudActionCatalogPath, $"{prefabPath}.CombatHudPresenter[{i}].actionCatalog");
                 RequireNonEmptyArray(serializedObject.FindProperty("actionSlots"), $"{prefabPath}.CombatHudPresenter[{i}].actionSlots");
                 RequireNonEmptyArray(serializedObject.FindProperty("summonSlots"), $"{prefabPath}.CombatHudPresenter[{i}].summonSlots");
-            }
-        }
-
-        private static void ValidateCombatHudMockFlowPresenters(
-            string prefabPath,
-            GameObject prefab,
-            HashSet<string> toastIds,
-            HashSet<string> resultIds,
-            HashSet<string> textKeys)
-        {
-            CombatHudMockFlowPresenter[] presenters = prefab.GetComponentsInChildren<CombatHudMockFlowPresenter>(true);
-            for (int i = 0; i < presenters.Length; i++)
-            {
-                SerializedObject serializedObject = new SerializedObject(presenters[i]);
-                RequireObjectReference(serializedObject, "hudPresenter", $"{prefabPath} mock flow HUD presenter");
-                RequireObjectReference(serializedObject, "resultPreviewPresenter", $"{prefabPath} mock flow result presenter");
-                RequireObjectReference(serializedObject, "toastPresenter", $"{prefabPath} mock flow toast presenter");
-                RequireObjectReferencePath(serializedObject, "textCatalog", TextCatalogPath, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].textCatalog");
-                RequireObjectReference(serializedObject, "stateText", $"{prefabPath} mock flow state text");
-                RequireObjectReference(serializedObject, "startButton", $"{prefabPath} mock flow start button");
-                RequireObjectReference(serializedObject, "winButton", $"{prefabPath} mock flow win button");
-                RequireObjectReference(serializedObject, "failButton", $"{prefabPath} mock flow fail button");
-                RequireObjectReference(serializedObject, "resetButton", $"{prefabPath} mock flow reset button");
-                ValidateCombatHudSnapshot(textKeys, serializedObject.FindProperty("readySnapshot"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].readySnapshot");
-                ValidateCombatHudSnapshot(textKeys, serializedObject.FindProperty("runningSnapshot"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].runningSnapshot");
-                ValidateCombatHudSnapshot(textKeys, serializedObject.FindProperty("winSnapshot"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].winSnapshot");
-                ValidateCombatHudSnapshot(textKeys, serializedObject.FindProperty("failSnapshot"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].failSnapshot");
-                ValidateCombatHudSkillCooldowns(textKeys, serializedObject.FindProperty("skillCooldowns"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].skillCooldowns");
-                ValidateCombatHudSummonSlotStates(textKeys, serializedObject.FindProperty("summonSlotStates"), $"{prefabPath}.CombatHudMockFlowPresenter[{i}].summonSlotStates");
-                RequireKnownKey(resultIds, serializedObject.FindProperty("winResultId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].winResultId");
-                RequireKnownKey(resultIds, serializedObject.FindProperty("failResultId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].failResultId");
-                RequireKnownKey(toastIds, serializedObject.FindProperty("startToastId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].startToastId");
-                RequireKnownKey(toastIds, serializedObject.FindProperty("winToastId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].winToastId");
-                RequireKnownKey(toastIds, serializedObject.FindProperty("failToastId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].failToastId");
-                RequireKnownKey(toastIds, serializedObject.FindProperty("resetToastId").stringValue, $"{prefabPath}.CombatHudMockFlowPresenter[{i}].resetToastId");
-            }
-        }
-
-        private static void ValidateCombatHudSnapshot(HashSet<string> textKeys, SerializedProperty snapshot, string label)
-        {
-            if (snapshot == null)
-            {
-                throw new InvalidOperationException($"{label} is missing.");
-            }
-
-            RequireKnownKey(textKeys, snapshot.FindPropertyRelative("objectiveTextKey").stringValue, $"{label}.objectiveTextKey");
-            RequireKnownKey(textKeys, snapshot.FindPropertyRelative("inputModeTextKey").stringValue, $"{label}.inputModeTextKey");
-            RequireKnownKey(textKeys, snapshot.FindPropertyRelative("actionFeedbackTextKey").stringValue, $"{label}.actionFeedbackTextKey");
-            RequireKnownKey(textKeys, snapshot.FindPropertyRelative("stateTextKey").stringValue, $"{label}.stateTextKey");
-            RequireNonNegative(snapshot.FindPropertyRelative("timerSeconds").floatValue, $"{label}.timerSeconds");
-            RequireNonNegative(snapshot.FindPropertyRelative("healthCurrent").floatValue, $"{label}.healthCurrent");
-            RequirePositive(snapshot.FindPropertyRelative("healthMax").floatValue, $"{label}.healthMax");
-            RequireNonNegative(snapshot.FindPropertyRelative("resourceCurrent").floatValue, $"{label}.resourceCurrent");
-            RequirePositive(snapshot.FindPropertyRelative("resourceMax").floatValue, $"{label}.resourceMax");
-        }
-
-        private static void ValidateCombatHudSkillCooldowns(HashSet<string> textKeys, SerializedProperty bindings, string label)
-        {
-            RequireNonEmptyArray(bindings, label);
-            for (int i = 0; i < bindings.arraySize; i++)
-            {
-                SerializedProperty binding = bindings.GetArrayElementAtIndex(i);
-                CombatHudActionId actionId = (CombatHudActionId)binding.FindPropertyRelative("actionId").intValue;
-                if (actionId == CombatHudActionId.None)
-                {
-                    throw new InvalidOperationException($"{label}[{i}].actionId must not be None.");
-                }
-
-                float normalizedRemaining = binding.FindPropertyRelative("normalizedRemaining").floatValue;
-                if (normalizedRemaining < 0f || normalizedRemaining > 1f)
-                {
-                    throw new InvalidOperationException($"{label}[{i}].normalizedRemaining must stay within 0-1.");
-                }
-
-                RequireKnownKey(textKeys, binding.FindPropertyRelative("labelTextKey").stringValue, $"{label}[{i}].labelTextKey");
-            }
-        }
-
-        private static void ValidateCombatHudSummonSlotStates(HashSet<string> textKeys, SerializedProperty bindings, string label)
-        {
-            RequireNonEmptyArray(bindings, label);
-            for (int i = 0; i < bindings.arraySize; i++)
-            {
-                SerializedProperty binding = bindings.GetArrayElementAtIndex(i);
-                CombatHudActionId actionId = (CombatHudActionId)binding.FindPropertyRelative("actionId").intValue;
-                if (actionId == CombatHudActionId.None)
-                {
-                    throw new InvalidOperationException($"{label}[{i}].actionId must not be None.");
-                }
-
-                RequireKnownKey(textKeys, binding.FindPropertyRelative("labelTextKey").stringValue, $"{label}[{i}].labelTextKey");
-                RequireKnownKey(textKeys, binding.FindPropertyRelative("stateTextKey").stringValue, $"{label}[{i}].stateTextKey");
             }
         }
 
@@ -2163,17 +2022,17 @@ namespace DimensionBrawl.Editor
         private static void RequireScenePath(
             string scenePath,
             string label,
-            bool allowCombatReviewScene = false)
+            bool allowCanonicalCombatScene = false)
         {
             RequireNonEmpty(scenePath, label);
             string normalized = scenePath.Replace('\\', '/');
-            bool isAllowedCombatReviewScene = allowCombatReviewScene
-                && string.Equals(normalized, BossBarrageReviewScenePath, StringComparison.Ordinal);
-            if (!normalized.StartsWith(UiSceneRoot, StringComparison.Ordinal) && !isAllowedCombatReviewScene)
+            bool isCanonicalCombatScene = allowCanonicalCombatScene
+                && string.Equals(normalized, CanonicalCombatScenePath, StringComparison.Ordinal);
+            if (!normalized.StartsWith(UiSceneRoot, StringComparison.Ordinal) && !isCanonicalCombatScene)
             {
                 throw new InvalidOperationException(
                     $"{label} must stay under {UiSceneRoot}"
-                    + $" unless it is the reviewed combat handoff scene, found {scenePath}.");
+                    + $" unless it is the canonical combat handoff scene, found {scenePath}.");
             }
 
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(normalized) == null)

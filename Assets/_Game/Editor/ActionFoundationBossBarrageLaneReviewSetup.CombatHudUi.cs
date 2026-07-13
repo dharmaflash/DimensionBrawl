@@ -297,13 +297,6 @@ namespace DimensionBrawl.Editor
             SetObjectReference(binder, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(binder, "summonSlot3Action", summonSlot3Action);
             SetBool(binder, "useSingleSummonPresentation", false);
-            CombatHudMockFlowPresenter mockFlow =
-                canvasRoot.GetComponentInChildren<CombatHudMockFlowPresenter>(includeInactive: true);
-            if (mockFlow != null)
-            {
-                SetBehaviourEnabled(mockFlow, false);
-            }
-
             ConfigureCombatHudInputComponents(
                 canvasRoot,
                 inputBridge,
@@ -704,7 +697,6 @@ namespace DimensionBrawl.Editor
             ConfigureImage(hudRoot, "ResourceBar_Track", sprites["Hud_PlayerMpBackground"], new Rect(1011.5f, 1296f, 616f, 28f), preserveAspect: false);
             ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(1017.5f, 1299f, 605f, 21f));
             HideLooseHudText(hudRoot, "AmmoText");
-            HideLegacyHudLabels(hudRoot);
             HideActionButtonTexts(hudRoot);
             ConfigureActionButtonAvailabilityEffects(
                 hudRoot,
@@ -1059,35 +1051,6 @@ namespace DimensionBrawl.Editor
             text.text = defaultText;
             MarkComponentDirty(text);
             return text;
-        }
-
-        private static void HideLegacyHudLabels(GameObject hudRoot)
-        {
-            string[] hiddenNames =
-            {
-                "CombatFieldReadback",
-                "CombatFieldLabel",
-                "MockState",
-                "MockStartButton",
-                "MockWinButton",
-                "MockFailButton",
-                "MockResetButton",
-                "RetryHudButton",
-                "ReturnLobbyButton",
-                "LobbyButton",
-                "ResultPreviewOverlay",
-                "CombatToast"
-            };
-
-            for (int i = 0; i < hiddenNames.Length; i++)
-            {
-                Transform target = FindHudDescendant(hudRoot.transform, hiddenNames[i]);
-                if (target != null)
-                {
-                    target.gameObject.SetActive(false);
-                    EditorUtility.SetDirty(target.gameObject);
-                }
-            }
         }
 
         private static void HideLooseHudText(GameObject hudRoot, string objectName)

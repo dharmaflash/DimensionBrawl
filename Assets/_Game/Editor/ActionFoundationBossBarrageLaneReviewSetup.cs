@@ -21,6 +21,7 @@ namespace DimensionBrawl.Editor
     public static partial class ActionFoundationBossBarrageLaneReviewSetup
     {
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        public const string ReviewSceneName = "ActionFoundationBossBarrageLaneReview";
         private const string OlympusInvasionStageScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         public const string PatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_NeedleLock.asset";
@@ -6351,12 +6352,11 @@ namespace DimensionBrawl.Editor
         private static void ConfigureOverlayRoutes(BossBarrageLaneReviewOverlayHud overlayHud)
         {
             UIScreenRouteTable routeTable = AssetDatabase.LoadAssetAtPath<UIScreenRouteTable>(UIRouteTablePath);
-            UIScreenRouteTable.Route retryRoute = ResolveRoute(routeTable, UIRouteId.CombatHud);
             UIScreenRouteTable.Route stageSelectRoute = ResolveRoute(routeTable, UIRouteId.StageSelect);
             UIScreenRouteTable.Route lobbyRoute = ResolveRoute(routeTable, UIRouteId.Lobby);
             overlayHud.ConfigureRoutes(
-                retryRoute.SceneName,
-                retryRoute.ScenePath,
+                ReviewSceneName,
+                ReviewScenePath,
                 stageSelectRoute.SceneName,
                 stageSelectRoute.ScenePath,
                 lobbyRoute.SceneName,

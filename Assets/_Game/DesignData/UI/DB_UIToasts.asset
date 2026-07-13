@@ -41,34 +41,6 @@ MonoBehaviour:
     durationSeconds: 1.05
     priority: 8
     cueId: DeniedActionMicroToast
-  - id: Combat.MockStart
-    messageTextKey: ui.toast.combat_mock_start
-    iconKey: status_ready
-    accentColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
-    durationSeconds: 1.1
-    priority: 7
-    cueId: StageToCombatMoodBridge
-  - id: Combat.MockWin
-    messageTextKey: ui.toast.combat_mock_win
-    iconKey: status_ready
-    accentColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
-    durationSeconds: 1.2
-    priority: 9
-    cueId: ResultWinPreview
-  - id: Combat.MockFail
-    messageTextKey: ui.toast.combat_mock_fail
-    iconKey: status_locked
-    accentColor: {r: 1, g: 0.68, b: 0.22, a: 1}
-    durationSeconds: 1.2
-    priority: 9
-    cueId: ResultFailPreview
-  - id: Combat.MockReset
-    messageTextKey: ui.toast.combat_mock_reset
-    iconKey: status_ready
-    accentColor: {r: 0.58, g: 0.66, b: 0.68, a: 1}
-    durationSeconds: 1
-    priority: 5
-    cueId: TitleEnter
   - id: Common.RouteBusy
     messageTextKey: ui.toast.route_busy
     iconKey: status_locked

@@ -24,7 +24,7 @@ V1 UI should prove:
 - Safe Area must be represented by an authored scene/prefab root, not left as a later runtime-only concern.
 - UI input prompts must use common action names across keyboard/mouse, gamepad, and mobile display rows.
 - Avoid hardcoded device-specific branches in UI presenters. Device differences belong in prompt/layout data.
-- For contest or local test builds that need to boot directly into the UI loop, Build Settings should register the UI route scenes in route-table order, starting with `UI_LoginTest`. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
+- For contest or local test builds that need to boot directly into the product loop, Build Settings should register the data-driven route in order, starting with `UI_LoginTest` and continuing through the canonical combat stages. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
 
 ## Parallel Work Rule
 
@@ -32,7 +32,7 @@ UI work may happen on another PC if it follows these rules:
 
 - Work under `Assets/_Game/UI/`, `Assets/_Game/Scenes/UI/`, and optional `Assets/_Game/DesignData/UI/`.
 - Do not edit canonical combat or runtime stage scenes for UI layout experiments.
-- Use separate UI inspection scenes such as `UI_LoginTest`, `UI_LobbyTest`, and `UI_CombatHudTest`.
+- Use separate UI inspection scenes for `UI_LoginTest`, `UI_LobbyTest`, and `UI_StageSelectTest`. Inspect the combat HUD prefab through canonical combat scenes.
 - Use authored prefabs and serialized references. Do not build the full UI hierarchy at runtime.
 - Do not reference `Assets/_Imported/` directly.
 - Do not add summon gameplay, account login, networking, currencies, progression, gacha, shop, reward economy, or final mobile HUD behavior in this slice.
@@ -54,15 +54,15 @@ Do not create a single catch-all UI folder with unrelated prefabs, sprites, data
 
 ## Scene Flow Boundary
 
-Other-PC UI work may include a minimal scene-flow shell if it stays UI-owned:
+Other-PC UI work may extend the scene-flow shell if route ownership stays UI-owned:
 
-- Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> UI_CombatHudTest -> UI_LobbyTest`.
+- Canonical route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> OlympusCorridorInvasionStage -> OlympusStationCombatStage -> UI_StageClearTest`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
 - Loading cards are conditional presentation for routes with a real wait reason. Immediate UI-to-UI routes should use a short fade without a card/progress layer.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
 - Scene flow code must not own save data, account login, progression unlocks, combat result resolution, or gameplay state.
-- The combat HUD test scene may simulate `Start Combat`, `Win`, `Fail`, and `Return Lobby` with mock UI state only.
-- Do not connect the flow directly to canonical combat scenes until an explicit integration pass.
+- The combat HUD consumes canonical encounter state. Do not add standalone mock win/fail ownership or a parallel combat scene.
+- Changes to canonical combat scene wiring must remain coordinated with combat validation and PlayMode coverage.
 - Do not create a permanent all-purpose `GameManager` just to move between UI scenes.
 
 If a transition needs persistent objects, keep them narrow:
@@ -192,24 +192,24 @@ Before merging UI work from another PC:
 
 - The branch starts from the latest pushed `main`.
 - No changes to canonical combat or runtime stage scenes unless explicitly coordinated.
-- For UI-loop test builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the route-table UI scenes only.
+- For product-loop builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the canonical route scenes in order.
 - No direct references to `_Imported/`.
 - No full runtime UI hierarchy construction.
-- Scene navigation is limited to the UI test route unless explicitly coordinated.
+- Scene navigation follows the serialized product route and canonical stage transitions.
 - No summon gameplay or economy implementation.
 - No EN gameplay ownership. Combat HUD may show `EN LV1~LV3`, but gameplay owns charge, tier upgrade, and spend reset.
 - No hand-of-cards, lane-first, or direct target-selection default UI.
-- Login, lobby, and combat HUD can be inspected separately.
+- Login, lobby, and stage select can be inspected separately; the combat HUD is inspected in canonical combat scenes.
 - Combat HUD uses canonical action names from `COMBAT_V1_SPEC.md`.
 - UI scripts are presenters/bridges, not gameplay owners.
 - Text fits at common landscape widths and does not overlap controls.
 
 ## Recommended First UI Tasks
 
-1. Create `UI_LoginTest` with a title screen root and start event placeholder.
-2. Create `UI_LobbyTest` with a guide slot, primary PvE CTA, and compact secondary anchors.
-3. Create `UI_CombatHudTest` with static HUD layout and mock state updates.
-4. Only after the three screens are inspectable, add shared transition/audio/cue data.
+1. Maintain `UI_LoginTest` as the product-loop entry scene.
+2. Maintain `UI_LobbyTest` and `UI_StageSelectTest` as separately inspectable UI-owned scenes.
+3. Validate `PF_UI_CombatHud` against canonical encounter state in both Olympus combat stages.
+4. Keep transition/audio/cue data shared and route-driven.
 
 ## Implementation Notes
 

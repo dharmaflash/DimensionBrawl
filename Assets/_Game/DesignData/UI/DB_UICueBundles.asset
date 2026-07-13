@@ -69,19 +69,3 @@ MonoBehaviour:
     cameraCueId:
     durationSeconds: 0.8
     cleanupPolicy: 0
-  - id: ResultWinPreview
-    eventId: ResultWinPreview
-    uiMotionId: result_rank_reward_sequence
-    sfxId: ui_result_win_preview
-    vfxId:
-    cameraCueId:
-    durationSeconds: 0.65
-    cleanupPolicy: 0
-  - id: ResultFailPreview
-    eventId: ResultFailPreview
-    uiMotionId: result_fail_fast_retry
-    sfxId: ui_result_fail_preview
-    vfxId:
-    cameraCueId:
-    durationSeconds: 0.35
-    cleanupPolicy: 0

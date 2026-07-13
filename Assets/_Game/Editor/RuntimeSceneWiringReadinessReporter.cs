@@ -18,8 +18,8 @@ namespace DimensionBrawl.Editor
 
         private static readonly SceneExpectation[] MinimumSceneExpectations =
         {
-            new("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", SceneContractKind.BossBarrageReview),
-            new("Assets/_Game/Scenes/UI/UI_CombatHudTest.unity", SceneContractKind.UiRoute)
+            new("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", SceneContractKind.CanonicalCombat),
+            new("Assets/_Game/Scenes/OlympusStationCombatStage.unity", SceneContractKind.CanonicalCombat)
         };
 
         [MenuItem("DimensionBrawl/Reports/Runtime Scene Wiring Readiness")]
@@ -200,11 +200,8 @@ namespace DimensionBrawl.Editor
 
             switch (expectation.ContractKind)
             {
-                case SceneContractKind.BossBarrageReview:
-                    CheckBossBarrageReviewContract(expectation, report);
-                    break;
-                case SceneContractKind.UiRoute:
-                    CheckUiRouteContract(expectation, report);
+                case SceneContractKind.CanonicalCombat:
+                    CheckCanonicalCombatContract(expectation, report);
                     break;
                 default:
                     report.AddIssue($"{expectation.ScenePath}: unknown scene contract kind {expectation.ContractKind}.");
@@ -212,22 +209,13 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void CheckBossBarrageReviewContract(SceneExpectation expectation, ReportBuilder report)
+        private static void CheckCanonicalCombatContract(SceneExpectation expectation, ReportBuilder report)
         {
             RequireSingle<BossBarrageEncounterController>(expectation, report);
             RequireSingle<CombatHudPresenter>(expectation, report);
             RequireSingle<CombatHudInputBridge>(expectation, report);
             RequireSingle<BossBarrageLaneReviewCombatHudBinder>(expectation, report);
             RequireAtLeastOne<BossBarrageLaneReviewOverlayHud>(expectation, report);
-        }
-
-        private static void CheckUiRouteContract(SceneExpectation expectation, ReportBuilder report)
-        {
-            RequireAtLeastOne<MonoBehaviour>(expectation, report, "UI route MonoBehaviour");
-            if (Object.FindObjectsByType<CombatHudPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
-            {
-                report.AppendLine("- UI_CombatHudTest has no CombatHudPresenter; classified as route/transition smoke, not runtime HUD proof.");
-            }
         }
 
         private static void RequireSingle<T>(SceneExpectation expectation, ReportBuilder report, string label = null)
@@ -274,8 +262,7 @@ namespace DimensionBrawl.Editor
 
         private enum SceneContractKind
         {
-            BossBarrageReview,
-            UiRoute
+            CanonicalCombat
         }
 
         private sealed class ReportBuilder

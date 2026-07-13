@@ -35,9 +35,9 @@ MonoBehaviour:
     useAsyncLoading: 0
     minimumLoadingSeconds: 0
   - routeId: 40
-    sceneName: ActionFoundationBossBarrageLaneReview
-    scenePath: Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity
+    sceneName: OlympusCorridorInvasionStage
+    scenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
     transitionId: stage_to_combat_mood_bridge
     loadingCardId: stage_to_combat_mood_bridge
-    useAsyncLoading: 0
+    useAsyncLoading: 1
     minimumLoadingSeconds: 0.65
