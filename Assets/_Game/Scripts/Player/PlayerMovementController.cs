@@ -89,12 +89,11 @@ namespace DimensionBrawl.Player
         private Vector3 requestedFacingDirection;
         private float requestedFacingTimer;
         private float actionMoveInputSpeedScale = 1f;
-        private float cinematicMoveInputSpeedScale = 1f;
         private bool actionMoveInputScaleActive;
-        private bool cinematicMoveInputScaleActive;
-        private bool sharedMoveInputBlocked;
-        private bool sharedLookActionBlocked;
-        private bool sharedFacingRequestsBlocked;
+        private PlayerInputLockSource sharedMoveInputLockSources;
+        private PlayerInputLockSource sharedLookInputLockSources;
+        private PlayerInputLockSource sharedFacingRequestLockSources;
+        private PlayerInputLockSource cinematicMoveInputLockSources;
         private bool laneConstraintEnabled = true;
         private bool scriptedMoveInputOverrideActive;
         private Vector2 scriptedMoveInputOverride;
@@ -109,7 +108,12 @@ namespace DimensionBrawl.Player
         public Vector3 CurrentMoveDirection => currentMoveDirection;
         public bool HasMoveInput => currentMoveInput.sqrMagnitude > 0f;
         public bool IsStopSettling => stopSettleTimer > 0f;
-        public bool IsCinematicMoveInputLocked => cinematicMoveInputScaleActive && cinematicMoveInputSpeedScale <= 0f;
+        public bool IsCinematicMoveInputLocked => cinematicMoveInputLockSources != PlayerInputLockSource.None;
+        public bool IsSharedMoveInputBlocked => sharedMoveInputLockSources != PlayerInputLockSource.None;
+        public bool IsSharedLookInputBlocked => sharedLookInputLockSources != PlayerInputLockSource.None;
+        public bool AreSharedFacingRequestsBlocked => sharedFacingRequestLockSources != PlayerInputLockSource.None;
+        public PlayerInputLockSource SharedMoveInputLockSources => sharedMoveInputLockSources;
+        public PlayerInputLockSource CinematicMoveInputLockSources => cinematicMoveInputLockSources;
         public bool LaneConstraintEnabled => laneConstraintEnabled;
         public Vector3 FacingDirection => transform.forward;
         public SummonLaneSpace LaneSpace => laneSpace;
@@ -125,7 +129,7 @@ namespace DimensionBrawl.Player
 
         public void SetMoveInput(Vector2 input)
         {
-            if (!CanAcceptSharedInput() || sharedMoveInputBlocked)
+            if (!CanAcceptSharedInput() || IsSharedMoveInputBlocked)
             {
                 mobileMoveInput = Vector2.zero;
                 return;
@@ -136,7 +140,7 @@ namespace DimensionBrawl.Player
 
         public void SetLookInput(Vector2 input)
         {
-            if (!CanAcceptSharedInput() || sharedLookActionBlocked)
+            if (!CanAcceptSharedInput() || sharedLookInputLockSources != PlayerInputLockSource.None)
             {
                 mobileLookInput = Vector2.zero;
                 return;
@@ -145,15 +149,19 @@ namespace DimensionBrawl.Player
             mobileLookInput = Vector2.ClampMagnitude(input, 1f);
         }
 
-        public void SetSharedMoveInputBlocked(bool blocked)
+        public void SetSharedMoveInputBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (sharedMoveInputBlocked == blocked)
+            bool wasBlocked = IsSharedMoveInputBlocked;
+            sharedMoveInputLockSources = PlayerInputLockMask.WithState(
+                sharedMoveInputLockSources,
+                source,
+                blocked);
+            if (wasBlocked == IsSharedMoveInputBlocked)
             {
                 return;
             }
 
-            sharedMoveInputBlocked = blocked;
-            if (!sharedMoveInputBlocked)
+            if (!IsSharedMoveInputBlocked)
             {
                 return;
             }
@@ -162,29 +170,39 @@ namespace DimensionBrawl.Player
             planarVelocity = Vector3.zero;
         }
 
-        public void SetSharedLookActionBlocked(bool blocked)
+        public void SetSharedLookActionBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (sharedLookActionBlocked == blocked)
+            bool wasBlocked = sharedLookInputLockSources != PlayerInputLockSource.None;
+            sharedLookInputLockSources = PlayerInputLockMask.WithState(
+                sharedLookInputLockSources,
+                source,
+                blocked);
+            bool isBlocked = sharedLookInputLockSources != PlayerInputLockSource.None;
+            if (wasBlocked == isBlocked)
             {
                 return;
             }
 
-            sharedLookActionBlocked = blocked;
-            if (sharedLookActionBlocked)
+            if (isBlocked)
             {
                 mobileLookInput = Vector2.zero;
             }
         }
 
-        public void SetSharedFacingRequestsBlocked(bool blocked)
+        public void SetSharedFacingRequestsBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (sharedFacingRequestsBlocked == blocked)
+            bool wasBlocked = sharedFacingRequestLockSources != PlayerInputLockSource.None;
+            sharedFacingRequestLockSources = PlayerInputLockMask.WithState(
+                sharedFacingRequestLockSources,
+                source,
+                blocked);
+            bool isBlocked = sharedFacingRequestLockSources != PlayerInputLockSource.None;
+            if (wasBlocked == isBlocked)
             {
                 return;
             }
 
-            sharedFacingRequestsBlocked = blocked;
-            if (sharedFacingRequestsBlocked)
+            if (isBlocked)
             {
                 ClearRequestedFacing();
             }
@@ -252,28 +270,23 @@ namespace DimensionBrawl.Player
             actionMoveInputScaleActive = false;
         }
 
-        public void SetCinematicMoveInputSpeedScale(float speedScale)
+        public void SetCinematicMoveInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicMoveInputSpeedScale = Mathf.Clamp01(speedScale);
-            cinematicMoveInputScaleActive = true;
-            if (cinematicMoveInputSpeedScale <= 0f)
+            bool wasLocked = IsCinematicMoveInputLocked;
+            cinematicMoveInputLockSources = PlayerInputLockMask.WithState(
+                cinematicMoveInputLockSources,
+                source,
+                locked);
+            if (wasLocked == IsCinematicMoveInputLocked || !IsCinematicMoveInputLocked)
             {
-                ClearSharedInput();
-                planarVelocity = Vector3.zero;
-                externalPlanarVelocity = Vector3.zero;
-                externalPlanarDuration = 0f;
-                externalPlanarTimer = 0f;
+                return;
             }
-            else
-            {
-                ClampPlanarVelocityToInputScales();
-            }
-        }
 
-        public void ClearCinematicMoveInputSpeedScale()
-        {
-            cinematicMoveInputSpeedScale = 1f;
-            cinematicMoveInputScaleActive = false;
+            ClearSharedInput();
+            planarVelocity = Vector3.zero;
+            externalPlanarVelocity = Vector3.zero;
+            externalPlanarDuration = 0f;
+            externalPlanarTimer = 0f;
         }
 
         public void SetLaneConstraintEnabled(bool enabled)
@@ -283,7 +296,7 @@ namespace DimensionBrawl.Player
 
         public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
         {
-            if (sharedFacingRequestsBlocked)
+            if (sharedFacingRequestLockSources != PlayerInputLockSource.None)
             {
                 return;
             }
@@ -380,7 +393,7 @@ namespace DimensionBrawl.Player
                 return scriptedMoveInputOverride;
             }
 
-            if (sharedMoveInputBlocked)
+            if (IsSharedMoveInputBlocked)
             {
                 return Vector2.zero;
             }
@@ -402,7 +415,7 @@ namespace DimensionBrawl.Player
                 return scriptedLookInputOverride;
             }
 
-            if (sharedLookActionBlocked)
+            if (sharedLookInputLockSources != PlayerInputLockSource.None)
             {
                 return Vector2.zero;
             }
@@ -536,9 +549,9 @@ namespace DimensionBrawl.Player
                 speedScale = Mathf.Min(speedScale, actionMoveInputSpeedScale);
             }
 
-            if (cinematicMoveInputScaleActive)
+            if (IsCinematicMoveInputLocked)
             {
-                speedScale = Mathf.Min(speedScale, cinematicMoveInputSpeedScale);
+                speedScale = 0f;
             }
 
             return speedScale;
@@ -554,13 +567,14 @@ namespace DimensionBrawl.Player
 
         private void UpdateFacing(Vector3 desiredMoveDirection, Vector2 lookInput, float deltaTime)
         {
-            Vector3 facingDirection = sharedFacingRequestsBlocked
+            bool facingRequestsBlocked = sharedFacingRequestLockSources != PlayerInputLockSource.None;
+            Vector3 facingDirection = facingRequestsBlocked
                 ? Vector3.zero
                 : BuildWorldDirection(lookInput);
 
             TryRequestSharpTurn(desiredMoveDirection);
 
-            if (sharedFacingRequestsBlocked)
+            if (facingRequestsBlocked)
             {
                 ClearRequestedFacing();
             }

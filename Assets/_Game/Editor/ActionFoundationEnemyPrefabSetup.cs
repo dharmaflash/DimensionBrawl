@@ -259,7 +259,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 soldier,
                 "contactDamageVfxPrefab",
-                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.ContactDamageVfxPrefabPath));
             SetFloat(soldier, "contactDamageVfxScale", 0.46f);
             SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
             SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
@@ -350,12 +350,12 @@ namespace DimensionBrawl.Editor
             projectileOrigin.localScale = Vector3.one;
 
             GameObject projectilePrefabObject =
-                LoadAsset<GameObject>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath);
+                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath);
             LaneActionProjectile projectilePrefab = projectilePrefabObject.GetComponent<LaneActionProjectile>();
             if (projectilePrefab == null)
             {
                 throw new InvalidOperationException(
-                    $"{ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath} is missing LaneActionProjectile.");
+                    $"{ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath} is missing LaneActionProjectile.");
             }
 
             SetObjectReference(driver, "soldier", soldier);
@@ -417,7 +417,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 soldier,
                 "contactDamageVfxPrefab",
-                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.ContactDamageVfxPrefabPath));
             SetFloat(soldier, "contactDamageVfxScale", 0.46f);
             SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
             SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
@@ -467,7 +467,7 @@ namespace DimensionBrawl.Editor
                 soldier,
                 "contactDamageVfxPrefab",
                 AssetDatabase.LoadAssetAtPath<GameObject>(
-                    ActionFoundationBossBarrageLaneReviewSetup.SummonContactDamageLightningVfxPrefabPath));
+                    ActionFoundationCombatAssetPaths.ContactDamageVfxPrefabPath));
             ValidateFloat(soldier, "contactDamageVfxScale", 0.46f);
             ValidateFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
             ValidateFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
@@ -561,7 +561,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 driver,
                 "projectilePrefab",
-                LoadAsset<GameObject>(ActionFoundationBossBarrageLaneReviewSetup.SummonSlot2ProjectilePrefabPath)
+                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath)
                     .GetComponent<LaneActionProjectile>());
             ValidateLocalReference(driver, "projectileRoot", root);
             ValidateFloat(driver, "projectileSpeed", 18f);

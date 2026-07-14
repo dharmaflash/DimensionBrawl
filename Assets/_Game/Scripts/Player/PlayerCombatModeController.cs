@@ -44,7 +44,7 @@ namespace DimensionBrawl.Player
 
         private bool actionEnabledHere;
         private bool queuedSwap;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
         private InputAction subscribedSwapInputAction;
         private InputAction keyboardFallbackAction;
 
@@ -54,6 +54,7 @@ namespace DimensionBrawl.Player
             : rangedActionProfile;
         public bool IsRangedMode => CurrentMode == PlayerCombatMode.Ranged;
         public bool IsMeleeMode => CurrentMode == PlayerCombatMode.Melee;
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
 
         public event Action<PlayerCombatMode> CombatModeChanged;
 
@@ -107,10 +108,14 @@ namespace DimensionBrawl.Player
             ConsumeQueuedSwap();
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicInputLocked = locked;
-            if (locked)
+            bool wasLocked = IsCinematicInputLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            if (!wasLocked && IsCinematicInputLocked)
             {
                 queuedSwap = false;
             }
@@ -317,7 +322,7 @@ namespace DimensionBrawl.Player
 
         private bool CanAcceptQueuedInput()
         {
-            return isActiveAndEnabled && !cinematicInputLocked;
+            return isActiveAndEnabled && !IsCinematicInputLocked;
         }
     }
 }

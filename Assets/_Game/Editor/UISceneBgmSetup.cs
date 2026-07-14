@@ -11,10 +11,10 @@ namespace DimensionBrawl.Editor
     {
         private const string ScreenCatalogPath = "Assets/_Game/DesignData/UI/DB_UIScreenCatalog.asset";
         private const string SoundContextCatalogPath = "Assets/_Game/DesignData/UI/DB_UISoundContexts.asset";
-        private const string LoginScenePath = "Assets/_Game/Scenes/UI/UI_LoginTest.unity";
-        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
+        private const string LoginScenePath = "Assets/_Game/Scenes/UI/UI_Login.unity";
+        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
         private const string BgmPlayerRootName = "UI Scene BGM";
-        private const string UiTestCameraName = "UI Test Camera";
+        private const string UiCameraName = "UI Camera";
 
         [MenuItem("DimensionBrawl/UI V1/Reapply Login And Lobby BGM")]
         public static void ReapplyLoginAndLobbyBgmMenu()
@@ -68,10 +68,10 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureAudioListener(string scenePath, Scene scene)
         {
-            GameObject cameraObject = FindRoot(scene, UiTestCameraName);
+            GameObject cameraObject = FindRoot(scene, UiCameraName);
             if (cameraObject == null)
             {
-                throw new InvalidOperationException($"{scenePath} is missing {UiTestCameraName}.");
+                throw new InvalidOperationException($"{scenePath} is missing {UiCameraName}.");
             }
 
             EnsureComponent<AudioListener>(cameraObject);

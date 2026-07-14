@@ -50,7 +50,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 0.75f)] private float maxPerfectDodgeEdgeAlpha = 0.48f;
         [SerializeField, Min(0.01f)] private float perfectDodgeDomainSeconds = 3f;
         [SerializeField, Min(0.01f)] private float perfectDodgePulseSeconds = 0.22f;
-        [SerializeField, Min(0f)] private float perfectDodgeBandThickness = 26f;
         [SerializeField] private Material perfectDodgeDomainMaterial;
         [SerializeField] private Material perfectDodgeGlitchOverlayMaterial;
         [SerializeField, Range(0f, 2f)] private float perfectDodgeShaderIntensity = 0.92f;

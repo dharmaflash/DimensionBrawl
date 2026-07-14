@@ -19,6 +19,8 @@ namespace DimensionBrawl.Editor
         private const string GameBgmRoot = "Assets/_Game/Art/Audio/BGM/";
         private const string GameCharacterRoot = "Assets/_Game/Art/Characters/";
         private const string GamePlayerCharacterRoot = "Assets/_Game/Art/Characters/Player/";
+        private const string GameEnemyRoleWeaponRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/";
         private const string GameEnvironmentRoot = "Assets/_Game/Art/Environment/";
         private const string GameCinematicVoiceRoot = "Assets/_Game/Art/Audio/Voice/Cinematics/";
         private const string CombatGirlAnimationRoot =
@@ -32,6 +34,8 @@ namespace DimensionBrawl.Editor
             "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader";
         private const string PretendardMediumFontPath =
             "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_Medium_Dynamic.asset";
+        private const string CanonicalInoriModelPath =
+            "Assets/_Game/Art/Characters/Player/Inori/Models/Inori_Unity.fbx";
 
         private static readonly string[] CanonicalPretendardFontPaths =
         {
@@ -64,11 +68,26 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/SpecialSkillsEffectsPack/"
         };
 
+        private static readonly TextureReferenceConsolidation[] TextureReferenceConsolidations =
+        {
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/MissileLauncher/Textures/T_BazookaMagazine_BaseColor.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AircraftModels/T_BazookaMagazine_BaseColor_c58cc6a9.png",
+                "Assets/_Game/Art/Materials/ActionFoundation/IntroGatePodBombingReview/AF_BombingReview_BombOriginal.mat"),
+            new(
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AerialBomb/Explosion_6_0d04b1c2.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AerialBomb2/Explosion_6_0d04b1c2.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Materials/AerialBomb2/Effect_40_Explosion.mat"),
+            new(
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AirstrikeBombExplosion/Explosion_1_9064114c.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/ShellExplosion/Explosion_1_9064114c.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Materials/ShellExplosion/Effect_10_Explosion.mat")
+        };
+
         private static readonly string[] CanonicalScenePaths =
         {
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
-            "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
-            "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
+            "Assets/_Game/Scenes/OlympusStationCombatStage.unity"
         };
 
         // Unity packs every Resources folder. These vendor samples and starter font assets are not
@@ -114,6 +133,8 @@ namespace DimensionBrawl.Editor
         {
             List<string> canonicalReferenceChanges = EnsureCanonicalTmpRuntimeAssets();
             List<string> resourceRelocations = RelocateNonRuntimeResources();
+            canonicalReferenceChanges.AddRange(EnsureCanonicalCharacterMeshMemoryBudgets());
+            canonicalReferenceChanges.AddRange(EnsureCanonicalTextureReferenceConsolidation());
             canonicalReferenceChanges.AddRange(EnsureCombatGirlRuntimeAnimationClips());
             canonicalReferenceChanges.AddRange(StripRuntimeScriptEditorIconDependencies());
             HashSet<string> dependencyPaths = CollectCanonicalDependencies(out int resourcesAssetCount);
@@ -242,6 +263,203 @@ namespace DimensionBrawl.Editor
             }
 
             return changes;
+        }
+
+        private static List<string> EnsureCanonicalCharacterMeshMemoryBudgets()
+        {
+            var changes = new List<string>();
+            ModelImporter importer = AssetImporter.GetAtPath(CanonicalInoriModelPath) as ModelImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Inori model importer is missing: {CanonicalInoriModelPath}");
+            }
+
+            if (importer.importAnimation)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Inori model unexpectedly contains runtime animation data: {CanonicalInoriModelPath}");
+            }
+
+            if (!importer.importBlendShapes)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Inori model must retain facial blend shapes: {CanonicalInoriModelPath}");
+            }
+
+            if (!importer.isReadable)
+            {
+                return changes;
+            }
+
+            importer.isReadable = false;
+            importer.SaveAndReimport();
+            changes.Add(
+                $"Mesh | audited skinned character CPU copy disabled; blend shapes and GPU skinning retained | `{CanonicalInoriModelPath}`");
+            return changes;
+        }
+
+        private static List<string> EnsureCanonicalTextureReferenceConsolidation()
+        {
+            var changes = new List<string>();
+            for (int consolidationIndex = 0;
+                 consolidationIndex < TextureReferenceConsolidations.Length;
+                 consolidationIndex++)
+            {
+                TextureReferenceConsolidation consolidation =
+                    TextureReferenceConsolidations[consolidationIndex];
+                Texture canonical = AssetDatabase.LoadAssetAtPath<Texture>(
+                    consolidation.CanonicalTexturePath);
+                Texture duplicate = AssetDatabase.LoadAssetAtPath<Texture>(
+                    consolidation.DuplicateTexturePath);
+                Material consumer = AssetDatabase.LoadAssetAtPath<Material>(
+                    consolidation.ConsumerMaterialPath);
+                if (canonical == null || duplicate == null || consumer == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical texture consolidation asset is missing: " +
+                        $"{consolidation.CanonicalTexturePath}, " +
+                        $"{consolidation.DuplicateTexturePath}, " +
+                        $"{consolidation.ConsumerMaterialPath}");
+                }
+
+                string[] propertyNames = consumer.GetTexturePropertyNames();
+                bool foundOwnedTexture = false;
+                bool needsReplacement = false;
+                for (int propertyIndex = 0; propertyIndex < propertyNames.Length; propertyIndex++)
+                {
+                    Texture current = consumer.GetTexture(propertyNames[propertyIndex]);
+                    if (current == canonical || current == duplicate)
+                    {
+                        foundOwnedTexture = true;
+                    }
+
+                    needsReplacement |= current == duplicate;
+                }
+
+                if (!foundOwnedTexture)
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical consumer no longer owns either reviewed texture: " +
+                        $"{consolidation.ConsumerMaterialPath}");
+                }
+
+                if (!needsReplacement)
+                {
+                    continue;
+                }
+
+                if (!FilesAreByteIdentical(
+                        consolidation.CanonicalTexturePath,
+                        consolidation.DuplicateTexturePath)
+                    || !ImporterMetadataEquivalent(
+                        consolidation.CanonicalTexturePath,
+                        consolidation.DuplicateTexturePath))
+                {
+                    throw new InvalidOperationException(
+                        $"Reviewed duplicate texture payload or importer policy diverged: " +
+                        $"{consolidation.DuplicateTexturePath}");
+                }
+
+                int replacementCount = 0;
+                for (int propertyIndex = 0; propertyIndex < propertyNames.Length; propertyIndex++)
+                {
+                    string propertyName = propertyNames[propertyIndex];
+                    if (consumer.GetTexture(propertyName) != duplicate)
+                    {
+                        continue;
+                    }
+
+                    consumer.SetTexture(propertyName, canonical);
+                    replacementCount++;
+                }
+
+                if (replacementCount <= 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Duplicate texture reference could not be replaced: " +
+                        $"{consolidation.ConsumerMaterialPath}");
+                }
+
+                EditorUtility.SetDirty(consumer);
+                changes.Add(
+                    $"Texture | {replacementCount} byte-identical material reference(s) consolidated | " +
+                    $"`{consolidation.ConsumerMaterialPath}` -> `{consolidation.CanonicalTexturePath}`");
+            }
+
+            if (changes.Count > 0)
+            {
+                AssetDatabase.SaveAssets();
+            }
+
+            return changes;
+        }
+
+        private static bool FilesAreByteIdentical(string leftPath, string rightPath)
+        {
+            var leftInfo = new FileInfo(leftPath);
+            var rightInfo = new FileInfo(rightPath);
+            if (!leftInfo.Exists || !rightInfo.Exists || leftInfo.Length != rightInfo.Length)
+            {
+                return false;
+            }
+
+            using FileStream left = File.OpenRead(leftPath);
+            using FileStream right = File.OpenRead(rightPath);
+            var leftBuffer = new byte[64 * 1024];
+            var rightBuffer = new byte[leftBuffer.Length];
+            while (true)
+            {
+                int leftRead = left.Read(leftBuffer, 0, leftBuffer.Length);
+                int rightRead = right.Read(rightBuffer, 0, rightBuffer.Length);
+                if (leftRead != rightRead)
+                {
+                    return false;
+                }
+
+                if (leftRead == 0)
+                {
+                    return true;
+                }
+
+                for (int i = 0; i < leftRead; i++)
+                {
+                    if (leftBuffer[i] != rightBuffer[i])
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        private static bool ImporterMetadataEquivalent(string leftPath, string rightPath)
+        {
+            return string.Equals(
+                NormalizeImporterMetadata(leftPath + ".meta"),
+                NormalizeImporterMetadata(rightPath + ".meta"),
+                StringComparison.Ordinal);
+        }
+
+        private static string NormalizeImporterMetadata(string metaPath)
+        {
+            if (!File.Exists(metaPath))
+            {
+                return string.Empty;
+            }
+
+            string[] lines = File.ReadAllLines(metaPath);
+            var builder = new StringBuilder();
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith("guid: ", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                builder.AppendLine(lines[i]);
+            }
+
+            return builder.ToString();
         }
 
         private static List<string> StripRuntimeScriptEditorIconDependencies()
@@ -621,6 +839,8 @@ namespace DimensionBrawl.Editor
                 bool dimensionHud = path.StartsWith(DimensionHudRoot, StringComparison.Ordinal);
                 bool vfx = IsVfxTexture(path);
                 bool largeVfx = vfx && largestAxis >= 2048;
+                bool enemyRoleWeaponBaseColor = IsEnemyRoleWeaponBaseColor(path)
+                    && largestAxis >= 2048;
                 bool characterAuxiliary = IsCharacterAuxiliaryTexture(path) && largestAxis >= 2048;
                 bool environmentAuxiliary = IsEnvironmentAuxiliaryTexture(path) && largestAxis >= 2048;
                 bool largeCanonicalTexture = largestAxis >= 4096;
@@ -636,6 +856,7 @@ namespace DimensionBrawl.Editor
                 bool needsExplicitAndroidBudget = streamableLargeTexture && !currentAndroid.overridden;
                 if (!dimensionHud
                     && !largeVfx
+                    && !enemyRoleWeaponBaseColor
                     && !characterAuxiliary
                     && !environmentAuxiliary
                     && !largeCanonicalTexture
@@ -658,6 +879,11 @@ namespace DimensionBrawl.Editor
                 {
                     androidMaxSize = 1024;
                     budgetReason = "Canonical large VFX texture capped at 1K on Android";
+                }
+                else if (enemyRoleWeaponBaseColor)
+                {
+                    androidMaxSize = 1024;
+                    budgetReason = "Enemy role-weapon base color capped at 1K on Android";
                 }
                 else if (characterAuxiliary)
                 {
@@ -708,6 +934,13 @@ namespace DimensionBrawl.Editor
             }
 
             return false;
+        }
+
+        private static bool IsEnemyRoleWeaponBaseColor(string path)
+        {
+            return path.StartsWith(GameEnemyRoleWeaponRoot, StringComparison.Ordinal)
+                && Path.GetFileNameWithoutExtension(path)
+                    .IndexOf("BaseColor", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool IsCharacterAuxiliaryTexture(string path)
@@ -953,7 +1186,9 @@ namespace DimensionBrawl.Editor
             builder.AppendLine($"- Audio candidates: {report.AudioCandidateCount:N0}");
             builder.AppendLine($"- Audio clips changed: {report.ChangedAudioCount:N0}");
             builder.AppendLine($"- Audio clips already compliant: {report.CompliantAudioCount:N0}");
-            builder.AppendLine("- Texture policy: Android-only automatic compression; 4K canonical/Resources textures cap at 2K, large VFX plus character/environment auxiliary maps cap at 1K, and 2K mipped Default/Normal textures stream while player base color and Dimension HUD retain their source budget.");
+            builder.AppendLine("- Texture policy: Android-only automatic compression; 4K canonical/Resources textures cap at 2K, large VFX, enemy role-weapon base colors, and character/environment auxiliary maps cap at 1K, and 2K mipped Default/Normal textures stream while player base color and Dimension HUD retain their source budget.");
+            builder.AppendLine("- Mesh policy: the canonical Inori model keeps its authored geometry, skinning, and blend shapes while dropping the audited unused CPU-readable mesh copy.");
+            builder.AppendLine("- Duplicate policy: canonical runtime materials share byte-identical texture payloads only when source bytes and complete importer metadata match.");
             builder.AppendLine("- Audio policy: long ambience/BGM/cinematic voice streams in the background; large combat one-shots stay preloaded as low-decode-cost ADPCM compressed data.");
             builder.AppendLine();
             builder.AppendLine("## Changes");
@@ -1026,6 +1261,23 @@ namespace DimensionBrawl.Editor
 
             public string SourcePath { get; }
             public string DestinationPath { get; }
+        }
+
+        private readonly struct TextureReferenceConsolidation
+        {
+            public TextureReferenceConsolidation(
+                string canonicalTexturePath,
+                string duplicateTexturePath,
+                string consumerMaterialPath)
+            {
+                CanonicalTexturePath = canonicalTexturePath;
+                DuplicateTexturePath = duplicateTexturePath;
+                ConsumerMaterialPath = consumerMaterialPath;
+            }
+
+            public string CanonicalTexturePath { get; }
+            public string DuplicateTexturePath { get; }
+            public string ConsumerMaterialPath { get; }
         }
 
         private sealed class OptimizationReport

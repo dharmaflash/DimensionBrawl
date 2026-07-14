@@ -28,6 +28,9 @@ namespace DimensionBrawl.Combat
         public bool IsWon => state == EncounterState.Won;
         public bool IsFailed => state == EncounterState.Failed;
 
+        public event System.Action Won;
+        public event System.Action Failed;
+
         public void ConfigureCombatants(CombatHealth newPlayerHealth, CombatHealth newEnemyHealth)
         {
             bool wasActive = isActiveAndEnabled;
@@ -93,6 +96,7 @@ namespace DimensionBrawl.Combat
 
             state = EncounterState.Won;
             SetMarkers();
+            Won?.Invoke();
             onWon.Invoke();
         }
 
@@ -105,6 +109,7 @@ namespace DimensionBrawl.Combat
 
             state = EncounterState.Failed;
             SetMarkers();
+            Failed?.Invoke();
             onFailed.Invoke();
         }
 

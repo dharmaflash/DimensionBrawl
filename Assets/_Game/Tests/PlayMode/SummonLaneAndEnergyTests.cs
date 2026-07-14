@@ -2828,6 +2828,56 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineClashSweepsBetweenScanPositions()
+        {
+            GameObject allyObject = new GameObject("SweptAllySummonActor");
+            SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+            allyCollider.isTrigger = true;
+            allyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+            allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+            allyHealth.ResetHealthToFull();
+            SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+            allyProxy.ConfigureHealth(allyHealth);
+            SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+            allyClash.ConfigureReferences(allyProxy, allyHealth);
+            allyClash.ConfigureTuning(100f, 0.2f, 0f, 0.3f, 0.45f);
+
+            GameObject enemyObject = new GameObject("SweptEnemySummonActor");
+            SphereCollider enemyCollider = enemyObject.AddComponent<SphereCollider>();
+            enemyCollider.isTrigger = true;
+            enemyCollider.center = new Vector3(0f, 0.9f, 0f);
+            enemyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+            enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+            enemyHealth.ResetHealthToFull();
+            SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
+            enemyProxy.ConfigureHealth(enemyHealth);
+
+            Vector3 allyStart = Vector3.back * 2f;
+            Vector3 allyEnd = Vector3.forward * 2f;
+            allyProxy.Activate(allyStart, Vector3.forward, 1, 0f, 1f, 4f, 4f, 140f, 1f);
+            enemyProxy.Activate(Vector3.zero, Vector3.back, 1, 0f, 1f, 4f, 4f, 120f, 1f);
+            Physics.SyncTransforms();
+
+            allyClash.Tick(0.1f);
+            Assert.AreEqual(0, allyClash.TotalClashCount);
+
+            allyObject.transform.position = allyEnd;
+            Physics.SyncTransforms();
+            allyClash.Tick(0.1f);
+
+            Assert.AreEqual(1, allyClash.TotalClashCount);
+            Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileSummon, allyClash.LastTargetKind);
+            Assert.IsTrue(allyProxy.IsAdvanceHeld);
+            Assert.IsTrue(enemyProxy.IsAdvanceHeld);
+
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
         public void SummonFrontlineClashDamagesHostileBodyTargetAndHoldsAdvance()
         {
             GameObject allyObject = new GameObject("AllySummonActor");

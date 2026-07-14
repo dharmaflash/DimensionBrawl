@@ -40,7 +40,7 @@ namespace DimensionBrawl.Tests
             AudioClip clip = AudioClip.Create("SpatialOneShotAudioPoolTestClip", 4410, 1, 44100, false);
             try
             {
-                owner.AddComponent<AudioListener>();
+                AddAudioListenerIfMissing(owner);
                 SpatialOneShotAudioPool pool = owner.AddComponent<SpatialOneShotAudioPool>();
                 int prewarmedCount = pool.PoolSize;
                 Assert.GreaterOrEqual(prewarmedCount, 2);
@@ -120,7 +120,7 @@ namespace DimensionBrawl.Tests
             AudioClip clip = AudioClip.Create("CombatVfxCuePlayerAudioTestClip", 44100, 1, 44100, false);
             try
             {
-                owner.AddComponent<AudioListener>();
+                AddAudioListenerIfMissing(owner);
                 GameObject audioObject = new GameObject("AudioCue");
                 audioObject.transform.SetParent(prefab.transform, worldPositionStays: false);
                 AudioSource source = audioObject.AddComponent<AudioSource>();
@@ -159,7 +159,7 @@ namespace DimensionBrawl.Tests
             AudioClip secondClip = AudioClip.Create("CombatVfxCuePlayerRandomAudioClipB", 44100, 1, 44100, false);
             try
             {
-                owner.AddComponent<AudioListener>();
+                AddAudioListenerIfMissing(owner);
                 GameObject audioObject = new GameObject("RandomAudioCue");
                 audioObject.transform.SetParent(prefab.transform, worldPositionStays: false);
                 AudioSource source = audioObject.AddComponent<AudioSource>();
@@ -202,7 +202,7 @@ namespace DimensionBrawl.Tests
             AudioClip clip = AudioClip.Create("CombatVfxCuePlayerAudioTailClip", 44100, 1, 44100, false);
             try
             {
-                owner.AddComponent<AudioListener>();
+                AddAudioListenerIfMissing(owner);
                 GameObject audioObject = new GameObject("RandomAudioCue");
                 audioObject.transform.SetParent(prefab.transform, worldPositionStays: false);
                 AudioSource source = audioObject.AddComponent<AudioSource>();
@@ -316,12 +316,11 @@ namespace DimensionBrawl.Tests
         [UnityTest]
         public IEnumerator LaneActionProjectileRestartsAudioSourcesOnConfigure()
         {
-            GameObject listener = new GameObject("LaneActionProjectileAudioListener");
+            GameObject listener = CreateAudioListenerIfMissing("LaneActionProjectileAudioListener");
             GameObject projectileObject = new GameObject("LaneActionProjectileAudioTest");
             AudioClip clip = CreateTestClip("LaneActionProjectileAudioClip");
             try
             {
-                listener.AddComponent<AudioListener>();
                 AudioSource source = AddOneShotAudio(projectileObject, clip);
                 LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
                 projectileObject.SetActive(false);
@@ -347,12 +346,11 @@ namespace DimensionBrawl.Tests
         [UnityTest]
         public IEnumerator BossBarrageProjectileRestartsAudioSourcesOnConfigure()
         {
-            GameObject listener = new GameObject("BossBarrageProjectileAudioListener");
+            GameObject listener = CreateAudioListenerIfMissing("BossBarrageProjectileAudioListener");
             GameObject projectileObject = new GameObject("BossBarrageProjectileAudioTest");
             AudioClip clip = CreateTestClip("BossBarrageProjectileAudioClip");
             try
             {
-                listener.AddComponent<AudioListener>();
                 AudioSource source = AddOneShotAudio(projectileObject, clip);
                 BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
                 projectileObject.SetActive(false);
@@ -424,6 +422,26 @@ namespace DimensionBrawl.Tests
             source.loop = false;
             source.spatialBlend = 0f;
             return source;
+        }
+
+        private static void AddAudioListenerIfMissing(GameObject host)
+        {
+            if (Object.FindFirstObjectByType<AudioListener>() == null)
+            {
+                host.AddComponent<AudioListener>();
+            }
+        }
+
+        private static GameObject CreateAudioListenerIfMissing(string name)
+        {
+            if (Object.FindFirstObjectByType<AudioListener>() != null)
+            {
+                return null;
+            }
+
+            GameObject listener = new GameObject(name);
+            listener.AddComponent<AudioListener>();
+            return listener;
         }
 
         private static void AssertCueHasNoAuthoredAudio(CombatVfxCueProfile profile, CombatVfxCueId cueId)

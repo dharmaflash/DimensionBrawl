@@ -135,7 +135,9 @@ namespace DimensionBrawl.Tests
                 "DimensionBrawl.UI.CombatHudAimDragInput, Assembly-CSharp",
                 throwOnError: true);
             Component aimDragInput = inputObject.AddComponent(aimDragInputType);
-            GameObject eventSystemObject = new("CameraOnlyDragEventSystem", typeof(EventSystem));
+            GameObject ownedEventSystemObject = EventSystem.current == null
+                ? new GameObject("CameraOnlyDragEventSystem", typeof(EventSystem))
+                : null;
 
             try
             {
@@ -185,7 +187,7 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual(
                     Vector2.zero,
                     GetPrivateField<Vector2>(movementController, "mobileLookInput"));
-                Assert.IsTrue(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+                Assert.IsTrue(movementController.AreSharedFacingRequestsBlocked);
 
                 yield return null;
                 yield return null;
@@ -201,7 +203,7 @@ namespace DimensionBrawl.Tests
 
                 ((IPointerUpHandler)aimDragInput).OnPointerUp(pointerDrag);
                 Assert.AreEqual(Vector2.zero, cameraController.LookPeekInput);
-                Assert.IsFalse(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+                Assert.IsFalse(movementController.AreSharedFacingRequestsBlocked);
 
                 rangedAction.SetFireHeld(true);
                 Assert.IsTrue(rangedAction.IsFireHeld);
@@ -214,14 +216,18 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual(routedAimInput.x, rangedAction.AimInput.x, 0.001f);
                 Assert.AreEqual(routedAimInput.x, cameraController.AimOrbitInput.x, 0.001f);
                 Assert.AreEqual(Vector2.zero, cameraController.LookPeekInput);
-                Assert.IsFalse(GetPrivateField<bool>(movementController, "sharedFacingRequestsBlocked"));
+                Assert.IsFalse(movementController.AreSharedFacingRequestsBlocked);
 
                 ((IPointerUpHandler)aimDragInput).OnPointerUp(pointerDrag);
                 rangedAction.SetFireHeld(false);
             }
             finally
             {
-                Object.DestroyImmediate(eventSystemObject);
+                if (ownedEventSystemObject != null)
+                {
+                    Object.DestroyImmediate(ownedEventSystemObject);
+                }
+
                 Object.DestroyImmediate(inputObject);
                 Object.DestroyImmediate(cameraObject);
                 Object.DestroyImmediate(playerObject);
@@ -282,9 +288,9 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator BossBarrageBinderRunsAndStopsReviewedRateRefreshRoutine()
+        public IEnumerator BossBarrageBinderRunsAndStopsConfiguredRateRefreshRoutine()
         {
-            GameObject binderObject = new("ReviewedRateCombatHudBinder", typeof(RectTransform));
+            GameObject binderObject = new("ConfiguredRateCombatHudBinder", typeof(RectTransform));
             binderObject.SetActive(false);
             System.Type presenterType = System.Type.GetType(
                 "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp",

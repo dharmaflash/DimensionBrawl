@@ -21,8 +21,7 @@ namespace DimensionBrawl.Editor
         private static readonly SceneTarget[] SceneTargets =
         {
             new("Olympus Corridor", "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "Runtime stage"),
-            new("Boss Barrage", "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", "Combat review"),
-            new("Frontline Motivation", "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity", "Combat review")
+            new("Olympus Station", "Assets/_Game/Scenes/OlympusStationCombatStage.unity", "Runtime stage")
         };
 
         [MenuItem("DimensionBrawl/Performance/Generate Mobile Performance Baseline")]
@@ -167,6 +166,8 @@ namespace DimensionBrawl.Editor
 
             metrics.MeshUsages.Sort(CompareMeshUsages);
             metrics.ColliderModelAssetCount = colliderModelAssetPaths.Count;
+            CollectColliderUsages(scene, metrics);
+            metrics.ColliderUsages.Sort(CompareColliderUsages);
 
             foreach (FrameLoopMetrics loop in loopMetrics.Values)
             {
@@ -199,13 +200,15 @@ namespace DimensionBrawl.Editor
             scene.GameObjectCount += transforms.Length;
             for (int i = 0; i < transforms.Length; i++)
             {
-                if (transforms[i].gameObject.activeInHierarchy)
+                GameObject gameObject = transforms[i].gameObject;
+                if (gameObject.activeInHierarchy)
                 {
                     scene.ActiveGameObjectCount++;
                 }
-            }
 
-            scene.MissingScriptCount += GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(root);
+                scene.MissingScriptCount +=
+                    GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(gameObject);
+            }
 
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
             rootMetrics.RendererCount = renderers.Length;
@@ -641,6 +644,62 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void CollectColliderUsages(Scene scene, SceneMetrics metrics)
+        {
+            var usages = new Dictionary<string, ColliderUsageMetrics>(StringComparer.Ordinal);
+            Collider[] colliders = Resources.FindObjectsOfTypeAll<Collider>();
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || !collider.enabled
+                    || !collider.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                MeshFilter meshFilter = collider.GetComponent<MeshFilter>();
+                Mesh renderMesh = meshFilter != null ? meshFilter.sharedMesh : null;
+                Mesh collisionMesh = collider is MeshCollider meshCollider
+                    ? meshCollider.sharedMesh
+                    : null;
+                Mesh groupingMesh = renderMesh != null ? renderMesh : collisionMesh;
+                string sourceName = groupingMesh != null ? groupingMesh.name : collider.name;
+                string key = $"{collider.GetType().Name}:{(groupingMesh != null ? groupingMesh.GetInstanceID() : sourceName)}";
+                if (!usages.TryGetValue(key, out ColliderUsageMetrics usage))
+                {
+                    usage = new ColliderUsageMetrics
+                    {
+                        ColliderType = collider.GetType().Name,
+                        SourceName = sourceName,
+                        AssetPath = groupingMesh != null
+                            ? AssetDatabase.GetAssetPath(groupingMesh)
+                            : string.Empty,
+                        TriangleCount = groupingMesh != null ? CountTriangles(groupingMesh) : 0L,
+                        SamplePath = GetHierarchyPath(collider.transform)
+                    };
+                    usages.Add(key, usage);
+                }
+
+                usage.InstanceCount++;
+                usage.TriggerCount += collider.isTrigger ? 1 : 0;
+                if (collider is MeshCollider currentMeshCollider && currentMeshCollider.convex)
+                {
+                    usage.ConvexCount++;
+                }
+
+                usage.MaxWorldBoundsAxis = Mathf.Max(
+                    usage.MaxWorldBoundsAxis,
+                    MaxAxis(collider.bounds.size));
+            }
+
+            foreach (ColliderUsageMetrics usage in usages.Values)
+            {
+                metrics.ColliderUsages.Add(usage);
+            }
+        }
+
         private static float MaxAxis(Vector3 value)
         {
             return Mathf.Max(value.x, Mathf.Max(value.y, value.z));
@@ -794,6 +853,20 @@ namespace DimensionBrawl.Editor
         private static int CompareMaterialUsages(MaterialUsageMetrics left, MaterialUsageMetrics right)
         {
             return right.RendererReferenceCount.CompareTo(left.RendererReferenceCount);
+        }
+
+        private static int CompareColliderUsages(ColliderUsageMetrics left, ColliderUsageMetrics right)
+        {
+            int instanceComparison = right.InstanceCount.CompareTo(left.InstanceCount);
+            if (instanceComparison != 0)
+            {
+                return instanceComparison;
+            }
+
+            int triangleComparison = right.TriangleCount.CompareTo(left.TriangleCount);
+            return triangleComparison != 0
+                ? triangleComparison
+                : string.Compare(left.SourceName, right.SourceName, StringComparison.Ordinal);
         }
 
         private static void AddObservations(SceneMetrics metrics)
@@ -984,6 +1057,22 @@ namespace DimensionBrawl.Editor
             }
 
             builder.AppendLine();
+            builder.AppendLine("### Active Collider Groups");
+            builder.AppendLine();
+            builder.AppendLine("| Collider | Source mesh/object | Instances | Triggers | Convex | Source triangles | Max world bounds | Asset | Sample path |");
+            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---|---|");
+            int colliderUsageCount = Math.Min(40, scene.ColliderUsages.Count);
+            for (int i = 0; i < colliderUsageCount; i++)
+            {
+                ColliderUsageMetrics collider = scene.ColliderUsages[i];
+                builder.AppendLine(
+                    $"| {collider.ColliderType} | {EscapeTableCell(collider.SourceName)} | " +
+                    $"{collider.InstanceCount:N0} | {collider.TriggerCount:N0} | {collider.ConvexCount:N0} | " +
+                    $"{collider.TriangleCount:N0} | {collider.MaxWorldBoundsAxis:0.###}m | " +
+                    $"{EscapeTableCell(collider.AssetPath)} | {EscapeTableCell(collider.SamplePath)} |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("### Active Lights");
             builder.AppendLine();
             builder.AppendLine("| Path | Type | Bake | Shadows | Range | Intensity | Culling mask |");
@@ -1117,6 +1206,7 @@ namespace DimensionBrawl.Editor
             public List<LightMetrics> Lights = new();
             public List<MaterialUsageMetrics> MaterialUsages = new();
             public List<MeshUsageMetrics> MeshUsages = new();
+            public List<ColliderUsageMetrics> ColliderUsages = new();
             public List<FrameLoopMetrics> FrameLoops = new();
             public List<string> Observations = new();
         }
@@ -1187,6 +1277,20 @@ namespace DimensionBrawl.Editor
             public string ShaderName;
             public int RendererReferenceCount;
             public bool InstancingEnabled;
+        }
+
+        [Serializable]
+        private sealed class ColliderUsageMetrics
+        {
+            public string ColliderType;
+            public string SourceName;
+            public string AssetPath;
+            public string SamplePath;
+            public int InstanceCount;
+            public int TriggerCount;
+            public int ConvexCount;
+            public long TriangleCount;
+            public float MaxWorldBoundsAxis;
         }
     }
 }

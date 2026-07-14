@@ -36,11 +36,10 @@ namespace DimensionBrawl.Editor
             AudioRoot + "/DB_SFX_Shield_End_01.mp3"
         };
 
-        private static readonly string[] ReviewScenePaths =
+        private static readonly string[] CanonicalScenePaths =
         {
-            "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity",
-            ActionFoundationBossBarrageLaneReviewSetup.ReviewScenePath,
-            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
+            ActionFoundationCombatAssetPaths.OlympusCorridorScenePath,
+            ActionFoundationCombatAssetPaths.OlympusStationScenePath
         };
 
         [MenuItem("DimensionBrawl/ActionFoundation/Apply Missile Shield SFX")]
@@ -170,7 +169,7 @@ namespace DimensionBrawl.Editor
         private static void ApplyBossProjectileAudio()
         {
             GameObject prefabRoot =
-                PrefabUtility.LoadPrefabContents(ActionFoundationBossBarrageLaneReviewSetup.ProjectilePrefabPath);
+                PrefabUtility.LoadPrefabContents(ActionFoundationCombatAssetPaths.BossProjectilePrefabPath);
             try
             {
                 BossBarrageProjectile projectile = prefabRoot.GetComponent<BossBarrageProjectile>();
@@ -211,7 +210,7 @@ namespace DimensionBrawl.Editor
                 EditorUtility.SetDirty(projectile);
                 EditorUtility.SetDirty(audioTransform.gameObject);
                 EditorUtility.SetDirty(source);
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, ActionFoundationBossBarrageLaneReviewSetup.ProjectilePrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, ActionFoundationCombatAssetPaths.BossProjectilePrefabPath);
             }
             finally
             {
@@ -222,9 +221,9 @@ namespace DimensionBrawl.Editor
         private static void ApplySceneReferences()
         {
             AudioClip launchClip = LoadClip(MissileLaunchClipPath);
-            for (int i = 0; i < ReviewScenePaths.Length; i++)
+            for (int i = 0; i < CanonicalScenePaths.Length; i++)
             {
-                string scenePath = ReviewScenePaths[i];
+                string scenePath = CanonicalScenePaths[i];
                 if (!File.Exists(ToProjectAbsolutePath(scenePath)))
                 {
                     continue;

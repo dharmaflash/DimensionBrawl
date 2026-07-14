@@ -6,11 +6,13 @@ using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Core;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -23,6 +25,8 @@ namespace DimensionBrawl.Tests
         private const int CaptureHeight = 720;
         private const string VisualReportPath =
             "C:/tmp/DimensionBrawl-OlympusEnvironmentShadowVisualBudget.md";
+        private const string StationBossCapturePath =
+            "C:/Git/DimensionBrawl/Logs/olympus_station_commando_arsenal.png";
         private const string RangedWeaponMaterialPath =
             "Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_RangedFocus.mat";
         private static readonly string[] PromotedRifleGirlModelPaths =
@@ -36,6 +40,32 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
         private const string CanonicalCommandoAssaultRifleModelPath =
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
+        private const string StationScenePath =
+            "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const string CanonicalBossRootName =
+            "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string CanonicalBossVisualName =
+            "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
+        private const string CanonicalBossVisualPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
+        private const string EnemyRoleWeaponRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/";
+        private const string CanonicalBossAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        private const string CanonicalBossModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
+        private const string CanonicalNoCrossVfxPrefabPath =
+            "Assets/_Game/Prefabs/VFX/Environment/PF_OlympusStation_NoCrossRedCubeZone.prefab";
+        private const string StationLaneRootName =
+            "BossBarrageLaneReview_SummonLaneSpace";
+        private const string StationNoCrossRootName =
+            "OlympusStation_NoCrossCenterLine";
+        private const string StationNoCrossVisualName =
+            "NoCross_RedCubeZone_Line";
+        private const string ObsoleteStationBoundaryMarkerName =
+            "PlayerForwardBoundary_DoNotCross";
+        private const string ImportedHovlRoot =
+            "Assets/_Imported/AssetStore/VFX/Hovl Studio/";
         private const string CombatGirlAnimationRoot =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield";
         private const string CombatGirlControllerPath =
@@ -49,8 +79,96 @@ namespace DimensionBrawl.Tests
             "Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader";
         private static readonly string[] ScenePaths =
         {
+            StationScenePath,
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
         };
+        private static readonly string[] RealtimeCombatLightPrefabPaths =
+        {
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_FireBreath.prefab",
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonDragonFireBreath_FORGE3D.prefab"
+        };
+        private static readonly MaterialTextureConsolidationExpectation[]
+            ConsolidatedWeaponMaterials =
+        {
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/AssaultRifle/Materials/M_AssaultRifle.mat",
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/AssaultRifle/Textures/"),
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/BeamGun/Materials/M_LaserGun_01.mat",
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/BeamGun/Textures/T_LaserGun_01_"),
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/SkorpIO_Right/Materials/M_Skorp-IO.mat",
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/SkorpIO_Right/Textures/"),
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/SM_SciFiLaserGatlinGun/Materials/M_LaserGatlinGun.mat",
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/SM_SciFiLaserGatlinGun/Textures/")
+        };
+        private static readonly TextureReferenceConsolidationExpectation[]
+            ConsolidatedRuntimeTextures =
+        {
+            new(
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/MissileLauncher/Textures/T_BazookaMagazine_BaseColor.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AircraftModels/T_BazookaMagazine_BaseColor_c58cc6a9.png",
+                "Assets/_Game/Art/Materials/ActionFoundation/IntroGatePodBombingReview/AF_BombingReview_BombOriginal.mat"),
+            new(
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AerialBomb/Explosion_6_0d04b1c2.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AerialBomb2/Explosion_6_0d04b1c2.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Materials/AerialBomb2/Effect_40_Explosion.mat"),
+            new(
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/AirstrikeBombExplosion/Explosion_1_9064114c.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Textures/ShellExplosion/Explosion_1_9064114c.png",
+                "Assets/_Game/Art/VFX/ActionFoundation/IntroGatePodBombingReview/Materials/ShellExplosion/Effect_10_Explosion.mat")
+        };
+        private static readonly string[] BossVisualScenePaths =
+        {
+            StationScenePath,
+            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
+        };
+
+        private static readonly BossWeaponExpectation[] CanonicalBossWeapons =
+        {
+            new("RefPosLightningGun_Action", "SM_SciFiLightingGun", "BeamGun"),
+            new("RefPosLaserGatlinGun_Idle", "SM_SciFiLaserGatlinGun", "SM_SciFiLaserGatlinGun"),
+            new("RefPosSkorp-IOLeft_Idle", "SM_SciFiSkorp-IO", "SkorpIO_Left"),
+            new("RefPosLaserGatlinGun_Action", "SK_SciFiLaserGatlinGun", "SK_SciFiLaserGatlinGun"),
+            new("RefPosAssaultRifle_Action", "SM_SciFiAssaultRifle_01", "AssaultRifle"),
+            new("RefPosShotgun_Idle", "SM_SciFiShotgun", "Shotgun"),
+            new("RefPosMissileLauncher_Idle", "SM_SciFiMissileLauncher", "MissileLauncher"),
+            new("RefPosMissileLauncher_Action", "SM_SciFiMissileLauncher", "MissileLauncher"),
+            new("RefPos2HandedGun_Action", "SM_SciFiLaserGun", "LaserGun"),
+            new("RefPosSkorp-IOLeft_Action", "SM_SciFiSkorp-IO", "SkorpIO_Left"),
+            new("RefPosSkorp-IORight_Idle", "SM_SciFiSkorp-IO", "SkorpIO_Right"),
+            new("RefPos2HandedGun_Idle", "SM_SciFiLaserGun", "LaserGun"),
+            new("RefPosLightningGun_Idle", "SM_SciFiLightingGun", "BeamGun"),
+            new("RefPosLaserAssaultRifle_Idle", "SM_SciFiAssaultRifle_01", "AssaultRifle"),
+            new("RefPosShotgun_Action", "SM_SciFiShotgun", "Shotgun"),
+            new("RefPosSkorp-IORight_Action", "SM_SciFiSkorp-IO", "SkorpIO_Right")
+        };
+
+        private int originalQualityLevel;
+
+        [UnitySetUp]
+        public IEnumerator UseMobileRenderPipeline()
+        {
+            originalQualityLevel = QualitySettings.GetQualityLevel();
+            int mobileQualityLevel = Array.IndexOf(QualitySettings.names, "Mobile");
+            Assert.That(mobileQualityLevel, Is.GreaterThanOrEqualTo(0));
+
+            QualitySettings.SetQualityLevel(mobileQualityLevel, applyExpensiveChanges: true);
+            yield return null;
+
+            Assert.That(
+                AssetDatabase.GetAssetPath(QualitySettings.renderPipeline),
+                Is.EqualTo("Assets/Settings/Mobile_RPAsset.asset"),
+                "Mobile render-budget tests must exercise the shipping mobile pipeline asset.");
+        }
+
+        [UnityTearDown]
+        public IEnumerator RestoreQualityLevel()
+        {
+            QualitySettings.SetQualityLevel(originalQualityLevel, applyExpensiveChanges: true);
+            yield return null;
+        }
 
         [UnityTest]
         [Timeout(60000)]
@@ -67,6 +185,15 @@ namespace DimensionBrawl.Tests
 
                 Scene scene = SceneManager.GetActiveScene();
                 Assert.That(scene.path, Is.EqualTo(scenePath));
+                Assert.That(
+                    CountMissingScripts(scene),
+                    Is.Zero,
+                    $"{scenePath} must not retain missing MonoBehaviour slots.");
+                if (sceneIndex == 0)
+                {
+                    AssertCanonicalStationHudOwnership();
+                }
+
                 Transform mapRoot = FindStageMapRoot(scene);
                 Assert.That(mapRoot, Is.Not.Null);
                 MeshRenderer[] environmentRenderers =
@@ -112,8 +239,12 @@ namespace DimensionBrawl.Tests
                 Assert.That(detailCuller, Is.Not.Null);
                 Assert.That(detailCuller.CandidateCount, Is.GreaterThan(300));
                 Assert.That(detailCuller.CullDistance, Is.EqualTo(120f).Within(0.001f));
-                Assert.That(detailCuller.CulledRendererCount, Is.GreaterThan(100));
-                Assert.That(activeEnvironmentRendererCount, Is.LessThan(environmentRenderers.Length));
+                Assert.That(detailCuller.ColliderCullDistance, Is.EqualTo(45f).Within(0.001f));
+                if (sceneIndex == 1)
+                {
+                    Assert.That(detailCuller.CulledRendererCount, Is.GreaterThan(100));
+                    Assert.That(activeEnvironmentRendererCount, Is.LessThan(environmentRenderers.Length));
+                }
 
                 Renderer[] sceneRenderers = UnityEngine.Object.FindObjectsByType<Renderer>(
                     FindObjectsInactive.Exclude,
@@ -164,6 +295,482 @@ namespace DimensionBrawl.Tests
                     OlympusMobileRenderBudgetBootstrap.ApplyToScene(scene),
                     Is.Zero,
                     "The scene-load optimization should be idempotent.");
+
+                AssertCanonicalMobilePipelineDependencies(scene);
+            }
+
+            AssertMobilePipelineFeatureConfiguration();
+        }
+
+        private static void AssertCanonicalMobilePipelineDependencies(Scene scene)
+        {
+            string scenePath = scene.path;
+            List<Terrain> terrains = FindSceneComponents<Terrain>(scene);
+            Assert.That(
+                terrains,
+                Is.Empty,
+                $"{scenePath} should not require mobile terrain-hole shader variants.");
+
+            List<ReflectionProbe> reflectionProbes = FindSceneComponents<ReflectionProbe>(scene);
+            Assert.That(
+                reflectionProbes,
+                Has.Count.EqualTo(1),
+                $"{scenePath} should keep its single authored reflection probe without multi-probe blending.");
+            Assert.That(reflectionProbes[0].boxProjection, Is.False);
+
+            List<DecalProjector> decals = FindSceneComponents<DecalProjector>(scene);
+            Assert.That(
+                decals.Count,
+                Is.GreaterThan(0),
+                $"{scenePath} requires the mobile decal renderer feature.");
+
+            List<Behaviour> behaviours = FindSceneComponents<Behaviour>(scene);
+            int lensFlareCount = 0;
+            for (int i = 0; i < behaviours.Count; i++)
+            {
+                Behaviour behaviour = behaviours[i];
+                if (behaviour != null
+                    && behaviour.GetType().FullName
+                        == "UnityEngine.Rendering.LensFlareComponentSRP")
+                {
+                    lensFlareCount++;
+                }
+            }
+
+            Assert.That(
+                lensFlareCount,
+                Is.Zero,
+                $"{scenePath} should not require data-driven lens-flare support.");
+
+            List<Light> lights = FindSceneComponents<Light>(scene);
+            for (int i = 0; i < lights.Count; i++)
+            {
+                Light light = lights[i];
+                Assert.That(
+                    light.cookie,
+                    Is.Null,
+                    $"{scenePath} light '{light.name}' unexpectedly requires cookie support.");
+                Assert.That(
+                    light.lightmapBakeType,
+                    Is.Not.EqualTo(LightmapBakeType.Mixed),
+                    $"{scenePath} light '{GetHierarchyPath(light.transform)}' unexpectedly requires " +
+                    $"mixed-lighting support (active={light.isActiveAndEnabled}, " +
+                    $"prefab='{PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(light.gameObject)}').");
+                Assert.That(
+                    light.renderingLayerMask,
+                    Is.EqualTo(1u),
+                    $"{scenePath} light '{light.name}' unexpectedly requires light-layer support.");
+            }
+
+            AssertParticleVelocityCurveModes(scene);
+        }
+
+        private static void AssertParticleVelocityCurveModes(Scene scene)
+        {
+            List<ParticleSystem> particleSystems = FindSceneComponents<ParticleSystem>(scene);
+            List<string> mismatches = new();
+            for (int i = 0; i < particleSystems.Count; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.VelocityOverLifetimeModule velocity =
+                    particleSystem.velocityOverLifetime;
+                if (!velocity.enabled)
+                {
+                    continue;
+                }
+
+                ParticleSystemCurveMode xMode = velocity.x.mode;
+                ParticleSystemCurveMode yMode = velocity.y.mode;
+                ParticleSystemCurveMode zMode = velocity.z.mode;
+                if (xMode != yMode || xMode != zMode)
+                {
+                    mismatches.Add(
+                        $"{GetHierarchyPath(particleSystem.transform)} " +
+                        $"(x={xMode}, y={yMode}, z={zMode})");
+                }
+            }
+
+            Assert.That(
+                mismatches,
+                Is.Empty,
+                $"{scene.path} has mixed particle velocity curve modes:\n" +
+                string.Join("\n", mismatches));
+        }
+
+        private static List<T> FindSceneComponents<T>(Scene scene)
+            where T : Component
+        {
+            List<T> components = new();
+            T[] candidates = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                T candidate = candidates[i];
+                if (candidate != null && candidate.gameObject.scene.handle == scene.handle)
+                {
+                    components.Add(candidate);
+                }
+            }
+
+            return components;
+        }
+
+        private static int CountMissingScripts(Scene scene)
+        {
+            int missingScriptCount = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Transform[] transforms =
+                    roots[rootIndex].GetComponentsInChildren<Transform>(includeInactive: true);
+                for (int transformIndex = 0;
+                     transformIndex < transforms.Length;
+                     transformIndex++)
+                {
+                    missingScriptCount +=
+                        GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(
+                            transforms[transformIndex].gameObject);
+                }
+            }
+
+            return missingScriptCount;
+        }
+
+        private static string GetHierarchyPath(Transform transform)
+        {
+            string path = transform.name;
+            while (transform.parent != null)
+            {
+                transform = transform.parent;
+                path = $"{transform.name}/{path}";
+            }
+
+            return path;
+        }
+
+        private static void AssertMobilePipelineFeatureConfiguration()
+        {
+            UniversalRenderPipelineAsset pipelineAsset =
+                AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(
+                    "Assets/Settings/Mobile_RPAsset.asset");
+            Assert.That(pipelineAsset, Is.Not.Null);
+
+            SerializedObject serializedPipeline = new(pipelineAsset);
+            AssertSerializedBool(serializedPipeline, "m_SupportsTerrainHoles", false);
+            AssertSerializedBool(serializedPipeline, "m_ReflectionProbeBlending", false);
+            AssertSerializedBool(serializedPipeline, "m_ReflectionProbeBoxProjection", false);
+            AssertSerializedBool(serializedPipeline, "m_MixedLightingSupported", false);
+            AssertSerializedBool(serializedPipeline, "m_SupportsLightCookies", false);
+            AssertSerializedBool(serializedPipeline, "m_SupportsLightLayers", true);
+            AssertSerializedBool(serializedPipeline, "m_SupportDataDrivenLensFlare", false);
+            AssertSerializedBool(serializedPipeline, "m_SupportScreenSpaceLensFlare", false);
+
+            UniversalRendererData rendererData =
+                AssetDatabase.LoadAssetAtPath<UniversalRendererData>(
+                    "Assets/Settings/Mobile_Renderer.asset");
+            Assert.That(rendererData, Is.Not.Null);
+
+            bool hasActiveDecalFeature = false;
+            bool hasActivePerfectDodgeFeature = false;
+            IReadOnlyList<ScriptableRendererFeature> features = rendererData.rendererFeatures;
+            for (int i = 0; i < features.Count; i++)
+            {
+                ScriptableRendererFeature feature = features[i];
+                if (feature == null || !feature.isActive)
+                {
+                    continue;
+                }
+
+                hasActiveDecalFeature |= feature is DecalRendererFeature;
+                hasActivePerfectDodgeFeature |=
+                    feature.GetType().Name == "PerfectDodgeScreenDomainRendererFeature";
+            }
+
+            Assert.That(hasActiveDecalFeature, Is.True);
+            Assert.That(
+                hasActivePerfectDodgeFeature,
+                Is.True,
+                "Perfect-dodge screen-domain color preservation must remain active on mobile.");
+
+            for (int prefabIndex = 0;
+                 prefabIndex < RealtimeCombatLightPrefabPaths.Length;
+                 prefabIndex++)
+            {
+                string prefabPath = RealtimeCombatLightPrefabPaths[prefabIndex];
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                Assert.That(prefab, Is.Not.Null, prefabPath);
+
+                Light[] lights = prefab.GetComponentsInChildren<Light>(includeInactive: true);
+                Assert.That(lights.Length, Is.GreaterThan(0), prefabPath);
+                for (int lightIndex = 0; lightIndex < lights.Length; lightIndex++)
+                {
+                    Assert.That(
+                        lights[lightIndex].lightmapBakeType,
+                        Is.EqualTo(LightmapBakeType.Realtime),
+                        $"Combat VFX light '{prefabPath}/{lights[lightIndex].name}' must remain realtime.");
+                }
+            }
+        }
+
+        private static void AssertSerializedBool(
+            SerializedObject serializedObject,
+            string propertyName,
+            bool expected)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            Assert.That(property, Is.Not.Null, $"Missing serialized property '{propertyName}'.");
+            Assert.That(property.boolValue, Is.EqualTo(expected), propertyName);
+        }
+
+        [Test]
+        public void CanonicalWeaponMaterialsShareByteIdenticalTextureSets()
+        {
+            for (int expectationIndex = 0;
+                 expectationIndex < ConsolidatedWeaponMaterials.Length;
+                 expectationIndex++)
+            {
+                MaterialTextureConsolidationExpectation expectation =
+                    ConsolidatedWeaponMaterials[expectationIndex];
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(expectation.MaterialPath);
+                Assert.That(material, Is.Not.Null, expectation.MaterialPath);
+
+                string[] dependencies =
+                    AssetDatabase.GetDependencies(expectation.MaterialPath, recursive: true);
+                int textureDependencyCount = 0;
+                for (int dependencyIndex = 0;
+                     dependencyIndex < dependencies.Length;
+                     dependencyIndex++)
+                {
+                    string dependency = dependencies[dependencyIndex];
+                    Assert.That(
+                        dependency.StartsWith(
+                            expectation.DuplicateTexturePrefix,
+                            StringComparison.Ordinal),
+                        Is.False,
+                        $"{expectation.MaterialPath} retains byte-identical texture copy {dependency}.");
+
+                    Type dependencyType = AssetDatabase.GetMainAssetTypeAtPath(dependency);
+                    if (dependencyType != null
+                        && typeof(Texture).IsAssignableFrom(dependencyType))
+                    {
+                        textureDependencyCount++;
+                    }
+                }
+
+                Assert.That(
+                    textureDependencyCount,
+                    Is.GreaterThanOrEqualTo(5),
+                    $"{expectation.MaterialPath} should retain its complete PBR texture set.");
+            }
+        }
+
+        [Test]
+        public void CanonicalBossRoleWeaponBaseColorsUseMobileOneKBudget()
+        {
+            string[] dependencies =
+                AssetDatabase.GetDependencies(CanonicalBossVisualPrefabPath, recursive: true);
+            int baseColorCount = 0;
+            int downscaledBaseColorCount = 0;
+            for (int dependencyIndex = 0;
+                 dependencyIndex < dependencies.Length;
+                 dependencyIndex++)
+            {
+                string dependency = dependencies[dependencyIndex];
+                if (!dependency.StartsWith(EnemyRoleWeaponRoot, StringComparison.Ordinal)
+                    || Path.GetFileNameWithoutExtension(dependency)
+                        .IndexOf("BaseColor", StringComparison.OrdinalIgnoreCase) < 0
+                    || AssetImporter.GetAtPath(dependency) is not TextureImporter importer)
+                {
+                    continue;
+                }
+
+                baseColorCount++;
+                importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
+                if (Math.Max(sourceWidth, sourceHeight) <= 1024)
+                {
+                    continue;
+                }
+
+                TextureImporterPlatformSettings android =
+                    importer.GetPlatformTextureSettings("Android");
+                Assert.That(
+                    android.overridden,
+                    Is.True,
+                    $"{dependency} must have an explicit Android texture budget.");
+                Assert.That(
+                    android.maxTextureSize,
+                    Is.LessThanOrEqualTo(1024),
+                    $"{dependency} exceeds the enemy role-weapon 1K Android budget.");
+                downscaledBaseColorCount++;
+            }
+
+            Assert.That(
+                baseColorCount,
+                Is.GreaterThanOrEqualTo(6),
+                "The canonical boss arsenal should retain its authored base-color texture set.");
+            Assert.That(
+                downscaledBaseColorCount,
+                Is.GreaterThanOrEqualTo(6),
+                "The canonical boss arsenal should keep its large base colors on the 1K Android budget.");
+        }
+
+        [Test]
+        public void CanonicalRuntimeMaterialsShareReviewedDuplicateTexturePayloads()
+        {
+            string[] corridorDependencies =
+                AssetDatabase.GetDependencies(ScenePaths[1], recursive: true);
+            for (int expectationIndex = 0;
+                 expectationIndex < ConsolidatedRuntimeTextures.Length;
+                 expectationIndex++)
+            {
+                TextureReferenceConsolidationExpectation expectation =
+                    ConsolidatedRuntimeTextures[expectationIndex];
+                string[] materialDependencies =
+                    AssetDatabase.GetDependencies(expectation.ConsumerMaterialPath, recursive: true);
+                Assert.That(
+                    materialDependencies,
+                    Does.Contain(expectation.CanonicalTexturePath),
+                    $"{expectation.ConsumerMaterialPath} should use the canonical texture payload.");
+                Assert.That(
+                    materialDependencies,
+                    Does.Not.Contain(expectation.DuplicateTexturePath),
+                    $"{expectation.ConsumerMaterialPath} retains an exact duplicate texture payload.");
+                Assert.That(
+                    corridorDependencies,
+                    Does.Not.Contain(expectation.DuplicateTexturePath),
+                    $"The canonical corridor should not package {expectation.DuplicateTexturePath}.");
+            }
+        }
+
+        private static void AssertCanonicalStationHudOwnership()
+        {
+            Behaviour combatHudPresenter = null;
+            Behaviour combatHudBinder = null;
+            Behaviour[] behaviours = UnityEngine.Object.FindObjectsByType<Behaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                Behaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                switch (behaviour.GetType().FullName)
+                {
+                    case "DimensionBrawl.UI.CombatHudPresenter":
+                        combatHudPresenter = behaviour;
+                        break;
+                    case "DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder":
+                        combatHudBinder = behaviour;
+                        break;
+                }
+            }
+
+            Assert.That(combatHudPresenter, Is.Not.Null);
+            Assert.That(combatHudPresenter.isActiveAndEnabled, Is.True, "UGUI should own the visible combat HUD.");
+            Assert.That(combatHudBinder, Is.Not.Null);
+            Assert.That(combatHudBinder.isActiveAndEnabled, Is.True, "The canonical HUD binder should stay active.");
+        }
+
+        [UnityTest]
+        [Timeout(60000)]
+        public IEnumerator RuntimeBossScenesUseAuthoredCommandoArsenalVisual()
+        {
+            for (int sceneIndex = 0; sceneIndex < BossVisualScenePaths.Length; sceneIndex++)
+            {
+                string scenePath = BossVisualScenePaths[sceneIndex];
+                EditorSceneManager.LoadSceneInPlayMode(
+                    scenePath,
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                yield return null;
+                yield return null;
+
+                Scene scene = SceneManager.GetActiveScene();
+                Assert.That(scene.path, Is.EqualTo(scenePath));
+
+                Transform bossRoot = FindSceneTransform(scene, CanonicalBossRootName);
+                Assert.That(bossRoot, Is.Not.Null, $"{scenePath} is missing the canonical boss gameplay root.");
+
+                Transform visual = bossRoot.Find(CanonicalBossVisualName);
+                Assert.That(visual, Is.Not.Null, $"{scenePath} should use the authored Commando arsenal boss visual.");
+                Assert.That(
+                    bossRoot.Find("BossBarrageLaneReview_HumanoidBossVisual_FinalStandCommanderElite"),
+                    Is.Null,
+                    $"{scenePath} must not use the unrelated HeavyBattleArmor commander visual as its boss.");
+                Assert.That(
+                    bossRoot.Find("BossBarrageLaneReview_HumanoidBossVisual_LineCasterGatling"),
+                    Is.Null,
+                    $"{scenePath} must not use the regular SciFiSoldier LineCaster as its boss.");
+                Assert.That(
+                    bossRoot.Find("BossBarrageLaneReview_HumanoidBossVisual_AkazaPhase2"),
+                    Is.Null,
+                    $"{scenePath} must not use the unrelated Akaza review visual as its boss.");
+                string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual.gameObject);
+                if (!string.IsNullOrEmpty(prefabPath))
+                {
+                    Assert.That(prefabPath, Is.EqualTo(CanonicalBossVisualPrefabPath));
+                }
+
+                Animator animator = visual.GetComponentInChildren<Animator>(includeInactive: true);
+                Assert.That(animator, Is.Not.Null);
+                Assert.That(animator.runtimeAnimatorController, Is.Not.Null);
+                Assert.That(
+                    AssetDatabase.GetAssetPath(animator.runtimeAnimatorController),
+                    Is.EqualTo(CanonicalBossAnimatorControllerPath));
+
+                BossBarrageVisualCueDriver cueDriver = bossRoot.GetComponent<BossBarrageVisualCueDriver>();
+                Assert.That(cueDriver, Is.Not.Null);
+                Assert.That(
+                    cueDriver.Animator,
+                    Is.SameAs(animator),
+                    "Boss attack cues should drive the canonical Commando Animator directly.");
+
+                AssertCanonicalCommandoArsenal(visual);
+                Assert.That(
+                    visual.GetComponentInChildren<CombatHealth>(includeInactive: true),
+                    Is.Null,
+                    "The visual prefab must not duplicate the boss gameplay owner.");
+
+                Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+                int renderReadyCount = 0;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    if (renderers[i].enabled
+                        && !renderers[i].forceRenderingOff)
+                    {
+                        renderReadyCount++;
+                    }
+                }
+
+                Assert.That(
+                    renderReadyCount,
+                    Is.GreaterThan(0),
+                    "The Commando arsenal boss should be render-ready when the encounter activates it.");
+
+                BossBasicFireEmitter basicFireEmitter = bossRoot.GetComponent<BossBasicFireEmitter>();
+                Assert.That(basicFireEmitter, Is.Not.Null);
+                SerializedProperty fireOriginProperty =
+                    new SerializedObject(basicFireEmitter).FindProperty("fireOrigin");
+                Transform fireOrigin = fireOriginProperty?.objectReferenceValue as Transform;
+                Assert.That(fireOrigin, Is.Not.Null);
+                Assert.That(
+                    fireOrigin.IsChildOf(
+                        FindDescendant(
+                            FindDescendant(visual, "RefPosMissileLauncher_Action"),
+                            "SM_SciFiMissileLauncher")),
+                    Is.True,
+                    "Boss projectiles should originate from the action rocket launcher.");
+
+                if (scenePath == StationScenePath)
+                {
+                    DisableVisualEffectsForCapture();
+                    yield return null;
+                    yield return null;
+                    CaptureCanonicalStationBoss(bossRoot, visual);
+                }
             }
         }
 
@@ -267,7 +874,7 @@ namespace DimensionBrawl.Tests
         [Timeout(30000)]
         public IEnumerator CanonicalCorridorInoriRifleUsesPromotedWeaponAssets()
         {
-            string scenePath = ScenePaths[0];
+            string scenePath = ScenePaths[1];
             EditorSceneManager.LoadSceneInPlayMode(
                 scenePath,
                 new LoadSceneParameters(LoadSceneMode.Single));
@@ -325,6 +932,103 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PromotedInoriModelUsesGpuOnlyMeshPayload()
+        {
+            ModelImporter importer =
+                AssetImporter.GetAtPath(PromotedInoriModelPath) as ModelImporter;
+            Assert.That(importer, Is.Not.Null);
+            Assert.That(
+                importer.isReadable,
+                Is.False,
+                "The canonical Inori model should not retain a duplicate CPU-readable mesh payload.");
+            Assert.That(
+                importer.importAnimation,
+                Is.False,
+                "The canonical Inori geometry model should keep animation clips in their dedicated assets.");
+            Assert.That(
+                importer.importBlendShapes,
+                Is.True,
+                "The CPU-copy optimization must preserve Inori facial blend shapes.");
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator CanonicalInoriGpuOnlyMeshesSupportRuntimeConsumers()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(
+                StationScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            SkinnedMeshRenderer[] renderers = UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            var bakedMeshes = new List<Mesh>();
+            int inoriRendererCount = 0;
+            int bakedRendererCount = 0;
+            bool verifiedBlendShapeLookup = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SkinnedMeshRenderer renderer = renderers[i];
+                Mesh sourceMesh = renderer.sharedMesh;
+                if (sourceMesh == null
+                    || AssetDatabase.GetAssetPath(sourceMesh) != PromotedInoriModelPath)
+                {
+                    continue;
+                }
+
+                inoriRendererCount++;
+                var bakedMesh = new Mesh
+                {
+                    name = sourceMesh.name + "_GpuOnlyContractTest"
+                };
+                bakedMeshes.Add(bakedMesh);
+                renderer.BakeMesh(bakedMesh);
+                Assert.That(
+                    bakedMesh.vertexCount,
+                    Is.EqualTo(sourceMesh.vertexCount),
+                    $"{renderer.name} must remain compatible with perfect-dodge afterimage baking.");
+                bakedRendererCount++;
+
+                if (!verifiedBlendShapeLookup && sourceMesh.blendShapeCount > 0)
+                {
+                    string shapeName = sourceMesh.GetBlendShapeName(0);
+                    Assert.That(shapeName, Is.Not.Empty);
+                    Assert.That(sourceMesh.GetBlendShapeIndex(shapeName), Is.Zero);
+                    verifiedBlendShapeLookup = true;
+                }
+            }
+
+            MeshCollider[] colliders = UnityEngine.Object.FindObjectsByType<MeshCollider>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Mesh colliderMesh = colliders[i].sharedMesh;
+                Assert.That(
+                    colliderMesh == null
+                        || AssetDatabase.GetAssetPath(colliderMesh) != PromotedInoriModelPath,
+                    Is.True,
+                    $"{colliders[i].name} must not require CPU access to the canonical Inori model.");
+            }
+
+            Assert.That(inoriRendererCount, Is.GreaterThanOrEqualTo(8));
+            Assert.That(bakedRendererCount, Is.EqualTo(inoriRendererCount));
+            Assert.That(
+                verifiedBlendShapeLookup,
+                Is.True,
+                "At least one canonical Inori mesh should preserve expression blend shapes.");
+
+            for (int i = 0; i < bakedMeshes.Count; i++)
+            {
+                UnityEngine.Object.Destroy(bakedMeshes[i]);
+            }
+
+            yield return null;
+        }
+
+        [Test]
         public void CanonicalCommandoPrefabHasNoImportedDependencies()
         {
             string[] dependencies = AssetDatabase.GetDependencies(CanonicalCommandoPrefabPath, recursive: true);
@@ -344,6 +1048,82 @@ namespace DimensionBrawl.Tests
                 weaponImporter.isReadable,
                 Is.False,
                 "Static Commando assault rifle should not retain a CPU mesh copy.");
+        }
+
+        [Test]
+        public void OlympusStationNoCrossVfxHasNoImportedHovlDependencies()
+        {
+            GameObject canonicalPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(CanonicalNoCrossVfxPrefabPath);
+            Assert.That(canonicalPrefab, Is.Not.Null);
+
+            string[] prefabDependencies =
+                AssetDatabase.GetDependencies(CanonicalNoCrossVfxPrefabPath, recursive: true);
+            Assert.That(prefabDependencies, Is.Not.Empty);
+            for (int i = 0; i < prefabDependencies.Length; i++)
+            {
+                Assert.That(
+                    prefabDependencies[i],
+                    Does.Not.StartWith("Assets/_Imported/"),
+                    $"Canonical no-cross VFX retains raw dependency {prefabDependencies[i]}.");
+            }
+
+            string[] sceneDependencies = AssetDatabase.GetDependencies(ScenePaths[0], recursive: true);
+            Assert.That(sceneDependencies, Does.Contain(CanonicalNoCrossVfxPrefabPath));
+            for (int i = 0; i < sceneDependencies.Length; i++)
+            {
+                Assert.That(
+                    sceneDependencies[i],
+                    Does.Not.StartWith(ImportedHovlRoot),
+                    $"Olympus Station retains raw Hovl dependency {sceneDependencies[i]}.");
+            }
+        }
+
+        [UnityTest]
+        [Timeout(60000)]
+        public IEnumerator OlympusStationNoCrossVisualMatchesRuntimePlayerBoundary()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(
+                StationScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene scene = SceneManager.GetActiveScene();
+            Assert.That(scene.path, Is.EqualTo(StationScenePath));
+
+            Transform laneRoot = FindSceneTransform(scene, StationLaneRootName);
+            Assert.That(laneRoot, Is.Not.Null);
+            SummonLaneSpace laneSpace = laneRoot.GetComponent<SummonLaneSpace>();
+            Assert.That(laneSpace, Is.Not.Null);
+
+            Transform noCrossRoot = FindSceneTransform(scene, StationNoCrossRootName);
+            Assert.That(noCrossRoot, Is.Not.Null);
+            Transform noCrossVisual = FindDescendant(noCrossRoot, StationNoCrossVisualName);
+            Assert.That(noCrossVisual, Is.Not.Null);
+            Assert.That(
+                FindSceneTransform(scene, ObsoleteStationBoundaryMarkerName),
+                Is.Null,
+                "Station should not retain a second visual or collider for the player boundary.");
+
+            Vector2 rootLaneCoordinates = laneSpace.GetLaneCoordinates(noCrossRoot.position);
+            Vector2 visualLaneCoordinates = laneSpace.GetLaneCoordinates(noCrossVisual.position);
+            Vector3 clampedBeyondBoundary = laneSpace.ClampPlayerPosition(
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ + 1f));
+            Vector2 clampedLaneCoordinates = laneSpace.GetLaneCoordinates(clampedBeyondBoundary);
+
+            Assert.That(rootLaneCoordinates.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(
+                rootLaneCoordinates.y,
+                Is.EqualTo(laneSpace.ForwardBoundaryZ).Within(0.001f));
+            Assert.That(
+                visualLaneCoordinates.y,
+                Is.EqualTo(laneSpace.ForwardBoundaryZ).Within(0.001f),
+                "The visible no-cross line should be centered on the runtime player clamp.");
+            Assert.That(
+                clampedLaneCoordinates.y,
+                Is.EqualTo(visualLaneCoordinates.y).Within(0.001f),
+                "The visible and physical forward boundaries should resolve to one lane coordinate.");
         }
 
         [Test]
@@ -444,7 +1224,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator CanonicalCorridorCombatGirlSourceUsesGameOwnedAssets()
         {
             EditorSceneManager.LoadSceneInPlayMode(
-                ScenePaths[0],
+                ScenePaths[1],
                 new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
             yield return null;
@@ -624,6 +1404,107 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static void AssertCanonicalCommandoArsenal(Transform visual)
+        {
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+            Assert.That(
+                Array.Exists(renderers, renderer => RendererUsesMesh(renderer, CanonicalBossModelPath)),
+                Is.True,
+                $"Commando boss should use the canonical body model at {CanonicalBossModelPath}.");
+
+            for (int i = 0; i < CanonicalBossWeapons.Length; i++)
+            {
+                BossWeaponExpectation expectation = CanonicalBossWeapons[i];
+                Transform socket = FindDescendant(visual, expectation.SocketName);
+                Assert.That(socket, Is.Not.Null, $"Commando boss is missing {expectation.SocketName}.");
+                Transform weapon = FindDescendant(socket, expectation.WeaponName);
+                Assert.That(
+                    weapon,
+                    Is.Not.Null,
+                    $"Commando boss is missing {expectation.WeaponName} under {expectation.SocketName}.");
+                Renderer[] weaponRenderers = weapon.GetComponentsInChildren<Renderer>(includeInactive: true);
+                Assert.That(
+                    Array.Exists(weaponRenderers, renderer => RendererUsesMesh(renderer, expectation.ModelPath)),
+                    Is.True,
+                    $"{expectation.SocketName}.{expectation.WeaponName} should render {expectation.ModelPath}.");
+            }
+        }
+
+        private static bool RendererUsesMesh(Renderer renderer, string expectedPath)
+        {
+            Mesh mesh = renderer is SkinnedMeshRenderer skinnedRenderer
+                ? skinnedRenderer.sharedMesh
+                : renderer.GetComponent<MeshFilter>()?.sharedMesh;
+            return mesh != null && AssetDatabase.GetAssetPath(mesh) == expectedPath;
+        }
+
+        private static Transform FindDescendant(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i].name == objectName)
+                {
+                    return transforms[i];
+                }
+            }
+
+            return null;
+        }
+
+        private readonly struct BossWeaponExpectation
+        {
+            private const string ModelRoot =
+                "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons/";
+
+            public BossWeaponExpectation(string socketName, string weaponName, string targetAssetName)
+            {
+                SocketName = socketName;
+                WeaponName = weaponName;
+                ModelPath = ModelRoot + targetAssetName + "/Models/" + targetAssetName + ".fbx";
+            }
+
+            public string SocketName { get; }
+            public string WeaponName { get; }
+            public string ModelPath { get; }
+        }
+
+        private readonly struct MaterialTextureConsolidationExpectation
+        {
+            public MaterialTextureConsolidationExpectation(
+                string materialPath,
+                string duplicateTexturePrefix)
+            {
+                MaterialPath = materialPath;
+                DuplicateTexturePrefix = duplicateTexturePrefix;
+            }
+
+            public string MaterialPath { get; }
+            public string DuplicateTexturePrefix { get; }
+        }
+
+        private readonly struct TextureReferenceConsolidationExpectation
+        {
+            public TextureReferenceConsolidationExpectation(
+                string canonicalTexturePath,
+                string duplicateTexturePath,
+                string consumerMaterialPath)
+            {
+                CanonicalTexturePath = canonicalTexturePath;
+                DuplicateTexturePath = duplicateTexturePath;
+                ConsumerMaterialPath = consumerMaterialPath;
+            }
+
+            public string CanonicalTexturePath { get; }
+            public string DuplicateTexturePath { get; }
+            public string ConsumerMaterialPath { get; }
+        }
+
         private static void AssertGameOwnedAsset(UnityEngine.Object asset, string label)
         {
             Assert.That(asset, Is.Not.Null, $"{label} should be assigned.");
@@ -683,7 +1564,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator BalancedDetailCullRestoresRenderersNearTheCamera()
         {
             EditorSceneManager.LoadSceneInPlayMode(
-                ScenePaths[0],
+                ScenePaths[1],
                 new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
             yield return null;
@@ -700,8 +1581,17 @@ namespace DimensionBrawl.Tests
             Assert.That(detailCuller.CandidateColliderCount, Is.GreaterThan(0));
             Assert.That(detailCuller.CulledColliderCount, Is.GreaterThan(0));
             int balancedCulledColliderCount = detailCuller.CulledColliderCount;
+            Assert.That(
+                detailCuller.TryGetFirstColliderOnlyCullForTests(
+                    out MeshRenderer colliderOnlyRenderer,
+                    out Collider colliderOnlyCollider),
+                Is.True,
+                "Balanced mobile physics culling should preserve mid-distance visuals while removing their decorative colliders.");
+            Assert.That(colliderOnlyRenderer.enabled, Is.True);
+            Assert.That(colliderOnlyCollider.enabled, Is.False);
             detailCuller.Configure(mapRoot, camera, MobilePerformanceTier.Low);
             Assert.That(detailCuller.CullDistance, Is.EqualTo(90f).Within(0.001f));
+            Assert.That(detailCuller.ColliderCullDistance, Is.EqualTo(32f).Within(0.001f));
             Assert.That(detailCuller.CulledRendererCount, Is.GreaterThanOrEqualTo(balancedCulledCount));
             Assert.That(detailCuller.CulledColliderCount, Is.GreaterThanOrEqualTo(balancedCulledColliderCount));
             Assert.That(
@@ -764,7 +1654,7 @@ namespace DimensionBrawl.Tests
         [Timeout(30000)]
         public IEnumerator BalancedEnvironmentShadowOptimizationStaysWithinVisualBudget()
         {
-            string scenePath = ScenePaths[0];
+            string scenePath = ScenePaths[1];
             EditorSceneManager.LoadSceneInPlayMode(
                 scenePath,
                 new LoadSceneParameters(LoadSceneMode.Single));
@@ -833,7 +1723,7 @@ namespace DimensionBrawl.Tests
         [Timeout(30000)]
         public IEnumerator BalancedCorridorDistantDetailCullStaysWithinVisualBudget()
         {
-            string scenePath = ScenePaths[0];
+            string scenePath = ScenePaths[1];
             EditorSceneManager.LoadSceneInPlayMode(
                 scenePath,
                 new LoadSceneParameters(LoadSceneMode.Single));
@@ -926,6 +1816,20 @@ namespace DimensionBrawl.Tests
 
         private static void DisableDynamicGraphicsForCapture()
         {
+            DisableVisualEffectsForCapture();
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                skinnedRenderers[i].enabled = false;
+            }
+        }
+
+        private static void DisableVisualEffectsForCapture()
+        {
             Behaviour[] behaviours = UnityEngine.Object.FindObjectsByType<Behaviour>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
@@ -936,15 +1840,6 @@ namespace DimensionBrawl.Tests
                 {
                     behaviour.enabled = false;
                 }
-            }
-
-            SkinnedMeshRenderer[] skinnedRenderers =
-                UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(
-                    FindObjectsInactive.Include,
-                    FindObjectsSortMode.None);
-            for (int i = 0; i < skinnedRenderers.Length; i++)
-            {
-                skinnedRenderers[i].enabled = false;
             }
         }
 
@@ -1058,11 +1953,147 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void CaptureCanonicalStationBoss(Transform bossRoot, Transform visual)
+        {
+            const int captureLayer = 31;
+            bool bossWasActive = bossRoot.gameObject.activeSelf;
+            bool visualWasActive = visual.gameObject.activeSelf;
+            Transform[] visualTransforms = visual.GetComponentsInChildren<Transform>(includeInactive: true);
+            int[] originalLayers = new int[visualTransforms.Length];
+            GameObject cameraObject = null;
+            GameObject keyLightObject = null;
+            GameObject fillLightObject = null;
+            try
+            {
+                bossRoot.gameObject.SetActive(true);
+                visual.gameObject.SetActive(true);
+                for (int i = 0; i < visualTransforms.Length; i++)
+                {
+                    originalLayers[i] = visualTransforms[i].gameObject.layer;
+                    visualTransforms[i].gameObject.layer = captureLayer;
+                }
+
+                Animator animator = visual.GetComponentInChildren<Animator>(includeInactive: true);
+                animator?.Update(0f);
+
+                Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+                bool hasBounds = false;
+                Bounds bounds = default;
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Renderer renderer = renderers[i];
+                    if (renderer == null || !renderer.enabled || renderer.forceRenderingOff)
+                    {
+                        continue;
+                    }
+
+                    if (!hasBounds)
+                    {
+                        bounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                }
+
+                Assert.That(hasBounds, Is.True, "Station Commando capture requires visible renderer bounds.");
+                float radius = Mathf.Max(1.2f, bounds.extents.magnitude);
+                Vector3 viewDirection =
+                    (visual.forward * 0.82f + visual.right * 0.58f + Vector3.up * 0.12f).normalized;
+                float fieldOfView = 38f;
+                float distance = radius / Mathf.Sin(fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.12f;
+
+                cameraObject = new GameObject("StationCommandoArsenalCaptureCamera");
+                Camera camera = cameraObject.AddComponent<Camera>();
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.018f, 0.024f, 0.038f, 1f);
+                camera.cullingMask = 1 << captureLayer;
+                camera.fieldOfView = fieldOfView;
+                camera.nearClipPlane = 0.05f;
+                camera.farClipPlane = Mathf.Max(50f, distance * 3f);
+                camera.allowHDR = true;
+                camera.transform.position = bounds.center + viewDirection * distance;
+                camera.transform.rotation = Quaternion.LookRotation(
+                    bounds.center - camera.transform.position,
+                    Vector3.up);
+
+                keyLightObject = new GameObject("StationCommandoArsenalKeyLight");
+                Light keyLight = keyLightObject.AddComponent<Light>();
+                keyLight.type = LightType.Directional;
+                keyLight.color = new Color(0.86f, 0.92f, 1f);
+                keyLight.intensity = 1.35f;
+                keyLight.cullingMask = 1 << captureLayer;
+                keyLight.transform.rotation = camera.transform.rotation;
+
+                fillLightObject = new GameObject("StationCommandoArsenalFillLight");
+                Light fillLight = fillLightObject.AddComponent<Light>();
+                fillLight.type = LightType.Point;
+                fillLight.color = new Color(0.35f, 0.58f, 1f);
+                fillLight.intensity = 2.2f;
+                fillLight.range = radius * 4f;
+                fillLight.cullingMask = 1 << captureLayer;
+                fillLight.transform.position =
+                    bounds.center - camera.transform.right * radius * 1.15f + Vector3.up * radius * 0.35f;
+
+                Texture2D image = CaptureCamera(camera);
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(StationBossCapturePath));
+                    File.WriteAllBytes(StationBossCapturePath, image.EncodeToPNG());
+                    Color32 background = camera.backgroundColor;
+                    Color32[] pixels = image.GetPixels32();
+                    int visiblePixelCount = 0;
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        Color32 pixel = pixels[i];
+                        int difference = Mathf.Abs(pixel.r - background.r)
+                            + Mathf.Abs(pixel.g - background.g)
+                            + Mathf.Abs(pixel.b - background.b);
+                        if (difference > 30)
+                        {
+                            visiblePixelCount++;
+                        }
+                    }
+
+                    Assert.That(
+                        visiblePixelCount,
+                        Is.GreaterThan(pixels.Length * 0.025f),
+                        "Station Commando capture should contain a nonblank boss silhouette and arsenal.");
+                }
+                finally
+                {
+                    UnityEngine.Object.Destroy(image);
+                }
+            }
+            finally
+            {
+                for (int i = 0; i < visualTransforms.Length; i++)
+                {
+                    if (visualTransforms[i] != null)
+                    {
+                        visualTransforms[i].gameObject.layer = originalLayers[i];
+                    }
+                }
+
+                visual.gameObject.SetActive(visualWasActive);
+                bossRoot.gameObject.SetActive(bossWasActive);
+                UnityEngine.Object.Destroy(cameraObject);
+                UnityEngine.Object.Destroy(keyLightObject);
+                UnityEngine.Object.Destroy(fillLightObject);
+            }
+        }
+
         private static Texture2D CaptureCamera(Camera camera)
         {
             RenderTexture previousTarget = camera.targetTexture;
             RenderTexture previousActive = RenderTexture.active;
-            RenderTexture target = new(CaptureWidth, CaptureHeight, 24, RenderTextureFormat.ARGB32);
+            RenderTexture target = RenderTexture.GetTemporary(
+                CaptureWidth,
+                CaptureHeight,
+                24,
+                RenderTextureFormat.ARGB32);
             Texture2D image = new(CaptureWidth, CaptureHeight, TextureFormat.RGB24, false);
             try
             {
@@ -1077,7 +2108,7 @@ namespace DimensionBrawl.Tests
             {
                 camera.targetTexture = previousTarget;
                 RenderTexture.active = previousActive;
-                UnityEngine.Object.Destroy(target);
+                RenderTexture.ReleaseTemporary(target);
             }
         }
 

@@ -4,9 +4,6 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -32,9 +29,7 @@ namespace DimensionBrawl.LevelDesign
             SwapToRangedConfirm,
             FireConfirm,
             DodgeConfirm,
-            ClearTargetsConfirm,
-            ReplicaGrantCue,
-            SummonGuideCue
+            ClearTargetsConfirm
         }
 
         [Serializable]
@@ -77,9 +72,7 @@ namespace DimensionBrawl.LevelDesign
             DialogueAudioCueId.SwapToRangedConfirm,
             DialogueAudioCueId.FireConfirm,
             DialogueAudioCueId.DodgeConfirm,
-            DialogueAudioCueId.ClearTargetsConfirm,
-            DialogueAudioCueId.ReplicaGrantCue,
-            DialogueAudioCueId.SummonGuideCue
+            DialogueAudioCueId.ClearTargetsConfirm
         };
 
         private enum TutorialStep
@@ -92,8 +85,6 @@ namespace DimensionBrawl.LevelDesign
             Fire,
             Dodge,
             ClearTargets,
-            ReplicaGrant,
-            SummonGuide,
             Completed
         }
 
@@ -138,17 +129,6 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private bool requireTutorialTargetsDefeated = true;
         [SerializeField] private bool enableEnemyGameplayDuringClearStep = true;
 
-        [Header("Post Tutorial Guide")]
-        [SerializeField] private bool postTutorialGuideEnabled = true;
-        [SerializeField, Min(0f)] private float postTutorialMinimumReadSeconds = 0.18f;
-        [SerializeField, Min(0f)] private float postTutorialConfirmedSeconds = 0.14f;
-        [SerializeField] private string postTutorialSpeaker = "천계관리시스템";
-        [SerializeField] private string replicaGrantLine =
-            "영혼 동기화율 70퍼센트, 전생특전 '레플리카'를 지급합니다.";
-        [SerializeField] private string summonGuideLine =
-            "코스트 수치를 만족하면 소환수를 소환할 수 있습니다.";
-        [SerializeField] private string postTutorialAdvanceInputLabel = "계속";
-
         [Header("Route Guard")]
         [SerializeField] private bool constrainPlayerDuringTutorial = true;
         [SerializeField] private Transform tutorialBoundsCenter;
@@ -159,6 +139,7 @@ namespace DimensionBrawl.LevelDesign
         [Header("References")]
         [SerializeField] private CinematicTutorialPromptPresenter promptPresenter;
         [SerializeField] private OlympusTutorialOverlayPresenter overlayPresenter;
+        [SerializeField] private MonoBehaviour moveInputGateBehaviour;
         [SerializeField] private AudioSource overlayAudioSource;
         [SerializeField] private AudioClip overlayOpenSfx;
         [SerializeField, Range(0f, 1f)] private float overlayOpenSfxVolume = 0.82f;
@@ -215,8 +196,6 @@ namespace DimensionBrawl.LevelDesign
         public bool TutorialEnabled => tutorialEnabled;
         public bool IsRunning => step != TutorialStep.Inactive && step != TutorialStep.Completed;
         public bool IsCompleted => step == TutorialStep.Completed;
-        public bool IsAwaitingGuideAdvance => IsPostTutorialGuideStep(step)
-            && stepPhase == TutorialStepPhase.AwaitingAction;
         public string CurrentStepId => step.ToString();
         public string CurrentPhaseId => stepPhase.ToString();
         public string LastCompletionRecord => lastCompletionRecord;
@@ -297,14 +276,6 @@ namespace DimensionBrawl.LevelDesign
             overlayDialogueAudioCues = NormalizeDialogueAudioCueSlots(dialogueAudioCues);
         }
 
-        public void AdvanceGuide()
-        {
-            if (IsAwaitingGuideAdvance)
-            {
-                CommitStepCompletion("advance");
-            }
-        }
-
         public void BeginTutorial()
         {
             ResolveMissingReferences();
@@ -363,6 +334,7 @@ namespace DimensionBrawl.LevelDesign
 
             UnsubscribeObservers();
             SetTutorialAimPreviewHeld(false);
+            SetMovementInputLocked(false);
             SetPlayerActionInputLocked(false);
             SetCombatModeInputLocked(false);
             SetRangedBasicAttackInputLocked(false);
@@ -428,16 +400,6 @@ namespace DimensionBrawl.LevelDesign
 
         private void UpdateAwaitingActionStep()
         {
-            if (IsPostTutorialGuideStep(step))
-            {
-                if (WasAdvancePressedThisFrame())
-                {
-                    AdvanceGuide();
-                }
-
-                return;
-            }
-
             UpdateCurrentStepObservation();
             if (!HasActionObservationWindowElapsed())
             {
@@ -564,14 +526,6 @@ namespace DimensionBrawl.LevelDesign
                     SetOptionalActionsEnabled(true);
                     SetEnemyGameplayEnabled(enableEnemyGameplayDuringClearStep);
                     break;
-                case TutorialStep.ReplicaGrant:
-                case TutorialStep.SummonGuide:
-                    ConfigureTargetCandidates(Array.Empty<CombatHealth>());
-                    SetCombatModeInputLocked(true);
-                    SetRangedFireEnabled(false);
-                    SetOptionalActionsEnabled(false);
-                    SetEnemyGameplayEnabled(false);
-                    break;
             }
 
             ShowCurrentStepGuide();
@@ -635,19 +589,6 @@ namespace DimensionBrawl.LevelDesign
                     StartStep(TutorialStep.ClearTargets);
                     break;
                 case TutorialStep.ClearTargets:
-                    if (postTutorialGuideEnabled)
-                    {
-                        StartStep(TutorialStep.ReplicaGrant);
-                    }
-                    else
-                    {
-                        CompleteTutorial();
-                    }
-                    break;
-                case TutorialStep.ReplicaGrant:
-                    StartStep(TutorialStep.SummonGuide);
-                    break;
-                case TutorialStep.SummonGuide:
                     CompleteTutorial();
                     break;
             }
@@ -663,6 +604,7 @@ namespace DimensionBrawl.LevelDesign
             step = TutorialStep.Completed;
             stepPhase = TutorialStepPhase.Inactive;
             SetTutorialAimPreviewHeld(false);
+            SetMovementInputLocked(false);
             SetPlayerActionInputLocked(false);
             SetCombatModeInputLocked(false);
             SetRangedBasicAttackInputLocked(false);
@@ -779,11 +721,6 @@ namespace DimensionBrawl.LevelDesign
 
         private float ResolveCueReadSeconds()
         {
-            if (IsPostTutorialGuideStep(step))
-            {
-                return postTutorialMinimumReadSeconds;
-            }
-
             float readSeconds = Mathf.Max(cuePrimeSeconds, minimumCueReadSeconds);
             if (step != TutorialStep.SoldierChallenge)
             {
@@ -804,11 +741,6 @@ namespace DimensionBrawl.LevelDesign
 
         private float ResolveCompletionReadSeconds()
         {
-            if (IsPostTutorialGuideStep(step))
-            {
-                return postTutorialConfirmedSeconds;
-            }
-
             return Mathf.Max(completionRecordSeconds, minimumCompletionReadSeconds);
         }
 
@@ -821,7 +753,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void RepeatPromptIfNeeded()
         {
-            if (stepPhase == TutorialStepPhase.Committed || IsPostTutorialGuideStep(step))
+            if (stepPhase == TutorialStepPhase.Committed)
             {
                 return;
             }
@@ -901,24 +833,6 @@ namespace DimensionBrawl.LevelDesign
                         "전투 완료",
                         OlympusTutorialOverlayPresenter.FocusKind.Route,
                         new Vector2(0.5f, 0.76f));
-                    break;
-                case TutorialStep.ReplicaGrant:
-                    ShowGuide(
-                        DialogueAudioCueId.ReplicaGrantCue,
-                        postTutorialSpeaker,
-                        replicaGrantLine,
-                        postTutorialAdvanceInputLabel,
-                        OlympusTutorialOverlayPresenter.FocusKind.None,
-                        new Vector2(0.24f, 0.43f));
-                    break;
-                case TutorialStep.SummonGuide:
-                    ShowGuide(
-                        DialogueAudioCueId.SummonGuideCue,
-                        postTutorialSpeaker,
-                        summonGuideLine,
-                        postTutorialAdvanceInputLabel,
-                        OlympusTutorialOverlayPresenter.FocusKind.SummonSlots,
-                        new Vector2(0.89f, 0.54f));
                     break;
             }
         }
@@ -1089,32 +1003,18 @@ namespace DimensionBrawl.LevelDesign
                 case TutorialStep.ClearTargets:
                 case TutorialStep.Completed:
                     return 6;
-                case TutorialStep.ReplicaGrant:
-                    return 1;
-                case TutorialStep.SummonGuide:
-                    return 2;
                 default:
                     return 0;
             }
         }
 
-        private int ResolveTutorialStepCount()
+        private static int ResolveTutorialStepCount()
         {
-            return IsPostTutorialGuideStep(step) ? 2 : 6;
+            return 6;
         }
 
         private string ResolveTutorialPhaseLabel()
         {
-            if (step == TutorialStep.ReplicaGrant)
-            {
-                return "READ";
-            }
-
-            if (step == TutorialStep.SummonGuide)
-            {
-                return "ACT";
-            }
-
             switch (stepPhase)
             {
                 case TutorialStepPhase.Cue:
@@ -1531,6 +1431,21 @@ namespace DimensionBrawl.LevelDesign
                 overlayPresenter = gameObject.AddComponent<OlympusTutorialOverlayPresenter>();
             }
 
+            if (moveInputGateBehaviour is not ICombatMoveInputGate)
+            {
+                MonoBehaviour[] behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is ICombatMoveInputGate)
+                    {
+                        moveInputGateBehaviour = behaviours[i];
+                        break;
+                    }
+                }
+            }
+
             ApplyOverlayPresentationBindings();
         }
 
@@ -1675,12 +1590,12 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetCombatModeInputLocked(bool locked)
         {
-            combatModeController?.SetCinematicInputLocked(locked);
+            combatModeController?.SetCinematicInputLocked(PlayerInputLockSource.CorridorTutorial, locked);
         }
 
         private void SetPlayerActionInputLocked(bool locked)
         {
-            actionController?.SetCinematicInputLocked(locked);
+            actionController?.SetCinematicInputLocked(PlayerInputLockSource.CorridorTutorial, locked);
         }
 
         private void SetRangedBasicAttackInputLocked(bool locked)
@@ -1690,23 +1605,36 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetRangedBasicAttackInputLocked(bool locked, bool preserveHeldAim)
         {
-            rangedBasicAttackAction?.SetCinematicInputLocked(locked, preserveHeldAim);
+            rangedBasicAttackAction?.SetCinematicInputLocked(
+                PlayerInputLockSource.CorridorTutorial,
+                locked,
+                preserveHeldAim);
         }
 
         private void SetMovementInputLocked(bool locked)
         {
             if (player == null)
             {
+                (moveInputGateBehaviour as ICombatMoveInputGate)?.SetInputBlocked(
+                    PlayerInputLockSource.CorridorTutorial,
+                    locked);
                 return;
             }
 
             if (locked)
             {
-                player.SetCinematicMoveInputSpeedScale(0f);
+                (moveInputGateBehaviour as ICombatMoveInputGate)?.SetInputBlocked(
+                    PlayerInputLockSource.CorridorTutorial,
+                    true);
+                player.SetMoveInput(Vector2.zero);
+                player.SetCinematicMoveInputLocked(PlayerInputLockSource.CorridorTutorial, true);
                 return;
             }
 
-            player.ClearCinematicMoveInputSpeedScale();
+            player.SetCinematicMoveInputLocked(PlayerInputLockSource.CorridorTutorial, false);
+            (moveInputGateBehaviour as ICombatMoveInputGate)?.SetInputBlocked(
+                PlayerInputLockSource.CorridorTutorial,
+                false);
         }
 
         private void SetOverlayGuideState(OlympusTutorialOverlayPresenter.GuideState guideState)
@@ -1763,13 +1691,6 @@ namespace DimensionBrawl.LevelDesign
                     SetCombatModeInputLocked(false);
                     SetRangedBasicAttackInputLocked(cueLocked || committed);
                     break;
-                case TutorialStep.ReplicaGrant:
-                case TutorialStep.SummonGuide:
-                    SetMovementInputLocked(true);
-                    SetPlayerActionInputLocked(true);
-                    SetCombatModeInputLocked(true);
-                    SetRangedBasicAttackInputLocked(true);
-                    break;
                 case TutorialStep.Completed:
                 case TutorialStep.Inactive:
                     SetMovementInputLocked(false);
@@ -1778,59 +1699,6 @@ namespace DimensionBrawl.LevelDesign
                     SetRangedBasicAttackInputLocked(false);
                     break;
             }
-        }
-
-        private static bool IsPostTutorialGuideStep(TutorialStep candidate)
-        {
-            return candidate == TutorialStep.ReplicaGrant || candidate == TutorialStep.SummonGuide;
-        }
-
-        private static bool WasAdvancePressedThisFrame()
-        {
-#if ENABLE_INPUT_SYSTEM
-            if (Touchscreen.current != null)
-            {
-                foreach (var touch in Touchscreen.current.touches)
-                {
-                    if (touch.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (Mouse.current != null
-                && (Mouse.current.leftButton.wasPressedThisFrame
-                    || Mouse.current.rightButton.wasPressedThisFrame))
-            {
-                return true;
-            }
-
-            if (Keyboard.current != null
-                && (Keyboard.current.spaceKey.wasPressedThisFrame
-                    || Keyboard.current.enterKey.wasPressedThisFrame
-                    || Keyboard.current.numpadEnterKey.wasPressedThisFrame))
-            {
-                return true;
-            }
-#endif
-
-#if ENABLE_LEGACY_INPUT_MANAGER
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-            {
-                return true;
-            }
-
-            for (int i = 0; i < Input.touchCount; i++)
-            {
-                if (Input.GetTouch(i).phase == TouchPhase.Began)
-                {
-                    return true;
-                }
-            }
-#endif
-
-            return false;
         }
 
         private void SetRangedFireEnabled(bool enabled)

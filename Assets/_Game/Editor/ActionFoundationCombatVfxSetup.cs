@@ -17,7 +17,7 @@ namespace DimensionBrawl.Editor
     {
         public const string CombatVfxCueProfilePath = ActionFoundationProfileSetup.ProfileRoot + "/DB_CombatVfxCues_ActionFoundation.asset";
 
-        private const string ScenePath = ActionFoundationBossBarrageLaneReviewSetup.ReviewScenePath;
+        private const string ScenePath = ActionFoundationCombatAssetPaths.OlympusStationScenePath;
         private const string CombatVfxRoot = "Assets/_Game/Art/VFX/CombatCues";
         private const string MaterialRoot = CombatVfxRoot + "/Materials";
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";

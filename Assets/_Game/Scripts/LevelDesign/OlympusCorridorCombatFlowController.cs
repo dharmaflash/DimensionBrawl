@@ -7,7 +7,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -15,6 +20,8 @@ namespace DimensionBrawl.LevelDesign
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
         private const string CombatHudInstanceName = "PF_UI_CombatHud";
+        private const string TutorialCombatSceneName = "OlympusStationCombatStage";
+        private const string TutorialCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const float ActivePhasePollIntervalSeconds = 0.05f;
 
         private enum FlowPhase
@@ -98,6 +105,7 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
         private AudioSource runtimeTutorialOverlayAudioSource;
+        private bool tutorialCombatSceneLoadStarted;
         private Coroutine introHandoffRoutine;
         private Coroutine hudRevealRoutine;
         private Coroutine activePhaseRoutine;
@@ -353,10 +361,11 @@ namespace DimensionBrawl.LevelDesign
             yield return null;
             while (isActiveAndEnabled
                 && phase != FlowPhase.WaitingForIntroHandoff
-                && phase != FlowPhase.StageCleared)
+                && phase != FlowPhase.StageCleared
+                && !tutorialCombatSceneLoadStarted)
             {
                 EvaluateActivePhase();
-                if (phase == FlowPhase.StageCleared)
+                if (phase == FlowPhase.StageCleared || tutorialCombatSceneLoadStarted)
                 {
                     break;
                 }
@@ -374,14 +383,14 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                        LoadTutorialCombatScene();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
                     TryAdvanceFromIntroSwordGate();
                     break;
                 case FlowPhase.WaitingForStairEntry:
-                    ReleasePlayerMovementLocksForGameplay();
+                    EnsurePlayerMovementEnabled();
                     SetPlayerLaneConstraintEnabled(false);
                     if (IsPlayerInsideStairTrigger())
                     {
@@ -559,7 +568,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
-            ReleasePlayerMovementLocksForGameplay();
+            ClearPlayerInputForPhaseTransition();
             SetPlayerLaneConstraintEnabled(true);
             SetSwordGateMode(true);
             SnapPlayerToHandoffGround();
@@ -599,7 +608,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetPlayerCombatInputLocked(false);
-            ReleasePlayerMovementLocksForGameplay();
+            ClearPlayerInputForPhaseTransition();
             SetPlayerLaneConstraintEnabled(false);
             SetTutorialEntryMode();
             SnapPlayerToHandoffGround();
@@ -636,7 +645,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                LoadTutorialCombatScene();
             }
 
             ResumePhaseRoutines();
@@ -760,7 +769,7 @@ namespace DimensionBrawl.LevelDesign
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
             SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetCollidersEnabled(stairBlockers, false);
-            ReleasePlayerMovementLocksForGameplay();
+            ClearPlayerInputForPhaseTransition();
             SetPlayerLaneConstraintEnabled(false);
             if (realignPlayerToEntry)
             {
@@ -785,7 +794,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorCombatRoots, true);
             SetObjectsActive(corridorBoundsRoots, true);
             SetCollidersEnabled(stairBlockers, false);
-            ReleasePlayerMovementLocksForGameplay();
+            ClearPlayerInputForPhaseTransition();
             SetPlayerCombatInputLocked(false);
             SetPlayerLaneConstraintEnabled(false);
             SetSwordGateMode(false);
@@ -801,7 +810,7 @@ namespace DimensionBrawl.LevelDesign
             UnregisterCorridorClearTargetHandlers();
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, false);
-            ReleasePlayerMovementLocksForGameplay();
+            ClearPlayerInputForPhaseTransition();
             SetPlayerLaneConstraintEnabled(false);
             SetCombatHealthRootCollidersEnabled(corridorTargets, false);
             SetCombatHealthRootCollidersEnabled(corridorClearTargets, false);
@@ -923,8 +932,26 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                BeginWaitingForStairEntry(realignPlayerToEntry: true);
+                LoadTutorialCombatScene();
             }
+        }
+
+        private void LoadTutorialCombatScene()
+        {
+            if (tutorialCombatSceneLoadStarted)
+            {
+                return;
+            }
+
+            tutorialCombatSceneLoadStarted = true;
+            UnregisterTutorialCompletedHandler();
+#if UNITY_EDITOR
+            EditorSceneManager.LoadSceneInPlayMode(
+                TutorialCombatScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            SceneManager.LoadScene(TutorialCombatSceneName, LoadSceneMode.Single);
+#endif
         }
 
         private bool ShouldRunTutorial()
@@ -1079,7 +1106,19 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
-        private void ReleasePlayerMovementLocksForGameplay()
+        private void ClearPlayerInputForPhaseTransition()
+        {
+            EnsurePlayerMovementEnabled();
+            if (player == null)
+            {
+                return;
+            }
+
+            player.SetMoveInput(Vector2.zero);
+            player.SetLookInput(Vector2.zero);
+        }
+
+        private void EnsurePlayerMovementEnabled()
         {
             if (player == null)
             {
@@ -1092,11 +1131,6 @@ namespace DimensionBrawl.LevelDesign
             {
                 characterController.enabled = true;
             }
-
-            player.ClearCinematicMoveInputSpeedScale();
-            player.ClearActionMoveInputSpeedScale();
-            player.SetMoveInput(Vector2.zero);
-            player.SetLookInput(Vector2.zero);
         }
 
         private void UpdateHudReveal()
@@ -1311,7 +1345,9 @@ namespace DimensionBrawl.LevelDesign
         {
             if (combatModeController != null)
             {
-                combatModeController.SetCinematicInputLocked(false);
+                combatModeController.SetCinematicInputLocked(
+                    PlayerInputLockSource.CorridorCombatFlow,
+                    false);
                 if (swordOnly)
                 {
                     combatModeController.enabled = true;
@@ -1339,7 +1375,9 @@ namespace DimensionBrawl.LevelDesign
             if (combatModeController != null)
             {
                 combatModeController.enabled = true;
-                combatModeController.SetCinematicInputLocked(false);
+                combatModeController.SetCinematicInputLocked(
+                    PlayerInputLockSource.CorridorCombatFlow,
+                    false);
                 combatModeController.SetMeleeMode();
             }
 
@@ -1356,13 +1394,13 @@ namespace DimensionBrawl.LevelDesign
         {
             if (player != null && player.TryGetComponent(out PlayerActionController actionController))
             {
-                actionController.SetCinematicInputLocked(locked);
+                actionController.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
             }
 
-            combatModeController?.SetCinematicInputLocked(locked);
-            rangedBasicAttackAction?.SetCinematicInputLocked(locked);
-            skill1Action?.SetCinematicInputLocked(locked);
-            summonSlot1Action?.SetCinematicInputLocked(locked);
+            combatModeController?.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
+            rangedBasicAttackAction?.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
+            skill1Action?.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
+            summonSlot1Action?.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
             if (supportSummonActions == null)
             {
                 return;
@@ -1370,7 +1408,9 @@ namespace DimensionBrawl.LevelDesign
 
             for (int i = 0; i < supportSummonActions.Length; i++)
             {
-                supportSummonActions[i]?.SetCinematicInputLocked(locked);
+                supportSummonActions[i]?.SetCinematicInputLocked(
+                    PlayerInputLockSource.CorridorCombatFlow,
+                    locked);
             }
         }
 

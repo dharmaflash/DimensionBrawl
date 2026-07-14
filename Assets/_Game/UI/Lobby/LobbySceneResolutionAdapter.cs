@@ -8,7 +8,7 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class LobbySceneResolutionAdapter : MonoBehaviour
     {
-        private const string LobbySceneName = "UI_LobbyTest";
+        private const string LobbySceneName = "UI_Lobby";
 
         [SerializeField] private CanvasScaler canvasScaler;
         [SerializeField] private Vector2 referenceResolution = new Vector2(2560f, 1440f);

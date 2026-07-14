@@ -27,7 +27,7 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0.0001f)] private float dragSensitivity = 0.00435f;
 
         private bool pointerHeld;
-        private bool inputBlocked;
+        private PlayerInputLockSource inputBlockSources;
         private int activePointerId = NoPointerId;
         private bool keyboardAimActive;
         private Vector2 pointerAimInput;
@@ -40,7 +40,7 @@ namespace DimensionBrawl.UI
         public Vector2 CurrentAimInput { get; private set; }
         public bool IsPointerHeld => pointerHeld;
         public bool IsKeyboardAimActive => keyboardAimActive;
-        public bool IsInputBlocked => inputBlocked;
+        public bool IsInputBlocked => inputBlockSources != PlayerInputLockSource.None;
 
         public void Configure(
             PlayerMovementController newMovementController,
@@ -89,7 +89,7 @@ namespace DimensionBrawl.UI
 
         private void RefreshKeyboardAim()
         {
-            if (inputBlocked)
+            if (IsInputBlocked)
             {
                 keyboardAimActive = false;
                 ApplyAim(Vector2.zero, holdAim: false);
@@ -111,7 +111,7 @@ namespace DimensionBrawl.UI
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (inputBlocked
+            if (IsInputBlocked
                 || pointerHeld
                 || eventData == null
                 || eventData.button != PointerEventData.InputButton.Left)
@@ -128,7 +128,7 @@ namespace DimensionBrawl.UI
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!IsActivePointer(eventData) || inputBlocked)
+            if (!IsActivePointer(eventData) || IsInputBlocked)
             {
                 return;
             }
@@ -158,15 +158,16 @@ namespace DimensionBrawl.UI
             }
         }
 
-        public void SetInputBlocked(bool blocked)
+        public void SetInputBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (inputBlocked == blocked)
+            bool wasBlocked = IsInputBlocked;
+            inputBlockSources = PlayerInputLockMask.WithState(inputBlockSources, source, blocked);
+            if (wasBlocked == IsInputBlocked)
             {
                 return;
             }
 
-            inputBlocked = blocked;
-            if (inputBlocked)
+            if (IsInputBlocked)
             {
                 ReleasePointerAim();
                 ApplyAim(Vector2.zero, holdAim: false);
@@ -197,8 +198,8 @@ namespace DimensionBrawl.UI
                 ResolveCameraController()?.SetLookPeekInput(Vector2.zero);
                 if (movementController != null)
                 {
-                    movementController.SetSharedFacingRequestsBlocked(false);
-                    movementController.SetSharedLookActionBlocked(false);
+                    movementController.SetSharedFacingRequestsBlocked(PlayerInputLockSource.CombatHudAim, false);
+                    movementController.SetSharedLookActionBlocked(PlayerInputLockSource.CombatHudAim, false);
                 }
 
                 ApplyAim(resolvedInput, holdAim: true);
@@ -208,8 +209,8 @@ namespace DimensionBrawl.UI
             CurrentAimInput = Vector2.zero;
             if (movementController != null)
             {
-                movementController.SetSharedFacingRequestsBlocked(true);
-                movementController.SetSharedLookActionBlocked(true);
+                movementController.SetSharedFacingRequestsBlocked(PlayerInputLockSource.CombatHudAim, true);
+                movementController.SetSharedLookActionBlocked(PlayerInputLockSource.CombatHudAim, true);
                 movementController.SetLookInput(Vector2.zero);
             }
 
@@ -233,8 +234,8 @@ namespace DimensionBrawl.UI
             ApplyAim(Vector2.zero, holdAim: false);
             if (movementController != null)
             {
-                movementController.SetSharedLookActionBlocked(false);
-                movementController.SetSharedFacingRequestsBlocked(false);
+                movementController.SetSharedLookActionBlocked(PlayerInputLockSource.CombatHudAim, false);
+                movementController.SetSharedFacingRequestsBlocked(PlayerInputLockSource.CombatHudAim, false);
             }
         }
 

@@ -88,10 +88,21 @@ namespace DimensionBrawl.Combat
                 return instance;
             }
 
-            GameObject root = new GameObject("[CombatResourceTickScheduler]");
+            GameObject root = new GameObject("[CombatResourceTickScheduler]")
+            {
+                hideFlags = HideFlags.DontSave
+            };
             DontDestroyOnLoad(root);
             instance = root.AddComponent<CombatResourceTickScheduler>();
             return instance;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
         }
 
         private void Update()

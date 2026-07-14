@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -33,8 +35,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
         [SerializeField] private CombatHudVirtualJoystick moveJoystick;
-        [SerializeField] private BossBarrageLaneReviewOverlayHud overlayHud;
-        [SerializeField] private BossBarrageLaneReviewTutorialGuide tutorialGuide;
+        [SerializeField] private MonoBehaviour sessionOverlayBehaviour;
+        [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
         [SerializeField] private bool useSingleSummonPresentation;
 
         [Header("Combat State")]
@@ -58,9 +60,7 @@ namespace DimensionBrawl.UI
         [Header("Performance")]
         [SerializeField, Range(15f, 60f)] private float hudRefreshRate = 30f;
 
-        private bool tutorialMoveInputLocked;
         private Coroutine hudRefreshRoutine;
-        private float lastTutorialTickTime;
         private CombatHealth subscribedPlayerDamageHealth;
         private CombatHealth subscribedBossHealth;
         private PlayerCombatModeController subscribedCombatModeController;
@@ -95,6 +95,11 @@ namespace DimensionBrawl.UI
         private SummonStateTextCache primarySummonTextCache;
         private SummonStateTextCache supportSummon2TextCache;
         private SummonStateTextCache supportSummon3TextCache;
+        private ICombatSessionOverlay sessionOverlay;
+        private ICombatSessionOverlay subscribedSessionOverlay;
+        private CombatHudAimDragInput aimDragInput;
+        private CombatHudPointerActionInput[] pointerActionInputs = Array.Empty<CombatHudPointerActionInput>();
+        private bool combatMenuInputLocked;
 
         private void Awake()
         {
@@ -113,29 +118,24 @@ namespace DimensionBrawl.UI
                 moveJoystick = GetComponentInChildren<CombatHudVirtualJoystick>(includeInactive: true);
             }
 
-            if (tutorialGuide == null)
-            {
-                tutorialGuide = GetComponent<BossBarrageLaneReviewTutorialGuide>();
-            }
-
             if (bossCostLadder == null)
             {
                 bossCostLadder = FindFirstObjectByType<BossPressureCostLadder>();
             }
 
             ResolveMovementController();
-            BindTutorialGuide();
+            ResolveCombatSessionOverlay();
+            ResolveCombatMenuInputs();
         }
 
         private void OnEnable()
         {
-            lastTutorialTickTime = Time.time;
             lastPresentedPlayerHealth = float.NaN;
             lastPresentedPlayerMaxHealth = float.NaN;
             lastPresentedBossHealth = float.NaN;
             lastPresentedBossMaxHealth = float.NaN;
             ResetTextCaches();
-            BindTutorialGuide();
+            BindCombatSessionOverlay();
 
             if (inputBridge != null)
             {
@@ -149,6 +149,8 @@ namespace DimensionBrawl.UI
 
         private void OnDisable()
         {
+            UnbindCombatSessionOverlay();
+            SetCombatMenuInputLocked(false);
             StopHudRefreshRoutine();
             UnsubscribeImmediateReadoutEvents();
             UnsubscribeBossHealthReadout();
@@ -164,27 +166,23 @@ namespace DimensionBrawl.UI
             {
                 rangedBasicAttackAction.SetFireHeld(false);
             }
-            ClearTutorialMovementInputLock();
         }
 
         public void RefreshHudNow()
         {
-            float scaledTime = Time.time;
-            float tutorialDeltaTime = Mathf.Max(0f, scaledTime - lastTutorialTickTime);
-            lastTutorialTickTime = scaledTime;
-            RefreshHudState(tutorialDeltaTime);
+            RefreshHudState();
         }
 
         private void StartHudRefreshRoutine()
         {
             if (hudRefreshRoutine != null
                 || !isActiveAndEnabled
-                || (hudPresenter == null && tutorialGuide == null))
+                || hudPresenter == null)
             {
                 return;
             }
 
-            hudRefreshRoutine = StartCoroutine(RefreshHudAtReviewedRate());
+            hudRefreshRoutine = StartCoroutine(RefreshHudAtConfiguredRate());
         }
 
         private void StopHudRefreshRoutine()
@@ -198,7 +196,7 @@ namespace DimensionBrawl.UI
             hudRefreshRoutine = null;
         }
 
-        private IEnumerator RefreshHudAtReviewedRate()
+        private IEnumerator RefreshHudAtConfiguredRate()
         {
             var refreshDelay = new WaitForSecondsRealtime(1f / Mathf.Max(1f, hudRefreshRate));
             while (isActiveAndEnabled)
@@ -215,14 +213,8 @@ namespace DimensionBrawl.UI
             hudRefreshRoutine = null;
         }
 
-        private void RefreshHudState(float tutorialDeltaTime)
+        private void RefreshHudState()
         {
-            if (tutorialGuide != null)
-            {
-                tutorialGuide.TickTutorial(tutorialDeltaTime);
-            }
-
-            UpdateTutorialMovementInputLock();
             if (isActiveAndEnabled)
             {
                 SubscribePlayerDamageFeedback();
@@ -241,7 +233,6 @@ namespace DimensionBrawl.UI
             UpdatePrimaryReadouts();
             UpdateActionReadouts();
             UpdateSummonReadouts();
-            UpdateTutorialGuideReadouts();
         }
 
         private void SubscribeImmediateReadoutEvents()
@@ -315,11 +306,9 @@ namespace DimensionBrawl.UI
 
         private void UpdatePrimaryReadouts()
         {
-            string objective = tutorialGuide != null && tutorialGuide.HasReadoutOverride
-                ? tutorialGuide.CurrentObjective
-                : encounterController != null
-                    ? encounterController.ObjectiveCue
-                    : "Survive the boss lane.";
+            string objective = encounterController != null
+                ? encounterController.ObjectiveCue
+                : "Survive the boss lane.";
             hudPresenter.SetObjective(objective);
             hudPresenter.SetTimer(ResolveRemainingSeconds());
             if (bossCostLadder != null)
@@ -337,10 +326,7 @@ namespace DimensionBrawl.UI
 
             hudPresenter.SetAmmo(ResolveAmmoReadout(), rangedBasicAttackAction != null && rangedBasicAttackAction.IsReloading);
 
-            string feedback = tutorialGuide != null && tutorialGuide.HasReadoutOverride
-                ? tutorialGuide.CurrentPrompt
-                : ResolveCombatModeLabel();
-            hudPresenter.SetActionFeedbackText(feedback);
+            hudPresenter.SetActionFeedbackText(ResolveCombatModeLabel());
         }
 
         private void UpdateAimReticleReadout()
@@ -437,19 +423,6 @@ namespace DimensionBrawl.UI
                 ResolveSupportSummonAvailabilityFill01(summonSlot3Action));
         }
 
-        private void UpdateTutorialGuideReadouts()
-        {
-            if (tutorialGuide == null || !tutorialGuide.HasActiveStep)
-            {
-                hudPresenter.SetGuideFocus(CombatHudActionId.None, dimUnfocused: false);
-                return;
-            }
-
-            hudPresenter.SetGuideFocus(
-                tutorialGuide.CurrentFocusAction,
-                tutorialGuide.CurrentFocusDimUnfocusedActions);
-        }
-
         private void HandleActionRequested(CombatHudActionId actionId)
         {
             switch (actionId)
@@ -494,11 +467,117 @@ namespace DimensionBrawl.UI
                     }
                     break;
                 case CombatHudActionId.Pause:
-                    if (overlayHud != null)
-                    {
-                        overlayHud.OpenPauseMenu();
-                    }
+                    ResolveCombatSessionOverlay();
+                    sessionOverlay?.ShowPause();
                     break;
+            }
+        }
+
+        private void ResolveCombatSessionOverlay()
+        {
+            if (sessionOverlayBehaviour is ICombatSessionOverlay authoredOverlay)
+            {
+                sessionOverlay = authoredOverlay;
+            }
+            else
+            {
+                sessionOverlay = null;
+                MonoBehaviour[] behaviours = GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    if (behaviours[i] is not ICombatSessionOverlay foundOverlay)
+                    {
+                        continue;
+                    }
+
+                    sessionOverlayBehaviour = behaviours[i];
+                    sessionOverlay = foundOverlay;
+                    break;
+                }
+            }
+
+            if (screenCuePresenter == null)
+            {
+                screenCuePresenter = FindFirstObjectByType<ActionScreenCuePresenter>(FindObjectsInactive.Include);
+            }
+
+            sessionOverlay?.Configure(encounterController, screenCuePresenter);
+        }
+
+        private void BindCombatSessionOverlay()
+        {
+            ResolveCombatSessionOverlay();
+            if (subscribedSessionOverlay == sessionOverlay)
+            {
+                SetCombatMenuInputLocked(sessionOverlay != null && sessionOverlay.IsVisible);
+                return;
+            }
+
+            UnbindCombatSessionOverlay();
+            subscribedSessionOverlay = sessionOverlay;
+            if (subscribedSessionOverlay != null)
+            {
+                subscribedSessionOverlay.CombatInputBlockChanged += HandleCombatInputBlockChanged;
+            }
+
+            SetCombatMenuInputLocked(subscribedSessionOverlay != null && subscribedSessionOverlay.IsVisible);
+        }
+
+        private void UnbindCombatSessionOverlay()
+        {
+            if (subscribedSessionOverlay == null)
+            {
+                return;
+            }
+
+            subscribedSessionOverlay.CombatInputBlockChanged -= HandleCombatInputBlockChanged;
+            subscribedSessionOverlay = null;
+        }
+
+        private void HandleCombatInputBlockChanged(bool blocked)
+        {
+            SetCombatMenuInputLocked(blocked);
+        }
+
+        private void ResolveCombatMenuInputs()
+        {
+            aimDragInput ??= GetComponentInChildren<CombatHudAimDragInput>(includeInactive: true);
+            pointerActionInputs = GetComponentsInChildren<CombatHudPointerActionInput>(includeInactive: true);
+        }
+
+        private void SetCombatMenuInputLocked(bool locked)
+        {
+            if (combatMenuInputLocked == locked)
+            {
+                return;
+            }
+
+            combatMenuInputLocked = locked;
+            ResolveMovementController();
+            ResolveCombatMenuInputs();
+
+            moveJoystick?.SetInputBlocked(PlayerInputLockSource.CombatMenu, locked);
+            aimDragInput?.SetInputBlocked(PlayerInputLockSource.CombatMenu, locked);
+            for (int i = 0; i < pointerActionInputs.Length; i++)
+            {
+                pointerActionInputs[i]?.SetInputBlocked(PlayerInputLockSource.CombatMenu, locked);
+            }
+
+            movementController?.SetSharedMoveInputBlocked(PlayerInputLockSource.CombatMenu, locked);
+            movementController?.SetSharedLookActionBlocked(PlayerInputLockSource.CombatMenu, locked);
+            movementController?.SetSharedFacingRequestsBlocked(PlayerInputLockSource.CombatMenu, locked);
+            actionController?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            combatModeController?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            rangedBasicAttackAction?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            skill1Action?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            summonSlot1Action?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            summonSlot2Action?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+            summonSlot3Action?.SetCinematicInputLocked(PlayerInputLockSource.CombatMenu, locked);
+
+            if (locked)
+            {
+                actionController?.SetBasicAttackHeld(false);
+                rangedBasicAttackAction?.SetFireHeld(false);
             }
         }
 
@@ -552,22 +631,6 @@ namespace DimensionBrawl.UI
             {
                 rangedBasicAttackAction.SetFireHeld(false);
             }
-        }
-
-        private void BindTutorialGuide()
-        {
-            if (tutorialGuide == null)
-            {
-                return;
-            }
-
-            tutorialGuide.BindRuntimeContext(
-                encounterController,
-                energyLadder,
-                actionController,
-                rangedBasicAttackAction,
-                skill1Action,
-                summonSlot1Action);
         }
 
         private void SubscribePlayerDamageFeedback()
@@ -700,55 +763,6 @@ namespace DimensionBrawl.UI
             if (movementController == null && combatModeController != null)
             {
                 movementController = combatModeController.GetComponent<PlayerMovementController>();
-            }
-        }
-
-        private void UpdateTutorialMovementInputLock()
-        {
-            bool shouldLock = tutorialGuide != null && tutorialGuide.ShouldBlockMoveInput;
-            if (tutorialMoveInputLocked == shouldLock)
-            {
-                return;
-            }
-
-            tutorialMoveInputLocked = shouldLock;
-            ResolveMovementController();
-            if (moveJoystick != null)
-            {
-                moveJoystick.SetInputBlocked(shouldLock);
-            }
-            if (shouldLock)
-            {
-                if (movementController != null)
-                {
-                    movementController.SetMoveInput(Vector2.zero);
-                    movementController.SetSharedMoveInputBlocked(true);
-                }
-                return;
-            }
-
-            if (movementController != null)
-            {
-                movementController.SetSharedMoveInputBlocked(false);
-            }
-        }
-
-        private void ClearTutorialMovementInputLock()
-        {
-            if (!tutorialMoveInputLocked)
-            {
-                return;
-            }
-
-            tutorialMoveInputLocked = false;
-            if (moveJoystick != null)
-            {
-                moveJoystick.SetInputBlocked(false);
-            }
-            ResolveMovementController();
-            if (movementController != null)
-            {
-                movementController.SetSharedMoveInputBlocked(false);
             }
         }
 

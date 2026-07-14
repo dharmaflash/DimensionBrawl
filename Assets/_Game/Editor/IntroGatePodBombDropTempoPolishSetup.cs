@@ -217,7 +217,6 @@ namespace DimensionBrawl.Editor
 
         private static float CompressBombDropTime(float originalTime)
         {
-            float oldDuration = OldBombImpactSeconds - BombReleaseStartSeconds;
             float newDuration = TargetBombImpactSeconds - BombReleaseStartSeconds;
             float t = Mathf.InverseLerp(BombReleaseStartSeconds, OldBombImpactSeconds, originalTime);
             return BombReleaseStartSeconds + (newDuration * t);

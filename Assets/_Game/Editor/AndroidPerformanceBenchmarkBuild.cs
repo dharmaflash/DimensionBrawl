@@ -21,9 +21,8 @@ namespace DimensionBrawl.Editor
 
         private static readonly string[] BenchmarkScenes =
         {
-            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
-            "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
-            "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
+            "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
+            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
         };
 
         [MenuItem("DimensionBrawl/Performance/Build Android Performance Benchmark")]
@@ -259,8 +258,11 @@ namespace DimensionBrawl.Editor
             builder.AppendLine("    Start-Sleep -Seconds 10");
             builder.AppendLine("}");
             builder.AppendLine("$remote = \"/sdcard/Android/data/$package/files/DimensionBrawl-MobilePerformance.json\"");
-            builder.AppendLine("Invoke-Adb @('pull', $remote, \"$output/DimensionBrawl-MobilePerformance.json\") | Out-Null");
+            builder.AppendLine("$reportPath = \"$output/DimensionBrawl-MobilePerformance.json\"");
+            builder.AppendLine("Invoke-Adb @('pull', $remote, $reportPath) | Out-Null");
             builder.AppendLine("if (-not $complete) { throw 'Benchmark did not complete within twelve minutes. Partial diagnostics were preserved.' }");
+            builder.AppendLine("$report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json");
+            builder.AppendLine("if (-not $report.Completed) { throw 'Benchmark completion marker was logged, but the pulled report is not finalized.' }");
             builder.AppendLine("Write-Output \"Benchmark complete: $output\"");
             File.WriteAllText(RunnerScriptPath, builder.ToString(), new UTF8Encoding(false));
         }

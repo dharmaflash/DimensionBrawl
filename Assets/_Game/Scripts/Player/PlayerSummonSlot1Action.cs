@@ -134,7 +134,7 @@ namespace DimensionBrawl.Player
         private float blockedHintTimer;
         private string lastBlockedReason;
         private float slotCooldownRemaining;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
         private InputAction subscribedSummonInputAction;
         private InputAction keyboardFallbackAction;
         private Coroutine feedbackRoutine;
@@ -146,6 +146,7 @@ namespace DimensionBrawl.Player
         public int LastPressureScreenInterceptTier => executionRuntime != null ? executionRuntime.LastPressureScreenInterceptTier : 0;
         public int TotalPressureScreenInterceptCount => executionRuntime != null ? executionRuntime.TotalPressureScreenInterceptCount : 0;
         public int TotalUseCount => totalUseCount;
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
         public Vector3 LastEntryPosition => executionRuntime != null ? executionRuntime.LastEntryPosition : Vector3.zero;
         public Vector3 LastSummonActorPosition => executionRuntime != null ? executionRuntime.LastSummonActorPosition : Vector3.zero;
         public int ActiveProjectileCount => executionRuntime != null ? executionRuntime.ActiveProjectileCount : 0;
@@ -349,10 +350,14 @@ namespace DimensionBrawl.Player
             ConsumeQueuedSummon();
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicInputLocked = locked;
-            if (locked)
+            bool wasLocked = IsCinematicInputLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            if (!wasLocked && IsCinematicInputLocked)
             {
                 queued = false;
             }
@@ -687,7 +692,7 @@ namespace DimensionBrawl.Player
 
         private bool CanAcceptQueuedInput()
         {
-            return isActiveAndEnabled && !cinematicInputLocked;
+            return isActiveAndEnabled && !IsCinematicInputLocked;
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)

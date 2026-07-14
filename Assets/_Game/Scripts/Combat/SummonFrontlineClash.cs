@@ -49,6 +49,8 @@ namespace DimensionBrawl.Combat
         private DamageTeam lastOpponentTeam = DamageTeam.Neutral;
         private float lastDamageAmount;
         private SummonFrontlineClashTargetKind lastTargetKind = SummonFrontlineClashTargetKind.None;
+        private Vector3 previousScanCenter;
+        private bool hasPreviousScanCenter;
 
         public bool IsClashing => proxy != null && proxy.IsActive && clashFeedbackTimer > 0f;
         public int TotalClashCount => totalClashCount;
@@ -89,6 +91,14 @@ namespace DimensionBrawl.Combat
             nextDamageTime = 0f;
             contactScanTimer = 0f;
             clashFeedbackTimer = 0f;
+            totalClashCount = 0;
+            contactScanCount = 0;
+            lastOpponentTier = 0;
+            lastOpponentTeam = DamageTeam.Neutral;
+            lastDamageAmount = 0f;
+            lastTargetKind = SummonFrontlineClashTargetKind.None;
+            previousScanCenter = Vector3.zero;
+            hasPreviousScanCenter = false;
         }
 
         private void Update()
@@ -241,12 +251,30 @@ namespace DimensionBrawl.Combat
 
             Vector3 center = transform.position + Vector3.up * engageCenterHeight;
             contactScanCount++;
-            int count = Physics.OverlapSphereNonAlloc(
-                center,
-                engageRadius,
-                contactBuffer,
-                contactLayers,
-                QueryTriggerInteraction.Collide);
+            int count;
+            if (hasPreviousScanCenter
+                && (center - previousScanCenter).sqrMagnitude > 0.0001f)
+            {
+                count = Physics.OverlapCapsuleNonAlloc(
+                    previousScanCenter,
+                    center,
+                    engageRadius,
+                    contactBuffer,
+                    contactLayers,
+                    QueryTriggerInteraction.Collide);
+            }
+            else
+            {
+                count = Physics.OverlapSphereNonAlloc(
+                    center,
+                    engageRadius,
+                    contactBuffer,
+                    contactLayers,
+                    QueryTriggerInteraction.Collide);
+            }
+
+            previousScanCenter = center;
+            hasPreviousScanCenter = true;
 
             Collider bestCandidate = null;
             int bestPriority = int.MaxValue;

@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 namespace DimensionBrawl.LevelDesign
 {
     [DisallowMultipleComponent]
-    public sealed class OlympusStationCombatIntroTutorialBridge : MonoBehaviour
+    public sealed class OlympusStationCombatIntroTutorialBridge : MonoBehaviour, ICombatEntryGuideGate
     {
         private const string TargetSceneName = "OlympusStationCombatStage";
         private const string SystemSpeaker = "천계관리시스템";
@@ -44,6 +44,20 @@ namespace DimensionBrawl.LevelDesign
         private PlayerSupportSummonSlotAction[] supportSummonActions;
         private bool played;
         private bool gameplayInputLocked;
+        private bool guidePlaying;
+        private bool awaitingAdvance;
+        private bool advanceRequested;
+
+        public bool IsGuidePlaying => guidePlaying;
+        public bool IsAwaitingAdvance => awaitingAdvance;
+
+        public void RequestAdvance()
+        {
+            if (awaitingAdvance)
+            {
+                advanceRequested = true;
+            }
+        }
 
         private void Reset()
         {
@@ -72,6 +86,9 @@ namespace DimensionBrawl.LevelDesign
                 SetGameplayInputLocked(false);
             }
 
+            guidePlaying = false;
+            awaitingAdvance = false;
+            advanceRequested = false;
             overlayPresenter?.Hide();
         }
 
@@ -85,9 +102,11 @@ namespace DimensionBrawl.LevelDesign
             played = true;
             ResolveReferences();
             SetGameplayInputLocked(true);
+            guidePlaying = true;
 
             if (overlayPresenter == null)
             {
+                guidePlaying = false;
                 SetGameplayInputLocked(false);
                 yield break;
             }
@@ -123,20 +142,27 @@ namespace DimensionBrawl.LevelDesign
 
             overlayPresenter.Hide();
             SetGameplayInputLocked(false);
+            guidePlaying = false;
         }
 
         private IEnumerator WaitForAdvanceInput()
         {
+            awaitingAdvance = false;
+            advanceRequested = false;
             float startTime = Time.unscaledTime;
             while (Time.unscaledTime - startTime < minimumReadSeconds)
             {
                 yield return null;
             }
 
-            while (!WasAdvancePressedThisFrame())
+            awaitingAdvance = true;
+            while (!advanceRequested && !WasAdvancePressedThisFrame())
             {
                 yield return null;
             }
+
+            awaitingAdvance = false;
+            advanceRequested = false;
         }
 
         private static IEnumerator WaitRealtime(float seconds)
@@ -191,24 +217,24 @@ namespace DimensionBrawl.LevelDesign
                 {
                     movement.SetMoveInput(Vector2.zero);
                     movement.SetLookInput(Vector2.zero);
-                    movement.SetCinematicMoveInputSpeedScale(0f);
+                    movement.SetCinematicMoveInputLocked(PlayerInputLockSource.StationEntryGuide, true);
                 }
                 else
                 {
-                    movement.ClearCinematicMoveInputSpeedScale();
+                    movement.SetCinematicMoveInputLocked(PlayerInputLockSource.StationEntryGuide, false);
                 }
             }
 
-            actionController?.SetCinematicInputLocked(locked);
-            combatModeController?.SetCinematicInputLocked(locked);
-            skill1Action?.SetCinematicInputLocked(locked);
-            summonSlot1Action?.SetCinematicInputLocked(locked);
-            rangedBasicAttackAction?.SetCinematicInputLocked(locked);
-            combatHudAimDragInput?.SetInputBlocked(locked);
-            combatHudMoveJoystick?.SetInputBlocked(locked);
+            actionController?.SetCinematicInputLocked(PlayerInputLockSource.StationEntryGuide, locked);
+            combatModeController?.SetCinematicInputLocked(PlayerInputLockSource.StationEntryGuide, locked);
+            skill1Action?.SetCinematicInputLocked(PlayerInputLockSource.StationEntryGuide, locked);
+            summonSlot1Action?.SetCinematicInputLocked(PlayerInputLockSource.StationEntryGuide, locked);
+            rangedBasicAttackAction?.SetCinematicInputLocked(PlayerInputLockSource.StationEntryGuide, locked);
+            combatHudAimDragInput?.SetInputBlocked(PlayerInputLockSource.StationEntryGuide, locked);
+            combatHudMoveJoystick?.SetInputBlocked(PlayerInputLockSource.StationEntryGuide, locked);
             for (int i = 0; i < combatHudPointerActions.Length; i++)
             {
-                combatHudPointerActions[i]?.SetInputBlocked(locked);
+                combatHudPointerActions[i]?.SetInputBlocked(PlayerInputLockSource.StationEntryGuide, locked);
             }
 
             if (locked && rangedBasicAttackAction != null)
@@ -224,7 +250,9 @@ namespace DimensionBrawl.LevelDesign
 
             for (int i = 0; i < supportSummonActions.Length; i++)
             {
-                supportSummonActions[i]?.SetCinematicInputLocked(locked);
+                supportSummonActions[i]?.SetCinematicInputLocked(
+                    PlayerInputLockSource.StationEntryGuide,
+                    locked);
             }
         }
 

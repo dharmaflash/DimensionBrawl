@@ -1,3 +1,4 @@
+using DimensionBrawl.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -14,13 +15,13 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool sendHoldState;
 
         private bool pointerHeld;
-        private bool inputBlocked;
+        private PlayerInputLockSource inputBlockSources;
         private int activePointerId = NoPointerId;
         private Button visualButton;
 
         public CombatHudActionId ActionId => actionId;
         public bool SendsHoldState => sendHoldState;
-        public bool IsInputBlocked => inputBlocked;
+        public bool IsInputBlocked => inputBlockSources != PlayerInputLockSource.None;
         public bool IsPointerHeld => pointerHeld;
 
         public void Configure(CombatHudInputBridge newInputBridge, CombatHudActionId newActionId, bool newSendHoldState = false)
@@ -93,15 +94,16 @@ namespace DimensionBrawl.UI
             }
         }
 
-        public void SetInputBlocked(bool blocked)
+        public void SetInputBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (inputBlocked == blocked)
+            bool wasBlocked = IsInputBlocked;
+            inputBlockSources = PlayerInputLockMask.WithState(inputBlockSources, source, blocked);
+            if (wasBlocked == IsInputBlocked)
             {
                 return;
             }
 
-            inputBlocked = blocked;
-            if (inputBlocked)
+            if (IsInputBlocked)
             {
                 ReleaseHold();
             }
@@ -132,7 +134,7 @@ namespace DimensionBrawl.UI
         private bool CanRequestAction()
         {
             CacheVisualButton();
-            return !inputBlocked
+            return !IsInputBlocked
                 && actionId != CombatHudActionId.None
                 && (visualButton == null || visualButton.IsInteractable());
         }

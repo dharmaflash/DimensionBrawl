@@ -19,7 +19,8 @@ namespace DimensionBrawl.Editor
 
         private static readonly string[] CanonicalScenePaths =
         {
-            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
+            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
+            "Assets/_Game/Scenes/OlympusStationCombatStage.unity"
         };
 
         [MenuItem("DimensionBrawl/Performance/Apply Olympus Render-Only Mesh Memory Optimization")]

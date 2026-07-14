@@ -2,7 +2,8 @@
     "name": "DimensionBrawl.PlayModeTests",
     "rootNamespace": "DimensionBrawl.Tests",
     "references": [
-        "DimensionBrawl.Runtime"
+        "DimensionBrawl.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

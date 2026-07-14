@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace DimensionBrawl.UI
 {
     [DisallowMultipleComponent]
-    public sealed class CombatHudPresenter : MonoBehaviour
+    public sealed class CombatHudPresenter : MonoBehaviour, ICombatBossHudStatus
     {
         private static readonly string[] BossHudGraphicNames =
         {
@@ -170,22 +170,6 @@ namespace DimensionBrawl.UI
                 return deltaTime > 0f ? deltaTime : 1f / 60f;
             }
 
-            public void ApplyGuideFocus(bool focused, bool dimUnfocused)
-            {
-                if (canvasGroup == null)
-                {
-                    return;
-                }
-
-                if (focused)
-                {
-                    canvasGroup.alpha = Mathf.Max(canvasGroup.alpha, 1f);
-                }
-                else if (dimUnfocused)
-                {
-                    canvasGroup.alpha = Mathf.Min(canvasGroup.alpha, 0.42f);
-                }
-            }
         }
 
         [Serializable]
@@ -512,23 +496,6 @@ namespace DimensionBrawl.UI
             {
                 Transform found = FindDeepChild(root, objectName);
                 return found != null ? found.GetComponent<Image>() : null;
-            }
-
-            public void ApplyGuideFocus(bool focused, bool dimUnfocused)
-            {
-                if (canvasGroup == null)
-                {
-                    return;
-                }
-
-                if (focused)
-                {
-                    canvasGroup.alpha = Mathf.Max(canvasGroup.alpha, 1f);
-                }
-                else if (dimUnfocused)
-                {
-                    canvasGroup.alpha = Mathf.Min(canvasGroup.alpha, 0.48f);
-                }
             }
 
             private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
@@ -1014,22 +981,6 @@ namespace DimensionBrawl.UI
         public void SetActionFeedbackText(string feedback)
         {
             SetText(actionFeedbackText, feedback);
-        }
-
-        public void SetGuideFocus(CombatHudActionId focusAction, bool dimUnfocused)
-        {
-            bool shouldDim = dimUnfocused && focusAction != CombatHudActionId.None;
-            for (int i = 0; i < actionSlots.Length; i++)
-            {
-                ActionSlotBinding slot = actionSlots[i];
-                slot?.ApplyGuideFocus(slot.ActionId == focusAction, shouldDim);
-            }
-
-            for (int i = 0; i < summonSlots.Length; i++)
-            {
-                SummonSlotBinding slot = summonSlots[i];
-                slot?.ApplyGuideFocus(slot.ActionId == focusAction, shouldDim);
-            }
         }
 
         private void ResolveOptionalRuntimeReferences()

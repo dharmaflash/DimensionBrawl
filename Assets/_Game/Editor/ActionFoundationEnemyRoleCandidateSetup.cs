@@ -221,7 +221,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 soldier,
                 "contactDamageVfxPrefab",
-                ActionFoundationBossBarrageLaneReviewSetup.EnsureContactDamageSphereLightningVfxPrefab());
+                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.ContactDamageVfxPrefabPath));
             SetFloat(soldier, "contactDamageVfxScale", 0.46f);
             SetFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
             SetFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);
@@ -519,7 +519,7 @@ namespace DimensionBrawl.Editor
                     soldier,
                     "contactDamageVfxPrefab",
                     AssetDatabase.LoadAssetAtPath<GameObject>(
-                        ActionFoundationBossBarrageLaneReviewSetup.SummonContactDamageLightningVfxPrefabPath));
+                        ActionFoundationCombatAssetPaths.ContactDamageVfxPrefabPath));
                 ValidateFloat(soldier, "contactDamageVfxScale", 0.46f);
                 ValidateFloat(soldier, "contactDamageVfxHeightOffset", 0.58f);
                 ValidateFloat(soldier, "contactDamageVfxLifetimeSeconds", 0.72f);

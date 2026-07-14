@@ -54,10 +54,21 @@ namespace DimensionBrawl.Presentation
                 return instance;
             }
 
-            GameObject root = new("[MovementFootstepAudioScheduler]");
+            GameObject root = new("[MovementFootstepAudioScheduler]")
+            {
+                hideFlags = HideFlags.DontSave
+            };
             DontDestroyOnLoad(root);
             instance = root.AddComponent<MovementFootstepAudioScheduler>();
             return instance;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
         }
 
         private void Update()

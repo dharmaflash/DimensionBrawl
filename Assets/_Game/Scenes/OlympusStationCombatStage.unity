@@ -227,8 +227,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   target: {fileID: 4001}
   threat: {fileID: 1932639514}
   cameraOffset: {x: 0.14, y: 0.68, z: -4.25}
@@ -299,7 +299,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraCueDriver
   actionController: {fileID: 4005}
   movement: {fileID: 4004}
@@ -481,7 +481,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -525,11 +525,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59f4125f170140fc8d135210e0d24d59, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraTargetBridge
   cameraController: {fileID: 1004}
   targetSelector: {fileID: 4008}
   followTarget: {fileID: 4001}
+  targetRefreshIntervalSeconds: 0.12
 --- !u!114 &1008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -540,7 +541,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f8914b1dea82eb41afc515bc541ffc5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCinematicCueDirector
   cueProfile: {fileID: 11400000, guid: 22c6a27659a21384095362ba02edcfc9, type: 2}
   cameraController: {fileID: 1004}
@@ -568,7 +569,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f04b3c4c5df4d5a9a5ab1c067c2db7e, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageCameraCueDriver
   bossBarrageEmitter: {fileID: 1932639512}
   bossPressureActionDirector: {fileID: 1932639516}
@@ -727,7 +728,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -959,8 +960,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   team: 1
   maxHealth: 480
   startAtFullHealth: 1
@@ -980,8 +981,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6253f5fe88f04869b1dc4654feb51dd1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   moveAction: {fileID: 0}
   lookAction: {fileID: 0}
   mobileMoveInput: {x: 0, y: 0}
@@ -1023,8 +1024,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 418dc101151a481e99bf66c89a1a2c85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   basicAttackAction: {fileID: 0}
   dodgeAction: {fileID: 0}
   useDeviceFallbackWhenActionMissing: 1
@@ -1138,8 +1139,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   health: {fileID: 4003}
   flashRenderers:
   - {fileID: 184322764}
@@ -1228,8 +1229,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3e42d67d3a144d6991ac7b99f75b2e06, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   actionController: {fileID: 4005}
   targetRenderers:
   - {fileID: 4511202044854305800}
@@ -1262,7 +1263,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934852f257b94ad6a96b33999f3ab7f9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatTargetSelector
   selfHealth: {fileID: 4003}
   selectionOrigin: {fileID: 4001}
@@ -1293,7 +1294,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d051f987e9194992881a51929c4af0a5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerCombatVfxCueDriver
   actionController: {fileID: 4005}
   playerHealth: {fileID: 4003}
@@ -1335,7 +1336,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 1907862087}
@@ -1350,7 +1351,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 69a7a6806637edd45bf01b269fb35655, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PerfectDodgeVfxDirector
   actionController: {fileID: 4005}
   playerHealth: {fileID: 4003}
@@ -1396,7 +1397,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f1be8a7e71e45f892b9acfa0f0e2157, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerRangedBasicAttackAction
   fireAction: {fileID: 0}
   fireContinuouslyWhileHeld: 1
@@ -1436,7 +1437,7 @@ MonoBehaviour:
   suppressFacingOnFireWhileMoving: 1
   movingFacingSuppressSpeed: 0.08
   requireAimToFire: 0
-  fireTrigger: 
+  fireTrigger:
   useMagazineReload: 1
   magazineSize: 24
   reloadSeconds: 2
@@ -1473,7 +1474,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d7e0b22f4b34f9185e12a2de9555f32, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerRangedAimController
   aimAction: {fileID: 0}
   holdToAim: 1
@@ -1483,7 +1484,7 @@ MonoBehaviour:
   cameraController: {fileID: 1004}
   movement: {fileID: 4004}
   animator: {fileID: 793999779145019064}
-  aimingParameter: 
+  aimingParameter:
   faceCameraForwardWhileAiming: 1
   aimingFacingHoldSeconds: 0.08
   snapAimingFacing: 0
@@ -1497,7 +1498,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36090a0b03e54fe9a077fa32b4524916, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatModeController
   combatModeSwapAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1530,7 +1531,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e3f7797398c11124fa8f62f060375fb1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot3
   summonAction: {fileID: 0}
@@ -1574,7 +1575,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e3f7797398c11124fa8f62f060375fb1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot2
   summonAction: {fileID: 0}
@@ -1618,7 +1619,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49022cb4726287f458a2f17a568ca0cf, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSummonSlot1Action
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1743,7 +1744,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9028d8fa7506fda4ba7604a1ea2f46f8, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1Action
   skillAction: {fileID: 0}
   energyLadder: {fileID: 4019}
@@ -1795,7 +1796,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c2d4e6f70814a3b8c5d1e2f3a4b6c7d, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonEnergyLadder
   laneSpace: {fileID: 6555123}
   trackedPlayer: {fileID: 4001}
@@ -1844,7 +1845,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d82a0f0a1c594f248aa0ca516981d5d3, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PerfectDodgeTimeWarp
   actionController: {fileID: 4005}
   timeScale: 0.18
@@ -1865,7 +1866,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c43a663b4d334c34bc75181727699fd7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonEnergyVfxCuePresenter
   energyLadder: {fileID: 4019}
   cuePlayer: {fileID: 4010}
@@ -1889,7 +1890,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fec47afb6982a9e468ba74e53250aa90, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerRangedReloadSfxDriver
   rangedBasicAttackAction: {fileID: 4012}
   audioSource: {fileID: 1778107362}
@@ -1909,7 +1910,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d4e4e2bd8f654e04a8d1581f7fc4b9fb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerRangedBasicVfxCueDriver
   rangedBasicAttackAction: {fileID: 4012}
   cuePlayer: {fileID: 4010}
@@ -1938,7 +1939,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6ad16cbb7b0eabe4eb748b3f3e441a37, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerDamageReactionAnimator
   health: {fileID: 4003}
   animator: {fileID: 793999779145019064}
@@ -1970,7 +1971,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e9d20cb5d344349b6b853ec1cb52f41, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerLockTargetController
   focusAction: {fileID: 0}
   useDeviceFallbackWhenActionMissing: 1
@@ -2005,7 +2006,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b102f1f29a843d18e0177a79f99ddea, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerLockTargetVisualPresenter
   lockTargetController: {fileID: 4025}
   ringMaterial: {fileID: 2100000, guid: a85d0241ccb646c4ca735ba5f287eab4, type: 2}
@@ -2039,7 +2040,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01290eba696ef304e9665df04f578ea2, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1LaserSweepAction
   sourceHealth: {fileID: 4003}
   targetSelector: {fileID: 4008}
@@ -2280,8 +2281,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3332ce2d0b3240ea95c5c66945f512a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   playerHealth: {fileID: 4003}
   enemyHealth: {fileID: 1932639513}
   winMarker: {fileID: 6100}
@@ -2854,7 +2855,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -3175,7 +3176,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3a4f1c6d2e4f0e9a1b8c3d5e6f7081, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.SummonLaneSpace
   halfWidth: 5.25
   backLimitZ: -12
@@ -6277,7 +6278,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.55, y: 0.8, z: 0.25}
@@ -8388,7 +8389,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -9090,7 +9091,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 30, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -10440,7 +10441,7 @@ VisualEffect:
   m_GameObject: {fileID: 49992856}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: 7341d12016b659642a1d37ae20c63ffd, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -10834,8 +10835,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -11152,7 +11153,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -13509,7 +13510,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 9, y: 24, z: 5}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -16267,7 +16268,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 2100000, guid: 3a3beb30c7c957d4f9f062ca4f08edee, type: 2}
   m_Color: {r: 0.26, g: 0.28, b: 0.31, a: 0}
@@ -20703,7 +20704,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.78, b: 0.2, a: 0}
@@ -21714,7 +21715,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -26560,7 +26561,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 579920ca50aa2264cb4e660c31c7fbf4, type: 2}
   m_DrawDistance: 80
@@ -27775,7 +27776,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 110
@@ -28215,6 +28216,17 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300004, guid: abc00000000001152711253471505489, type: 3}
+--- !u!114 &185071497 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4845567660979824608, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
+  m_PrefabInstance: {fileID: 1248464237}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc64d552008343f1ba0be75f22a635ea, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatSessionOverlayPresenter
 --- !u!1 &185333092
 GameObject:
   m_ObjectHideFlags: 0
@@ -35167,7 +35179,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 579920ca50aa2264cb4e660c31c7fbf4, type: 2}
   m_DrawDistance: 80
@@ -38149,7 +38161,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
 --- !u!114 &254735494 stripped
 MonoBehaviour:
@@ -38160,7 +38172,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &254735495 stripped
 MonoBehaviour:
@@ -38171,7 +38183,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!114 &254735496 stripped
 MonoBehaviour:
@@ -38182,7 +38194,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &254780128
 GameObject:
@@ -40078,7 +40090,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -40924,7 +40936,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -41904,7 +41916,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 40
@@ -42629,7 +42641,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 100
@@ -48712,7 +48724,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -53185,8 +53197,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -53781,7 +53793,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.94}
@@ -58113,7 +58125,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.42, g: 0.98, b: 1, a: 0}
@@ -62598,7 +62610,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -63251,7 +63263,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -63289,12 +63301,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05e8d31be1fb44e4c8b3c828334d6c04, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudAimDragInput
   movementController: {fileID: 4004}
   combatModeController: {fileID: 4014}
   aimController: {fileID: 4013}
   rangedBasicAttackAction: {fileID: 4012}
+  cameraController: {fileID: 0}
   routeAimToMovementLook: 0
   keyboardPeekControlsAim: 1
   keyboardPeekRequiresActiveAim: 1
@@ -63649,7 +63662,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 195573a44d3b84a448c1c22ea8e868f0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarrageEncounterController
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 0}
@@ -63718,7 +63731,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a7c6d2f4db64e0f94566f910abbcd1a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarragePocketVfxCueBridge
   encounterController: {fileID: 439529094}
   cuePlayer: {fileID: 4010}
@@ -63756,7 +63769,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f0d5ee2af4340f7b9e6f2f12b2e4a45, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarragePocketCameraCueBridge
   encounterController: {fileID: 439529094}
   summonSlot1Action: {fileID: 4017}
@@ -64073,7 +64086,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5cd14630dd9148478d1b89b204b74ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatGirlWeaponSocketBinder
   bindings:
   - label: Left weapon socket
@@ -71665,7 +71678,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.42, g: 0.98, b: 1, a: 0}
@@ -73944,7 +73957,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 200
@@ -78558,7 +78571,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -79270,7 +79283,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -83646,7 +83659,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -83756,7 +83769,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 9, y: -24, z: 5}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -93771,8 +93784,9 @@ GameObject:
   m_Component:
   - component: {fileID: 615080645}
   - component: {fileID: 615080644}
+  - component: {fileID: 615080646}
   m_Layer: 0
-  m_Name: OlympusStation_BossHpTargetRuntimeBinder
+  m_Name: OlympusStation_CombatResultPresenter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -93788,14 +93802,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e760cf19c394b084c9fa9e226e304216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationCombatStageRuntimeBossTargetBinder
-  playerHealth: {fileID: 4003}
-  bossHealth: {fileID: 1932639513}
-  targetSelector: {fileID: 4008}
-  lockTargetController: {fileID: 4025}
-  rangedBasicAttackAction: {fileID: 4012}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationCombatResultPresenter
   encounter: {fileID: 6002}
+  stageClearOverlay: {fileID: 615080646}
+  resultSurfaceBehaviour: {fileID: 185071497}
 --- !u!4 &615080645
 Transform:
   m_ObjectHideFlags: 0
@@ -93811,6 +93822,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &615080646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 615080643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd1a9936cc7a40bcb1358f7c1a6d6b1a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+  sortOrder: 7000
+  combatHudExitSeconds: 0.42
+  postBossDefeatHoldSeconds: 1.1
+  hudExitSlidePixels: 128
 --- !u!1 &615510746
 GameObject:
   m_ObjectHideFlags: 0
@@ -94230,7 +94257,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -95583,7 +95610,7 @@ VisualEffect:
   m_GameObject: {fileID: 631066339}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: 5c9799d3e418db3448d0fbae1222f03b, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -95701,7 +95728,7 @@ VisualEffect:
   m_GameObject: {fileID: 632858262}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: 7341d12016b659642a1d37ae20c63ffd, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -96209,7 +96236,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 24, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -99247,7 +99274,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -100696,7 +100723,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 18, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -101748,7 +101775,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -102878,7 +102905,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -103006,7 +103033,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 19, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -104649,7 +104676,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -106251,7 +106278,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 711388407}
@@ -106269,7 +106296,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -3, y: -10, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -106636,7 +106663,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 579920ca50aa2264cb4e660c31c7fbf4, type: 2}
   m_DrawDistance: 80
@@ -107008,7 +107035,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -109102,7 +109129,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 22, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -115494,7 +115521,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 20, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -118130,7 +118157,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -119686,7 +119713,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 579920ca50aa2264cb4e660c31c7fbf4, type: 2}
   m_DrawDistance: 80
@@ -120034,7 +120061,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -122593,37 +122620,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 835092155}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &836340386
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 836340387}
-  m_Layer: 0
-  m_Name: BossBasicFireMuzzle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &836340387
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 836340386}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.20674478, y: 0.15479739, z: 0.55415624, w: -0.7913314}
-  m_LocalPosition: {x: 0.0123130875, y: 0.38396305, z: 0.5834162}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2135601040}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &837591014
 GameObject:
   m_ObjectHideFlags: 0
@@ -123486,7 +123482,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 33, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -124186,7 +124182,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.94}
@@ -125829,7 +125825,7 @@ VisualEffect:
   m_GameObject: {fileID: 864973744}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: fc182263ad487674f9b9cae54fec12e6, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -126180,6 +126176,14 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 95347344265657090, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 95347344265657090, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 95347344265657090, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: InitialModule.startSpeed.scalar
       value: 0
       objectReference: {fileID: 0}
@@ -126236,6 +126240,14 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 390361921474788172, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 390361921474788172, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 390361921474788172, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: ShapeModule.randomPositionAmount
       value: 0.03
       objectReference: {fileID: 0}
@@ -126288,6 +126300,14 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1436075690542458060, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1436075690542458060, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1436075690542458060, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: ShapeModule.randomPositionAmount
       value: 0.03
       objectReference: {fileID: 0}
@@ -126333,6 +126353,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1534055653380032146, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: VelocityModule.x.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1534055653380032146, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1534055653380032146, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 1534055653380032146, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
@@ -126361,7 +126389,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5289093696991605134, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.22
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5289093696991605134, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: m_LocalRotation.w
@@ -126428,6 +126456,14 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5319723888390932373, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5319723888390932373, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5319723888390932373, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: ShapeModule.randomPositionAmount
       value: 0.03
       objectReference: {fileID: 0}
@@ -126469,6 +126505,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6727166400826729956, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
       propertyPath: VelocityModule.x.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6727166400826729956, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.y.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6727166400826729956, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
+      propertyPath: VelocityModule.z.minMaxState
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6727166400826729956, guid: b683dd9926fca9c4f90696827c97f67b, type: 3}
@@ -131091,7 +131135,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.92, b: 0.38, a: 0}
@@ -131605,7 +131649,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 29, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -140955,7 +140999,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 25, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -152838,7 +152882,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -153022,50 +153066,6 @@ Transform:
   - {fileID: 327145317}
   m_Father: {fileID: 901817721}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1042399846
-GameObject:
-  m_ObjectHideFlags: 19
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1042399847}
-  - component: {fileID: 1042399848}
-  m_Layer: 0
-  m_Name: SceneIDMap
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1042399847
-Transform:
-  m_ObjectHideFlags: 19
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1042399846}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1675588418}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1042399848
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1042399846}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1042413538
 GameObject:
   m_ObjectHideFlags: 0
@@ -154781,7 +154781,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
   source: {fileID: 1053920870}
   trackedTransform: {fileID: 4001}
@@ -155297,7 +155297,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.DecalProjector
   m_Material: {fileID: 2100000, guid: 579920ca50aa2264cb4e660c31c7fbf4, type: 2}
   m_DrawDistance: 80
@@ -161293,7 +161293,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 21, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -161897,7 +161897,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -162472,7 +162472,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -162611,7 +162611,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -165121,7 +165121,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 27, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -166161,7 +166161,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -177140,8 +177140,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_IsGlobal: 1
   priority: 0
   blendDistance: 0
@@ -179281,8 +179281,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -179526,7 +179526,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 2100000, guid: 3a3beb30c7c957d4f9f062ca4f08edee, type: 2}
   m_Color: {r: 0.26, g: 0.28, b: 0.31, a: 0}
@@ -180296,7 +180296,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 0.42, g: 0.98, b: 1, a: 0}
@@ -184422,7 +184422,6 @@ Transform:
   m_Children:
   - {fileID: 46892161}
   - {fileID: 1014562039}
-  - {fileID: 1644142457}
   - {fileID: 915987235}
   - {fileID: 1407035916}
   - {fileID: 1232246021}
@@ -184662,7 +184661,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 730105525700213134, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 0b09d18fbdef8df41a1399920546fa9a, type: 3}
     - target: {fileID: 730105525700213134, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.g
@@ -184714,7 +184713,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1088591233675231321, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: beabc96021738594ba8c2b957fcb5613, type: 3}
     - target: {fileID: 1088591233675231321, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -184734,7 +184733,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1091538742212054281, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: beabc96021738594ba8c2b957fcb5613, type: 3}
     - target: {fileID: 1091538742212054281, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -184778,7 +184777,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1253479575630756170, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: bc01c162657a4eb48a053d12f2bb7c3d, type: 3}
     - target: {fileID: 1253479575630756170, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.b
@@ -184790,7 +184789,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1265204428943132751, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: cbb08697a8ab89945a0c63cd14a00459, type: 3}
     - target: {fileID: 1265204428943132751, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.b
@@ -184918,7 +184917,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1842193623212257861, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: b3a444307ba6e2944bcfdcb161a9e5a4, type: 3}
     - target: {fileID: 1842193623212257861, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185182,7 +185181,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3361010194900093769, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 2759dc1ee77c14c42b7962638e78cdad, type: 3}
     - target: {fileID: 3361010194900093769, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185199,10 +185198,6 @@ PrefabInstance:
     - target: {fileID: 3361010194900093769, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.r
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3361010194900093769, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_RaycastTarget
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3703126060584930097, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Pivot.x
@@ -185274,7 +185269,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4029489247150146584, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: aa5f9bf5722c9674a95297ccde8b25e2, type: 3}
     - target: {fileID: 4029489247150146584, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185298,7 +185293,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4446544736316703841, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 8d30eda848a19c74da52fe902f274bfa, type: 3}
     - target: {fileID: 4446544736316703841, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185426,7 +185421,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4804544984278972721, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 401ab987c2f916b458b20a1d51e0c2dd, type: 3}
     - target: {fileID: 4804544984278972721, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185522,31 +185517,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: ammoText
-      value: 
+      value:
       objectReference: {fileID: 254735493}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossHealthFill
-      value: 
+      value:
       objectReference: {fileID: 271871110}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossHealthText
-      value: 
+      value:
       objectReference: {fileID: 0}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: bossResourceFill
-      value: 
+      value:
       objectReference: {fileID: 271871109}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: actionSlots.Array.data[1].readyGlowImage
-      value: 
+      value:
       objectReference: {fileID: 254735496}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: actionSlots.Array.data[2].readyGlowImage
-      value: 
+      value:
       objectReference: {fileID: 254735494}
     - target: {fileID: 5107563179232993290, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: actionSlots.Array.data[1].readyProgressFill
-      value: 
+      value:
       objectReference: {fileID: 254735495}
     - target: {fileID: 5141939096489136729, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_IsActive
@@ -185626,7 +185621,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5636449933055466095, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: beabc96021738594ba8c2b957fcb5613, type: 3}
     - target: {fileID: 5636449933055466095, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -185682,7 +185677,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5756717049702816846, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: d691c29d1a6eb9f4d85b0c8c759b9e4a, type: 3}
     - target: {fileID: 5756717049702816846, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.b
@@ -186026,7 +186021,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6621567413535496108, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: abee3a3deb2eecc4c9abe41254075f2b, type: 3}
     - target: {fileID: 6621567413535496108, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -186090,7 +186085,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6768418161951259002, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 824cbefca4f153c4483b8d7e2c5664ee, type: 3}
     - target: {fileID: 6768418161951259002, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -186538,7 +186533,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8747059325834610369, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: e60a5fb6996e21a43b287e7efae58cd8, type: 3}
     - target: {fileID: 8747059325834610369, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.b
@@ -186650,7 +186645,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9117214623022392823, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: d4986b6be5f29204f89853e146c6b4dc, type: 3}
     - target: {fileID: 9117214623022392823, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.a
@@ -186702,7 +186697,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9207186531740888459, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
-      value: 
+      value:
       objectReference: {fileID: 21300000, guid: 3786db3a64b0c49458cd0f94932bc5a1, type: 3}
     - target: {fileID: 9207186531740888459, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Color.b
@@ -186938,7 +186933,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e0cbb26d23b4f04099f0d449c3dd76b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudInputBridge
 --- !u!114 &1248464262 stripped
 MonoBehaviour:
@@ -186949,7 +186944,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: edaeb11f8bb452e4e88e030f3e7654f6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPresenter
 --- !u!114 &1248464263
 MonoBehaviour:
@@ -186961,7 +186956,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -186976,7 +186971,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -193058,8 +193053,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -205039,8 +205034,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -205334,7 +205329,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1376262359}
@@ -205352,7 +205347,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 8, y: 6, z: -3}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -205465,7 +205460,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -207504,7 +207499,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 20
@@ -210030,7 +210025,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d85f5878113320a48a4d953bd098c390, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudVirtualJoystick
   movementController: {fileID: 4004}
   knob: {fileID: 1248464255}
@@ -212371,7 +212366,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.8, y: 0.4, z: -0.35}
@@ -214402,7 +214397,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -221038,7 +221033,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.78, b: 0.2, a: 0}
@@ -221412,7 +221407,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -221521,7 +221516,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -223723,7 +223718,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -224714,7 +224709,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -224827,7 +224822,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.92, b: 0.38, a: 0}
@@ -225868,8 +225863,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -228932,7 +228927,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 120
@@ -229425,7 +229420,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 130
@@ -229473,7 +229468,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -229779,7 +229774,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -231442,7 +231437,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c5b3c1a16b81c094785bc0b51623d7e4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageLaneTelegraphPresenter
   bossBarrageEmitter: {fileID: 1932639512}
   laneSpace: {fileID: 6555123}
@@ -232019,7 +232014,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.92, b: 0.38, a: 0}
@@ -235727,7 +235722,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0.94}
@@ -239946,118 +239941,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.26959845, y: 0.41798544, z: 0.11978981}
   m_Center: {x: 0.000000074505806, y: 0, z: 0}
---- !u!1 &1644142456
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1644142457}
-  - component: {fileID: 1644142460}
-  - component: {fileID: 1644142459}
-  - component: {fileID: 1644142458}
-  m_Layer: 0
-  m_Name: PlayerForwardBoundary_DoNotCross
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1644142457
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644142456}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.06, z: 0}
-  m_LocalScale: {x: 10.5, y: 0.08, z: 0.12}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1248049772}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!23 &1644142458
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644142456}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: d1eefb8bc581acd448fba21ad52345d2, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &1644142459
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644142456}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!33 &1644142460
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1644142456}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1644238190
 GameObject:
   m_ObjectHideFlags: 0
@@ -240157,7 +240040,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 26, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -242335,6 +242218,37 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300004, guid: abc00000000005697403362649407016, type: 3}
+--- !u!1 &1663344705
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1663344706}
+  m_Layer: 0
+  m_Name: BossBasicFireMuzzle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1663344706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1663344705}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.38385862, y: 0.09894525, z: 0.48603627, w: -0.7788654}
+  m_LocalPosition: {x: 0.10403614, y: 0.586162, z: 0.37677547}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2007048431}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1664789177
 GameObject:
   m_ObjectHideFlags: 0
@@ -242907,7 +242821,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -243915,7 +243829,6 @@ Transform:
   - {fileID: 1876407021}
   - {fileID: 1649552630}
   - {fileID: 2117440287}
-  - {fileID: 1042399847}
   - {fileID: 1874537053}
   - {fileID: 1648882833}
   - {fileID: 1119122325}
@@ -245859,7 +245772,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -247202,7 +247115,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -248391,7 +248304,7 @@ VisualEffect:
   m_GameObject: {fileID: 1702380458}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: 6218f6d5913a4df4c880f4f40e08b0ec, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -249033,7 +248946,7 @@ VisualEffect:
   m_GameObject: {fileID: 1708042771}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: 6218f6d5913a4df4c880f4f40e08b0ec, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -250861,7 +250774,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1723322382}
@@ -250879,7 +250792,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 3, y: 11, z: -4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -253435,7 +253348,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -254513,7 +254426,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 220
@@ -254620,7 +254533,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.78, b: 0.2, a: 0}
@@ -256241,7 +256154,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -256595,7 +256508,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
   m_EffectColor: {r: 0, g: 0.025, b: 0.035, a: 0.95}
   m_EffectDistance: {x: 1.25, y: -1.25}
@@ -256610,7 +256523,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 0.86, b: 0.38, a: 1}
@@ -257383,7 +257296,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -259172,7 +259085,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -259861,7 +259774,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1777501759}
@@ -259879,7 +259792,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 7}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -262381,7 +262294,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 1.2, y: 0.5, z: 0.15}
@@ -267802,7 +267715,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0.4, y: -0.2, z: 1}
@@ -267915,57 +267828,13 @@ GameObject:
   m_Component:
   - component: {fileID: 1831336407}
   - component: {fileID: 1831336404}
-  - component: {fileID: 1831336403}
   m_Layer: 0
-  m_Name: BossBarrageLaneReview_DebugHud
+  m_Name: ActionScreenCueRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1831336403
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1831336402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef0bf0b1949263746b2e530813c06605, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud
-  encounterController: {fileID: 439529094}
-  screenCuePresenter: {fileID: 1831336404}
-  inputLockBehaviours:
-  - {fileID: 1248464261}
-  - {fileID: 437249723}
-  - {fileID: 1406907996}
-  - {fileID: 292477426}
-  - {fileID: 183828589}
-  - {fileID: 1554268320}
-  - {fileID: 1558434457}
-  - {fileID: 520126473}
-  - {fileID: 1839690757}
-  - {fileID: 1742448631}
-  retrySceneName: OlympusStationCombatStage
-  retryScenePath: Assets/_Game/Scenes/OlympusStationCombatStage.unity
-  stageSelectSceneName: UI_StageSelectTest
-  stageSelectScenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
-  lobbySceneName: UI_LobbyTest
-  lobbyScenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
-  showOverlay: 1
-  drawIdleButton: 0
-  pauseButtonSize: 72
-  edgeInset: 32
-  panelWidth: 560
-  panelHeight: 430
-  panelColor: {r: 0.015, g: 0.022, b: 0.034, a: 0.92}
-  dimColor: {r: 0, g: 0, b: 0, a: 0.46}
-  accentColor: {r: 1, g: 0.72, b: 0.34, a: 0.96}
-  clearAccentColor: {r: 0.28, g: 1, b: 0.62, a: 0.96}
-  failAccentColor: {r: 1, g: 0.28, b: 0.2, a: 0.96}
-  pauseKey: 60
 --- !u!114 &1831336404
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267976,7 +267845,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f93009fed8905bb42a31f7ee799ffc95, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionScreenCuePresenter
   actionController: {fileID: 4005}
   playerHealth: {fileID: 4003}
@@ -268000,7 +267869,6 @@ MonoBehaviour:
   maxPerfectDodgeEdgeAlpha: 0
   perfectDodgeDomainSeconds: 3
   perfectDodgePulseSeconds: 0.22
-  perfectDodgeBandThickness: 26
   perfectDodgeDomainMaterial: {fileID: 2100000, guid: 781b4663cac37384987ed06654555eb4, type: 2}
   perfectDodgeGlitchOverlayMaterial: {fileID: 2100000, guid: b32dcd3cfade93d488085177bf32365b, type: 2}
   perfectDodgeShaderIntensity: 0.92
@@ -268355,7 +268223,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -268643,7 +268511,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 31, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -269628,7 +269496,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1248464261}
   actionId: 210
@@ -272373,7 +272241,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
   source: {fileID: 1858156243}
   trackedTransform: {fileID: 1932639514}
@@ -273860,13 +273728,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a529d70643acd034b8f7c136aa5dd8f1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewCombatHudBinder
   hudPresenter: {fileID: 1248464262}
   inputBridge: {fileID: 1248464261}
   moveJoystick: {fileID: 0}
-  overlayHud: {fileID: 1831336403}
-  tutorialGuide: {fileID: 0}
+  sessionOverlayBehaviour: {fileID: 185071497}
+  screenCuePresenter: {fileID: 1831336404}
   useSingleSummonPresentation: 0
   encounterController: {fileID: 439529094}
   playerHealth: {fileID: 4003}
@@ -273892,7 +273760,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -273909,7 +273777,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
@@ -276817,7 +276685,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 2100000, guid: 3a3beb30c7c957d4f9f062ca4f08edee, type: 2}
   m_Color: {r: 0.26, g: 0.28, b: 0.31, a: 0}
@@ -278065,7 +277933,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -281529,7 +281397,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -281560,7 +281428,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
@@ -281754,7 +281622,7 @@ VisualEffect:
   m_GameObject: {fileID: 1929799178}
   m_Enabled: 1
   m_Asset: {fileID: 8926484042661614526, guid: fc182263ad487674f9b9cae54fec12e6, type: 3}
-  m_InitialEventName: 
+  m_InitialEventName:
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
@@ -281965,7 +281833,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3d4e5f6471890abcdeffedcba123456, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarrageEmitter
   laneSpace: {fileID: 6555123}
   trackedPlayer: {fileID: 4001}
@@ -281999,7 +281867,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
   maxHealth: 2400
@@ -282023,10 +281891,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2135601040}
   - {fileID: 657815555}
   - {fileID: 8735513}
   - {fileID: 1858156241}
+  - {fileID: 2007048430}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1932639515
@@ -282039,7 +281907,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05c83bdbe7851b8459f4e03b08d6e96c, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureCostLadder
   laneSpace: {fileID: 6555123}
   trackedBoss: {fileID: 1932639514}
@@ -282085,7 +281953,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 630890bd4f66f01479c55f58a987d7f4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDirector
   costLadder: {fileID: 1932639515}
   bossBarrageEmitter: {fileID: 1932639512}
@@ -282157,7 +282025,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 84b58112c21226844881d824e2eb7ecc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossSummonPressureAction
   laneSpace: {fileID: 6555123}
   trackedPlayer: {fileID: 4001}
@@ -282233,12 +282101,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78d830c626a3a3549b15282246430d2b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireEmitter
   laneSpace: {fileID: 6555123}
   trackedPlayer: {fileID: 4001}
   sourceHealth: {fileID: 1932639513}
-  fireOrigin: {fileID: 836340387}
+  fireOrigin: {fileID: 1663344706}
   fireProfile: {fileID: 11400000, guid: 2250ad5d8f39e334ba6213f256f82a6a, type: 2}
   projectilePrefab: {fileID: 2794082157248871863, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
   projectilePrefabObject: {fileID: 2676862116300731253, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
@@ -282262,7 +282130,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d3f1c2b9a4e4561b0c7d8e9f0123456, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressurePositionController
   laneSpace: {fileID: 6555123}
   costLadder: {fileID: 1932639515}
@@ -282319,11 +282187,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ed3f804e35be3a42bc0b8e861c34b3f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageVisualCueDriver
   bossBarrageEmitter: {fileID: 1932639512}
   bossPressureActionDirector: {fileID: 1932639516}
-  animator: {fileID: 2135601042}
+  animator: {fileID: 2007048432}
   pulseRoot: {fileID: 657815555}
   pulseRenderers:
   - {fileID: 657815556}
@@ -282513,7 +282381,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a7403340c564fa49bdb37b281821b39, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.EnemySummonPacingDirector
   summonPressureAction: {fileID: 1932639517}
   pacingEnabled: 1
@@ -285182,8 +285050,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
   m_CustomShadowLayers: 0
@@ -286299,7 +286167,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1961815686}
@@ -286317,7 +286185,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 9, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -288151,7 +288019,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 95
@@ -289602,7 +289470,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 28, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -290994,8 +290862,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -292364,6 +292232,113 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300004, guid: abc00000000008653169545693586208, type: 3}
+--- !u!1001 &2007048429
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1932639514}
+    m_Modifications:
+    - target: {fileID: 1555887499901681993, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.0002990702
+      objectReference: {fileID: 0}
+    - target: {fileID: 1555887499901681993, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.0002628423
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917254188157416145, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_Name
+      value: BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_Controller
+      value:
+      objectReference: {fileID: 9100000, guid: 8af592b4e53c1154d8dc59d699963e68, type: 2}
+    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8794101981141614011, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1663344706}
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+--- !u!4 &2007048430 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+  m_PrefabInstance: {fileID: 2007048429}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2007048431 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8794101981141614011, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+  m_PrefabInstance: {fileID: 2007048429}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &2007048432 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
+  m_PrefabInstance: {fileID: 2007048429}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2007064263
 GameObject:
   m_ObjectHideFlags: 0
@@ -292552,7 +292527,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -294983,8 +294958,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0777d029ed3dffa4692f417d4aba19ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   m_Material: {fileID: 2100000, guid: 5257b3a728a59f44d835539517a078c7, type: 2}
   m_DrawDistance: 1000
   m_FadeScale: 0.9
@@ -297039,7 +297014,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -298041,7 +298016,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 32, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -299286,7 +299261,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2066667281}
@@ -299304,7 +299279,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: -10}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -299598,7 +299573,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -304004,7 +303979,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 9, y: -24, z: 5}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -305634,7 +305609,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2110969827}
@@ -305652,7 +305627,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -7, y: 5, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -306515,7 +306490,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 9, y: 24, z: 5}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -307059,7 +307034,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 23, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -308406,108 +308381,6 @@ Transform:
   - {fileID: 1751949397}
   m_Father: {fileID: 901817721}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2135601039
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1932639514}
-    m_Modifications:
-    - target: {fileID: 1555887499901681993, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.00029907015
-      objectReference: {fileID: 0}
-    - target: {fileID: 1555887499901681993, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.00026284225
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -1.58
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2917254188157416145, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_Name
-      value: BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando
-      objectReference: {fileID: 0}
-    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_Controller
-      value: 
-      objectReference: {fileID: 9100000, guid: 8af592b4e53c1154d8dc59d699963e68, type: 2}
-    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_CullingMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      propertyPath: m_ApplyRootMotion
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 836340387}
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
---- !u!4 &2135601040 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2537773540167706731, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-  m_PrefabInstance: {fileID: 2135601039}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &2135601042 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 8491492302163358225, guid: d405ed8ecd0740748a4c4f82842ebd49, type: 3}
-  m_PrefabInstance: {fileID: 2135601039}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2135726294
 GameObject:
   m_ObjectHideFlags: 0
@@ -311338,7 +311211,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -311642,7 +311515,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -311657,7 +311530,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5cd14630dd9148478d1b89b204b74ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatGirlWeaponSocketBinder
   bindings:
   - label: Left weapon socket
@@ -320925,8 +320798,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.05, y: 0.05, z: 0.2}
   symmetryMode: 0
@@ -320977,8 +320850,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.08, y: 0.02, z: 0.6}
   symmetryMode: 0
@@ -321044,8 +320917,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.08, y: 0.035, z: 0.6}
   symmetryMode: 0
@@ -321096,8 +320969,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.08, y: 0.035, z: 0.6}
   symmetryMode: 0
@@ -321153,8 +321026,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdbd3ce05f5b45942b56ede5c9b38364, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   serializeData:
     clothType: 1
     sourceRenderers: []
@@ -323765,8 +323638,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.04, y: 0.05, z: 0.5}
   symmetryMode: 0
@@ -323822,8 +323695,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.07, y: 0.05, z: 0.5}
   symmetryMode: 0
@@ -323874,8 +323747,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdbd3ce05f5b45942b56ede5c9b38364, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   serializeData:
     clothType: 10
     sourceRenderers: []
@@ -324603,8 +324476,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdbd3ce05f5b45942b56ede5c9b38364, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   serializeData:
     clothType: 1
     sourceRenderers: []
@@ -325270,8 +325143,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.05, y: 0.12, z: 0.562}
   symmetryMode: 0
@@ -325322,8 +325195,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.08, y: 0.02, z: 0.6}
   symmetryMode: 0
@@ -325459,8 +325332,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdbd3ce05f5b45942b56ede5c9b38364, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   serializeData:
     clothType: 1
     sourceRenderers: []
@@ -326176,8 +326049,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2b68b2c7953ebb479b78627f19a6ccb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.08, y: 0.1, z: 0.1}
   symmetryMode: 0
@@ -326244,8 +326117,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.101, y: 0.05, z: 0.5}
   symmetryMode: 0
@@ -326336,8 +326209,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e6f5338a96461264fb9a1132c8509672, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   center: {x: 0, y: 0, z: 0}
   size: {x: 0.05, y: 0.05, z: 0.2}
   symmetryMode: 0
@@ -326403,8 +326276,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bdbd3ce05f5b45942b56ede5c9b38364, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   serializeData:
     clothType: 1
     sourceRenderers: []
@@ -328887,7 +328760,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b0d14ad5acfb85418e2367d4f4a8835, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.RifleGirlWeaponSocketDriver
   animator: {fileID: 793999779145019064}
   rifleConstraint: {fileID: 0}
@@ -328913,7 +328786,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34323a34dbcf1fb409db2e34f1191361, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.RifleGirlNativeGameplayAnimatorBridge
   animator: {fileID: 793999779145019064}
   movement: {fileID: 4004}

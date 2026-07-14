@@ -165,7 +165,7 @@ namespace DimensionBrawl.Player
         private bool perfectDodgeTriggeredThisDodge;
         private bool nextAttackQueued;
         private bool basicAttackHeld;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
         private bool healthSubscribed;
         private float nextDodgeAllowedTime;
         private Vector3 currentAttackDirection = Vector3.forward;
@@ -179,6 +179,7 @@ namespace DimensionBrawl.Player
             ActiveDodgeCooldownSeconds <= 0f
                 ? 1f
                 : Mathf.Clamp01(1f - DodgeCooldownRemaining / ActiveDodgeCooldownSeconds);
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
         public Vector3 LastDodgeDirection { get; private set; } = Vector3.forward;
         public Vector3 LastAttackDirection { get; private set; } = Vector3.forward;
 
@@ -252,10 +253,14 @@ namespace DimensionBrawl.Player
             suppressBasicAttackDeviceFallback = true;
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicInputLocked = locked;
-            if (!locked)
+            bool wasLocked = IsCinematicInputLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            if (wasLocked || !IsCinematicInputLocked)
             {
                 return;
             }
@@ -785,7 +790,7 @@ namespace DimensionBrawl.Player
 
         private bool CanAcceptQueuedInput()
         {
-            return isActiveAndEnabled && !cinematicInputLocked;
+            return isActiveAndEnabled && !IsCinematicInputLocked;
         }
 
         private void ClearQueuedInput()
@@ -856,7 +861,7 @@ namespace DimensionBrawl.Player
 
         private bool ReadAttackPressed()
         {
-            if (cinematicInputLocked)
+            if (IsCinematicInputLocked)
             {
                 mobileAttackQueued = false;
                 basicAttackHeld = false;
@@ -883,7 +888,7 @@ namespace DimensionBrawl.Player
 
         private bool ReadAttackHeld()
         {
-            if (cinematicInputLocked)
+            if (IsCinematicInputLocked)
             {
                 basicAttackHeld = false;
                 return false;
@@ -907,7 +912,7 @@ namespace DimensionBrawl.Player
 
         private bool ReadDodgePressed()
         {
-            if (cinematicInputLocked)
+            if (IsCinematicInputLocked)
             {
                 mobileDodgeQueued = false;
                 return false;

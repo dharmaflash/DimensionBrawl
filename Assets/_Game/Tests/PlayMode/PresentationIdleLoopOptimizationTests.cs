@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using DimensionBrawl.Debugging;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEngine;
@@ -104,7 +105,7 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(combatHudBinder);
             Assert.IsNull(
                 combatHudBinder.GetMethod("Update", flags),
-                "Combat HUD polling should run at its reviewed refresh rate instead of every render frame.");
+                "Combat HUD polling should run at its configured refresh rate instead of every render frame.");
 
             System.Type combatHudPresenter = System.Type.GetType(
                 "DimensionBrawl.UI.CombatHudPresenter, Assembly-CSharp");
@@ -120,12 +121,6 @@ namespace DimensionBrawl.Tests
                 combatHudAimDragInput.GetMethod("Update", flags),
                 "Combat HUD aim drag should react to pointer and input-action events instead of polling every frame.");
 
-            System.Type reviewOverlayHud = System.Type.GetType(
-                "DimensionBrawl.UI.BossBarrageLaneReviewOverlayHud, DimensionBrawl.Runtime");
-            Assert.IsNotNull(reviewOverlayHud);
-            Assert.IsNull(
-                reviewOverlayHud.GetMethod("Update", flags),
-                "Pause and result overlays should react to input and pocket result events.");
         }
 
         [UnityTest]
@@ -226,11 +221,11 @@ namespace DimensionBrawl.Tests
                 controller.QueueCombatModeSwap();
                 Assert.IsTrue(controller.IsMeleeMode);
 
-                controller.SetCinematicInputLocked(true);
+                controller.SetCinematicInputLocked(PlayerInputLockSource.EditorVerification, true);
                 controller.QueueCombatModeSwap();
                 Assert.IsTrue(controller.IsMeleeMode);
 
-                controller.SetCinematicInputLocked(false);
+                controller.SetCinematicInputLocked(PlayerInputLockSource.EditorVerification, false);
                 controller.QueueCombatModeSwap();
                 Assert.IsTrue(controller.IsRangedMode);
             }
@@ -259,9 +254,7 @@ namespace DimensionBrawl.Tests
                 yield return null;
 
                 MovementFootstepAudioScheduler[] schedulers =
-                    Object.FindObjectsByType<MovementFootstepAudioScheduler>(
-                        FindObjectsInactive.Include,
-                        FindObjectsSortMode.None);
+                    Resources.FindObjectsOfTypeAll<MovementFootstepAudioScheduler>();
                 Assert.AreEqual(1, schedulers.Length);
                 Assert.AreEqual(
                     initialPresenterCount + 2,
@@ -549,7 +542,8 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(player.PlayExpression("Smile"));
                 Assert.IsTrue(player.IsBlending);
 
-                for (int frame = 0; frame < 180 && player.IsBlending; frame++)
+                float settleDeadline = Time.realtimeSinceStartup + 2f;
+                while (player.IsBlending && Time.realtimeSinceStartup < settleDeadline)
                 {
                     yield return null;
                 }

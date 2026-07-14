@@ -1,8 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -10,9 +10,11 @@ using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.Tests
 {
@@ -54,7 +56,7 @@ namespace DimensionBrawl.Tests
             OlympusCorridorTutorialDirector.DialogueAudioCue[] cues =
                 OlympusCorridorTutorialDirector.CreateDefaultDialogueAudioCueSlots();
 
-            Assert.That(cues.Length, Is.EqualTo(15));
+            Assert.That(cues.Length, Is.EqualTo(13));
             Assert.That(cues[0].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SoldierChallenge));
             Assert.That(cues[1].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MeleeCue));
             Assert.That(cues[2].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.MoveCue));
@@ -68,8 +70,6 @@ namespace DimensionBrawl.Tests
             Assert.That(cues[10].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.FireConfirm));
             Assert.That(cues[11].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.DodgeConfirm));
             Assert.That(cues[12].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ClearTargetsConfirm));
-            Assert.That(cues[13].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.ReplicaGrantCue));
-            Assert.That(cues[14].CueId, Is.EqualTo(OlympusCorridorTutorialDirector.DialogueAudioCueId.SummonGuideCue));
         }
 
         [Test]
@@ -141,7 +141,6 @@ namespace DimensionBrawl.Tests
         public IEnumerator LoadOlympusCorridorScene()
         {
             Time.timeScale = 1f;
-            ExpectKnownMissingScenePrefabLogs();
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
         }
@@ -361,19 +360,16 @@ namespace DimensionBrawl.Tests
                     flowController,
                     "tutorialOverlayDialogueAudioCues");
 
-            Assert.That(cues.Length, Is.EqualTo(15));
+            Assert.That(cues.Length, Is.EqualTo(13));
             for (int i = 0; i <= 6; i++)
             {
                 Assert.IsNotNull(cues[i].Clip, $"Tutorial instruction voice cue {cues[i].CueId} should be assigned.");
             }
 
-            for (int i = 7; i <= 12; i++)
+            for (int i = 7; i < cues.Length; i++)
             {
                 Assert.IsNull(cues[i].Clip, $"Fast confirmation cue {cues[i].CueId} should stay silent.");
             }
-
-            Assert.IsNotNull(cues[13].Clip, "Replica grant voice cue should be assigned.");
-            Assert.IsNotNull(cues[14].Clip, "Summon guide voice cue should be assigned.");
         }
 
         [UnityTest]
@@ -618,12 +614,19 @@ namespace DimensionBrawl.Tests
             report.AppendLine("| Frame | Time | Combat FOV | Main Camera | Base FOV | Aim Target | Aim Weight | Is Aiming |");
             report.AppendLine("|---:|---:|---:|---|---:|---:|---:|---|");
             float minFireFieldOfView = combatCamera.fieldOfView;
-            for (int i = 0; i < 60; i++)
+            float fireAimSettleDeadline = Time.realtimeSinceStartup + 2f;
+            int fireAimFrame = 0;
+            do
             {
                 yield return null;
                 minFireFieldOfView = Mathf.Min(minFireFieldOfView, combatCamera.fieldOfView);
-                AppendCameraFovSample(report, i + 1, cameraController, combatCamera, rangedAimController);
+                fireAimFrame++;
+                AppendCameraFovSample(report, fireAimFrame, cameraController, combatCamera, rangedAimController);
             }
+            while ((ReadPrivateField<float>(cameraController, "aimWeight") <= 0.75f
+                    || minFireFieldOfView >= preFireFieldOfView - 3f
+                    || Vector3.Distance(preFireCameraPosition, combatCamera.transform.position) <= 0.35f)
+                && Time.realtimeSinceStartup < fireAimSettleDeadline);
 
             Assert.IsTrue(rangedAimController.IsAiming, "Fire cue should put the player ranged aim controller into aim mode.");
             Assert.That(
@@ -707,13 +710,7 @@ namespace DimensionBrawl.Tests
                     DamageResponsePolicy.DamageOnly));
             }
 
-            yield return WaitForStep(tutorialDirector, "ReplicaGrant", 4f, report);
-            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
-            tutorialDirector.AdvanceGuide();
-            yield return WaitForStep(tutorialDirector, "SummonGuide", 2f, report);
-            yield return WaitForPhase(tutorialDirector, "AwaitingAction", 2f, report);
-            tutorialDirector.AdvanceGuide();
-            yield return WaitForStep(tutorialDirector, "Completed", 2f, report);
+            yield return WaitForStep(tutorialDirector, "Completed", 4f, report);
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 if (tutorialTargets[i] != null)
@@ -835,12 +832,19 @@ namespace DimensionBrawl.Tests
                 report.AppendLine("| Frame | Time | Combat FOV | Main Camera | Base FOV | Aim Target | Aim Weight | Is Aiming |");
                 report.AppendLine("|---:|---:|---:|---|---:|---:|---:|---|");
                 minFireFieldOfView = combatCamera.fieldOfView;
-                for (int i = 0; i < 60; i++)
+                float fireAimSettleDeadline = Time.realtimeSinceStartup + 2f;
+                int fireAimFrame = 0;
+                do
                 {
                     yield return null;
                     minFireFieldOfView = Mathf.Min(minFireFieldOfView, combatCamera.fieldOfView);
-                    AppendCameraFovSample(report, i + 1, cameraController, combatCamera, rangedAimController);
+                    fireAimFrame++;
+                    AppendCameraFovSample(report, fireAimFrame, cameraController, combatCamera, rangedAimController);
                 }
+                while ((ReadPrivateField<float>(cameraController, "aimWeight") <= 0.75f
+                        || minFireFieldOfView >= preFireFieldOfView - 3f
+                        || Vector3.Distance(preFireCameraPosition, combatCamera.transform.position) <= 0.35f)
+                    && Time.realtimeSinceStartup < fireAimSettleDeadline);
 
                 AppendCameraSnapshot(report, "Fire aim settled", cameraController, combatCamera, rangedAimController);
                 AppendAndAssertAimCameraLaneComposition(report, "Fire aim settled", combatCamera, player);
@@ -956,18 +960,150 @@ namespace DimensionBrawl.Tests
             float gameplayStartedAt = Time.time;
             Vector3 startPosition = player.transform.position;
             int frames = 0;
+
+            Behaviour joystick = RequireBehaviourByTypeName(
+                "MoveJoystickRing",
+                "DimensionBrawl.UI.CombatHudVirtualJoystick");
+            Image joystickImage = joystick.GetComponent<Image>();
+            Assert.IsNotNull(joystickImage, "The virtual joystick needs a Graphic for EventSystem raycasts.");
+            Assert.IsTrue(
+                joystickImage.raycastTarget,
+                "The virtual joystick Graphic must accept raycasts or real touch input cannot reach its pointer handlers.");
+            Assert.AreSame(
+                player,
+                ReadPrivateField<PlayerMovementController>(joystick, "movementController"),
+                "The scene joystick must drive the active corridor player.");
+
+            EventSystem eventSystem = EventSystem.current;
+            Assert.IsNotNull(eventSystem, "The corridor scene needs an active EventSystem for the virtual joystick.");
+
+            RectTransform joystickRect = joystick.GetComponent<RectTransform>();
+            Canvas canvas = joystick.GetComponentInParent<Canvas>();
+            Assert.IsNotNull(canvas, "The virtual joystick must be under a Canvas.");
+            Camera eventCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            Vector2 center = RectTransformUtility.WorldToScreenPoint(
+                eventCamera,
+                joystickRect.TransformPoint(joystickRect.rect.center));
+
+            var pointerData = new PointerEventData(eventSystem)
+            {
+                pointerId = 71,
+                button = PointerEventData.InputButton.Left,
+                position = center,
+                pressPosition = center
+            };
+            var raycastResults = new List<RaycastResult>();
+            eventSystem.RaycastAll(pointerData, raycastResults);
+
+            GameObject raycastTarget = null;
+            RaycastResult joystickRaycast = default;
+            for (int i = 0; i < raycastResults.Count; i++)
+            {
+                RaycastResult candidate = raycastResults[i];
+                if (ExecuteEvents.GetEventHandler<IPointerDownHandler>(candidate.gameObject) != joystick.gameObject)
+                {
+                    continue;
+                }
+
+                raycastTarget = candidate.gameObject;
+                joystickRaycast = candidate;
+                break;
+            }
+
+            Assert.IsNotNull(
+                raycastTarget,
+                "A real EventSystem raycast at the visible move stick must resolve to the virtual joystick.");
+
+            pointerData.pointerCurrentRaycast = joystickRaycast;
+            pointerData.pointerPressRaycast = joystickRaycast;
+            pointerData.rawPointerPress = raycastTarget;
+            pointerData.pointerPress = ExecuteEvents.ExecuteHierarchy(
+                raycastTarget,
+                pointerData,
+                ExecuteEvents.pointerDownHandler);
+            pointerData.pointerDrag = ExecuteEvents.GetEventHandler<IDragHandler>(raycastTarget);
+            Assert.AreSame(
+                joystick.gameObject,
+                pointerData.pointerPress,
+                "The EventSystem should select the virtual joystick as the pointer-down handler.");
+            Assert.AreSame(
+                joystick.gameObject,
+                pointerData.pointerDrag,
+                "The EventSystem should select the virtual joystick as the drag handler.");
+            Assert.IsTrue(
+                ReadPublicProperty<bool>(joystick, "IsInputBlocked"),
+                "The Move cue should keep gameplay input locked before its action window.");
+            Assert.IsFalse(
+                ReadPublicProperty<bool>(joystick, "IsPointerHeld"),
+                "A pointer pressed during the cue must not drive movement before the action window opens.");
+
+            float dragDistance = Mathf.Max(48f, joystickRect.rect.width * 0.3f);
+            pointerData.position = center + Vector2.up * dragDistance;
+            ExecuteEvents.Execute(pointerData.pointerDrag, pointerData, ExecuteEvents.dragHandler);
+
+            while (tutorialDirector.CurrentPhaseId != "AwaitingAction")
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    "Timed out waiting for the Move tutorial input window.");
+                yield return null;
+            }
+
+            Assert.IsFalse(
+                ReadPublicProperty<bool>(joystick, "IsInputBlocked"),
+                "The joystick should unlock for the Move tutorial action window.");
+            Assert.IsTrue(
+                ReadPublicProperty<bool>(joystick, "IsPointerHeld"),
+                "The joystick should adopt the same held pointer when the tutorial action window opens.");
+            Assert.That(
+                ReadPublicProperty<Vector2>(joystick, "CurrentInput").sqrMagnitude,
+                Is.GreaterThan(0.01f),
+                "A drag begun during the cue should become live without requiring a second touch.");
+            Assert.That(
+                ReadPrivateField<Vector2>(player, "mobileMoveInput").sqrMagnitude,
+                Is.GreaterThan(0.01f),
+                "The unlocked joystick must replay its held value after the player movement lock is released.");
+
+            while (tutorialDirector.CurrentStepId != expectedStep
+                && tutorialDirector.CurrentPhaseId == "AwaitingAction")
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    $"Timed out waiting for {expectedStep} from a real joystick drag.");
+                Assert.IsFalse(
+                    ReadPublicProperty<bool>(joystick, "IsInputBlocked"),
+                    "The Move action window should not relock the joystick during an active drag.");
+                Assert.That(
+                    ReadPublicProperty<Vector2>(joystick, "CurrentInput").sqrMagnitude,
+                    Is.GreaterThan(0.01f),
+                    "The held joystick value should remain live without synthetic repeat drag events.");
+                Assert.That(
+                    ReadPrivateField<Vector2>(player, "mobileMoveInput").sqrMagnitude,
+                    Is.GreaterThan(0.01f),
+                    "The active player should retain virtual joystick input while the pointer remains held.");
+                frames++;
+                yield return null;
+            }
+
+            ExecuteEvents.Execute(pointerData.pointerPress, pointerData, ExecuteEvents.pointerUpHandler);
+            Assert.IsFalse(
+                ReadPublicProperty<bool>(joystick, "IsPointerHeld"),
+                "The virtual joystick should release its active pointer.");
+            Assert.That(
+                ReadPublicProperty<Vector2>(joystick, "CurrentInput").sqrMagnitude,
+                Is.EqualTo(0f).Within(0.0001f));
+
             while (tutorialDirector.CurrentStepId != expectedStep)
             {
                 Assert.Less(
                     Time.realtimeSinceStartup - startedAt,
                     timeoutSeconds,
-                    $"Timed out waiting for {expectedStep} from move input.");
-                player.SetMoveInput(Vector2.up);
-                frames++;
+                    $"Timed out waiting for {expectedStep} after the Move action committed.");
                 yield return null;
             }
 
-            player.SetMoveInput(Vector2.zero);
             float movedDistance = Vector3.ProjectOnPlane(
                 player.transform.position - startPosition,
                 Vector3.up).magnitude;
@@ -976,7 +1112,7 @@ namespace DimensionBrawl.Tests
                 0.65f,
                 "Move tutorial should require a visible amount of player displacement, not only a run-start event.");
             report.AppendLine($"- Move displacement before completion: `{movedDistance:0.00}m`.");
-            AppendStepTiming(report, expectedStep, "move input", frames, gameplayStartedAt);
+            AppendStepTiming(report, expectedStep, "EventSystem joystick drag", frames, gameplayStartedAt);
         }
 
         private static IEnumerator QueueSwapUntilStep(
@@ -1298,22 +1434,15 @@ namespace DimensionBrawl.Tests
             return (T)fieldInfo.GetValue(target);
         }
 
-        private static void ExpectKnownMissingScenePrefabLogs()
+        private static T ReadPublicProperty<T>(object target, string propertyName)
         {
-            const string humanoidBossGuid = "d405ed8ecd0740748a4c4f82842ebd49";
-            bool missingHumanoidBoss = string.IsNullOrWhiteSpace(
-                UnityEditor.AssetDatabase.GUIDToAssetPath(humanoidBossGuid));
-            if (!missingHumanoidBoss)
-            {
-                return;
-            }
-
-            LogAssert.Expect(
-                LogType.Error,
-                new Regex("Problem detected while opening the Scene file: 'Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity'"));
-            LogAssert.Expect(
-                LogType.Error,
-                new Regex("Prefab instance problem\\. Missing Prefab Asset: 'BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando"));
+            Assert.IsNotNull(target);
+            PropertyInfo propertyInfo = target.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.IsNotNull(propertyInfo, $"Missing public property `{propertyName}` on {target.GetType().Name}.");
+            return (T)propertyInfo.GetValue(target);
         }
+
     }
 }

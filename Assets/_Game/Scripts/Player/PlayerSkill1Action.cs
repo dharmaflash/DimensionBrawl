@@ -98,7 +98,7 @@ namespace DimensionBrawl.Player
         private int totalUseCount;
         private float blockedHintTimer;
         private string lastBlockedReason;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
         private InputAction subscribedSkillInputAction;
         private Coroutine feedbackRoutine;
 
@@ -108,6 +108,7 @@ namespace DimensionBrawl.Player
         public int ActiveProjectileCount => CountActiveProjectiles();
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
         public DamageResponsePolicy ProjectileResponsePolicy => SkillProjectileResponsePolicy;
         public CombatControlLockPolicy ProjectileControlLockPolicy => SkillProjectileControlLockPolicy;
 
@@ -181,10 +182,14 @@ namespace DimensionBrawl.Player
             ConsumeQueuedSkill();
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicInputLocked = locked;
-            if (locked)
+            bool wasLocked = IsCinematicInputLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            if (!wasLocked && IsCinematicInputLocked)
             {
                 queued = false;
             }
@@ -470,7 +475,7 @@ namespace DimensionBrawl.Player
 
         private bool CanAcceptQueuedInput()
         {
-            return isActiveAndEnabled && !cinematicInputLocked;
+            return isActiveAndEnabled && !IsCinematicInputLocked;
         }
 
         private static Vector3 ResolveRight(Vector3 direction)

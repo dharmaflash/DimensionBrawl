@@ -14,22 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIScreenRouteTable
   routes:
   - routeId: 10
-    sceneName: UI_LoginTest
-    scenePath: Assets/_Game/Scenes/UI/UI_LoginTest.unity
+    sceneName: UI_Login
+    scenePath: Assets/_Game/Scenes/UI/UI_Login.unity
     transitionId: SceneFadeShort
     loadingCardId:
     useAsyncLoading: 0
     minimumLoadingSeconds: 0
   - routeId: 20
-    sceneName: UI_LobbyTest
-    scenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
+    sceneName: UI_Lobby
+    scenePath: Assets/_Game/Scenes/UI/UI_Lobby.unity
     transitionId: SceneFadeShort
     loadingCardId:
     useAsyncLoading: 0
     minimumLoadingSeconds: 0
   - routeId: 30
-    sceneName: UI_StageSelectTest
-    scenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
+    sceneName: UI_StageSelect
+    scenePath: Assets/_Game/Scenes/UI/UI_StageSelect.unity
     transitionId: lobby_to_stage_select_bridge
     loadingCardId:
     useAsyncLoading: 0

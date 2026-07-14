@@ -41,14 +41,14 @@ namespace DimensionBrawl.Debugging
 
         private static readonly BenchmarkScene[] Scenes =
         {
-            new("Olympus Corridor", "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"),
-            new("Boss Barrage", "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity"),
-            new("Frontline Motivation", "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity")
+            new("Olympus Station Combat", "Assets/_Game/Scenes/OlympusStationCombatStage.unity"),
+            new("Olympus Corridor", "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity")
         };
 
         private readonly double[] frameMilliseconds = new double[MaximumSamples];
         private readonly double[] mainThreadMilliseconds = new double[MaximumSamples];
         private readonly double[] renderThreadMilliseconds = new double[MaximumSamples];
+        private readonly double[] gpuFrameMilliseconds = new double[MaximumSamples];
         private readonly double[] gcAllocatedKibibytes = new double[MaximumSamples];
         private readonly double[] totalUsedMemoryMebibytes = new double[MaximumSamples];
         private readonly double[] gfxUsedMemoryMebibytes = new double[MaximumSamples];
@@ -72,6 +72,7 @@ namespace DimensionBrawl.Debugging
 
         private ProfilerRecorder mainThreadRecorder;
         private ProfilerRecorder renderThreadRecorder;
+        private ProfilerRecorder gpuFrameRecorder;
         private ProfilerRecorder gcAllocatedRecorder;
         private ProfilerRecorder totalUsedMemoryRecorder;
         private ProfilerRecorder gfxUsedMemoryRecorder;
@@ -176,6 +177,7 @@ namespace DimensionBrawl.Debugging
                     $"{LogPrefix} {target.Label} complete: " +
                     $"frame p95={result.FrameMilliseconds.P95:0.00}ms, " +
                     $"main p95={result.MainThreadMilliseconds.P95:0.00}ms, " +
+                    $"gpu p95={result.GpuFrameMilliseconds.P95:0.00}ms, " +
                     $"GC={result.GcAllocatedKibibytes.Average:0.00}KiB/frame");
                 yield return null;
             }
@@ -191,7 +193,7 @@ namespace DimensionBrawl.Debugging
 
         private void OnApplicationPause(bool paused)
         {
-            if (paused && report != null)
+            if (paused && report != null && !report.Completed)
             {
                 WriteReport(completed: false);
             }
@@ -355,8 +357,18 @@ namespace DimensionBrawl.Debugging
 
         private void StartRecorders()
         {
-            mainThreadRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread", 1);
-            renderThreadRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Render Thread", 1);
+            mainThreadRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render,
+                "CPU Main Thread Frame Time",
+                1);
+            renderThreadRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render,
+                "CPU Render Thread Frame Time",
+                1);
+            gpuFrameRecorder = ProfilerRecorder.StartNew(
+                ProfilerCategory.Render,
+                "GPU Frame Time",
+                1);
             gcAllocatedRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", 1);
             totalUsedMemoryRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Total Used Memory", 1);
             gfxUsedMemoryRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Gfx Used Memory", 1);
@@ -369,6 +381,7 @@ namespace DimensionBrawl.Debugging
         {
             mainThreadRecorder.Dispose();
             renderThreadRecorder.Dispose();
+            gpuFrameRecorder.Dispose();
             gcAllocatedRecorder.Dispose();
             totalUsedMemoryRecorder.Dispose();
             gfxUsedMemoryRecorder.Dispose();
@@ -412,6 +425,7 @@ namespace DimensionBrawl.Debugging
             frameMilliseconds[index] = frameDurationMilliseconds;
             mainThreadMilliseconds[index] = RecorderNanosecondsToMilliseconds(mainThreadRecorder);
             renderThreadMilliseconds[index] = RecorderNanosecondsToMilliseconds(renderThreadRecorder);
+            gpuFrameMilliseconds[index] = RecorderNanosecondsToMilliseconds(gpuFrameRecorder);
             gcAllocatedKibibytes[index] = RecorderBytesToKibibytes(gcAllocatedRecorder);
             totalUsedMemoryMebibytes[index] = RecorderBytesToMebibytes(totalUsedMemoryRecorder);
             gfxUsedMemoryMebibytes[index] = RecorderBytesToMebibytes(gfxUsedMemoryRecorder);
@@ -529,15 +543,21 @@ namespace DimensionBrawl.Debugging
                 MainThreadMilliseconds = MobilePerformanceStatistics.Summarize(
                     mainThreadMilliseconds,
                     sampleCount,
-                    "Main Thread",
+                    "CPU Main Thread Work",
                     "ms",
                     mainThreadRecorder.Valid),
                 RenderThreadMilliseconds = MobilePerformanceStatistics.Summarize(
                     renderThreadMilliseconds,
                     sampleCount,
-                    "Render Thread",
+                    "CPU Render Thread Work",
                     "ms",
                     renderThreadRecorder.Valid),
+                GpuFrameMilliseconds = MobilePerformanceStatistics.Summarize(
+                    gpuFrameMilliseconds,
+                    sampleCount,
+                    "GPU Frame",
+                    "ms",
+                    gpuFrameRecorder.Valid),
                 GcAllocatedKibibytes = MobilePerformanceStatistics.Summarize(
                     gcAllocatedKibibytes,
                     sampleCount,
@@ -716,6 +736,8 @@ namespace DimensionBrawl.Debugging
                 OlympusMobileEnvironmentDetailCuller detailCuller = detailCullers[i];
                 result.EnvironmentDetailCandidateRendererCount += detailCuller.CandidateCount;
                 result.EnvironmentDetailCulledRendererCount += detailCuller.CulledRendererCount;
+                result.EnvironmentDetailCandidateTriangleCount += detailCuller.CandidateTriangleCount;
+                result.EnvironmentDetailCulledTriangleCount += detailCuller.CulledTriangleCount;
                 result.EnvironmentDetailCandidateColliderCount += detailCuller.CandidateColliderCount;
                 result.EnvironmentDetailCulledColliderCount += detailCuller.CulledColliderCount;
             }
@@ -728,15 +750,15 @@ namespace DimensionBrawl.Debugging
         private static void CaptureRuntimeFrameLoops(MobilePerformanceSceneResult result)
         {
             Scene activeScene = SceneManager.GetActiveScene();
-            Behaviour[] behaviours = FindObjectsByType<Behaviour>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.None);
+            // Global runtime schedulers use DontSave hosts and are omitted by FindObjectsByType.
+            Behaviour[] behaviours = Resources.FindObjectsOfTypeAll<Behaviour>();
             var messageMasks = new Dictionary<Type, byte>();
             var loopInventory = new Dictionary<Type, MobilePerformanceFrameLoopInventory>();
             for (int i = 0; i < behaviours.Length; i++)
             {
                 Behaviour behaviour = behaviours[i];
                 if (behaviour == null
+                    || !behaviour.gameObject.scene.IsValid()
                     || !behaviour.isActiveAndEnabled
                     || !ShouldCountRuntimeLoop(behaviour, activeScene))
                 {
@@ -812,6 +834,8 @@ namespace DimensionBrawl.Debugging
             result.ActiveColliderCount = 0;
             result.EnvironmentDetailCandidateRendererCount = 0;
             result.EnvironmentDetailCulledRendererCount = 0;
+            result.EnvironmentDetailCandidateTriangleCount = 0L;
+            result.EnvironmentDetailCulledTriangleCount = 0L;
             result.EnvironmentDetailCandidateColliderCount = 0;
             result.EnvironmentDetailCulledColliderCount = 0;
             result.ActiveFrameLoopBehaviourCount = 0;
@@ -831,6 +855,7 @@ namespace DimensionBrawl.Debugging
             }
 
             return behaviour is DimensionBrawl.Presentation.MovementFootstepAudioScheduler
+                || behaviour is DimensionBrawl.Presentation.ActionFoundationArenaAnimationScheduler
                 || behaviour is CombatResourceTickScheduler
                 || behaviour is BossCombatCadenceScheduler
                 || behaviour is MobilePerformanceGovernor;
@@ -1074,6 +1099,8 @@ namespace DimensionBrawl.Debugging
         public int ActiveColliderCount;
         public int EnvironmentDetailCandidateRendererCount;
         public int EnvironmentDetailCulledRendererCount;
+        public long EnvironmentDetailCandidateTriangleCount;
+        public long EnvironmentDetailCulledTriangleCount;
         public int EnvironmentDetailCandidateColliderCount;
         public int EnvironmentDetailCulledColliderCount;
         public int ActiveFrameLoopBehaviourCount;
@@ -1085,6 +1112,7 @@ namespace DimensionBrawl.Debugging
         public MobilePerformanceMetricSummary FrameMilliseconds;
         public MobilePerformanceMetricSummary MainThreadMilliseconds;
         public MobilePerformanceMetricSummary RenderThreadMilliseconds;
+        public MobilePerformanceMetricSummary GpuFrameMilliseconds;
         public MobilePerformanceMetricSummary GcAllocatedKibibytes;
         public MobilePerformanceMetricSummary TotalUsedMemoryMebibytes;
         public MobilePerformanceMetricSummary GfxUsedMemoryMebibytes;

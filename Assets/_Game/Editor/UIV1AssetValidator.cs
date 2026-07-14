@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DimensionBrawl.UI;
+using DimensionBrawl.UI.StageClear;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -39,9 +40,14 @@ namespace DimensionBrawl.Editor
         private const string DialogCatalogPath = "Assets/_Game/DesignData/UI/DB_UIDialogs.asset";
         private const string LoginVideoProfilePath = "Assets/_Game/DesignData/UI/DB_LoginBackgroundVideo.asset";
         private const string LoginScreenPrefabPath = "Assets/_Game/UI/Login/PF_UI_LoginScreen.prefab";
+        private const string CombatHudPrefabPath = "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab";
         private const string LoginVideoRoot = "Assets/_Game/UI/Login/Art/Videos/";
         private const string LoginAccountServerToastId = "Login.AccountServerNotice";
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
+        private const string LoginScenePath = UiSceneRoot + "UI_Login.unity";
+        private const string LobbyScenePath = UiSceneRoot + "UI_Lobby.unity";
+        private const string StageSelectScenePath = UiSceneRoot + "UI_StageSelect.unity";
+        private const string StageClearScenePath = UiSceneRoot + "UI_StageClear.unity";
         private const string ImportedRoot = "Assets/_Imported/";
         private const string CanonicalCombatScenePath =
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
@@ -805,10 +811,16 @@ namespace DimensionBrawl.Editor
             HashSet<string> textKeys)
         {
             string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { UiSceneRoot });
-            if (sceneGuids.Length < 3)
+            if (sceneGuids.Length < 4)
             {
-                throw new InvalidOperationException($"{UiSceneRoot} must contain the Login, Lobby, and StageSelect UI scenes.");
+                throw new InvalidOperationException(
+                    $"{UiSceneRoot} must contain the Login, Lobby, StageSelect, and StageClear product scenes.");
             }
+
+            RequireScenePath(LoginScenePath, nameof(LoginScenePath));
+            RequireScenePath(LobbyScenePath, nameof(LobbyScenePath));
+            RequireScenePath(StageSelectScenePath, nameof(StageSelectScenePath));
+            RequireScenePath(StageClearScenePath, nameof(StageClearScenePath));
 
             string[] scenePaths = new string[sceneGuids.Length];
             for (int i = 0; i < sceneGuids.Length; i++)
@@ -824,7 +836,14 @@ namespace DimensionBrawl.Editor
                 Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
                 try
                 {
-                    ValidateLoadedUiScene(scenePath, scene, routeIds, toastIds, textKeys);
+                    if (string.Equals(scenePath, StageClearScenePath, StringComparison.Ordinal))
+                    {
+                        ValidateLoadedStageClearOverlayScene(scenePath, scene);
+                    }
+                    else
+                    {
+                        ValidateLoadedUiScene(scenePath, scene, routeIds, toastIds, textKeys);
+                    }
                 }
                 finally
                 {
@@ -840,25 +859,16 @@ namespace DimensionBrawl.Editor
             HashSet<string> toastIds,
             HashSet<string> textKeys)
         {
-            if (!scene.IsValid() || !scene.isLoaded)
-            {
-                throw new InvalidOperationException($"{scenePath} could not be opened for validation.");
-            }
-
-            GameObject[] roots = scene.GetRootGameObjects();
-            if (roots.Length == 0)
-            {
-                throw new InvalidOperationException($"{scenePath} must contain authored UI scene roots.");
-            }
-
-            int missingScriptCount = CountMissingScripts(roots);
-            if (missingScriptCount > 0)
-            {
-                throw new InvalidOperationException($"{scenePath} has {missingScriptCount} missing script reference(s).");
-            }
+            GameObject[] roots = RequireValidSceneRoots(scenePath, scene);
 
             Canvas canvas = RequireSingleSceneComponent<Canvas>(scenePath, roots);
             EventSystem eventSystem = RequireSingleSceneComponent<EventSystem>(scenePath, roots);
+            if (GetComponentsInScene<Camera>(roots).Length == 0)
+            {
+                throw new InvalidOperationException($"{scenePath} must contain at least one camera.");
+            }
+
+            RequireSingleSceneComponent<AudioListener>(scenePath, roots);
             ValidateMobileFirstSceneFrame(scenePath, roots, canvas, eventSystem);
 
             UISceneFlowRouter router = RequireSingleSceneComponent<UISceneFlowRouter>(scenePath, roots);
@@ -892,42 +902,124 @@ namespace DimensionBrawl.Editor
             ValidateSceneSpecificPresenter(scenePath, roots, routeIds, textKeys);
         }
 
+        private static void ValidateLoadedStageClearOverlayScene(string scenePath, Scene scene)
+        {
+            GameObject[] roots = RequireValidSceneRoots(scenePath, scene);
+            Canvas canvas = RequireSingleSceneComponent<Canvas>(scenePath, roots);
+            ValidateMobileLandscapeCanvas(scenePath, canvas);
+
+            if (canvas.GetComponent<GraphicRaycaster>() == null)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} overlay Canvas must include a GraphicRaycaster.");
+            }
+
+            EventSystem[] eventSystems = GetComponentsInScene<EventSystem>(roots);
+            if (eventSystems.Length != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} is additive and must use the host combat EventSystem; found {eventSystems.Length} local owner(s).");
+            }
+
+            if (GetComponentsInScene<Camera>(roots).Length != 0
+                || GetComponentsInScene<AudioListener>(roots).Length != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} is a screen-space additive overlay and must use the host combat camera and AudioListener.");
+            }
+
+            if (GetComponentsInScene<UISceneFlowRouter>(roots).Length != 0
+                || GetComponentsInScene<UISceneRouteLoader>(roots).Length != 0
+                || GetComponentsInScene<UITransitionPresenter>(roots).Length != 0)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} is an additive result overlay and must not own a full-screen scene router or transition loader.");
+            }
+
+            StageClearScreenPresenter presenter =
+                RequireSingleSceneComponent<StageClearScreenPresenter>(scenePath, roots);
+            SerializedObject presenterObject = new SerializedObject(presenter);
+            RequireObjectReference(presenterObject, "retryButton", $"{scenePath} retry button");
+            RequireObjectReference(presenterObject, "lobbyButton", $"{scenePath} lobby button");
+            RequireObjectReference(presenterObject, "canvasGroup", $"{scenePath} entrance canvas group");
+            RequireObjectReference(presenterObject, "motionRoot", $"{scenePath} entrance motion root");
+            RequireObjectReference(presenterObject, "clearBgmClip", $"{scenePath} clear BGM clip");
+            RequireTrue(
+                presenterObject.FindProperty("playEntranceOnEnable").boolValue,
+                $"{scenePath}.StageClearScreenPresenter.playEntranceOnEnable");
+            RequirePositive(
+                presenterObject.FindProperty("entranceDurationSeconds").floatValue,
+                $"{scenePath}.StageClearScreenPresenter.entranceDurationSeconds");
+
+            ValidateStageClearRoute(
+                presenterObject,
+                "retrySceneName",
+                "retryScenePath",
+                CanonicalCombatScenePath,
+                true,
+                $"{scenePath} retry route");
+            ValidateStageClearRoute(
+                presenterObject,
+                "lobbySceneName",
+                "lobbyScenePath",
+                LobbyScenePath,
+                false,
+                $"{scenePath} lobby route");
+        }
+
+        private static void ValidateStageClearRoute(
+            SerializedObject presenterObject,
+            string sceneNameProperty,
+            string scenePathProperty,
+            string expectedScenePath,
+            bool allowCanonicalCombatScene,
+            string label)
+        {
+            string sceneName = presenterObject.FindProperty(sceneNameProperty).stringValue;
+            string scenePath = presenterObject.FindProperty(scenePathProperty).stringValue;
+            RequireScenePath(scenePath, label, allowCanonicalCombatScene);
+            RequireSceneNameMatchesPath(sceneName, scenePath, label);
+            if (!string.Equals(
+                    scenePath.Replace('\\', '/'),
+                    expectedScenePath,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{label} must target {expectedScenePath}, found {scenePath}.");
+            }
+        }
+
+        private static GameObject[] RequireValidSceneRoots(string scenePath, Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                throw new InvalidOperationException($"{scenePath} could not be opened for validation.");
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            if (roots.Length == 0)
+            {
+                throw new InvalidOperationException($"{scenePath} must contain authored UI scene roots.");
+            }
+
+            int missingScriptCount = CountMissingScripts(roots);
+            if (missingScriptCount > 0)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} has {missingScriptCount} missing script reference(s).");
+            }
+
+            return roots;
+        }
+
         private static void ValidateMobileFirstSceneFrame(
             string scenePath,
             GameObject[] roots,
             Canvas canvas,
             EventSystem eventSystem)
         {
-            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
-            if (scaler == null)
-            {
-                throw new InvalidOperationException($"{scenePath} Canvas must include a CanvasScaler.");
-            }
-
-            if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
-            {
-                throw new InvalidOperationException($"{scenePath} CanvasScaler must scale with screen size.");
-            }
-
-            if (scaler.referenceResolution.x <= scaler.referenceResolution.y)
-            {
-                throw new InvalidOperationException($"{scenePath} CanvasScaler must use a landscape reference resolution.");
-            }
-
-            if (scaler.referenceResolution.x < 1600f || scaler.referenceResolution.y < 720f)
-            {
-                throw new InvalidOperationException($"{scenePath} CanvasScaler reference resolution is below the mobile landscape floor.");
-            }
-
-            if (eventSystem.GetComponent<InputSystemUIInputModule>() == null)
-            {
-                throw new InvalidOperationException($"{scenePath} EventSystem must use InputSystemUIInputModule for mobile/touch UI input.");
-            }
-
-            if (eventSystem.GetComponent<StandaloneInputModule>() != null)
-            {
-                throw new InvalidOperationException($"{scenePath} EventSystem must not keep StandaloneInputModule.");
-            }
+            CanvasScaler scaler = ValidateMobileLandscapeCanvas(scenePath, canvas);
+            ValidateInputSystemEventSystem(scenePath, eventSystem);
 
             UIResponsiveRoot responsiveRoot = RequireSingleSceneComponent<UIResponsiveRoot>(scenePath, roots);
             UISafeAreaRoot safeAreaRoot = RequireSingleSceneComponent<UISafeAreaRoot>(scenePath, roots);
@@ -944,6 +1036,49 @@ namespace DimensionBrawl.Editor
             if (responsiveObject.FindProperty("safeAreaRoot").objectReferenceValue != safeAreaRoot)
             {
                 throw new InvalidOperationException($"{scenePath} UIResponsiveRoot must reference the scene UISafeAreaRoot.");
+            }
+        }
+
+        private static CanvasScaler ValidateMobileLandscapeCanvas(string scenePath, Canvas canvas)
+        {
+            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler == null)
+            {
+                throw new InvalidOperationException($"{scenePath} Canvas must include a CanvasScaler.");
+            }
+
+            if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ScaleWithScreenSize)
+            {
+                throw new InvalidOperationException($"{scenePath} CanvasScaler must scale with screen size.");
+            }
+
+            if (scaler.referenceResolution.x <= scaler.referenceResolution.y)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} CanvasScaler must use a landscape reference resolution.");
+            }
+
+            if (scaler.referenceResolution.x < 1600f || scaler.referenceResolution.y < 720f)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} CanvasScaler reference resolution is below the mobile landscape floor.");
+            }
+
+            return scaler;
+        }
+
+        private static void ValidateInputSystemEventSystem(string scenePath, EventSystem eventSystem)
+        {
+            if (eventSystem.GetComponent<InputSystemUIInputModule>() == null)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} EventSystem must use InputSystemUIInputModule for mobile/touch UI input.");
+            }
+
+            if (eventSystem.GetComponent<StandaloneInputModule>() != null)
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} EventSystem must not keep StandaloneInputModule.");
             }
         }
 
@@ -1062,19 +1197,19 @@ namespace DimensionBrawl.Editor
 
         private static bool TryGetExpectedRouteForScene(string scenePath, out UIRouteId routeId)
         {
-            if (scenePath.EndsWith("UI_LoginTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_Login.unity", StringComparison.Ordinal))
             {
                 routeId = UIRouteId.Login;
                 return true;
             }
 
-            if (scenePath.EndsWith("UI_LobbyTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_Lobby.unity", StringComparison.Ordinal))
             {
                 routeId = UIRouteId.Lobby;
                 return true;
             }
 
-            if (scenePath.EndsWith("UI_StageSelectTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_StageSelect.unity", StringComparison.Ordinal))
             {
                 routeId = UIRouteId.StageSelect;
                 return true;
@@ -1090,14 +1225,14 @@ namespace DimensionBrawl.Editor
             HashSet<UIRouteId> routeIds,
             HashSet<string> textKeys)
         {
-            if (scenePath.EndsWith("UI_LoginTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_Login.unity", StringComparison.Ordinal))
             {
                 LoginScreenPresenter presenter = RequireSingleSceneComponent<LoginScreenPresenter>(scenePath, roots);
                 ValidateLoginScreenPresenter($"{scenePath}.LoginScreenPresenter", presenter, routeIds, textKeys, true);
                 return;
             }
 
-            if (scenePath.EndsWith("UI_LobbyTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_Lobby.unity", StringComparison.Ordinal))
             {
                 LobbyScreenPresenter presenter = RequireSingleSceneComponent<LobbyScreenPresenter>(scenePath, roots);
                 ValidateLobbyScreenPresenter($"{scenePath}.LobbyScreenPresenter", presenter, routeIds, textKeys, true);
@@ -1105,7 +1240,7 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            if (scenePath.EndsWith("UI_StageSelectTest.unity", StringComparison.Ordinal))
+            if (scenePath.EndsWith("UI_StageSelect.unity", StringComparison.Ordinal))
             {
                 StageSelectScreenPresenter presenter = RequireSingleSceneComponent<StageSelectScreenPresenter>(scenePath, roots);
                 SerializedObject serializedObject = new SerializedObject(presenter);
@@ -1255,6 +1390,7 @@ namespace DimensionBrawl.Editor
                 }
 
                 ValidateCombatHudPresenters(path, prefab);
+                ValidateCombatSessionOverlay(path, prefab, routeIds);
                 ValidateSceneFlowRouters(path, prefab);
                 ValidateFlowStatusPresenters(path, prefab);
                 ValidateFlowNoticePresenters(path, prefab, toastIds);
@@ -1502,6 +1638,77 @@ namespace DimensionBrawl.Editor
                 RequireObjectReferencePath(serializedObject, "actionCatalog", CombatHudActionCatalogPath, $"{prefabPath}.CombatHudPresenter[{i}].actionCatalog");
                 RequireNonEmptyArray(serializedObject.FindProperty("actionSlots"), $"{prefabPath}.CombatHudPresenter[{i}].actionSlots");
                 RequireNonEmptyArray(serializedObject.FindProperty("summonSlots"), $"{prefabPath}.CombatHudPresenter[{i}].summonSlots");
+            }
+        }
+
+        private static void ValidateCombatSessionOverlay(
+            string prefabPath,
+            GameObject prefab,
+            HashSet<UIRouteId> routeIds)
+        {
+            CombatSessionOverlayPresenter[] overlays =
+                prefab.GetComponentsInChildren<CombatSessionOverlayPresenter>(true);
+            if (!string.Equals(prefabPath, CombatHudPrefabPath, StringComparison.Ordinal))
+            {
+                if (overlays.Length > 0)
+                {
+                    throw new InvalidOperationException(
+                        $"{prefabPath} must not own the canonical combat session overlay.");
+                }
+
+                return;
+            }
+
+            if (overlays.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"{CombatHudPrefabPath} must own exactly one {nameof(CombatSessionOverlayPresenter)}; found {overlays.Length}.");
+            }
+
+            SerializedObject serializedObject = new SerializedObject(overlays[0]);
+            RequireObjectReferencePath(
+                serializedObject,
+                "routeTable",
+                RouteTablePath,
+                $"{CombatHudPrefabPath} combat session route table");
+            RequireObjectReference(serializedObject, "routeLoader", $"{CombatHudPrefabPath} combat session route loader");
+            RequireObjectReference(serializedObject, "canvasGroup", $"{CombatHudPrefabPath} combat session canvas group");
+            RequireObjectReference(serializedObject, "accentImage", $"{CombatHudPrefabPath} combat session accent");
+            RequireObjectReference(serializedObject, "modeIcon", $"{CombatHudPrefabPath} combat session mode icon");
+            RequireObjectReference(serializedObject, "pauseIcon", $"{CombatHudPrefabPath} combat session pause icon");
+            RequireObjectReference(serializedObject, "settingsIcon", $"{CombatHudPrefabPath} combat session settings icon");
+            RequireObjectReference(serializedObject, "titleText", $"{CombatHudPrefabPath} combat session title");
+            RequireObjectReference(serializedObject, "bodyText", $"{CombatHudPrefabPath} combat session body");
+            RequireObjectReference(serializedObject, "detailText", $"{CombatHudPrefabPath} combat session details");
+            RequireObjectReference(serializedObject, "routeStatusText", $"{CombatHudPrefabPath} combat route status");
+            RequireObjectReference(serializedObject, "settingsContent", $"{CombatHudPrefabPath} combat settings content");
+            RequireObjectReference(serializedObject, "screenCuesToggle", $"{CombatHudPrefabPath} screen-cues toggle");
+            RequireObjectReference(serializedObject, "resumeButton", $"{CombatHudPrefabPath} resume button");
+            RequireObjectReference(serializedObject, "retryButton", $"{CombatHudPrefabPath} retry button");
+            RequireObjectReference(serializedObject, "settingsButton", $"{CombatHudPrefabPath} settings button");
+            RequireObjectReference(serializedObject, "stageSelectButton", $"{CombatHudPrefabPath} stage-select button");
+            RequireObjectReference(serializedObject, "lobbyButton", $"{CombatHudPrefabPath} lobby button");
+            RequireObjectReference(serializedObject, "backButton", $"{CombatHudPrefabPath} settings back button");
+
+            RequireKnownRoute(
+                routeIds,
+                (UIRouteId)serializedObject.FindProperty("retryRoute").intValue,
+                $"{CombatHudPrefabPath}.retryRoute");
+            RequireKnownRoute(
+                routeIds,
+                (UIRouteId)serializedObject.FindProperty("stageSelectRoute").intValue,
+                $"{CombatHudPrefabPath}.stageSelectRoute");
+            RequireKnownRoute(
+                routeIds,
+                (UIRouteId)serializedObject.FindProperty("lobbyRoute").intValue,
+                $"{CombatHudPrefabPath}.lobbyRoute");
+
+            if ((UIRouteId)serializedObject.FindProperty("retryRoute").intValue != UIRouteId.Combat
+                || (UIRouteId)serializedObject.FindProperty("stageSelectRoute").intValue != UIRouteId.StageSelect
+                || (UIRouteId)serializedObject.FindProperty("lobbyRoute").intValue != UIRouteId.Lobby)
+            {
+                throw new InvalidOperationException(
+                    $"{CombatHudPrefabPath} must route Retry to Combat, Stage Select to StageSelect, and Lobby to Lobby.");
             }
         }
 

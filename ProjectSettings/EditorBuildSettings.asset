@@ -6,19 +6,22 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Game/Scenes/UI/UI_LoginTest.unity
+    path: Assets/_Game/Scenes/UI/UI_Login.unity
     guid: b740752ba24f4d44b94fc2370aee234b
   - enabled: 1
-    path: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
+    path: Assets/_Game/Scenes/UI/UI_Lobby.unity
     guid: d46f98b99bfdce94ba75dcffed88d3d4
   - enabled: 1
-    path: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
+    path: Assets/_Game/Scenes/UI/UI_StageSelect.unity
     guid: 8053da754b10ae74bb1331e8db8ba073
   - enabled: 1
     path: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
     guid: 39cafe519f1c8414684673f1311136c2
   - enabled: 1
-    path: Assets/_Game/Scenes/Experiments/UI_StageClearTest.unity
+    path: Assets/_Game/Scenes/OlympusStationCombatStage.unity
+    guid: 94ab0f62c8b64cc9b97cdbd6ae3a7c40
+  - enabled: 1
+    path: Assets/_Game/Scenes/UI/UI_StageClear.unity
     guid: 3b34f29852834914d8166e4945c8aa5d
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

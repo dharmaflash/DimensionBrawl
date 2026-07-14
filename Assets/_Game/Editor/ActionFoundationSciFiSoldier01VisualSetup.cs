@@ -16,12 +16,16 @@ namespace DimensionBrawl.Editor
         public const string ModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
         public const string AssaultRifleModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
         public const string ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        public const string CommandoVisualPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
 
         private const string OldMaintenanceVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string SourceModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
-        private const string SourceVariantPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_SciFiSoldier01_CommandoVisual.prefab";
+        private const string SourceVariantPrefabPath = CommandoVisualPrefabPath;
         private const string ImportedCommandoPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
         private const string ImportedCommonWeaponRoot = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/";
+        private const string PromotedCommandoWeaponRoot =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleWeapons";
         private const string SourceBodyMaterialPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Materials/M_SciFiSoldier_01.mat";
         private const string SourceAssaultRifleModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/FBX Files/SM_SciFiAssaultRifle_01.FBX";
         private const string SourceAssaultRifleMaterialPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/Materials/M_AssaultRifle.mat";
@@ -44,6 +48,26 @@ namespace DimensionBrawl.Editor
         private const string HitClipPath = AnimationRoot + "/S01_GetHitFrontLight.fbx";
         private const string HitHeavyClipPath = AnimationRoot + "/S01_GetHitFrontHeavy.fbx";
         private const string DeathClipPath = AnimationRoot + "/S01_DeathFront.fbx";
+
+        private static readonly CommandoWeaponAttachment[] CommandoWeaponAttachments =
+        {
+            new("RefPosLightningGun_Action", "SM_SciFiLightingGun", "SM_SciFiLightingGun.FBX", "BeamGun"),
+            new("RefPosLaserGatlinGun_Idle", "SM_SciFiLaserGatlinGun", "SM_SciFiLaserGatlinGun.FBX", "SM_SciFiLaserGatlinGun"),
+            new("RefPosSkorp-IOLeft_Idle", "SM_SciFiSkorp-IO", "SM_SciFiSkorp-IO.FBX", "SkorpIO_Left"),
+            new("RefPosLaserGatlinGun_Action", "SK_SciFiLaserGatlinGun", "SK_SciFiLaserGatlinGun.FBX", "SK_SciFiLaserGatlinGun"),
+            new("RefPosAssaultRifle_Action", "SM_SciFiAssaultRifle_01", "SM_SciFiAssaultRifle_01.FBX", "AssaultRifle"),
+            new("RefPosShotgun_Idle", "SM_SciFiShotgun", "SM_SciFiShotgun.FBX", "Shotgun"),
+            new("RefPosMissileLauncher_Idle", "SM_SciFiMissileLauncher", "SM_SciFiMissileLauncher.FBX", "MissileLauncher"),
+            new("RefPosMissileLauncher_Action", "SM_SciFiMissileLauncher", "SM_SciFiMissileLauncher.FBX", "MissileLauncher"),
+            new("RefPos2HandedGun_Action", "SM_SciFiLaserGun", "SM_SciFiLaserGun.FBX", "LaserGun"),
+            new("RefPosSkorp-IOLeft_Action", "SM_SciFiSkorp-IO", "SM_SciFiSkorp-IO.FBX", "SkorpIO_Left"),
+            new("RefPosSkorp-IORight_Idle", "SM_SciFiSkorp-IO", "SM_SciFiSkorp-IO.FBX", "SkorpIO_Right"),
+            new("RefPos2HandedGun_Idle", "SM_SciFiLaserGun", "SM_SciFiLaserGun.FBX", "LaserGun"),
+            new("RefPosLightningGun_Idle", "SM_SciFiLightingGun", "SM_SciFiLightingGun.FBX", "BeamGun"),
+            new("RefPosLaserAssaultRifle_Idle", "SM_SciFiAssaultRifle_01", "SM_SciFiAssaultRifle_01.FBX", "AssaultRifle"),
+            new("RefPosShotgun_Action", "SM_SciFiShotgun", "SM_SciFiShotgun.FBX", "Shotgun"),
+            new("RefPosSkorp-IORight_Action", "SM_SciFiSkorp-IO", "SM_SciFiSkorp-IO.FBX", "SkorpIO_Right")
+        };
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation SciFiSoldier01 GeneralDeck Visual Assets")]
         public static void ReapplyGeneralDeckVisualAssetsMenu()
@@ -169,6 +193,108 @@ namespace DimensionBrawl.Editor
             ValidateFlashRenderers(root, hitFeedback, renderers);
         }
 
+        public static void ValidateCanonicalCommandoArsenal(GameObject root)
+        {
+            if (root == null)
+            {
+                throw new ArgumentNullException(nameof(root));
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            if (!renderers.Any(renderer => RendererUsesMeshAtPath(renderer, ModelPath)))
+            {
+                throw new InvalidOperationException(
+                    $"{root.name} should use the canonical SciFiSoldier01 body model at {ModelPath}.");
+            }
+
+            for (int i = 0; i < CommandoWeaponAttachments.Length; i++)
+            {
+                CommandoWeaponAttachment attachment = CommandoWeaponAttachments[i];
+                Transform socket = FindDescendant(root.transform, attachment.SocketName);
+                if (socket == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{root.name} is missing Commando weapon socket {attachment.SocketName}.");
+                }
+
+                Transform weapon = FindDirectChild(socket, attachment.InstanceName);
+                if (weapon == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{root.name} should carry {attachment.InstanceName} under {attachment.SocketName}.");
+                }
+
+                if (!weapon.GetComponentsInChildren<Renderer>(true)
+                        .Any(renderer => RendererUsesMeshAtPath(renderer, attachment.TargetModelPath)))
+                {
+                    throw new InvalidOperationException(
+                        $"{root.name}.{attachment.SocketName}.{attachment.InstanceName} should render {attachment.TargetModelPath}.");
+                }
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ValidateCanonicalCommandoRendererAssets(renderers[i]);
+            }
+        }
+
+        private static void ValidateCanonicalCommandoRendererAssets(Renderer renderer)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                ValidateCanonicalCommandoAsset(meshFilter.sharedMesh, $"{renderer.name} mesh");
+            }
+
+            if (renderer is SkinnedMeshRenderer skinnedRenderer && skinnedRenderer.sharedMesh != null)
+            {
+                ValidateCanonicalCommandoAsset(skinnedRenderer.sharedMesh, $"{renderer.name} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] == null)
+                {
+                    throw new InvalidOperationException($"{renderer.name} has a missing Commando material slot.");
+                }
+
+                ValidateCanonicalCommandoAsset(materials[i], $"{renderer.name} material");
+                ValidateCanonicalCommandoMaterialPresentation(materials[i], renderer.name);
+            }
+        }
+
+        private static void ValidateCanonicalCommandoMaterialPresentation(Material material, string rendererName)
+        {
+            if (!material.HasProperty("_EmissionMap") || material.GetTexture("_EmissionMap") == null)
+            {
+                return;
+            }
+
+            if (!material.IsKeywordEnabled("_EMISSION"))
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Commando material {material.name} on {rendererName} lost its emission keyword.");
+            }
+
+            if ((material.globalIlluminationFlags & MaterialGlobalIlluminationFlags.EmissiveIsBlack) != 0)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Commando material {material.name} on {rendererName} is incorrectly marked non-emissive.");
+            }
+        }
+
+        private static void ValidateCanonicalCommandoAsset(UnityEngine.Object asset, string label)
+        {
+            string path = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            if (!path.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || path.Contains("/_Imported/", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Commando {label} must be game-owned, found {path}.");
+            }
+        }
+
         private static void PromoteModel()
         {
             EnsureFolder("Assets/_Game/Art/Characters");
@@ -210,103 +336,27 @@ namespace DimensionBrawl.Editor
         private static void EnsureCanonicalCommandoSourcePrefab()
         {
             EnsureFolder("Assets/_Game/Prefabs/Enemies/ActionFoundation");
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(SourceVariantPrefabPath) == null
-                && !AssetDatabase.CopyAsset(ImportedCommandoPrefabPath, SourceVariantPrefabPath))
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ImportedCommandoPrefabPath) == null)
             {
                 throw new InvalidOperationException(
-                    $"Failed to promote Commando source prefab from {ImportedCommandoPrefabPath}.");
+                    $"Missing authored Commando source prefab at {ImportedCommandoPrefabPath}.");
             }
 
+            PromoteCommandoWeaponAssets();
             Material bodyMaterial = PromoteMaterial(
                 AssetDatabase.LoadAssetAtPath<Material>(SourceBodyMaterialPath));
-            Material weaponMaterial = PromoteWeaponMaterial(
-                AssetDatabase.LoadAssetAtPath<Material>(SourceAssaultRifleMaterialPath));
-            GameObject canonicalWeaponAsset = AssetDatabase.LoadAssetAtPath<GameObject>(AssaultRifleModelPath);
-            if (bodyMaterial == null || weaponMaterial == null || canonicalWeaponAsset == null)
+            if (bodyMaterial == null)
             {
-                throw new InvalidOperationException("Canonical Commando visual dependencies are missing.");
+                throw new InvalidOperationException("Canonical Commando body material is missing.");
             }
 
-            GameObject root = PrefabUtility.LoadPrefabContents(SourceVariantPrefabPath);
+            GameObject root = PrefabUtility.LoadPrefabContents(ImportedCommandoPrefabPath);
             try
             {
+                root.name = "PF_SciFiSoldier01_CommandoVisual";
                 RemapCommandoBodyMeshes(root);
-                Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
-                var importedWeaponRoots = new List<GameObject>();
-                for (int i = 0; i < transforms.Length; i++)
-                {
-                    GameObject candidate = transforms[i].gameObject;
-                    if (!PrefabUtility.IsAnyPrefabInstanceRoot(candidate))
-                    {
-                        continue;
-                    }
-
-                    string sourcePath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(candidate)
-                        .Replace('\\', '/');
-                    if (sourcePath.StartsWith(ImportedCommonWeaponRoot, StringComparison.Ordinal))
-                    {
-                        importedWeaponRoots.Add(candidate);
-                    }
-                }
-
-                GameObject canonicalWeapon = null;
-                for (int i = 0; i < importedWeaponRoots.Count; i++)
-                {
-                    GameObject importedWeapon = importedWeaponRoots[i];
-                    bool keepAsAssaultRifle = string.Equals(
-                        importedWeapon.name,
-                        "SM_SciFiAssaultRifle_01",
-                        StringComparison.Ordinal);
-                    if (keepAsAssaultRifle && canonicalWeapon == null)
-                    {
-                        Transform importedTransform = importedWeapon.transform;
-                        canonicalWeapon = PrefabUtility.InstantiatePrefab(
-                            canonicalWeaponAsset,
-                            importedTransform.parent) as GameObject;
-                        if (canonicalWeapon == null)
-                        {
-                            throw new InvalidOperationException("Failed to instantiate the canonical Commando assault rifle.");
-                        }
-
-                        canonicalWeapon.name = importedWeapon.name;
-                        canonicalWeapon.transform.localPosition = importedTransform.localPosition;
-                        canonicalWeapon.transform.localRotation = importedTransform.localRotation;
-                        canonicalWeapon.transform.localScale = importedTransform.localScale;
-                        canonicalWeapon.SetActive(importedWeapon.activeSelf);
-                    }
-
-                    UnityEngine.Object.DestroyImmediate(importedWeapon);
-                }
-
-                if (canonicalWeapon == null)
-                {
-                    Transform socket = FindDescendant(root.transform, "RefPosAssaultRifle_Action");
-                    if (socket == null)
-                    {
-                        throw new InvalidOperationException("Canonical Commando prefab is missing RefPosAssaultRifle_Action.");
-                    }
-
-                    canonicalWeapon = PrefabUtility.InstantiatePrefab(canonicalWeaponAsset, socket) as GameObject;
-                    if (canonicalWeapon == null)
-                    {
-                        throw new InvalidOperationException("Failed to attach the canonical Commando assault rifle.");
-                    }
-
-                    canonicalWeapon.name = "SM_SciFiAssaultRifle_01";
-                    canonicalWeapon.transform.localPosition = Vector3.zero;
-                    canonicalWeapon.transform.localRotation = Quaternion.identity;
-                    canonicalWeapon.transform.localScale = Vector3.one;
-                }
-
-                AssignSingleMaterial(canonicalWeapon, weaponMaterial);
-                Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-                for (int i = 0; i < renderers.Length; i++)
-                {
-                    if (!renderers[i].transform.IsChildOf(canonicalWeapon.transform))
-                    {
-                        AssignSingleMaterial(renderers[i], bodyMaterial);
-                    }
-                }
+                AssignCanonicalCommandoBodyMaterial(root, bodyMaterial);
+                ReplaceImportedCommandoWeapons(root);
 
                 Animator[] animators = root.GetComponentsInChildren<Animator>(true);
                 Avatar avatar = LoadAvatar(ModelPath);
@@ -317,6 +367,7 @@ namespace DimensionBrawl.Editor
                     EditorUtility.SetDirty(animators[i]);
                 }
 
+                ValidateCanonicalCommandoArsenal(root);
                 if (PrefabUtility.SaveAsPrefabAsset(root, SourceVariantPrefabPath) == null)
                 {
                     throw new InvalidOperationException($"Failed to save canonical Commando prefab at {SourceVariantPrefabPath}.");
@@ -327,6 +378,139 @@ namespace DimensionBrawl.Editor
                 PrefabUtility.UnloadPrefabContents(root);
             }
 
+            AssetDatabase.SaveAssets();
+            GameObject canonicalPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SourceVariantPrefabPath);
+            ValidateCanonicalCommandoArsenal(canonicalPrefab);
+            ValidateCanonicalCommandoDependencies();
+        }
+
+        private static void PromoteCommandoWeaponAssets()
+        {
+            var promotedPaths = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < CommandoWeaponAttachments.Length; i++)
+            {
+                CommandoWeaponAttachment attachment = CommandoWeaponAttachments[i];
+                if (!promotedPaths.Add(attachment.TargetModelPath))
+                {
+                    continue;
+                }
+
+                EnsureFolder(attachment.TargetRoot + "/Models");
+                EnsureFolder(attachment.TargetMaterialRoot);
+                EnsureFolder(attachment.TargetTextureRoot);
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(attachment.SourceModelPath) == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Missing authored Commando weapon model at {attachment.SourceModelPath}.");
+                }
+
+                bool copiedModel = false;
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(attachment.TargetModelPath) == null)
+                {
+                    if (!AssetDatabase.CopyAsset(attachment.SourceModelPath, attachment.TargetModelPath))
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to promote Commando weapon from {attachment.SourceModelPath} to {attachment.TargetModelPath}.");
+                    }
+
+                    copiedModel = true;
+                }
+
+                if (copiedModel)
+                {
+                    ConfigureWeaponModelImporter(attachment.TargetModelPath);
+                }
+            }
+        }
+
+        private static void AssignCanonicalCommandoBodyMaterial(GameObject root, Material bodyMaterial)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            int assignedCount = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (!RendererUsesMeshAtPath(renderers[i], ModelPath))
+                {
+                    continue;
+                }
+
+                AssignSingleMaterial(renderers[i], bodyMaterial);
+                assignedCount++;
+            }
+
+            if (assignedCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Canonical Commando did not expose the promoted body model at {ModelPath}.");
+            }
+        }
+
+        private static void ReplaceImportedCommandoWeapons(GameObject root)
+        {
+            for (int i = 0; i < CommandoWeaponAttachments.Length; i++)
+            {
+                CommandoWeaponAttachment attachment = CommandoWeaponAttachments[i];
+                Transform socket = FindDescendant(root.transform, attachment.SocketName);
+                if (socket == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Canonical Commando prefab is missing weapon socket {attachment.SocketName}.");
+                }
+
+                Transform importedWeapon = FindDirectChild(socket, attachment.InstanceName);
+                if (importedWeapon == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Authored Commando source is missing {attachment.InstanceName} under {attachment.SocketName}.");
+                }
+
+                GameObject promotedAsset = AssetDatabase.LoadAssetAtPath<GameObject>(attachment.TargetModelPath);
+                GameObject promotedWeapon = PrefabUtility.InstantiatePrefab(promotedAsset, socket) as GameObject;
+                if (promotedWeapon == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to instantiate promoted Commando weapon {attachment.TargetModelPath}.");
+                }
+
+                Transform importedTransform = importedWeapon.transform;
+                promotedWeapon.name = attachment.InstanceName;
+                promotedWeapon.transform.localPosition = importedTransform.localPosition;
+                promotedWeapon.transform.localRotation = importedTransform.localRotation;
+                promotedWeapon.transform.localScale = importedTransform.localScale;
+                promotedWeapon.SetActive(importedWeapon.gameObject.activeSelf);
+                AssignPromotedCommandoWeaponMaterials(
+                    importedWeapon.gameObject,
+                    promotedWeapon,
+                    attachment);
+                UnityEngine.Object.DestroyImmediate(importedWeapon.gameObject);
+            }
+        }
+
+        private static void AssignPromotedCommandoWeaponMaterials(
+            GameObject importedWeapon,
+            GameObject promotedWeapon,
+            CommandoWeaponAttachment attachment)
+        {
+            Renderer[] sourceRenderers = importedWeapon.GetComponentsInChildren<Renderer>(true);
+            Renderer[] targetRenderers = promotedWeapon.GetComponentsInChildren<Renderer>(true);
+            if (sourceRenderers.Length == 0 || sourceRenderers.Length != targetRenderers.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Commando weapon {attachment.InstanceName} renderer layout changed while promoting {attachment.TargetModelPath}.");
+            }
+
+            for (int i = 0; i < targetRenderers.Length; i++)
+            {
+                targetRenderers[i].sharedMaterials = PromoteMaterials(
+                    sourceRenderers[i].sharedMaterials,
+                    attachment.TargetMaterialRoot,
+                    attachment.TargetTextureRoot);
+                EditorUtility.SetDirty(targetRenderers[i]);
+            }
+        }
+
+        private static void ValidateCanonicalCommandoDependencies()
+        {
             string[] dependencies = AssetDatabase.GetDependencies(SourceVariantPrefabPath, recursive: true);
             for (int i = 0; i < dependencies.Length; i++)
             {
@@ -742,10 +926,18 @@ namespace DimensionBrawl.Editor
 
         private static Material[] PromoteMaterials(Material[] sourceMaterials)
         {
+            return PromoteMaterials(sourceMaterials, MaterialRoot, TextureRoot);
+        }
+
+        private static Material[] PromoteMaterials(
+            Material[] sourceMaterials,
+            string materialRoot,
+            string textureRoot)
+        {
             Material[] promoted = new Material[sourceMaterials.Length];
             for (int i = 0; i < sourceMaterials.Length; i++)
             {
-                promoted[i] = PromoteMaterial(sourceMaterials[i]);
+                promoted[i] = PromoteMaterial(sourceMaterials[i], materialRoot, textureRoot);
             }
 
             return promoted;
@@ -773,6 +965,11 @@ namespace DimensionBrawl.Editor
 
             string targetPath = $"{materialRoot}/{SanitizeAssetName(sourceMaterial.name)}.mat";
             Material targetMaterial = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+            if (IsSelfContainedGameOwnedMaterial(targetMaterial))
+            {
+                return targetMaterial;
+            }
+
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? sourceMaterial.shader;
             if (targetMaterial == null)
             {
@@ -781,16 +978,26 @@ namespace DimensionBrawl.Editor
             }
             else
             {
-                targetMaterial.shader = shader;
+                Material resetMaterial = new Material(shader)
+                {
+                    name = sourceMaterial.name
+                };
+                EditorUtility.CopySerialized(resetMaterial, targetMaterial);
+                UnityEngine.Object.DestroyImmediate(resetMaterial);
             }
 
-            targetMaterial.CopyPropertiesFromMaterial(sourceMaterial);
+            targetMaterial.name = sourceMaterial.name;
+            CopyCompatibleMaterialProperties(sourceMaterial, targetMaterial, textureRoot);
+            CopyColorProperty(sourceMaterial, targetMaterial, "_Color", "_BaseColor");
+            CopyFloatProperty(sourceMaterial, targetMaterial, "_Glossiness", "_Smoothness");
             CopyTextureProperty(sourceMaterial, targetMaterial, "_BaseMap", TextureUsage.Color, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_MainTex", "_BaseMap", TextureUsage.Color, textureRoot);
             CopyTextureProperty(sourceMaterial, targetMaterial, "_MainTex", TextureUsage.Color, textureRoot);
             CopyTextureProperty(sourceMaterial, targetMaterial, "_BumpMap", TextureUsage.Normal, textureRoot);
             CopyTextureProperty(sourceMaterial, targetMaterial, "_EmissionMap", TextureUsage.Color, textureRoot);
             CopyTextureProperty(sourceMaterial, targetMaterial, "_MetallicGlossMap", TextureUsage.Linear, textureRoot);
             CopyTextureProperty(sourceMaterial, targetMaterial, "_OcclusionMap", TextureUsage.Linear, textureRoot);
+            PromoteImportedTextureProperties(sourceMaterial, targetMaterial, textureRoot);
 
             if (targetMaterial.GetTexture("_BumpMap") != null)
             {
@@ -810,21 +1017,197 @@ namespace DimensionBrawl.Editor
             if (targetMaterial.GetTexture("_EmissionMap") != null)
             {
                 targetMaterial.EnableKeyword("_EMISSION");
+                targetMaterial.globalIlluminationFlags = sourceMaterial.globalIlluminationFlags
+                    & ~MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+                MaterialEditor.FixupEmissiveFlag(targetMaterial);
             }
 
             EditorUtility.SetDirty(targetMaterial);
             return targetMaterial;
         }
 
+        private static bool IsSelfContainedGameOwnedMaterial(Material material)
+        {
+            if (material == null)
+            {
+                return false;
+            }
+
+            string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+            if (!materialPath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string[] dependencies = AssetDatabase.GetDependencies(materialPath, recursive: true);
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                if (dependencies[i].StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static void CopyCompatibleMaterialProperties(
+            Material sourceMaterial,
+            Material targetMaterial,
+            string textureRoot)
+        {
+            Shader shader = targetMaterial.shader;
+            for (int i = 0; i < shader.GetPropertyCount(); i++)
+            {
+                string propertyName = shader.GetPropertyName(i);
+                if (!sourceMaterial.HasProperty(propertyName))
+                {
+                    continue;
+                }
+
+                switch (shader.GetPropertyType(i))
+                {
+                    case UnityEngine.Rendering.ShaderPropertyType.Color:
+                        targetMaterial.SetColor(propertyName, sourceMaterial.GetColor(propertyName));
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Vector:
+                        targetMaterial.SetVector(propertyName, sourceMaterial.GetVector(propertyName));
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Float:
+                    case UnityEngine.Rendering.ShaderPropertyType.Range:
+                        targetMaterial.SetFloat(propertyName, sourceMaterial.GetFloat(propertyName));
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Int:
+                        targetMaterial.SetInteger(propertyName, sourceMaterial.GetInteger(propertyName));
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Texture:
+                        Texture sourceTexture = sourceMaterial.GetTexture(propertyName);
+                        targetMaterial.SetTexture(
+                            propertyName,
+                            sourceTexture != null
+                                ? PromoteTexture(sourceTexture, InferTextureUsage(propertyName), textureRoot)
+                                : null);
+                        targetMaterial.SetTextureScale(propertyName, sourceMaterial.GetTextureScale(propertyName));
+                        targetMaterial.SetTextureOffset(propertyName, sourceMaterial.GetTextureOffset(propertyName));
+                        break;
+                }
+            }
+
+            targetMaterial.renderQueue = sourceMaterial.rawRenderQueue;
+            targetMaterial.enableInstancing = sourceMaterial.enableInstancing;
+            targetMaterial.doubleSidedGI = sourceMaterial.doubleSidedGI;
+            targetMaterial.globalIlluminationFlags = sourceMaterial.globalIlluminationFlags;
+        }
+
+        private static void CopyColorProperty(
+            Material sourceMaterial,
+            Material targetMaterial,
+            string sourcePropertyName,
+            string targetPropertyName)
+        {
+            if (sourceMaterial.HasProperty(sourcePropertyName)
+                && targetMaterial.HasProperty(targetPropertyName))
+            {
+                targetMaterial.SetColor(targetPropertyName, sourceMaterial.GetColor(sourcePropertyName));
+            }
+        }
+
+        private static void CopyFloatProperty(
+            Material sourceMaterial,
+            Material targetMaterial,
+            string sourcePropertyName,
+            string targetPropertyName)
+        {
+            if (sourceMaterial.HasProperty(sourcePropertyName)
+                && targetMaterial.HasProperty(targetPropertyName))
+            {
+                targetMaterial.SetFloat(targetPropertyName, sourceMaterial.GetFloat(sourcePropertyName));
+            }
+        }
+
+        private static void PromoteImportedTextureProperties(
+            Material sourceMaterial,
+            Material targetMaterial,
+            string textureRoot)
+        {
+            string[] textureProperties = targetMaterial.GetTexturePropertyNames();
+            for (int i = 0; i < textureProperties.Length; i++)
+            {
+                string propertyName = textureProperties[i];
+                Texture sourceTexture = sourceMaterial.HasProperty(propertyName)
+                    ? sourceMaterial.GetTexture(propertyName)
+                    : targetMaterial.GetTexture(propertyName);
+                if (sourceTexture == null)
+                {
+                    continue;
+                }
+
+                string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
+                if (!sourcePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                targetMaterial.SetTexture(
+                    propertyName,
+                    PromoteTexture(sourceTexture, InferTextureUsage(propertyName), textureRoot));
+                if (sourceMaterial.HasProperty(propertyName))
+                {
+                    targetMaterial.SetTextureScale(propertyName, sourceMaterial.GetTextureScale(propertyName));
+                    targetMaterial.SetTextureOffset(propertyName, sourceMaterial.GetTextureOffset(propertyName));
+                }
+            }
+        }
+
+        private static TextureUsage InferTextureUsage(string propertyName)
+        {
+            if (propertyName.IndexOf("normal", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("bump", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return TextureUsage.Normal;
+            }
+
+            if (propertyName.IndexOf("metal", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("occlusion", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("rough", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("smooth", StringComparison.OrdinalIgnoreCase) >= 0
+                || propertyName.IndexOf("mask", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return TextureUsage.Linear;
+            }
+
+            return TextureUsage.Color;
+        }
+
         private static void CopyTextureProperty(Material sourceMaterial, Material targetMaterial, string propertyName, TextureUsage usage, string textureRoot)
         {
-            if (!sourceMaterial.HasProperty(propertyName) || !targetMaterial.HasProperty(propertyName))
+            CopyTextureProperty(
+                sourceMaterial,
+                targetMaterial,
+                propertyName,
+                propertyName,
+                usage,
+                textureRoot);
+        }
+
+        private static void CopyTextureProperty(
+            Material sourceMaterial,
+            Material targetMaterial,
+            string sourcePropertyName,
+            string targetPropertyName,
+            TextureUsage usage,
+            string textureRoot)
+        {
+            if (!sourceMaterial.HasProperty(sourcePropertyName)
+                || !targetMaterial.HasProperty(targetPropertyName))
             {
                 return;
             }
 
-            Texture sourceTexture = sourceMaterial.GetTexture(propertyName);
-            targetMaterial.SetTexture(propertyName, sourceTexture != null ? PromoteTexture(sourceTexture, usage, textureRoot) : null);
+            Texture sourceTexture = sourceMaterial.GetTexture(sourcePropertyName);
+            targetMaterial.SetTexture(targetPropertyName, sourceTexture != null ? PromoteTexture(sourceTexture, usage, textureRoot) : null);
+            targetMaterial.SetTextureScale(targetPropertyName, sourceMaterial.GetTextureScale(sourcePropertyName));
+            targetMaterial.SetTextureOffset(targetPropertyName, sourceMaterial.GetTextureOffset(sourcePropertyName));
         }
 
         private static Texture PromoteTexture(Texture sourceTexture, TextureUsage usage, string textureRoot)
@@ -860,8 +1243,16 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            importer.textureType = usage == TextureUsage.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            importer.sRGBTexture = usage == TextureUsage.Color;
+            TextureImporterType expectedType =
+                usage == TextureUsage.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+            bool expectedSrgb = usage == TextureUsage.Color;
+            if (importer.textureType == expectedType && importer.sRGBTexture == expectedSrgb)
+            {
+                return;
+            }
+
+            importer.textureType = expectedType;
+            importer.sRGBTexture = expectedSrgb;
             importer.SaveAndReimport();
         }
 
@@ -1024,6 +1415,34 @@ namespace DimensionBrawl.Editor
             }
 
             return null;
+        }
+
+        private static Transform FindDirectChild(Transform parent, string childName)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (string.Equals(child.name, childName, StringComparison.Ordinal))
+                {
+                    return child;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool RendererUsesMeshAtPath(Renderer renderer, string expectedPath)
+        {
+            Mesh mesh = renderer is SkinnedMeshRenderer skinnedRenderer
+                ? skinnedRenderer.sharedMesh
+                : renderer.GetComponent<MeshFilter>()?.sharedMesh;
+            if (mesh == null)
+            {
+                return false;
+            }
+
+            string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+            return string.Equals(meshPath, expectedPath, StringComparison.Ordinal);
         }
 
         private static AnimatorController LoadController()
@@ -1200,6 +1619,32 @@ namespace DimensionBrawl.Editor
             string name = folderPath.Substring(separatorIndex + 1);
             EnsureFolder(parent);
             AssetDatabase.CreateFolder(parent, name);
+        }
+
+        private sealed class CommandoWeaponAttachment
+        {
+            public CommandoWeaponAttachment(
+                string socketName,
+                string instanceName,
+                string sourceFileName,
+                string targetAssetName)
+            {
+                SocketName = socketName;
+                InstanceName = instanceName;
+                SourceModelPath = ImportedCommonWeaponRoot + "FBX Files/" + sourceFileName;
+                TargetRoot = PromotedCommandoWeaponRoot + "/" + targetAssetName;
+                TargetModelPath = TargetRoot + "/Models/" + targetAssetName + ".fbx";
+                TargetMaterialRoot = TargetRoot + "/Materials";
+                TargetTextureRoot = TargetRoot + "/Textures";
+            }
+
+            public string SocketName { get; }
+            public string InstanceName { get; }
+            public string SourceModelPath { get; }
+            public string TargetRoot { get; }
+            public string TargetModelPath { get; }
+            public string TargetMaterialRoot { get; }
+            public string TargetTextureRoot { get; }
         }
 
         private enum TextureUsage

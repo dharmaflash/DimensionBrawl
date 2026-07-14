@@ -152,7 +152,7 @@ namespace DimensionBrawl.Editor
             lineText.color = new Color(0.94f, 0.97f, 1.00f, 1f);
             lineText.font = dialogueFont;
             lineText.fontStyle = FontStyles.Normal;
-            lineText.enableWordWrapping = true;
+            lineText.textWrappingMode = TextWrappingModes.Normal;
             lineText.overflowMode = TextOverflowModes.Ellipsis;
             ConfigureAnchored(lineText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(1080f, 74f), new Vector2(0f, -62f));
 
@@ -449,7 +449,7 @@ namespace DimensionBrawl.Editor
             text.fontSize = fontSize;
             text.alignment = alignment;
             text.raycastTarget = false;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             return text;
         }
 

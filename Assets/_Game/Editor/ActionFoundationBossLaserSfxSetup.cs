@@ -14,16 +14,15 @@ namespace DimensionBrawl.Editor
 
         private static readonly string[] ImportedClipPaths =
         {
-            ActionFoundationBossBarrageLaneReviewSetup.BossLaserTelegraphSfxClipPath,
-            ActionFoundationBossBarrageLaneReviewSetup.BossLaserSustainLoopSfxClipPath,
-            ActionFoundationBossBarrageLaneReviewSetup.BossLaserEndSfxClipPath
+            ActionFoundationCombatAssetPaths.BossLaserTelegraphSfxClipPath,
+            ActionFoundationCombatAssetPaths.BossLaserSustainLoopSfxClipPath,
+            ActionFoundationCombatAssetPaths.BossLaserEndSfxClipPath
         };
 
-        private static readonly string[] ReviewScenePaths =
+        private static readonly string[] CanonicalScenePaths =
         {
-            "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity",
-            ActionFoundationBossBarrageLaneReviewSetup.ReviewScenePath,
-            "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
+            ActionFoundationCombatAssetPaths.OlympusCorridorScenePath,
+            ActionFoundationCombatAssetPaths.OlympusStationScenePath
         };
 
         [MenuItem("DimensionBrawl/ActionFoundation/Apply Boss Laser SFX")]
@@ -74,7 +73,7 @@ namespace DimensionBrawl.Editor
         private static void ApplyBossLaserPrefab()
         {
             GameObject prefabRoot =
-                PrefabUtility.LoadPrefabContents(ActionFoundationBossBarrageLaneReviewSetup.BossLaserSummonActorPrefabPath);
+                PrefabUtility.LoadPrefabContents(ActionFoundationCombatAssetPaths.BossLaserSummonActorPrefabPath);
             try
             {
                 BossLaserSummonPattern laserPattern = prefabRoot.GetComponent<BossLaserSummonPattern>();
@@ -84,7 +83,7 @@ namespace DimensionBrawl.Editor
                 }
 
                 ApplyPatternAudio(laserPattern);
-                PrefabUtility.SaveAsPrefabAsset(prefabRoot, ActionFoundationBossBarrageLaneReviewSetup.BossLaserSummonActorPrefabPath);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, ActionFoundationCombatAssetPaths.BossLaserSummonActorPrefabPath);
             }
             finally
             {
@@ -94,9 +93,9 @@ namespace DimensionBrawl.Editor
 
         private static void ApplySceneReferences()
         {
-            for (int i = 0; i < ReviewScenePaths.Length; i++)
+            for (int i = 0; i < CanonicalScenePaths.Length; i++)
             {
-                string scenePath = ReviewScenePaths[i];
+                string scenePath = CanonicalScenePaths[i];
                 if (!File.Exists(ToProjectAbsolutePath(scenePath)))
                 {
                     continue;
@@ -136,13 +135,13 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedPattern, "audioSource").objectReferenceValue = oneShotSource;
             RequireProperty(serializedPattern, "laserSustainLoopAudioSource").objectReferenceValue = sustainSource;
             RequireProperty(serializedPattern, "telegraphSfx").objectReferenceValue =
-                LoadClip(ActionFoundationBossBarrageLaneReviewSetup.BossLaserTelegraphSfxClipPath);
+                LoadClip(ActionFoundationCombatAssetPaths.BossLaserTelegraphSfxClipPath);
             RequireProperty(serializedPattern, "laserFireSfx").objectReferenceValue =
-                LoadClip(ActionFoundationBossBarrageLaneReviewSetup.BossLaserFireSfxClipPath);
+                LoadClip(ActionFoundationCombatAssetPaths.BossLaserFireSfxClipPath);
             RequireProperty(serializedPattern, "laserSustainLoopSfx").objectReferenceValue =
-                LoadClip(ActionFoundationBossBarrageLaneReviewSetup.BossLaserSustainLoopSfxClipPath);
+                LoadClip(ActionFoundationCombatAssetPaths.BossLaserSustainLoopSfxClipPath);
             RequireProperty(serializedPattern, "laserEndSfx").objectReferenceValue =
-                LoadClip(ActionFoundationBossBarrageLaneReviewSetup.BossLaserEndSfxClipPath);
+                LoadClip(ActionFoundationCombatAssetPaths.BossLaserEndSfxClipPath);
             RequireProperty(serializedPattern, "telegraphSfxVolume").floatValue = 0.72f;
             RequireProperty(serializedPattern, "laserFireSfxVolume").floatValue = 0f;
             RequireProperty(serializedPattern, "laserSustainLoopSfxVolume").floatValue = 0.56f;
@@ -172,7 +171,7 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureSustainLoopAudioSource(AudioSource source)
         {
-            source.clip = LoadClip(ActionFoundationBossBarrageLaneReviewSetup.BossLaserSustainLoopSfxClipPath);
+            source.clip = LoadClip(ActionFoundationCombatAssetPaths.BossLaserSustainLoopSfxClipPath);
             source.playOnAwake = false;
             source.loop = true;
             source.volume = 0.56f;

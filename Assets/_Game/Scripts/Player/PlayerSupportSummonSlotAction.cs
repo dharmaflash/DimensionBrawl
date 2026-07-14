@@ -62,7 +62,7 @@ namespace DimensionBrawl.Player
         private SupportSummonSlotExecutor executor;
         private bool actionEnabledHere;
         private bool queued;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
         private InputAction subscribedSummonInputAction;
         private InputAction keyboardFallbackAction;
         private Coroutine feedbackRoutine;
@@ -99,6 +99,7 @@ namespace DimensionBrawl.Player
         public bool HasRequiredPresentation => Executor.HasRequiredPresentation;
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
 
         internal CombatHealth SourceHealth => sourceHealth;
         internal DamageTeam SourceTeam => sourceTeam;
@@ -269,10 +270,14 @@ namespace DimensionBrawl.Player
             ConsumeQueuedSummon();
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            cinematicInputLocked = locked;
-            if (locked)
+            bool wasLocked = IsCinematicInputLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            if (!wasLocked && IsCinematicInputLocked)
             {
                 queued = false;
             }
@@ -479,7 +484,7 @@ namespace DimensionBrawl.Player
 
         private bool CanAcceptQueuedInput()
         {
-            return isActiveAndEnabled && !cinematicInputLocked;
+            return isActiveAndEnabled && !IsCinematicInputLocked;
         }
 
         private void SetUseBlocked(string reason)

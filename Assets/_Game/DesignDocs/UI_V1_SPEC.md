@@ -1,6 +1,6 @@
 # UI V1 Spec
 
-Last updated: 2026-06-15 KST
+Last updated: 2026-07-14 KST
 
 This document defines the first safe UI work split for parallel development on another PC. It turns the existing UI research into implementation boundaries for login, lobby, and combat HUD work without reopening old card/lane UI assumptions or mixing UI with gameplay systems.
 
@@ -20,11 +20,11 @@ V1 UI should prove:
 ## Android Mobile-First Baseline
 
 - Default product target is Android landscape.
-- UI test scenes should use `Scale With Screen Size` with a mobile landscape reference resolution.
+- Product UI scenes should use `Scale With Screen Size` with a mobile landscape reference resolution.
 - Safe Area must be represented by an authored scene/prefab root, not left as a later runtime-only concern.
 - UI input prompts must use common action names across keyboard/mouse, gamepad, and mobile display rows.
 - Avoid hardcoded device-specific branches in UI presenters. Device differences belong in prompt/layout data.
-- For contest or local test builds that need to boot directly into the product loop, Build Settings should register the data-driven route in order, starting with `UI_LoginTest` and continuing through the canonical combat stages. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
+- For contest or local test builds that need to boot directly into the product loop, Build Settings should register the data-driven route in order, starting with `UI_Login` and continuing through the canonical combat stages. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
 
 ## Parallel Work Rule
 
@@ -32,7 +32,8 @@ UI work may happen on another PC if it follows these rules:
 
 - Work under `Assets/_Game/UI/`, `Assets/_Game/Scenes/UI/`, and optional `Assets/_Game/DesignData/UI/`.
 - Do not edit canonical combat or runtime stage scenes for UI layout experiments.
-- Use separate UI inspection scenes for `UI_LoginTest`, `UI_LobbyTest`, and `UI_StageSelectTest`. Inspect the combat HUD prefab through canonical combat scenes.
+- Use separate UI-owned scenes for `UI_Login`, `UI_Lobby`, and `UI_StageSelect`. Inspect the combat HUD prefab through canonical combat scenes.
+- Keep `UI_StageClear` as a screen-space additive result overlay: it uses the host combat EventSystem, camera, and AudioListener, and must not own a second full-screen scene router or transition loader.
 - Use authored prefabs and serialized references. Do not build the full UI hierarchy at runtime.
 - Do not reference `Assets/_Imported/` directly.
 - Do not add summon gameplay, account login, networking, currencies, progression, gacha, shop, reward economy, or final mobile HUD behavior in this slice.
@@ -56,7 +57,7 @@ Do not create a single catch-all UI folder with unrelated prefabs, sprites, data
 
 Other-PC UI work may extend the scene-flow shell if route ownership stays UI-owned:
 
-- Canonical route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> OlympusCorridorInvasionStage -> UI_StageClearTest`.
+- Canonical route: `UI_Login -> UI_Lobby -> UI_StageSelect -> OlympusCorridorInvasionStage -> OlympusStationCombatStage -> UI_StageClear`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
 - Loading cards are conditional presentation for routes with a real wait reason. Immediate UI-to-UI routes should use a short fade without a card/progress layer.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
@@ -67,7 +68,7 @@ Other-PC UI work may extend the scene-flow shell if route ownership stays UI-own
 
 If a transition needs persistent objects, keep them narrow:
 
-- `UISceneFlowRouter`: one responsibility, route requests between authored UI test scenes.
+- `UISceneFlowRouter`: one responsibility, route requests between authored full-screen UI scenes.
 - `UITransitionPresenter`: fade/loading visuals only.
 - `UIScreenRouteTable`: screen id, scene name/reference, transition id, and optional loading-card id.
 
@@ -82,7 +83,7 @@ Allowed:
 - One clear start prompt.
 - Minimal version/server placeholder text.
 - Optional loading card placeholder using local dummy data.
-- Transition request to lobby test scene through the scene-flow shell or placeholder event.
+- Transition request to the lobby scene through the scene-flow shell or placeholder event.
 
 Not allowed:
 
@@ -149,6 +150,15 @@ Reference direction:
 - `SummonSlot1` may become a functional input bridge after a reviewed gameplay slice exists. `SummonSlot2` and `SummonSlot3` stay placeholder-only until later.
 - `Skill1` and `SummonSlot1` should display the current available tier (`LV1`, `LV2`, or `LV3`) once gameplay exposes EN state.
 
+#### Product Combat Session Overlay
+
+- `PF_UI_CombatHud` owns exactly one authored `CombatSessionOverlayPresenter` for Pause, Settings, and Failure. It must not construct its hierarchy at runtime.
+- Runtime combat code talks to the surface through `ICombatSessionOverlay`; it does not depend on the concrete UGUI presenter or the Review overlay type.
+- Opening the surface publishes the `CombatMenu` input-lock owner, clears held combat input, pauses only Pause/Settings modes, and restores the prior time scale on resume or route exit.
+- Station victory dismisses the session surface before loading additive `UI_StageClear`; Station failure opens the same product surface with committed encounter details.
+- Canonical Corridor and Station scenes contain one product session surface. The legacy Review overlay and standalone Review scenes are retired.
+- The visible session surface moves above runtime-created HUD layers. Its action stack and text must remain inside the authored panel at 16:9 and wide mobile landscape ratios.
+
 ## Ownership
 
 Use narrow scripts if implementation starts:
@@ -176,7 +186,7 @@ Data can be placeholder-only in V1, but it should be shaped so real content can 
 
 ## Scene Composition Rule
 
-UI test scenes should be authored:
+Product UI scenes should be authored:
 
 - One Canvas root.
 - One EventSystem.
@@ -184,7 +194,7 @@ UI test scenes should be authored:
 - Optional camera/presentation object if the screen needs scene-space composition.
 - Optional mock data provider.
 
-The test scene may call simple presenter setup methods in `Awake` or `Start`, but it must not construct all visual children procedurally.
+The scene may call simple presenter setup methods in `Awake` or `Start`, but it must not construct all visual children procedurally.
 
 ## Validation Checklist
 
@@ -192,7 +202,7 @@ Before merging UI work from another PC:
 
 - The branch starts from the latest pushed `main`.
 - No changes to canonical combat or runtime stage scenes unless explicitly coordinated.
-- For product-loop builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the canonical route scenes in order.
+- For product-loop builds, the first enabled Build Settings scene is `UI_Login`, followed by the canonical route scenes in order.
 - No direct references to `_Imported/`.
 - No full runtime UI hierarchy construction.
 - Scene navigation follows the serialized product route and canonical stage transitions.
@@ -203,11 +213,13 @@ Before merging UI work from another PC:
 - Combat HUD uses canonical action names from `COMBAT_V1_SPEC.md`.
 - UI scripts are presenters/bridges, not gameplay owners.
 - Text fits at common landscape widths and does not overlap controls.
+- Login, Lobby, and StageSelect each own an EventSystem, at least one camera, and exactly one AudioListener; additive StageClear owns none of those host services.
+- Pause and Failure actions stay inside the product session panel, and runtime-created reticles cannot render above the visible session surface.
 
 ## Recommended First UI Tasks
 
-1. Maintain `UI_LoginTest` as the product-loop entry scene.
-2. Maintain `UI_LobbyTest` and `UI_StageSelectTest` as separately inspectable UI-owned scenes.
+1. Maintain `UI_Login` as the product-loop entry scene.
+2. Maintain `UI_Lobby` and `UI_StageSelect` as separately inspectable UI-owned scenes.
 3. Validate `PF_UI_CombatHud` against canonical encounter state in both Olympus combat stages.
 4. Keep transition/audio/cue data shared and route-driven.
 
@@ -215,7 +227,7 @@ Before merging UI work from another PC:
 
 ### 2026-06-15 Lobby Character Presentation
 
-- `UI_LobbyTest` may contain a separate authored presentation prefab beside the Canvas for a RenderTexture-based lobby character stage.
+- `UI_Lobby` may contain a separate authored presentation prefab beside the Canvas for a RenderTexture-based lobby character stage.
 - The current lobby character presentation is display-only: `PF_UI_LobbyCharacterStage` frames the game-owned CombatGirl visual with a UI-only camera and renders it into `RT_LobbyCharacterStage`, while `PF_UI_LobbyScreen` displays that texture as a transparent full-screen lobby art layer behind authored UI panels.
 - Lobby character skeletal motion should stay display-only. The lobby stage uses a lobby-only signboard Animator Controller through `LobbyCharacterAnimatorPresenter`, while root/tap/drag reactions stay in `LobbyCharacterStagePresenter`. This follows the PGR-style signboard/action split without binding the lobby UI to the combat/action animator state machine.
 - Lobby character framing uses a PGR-style low-FOV presentation camera plus explicit viewport-fill and composition settings, so size tweaks happen in the prefab instead of through scene transforms.

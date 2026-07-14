@@ -10,6 +10,7 @@ namespace DimensionBrawl.Editor
     {
         private const string RouteTablePath = "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
+        private const string StationCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
 
         [MenuItem("DimensionBrawl/UI V1/Report Build Settings Readiness")]
         public static void ReportMenu()
@@ -126,8 +127,12 @@ namespace DimensionBrawl.Editor
             AddStageCatalogScenes(routeScenes, stageCatalog);
             AddUniqueRouteScene(
                 routeScenes,
+                "CombatContinuation",
+                StationCombatScenePath);
+            AddUniqueRouteScene(
+                routeScenes,
                 "StageClear",
-                StageClearUiBuildSettings.ScenePath);
+                CanonicalUiBuildSettings.StageClearScenePath);
             return routeScenes;
         }
 

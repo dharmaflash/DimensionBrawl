@@ -73,5 +73,28 @@ namespace DimensionBrawl.Tests
                 Assert.That(profile.StreamingMipmapsMaxFileIoRequests, Is.InRange(32, 256));
             }
         }
+
+        [Test]
+        public void ThermalPressureConstrainsTierBeforeSustainedFrameLoss()
+        {
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.High, -1),
+                Is.EqualTo(MobilePerformanceTier.High));
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.High, 1),
+                Is.EqualTo(MobilePerformanceTier.High));
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.High, 2),
+                Is.EqualTo(MobilePerformanceTier.Balanced));
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.Balanced, 2),
+                Is.EqualTo(MobilePerformanceTier.Balanced));
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.High, 3),
+                Is.EqualTo(MobilePerformanceTier.Low));
+            Assert.That(
+                MobilePerformanceGovernor.GetThermallyConstrainedTier(MobilePerformanceTier.Balanced, 6),
+                Is.EqualTo(MobilePerformanceTier.Low));
+        }
     }
 }

@@ -6,7 +6,7 @@ namespace DimensionBrawl.UI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class CombatHudVirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+    public sealed class CombatHudVirtualJoystick : MonoBehaviour, ICombatMoveInputGate, IPointerDownHandler, IDragHandler, IPointerUpHandler
     {
         private const int NoPointerId = int.MinValue;
 
@@ -23,12 +23,15 @@ namespace DimensionBrawl.UI
         private Vector2 knobRestPosition;
         private bool hasKnobRestPosition;
         private bool pointerHeld;
-        private bool inputBlocked;
+        private PlayerInputLockSource inputBlockSources;
         private int activePointerId = NoPointerId;
+        private int deferredPointerId = NoPointerId;
+        private Vector2 deferredPointerPosition;
+        private Camera deferredEventCamera;
 
         public Vector2 CurrentInput { get; private set; }
         public bool IsPointerHeld => pointerHeld;
-        public bool IsInputBlocked => inputBlocked;
+        public bool IsInputBlocked => inputBlockSources != PlayerInputLockSource.None;
 
         public void Configure(PlayerMovementController newMovementController, RectTransform newKnob)
         {
@@ -57,36 +60,59 @@ namespace DimensionBrawl.UI
 
         private void OnDisable()
         {
-            ClearInput();
+            CancelPointerInput();
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (inputBlocked
-                || pointerHeld
+            if (pointerHeld
                 || eventData == null
                 || eventData.button != PointerEventData.InputButton.Left)
             {
                 return;
             }
 
-            pointerHeld = true;
-            activePointerId = eventData.pointerId;
-            UpdateInput(eventData);
+            if (IsInputBlocked)
+            {
+                CaptureDeferredPointer(eventData);
+                return;
+            }
+
+            BeginPointerInput(eventData.pointerId, eventData.position, eventData.pressEventCamera);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            if (!IsActivePointer(eventData) || inputBlocked)
+            if (eventData == null)
             {
                 return;
             }
 
-            UpdateInput(eventData);
+            if (IsInputBlocked)
+            {
+                if (eventData.pointerId == deferredPointerId)
+                {
+                    deferredPointerPosition = eventData.position;
+                    deferredEventCamera = eventData.pressEventCamera;
+                }
+
+                return;
+            }
+
+            if (IsActivePointer(eventData))
+            {
+                UpdateInput(eventData.position, eventData.pressEventCamera);
+            }
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
+            if (eventData != null && eventData.pointerId == deferredPointerId)
+            {
+                ClearDeferredPointer();
+                return;
+            }
+
             if (!IsActivePointer(eventData))
             {
                 return;
@@ -107,25 +133,28 @@ namespace DimensionBrawl.UI
             hasKnobRestPosition = true;
         }
 
-        public void SetInputBlocked(bool blocked)
+        public void SetInputBlocked(PlayerInputLockSource source, bool blocked)
         {
-            if (inputBlocked == blocked)
+            bool wasBlocked = IsInputBlocked;
+            inputBlockSources = PlayerInputLockMask.WithState(inputBlockSources, source, blocked);
+            if (wasBlocked == IsInputBlocked)
             {
                 return;
             }
 
-            inputBlocked = blocked;
-            if (inputBlocked)
+            if (IsInputBlocked)
             {
-                ClearInput();
+                CancelPointerInput();
+                return;
             }
+
+            ActivateDeferredPointer();
         }
 
-        private void UpdateInput(PointerEventData eventData)
+        private void UpdateInput(Vector2 screenPosition, Camera eventCamera)
         {
-            if (inputBlocked)
+            if (IsInputBlocked)
             {
-                ClearInput();
                 return;
             }
 
@@ -137,8 +166,8 @@ namespace DimensionBrawl.UI
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     joystickRect,
-                    eventData.position,
-                    eventData.pressEventCamera,
+                    screenPosition,
+                    eventCamera,
                     out Vector2 localPoint))
             {
                 return;
@@ -184,6 +213,52 @@ namespace DimensionBrawl.UI
                 movementController.SetMoveInput(Vector2.zero);
             }
             ResetKnob();
+        }
+
+        private void BeginPointerInput(int pointerId, Vector2 screenPosition, Camera eventCamera)
+        {
+            pointerHeld = true;
+            activePointerId = pointerId;
+            UpdateInput(screenPosition, eventCamera);
+        }
+
+        private void CaptureDeferredPointer(PointerEventData eventData)
+        {
+            if (deferredPointerId != NoPointerId && deferredPointerId != eventData.pointerId)
+            {
+                return;
+            }
+
+            deferredPointerId = eventData.pointerId;
+            deferredPointerPosition = eventData.position;
+            deferredEventCamera = eventData.pressEventCamera;
+        }
+
+        private void ActivateDeferredPointer()
+        {
+            if (deferredPointerId == NoPointerId || pointerHeld)
+            {
+                return;
+            }
+
+            int pointerId = deferredPointerId;
+            Vector2 screenPosition = deferredPointerPosition;
+            Camera eventCamera = deferredEventCamera;
+            ClearDeferredPointer();
+            BeginPointerInput(pointerId, screenPosition, eventCamera);
+        }
+
+        private void CancelPointerInput()
+        {
+            ClearDeferredPointer();
+            ClearInput();
+        }
+
+        private void ClearDeferredPointer()
+        {
+            deferredPointerId = NoPointerId;
+            deferredPointerPosition = Vector2.zero;
+            deferredEventCamera = null;
         }
 
         private void ResetKnob()

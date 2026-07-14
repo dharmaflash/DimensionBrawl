@@ -103,7 +103,8 @@ namespace DimensionBrawl.Player
         private bool externalAimPreviewHeld;
         private bool pendingFireThisFrame;
         private bool suppressDeviceFallbackThisFrame;
-        private bool cinematicInputLocked;
+        private PlayerInputLockSource cinematicInputLockSources;
+        private PlayerInputLockSource heldAimPreservationLockSources;
         private bool preserveHeldAimWhileCinematicLocked;
         private float nextFireTime;
         private float blockedHintUntil;
@@ -164,6 +165,7 @@ namespace DimensionBrawl.Player
 
         public bool IsFireHeld => currentFireHeld;
         public bool HasExternalFireHeldInput => mobileFireHeld;
+        public bool IsCinematicInputLocked => cinematicInputLockSources != PlayerInputLockSource.None;
         public bool IsAimPreviewActive => IsRangedModeActive()
             && (currentFireHeld
                 || externalAimPreviewHeld
@@ -235,7 +237,7 @@ namespace DimensionBrawl.Player
             }
 
             mobileFireHeld = active;
-            SetCurrentFireHeldState(active && !cinematicInputLocked && IsRangedModeActive());
+            SetCurrentFireHeldState(active && !IsCinematicInputLocked && IsRangedModeActive());
             SetFireAimHold(currentFireHeld);
             InvalidateFirePreviewCache();
         }
@@ -279,17 +281,37 @@ namespace DimensionBrawl.Player
             suppressDeviceFallbackThisFrame = true;
         }
 
-        public void SetCinematicInputLocked(bool locked)
+        public void SetCinematicInputLocked(PlayerInputLockSource source, bool locked)
         {
-            SetCinematicInputLocked(locked, false);
+            SetCinematicInputLocked(source, locked, false);
         }
 
-        public void SetCinematicInputLocked(bool locked, bool preserveHeldAim)
+        public void SetCinematicInputLocked(
+            PlayerInputLockSource source,
+            bool locked,
+            bool preserveHeldAim)
         {
-            cinematicInputLocked = locked;
-            if (!locked)
+            bool wasLocked = IsCinematicInputLocked;
+            bool wasPreservingHeldAim = preserveHeldAimWhileCinematicLocked;
+            cinematicInputLockSources = PlayerInputLockMask.WithState(
+                cinematicInputLockSources,
+                source,
+                locked);
+            heldAimPreservationLockSources = PlayerInputLockMask.WithState(
+                heldAimPreservationLockSources,
+                source,
+                locked && preserveHeldAim);
+
+            if (!IsCinematicInputLocked)
             {
                 preserveHeldAimWhileCinematicLocked = false;
+                return;
+            }
+
+            bool everyOwnerPreservesHeldAim =
+                heldAimPreservationLockSources == cinematicInputLockSources;
+            if (wasLocked && wasPreservingHeldAim == everyOwnerPreservesHeldAim)
+            {
                 return;
             }
 
@@ -297,7 +319,7 @@ namespace DimensionBrawl.Player
             pendingFireThisFrame = false;
             suppressDeviceFallbackThisFrame = true;
             InvalidateFirePreviewCache();
-            preserveHeldAimWhileCinematicLocked = preserveHeldAim
+            preserveHeldAimWhileCinematicLocked = everyOwnerPreservesHeldAim
                 && IsRangedModeActive()
                 && (currentFireHeld || mobileFireHeld);
             if (preserveHeldAimWhileCinematicLocked)
@@ -492,7 +514,7 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            if (cinematicInputLocked)
+            if (IsCinematicInputLocked)
             {
                 queuedFire = false;
                 pendingFireThisFrame = false;
@@ -543,7 +565,7 @@ namespace DimensionBrawl.Player
             }
 
             pendingFireThisFrame = false;
-            if (cinematicInputLocked || !IsRangedModeActive())
+            if (IsCinematicInputLocked || !IsRangedModeActive())
             {
                 return;
             }
@@ -752,7 +774,7 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            if (!reloadWhenAimReleased || cinematicInputLocked || !IsRangedModeActive())
+            if (!reloadWhenAimReleased || IsCinematicInputLocked || !IsRangedModeActive())
             {
                 return;
             }
@@ -1609,21 +1631,21 @@ namespace DimensionBrawl.Player
         private bool CanAcceptQueuedFireInput()
         {
             return isActiveAndEnabled
-                && !cinematicInputLocked
+                && !IsCinematicInputLocked
                 && IsRangedModeActive();
         }
 
         private bool CanAcceptContinuousFireInput()
         {
             return isActiveAndEnabled
-                && !cinematicInputLocked
+                && !IsCinematicInputLocked
                 && IsRangedModeActive();
         }
 
         private bool CanPreserveHeldAimWhileLocked()
         {
             return isActiveAndEnabled
-                && cinematicInputLocked
+                && IsCinematicInputLocked
                 && preserveHeldAimWhileCinematicLocked
                 && IsRangedModeActive();
         }

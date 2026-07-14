@@ -19,16 +19,15 @@ namespace DimensionBrawl.LevelDesign
     {
         private const string RetrySceneName = "OlympusCorridorInvasionStage";
         private const string RetryScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
-        private const string ClearUiSceneName = "UI_StageClearTest";
-        private const string ClearUiScenePath = "Assets/_Game/Scenes/Experiments/UI_StageClearTest.unity";
-        private const string LobbySceneName = "UI_LobbyTest";
-        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_LobbyTest.unity";
+        private const string ClearUiSceneName = "UI_StageClear";
+        private const string ClearUiScenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
+        private const string LobbySceneName = "UI_Lobby";
+        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
 
         private static readonly string[] CombatHudExitRootNames =
         {
             "BossBarrageLaneReview_CombatHudCanvas",
             "PF_UI_CombatHud",
-            "BossBarrageLaneReview_DebugHud",
             "PF_UI_CombatHudPresentation"
         };
 
@@ -119,7 +118,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (!configured)
             {
-                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Authored stage clear scene loaded without a {nameof(UIStageClearTestPresenter)}.");
+                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Authored stage clear scene loaded without a {nameof(StageClearScreenPresenter)}.");
             }
 
             stageClearRoutine = null;
@@ -173,14 +172,6 @@ namespace DimensionBrawl.LevelDesign
             {
                 GameObject root = GameObject.Find(CombatHudExitRootNames[i]);
                 AddUiExitTarget(root != null ? root.transform : null, targets, seen);
-            }
-
-            BossBarrageLaneReviewOverlayHud[] overlayHuds = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < overlayHuds.Length; i++)
-            {
-                AddUiExitTarget(overlayHuds[i] != null ? overlayHuds[i].transform : null, targets, seen);
             }
 
             return targets;
@@ -265,11 +256,11 @@ namespace DimensionBrawl.LevelDesign
             PromoteCanvases(roots, resolvedSortOrder);
             for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
             {
-                UIStageClearTestPresenter[] presenters =
-                    roots[rootIndex].GetComponentsInChildren<UIStageClearTestPresenter>(true);
+                StageClearScreenPresenter[] presenters =
+                    roots[rootIndex].GetComponentsInChildren<StageClearScreenPresenter>(true);
                 for (int presenterIndex = 0; presenterIndex < presenters.Length; presenterIndex++)
                 {
-                    UIStageClearTestPresenter presenter = presenters[presenterIndex];
+                    StageClearScreenPresenter presenter = presenters[presenterIndex];
                     presenter.ConfigureRoutes(
                         RetrySceneName,
                         RetryScenePath,
@@ -317,7 +308,7 @@ namespace DimensionBrawl.LevelDesign
 
             CombatHealth playerHealth = FindHealthByTeam(DamageTeam.Player);
             playerHealth?.SetInvulnerableUntil(Time.time + 3600f);
-            DisableCombatResultOverlays();
+            DismissCombatSessionOverlays();
             DisableEncounterFailureHooks();
             StopHostileCombat();
         }
@@ -349,16 +340,16 @@ namespace DimensionBrawl.LevelDesign
             return null;
         }
 
-        private static void DisableCombatResultOverlays()
+        private static void DismissCombatSessionOverlays()
         {
-            BossBarrageLaneReviewOverlayHud[] overlays = FindObjectsByType<BossBarrageLaneReviewOverlayHud>(
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
-            for (int i = 0; i < overlays.Length; i++)
+            for (int i = 0; i < behaviours.Length; i++)
             {
-                if (overlays[i] != null)
+                if (behaviours[i] is ICombatSessionOverlay overlay)
                 {
-                    overlays[i].enabled = false;
+                    overlay.DismissForStageClear();
                 }
             }
         }

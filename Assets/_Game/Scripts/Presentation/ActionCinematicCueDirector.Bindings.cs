@@ -55,7 +55,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            movement?.SetCinematicMoveInputSpeedScale(0f);
+            movement?.SetCinematicMoveInputLocked(PlayerInputLockSource.CinematicCue, true);
             movementLockActive = movement != null;
         }
 
@@ -66,7 +66,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            movement?.ClearCinematicMoveInputSpeedScale();
+            movement?.SetCinematicMoveInputLocked(PlayerInputLockSource.CinematicCue, false);
             movementLockActive = false;
         }
 
@@ -77,10 +77,10 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            actionController?.SetCinematicInputLocked(true);
-            skill1Action?.SetCinematicInputLocked(true);
-            summonSlot1Action?.SetCinematicInputLocked(true);
-            rangedBasicAttackAction?.SetCinematicInputLocked(true);
+            actionController?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, true);
+            skill1Action?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, true);
+            summonSlot1Action?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, true);
+            rangedBasicAttackAction?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, true);
             inputLockActive = actionController != null
                 || skill1Action != null
                 || summonSlot1Action != null
@@ -94,10 +94,10 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            actionController?.SetCinematicInputLocked(false);
-            skill1Action?.SetCinematicInputLocked(false);
-            summonSlot1Action?.SetCinematicInputLocked(false);
-            rangedBasicAttackAction?.SetCinematicInputLocked(false);
+            actionController?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            skill1Action?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            summonSlot1Action?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            rangedBasicAttackAction?.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
             inputLockActive = false;
         }
 

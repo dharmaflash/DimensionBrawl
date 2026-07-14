@@ -9,6 +9,8 @@ namespace DimensionBrawl.Core
     {
         private const float BalancedCullDistance = 120f;
         private const float LowCullDistance = 90f;
+        private const float BalancedColliderCullDistance = 45f;
+        private const float LowColliderCullDistance = 32f;
         private const float MaxCandidateBoundsSize = 8f;
         private const long MaxCandidateTriangles = 3000L;
 
@@ -24,6 +26,7 @@ namespace DimensionBrawl.Core
         private Camera targetCamera;
         private MobilePerformanceTier configuredTier = MobilePerformanceTier.High;
         private float cullDistance;
+        private float colliderCullDistance;
         private long candidateTriangleCount;
         private long culledTriangleCount;
         private int culledRendererCount;
@@ -36,6 +39,7 @@ namespace DimensionBrawl.Core
         public long CandidateTriangleCount => candidateTriangleCount;
         public long CulledTriangleCount => culledTriangleCount;
         public float CullDistance => cullDistance;
+        public float ColliderCullDistance => colliderCullDistance;
         public int CandidateColliderCount => candidateColliderCount;
         public int CulledColliderCount => culledColliderCount;
 
@@ -60,6 +64,7 @@ namespace DimensionBrawl.Core
             targetCamera = resolvedCamera;
             configuredTier = tier;
             cullDistance = ResolveCullDistance(tier);
+            colliderCullDistance = ResolveColliderCullDistance(tier);
             cullCandidateColliders = tier != MobilePerformanceTier.High;
 
             if (!cullCandidateColliders)
@@ -81,7 +86,7 @@ namespace DimensionBrawl.Core
             }
             else if (tierChanged)
             {
-                cullingGroup.SetBoundingDistances(new[] { cullDistance });
+                SetCullingDistances();
                 changed = true;
             }
 
@@ -115,7 +120,10 @@ namespace DimensionBrawl.Core
                 float distance = Vector3.Distance(
                     cameraPosition,
                     renderer.bounds.center);
-                changed |= SetCulled(i, distance > cullDistance);
+                changed |= SetRendererCulled(i, distance > cullDistance);
+                changed |= SetColliderCulled(
+                    i,
+                    cullCandidateColliders && distance > colliderCullDistance);
             }
 
             return changed;
@@ -181,7 +189,7 @@ namespace DimensionBrawl.Core
                 targetCamera = targetCamera
             };
             cullingGroup.SetDistanceReferencePoint(targetCamera.transform);
-            cullingGroup.SetBoundingDistances(new[] { cullDistance });
+            SetCullingDistances();
             cullingGroup.SetBoundingSpheres(boundingSpheres);
             cullingGroup.SetBoundingSphereCount(boundingSpheres.Length);
             cullingGroup.onStateChanged = HandleCullingStateChanged;
@@ -189,10 +197,13 @@ namespace DimensionBrawl.Core
 
         private void HandleCullingStateChanged(CullingGroupEvent state)
         {
-            SetCulled(state.index, state.currentDistance > 0);
+            SetRendererCulled(state.index, state.currentDistance > 1);
+            SetColliderCulled(
+                state.index,
+                cullCandidateColliders && state.currentDistance > 0);
         }
 
-        private bool SetCulled(int index, bool shouldCull)
+        private bool SetRendererCulled(int index, bool shouldCull)
         {
             if (index < 0 || index >= renderers.Length)
             {
@@ -222,8 +233,6 @@ namespace DimensionBrawl.Core
 
                 changed = true;
             }
-
-            changed |= SetColliderCulled(index, cullCandidateColliders && shouldCull);
             return changed;
         }
 
@@ -261,7 +270,7 @@ namespace DimensionBrawl.Core
             bool changed = false;
             for (int i = 0; i < renderers.Length; i++)
             {
-                changed |= SetCulled(i, false);
+                changed |= SetRendererCulled(i, false);
             }
 
             return changed;
@@ -407,6 +416,37 @@ namespace DimensionBrawl.Core
             collider = null;
             return false;
         }
+
+        public bool TryGetFirstColliderOnlyCullForTests(
+            out MeshRenderer renderer,
+            out Collider collider)
+        {
+            for (int rendererIndex = 0; rendererIndex < candidateColliders.Length; rendererIndex++)
+            {
+                if (culled[rendererIndex])
+                {
+                    continue;
+                }
+
+                Collider[] colliders = candidateColliders[rendererIndex];
+                bool[] culledStates = colliderCulled[rendererIndex];
+                for (int colliderIndex = 0; colliderIndex < colliders.Length; colliderIndex++)
+                {
+                    if (!culledStates[colliderIndex] || colliders[colliderIndex] == null)
+                    {
+                        continue;
+                    }
+
+                    renderer = renderers[rendererIndex];
+                    collider = colliders[colliderIndex];
+                    return renderer != null;
+                }
+            }
+
+            renderer = null;
+            collider = null;
+            return false;
+        }
 #endif
 
         private static float ResolveCullDistance(MobilePerformanceTier tier)
@@ -414,6 +454,18 @@ namespace DimensionBrawl.Core
             return tier == MobilePerformanceTier.Low
                 ? LowCullDistance
                 : BalancedCullDistance;
+        }
+
+        private static float ResolveColliderCullDistance(MobilePerformanceTier tier)
+        {
+            return tier == MobilePerformanceTier.Low
+                ? LowColliderCullDistance
+                : BalancedColliderCullDistance;
+        }
+
+        private void SetCullingDistances()
+        {
+            cullingGroup?.SetBoundingDistances(new[] { colliderCullDistance, cullDistance });
         }
 
         private static Camera FindActiveCamera()

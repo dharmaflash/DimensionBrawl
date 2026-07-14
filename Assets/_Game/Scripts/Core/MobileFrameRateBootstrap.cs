@@ -83,6 +83,8 @@ namespace DimensionBrawl.Core
         private const int SlowWindowsBeforeAdjustment = 3;
         private const int StableWindowsBeforeRecovery = 10;
         private const float RenderScaleStep = 0.05f;
+        private const int ModerateThermalStatus = 2;
+        private const int SevereThermalStatus = 3;
 
         private UniversalRenderPipelineAsset pipelineAsset;
         private MobilePerformanceTier currentTier;
@@ -93,10 +95,16 @@ namespace DimensionBrawl.Core
         private int slowWindowCount;
         private int stableWindowCount;
         private float lastAdjustmentTime = float.NegativeInfinity;
+        private int currentThermalStatus = -1;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private AndroidJavaObject powerManager;
+#endif
 
         public static MobilePerformanceGovernor ActiveInstance { get; private set; }
         public MobilePerformanceTier CurrentTier => currentTier;
         public float CurrentRenderScale => pipelineAsset != null ? pipelineAsset.renderScale : 1f;
+        public int CurrentThermalStatus => currentThermalStatus;
 
         private void Awake()
         {
@@ -117,6 +125,11 @@ namespace DimensionBrawl.Core
             {
                 ActiveInstance = null;
             }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            powerManager?.Dispose();
+            powerManager = null;
+#endif
         }
 
         private void OnEnable()
@@ -154,7 +167,22 @@ namespace DimensionBrawl.Core
             }
 
             float averageFrameSeconds = sampledFrameSeconds / sampledFrames;
-            EvaluateFrameWindow(averageFrameSeconds);
+            currentThermalStatus = ReadThermalStatus();
+            MobilePerformanceTier thermallyConstrainedTier = GetThermallyConstrainedTier(
+                currentTier,
+                currentThermalStatus);
+            if (thermallyConstrainedTier < currentTier)
+            {
+                ApplyTier(thermallyConstrainedTier);
+                slowWindowCount = 0;
+                stableWindowCount = 0;
+                lastAdjustmentTime = Time.unscaledTime;
+            }
+            else
+            {
+                EvaluateFrameWindow(averageFrameSeconds);
+            }
+
             ResetSamples();
         }
 
@@ -349,11 +377,51 @@ namespace DimensionBrawl.Core
             }
         }
 
+        public static MobilePerformanceTier GetThermallyConstrainedTier(
+            MobilePerformanceTier currentTier,
+            int thermalStatus)
+        {
+            if (thermalStatus >= SevereThermalStatus)
+            {
+                return MobilePerformanceTier.Low;
+            }
+
+            if (thermalStatus >= ModerateThermalStatus
+                && currentTier > MobilePerformanceTier.Balanced)
+            {
+                return MobilePerformanceTier.Balanced;
+            }
+
+            return currentTier;
+        }
+
+        private int ReadThermalStatus()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                if (powerManager == null)
+                {
+                    using AndroidJavaClass unityPlayer = new("com.unity3d.player.UnityPlayer");
+                    using AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                    powerManager = activity.Call<AndroidJavaObject>("getSystemService", "power");
+                }
+
+                return powerManager != null ? powerManager.Call<int>("getCurrentThermalStatus") : -1;
+            }
+            catch (System.Exception)
+            {
+                return -1;
+            }
+#else
+            return -1;
+#endif
+        }
+
         private static bool IsMonitoredCombatScene(string sceneName)
         {
             return sceneName == "OlympusCorridorInvasionStage"
-                || sceneName == "ActionFoundationBossBarrageLaneReview"
-                || sceneName == "ActionFoundationFrontlineMotivationReview";
+                || sceneName == "OlympusStationCombatStage";
         }
     }
 }

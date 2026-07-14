@@ -293,7 +293,7 @@ namespace DimensionBrawl.Presentation
             text.alignment = TextAlignmentOptions.Center;
             text.fontStyle = FontStyles.Bold;
             text.raycastTarget = false;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.outlineColor = new Color(0f, 0f, 0f, 0.92f);
             text.outlineWidth = 0.22f;
             text.isOverlay = true;

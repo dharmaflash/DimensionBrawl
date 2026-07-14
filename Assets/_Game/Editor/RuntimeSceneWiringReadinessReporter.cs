@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using DimensionBrawl.Combat;
+using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using IsekaiBrawl.Gameplay;
 using UnityEditor;
@@ -18,8 +20,20 @@ namespace DimensionBrawl.Editor
 
         private static readonly SceneExpectation[] MinimumSceneExpectations =
         {
-            new("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", SceneContractKind.CanonicalCombat)
+            new("Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", SceneContractKind.CanonicalCombat),
+            new("Assets/_Game/Scenes/OlympusStationCombatStage.unity", SceneContractKind.CanonicalCombat)
         };
+
+        private const string StationCombatScenePath =
+            "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const string CanonicalBossRootName =
+            "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string CanonicalBossVisualName =
+            "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
+        private const string CanonicalBossVisualPrefabPath =
+            ActionFoundationSciFiSoldier01VisualSetup.CommandoVisualPrefabPath;
+        private const string CanonicalBossAnimatorControllerPath =
+            ActionFoundationSciFiSoldier01VisualSetup.ControllerPath;
 
         [MenuItem("DimensionBrawl/Reports/Runtime Scene Wiring Readiness")]
         public static void ReportMenu()
@@ -214,7 +228,152 @@ namespace DimensionBrawl.Editor
             RequireSingle<CombatHudPresenter>(expectation, report);
             RequireSingle<CombatHudInputBridge>(expectation, report);
             RequireSingle<BossBarrageLaneReviewCombatHudBinder>(expectation, report);
-            RequireAtLeastOne<BossBarrageLaneReviewOverlayHud>(expectation, report);
+            RequireSingle<CombatSessionOverlayPresenter>(expectation, report);
+
+            if (expectation.ScenePath == StationCombatScenePath)
+            {
+                CheckStationResultOwnership(expectation, report);
+            }
+
+            CheckCanonicalBossVisual(expectation, report);
+        }
+
+        private static void CheckStationResultOwnership(SceneExpectation expectation, ReportBuilder report)
+        {
+            RequireSingle<CombatEncounterController>(expectation, report);
+            RequireSingle<OlympusStageClearOverlay>(expectation, report);
+
+            OlympusStationCombatResultPresenter[] presenters =
+                Object.FindObjectsByType<OlympusStationCombatResultPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            report.AppendLine($"- {nameof(OlympusStationCombatResultPresenter)} count: {presenters.Length}");
+            if (presenters.Length != 1)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: expected exactly one {nameof(OlympusStationCombatResultPresenter)}, found {presenters.Length}.");
+                return;
+            }
+
+            SerializedObject serializedPresenter = new(presenters[0]);
+            SerializedProperty encounter = serializedPresenter.FindProperty("encounter");
+            SerializedProperty stageClearOverlay = serializedPresenter.FindProperty("stageClearOverlay");
+            SerializedProperty resultSurfaceBehaviour = serializedPresenter.FindProperty("resultSurfaceBehaviour");
+            bool hasEncounter = encounter != null && encounter.objectReferenceValue is CombatEncounterController;
+            bool hasStageClearOverlay =
+                stageClearOverlay != null && stageClearOverlay.objectReferenceValue is OlympusStageClearOverlay;
+            bool hasResultSurface =
+                resultSurfaceBehaviour != null
+                && resultSurfaceBehaviour.objectReferenceValue is MonoBehaviour behaviour
+                && behaviour is ICombatSessionOverlay;
+            report.AppendLine($"- Station result encounter: {(hasEncounter ? "set" : "missing")}");
+            report.AppendLine($"- Station clear overlay: {(hasStageClearOverlay ? "set" : "missing")}");
+            report.AppendLine($"- Station fail surface: {(hasResultSurface ? "set" : "missing")}");
+            if (!hasEncounter || !hasStageClearOverlay || !hasResultSurface)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: Station result presenter must use authored encounter, clear-overlay, and fail-surface references.");
+            }
+        }
+
+        private static void CheckCanonicalBossVisual(SceneExpectation expectation, ReportBuilder report)
+        {
+            Transform bossRoot = FindSceneTransform(SceneManager.GetActiveScene(), CanonicalBossRootName);
+            if (bossRoot == null)
+            {
+                report.AddIssue($"{expectation.ScenePath}: missing canonical boss root '{CanonicalBossRootName}'.");
+                return;
+            }
+
+            Transform visual = bossRoot.Find(CanonicalBossVisualName);
+            report.AppendLine($"- Canonical boss visual: {(visual != null ? CanonicalBossVisualName : "missing")}");
+            if (visual == null)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: canonical boss must use '{CanonicalBossVisualName}'.");
+                return;
+            }
+
+            string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual.gameObject);
+            report.AppendLine($"- Canonical boss visual prefab: {prefabPath}");
+            if (prefabPath != CanonicalBossVisualPrefabPath)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: canonical boss visual source must be {CanonicalBossVisualPrefabPath}, found {prefabPath}.");
+            }
+
+            Animator animator = visual.GetComponentInChildren<Animator>(includeInactive: true);
+            string controllerPath = animator != null && animator.runtimeAnimatorController != null
+                ? AssetDatabase.GetAssetPath(animator.runtimeAnimatorController)
+                : string.Empty;
+            report.AppendLine($"- Canonical boss Animator controller: {controllerPath}");
+            if (animator == null || controllerPath != CanonicalBossAnimatorControllerPath)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: canonical boss visual must keep the authored SciFiSoldier01 Commando Animator controller.");
+                return;
+            }
+
+            BossBarrageVisualCueDriver cueDriver = bossRoot.GetComponent<BossBarrageVisualCueDriver>();
+            SerializedProperty boundAnimator = cueDriver != null
+                ? new SerializedObject(cueDriver).FindProperty("animator")
+                : null;
+            if (boundAnimator == null || boundAnimator.objectReferenceValue != animator)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: boss visual cue driver must target the canonical Commando Animator.");
+            }
+
+            try
+            {
+                ActionFoundationSciFiSoldier01VisualSetup.ValidateCanonicalCommandoArsenal(visual.gameObject);
+                report.AppendLine("- Canonical boss Commando arsenal: complete");
+            }
+            catch (System.InvalidOperationException exception)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: canonical boss Commando arsenal is incomplete: {exception.Message}");
+            }
+
+            if (visual.GetComponentInChildren<CombatHealth>(includeInactive: true) != null)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: canonical boss visual prefab must not duplicate gameplay health ownership.");
+            }
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+            int enabledRendererCount = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null && renderers[i].enabled && !renderers[i].forceRenderingOff)
+                {
+                    enabledRendererCount++;
+                }
+            }
+
+            report.AppendLine($"- Canonical boss enabled renderers: {enabledRendererCount}/{renderers.Length}");
+            if (enabledRendererCount == 0)
+            {
+                report.AddIssue($"{expectation.ScenePath}: canonical Commando boss visual has no enabled renderers.");
+            }
+        }
+
+        private static Transform FindSceneTransform(Scene scene, string objectName)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Transform[] transforms = roots[rootIndex].GetComponentsInChildren<Transform>(includeInactive: true);
+                for (int transformIndex = 0; transformIndex < transforms.Length; transformIndex++)
+                {
+                    if (transforms[transformIndex].name == objectName)
+                    {
+                        return transforms[transformIndex];
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static void RequireSingle<T>(SceneExpectation expectation, ReportBuilder report, string label = null)
@@ -226,18 +385,6 @@ namespace DimensionBrawl.Editor
             if (instances.Length != 1)
             {
                 report.AddIssue($"{expectation.ScenePath}: expected exactly one {resolvedLabel}, found {instances.Length}.");
-            }
-        }
-
-        private static void RequireAtLeastOne<T>(SceneExpectation expectation, ReportBuilder report, string label = null)
-            where T : Object
-        {
-            T[] instances = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            string resolvedLabel = label ?? typeof(T).Name;
-            report.AppendLine($"- {resolvedLabel} count: {instances.Length}");
-            if (instances.Length == 0)
-            {
-                report.AddIssue($"{expectation.ScenePath}: expected at least one {resolvedLabel}, found none.");
             }
         }
 

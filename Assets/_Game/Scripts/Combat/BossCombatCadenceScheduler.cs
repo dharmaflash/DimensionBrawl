@@ -144,10 +144,21 @@ namespace DimensionBrawl.Combat
                 return instance;
             }
 
-            GameObject root = new GameObject("[BossCombatCadenceScheduler]");
+            GameObject root = new GameObject("[BossCombatCadenceScheduler]")
+            {
+                hideFlags = HideFlags.DontSave
+            };
             DontDestroyOnLoad(root);
             instance = root.AddComponent<BossCombatCadenceScheduler>();
             return instance;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
         }
 
         private void Update()

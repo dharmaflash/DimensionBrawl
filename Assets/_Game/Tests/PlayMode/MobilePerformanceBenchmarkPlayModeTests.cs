@@ -11,14 +11,13 @@ namespace DimensionBrawl.Tests
     public sealed class MobilePerformanceBenchmarkPlayModeTests
     {
         [Test]
-        public void BenchmarkUsesOnlyCanonicalCombatScenesInReviewedOrder()
+        public void BenchmarkUsesOnlyCanonicalRuntimeCombatScenes()
         {
             CollectionAssert.AreEqual(
                 new[]
                 {
-                    "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
-                    "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
-                    "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
+                    "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
+                    "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
                 },
                 MobilePerformanceBenchmarkRunner.CanonicalScenePaths);
         }
@@ -95,8 +94,8 @@ namespace DimensionBrawl.Tests
         {
             MobilePerformanceSceneResult scene = new()
             {
-                Label = "Olympus Corridor Combat",
-                ScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
+                Label = "Olympus Station Combat",
+                ScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
                 SceneLoadSeconds = 2.75f,
                 MaximumThermalStatus = 4,
                 ThermalStatusSampleCount = 6,
@@ -112,6 +111,8 @@ namespace DimensionBrawl.Tests
                 ActiveColliderCount = 456,
                 EnvironmentDetailCandidateRendererCount = 321,
                 EnvironmentDetailCulledRendererCount = 123,
+                EnvironmentDetailCandidateTriangleCount = 654321L,
+                EnvironmentDetailCulledTriangleCount = 234567L,
                 EnvironmentDetailCandidateColliderCount = 210,
                 EnvironmentDetailCulledColliderCount = 98,
                 ActiveFrameLoopBehaviourCount = 24,
@@ -119,6 +120,7 @@ namespace DimensionBrawl.Tests
                 ActiveLateUpdateBehaviourCount = 4,
                 ActiveFixedUpdateBehaviourCount = 1,
                 ConsolidatedFootstepPresenterCount = 3,
+                GpuFrameMilliseconds = CreateMetric("GPU Frame", "ms", 5.25d),
                 TextureCurrentMemoryMebibytes = CreateMetric("Texture Current Memory", "MiB", 128.5d),
                 StreamingTexturePendingLoads = CreateMetric("Streaming Texture Pending Loads", "count", 3d),
                 GlobalTextureMipmapLimit = CreateMetric("Global Texture Mipmap Limit", "level", 1d),
@@ -160,6 +162,8 @@ namespace DimensionBrawl.Tests
             Assert.That(restoredScene.ActiveColliderCount, Is.EqualTo(456));
             Assert.That(restoredScene.EnvironmentDetailCandidateRendererCount, Is.EqualTo(321));
             Assert.That(restoredScene.EnvironmentDetailCulledRendererCount, Is.EqualTo(123));
+            Assert.That(restoredScene.EnvironmentDetailCandidateTriangleCount, Is.EqualTo(654321L));
+            Assert.That(restoredScene.EnvironmentDetailCulledTriangleCount, Is.EqualTo(234567L));
             Assert.That(restoredScene.EnvironmentDetailCandidateColliderCount, Is.EqualTo(210));
             Assert.That(restoredScene.EnvironmentDetailCulledColliderCount, Is.EqualTo(98));
             Assert.That(restoredScene.ActiveFrameLoopBehaviourCount, Is.EqualTo(24));
@@ -172,6 +176,7 @@ namespace DimensionBrawl.Tests
                 restoredScene.FrameLoops[0].TypeName,
                 Is.EqualTo("DimensionBrawl.Presentation.MovementFootstepAudioScheduler"));
             Assert.That(restoredScene.FrameLoops[0].UpdateInstances, Is.EqualTo(1));
+            Assert.That(restoredScene.GpuFrameMilliseconds.P95, Is.EqualTo(5.25d));
             Assert.That(restoredScene.TextureCurrentMemoryMebibytes.Average, Is.EqualTo(128.5d));
             Assert.That(restoredScene.StreamingTexturePendingLoads.Maximum, Is.EqualTo(3d));
             Assert.That(restoredScene.GlobalTextureMipmapLimit.Average, Is.EqualTo(1d));
@@ -186,12 +191,11 @@ namespace DimensionBrawl.Tests
         {
             string[] scenePaths =
             {
-                "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity",
-                "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
-                "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity"
+                "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
+                "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
             };
-            int[] maximumFrameLoopCounts = { 20, 15, 13 };
-            int[] expectedFootstepPresenterCounts = { 0, 3, 3 };
+            int[] maximumFrameLoopCounts = { 17, 20 };
+            int[] expectedFootstepPresenterCounts = { 2, 0 };
 
             for (int sceneIndex = 0; sceneIndex < scenePaths.Length; sceneIndex++)
             {
@@ -211,7 +215,8 @@ namespace DimensionBrawl.Tests
                     + $"fixed={result.ActiveFixedUpdateBehaviourCount} "
                     + $"footsteps={result.ConsolidatedFootstepPresenterCount} "
                     + $"activeColliders={result.ActiveColliderCount} "
-                    + $"culledDetailColliders={result.EnvironmentDetailCulledColliderCount}");
+                    + $"culledDetailColliders={result.EnvironmentDetailCulledColliderCount} "
+                    + $"culledDetailTriangles={result.EnvironmentDetailCulledTriangleCount}");
                 Debug.Log(
                     $"[MobilePerformance] RuntimeFrameLoopTypes scene={scenePaths[sceneIndex]} "
                     + FormatFrameLoops(result));
@@ -226,7 +231,7 @@ namespace DimensionBrawl.Tests
                     Is.EqualTo(expectedFootstepPresenterCounts[sceneIndex]));
                 Assert.That(result.ActiveFixedUpdateBehaviourCount, Is.Zero);
 
-                if (sceneIndex == 0)
+                if (sceneIndex == 1)
                 {
                     DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController flowController =
                         Object.FindFirstObjectByType<DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController>();
@@ -245,7 +250,8 @@ namespace DimensionBrawl.Tests
                         + $"fixed={postHandoffResult.ActiveFixedUpdateBehaviourCount} "
                         + $"footsteps={postHandoffResult.ConsolidatedFootstepPresenterCount} "
                         + $"activeColliders={postHandoffResult.ActiveColliderCount} "
-                        + $"culledDetailColliders={postHandoffResult.EnvironmentDetailCulledColliderCount}");
+                        + $"culledDetailColliders={postHandoffResult.EnvironmentDetailCulledColliderCount} "
+                        + $"culledDetailTriangles={postHandoffResult.EnvironmentDetailCulledTriangleCount}");
                     Debug.Log(
                         "[MobilePerformance] RuntimeFrameLoopTypes scene=OlympusCorridorPostHandoff "
                         + FormatFrameLoops(postHandoffResult));
