@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.UI;
+using DimensionBrawl.UI.StageClear;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -11,6 +14,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.Tests
 {
@@ -26,6 +30,7 @@ namespace DimensionBrawl.Tests
         private const string CorridorScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         private const string StationScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string StageClearScenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
+        private const string StageClearSceneName = "UI_StageClear";
         private const string RouteTablePath = "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
 
@@ -193,6 +198,171 @@ namespace DimensionBrawl.Tests
                 false);
         }
 
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StationVictoryRetryButtonLoadsFreshCorridorRun()
+        {
+            yield return LoadStationVictoryAndWaitForClearSurface();
+
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            AssertPresenterRoutes(presenter);
+            Button retryButton = ReadPrivateField<Button>(presenter, "retryButton");
+            Assert.That(retryButton.IsInteractable(), Is.True);
+
+            retryButton.onClick.Invoke();
+            yield return WaitForActiveScenePath(CorridorScenePath, 8f);
+
+            Scene corridorScene = SceneManager.GetActiveScene();
+            Assert.That(SceneManager.GetSceneByName(StageClearSceneName).isLoaded, Is.False);
+            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+
+            OlympusCorridorCombatFlowController flow =
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
+            Assert.That(flow.StageCleared, Is.False);
+            Assert.That(flow.StageClearOverlayShown, Is.False);
+            GameObject playerRoot = FindSceneObject(corridorScene, "Player_CombatGirl_ActionFoundation");
+            Assert.That(playerRoot, Is.Not.Null);
+            Assert.That(playerRoot.activeInHierarchy, Is.False, "Retry must start a fresh intro run.");
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StationVictoryLobbyButtonLoadsCanonicalLobby()
+        {
+            yield return LoadStationVictoryAndWaitForClearSurface();
+
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            AssertPresenterRoutes(presenter);
+            Button lobbyButton = ReadPrivateField<Button>(presenter, "lobbyButton");
+            Assert.That(lobbyButton.IsInteractable(), Is.True);
+
+            lobbyButton.onClick.Invoke();
+            yield return WaitForActiveScenePath(LobbyScenePath, 8f);
+
+            Scene lobbyScene = SceneManager.GetActiveScene();
+            Assert.That(SceneManager.GetSceneByName(StageClearSceneName).isLoaded, Is.False);
+            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(
+                CountSceneComponents(lobbyScene, RequireProductType("DimensionBrawl.UI.LobbyScreenPresenter")),
+                Is.EqualTo(1));
+        }
+
+        private static IEnumerator LoadStationVictoryAndWaitForClearSurface()
+        {
+            Time.timeScale = 1f;
+            EditorSceneManager.LoadSceneInPlayMode(
+                StationScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene stationScene = SceneManager.GetActiveScene();
+            Assert.AreEqual(StationScenePath, stationScene.path.Replace('\\', '/'));
+            Assert.That(CountSceneComponents<OlympusStationCombatResultPresenter>(stationScene), Is.EqualTo(1));
+            Assert.That(CountSceneComponents<OlympusStageClearOverlay>(stationScene), Is.EqualTo(1));
+            Assert.That(CountSceneComponents<CombatEncounterController>(stationScene), Is.EqualTo(1));
+
+            Behaviour entryGuide = RequireSingleSceneBehaviour(
+                stationScene,
+                RequireProductType("DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge"));
+            Behaviour entryNotice = RequireSingleSceneBehaviour(
+                stationScene,
+                RequireProductType("DimensionBrawl.UI.SceneEntryNoticeOverlay"));
+            entryGuide.enabled = false;
+            entryNotice.enabled = false;
+            yield return null;
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+
+            CombatEncounterController encounter = RequireSingleSceneComponent<CombatEncounterController>(stationScene);
+            CombatHealth enemyHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
+            enemyHealth.ResetHealthToFull();
+            Assert.That(
+                enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    enemyHealth.MaxHealth + 1f,
+                    enemyHealth.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.DamageOnly,
+                    CombatControlLockPolicy.None)),
+                Is.True);
+            Assert.That(encounter.IsWon, Is.True);
+
+            float deadline = Time.realtimeSinceStartup + 8f;
+            StageClearScreenPresenter presenter = null;
+            while (presenter == null || !IsPresenterInteractive(presenter))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    deadline,
+                    "Timed out waiting for the authored stage-clear surface.");
+                Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+                if (clearScene.IsValid()
+                    && clearScene.isLoaded
+                    && CountSceneComponents<StageClearScreenPresenter>(clearScene) == 1)
+                {
+                    presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+                }
+
+                yield return null;
+            }
+
+            Scene loadedClearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            Assert.That(loadedClearScene.isLoaded, Is.True);
+            Assert.That(CountSceneComponents<StageClearScreenPresenter>(loadedClearScene), Is.EqualTo(1));
+            Assert.That(CountCombatSessionSurfaces(stationScene, visibleOnly: false), Is.EqualTo(1));
+            Assert.That(CountCombatSessionSurfaces(stationScene, visibleOnly: true), Is.Zero);
+            Assert.That(Time.timeScale, Is.Zero);
+
+            GameObject combatHud = FindSceneObject(stationScene, "BossBarrageLaneReview_CombatHudCanvas");
+            Assert.That(combatHud, Is.Not.Null);
+            Assert.That(combatHud.activeSelf, Is.False, "The combat HUD must yield to the single clear surface.");
+        }
+
+        private static bool IsPresenterInteractive(StageClearScreenPresenter presenter)
+        {
+            if (presenter == null || !presenter.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            CanvasGroup canvasGroup = ReadPrivateField<CanvasGroup>(presenter, "canvasGroup");
+            return canvasGroup.interactable && canvasGroup.blocksRaycasts;
+        }
+
+        private static void AssertPresenterRoutes(StageClearScreenPresenter presenter)
+        {
+            Assert.AreEqual("OlympusCorridorInvasionStage", ReadPrivateField<string>(presenter, "retrySceneName"));
+            Assert.AreEqual(CorridorScenePath, ReadPrivateField<string>(presenter, "retryScenePath"));
+            Assert.AreEqual("UI_Lobby", ReadPrivateField<string>(presenter, "lobbySceneName"));
+            Assert.AreEqual(LobbyScenePath, ReadPrivateField<string>(presenter, "lobbyScenePath"));
+        }
+
+        private static IEnumerator WaitForActiveScenePath(string expectedPath, float timeoutSeconds)
+        {
+            float deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            while (!string.Equals(
+                SceneManager.GetActiveScene().path.Replace('\\', '/'),
+                expectedPath,
+                StringComparison.Ordinal))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    deadline,
+                    $"Timed out waiting for active scene {expectedPath}.");
+                yield return null;
+            }
+
+            yield return null;
+            yield return null;
+            Assert.AreEqual(expectedPath, SceneManager.GetActiveScene().path.Replace('\\', '/'));
+        }
+
         private static IEnumerator LoadSceneAndAssertPresenter(
             string scenePath,
             string presenterTypeName,
@@ -278,6 +448,93 @@ namespace DimensionBrawl.Tests
             }
 
             return componentCount;
+        }
+
+        private static int CountSceneComponents(Scene scene, Type componentType)
+        {
+            int componentCount = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                componentCount += roots[i].GetComponentsInChildren(componentType, true).Length;
+            }
+
+            return componentCount;
+        }
+
+        private static T RequireSingleSceneComponent<T>(Scene scene)
+            where T : Component
+        {
+            T found = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                T[] components = roots[rootIndex].GetComponentsInChildren<T>(true);
+                for (int componentIndex = 0; componentIndex < components.Length; componentIndex++)
+                {
+                    Assert.That(found, Is.Null, $"{scene.path} owns duplicate {typeof(T).Name} components.");
+                    found = components[componentIndex];
+                }
+            }
+
+            Assert.That(found, Is.Not.Null, $"{scene.path} is missing {typeof(T).Name}.");
+            return found;
+        }
+
+        private static Behaviour RequireSingleSceneBehaviour(Scene scene, Type behaviourType)
+        {
+            Behaviour found = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Component[] components = roots[rootIndex].GetComponentsInChildren(behaviourType, true);
+                for (int componentIndex = 0; componentIndex < components.Length; componentIndex++)
+                {
+                    Assert.That(found, Is.Null, $"{scene.path} owns duplicate {behaviourType.Name} components.");
+                    found = components[componentIndex] as Behaviour;
+                }
+            }
+
+            Assert.That(found, Is.Not.Null, $"{scene.path} is missing {behaviourType.Name}.");
+            return found;
+        }
+
+        private static int CountCombatSessionSurfaces(Scene scene, bool visibleOnly)
+        {
+            int count = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                MonoBehaviour[] behaviours = roots[rootIndex].GetComponentsInChildren<MonoBehaviour>(true);
+                for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
+                {
+                    if (behaviours[behaviourIndex] is ICombatSessionOverlay surface
+                        && (!visibleOnly || surface.IsVisible))
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static GameObject FindSceneObject(Scene scene, string objectName)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                Transform[] transforms = roots[i].GetComponentsInChildren<Transform>(true);
+                for (int transformIndex = 0; transformIndex < transforms.Length; transformIndex++)
+                {
+                    if (string.Equals(transforms[transformIndex].name, objectName, StringComparison.Ordinal))
+                    {
+                        return transforms[transformIndex].gameObject;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static void AssertSerializedRoute(
@@ -381,6 +638,17 @@ namespace DimensionBrawl.Tests
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(field, $"Missing private field {target.GetType().Name}.{fieldName}.");
             field.SetValue(target, value);
+        }
+
+        private static T ReadPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field, $"Missing private field {target.GetType().Name}.{fieldName}.");
+            object value = field.GetValue(target);
+            Assert.That(value, Is.Not.Null, $"Missing value {target.GetType().Name}.{fieldName}.");
+            return (T)value;
         }
 
         private static T LoadRequired<T>(string assetPath)

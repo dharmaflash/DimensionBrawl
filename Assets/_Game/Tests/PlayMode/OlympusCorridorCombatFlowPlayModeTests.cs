@@ -21,6 +21,7 @@ namespace DimensionBrawl.Tests
     public sealed class OlympusCorridorCombatFlowPlayModeTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string StationScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string DirectorName = "IntroGatePodReview_TimelineDirector";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
         private const string PlayerRootName = "Player_CombatGirl_ActionFoundation";
@@ -729,6 +730,8 @@ namespace DimensionBrawl.Tests
             report.AppendLine("- Move gate: `0.75m` confirmed position movement inside the tutorial area.");
             report.AppendLine("- Fire gate: `0.7s` real aim preview hold after Ready + fire event + player-side target damage/death.");
             report.AppendLine("- Clear gate: all tutorial targets defeated.");
+            yield return WaitForActiveScenePath(StationScenePath, 5f);
+            report.AppendLine($"- Tutorial completion scene: `{SceneManager.GetActiveScene().path}`.");
             Directory.CreateDirectory(Path.GetDirectoryName(TutorialTimingReportPath));
             File.WriteAllText(TutorialTimingReportPath, report.ToString());
         }
@@ -1252,6 +1255,25 @@ namespace DimensionBrawl.Tests
 
             report.AppendLine(
                 $"- Reached phase `{expectedPhase}` after `{Time.realtimeSinceStartup - startedAt:0.000}s`.");
+        }
+
+        private static IEnumerator WaitForActiveScenePath(string expectedPath, float timeoutSeconds)
+        {
+            float startedAt = Time.realtimeSinceStartup;
+            while (!string.Equals(
+                SceneManager.GetActiveScene().path.Replace('\\', '/'),
+                expectedPath,
+                System.StringComparison.Ordinal))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    $"Timed out waiting for active scene {expectedPath}.");
+                yield return null;
+            }
+
+            yield return null;
+            Assert.AreEqual(expectedPath, SceneManager.GetActiveScene().path.Replace('\\', '/'));
         }
 
         private static void AppendAndAssertAimCameraLaneComposition(
