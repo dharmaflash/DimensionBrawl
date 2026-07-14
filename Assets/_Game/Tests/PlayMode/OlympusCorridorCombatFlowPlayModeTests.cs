@@ -7,6 +7,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.UI.StageClear;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -36,6 +37,7 @@ namespace DimensionBrawl.Tests
         private const string FirstPersonRendererMaskRootName = "IntroGatePodReview_FirstPersonRendererMask";
         private const string TutorialTimingReportPath = "C:/tmp/DimensionBrawl-OlympusTutorialTimingReport.md";
         private const string TutorialAimFovReportPath = "C:/tmp/DimensionBrawl-OlympusAimFovReport.md";
+        private const string FullRouteReportPath = "C:/tmp/DimensionBrawl-OlympusCanonicalFullRouteReport.md";
         private const float ExpectedMinimumTutorialStepSeconds = 0.85f;
 
         [Test]
@@ -738,6 +740,129 @@ namespace DimensionBrawl.Tests
 
         [UnityTest]
         [Timeout(90000)]
+        public IEnumerator CanonicalFullRouteCompletesTutorialStationGuideVictoryAndRetry()
+        {
+            var report = new StringBuilder();
+            report.AppendLine("# Olympus Canonical Full Route");
+            report.AppendLine();
+            report.AppendLine("- Corridor intro uses the production skip handoff.");
+            report.AppendLine("- Tutorial steps use runtime action queues and the EventSystem joystick path.");
+            report.AppendLine("- Station entry guide advances through its public request surface.");
+            report.AppendLine("- Victory uses the authored encounter health binding and Retry uses the real button listener.");
+            report.AppendLine();
+
+            OlympusCorridorCombatFlowController flow =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            PlayerMovementController player = RequireComponent<PlayerMovementController>(
+                PlayerRootName,
+                "player movement controller");
+            PlayerActionController actionController = RequireComponent<PlayerActionController>(
+                PlayerRootName,
+                "player action controller");
+            PlayerCombatModeController combatModeController = RequireComponent<PlayerCombatModeController>(
+                PlayerRootName,
+                "player combat mode controller");
+            PlayerRangedBasicAttackAction rangedAttack = RequireComponent<PlayerRangedBasicAttackAction>(
+                PlayerRootName,
+                "player ranged basic action");
+
+            flow.SkipIntroCutscene();
+            yield return null;
+            yield return null;
+
+            OlympusCorridorTutorialDirector tutorial =
+                RequireComponent<OlympusCorridorTutorialDirector>(
+                    FlowRootName,
+                    "Olympus corridor tutorial director");
+            yield return WaitForStep(tutorial, "Melee", 5f, report);
+            yield return QueueBasicAttackUntilStep(
+                tutorial,
+                actionController,
+                "Move",
+                "melee hit",
+                8f,
+                report);
+            yield return MoveUntilStep(tutorial, player, "SwapToRanged", 8f, report);
+            yield return QueueSwapUntilStep(tutorial, combatModeController, "Fire", 5f, report);
+            yield return WaitForPhase(tutorial, "AwaitingAction", 3f, report);
+
+            rangedAttack.SetFireHeld(true);
+            yield return WaitForStep(tutorial, "Dodge", 6f, report);
+            rangedAttack.SetFireHeld(false);
+            yield return QueueDodgeUntilStep(
+                tutorial,
+                actionController,
+                "ClearTargets",
+                5f,
+                report);
+            yield return WaitForPhase(tutorial, "AwaitingAction", 3f, report);
+
+            CombatHealth[] tutorialTargets =
+                ReadPrivateField<CombatHealth[]>(tutorial, "tutorialTargets");
+            Assert.That(tutorialTargets, Is.Not.Empty);
+            for (int i = 0; i < tutorialTargets.Length; i++)
+            {
+                CombatHealth target = tutorialTargets[i];
+                Assert.That(target, Is.Not.Null);
+                Assert.That(ApplyLethalDamage(target, DamageTeam.Player), Is.True);
+            }
+
+            yield return WaitForActiveScenePath(StationScenePath, 8f);
+            report.AppendLine($"- Station scene loaded: `{SceneManager.GetActiveScene().path}`.");
+
+            Behaviour stationGuide = RequireActiveSceneBehaviour(
+                "DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge");
+            yield return CompleteStationGuide(stationGuide, report, 12f);
+
+            CombatEncounterController encounter =
+                UnityEngine.Object.FindFirstObjectByType<CombatEncounterController>();
+            Assert.That(encounter, Is.Not.Null);
+            Assert.That(encounter.IsRunning, Is.True);
+            CombatHealth bossHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
+            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
+            Assert.That(encounter.IsWon, Is.True);
+            report.AppendLine("- Station encounter committed authored victory.");
+
+            StageClearScreenPresenter clearPresenter = null;
+            float clearDeadline = Time.realtimeSinceStartup + 8f;
+            while (clearPresenter == null || !IsStageClearInteractive(clearPresenter))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    clearDeadline,
+                    "Timed out waiting for the additive product result surface.");
+                clearPresenter = FindSingleStageClearPresenter();
+                yield return null;
+            }
+
+            Button retryButton = ReadPrivateField<Button>(clearPresenter, "retryButton");
+            Assert.That(retryButton, Is.Not.Null);
+            Assert.That(retryButton.IsInteractable(), Is.True);
+            retryButton.onClick.Invoke();
+            yield return WaitForActiveScenePath(ScenePath, 8f);
+
+            OlympusCorridorCombatFlowController freshFlow =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "fresh retry flow controller");
+            GameObject freshPlayer = RequireSceneObject(PlayerRootName);
+            Assert.That(freshFlow.StageCleared, Is.False);
+            Assert.That(freshFlow.StageClearOverlayShown, Is.False);
+            Assert.That(freshPlayer.activeInHierarchy, Is.False);
+            Assert.That(SceneManager.GetSceneByName("UI_StageClear").isLoaded, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            report.AppendLine("- Retry loaded a fresh Corridor intro run.");
+            report.AppendLine();
+            report.AppendLine("RESULT: PASS");
+
+            Directory.CreateDirectory(Path.GetDirectoryName(FullRouteReportPath));
+            File.WriteAllText(FullRouteReportPath, report.ToString());
+        }
+
+        [UnityTest]
+        [Timeout(90000)]
         public IEnumerator TutorialFireAimFovUsesVisibleCombatCamera()
         {
             var report = new StringBuilder();
@@ -1274,6 +1399,134 @@ namespace DimensionBrawl.Tests
 
             yield return null;
             Assert.AreEqual(expectedPath, SceneManager.GetActiveScene().path.Replace('\\', '/'));
+        }
+
+        private static IEnumerator CompleteStationGuide(
+            Behaviour stationGuide,
+            StringBuilder report,
+            float timeoutSeconds)
+        {
+            MethodInfo requestAdvance = stationGuide.GetType().GetMethod(
+                "RequestAdvance",
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(requestAdvance, Is.Not.Null);
+
+            float deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            bool observedGuide = false;
+            bool requestedForCurrentPrompt = false;
+            int advanceCount = 0;
+            while (true)
+            {
+                bool guidePlaying = ReadPublicProperty<bool>(stationGuide, "IsGuidePlaying");
+                bool awaitingAdvance = ReadPublicProperty<bool>(stationGuide, "IsAwaitingAdvance");
+                observedGuide |= guidePlaying || awaitingAdvance;
+
+                if (!awaitingAdvance)
+                {
+                    requestedForCurrentPrompt = false;
+                }
+                else if (!requestedForCurrentPrompt)
+                {
+                    requestAdvance.Invoke(stationGuide, null);
+                    requestedForCurrentPrompt = true;
+                    advanceCount++;
+                }
+
+                if (observedGuide
+                    && !guidePlaying
+                    && !awaitingAdvance
+                    && Time.timeScale > 0.99f)
+                {
+                    break;
+                }
+
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    deadline,
+                    "Timed out completing the Station entry guide.");
+                yield return null;
+            }
+
+            Assert.That(advanceCount, Is.EqualTo(2));
+            report.AppendLine($"- Station guide prompts advanced: `{advanceCount}`.");
+        }
+
+        private static Behaviour RequireActiveSceneBehaviour(string fullTypeName)
+        {
+            System.Type type = System.Type.GetType(fullTypeName + ", Assembly-CSharp")
+                ?? System.Type.GetType(fullTypeName + ", DimensionBrawl.Runtime");
+            Assert.That(type, Is.Not.Null, $"Missing product type {fullTypeName}.");
+
+            Behaviour found = null;
+            UnityEngine.Object[] objects = Resources.FindObjectsOfTypeAll(type);
+            Scene activeScene = SceneManager.GetActiveScene();
+            for (int i = 0; i < objects.Length; i++)
+            {
+                if (objects[i] is not Behaviour candidate || candidate.gameObject.scene != activeScene)
+                {
+                    continue;
+                }
+
+                Assert.That(found, Is.Null, $"Active scene owns duplicate {type.Name} components.");
+                found = candidate;
+            }
+
+            Assert.That(found, Is.Not.Null, $"Active scene is missing {type.Name}.");
+            return found;
+        }
+
+        private static StageClearScreenPresenter FindSingleStageClearPresenter()
+        {
+            Scene clearScene = SceneManager.GetSceneByName("UI_StageClear");
+            if (!clearScene.IsValid() || !clearScene.isLoaded)
+            {
+                return null;
+            }
+
+            StageClearScreenPresenter found = null;
+            GameObject[] roots = clearScene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                StageClearScreenPresenter[] presenters =
+                    roots[rootIndex].GetComponentsInChildren<StageClearScreenPresenter>(true);
+                for (int presenterIndex = 0; presenterIndex < presenters.Length; presenterIndex++)
+                {
+                    Assert.That(found, Is.Null, "The product clear scene must own one presenter.");
+                    found = presenters[presenterIndex];
+                }
+            }
+
+            return found;
+        }
+
+        private static bool IsStageClearInteractive(StageClearScreenPresenter presenter)
+        {
+            if (presenter == null || !presenter.isActiveAndEnabled)
+            {
+                return false;
+            }
+
+            CanvasGroup canvasGroup = ReadPrivateField<CanvasGroup>(presenter, "canvasGroup");
+            return canvasGroup != null && canvasGroup.interactable && canvasGroup.blocksRaycasts;
+        }
+
+        private static bool ApplyLethalDamage(CombatHealth health, DamageTeam sourceTeam)
+        {
+            if (health == null)
+            {
+                return false;
+            }
+
+            health.ResetHealthToFull();
+            return health.TryApplyDamage(new DamageInfo(
+                null,
+                sourceTeam,
+                health.MaxHealth + 1f,
+                health.transform.position,
+                Vector3.forward,
+                0f,
+                DamageResponsePolicy.DamageOnly,
+                CombatControlLockPolicy.None));
         }
 
         private static void AppendAndAssertAimCameraLaneComposition(
