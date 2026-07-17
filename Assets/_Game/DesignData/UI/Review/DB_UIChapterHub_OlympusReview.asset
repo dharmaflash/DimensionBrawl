@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaab7f92807da3646841d7e90e830bf9, type: 3}
+  m_Name: DB_UIChapterHub_OlympusReview
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.ChapterHubReview.ChapterHubReviewProfile
+  chapters:
+  - chapterId: review.chapter.olympus
+    episodeCode: EP 01
+    titleLocalizationKey: ui.review.chapter.olympus.title
+    titleFallback: "\uC62C\uB9BC\uD3EC\uC2A4 \uADE0\uC5F4"
+  stages:
+  - stageId: review.stage.memory-corridor
+    chapterId: review.chapter.olympus
+    stageCode: 01-01
+    titleLocalizationKey: ui.review.stage.memory-corridor.title
+    titleFallback: "\uAE30\uC5B5\uC758 \uD68C\uB791"
+    normalizedMapPosition: {x: 0.32, y: 0.53}
+    contentStatus: 10
+    canonicalCatalogEntryId: story_v1_training_route
+  - stageId: review.stage.broken-dock
+    chapterId: review.chapter.olympus
+    stageCode: 01-02
+    titleLocalizationKey: ui.review.stage.broken-dock.title
+    titleFallback: "\uD30C\uC190\uB41C \uB3C4\uD06C"
+    normalizedMapPosition: {x: 0.55, y: 0.47}
+    contentStatus: 20
+    canonicalCatalogEntryId: 
+  - stageId: review.stage.gate-depths
+    chapterId: review.chapter.olympus
+    stageCode: 01-03
+    titleLocalizationKey: ui.review.stage.gate-depths.title
+    titleFallback: "\uAC8C\uC774\uD2B8 \uC2EC\uBD80"
+    normalizedMapPosition: {x: 0.74, y: 0.38}
+    contentStatus: 30
+    canonicalCatalogEntryId: 
