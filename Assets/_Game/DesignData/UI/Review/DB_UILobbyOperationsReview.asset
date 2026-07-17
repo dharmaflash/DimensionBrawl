@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24c23b859dc0a644a8ea3a851accd342, type: 3}
+  m_Name: DB_UILobbyOperationsReview
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyOperationsReview.LobbyOperationsReviewProfile
+  entries:
+  - entryId: review.operations.notice
+    kind: 10
+    titleLocalizationKey: ui.review.operations.notice.title
+    titleFallback: "\uC6B4\uC601 \uC548\uB0B4 \uC0D8\uD50C"
+    explanationLocalizationKey: ui.review.operations.notice.explanation
+    explanationFallback: "\uB85C\uCEEC UI \uAC80\uD1A0\uC6A9 \uC548\uB0B4 \uC0D8\uD50C\uC785\uB2C8\uB2E4.
+      \uC2E4\uC81C \uACF5\uC9C0\uB098 \uC11C\uBE44\uC2A4 \uC751\uB2F5\uC744 \uB098\uD0C0\uB0B4\uC9C0
+      \uC54A\uC2B5\uB2C8\uB2E4."
+    productionDisposition: 10
+    serviceDisposition: 10
+    accountDisposition: 10
+    serverClockDisposition: 10
+    scheduleDisposition: 10
+    progressDisposition: 10
+    attentionDisposition: 10
+    actionDisposition: 10
+  - entryId: review.operations.mailbox
+    kind: 20
+    titleLocalizationKey: ui.review.operations.mailbox.title
+    titleFallback: "\uC6B0\uD3B8\uD568"
+    explanationLocalizationKey: ui.review.operations.mailbox.explanation
+    explanationFallback: "\uC11C\uBE44\uC2A4\uC640 \uACC4\uC815 \uB370\uC774\uD130
+      \uC18C\uC2A4\uAC00 \uC5F0\uACB0\uB418\uC9C0 \uC54A\uC740 \uC124\uBA85 \uC804\uC6A9
+      \uAC80\uD1A0 \uD56D\uBAA9\uC785\uB2C8\uB2E4."
+    productionDisposition: 20
+    serviceDisposition: 20
+    accountDisposition: 20
+    serverClockDisposition: 10
+    scheduleDisposition: 10
+    progressDisposition: 10
+    attentionDisposition: 20
+    actionDisposition: 20
+  - entryId: review.operations.missions
+    kind: 30
+    titleLocalizationKey: ui.review.operations.missions.title
+    titleFallback: "\uBBF8\uC158"
+    explanationLocalizationKey: ui.review.operations.missions.explanation
+    explanationFallback: "\uACC4\uC815 \uC9C4\uD589 \uB370\uC774\uD130 \uC18C\uC2A4\uAC00
+      \uC5F0\uACB0\uB418\uC9C0 \uC54A\uC544 \uC9C4\uD589 \uC0C1\uD0DC\uB97C \uCD94\uB860\uD558\uC9C0
+      \uC54A\uB294 \uC124\uBA85 \uC804\uC6A9 \uAC80\uD1A0 \uD56D\uBAA9\uC785\uB2C8\uB2E4."
+    productionDisposition: 20
+    serviceDisposition: 10
+    accountDisposition: 20
+    serverClockDisposition: 10
+    scheduleDisposition: 10
+    progressDisposition: 20
+    attentionDisposition: 20
+    actionDisposition: 20
+  - entryId: review.operations.event-calendar
+    kind: 40
+    titleLocalizationKey: ui.review.operations.event_calendar.title
+    titleFallback: "\uC774\uBCA4\uD2B8 \uC77C\uC815"
+    explanationLocalizationKey: ui.review.operations.event_calendar.explanation
+    explanationFallback: "\uC11C\uBC84 \uC2DC\uAC01\uACFC \uC77C\uC815 \uD310\uC815
+      \uB370\uC774\uD130 \uC18C\uC2A4\uAC00 \uC5F0\uACB0\uB418\uC9C0 \uC54A\uC740
+      \uC815\uC758 \uC804\uC6A9 \uAC80\uD1A0 \uD56D\uBAA9\uC785\uB2C8\uB2E4."
+    productionDisposition: 30
+    serviceDisposition: 20
+    accountDisposition: 10
+    serverClockDisposition: 20
+    scheduleDisposition: 30
+    progressDisposition: 10
+    attentionDisposition: 20
+    actionDisposition: 20
