@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.Player
 {
@@ -869,7 +872,15 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            bool pressed = ReadButtonDown(basicAttackAction, ref mobileAttackQueued);
+            bool pressed = mobileAttackQueued;
+            mobileAttackQueued = false;
+            if (basicAttackAction != null
+                && basicAttackAction.action != null
+                && basicAttackAction.action.WasPressedThisFrame()
+                && CanConsumePointerBoundAttack(basicAttackAction.action))
+            {
+                pressed = true;
+            }
             if (pressed || !useDeviceFallbackWhenActionMissing || !IsActionMissing(basicAttackAction))
             {
                 suppressBasicAttackDeviceFallback = false;
@@ -897,7 +908,8 @@ namespace DimensionBrawl.Player
             bool held = basicAttackHeld;
             if (basicAttackAction != null && basicAttackAction.action != null)
             {
-                held |= basicAttackAction.action.IsPressed();
+                held |= basicAttackAction.action.IsPressed()
+                    && CanConsumePointerBoundAttack(basicAttackAction.action);
             }
 
             if (!useDeviceFallbackWhenActionMissing || !IsActionMissing(basicAttackAction))
@@ -934,6 +946,11 @@ namespace DimensionBrawl.Player
             return actionReference == null || actionReference.action == null;
         }
 
+        private static bool CanConsumePointerBoundAttack(InputAction action)
+        {
+            return CombatPointerInputGate.CanConsume(action);
+        }
+
         private void TriggerAnimator(string triggerName)
         {
             if (animator != null && !string.IsNullOrWhiteSpace(triggerName))
@@ -948,6 +965,89 @@ namespace DimensionBrawl.Player
             {
                 animator.SetBool(parameterName, value);
             }
+        }
+    }
+
+    internal static class CombatPointerInputGate
+    {
+        private const string AimDragInputTypeName =
+            "DimensionBrawl.UI.CombatHudAimDragInput";
+        private const string VirtualJoystickTypeName =
+            "DimensionBrawl.UI.CombatHudVirtualJoystick";
+        private const string PointerActionInputTypeName =
+            "DimensionBrawl.UI.CombatHudPointerActionInput";
+        private static readonly List<RaycastResult> RaycastResults = new(16);
+        private static readonly List<MonoBehaviour> BehaviourBuffer = new(8);
+
+        internal static bool CanConsume(InputAction action)
+        {
+            if (action == null || !(action.activeControl?.device is Pointer pointer))
+            {
+                return true;
+            }
+
+            return CanConsumeAtScreenPosition(pointer.position.ReadValue());
+        }
+
+        internal static bool CanConsumeAtScreenPosition(Vector2 screenPosition)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return true;
+            }
+
+            var pointerData = new PointerEventData(eventSystem)
+            {
+                position = screenPosition
+            };
+            RaycastResults.Clear();
+            eventSystem.RaycastAll(pointerData, RaycastResults);
+            for (int i = 0; i < RaycastResults.Count; i++)
+            {
+                GameObject hitObject = RaycastResults[i].gameObject;
+                if (hitObject == null)
+                {
+                    continue;
+                }
+
+                if (hitObject.GetComponentInParent<Selectable>() != null
+                    || HasComponentInParent(hitObject, VirtualJoystickTypeName)
+                    || HasComponentInParent(hitObject, PointerActionInputTypeName))
+                {
+                    return false;
+                }
+
+                return HasComponentInParent(hitObject, AimDragInputTypeName);
+            }
+
+            return true;
+        }
+
+        private static bool HasComponentInParent(GameObject gameObject, string fullTypeName)
+        {
+            Transform current = gameObject != null ? gameObject.transform : null;
+            while (current != null)
+            {
+                BehaviourBuffer.Clear();
+                current.GetComponents(BehaviourBuffer);
+                for (int i = 0; i < BehaviourBuffer.Count; i++)
+                {
+                    MonoBehaviour component = BehaviourBuffer[i];
+                    if (component != null
+                        && string.Equals(
+                            component.GetType().FullName,
+                            fullTypeName,
+                            StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+
+                current = current.parent;
+            }
+
+            return false;
         }
     }
 }

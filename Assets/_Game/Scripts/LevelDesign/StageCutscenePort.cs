@@ -1,5 +1,7 @@
 using System;
+using DimensionBrawl.Presentation;
 using UnityEngine;
+using UnityEngine.Playables;
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -18,6 +20,8 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string anchorId;
         [SerializeField] private string runtimeStateId;
         [SerializeField] private Transform payloadRoot;
+        [SerializeField] private CinematicSequenceProfile presentationProfile;
+        [SerializeField] private PlayableDirector runtimeDirector;
         [TextArea, SerializeField] private string purpose;
 
         public string PortId => portId;
@@ -26,6 +30,8 @@ namespace DimensionBrawl.LevelDesign
         public string AnchorId => anchorId;
         public string RuntimeStateId => runtimeStateId;
         public Transform PayloadRoot => payloadRoot;
+        public CinematicSequenceProfile PresentationProfile => presentationProfile;
+        public PlayableDirector RuntimeDirector => runtimeDirector;
         public string Purpose => purpose;
         public bool HasPayloadRoot => payloadRoot != null;
 
@@ -65,6 +71,14 @@ namespace DimensionBrawl.LevelDesign
             runtimeStateId = newRuntimeStateId;
             payloadRoot = newPayloadRoot;
             purpose = newPurpose ?? string.Empty;
+        }
+
+        public void ConfigurePresentationBinding(
+            CinematicSequenceProfile profile,
+            PlayableDirector director)
+        {
+            presentationProfile = profile;
+            runtimeDirector = director;
         }
     }
 }

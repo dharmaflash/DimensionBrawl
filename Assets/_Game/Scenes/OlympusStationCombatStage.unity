@@ -2285,6 +2285,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   playerHealth: {fileID: 4003}
   enemyHealth: {fileID: 1932639513}
+  useCoordinatedTerminalResolution: 1
   winMarker: {fileID: 6100}
   failMarker: {fileID: 6200}
   onWon:
@@ -93784,6 +93785,7 @@ GameObject:
   m_Component:
   - component: {fileID: 615080645}
   - component: {fileID: 615080644}
+  - component: {fileID: 615080647}
   - component: {fileID: 615080646}
   m_Layer: 0
   m_Name: OlympusStation_CombatResultPresenter
@@ -93806,6 +93808,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationCombatResultPresenter
   encounter: {fileID: 6002}
   stageClearOverlay: {fileID: 615080646}
+  resultSurfaceBehaviour: {fileID: 185071497}
+  factCollector: {fileID: 615080647}
+--- !u!114 &615080647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 615080643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4aeed8190ca24a71a79308d224f18c64, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationRunFactCollector
+  encounter: {fileID: 6002}
+  playerHealth: {fileID: 4003}
+  playerActionController: {fileID: 4005}
+  summonEnergyLadder: {fileID: 4019}
+  summonSlot1Action: {fileID: 4017}
+  supportSummonActions:
+  - {fileID: 4016}
+  - {fileID: 4015}
+  bossEncounter: {fileID: 439529094}
   resultSurfaceBehaviour: {fileID: 185071497}
 --- !u!4 &615080645
 Transform:
@@ -180863,6 +180888,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1232183589}
+  - component: {fileID: 2100456790}
   m_Layer: 0
   m_Name: Add_LeftLaneAnchor
   m_TagString: Untagged
@@ -180885,6 +180911,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1826890581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2100456790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232183588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
+  anchorId: Add_LeftLaneAnchor
+  groupId: CombatSpawnAnchors
+  usageKind: 1
+  positionId: 2101
+  spawnKind: 2
+  runtimeStateKind: 0
+  purpose: Stable count-one Station Add authoring anchor; runtime execution remains P1-C-owned.
 --- !u!1 &1232246020
 GameObject:
   m_ObjectHideFlags: 0
@@ -243805,6 +243850,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1675588418}
+  - component: {fileID: 2100456789}
+  - component: {fileID: 2100456791}
   m_Layer: 0
   m_Name: OlympusCorridorStageMap
   m_TagString: Untagged
@@ -243812,6 +243859,42 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &2100456789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675588417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3421799b414862e41bf7db1dca383675, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionSceneBinding
+  stageDefinition: {fileID: 11400000, guid: e7f3c6a9d2b140f5a8c4e1b7d9053f62, type: 2}
+  mapRoot: {fileID: 1675588418}
+  anchorPoints:
+  - {fileID: 2100456790}
+  cutscenePorts: []
+--- !u!114 &2100456791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675588417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac42f5986b8f4efb9f25f811da8d2031, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageCountOneEncounterExecutor
+  sceneBinding: {fileID: 2100456789}
+  spawnId: add-left
+  payloadMappings:
+  - {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
+  activationKind: 1
+  requireActiveStageRun: 1
+  cancelOnTerminalEncounter: 1
 --- !u!4 &1675588418
 Transform:
   m_ObjectHideFlags: 0

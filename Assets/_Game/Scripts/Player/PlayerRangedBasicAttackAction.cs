@@ -14,6 +14,7 @@ namespace DimensionBrawl.Player
     {
         [Header("Input")]
         [SerializeField] private InputActionReference fireAction;
+        [SerializeField] private bool manageFireActionLifecycle = true;
         [SerializeField] private bool fireContinuouslyWhileHeld = true;
         [SerializeField] private bool holdFireActivatesAim = true;
         [SerializeField] private bool useDeviceFallbackWhenActionMissing = true;
@@ -478,7 +479,7 @@ namespace DimensionBrawl.Player
         {
             EnsureAmmoInitialized();
             SubscribeAimController();
-            actionEnabledHere = EnableActionIfNeeded(fireAction);
+            actionEnabledHere = manageFireActionLifecycle && EnableActionIfNeeded(fireAction);
             projectilePool.Prewarm(ResolveProjectilePrefab(), projectileRoot, prewarmCount);
         }
 
@@ -1662,7 +1663,8 @@ namespace DimensionBrawl.Player
 
             if (fireAction != null && fireAction.action != null)
             {
-                pressed |= fireAction.action.WasPressedThisFrame();
+                pressed |= fireAction.action.WasPressedThisFrame()
+                    && CanConsumePointerBoundFire(fireAction.action);
             }
 
             if (pressed || !useDeviceFallbackWhenActionMissing || !IsActionMissing(fireAction))
@@ -1689,7 +1691,8 @@ namespace DimensionBrawl.Player
             bool held = mobileFireHeld;
             if (fireAction != null && fireAction.action != null)
             {
-                held |= fireAction.action.IsPressed();
+                held |= fireAction.action.IsPressed()
+                    && CanConsumePointerBoundFire(fireAction.action);
             }
 
             if (held || !useDeviceFallbackWhenActionMissing || !IsActionMissing(fireAction))
@@ -1726,6 +1729,11 @@ namespace DimensionBrawl.Player
             return !blockMouseFireFallbackOverUi
                 || EventSystem.current == null
                 || !EventSystem.current.IsPointerOverGameObject();
+        }
+
+        private bool CanConsumePointerBoundFire(InputAction action)
+        {
+            return CombatPointerInputGate.CanConsume(action);
         }
 
         private bool IsKeyboardHeld()

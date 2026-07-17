@@ -7,12 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
-
-#if UNITY_EDITOR
-using UnityEditor.SceneManagement;
-#endif
 
 namespace DimensionBrawl.LevelDesign
 {
@@ -20,8 +15,6 @@ namespace DimensionBrawl.LevelDesign
     public sealed class OlympusCorridorCombatFlowController : MonoBehaviour
     {
         private const string CombatHudInstanceName = "PF_UI_CombatHud";
-        private const string TutorialCombatSceneName = "OlympusStationCombatStage";
-        private const string TutorialCombatScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const float ActivePhasePollIntervalSeconds = 0.05f;
 
         private enum FlowPhase
@@ -33,6 +26,9 @@ namespace DimensionBrawl.LevelDesign
             CorridorCombat,
             StageCleared
         }
+
+        [Header("Canonical Stage Run")]
+        [SerializeField] private PlayableStageDefinition playableStageDefinition;
 
         [Header("Intro Handoff")]
         [SerializeField] private PlayableDirector introDirector;
@@ -105,10 +101,12 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
         private GUIStyle introSkipButtonStyle;
         private AudioSource runtimeTutorialOverlayAudioSource;
-        private bool tutorialCombatSceneLoadStarted;
+        private bool tutorialRouteCompletionHandled;
         private Coroutine introHandoffRoutine;
         private Coroutine hudRevealRoutine;
         private Coroutine activePhaseRoutine;
+        private StageRunContext stageRunContext;
+        private bool stageRunAdmissionErrorLogged;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -119,6 +117,10 @@ namespace DimensionBrawl.LevelDesign
         public bool CorridorCombatStarted => phase == FlowPhase.CorridorCombat;
         public bool StageCleared => phase == FlowPhase.StageCleared;
         public bool StageClearOverlayShown => stageClearOverlay != null && stageClearOverlay.IsShown;
+        public bool HasCanonicalStageRun => stageRunContext != null
+            && stageRunContext.LifecycleState != StageRunLifecycleState.Faulted
+            && stageRunContext.LifecycleState != StageRunLifecycleState.Disposed;
+        public string CanonicalStageRunId => stageRunContext?.Identity.RunId ?? string.Empty;
 
         public void Configure(
             PlayableDirector newIntroDirector,
@@ -217,6 +219,19 @@ namespace DimensionBrawl.LevelDesign
             RegisterIntroDirectorStoppedHandler();
             PrepareInitialState();
             ResumePhaseRoutines();
+        }
+
+        private void Start()
+        {
+            if (Application.isPlaying)
+            {
+                EnsureCanonicalStageRunAdmission();
+            }
+        }
+
+        private void Update()
+        {
+            PulseCanonicalStageRunClock();
         }
 
         private void OnDisable()
@@ -361,11 +376,10 @@ namespace DimensionBrawl.LevelDesign
             yield return null;
             while (isActiveAndEnabled
                 && phase != FlowPhase.WaitingForIntroHandoff
-                && phase != FlowPhase.StageCleared
-                && !tutorialCombatSceneLoadStarted)
+                && phase != FlowPhase.StageCleared)
             {
                 EvaluateActivePhase();
-                if (phase == FlowPhase.StageCleared || tutorialCombatSceneLoadStarted)
+                if (phase == FlowPhase.StageCleared)
                 {
                     break;
                 }
@@ -383,7 +397,7 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        LoadTutorialCombatScene();
+                        CompleteTutorialAndOpenStairs();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -396,9 +410,6 @@ namespace DimensionBrawl.LevelDesign
                     {
                         BeginCorridorCombat();
                     }
-                    break;
-                case FlowPhase.CorridorCombat:
-                    TryAdvanceFromCorridorCombat();
                     break;
             }
         }
@@ -645,7 +656,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                LoadTutorialCombatScene();
+                CompleteTutorialAndOpenStairs();
             }
 
             ResumePhaseRoutines();
@@ -753,11 +764,6 @@ namespace DimensionBrawl.LevelDesign
 
         private void BeginWaitingForStairEntry()
         {
-            BeginWaitingForStairEntry(realignPlayerToEntry: false);
-        }
-
-        private void BeginWaitingForStairEntry(bool realignPlayerToEntry)
-        {
             phase = FlowPhase.WaitingForStairEntry;
             UnregisterTutorialCompletedHandler();
             if (tutorialDirector != null && tutorialDirector.IsRunning)
@@ -771,10 +777,6 @@ namespace DimensionBrawl.LevelDesign
             SetCollidersEnabled(stairBlockers, false);
             ClearPlayerInputForPhaseTransition();
             SetPlayerLaneConstraintEnabled(false);
-            if (realignPlayerToEntry)
-            {
-                SnapPlayerToStairEntryAnchor();
-            }
 
             if (Application.isPlaying)
             {
@@ -786,6 +788,24 @@ namespace DimensionBrawl.LevelDesign
 
         private void BeginCorridorCombat()
         {
+            if (!EnsureCanonicalStageRunAdmission())
+            {
+                return;
+            }
+
+            PulseCanonicalStageRunClock();
+            if (!stageRunContext.TryAdvanceCurrentSegmentInScene(
+                    stageRunContext.CurrentSegment.ExitConditionId,
+                    gameObject.scene,
+                    out _,
+                    out string advanceError))
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Canonical lower-combat in-scene advance rejected: {advanceError}",
+                    this);
+                return;
+            }
+
             phase = FlowPhase.CorridorCombat;
             tutorialDirector?.HideGuide();
             UnregisterIntroSwordEnemyHandlers();
@@ -796,11 +816,9 @@ namespace DimensionBrawl.LevelDesign
             SetCollidersEnabled(stairBlockers, false);
             ClearPlayerInputForPhaseTransition();
             SetPlayerCombatInputLocked(false);
-            SetPlayerLaneConstraintEnabled(false);
+            SetPlayerLaneConstraintEnabled(true);
             SetSwordGateMode(false);
             ConfigureTargetCandidates(corridorTargets);
-            RegisterCorridorClearTargetHandlers();
-            TryAdvanceFromCorridorCombat();
             ResumePhaseRoutines();
         }
 
@@ -932,26 +950,100 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                LoadTutorialCombatScene();
+                CompleteTutorialAndOpenStairs();
             }
         }
 
-        private void LoadTutorialCombatScene()
+        private void CompleteTutorialAndOpenStairs()
         {
-            if (tutorialCombatSceneLoadStarted)
+            if (tutorialRouteCompletionHandled)
             {
                 return;
             }
 
-            tutorialCombatSceneLoadStarted = true;
+            if (!EnsureCanonicalStageRunAdmission())
+            {
+                return;
+            }
+
+            PulseCanonicalStageRunClock();
+            OlympusCorridorTutorialDirector director = ResolveTutorialDirector();
+            if (director == null || !director.IsCompleted)
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Corridor tutorial completion fact is unavailable before stair release.",
+                    this);
+                return;
+            }
+
+            if (stageRunContext.TutorialRouteSummaryFact == null
+                && !stageRunContext.TrySealTutorialRouteCompletion(out string tutorialFactError))
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Corridor tutorial fact seal rejected: {tutorialFactError}",
+                    this);
+                return;
+            }
+
+            tutorialRouteCompletionHandled = true;
             UnregisterTutorialCompletedHandler();
-#if UNITY_EDITOR
-            EditorSceneManager.LoadSceneInPlayMode(
-                TutorialCombatScenePath,
-                new LoadSceneParameters(LoadSceneMode.Single));
-#else
-            SceneManager.LoadScene(TutorialCombatSceneName, LoadSceneMode.Single);
-#endif
+            BeginWaitingForStairEntry();
+        }
+
+        private bool EnsureCanonicalStageRunAdmission()
+        {
+            if (stageRunContext != null
+                && stageRunContext.CurrentSceneHandle == gameObject.scene.handle
+                && stageRunContext.LifecycleState == StageRunLifecycleState.CorridorActive)
+            {
+                return true;
+            }
+
+            string admissionError = "PlayableStageDefinition is missing.";
+            if (playableStageDefinition != null
+                && StageRunRuntime.TryAdmitFirstSegment(
+                    playableStageDefinition,
+                    gameObject.scene,
+                    out stageRunContext,
+                    out admissionError))
+            {
+                stageRunAdmissionErrorLogged = false;
+                return true;
+            }
+
+            if (!stageRunAdmissionErrorLogged)
+            {
+                stageRunAdmissionErrorLogged = true;
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Canonical run admission failed: "
+                    + admissionError,
+                    this);
+            }
+
+            return false;
+        }
+
+        private void PulseCanonicalStageRunClock()
+        {
+            if (!Application.isPlaying
+                || stageRunContext == null
+                || stageRunContext.LifecycleState != StageRunLifecycleState.CorridorActive)
+            {
+                return;
+            }
+
+            if (!stageRunContext.TryPulseActiveTime(
+                    Time.realtimeSinceStartupAsDouble,
+                    Application.isBatchMode || Application.isFocused,
+                    false,
+                    false,
+                    false,
+                    out string clockError))
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Canonical run clock rejected: {clockError}",
+                    this);
+            }
         }
 
         private bool ShouldRunTutorial()
@@ -1268,43 +1360,6 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
-        private void SnapPlayerToStairEntryAnchor()
-        {
-            if (player == null || stairEntryAnchor == null)
-            {
-                return;
-            }
-
-            CharacterController characterController = player.GetComponent<CharacterController>();
-            bool controllerWasEnabled = characterController != null && characterController.enabled;
-            if (characterController != null)
-            {
-                characterController.enabled = false;
-            }
-
-            Transform playerTransform = player.transform;
-            playerTransform.position = stairEntryAnchor.position;
-
-            if (characterController != null)
-            {
-                characterController.enabled = controllerWasEnabled;
-            }
-
-            player.ClearScriptedInputOverride();
-            player.SetMoveInput(Vector2.zero);
-            player.SetLookInput(Vector2.zero);
-            player.BeginExternalPlanarBurst(Vector3.zero, 0f);
-            if (stairTriggerCenter != null)
-            {
-                player.RequestFacingDirection(
-                    stairTriggerCenter.position - playerTransform.position,
-                    0.2f,
-                    snapImmediately: true);
-            }
-
-            Physics.SyncTransforms();
-        }
-
         private bool TryResolvePlayerFootMinY(out float footMinY)
         {
             footMinY = float.PositiveInfinity;
@@ -1498,9 +1553,7 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
-            Vector3 offset = Vector3.ProjectOnPlane(
-                player.transform.position - stairTriggerCenter.position,
-                Vector3.up);
+            Vector3 offset = player.transform.position - stairTriggerCenter.position;
             return stairTriggerRadius <= 0f || offset.sqrMagnitude <= stairTriggerRadius * stairTriggerRadius;
         }
 

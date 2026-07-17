@@ -17,12 +17,8 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusStageClearOverlay : MonoBehaviour
     {
-        private const string RetrySceneName = "OlympusCorridorInvasionStage";
-        private const string RetryScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         private const string ClearUiSceneName = "UI_StageClear";
         private const string ClearUiScenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
-        private const string LobbySceneName = "UI_Lobby";
-        private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
 
         private static readonly string[] CombatHudExitRootNames =
         {
@@ -40,8 +36,10 @@ namespace DimensionBrawl.LevelDesign
         private bool shown;
         private bool combatLocked;
         private float previousTimeScale = 1f;
+        private StageRunResultSummary resultSummary;
 
         public bool IsShown => shown;
+        public StageRunResultSummary ResultSummary => resultSummary;
 
         private void OnDisable()
         {
@@ -51,11 +49,17 @@ namespace DimensionBrawl.LevelDesign
 
         public void Show()
         {
+            Show(null);
+        }
+
+        public void Show(StageRunResultSummary summary)
+        {
             if (shown)
             {
                 return;
             }
 
+            resultSummary = summary;
             shown = true;
             LockCombatAfterClear();
             if (isActiveAndEnabled)
@@ -107,7 +111,8 @@ namespace DimensionBrawl.LevelDesign
             {
                 configured = ConfigureStageClearPresenters(
                     SceneManager.GetSceneByName(ClearUiSceneName),
-                    sortOrder);
+                    sortOrder,
+                    resultSummary);
                 if (configured)
                 {
                     break;
@@ -244,7 +249,10 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
-        private static bool ConfigureStageClearPresenters(Scene clearScene, int resolvedSortOrder)
+        private static bool ConfigureStageClearPresenters(
+            Scene clearScene,
+            int resolvedSortOrder,
+            StageRunResultSummary summary)
         {
             if (!clearScene.IsValid() || !clearScene.isLoaded)
             {
@@ -261,11 +269,7 @@ namespace DimensionBrawl.LevelDesign
                 for (int presenterIndex = 0; presenterIndex < presenters.Length; presenterIndex++)
                 {
                     StageClearScreenPresenter presenter = presenters[presenterIndex];
-                    presenter.ConfigureRoutes(
-                        RetrySceneName,
-                        RetryScenePath,
-                        LobbySceneName,
-                        LobbyScenePath);
+                    presenter.ConfigureResult(summary);
                     presenter.PlayEntrance();
                     configuredAny = true;
                 }

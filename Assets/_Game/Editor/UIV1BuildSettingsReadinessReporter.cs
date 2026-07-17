@@ -171,10 +171,16 @@ namespace DimensionBrawl.Editor
 
             for (int i = 0; i < stageCatalog.StageCount; i++)
             {
-                UIStageCatalog.StageEntry stage = stageCatalog.GetStage(i);
-                if (stage.HasSceneRoute)
+                if (stageCatalog.TryCreateRouteProjection(
+                    i,
+                    UIRouteId.Combat,
+                    out UIStageRouteProjection projection,
+                    out _))
                 {
-                    AddUniqueRouteScene(routeScenes, UIRouteId.Combat.ToString(), stage.ScenePath);
+                    AddUniqueRouteScene(
+                        routeScenes,
+                        projection.UiRouteId.ToString(),
+                        projection.EntryScenePath);
                 }
             }
         }

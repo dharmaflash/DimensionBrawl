@@ -26,6 +26,9 @@ namespace DimensionBrawl.Player
 
         [Header("Input")]
         [SerializeField] private InputActionReference skillAction;
+        [Tooltip("Desktop/editor fallback used only while no Skill1 InputActionReference is authored.")]
+        [SerializeField] private bool useKeyboardWhenActionMissing = true;
+        [SerializeField] private Key keyboardTestKey = Key.R;
 
         [Header("References")]
         [SerializeField] private SummonEnergyLadder energyLadder;
@@ -153,6 +156,22 @@ namespace DimensionBrawl.Player
             feedbackRoutine = null;
             DisableActionIfOwned(skillAction, actionEnabledHere);
             actionEnabledHere = false;
+        }
+
+        private void Update()
+        {
+            if (!useKeyboardWhenActionMissing
+                || !IsActionMissing(skillAction)
+                || keyboardTestKey == Key.None
+                || Keyboard.current == null
+                || Keyboard.current[keyboardTestKey] == null
+                || !Keyboard.current[keyboardTestKey].wasPressedThisFrame
+                || !CanAcceptQueuedInput())
+            {
+                return;
+            }
+
+            TryUseSkill1();
         }
 
         public void ConfigureReferences(
@@ -512,6 +531,11 @@ namespace DimensionBrawl.Player
             {
                 actionReference.action.Disable();
             }
+        }
+
+        private static bool IsActionMissing(InputActionReference actionReference)
+        {
+            return actionReference == null || actionReference.action == null;
         }
     }
 }

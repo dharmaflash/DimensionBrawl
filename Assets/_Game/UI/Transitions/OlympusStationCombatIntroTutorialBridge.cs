@@ -14,7 +14,6 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusStationCombatIntroTutorialBridge : MonoBehaviour, ICombatEntryGuideGate
     {
-        private const string TargetSceneName = "OlympusStationCombatStage";
         private const string SystemSpeaker = "천계관리시스템";
         private const string ReplicaGrantLine = "영혼 동기화율 70퍼센트, 전생특전 '레플리카'를 지급합니다.";
         private const string SummonGuideLine =
@@ -44,12 +43,14 @@ namespace DimensionBrawl.LevelDesign
         private PlayerSupportSummonSlotAction[] supportSummonActions;
         private bool played;
         private bool gameplayInputLocked;
-        private bool guidePlaying;
         private bool awaitingAdvance;
         private bool advanceRequested;
 
-        public bool IsGuidePlaying => guidePlaying;
+        public CombatEntryGuideState State { get; private set; } = CombatEntryGuideState.NotStarted;
+        public bool IsGuidePlaying => State == CombatEntryGuideState.Playing;
         public bool IsAwaitingAdvance => awaitingAdvance;
+
+        public event Action<CombatEntryGuideState> StateChanged;
 
         public void RequestAdvance()
         {
@@ -86,7 +87,11 @@ namespace DimensionBrawl.LevelDesign
                 SetGameplayInputLocked(false);
             }
 
-            guidePlaying = false;
+            if (State == CombatEntryGuideState.Playing)
+            {
+                SetGuideState(CombatEntryGuideState.Interrupted);
+            }
+
             awaitingAdvance = false;
             advanceRequested = false;
             overlayPresenter?.Hide();
@@ -94,7 +99,11 @@ namespace DimensionBrawl.LevelDesign
 
         private IEnumerator PlayGuideBeforeGameplayRelease()
         {
-            if (played || SceneManager.GetActiveScene().name != TargetSceneName)
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            if (played
+                || context == null
+                || context.LifecycleState != StageRunLifecycleState.StationActive
+                || context.CurrentSceneHandle != gameObject.scene.handle)
             {
                 yield break;
             }
@@ -102,12 +111,12 @@ namespace DimensionBrawl.LevelDesign
             played = true;
             ResolveReferences();
             SetGameplayInputLocked(true);
-            guidePlaying = true;
+            SetGuideState(CombatEntryGuideState.Playing);
 
             if (overlayPresenter == null)
             {
-                guidePlaying = false;
                 SetGameplayInputLocked(false);
+                SetGuideState(CombatEntryGuideState.Interrupted);
                 yield break;
             }
 
@@ -142,7 +151,18 @@ namespace DimensionBrawl.LevelDesign
 
             overlayPresenter.Hide();
             SetGameplayInputLocked(false);
-            guidePlaying = false;
+            SetGuideState(CombatEntryGuideState.Released);
+        }
+
+        private void SetGuideState(CombatEntryGuideState nextState)
+        {
+            if (State == nextState)
+            {
+                return;
+            }
+
+            State = nextState;
+            StateChanged?.Invoke(nextState);
         }
 
         private IEnumerator WaitForAdvanceInput()

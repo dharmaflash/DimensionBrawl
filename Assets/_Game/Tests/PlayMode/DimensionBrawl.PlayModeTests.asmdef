@@ -3,6 +3,7 @@
     "rootNamespace": "DimensionBrawl.Tests",
     "references": [
         "DimensionBrawl.Runtime",
+        "Unity.InputSystem",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],

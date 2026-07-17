@@ -225,27 +225,114 @@ namespace DimensionBrawl.Editor
             }
 
             RectTransform selectedChapterTarget = RequireRectTransform(prefabRoot, "EP 01_SelectedChapterCard");
+            Text combatLessonText = EnsureCombatLessonText(prefabRoot);
+            Text rewardPreviewText = EnsureRewardPreviewText(prefabRoot);
             SerializedObject serializedObject = new SerializedObject(presenter);
             serializedObject.FindProperty("stageScrollMotion").objectReferenceValue = stageScrollMotion;
             serializedObject.FindProperty("chapterScrollMotion").objectReferenceValue = chapterScrollMotion;
+            serializedObject.FindProperty("combatLessonText").objectReferenceValue = combatLessonText;
+            serializedObject.FindProperty("rewardPreviewText").objectReferenceValue = rewardPreviewText;
             serializedObject.FindProperty("focusSelectedStageOnEnable").boolValue = true;
             serializedObject.FindProperty("focusDelaySeconds").floatValue = 0.02f;
             serializedObject.FindProperty("initialFocusDurationSeconds").floatValue = 0.18f;
             serializedObject.FindProperty("selectedFocusDurationSeconds").floatValue = 0.3f;
+            serializedObject.FindProperty("startRoute").intValue = (int)UIRouteId.Combat;
 
             SerializedProperty entriesProperty = serializedObject.FindProperty("stageFocusEntries");
-            entriesProperty.arraySize = 2;
+            entriesProperty.arraySize = 1;
             ConfigureStageFocusEntry(
                 entriesProperty.GetArrayElementAtIndex(0),
                 RequireStageId(stageCatalog, 0),
                 RequireRectTransform(prefabRoot, "01-1_StageCard"),
                 selectedChapterTarget);
-            ConfigureStageFocusEntry(
-                entriesProperty.GetArrayElementAtIndex(1),
-                RequireStageId(stageCatalog, 1),
-                RequireRectTransform(prefabRoot, "01-2_StageCard"),
-                selectedChapterTarget);
+            RequireRectTransform(prefabRoot, "01-2_StageCard").gameObject.SetActive(false);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static Text EnsureCombatLessonText(GameObject prefabRoot)
+        {
+            const string objectName = "CurrentChapterLessonText";
+            GameObject lessonObject = FindChild(prefabRoot, objectName);
+            if (lessonObject == null)
+            {
+                RectTransform parent = RequireRectTransform(prefabRoot, "StageSelectArtRoot");
+                lessonObject = new GameObject(
+                    objectName,
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Text));
+                lessonObject.transform.SetParent(parent, false);
+            }
+
+            RectTransform lessonRect = lessonObject.GetComponent<RectTransform>();
+            Text lessonText = lessonObject.GetComponent<Text>();
+            Text bodyText = FindChild(prefabRoot, "CurrentChapterBodyText")?.GetComponent<Text>();
+            if (lessonRect == null || lessonText == null || bodyText == null)
+            {
+                throw new InvalidOperationException(
+                    "Stage select combat lesson requires a RectTransform, Text, and body-text style source.");
+            }
+
+            lessonRect.anchorMin = new Vector2(0.2421875f, 0.49f);
+            lessonRect.anchorMax = new Vector2(0.45273438f, 0.615f);
+            lessonRect.anchoredPosition = Vector2.zero;
+            lessonRect.sizeDelta = Vector2.zero;
+            lessonRect.pivot = new Vector2(0.5f, 0.5f);
+            lessonText.font = bodyText.font;
+            lessonText.fontSize = 18;
+            lessonText.fontStyle = FontStyle.Normal;
+            lessonText.resizeTextForBestFit = true;
+            lessonText.resizeTextMinSize = 14;
+            lessonText.resizeTextMaxSize = 18;
+            lessonText.alignment = TextAnchor.UpperLeft;
+            lessonText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            lessonText.verticalOverflow = VerticalWrapMode.Truncate;
+            lessonText.lineSpacing = 0.95f;
+            lessonText.color = new Color(0.78f, 0.84f, 0.92f, 1f);
+            lessonText.raycastTarget = false;
+            lessonText.text = string.Empty;
+            lessonObject.SetActive(true);
+            return lessonText;
+        }
+
+        private static Text EnsureRewardPreviewText(GameObject prefabRoot)
+        {
+            const string objectName = "CurrentChapterRewardText";
+            GameObject rewardObject = FindChild(prefabRoot, objectName);
+            if (rewardObject == null)
+            {
+                RectTransform parent = RequireRectTransform(prefabRoot, "StageSelectArtRoot");
+                rewardObject = new GameObject(
+                    objectName,
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Text));
+                rewardObject.transform.SetParent(parent, false);
+            }
+
+            RectTransform rewardRect = rewardObject.GetComponent<RectTransform>();
+            Text rewardText = rewardObject.GetComponent<Text>();
+            Text bodyText = FindChild(prefabRoot, "CurrentChapterBodyText")?.GetComponent<Text>();
+            if (rewardRect == null || rewardText == null || bodyText == null)
+            {
+                throw new InvalidOperationException(
+                    "Stage select reward preview requires a RectTransform, Text, and body-text style source.");
+            }
+
+            rewardRect.anchorMin = new Vector2(0.2421875f, 0.445f);
+            rewardRect.anchorMax = new Vector2(0.45273438f, 0.482f);
+            rewardRect.anchoredPosition = Vector2.zero;
+            rewardRect.sizeDelta = Vector2.zero;
+            rewardRect.pivot = new Vector2(0.5f, 0.5f);
+            rewardText.font = bodyText.font;
+            rewardText.fontSize = 18;
+            rewardText.fontStyle = FontStyle.Bold;
+            rewardText.alignment = TextAnchor.MiddleLeft;
+            rewardText.color = new Color(0.72f, 0.82f, 0.95f, 1f);
+            rewardText.raycastTarget = false;
+            rewardText.text = string.Empty;
+            rewardObject.SetActive(false);
+            return rewardText;
         }
 
         private static string RequireStageId(UIStageCatalog stageCatalog, int index)

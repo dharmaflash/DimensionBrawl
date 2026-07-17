@@ -1,29 +1,55 @@
 using System.Collections;
+using DimensionBrawl.LevelDesign;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-
-#if UNITY_EDITOR
-using UnityEditor.SceneManagement;
-#endif
 
 namespace DimensionBrawl.UI.StageClear
 {
     [DisallowMultipleComponent]
     public sealed class StageClearScreenPresenter : MonoBehaviour
     {
+        private static readonly string[] ProofRowObjectNames =
+        {
+            "Mission1",
+            "Mission2",
+            "Mission3"
+        };
+
+        private static readonly string[] ProofRowFrameObjectNames =
+        {
+            "Stage_Clear_UI_0001s_0010_Mission1_Frame",
+            "Stage_Clear_UI_0001s_0007_Mission2_Frame",
+            "Stage_Clear_UI_0001s_0004_Mission3_Frame"
+        };
+
+        private static readonly string[] ProofRowIconObjectNames =
+        {
+            "Stage_Clear_UI_0001s_0009_mission1_Icon",
+            "Stage_Clear_UI_0001s_0006_mission2_Icon",
+            "Stage_Clear_UI_0001s_0003_mission3_Icon"
+        };
+
         [SerializeField] private Button retryButton;
         [SerializeField] private Button lobbyButton;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private RectTransform motionRoot;
+        [SerializeField] private MonoBehaviour uiRouteResolverBehaviour;
+        [SerializeField] private StageResultPresentationCatalog presentationCatalog;
+        [SerializeField] private string localeId = "ko-KR";
+        [SerializeField] private Text primaryActionText;
+        [SerializeField] private Text lobbyActionText;
+        [SerializeField] private Text stageNameText;
+        [SerializeField] private Text stageNumberText;
+        [SerializeField] private Text totalActiveTimeLabelText;
+        [SerializeField] private Text totalActiveTimeValueText;
+        [SerializeField] private Text combatActiveTimeLabelText;
+        [SerializeField] private Text combatActiveTimeValueText;
+        [SerializeField] private Text recordsCategoryText;
+        [SerializeField] private Text[] proofRowTexts = new Text[3];
         [Header("Clear Audio")]
         [SerializeField] private AudioSource clearBgmSource;
         [SerializeField] private AudioClip clearBgmClip;
         [SerializeField, Range(0f, 1f)] private float clearBgmVolume = 0.9f;
-        [SerializeField] private string retrySceneName = "OlympusCorridorInvasionStage";
-        [SerializeField] private string retryScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
-        [SerializeField] private string lobbySceneName = "UI_Lobby";
-        [SerializeField] private string lobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
         [SerializeField] private bool playEntranceOnEnable = true;
         [SerializeField, Min(0f)] private float entranceDelaySeconds = 0.02f;
         [SerializeField, Min(0.01f)] private float entranceDurationSeconds = 0.42f;
@@ -36,20 +62,121 @@ namespace DimensionBrawl.UI.StageClear
         private Vector2 entranceBasePosition;
         private Vector3 entranceBaseScale;
         private bool clearBgmPlayed;
+        private StageRunResultSummary resultSummary;
+        private StageResultPresentationSnapshot presentationSnapshot;
+        private StageResultPresentationAuditEnvelope presentationAudit;
+        private StageRunActionSnapshot primaryAction;
+        private StageRunActionSnapshot lobbyAction;
 
         public int RetryClickCount { get; private set; }
+        public int PrimaryClickCount => RetryClickCount;
         public int LobbyClickCount { get; private set; }
+        public bool IsConfigured => resultSummary != null;
+        public StageRunResultSummary ResultSummary => resultSummary;
+        public StageResultPresentationSnapshot PresentationSnapshot => presentationSnapshot;
+        public StageResultPresentationAuditEnvelope PresentationAudit => presentationAudit;
+        public string PrimaryActionId => primaryAction?.ActionId ?? string.Empty;
+        public string LobbyActionId => lobbyAction?.ActionId ?? string.Empty;
+        public string LastActionError { get; private set; } = string.Empty;
 
-        public void ConfigureRoutes(
-            string newRetrySceneName,
-            string newRetryScenePath,
-            string newLobbySceneName,
-            string newLobbyScenePath)
+        public void ConfigureResult(StageRunResultSummary summary)
         {
-            retrySceneName = newRetrySceneName;
-            retryScenePath = newRetryScenePath;
-            lobbySceneName = newLobbySceneName;
-            lobbyScenePath = newLobbyScenePath;
+            ResolveButtons();
+            ResolveMotionTargets();
+            ResolveResultLabels();
+            resultSummary = null;
+            presentationSnapshot = null;
+            presentationAudit = null;
+            primaryAction = null;
+            lobbyAction = null;
+            LastActionError = string.Empty;
+            ClearPresentationSurface();
+
+            if (summary == null)
+            {
+                LastActionError = "Committed result summary is missing.";
+                SetActionsInteractive(false);
+                return;
+            }
+
+            for (int i = 0; i < summary.OfferedActionCount; i++)
+            {
+                StageRunActionSnapshot action = summary.GetOfferedAction(i);
+                if (action.ActionKind == StageRouteActionKind.UIRoute
+                    && action.TargetUiRouteId == StageUiRouteId.Lobby)
+                {
+                    lobbyAction = action;
+                }
+                else if ((summary.Outcome == StageRouteOutcome.Clear
+                        && action.ActionKind == StageRouteActionKind.Replay)
+                    || (summary.Outcome == StageRouteOutcome.Fail
+                        && action.ActionKind == StageRouteActionKind.Retry))
+                {
+                    primaryAction = action;
+                }
+            }
+
+            if (primaryAction == null || lobbyAction == null)
+            {
+                LastActionError = "Committed result does not offer the required outcome actions.";
+                SetActionsInteractive(false);
+                return;
+            }
+
+            StageResultPresentationSnapshot resolvedPresentation = null;
+            StageResultPresentationAuditEnvelope resolvedAudit = null;
+            string presentationProfileError = string.Empty;
+            StageRunContext runContext = StageRunRuntime.ActiveContext;
+            if (runContext == null
+                || !StageRunRuntime.TryPrepareResultPresentation(
+                    summary,
+                    runContext.ResultProgressionJoinSnapshot,
+                    localeId,
+                    out resolvedPresentation,
+                    out resolvedAudit,
+                    out presentationProfileError))
+            {
+                LastActionError = string.IsNullOrWhiteSpace(presentationProfileError)
+                    ? "Committed result presentation snapshot is unavailable."
+                    : presentationProfileError;
+                SetActionsInteractive(false);
+                return;
+            }
+
+            IStageRunUiRouteResolver resolver = ResolveUiRouteResolver();
+            StageRunUiRouteTarget lobbyTarget = null;
+            string routeError = string.Empty;
+            if (resolver == null
+                || !resolver.TryResolve(
+                    lobbyAction.TargetUiRouteId,
+                    out lobbyTarget,
+                    out routeError)
+                || lobbyTarget == null
+                || lobbyTarget.RouteId != lobbyAction.TargetUiRouteId)
+            {
+                LastActionError = string.IsNullOrWhiteSpace(routeError)
+                    ? "Canonical Lobby route resolver is missing."
+                    : routeError;
+                SetActionsInteractive(false);
+                return;
+            }
+
+            if (!StageRunRuntime.TryMarkResultPresented(
+                    summary,
+                    resolvedPresentation,
+                    resolvedAudit,
+                    out string presentationError))
+            {
+                LastActionError = presentationError;
+                SetActionsInteractive(false);
+                return;
+            }
+
+            resultSummary = summary;
+            presentationSnapshot = resolvedPresentation;
+            presentationAudit = resolvedAudit;
+            ApplyPresentation(resolvedPresentation);
+            SetActionsInteractive(false);
         }
 
         private void Awake()
@@ -62,6 +189,7 @@ namespace DimensionBrawl.UI.StageClear
         {
             ResolveButtons();
             ResolveMotionTargets();
+            ResolveResultLabels();
 
             if (retryButton != null)
             {
@@ -73,7 +201,13 @@ namespace DimensionBrawl.UI.StageClear
                 lobbyButton.onClick.AddListener(HandleLobbyClicked);
             }
 
-            if (playEntranceOnEnable)
+            SetActionsInteractive(false);
+            if (!IsConfigured)
+            {
+                ClearPresentationSurface();
+            }
+
+            if (playEntranceOnEnable && IsConfigured)
             {
                 PlayEntrance();
             }
@@ -100,7 +234,7 @@ namespace DimensionBrawl.UI.StageClear
 
         public void PlayEntrance()
         {
-            if (!isActiveAndEnabled)
+            if (!isActiveAndEnabled || !IsConfigured)
             {
                 return;
             }
@@ -117,13 +251,13 @@ namespace DimensionBrawl.UI.StageClear
         private void HandleRetryClicked()
         {
             RetryClickCount++;
-            LoadSingleScene(retrySceneName, retryScenePath);
+            DispatchAction(primaryAction);
         }
 
         private void HandleLobbyClicked()
         {
             LobbyClickCount++;
-            LoadSingleScene(lobbySceneName, lobbyScenePath);
+            DispatchAction(lobbyAction);
         }
 
         private void ResolveButtons()
@@ -212,9 +346,9 @@ namespace DimensionBrawl.UI.StageClear
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 1f;
-                canvasGroup.interactable = true;
-                canvasGroup.blocksRaycasts = true;
             }
+
+            SetActionsInteractive(IsConfigured);
 
             if (targetRect != null)
             {
@@ -246,7 +380,10 @@ namespace DimensionBrawl.UI.StageClear
 
         private void PlayClearBgmOnce()
         {
-            if (clearBgmPlayed || clearBgmClip == null)
+            if (clearBgmPlayed
+                || clearBgmClip == null
+                || resultSummary == null
+                || resultSummary.Outcome != StageRouteOutcome.Clear)
             {
                 return;
             }
@@ -298,21 +435,248 @@ namespace DimensionBrawl.UI.StageClear
             return null;
         }
 
-        private static void LoadSingleScene(string sceneName, string scenePath)
+        private void DispatchAction(StageRunActionSnapshot action)
         {
-            Time.timeScale = 1f;
-
-#if UNITY_EDITOR
-            if (!string.IsNullOrEmpty(scenePath))
+            if (resultSummary == null || action == null)
             {
-                EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
+                LastActionError = "Result action is unavailable.";
+                SetActionsInteractive(false);
                 return;
             }
-#endif
 
-            if (!string.IsNullOrEmpty(sceneName))
+            IStageRunUiRouteResolver resolver = ResolveUiRouteResolver();
+            if (!StageRunRuntime.TryDispatchTerminalAction(
+                resultSummary,
+                action.ActionId,
+                resolver,
+                out _,
+                out string error))
             {
-                SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+                LastActionError = error;
+                SetActionsInteractive(false);
+            }
+        }
+
+        private IStageRunUiRouteResolver ResolveUiRouteResolver()
+        {
+            if (uiRouteResolverBehaviour is IStageRunUiRouteResolver configured)
+            {
+                return configured;
+            }
+
+            MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is IStageRunUiRouteResolver candidate)
+                {
+                    uiRouteResolverBehaviour = behaviours[i];
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private void ResolveResultLabels()
+        {
+            primaryActionText ??= FindText("RetryText");
+            lobbyActionText ??= FindText("NextStageText");
+            stageNameText ??= FindText("StageName");
+            stageNumberText ??= FindText("StageNumber");
+            totalActiveTimeLabelText ??= FindText("MaxComboLabel");
+            totalActiveTimeValueText ??= FindText("MaxComboValue");
+            combatActiveTimeLabelText ??= FindText("BattleTimeLabel");
+            combatActiveTimeValueText ??= FindText("BattleTimeValue");
+            recordsCategoryText ??= FindText("MissionCategory");
+
+            if (proofRowTexts == null || proofRowTexts.Length != ProofRowObjectNames.Length)
+            {
+                proofRowTexts = new Text[ProofRowObjectNames.Length];
+            }
+
+            for (int i = 0; i < proofRowTexts.Length; i++)
+            {
+                proofRowTexts[i] ??= FindText(ProofRowObjectNames[i]);
+            }
+        }
+
+        private Text FindText(string objectName)
+        {
+            Text[] texts = GetComponentsInChildren<Text>(true);
+            for (int i = 0; i < texts.Length; i++)
+            {
+                if (texts[i] != null && texts[i].name == objectName)
+                {
+                    return texts[i];
+                }
+            }
+
+            return null;
+        }
+
+        private void ApplyPresentation(StageResultPresentationSnapshot snapshot)
+        {
+            bool clear = snapshot.Outcome == StageRouteOutcome.Clear;
+            SetNamedObjectActive("StageName", true);
+            SetNamedObjectActive("StageNumber", true);
+            SetNamedObjectActive("MaxComboLabel", true);
+            SetNamedObjectActive("MaxComboValue", true);
+            SetNamedObjectActive("BattleTimeLabel", true);
+            SetNamedObjectActive("BattleTimeValue", true);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0011_MaxCombo_Frame", true);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0010_MaxCombo_Icon", true);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0007_BatteTime_Frame", true);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0006_BatteTime_Icon", true);
+            if (primaryActionText != null)
+            {
+                primaryActionText.text = snapshot.PrimaryActionLabel;
+            }
+
+            if (lobbyActionText != null)
+            {
+                lobbyActionText.text = snapshot.LobbyActionLabel;
+            }
+
+            if (stageNameText != null)
+            {
+                stageNameText.text = snapshot.StageTitle;
+                stageNameText.color = snapshot.StageTitleColor;
+            }
+
+            if (stageNumberText != null)
+            {
+                stageNumberText.text = snapshot.StageCode;
+            }
+
+            if (totalActiveTimeLabelText != null)
+            {
+                totalActiveTimeLabelText.text = snapshot.TotalActiveTimeLabel;
+            }
+
+            if (totalActiveTimeValueText != null)
+            {
+                totalActiveTimeValueText.text = snapshot.TotalActiveTimeValue;
+            }
+
+            if (combatActiveTimeLabelText != null)
+            {
+                combatActiveTimeLabelText.text = snapshot.CombatActiveTimeLabel;
+            }
+
+            if (combatActiveTimeValueText != null)
+            {
+                combatActiveTimeValueText.text = snapshot.CombatActiveTimeValue;
+            }
+
+            if (recordsCategoryText != null)
+            {
+                recordsCategoryText.text = snapshot.RecordsCategoryLabel;
+            }
+
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0000_StageClear_Icon", clear);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0001_Claer!_Text", clear);
+            SetNamedObjectActive("RewardCategory", false);
+            SetNamedObjectActive("Stage_Clear_UI_0002s_0006_RewardCategory_Frame", false);
+            SetNamedObjectActive("Stage_Clear_UI_0002s_0004_Reward_Panel", false);
+
+            bool hasProofRows = snapshot.ProofRowCount > 0;
+            SetNamedObjectActive("MissionCategory", hasProofRows);
+            SetNamedObjectActive("Stage_Clear_UI_0001s_0000_MissionCategory_Frame", hasProofRows);
+            for (int i = 0; i < ProofRowObjectNames.Length; i++)
+            {
+                bool active = i < snapshot.ProofRowCount;
+                if (active && proofRowTexts[i] != null)
+                {
+                    proofRowTexts[i].text = snapshot.GetProofRow(i).LocalizedText;
+                }
+
+                SetNamedObjectActive(ProofRowObjectNames[i], active);
+                SetNamedObjectActive(ProofRowFrameObjectNames[i], active);
+                SetNamedObjectActive(ProofRowIconObjectNames[i], active);
+            }
+        }
+
+        private void ClearPresentationSurface()
+        {
+            Text[] dynamicTexts =
+            {
+                primaryActionText,
+                lobbyActionText,
+                stageNameText,
+                stageNumberText,
+                totalActiveTimeLabelText,
+                totalActiveTimeValueText,
+                combatActiveTimeLabelText,
+                combatActiveTimeValueText,
+                recordsCategoryText
+            };
+            for (int i = 0; i < dynamicTexts.Length; i++)
+            {
+                if (dynamicTexts[i] != null)
+                {
+                    dynamicTexts[i].text = string.Empty;
+                }
+            }
+
+            SetNamedObjectActive("StageName", false);
+            SetNamedObjectActive("StageNumber", false);
+            SetNamedObjectActive("MaxComboLabel", false);
+            SetNamedObjectActive("MaxComboValue", false);
+            SetNamedObjectActive("BattleTimeLabel", false);
+            SetNamedObjectActive("BattleTimeValue", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0011_MaxCombo_Frame", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0010_MaxCombo_Icon", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0007_BatteTime_Frame", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0006_BatteTime_Icon", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0000_StageClear_Icon", false);
+            SetNamedObjectActive("Stage_Clear_UI_0000s_0001_Claer!_Text", false);
+            SetNamedObjectActive("MissionCategory", false);
+            SetNamedObjectActive("Stage_Clear_UI_0001s_0000_MissionCategory_Frame", false);
+            SetNamedObjectActive("RewardCategory", false);
+            SetNamedObjectActive("Stage_Clear_UI_0002s_0006_RewardCategory_Frame", false);
+            SetNamedObjectActive("Stage_Clear_UI_0002s_0004_Reward_Panel", false);
+            for (int i = 0; i < ProofRowObjectNames.Length; i++)
+            {
+                if (proofRowTexts != null && i < proofRowTexts.Length && proofRowTexts[i] != null)
+                {
+                    proofRowTexts[i].text = string.Empty;
+                }
+
+                SetNamedObjectActive(ProofRowObjectNames[i], false);
+                SetNamedObjectActive(ProofRowFrameObjectNames[i], false);
+                SetNamedObjectActive(ProofRowIconObjectNames[i], false);
+            }
+        }
+
+        private void SetNamedObjectActive(string objectName, bool active)
+        {
+            RectTransform[] transforms = GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i] != null && transforms[i].name == objectName)
+                {
+                    transforms[i].gameObject.SetActive(active);
+                    return;
+                }
+            }
+        }
+
+        private void SetActionsInteractive(bool interactive)
+        {
+            if (retryButton != null)
+            {
+                retryButton.interactable = interactive && primaryAction != null;
+            }
+
+            if (lobbyButton != null)
+            {
+                lobbyButton.interactable = interactive && lobbyAction != null;
+            }
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.interactable = interactive;
+                canvasGroup.blocksRaycasts = interactive;
             }
         }
     }

@@ -12,29 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20de7bb4a7b00194fbdf583e729d6aa0, type: 3}
   m_Name: DB_UIStageCatalog
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIStageCatalog
+  projectionSchemaVersion: 1
+  catalogProjectionGeneration: 2
   stages:
   - id: story_v1_training_route
-    displayName: "\uae30\uc5b5\uc758 \ud68c\ub791"
-    summary: "\ud558\uce35 \uc138\uacc4\uc5d0\uc11c \ubc1c\uc0dd\ud55c \ucc28\uc6d0\uc758 \ubbf8\uc138\ud55c \uade0\uc5f4.\n\uadf8 \uc9d5\ud6c4\uc758 \uc9c4\uc6d0\uc9c0\ub97c \uc870\uc0ac\ud558\ub77c."
+    displayName: "\uAE30\uC5B5\uC758 \uD68C\uB791"
+    summary: "\uD558\uCE35 \uC138\uACC4\uC5D0\uC11C \uBC1C\uC0DD\uD55C \uCC28\uC6D0\uC758
+      \uBBF8\uC138\uD55C \uADE0\uC5F4.\n\uADF8 \uC9D5\uD6C4\uC758 \uC9C4\uC6D0\uC9C0\uB97C
+      \uC870\uC0AC\uD558\uB77C."
     threatTags: "\uC791\uC804 \uC815\uBCF4: \uC815\uCC30\uD615 \uC801\uC131\uCCB4
       / \uBAA9\uD45C: \uADE0\uC5F4 \uD45C\uC2DD\uAE4C\uC9C0 \uC811\uADFC"
-    recommendedSummonRole: "\uAD8C\uC7A5 \uC9C0\uC6D0: \uB3CC\uD30C\uD615
-      \uC9C0\uC6D0"
-    mockRewardPreview: "\uBD84\uC11D \uB300\uC0C1: \uADE0\uC5F4 \uC2E0\uD638
-      \uD30C\uD3B8"
-    stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+    recommendedSummonRole: "\uAD8C\uC7A5 \uC9C0\uC6D0: \uB3CC\uD30C\uD615 \uC9C0\uC6D0"
+    mockRewardPreview: 
+    presentationProvenance: 1
+    playableStage: {fileID: 11400000, guid: a1d4f8c3b6e24970a5c1d7e9f2036b84, type: 2}
     loadingCardId: stage_to_combat_mood_bridge
-  - id: story_v1_retry_route
-    displayName: "\uB4A4\uD2C0\uB9B0 \uAC70\uB9AC"
-    summary: "\uC2E0\uD638\uAC00 \uAE4A\uC5B4\uC9C4 \uAC70\uB9AC\uB294
-      \uB2E4\uC2DC \uC9C4\uC785\uD558\uAE30 \uC26C\uC6B4 \uACBD\uB85C\uB97C
-      \uB0A8\uAE34\uB2E4.\n\uACBD\uACC4\uB97C \uC720\uC9C0\uD558\uACE0
-      \uD45C\uC2DD\uC744 \uC7AC\uD655\uC778\uD558\uB77C."
-    threatTags: "\uC791\uC804 \uC815\uBCF4: \uC2E4\uD328 \uC2E0\uD638
-      \uC7AC\uC9C4\uC785 / \uBAA9\uD45C: \uB8E8\uD2B8 \uC7AC\uACE0\uC815"
-    recommendedSummonRole: "\uAD8C\uC7A5 \uC9C0\uC6D0: \uBC29\uC5B4\uD615
-      \uC9C0\uC6D0"
-    mockRewardPreview: "\uBD84\uC11D \uB300\uC0C1: \uC190\uC2E4\uB41C
-      \uB8E8\uD2B8 \uAE30\uB85D"
-    stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
-    loadingCardId: stage_to_combat_mood_bridge
+    canonicalProjectionDigest: 571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d

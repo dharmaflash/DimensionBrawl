@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8db1e4c6f24911a3d5e72b8f0c4a91, type: 3}
+  m_Name: DB_StageResultLocalization_Core
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.StageClear.StageResultLocalizationTable
+  schemaVersion: 1
+  tableId: stage-result.localization.core
+  tableRevision: 1
+  defaultLocaleId: ko-KR
+  locales:
+  - localeId: en-US
+    entries:
+    - key: stage_result.action.lobby
+      value: LOBBY
+    - key: stage_result.action.replay
+      value: REPLAY
+    - key: stage_result.action.retry
+      value: RETRY
+    - key: stage_result.label.combat_time
+      value: "COMBAT TIME\nCOMBAT"
+    - key: stage_result.label.records
+      value: COMBAT RECORD
+    - key: stage_result.label.total_time
+      value: "OPERATION TIME\nTOTAL"
+    - key: stage_result.olympus.proof.counter_recovery
+      value: Counter recovery confirmed ({0})
+    - key: stage_result.olympus.proof.forward_risk_time
+      value: Forward pressure {0}
+    - key: stage_result.olympus.proof.summon_followup
+      value: Summon follow-up confirmed ({0})
+    - key: stage_result.olympus.proof.summon_pressure
+      value: Summon pressure block confirmed ({0})
+    - key: stage_result.olympus.proof.survival
+      value: No combat incapacitation
+    - key: stage_result.olympus.stage_name
+      value: OLYMPUS INVASION
+    - key: stage_result.status.clear
+      value: CLEAR
+    - key: stage_result.status.fail
+      value: FAILED
+    - key: stage_result.title.format
+      value: '{0} / {1}'
+  - localeId: ko-KR
+    entries:
+    - key: stage_result.action.lobby
+      value: 로비로
+    - key: stage_result.action.replay
+      value: REPLAY
+    - key: stage_result.action.retry
+      value: RETRY
+    - key: stage_result.label.combat_time
+      value: "전투 시간\nCOMBAT"
+    - key: stage_result.label.records
+      value: 전투 기록
+    - key: stage_result.label.total_time
+      value: "작전 시간\nTOTAL"
+    - key: stage_result.olympus.proof.counter_recovery
+      value: 소환 반격 복구 확인 ({0}회)
+    - key: stage_result.olympus.proof.forward_risk_time
+      value: 전진 압박 유지 {0}
+    - key: stage_result.olympus.proof.summon_followup
+      value: 소환 연계 적중 확인 ({0}회)
+    - key: stage_result.olympus.proof.summon_pressure
+      value: 소환 압박 방어 확인 ({0}회)
+    - key: stage_result.olympus.proof.survival
+      value: 전투 불능 없이 생존
+    - key: stage_result.olympus.stage_name
+      value: 낙원의 침식
+    - key: stage_result.status.clear
+      value: 클리어
+    - key: stage_result.status.fail
+      value: 실패
+    - key: stage_result.title.format
+      value: '{0} / {1}'

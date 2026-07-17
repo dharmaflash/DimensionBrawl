@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd83a106a8ee78e45919f10ddb386e62, type: 3}
+  m_Name: DB_Stage_OlympusStationCombat
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionProfile
+  stageId: OLYMPUS-STATION-COMBAT-01
+  displayName: Olympus Station Combat
+  chapterId: OLYMPUS-INVASION
+  previousStageId: OLYMPUS-CORRIDOR-INTRO-COMBAT-01
+  nextStageId: 
+  mapScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
+  mapRootName: OlympusCorridorStageMap
+  mapContentRootName: OlympusCorridorStageMap
+  mapScale: {x: 1.5, y: 1.5, z: 1.5}
+  layoutId: OLYMPUS_STATION_COMBAT_01
+  scenePrefabSource: 
+  objective: Station entry guidance and the canonical player-versus-boss encounter
+    run in this physical segment.
+  clearCondition: The authoritative Station encounter resolves the bound boss terminal
+    state through the coordinated terminal policy.
+  excludedScope: Corridor tutorial content, result UI layout, combat balance, reward
+    payout, and persistent progress are owned elsewhere.
+  anchors:
+  - anchorId: Add_LeftLaneAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 8.9, y: 0, z: -1.25}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Stable authoring anchor for the first count-one Station Add fixture.
+  spawns:
+  - spawnId: add-left
+    spawnKind: 2
+    positionId: 2101
+    anchorId: Add_LeftLaneAnchor
+    payloadId: SciFiSoldier.Melee
+    count: 1
+    delaySeconds: 0
+    note: Concrete P1-B authoring identity; runtime spawn and lifetime ownership
+      remain in P1-C.
+  cutsceneHandoffs: []
+  runtimeStates:
+  - stateId: state-station-encounter-terminal
+    stateKind: 2
+    positionId: 9002
+    anchorId: 
+    conditionId: station.encounter.terminal
+    note: A coordinated terminal result ends the physical Station segment; additive
+      result UI remains presentation.
+  sourceReferences:
+  - sourceId: local-olympus-station
+    sourcePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
+    localTakeaway: This logical Station segment reuses the continuous Corridor host
+      scene after the stair-entry boundary.

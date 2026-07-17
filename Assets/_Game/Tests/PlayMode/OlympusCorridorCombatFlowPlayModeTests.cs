@@ -12,6 +12,7 @@ using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -499,6 +500,106 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator DesktopInputActionsAndKeyboardFallbackKeysAreAuthored()
+        {
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            PlayerMovementController player = RequireComponent<PlayerMovementController>(
+                PlayerRootName,
+                "player movement controller");
+            PlayerActionController actionController = RequireComponent<PlayerActionController>(
+                PlayerRootName,
+                "player action controller");
+            PlayerRangedBasicAttackAction rangedAttack =
+                RequireComponent<PlayerRangedBasicAttackAction>(
+                    PlayerRootName,
+                    "player ranged basic action");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(
+                PlayerRootName,
+                "player skill 1 action");
+            PlayerCombatModeController combatMode = RequireComponent<PlayerCombatModeController>(
+                PlayerRootName,
+                "player combat mode controller");
+            PlayerLockTargetController lockTarget = RequireComponent<PlayerLockTargetController>(
+                PlayerRootName,
+                "player lock target controller");
+            PlayerSummonSlot1Action summonSlot1 = RequireComponent<PlayerSummonSlot1Action>(
+                PlayerRootName,
+                "player summon slot 1 action");
+            PlayerSupportSummonSlotAction[] supportSummons =
+                RequireSceneObject(PlayerRootName).GetComponents<PlayerSupportSummonSlotAction>();
+
+            InputActionReference moveAction =
+                ReadPrivateField<InputActionReference>(player, "moveAction");
+            InputActionReference attackAction =
+                ReadPrivateField<InputActionReference>(actionController, "basicAttackAction");
+            InputActionReference dodgeAction =
+                ReadPrivateField<InputActionReference>(actionController, "dodgeAction");
+            InputActionReference skillAction =
+                ReadPrivateField<InputActionReference>(skill1Action, "skillAction");
+
+            AssertInputActionBinding(
+                moveAction,
+                "Move",
+                "<Keyboard>/w",
+                "<Keyboard>/a",
+                "<Keyboard>/s",
+                "<Keyboard>/d");
+            AssertInputActionBinding(
+                attackAction,
+                "Attack",
+                "<Mouse>/leftButton",
+                "<Keyboard>/f");
+            AssertInputActionBindingAbsent(
+                attackAction,
+                "Attack",
+                "<Keyboard>/enter",
+                "<Touchscreen>/primaryTouch/tap");
+            AssertInputActionBinding(
+                dodgeAction,
+                "Dodge",
+                "<Keyboard>/space",
+                "<Keyboard>/leftShift");
+            AssertInputActionBinding(skillAction, "Skill1", "<Keyboard>/r");
+            Assert.AreSame(
+                attackAction,
+                ReadPrivateField<InputActionReference>(rangedAttack, "fireAction"),
+                "Melee and ranged mode must consume the same authored Attack action reference.");
+            Assert.IsFalse(
+                ReadPrivateField<bool>(rangedAttack, "manageFireActionLifecycle"),
+                "The always-enabled melee controller must be the sole lifecycle owner of the shared Attack action.");
+
+            flowController.SkipIntroCutscene();
+            yield return null;
+            yield return null;
+            Assert.IsTrue(attackAction.action.enabled);
+            rangedAttack.enabled = false;
+            Assert.IsTrue(
+                attackAction.action.enabled,
+                "Disabling the ranged adapter must not disable the shared melee Attack action.");
+            rangedAttack.enabled = true;
+            Assert.IsTrue(attackAction.action.enabled);
+
+            Assert.That(ReadPrivateField<Key>(rangedAttack, "keyboardTestKey"), Is.EqualTo(Key.F));
+            Assert.That(ReadPrivateField<Key>(skill1Action, "keyboardTestKey"), Is.EqualTo(Key.R));
+            Assert.That(ReadPrivateField<Key>(combatMode, "keyboardTestKey"), Is.EqualTo(Key.Tab));
+            Assert.That(ReadPrivateField<Key>(lockTarget, "keyboardFocusKey"), Is.EqualTo(Key.T));
+            Assert.That(ReadPrivateField<Key>(summonSlot1, "keyboardTestKey"), Is.EqualTo(Key.Digit1));
+            Assert.That(supportSummons.Length, Is.EqualTo(2));
+
+            var supportKeys = new HashSet<Key>();
+            for (int i = 0; i < supportSummons.Length; i++)
+            {
+                supportKeys.Add(ReadPrivateField<Key>(supportSummons[i], "keyboardTestKey"));
+            }
+
+            CollectionAssert.AreEquivalent(new[] { Key.Digit2, Key.Digit3 }, supportKeys);
+            yield return null;
+        }
+
+        [UnityTest]
         [Timeout(90000)]
         public IEnumerator TutorialRuntimeInputsAdvanceByExpectedTriggers()
         {
@@ -584,6 +685,8 @@ namespace DimensionBrawl.Tests
             yield return MoveUntilStep(
                 tutorialDirector,
                 player,
+                flowController,
+                combatCamera,
                 "SwapToRanged",
                 8f,
                 report);
@@ -671,6 +774,9 @@ namespace DimensionBrawl.Tests
             yield return QueueDodgeUntilStep(
                 tutorialDirector,
                 actionController,
+                player,
+                flowController,
+                combatCamera,
                 "ClearTargets",
                 5f,
                 report);
@@ -698,6 +804,10 @@ namespace DimensionBrawl.Tests
             CombatHealth[] tutorialTargets =
                 ReadPrivateField<CombatHealth[]>(tutorialDirector, "tutorialTargets");
             Assert.That(tutorialTargets.Length, Is.GreaterThan(0));
+            Scene corridorSceneBeforeTutorialCompletion = SceneManager.GetActiveScene();
+            int playerInstanceIdBeforeTutorialCompletion = player.gameObject.GetInstanceID();
+            string runIdBeforeTutorialCompletion = flowController.CanonicalStageRunId;
+            Vector3 playerPositionBeforeTutorialCompletion = player.transform.position;
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 CombatHealth target = tutorialTargets[i];
@@ -714,6 +824,7 @@ namespace DimensionBrawl.Tests
             }
 
             yield return WaitForStep(tutorialDirector, "Completed", 4f, report);
+            rangedBasicAttackAction.SetFireHeld(false);
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 if (tutorialTargets[i] != null)
@@ -732,15 +843,24 @@ namespace DimensionBrawl.Tests
             report.AppendLine("- Move gate: `0.75m` confirmed position movement inside the tutorial area.");
             report.AppendLine("- Fire gate: `0.7s` real aim preview hold after Ready + fire event + player-side target damage/death.");
             report.AppendLine("- Clear gate: all tutorial targets defeated.");
-            yield return WaitForActiveScenePath(StationScenePath, 5f);
-            report.AppendLine($"- Tutorial completion scene: `{SceneManager.GetActiveScene().path}`.");
+            yield return WalkDownAuthoredStairsThroughJoystick(
+                flowController,
+                player,
+                combatCamera,
+                corridorSceneBeforeTutorialCompletion,
+                playerInstanceIdBeforeTutorialCompletion,
+                runIdBeforeTutorialCompletion,
+                playerPositionBeforeTutorialCompletion,
+                report,
+                18f);
+            report.AppendLine($"- Tutorial completion and stair traversal scene: `{SceneManager.GetActiveScene().path}`.");
             Directory.CreateDirectory(Path.GetDirectoryName(TutorialTimingReportPath));
             File.WriteAllText(TutorialTimingReportPath, report.ToString());
         }
 
         [UnityTest]
         [Timeout(90000)]
-        public IEnumerator CanonicalFullRouteCompletesTutorialStationGuideVictoryAndRetry()
+        public IEnumerator CanonicalFullRouteCompletesTutorialStationGuideVictoryAndReplay()
         {
             var report = new StringBuilder();
             report.AppendLine("# Olympus Canonical Full Route");
@@ -748,7 +868,7 @@ namespace DimensionBrawl.Tests
             report.AppendLine("- Corridor intro uses the production skip handoff.");
             report.AppendLine("- Tutorial steps use runtime action queues and the EventSystem joystick path.");
             report.AppendLine("- Station entry guide advances through its public request surface.");
-            report.AppendLine("- Victory uses the authored encounter health binding and Retry uses the real button listener.");
+            report.AppendLine("- Victory commits a Clear result and Replay uses the real typed-action button listener.");
             report.AppendLine();
 
             OlympusCorridorCombatFlowController flow =
@@ -767,6 +887,9 @@ namespace DimensionBrawl.Tests
             PlayerRangedBasicAttackAction rangedAttack = RequireComponent<PlayerRangedBasicAttackAction>(
                 PlayerRootName,
                 "player ranged basic action");
+            Camera combatCamera = RequireComponent<Camera>(
+                CombatCameraName,
+                "combat camera");
 
             flow.SkipIntroCutscene();
             yield return null;
@@ -784,7 +907,14 @@ namespace DimensionBrawl.Tests
                 "melee hit",
                 8f,
                 report);
-            yield return MoveUntilStep(tutorial, player, "SwapToRanged", 8f, report);
+            yield return MoveUntilStep(
+                tutorial,
+                player,
+                flow,
+                combatCamera,
+                "SwapToRanged",
+                8f,
+                report);
             yield return QueueSwapUntilStep(tutorial, combatModeController, "Fire", 5f, report);
             yield return WaitForPhase(tutorial, "AwaitingAction", 3f, report);
 
@@ -794,6 +924,9 @@ namespace DimensionBrawl.Tests
             yield return QueueDodgeUntilStep(
                 tutorial,
                 actionController,
+                player,
+                flow,
+                combatCamera,
                 "ClearTargets",
                 5f,
                 report);
@@ -802,6 +935,10 @@ namespace DimensionBrawl.Tests
             CombatHealth[] tutorialTargets =
                 ReadPrivateField<CombatHealth[]>(tutorial, "tutorialTargets");
             Assert.That(tutorialTargets, Is.Not.Empty);
+            Scene corridorSceneBeforeTutorialCompletion = SceneManager.GetActiveScene();
+            int playerInstanceIdBeforeTutorialCompletion = player.gameObject.GetInstanceID();
+            string runIdBeforeTutorialCompletion = flow.CanonicalStageRunId;
+            Vector3 playerPositionBeforeTutorialCompletion = player.transform.position;
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 CombatHealth target = tutorialTargets[i];
@@ -809,17 +946,33 @@ namespace DimensionBrawl.Tests
                 Assert.That(ApplyLethalDamage(target, DamageTeam.Player), Is.True);
             }
 
-            yield return WaitForActiveScenePath(StationScenePath, 8f);
-            report.AppendLine($"- Station scene loaded: `{SceneManager.GetActiveScene().path}`.");
+            yield return WalkDownAuthoredStairsThroughJoystick(
+                flow,
+                player,
+                combatCamera,
+                corridorSceneBeforeTutorialCompletion,
+                playerInstanceIdBeforeTutorialCompletion,
+                runIdBeforeTutorialCompletion,
+                playerPositionBeforeTutorialCompletion,
+                report,
+                18f);
+            report.AppendLine("- Player walked down the authored stairs into lower combat without a scene load.");
 
             Behaviour stationGuide = RequireActiveSceneBehaviour(
                 "DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge");
             yield return CompleteStationGuide(stationGuide, report, 12f);
+            yield return new WaitForSecondsRealtime(0.05f);
 
             CombatEncounterController encounter =
                 UnityEngine.Object.FindFirstObjectByType<CombatEncounterController>();
             Assert.That(encounter, Is.Not.Null);
-            Assert.That(encounter.IsRunning, Is.True);
+            Assert.That(encounter.UsesCoordinatedTerminalResolution, Is.True);
+            Assert.That(
+                encounter.IsRunning,
+                Is.True,
+                $"Station encounter was not running before authored victory. "
+                + $"Won={encounter.IsWon}, Failed={encounter.IsFailed}, Faulted={encounter.IsFaulted}, "
+                + $"Diagnostic={encounter.Diagnostic.Reason}: {encounter.Diagnostic.Message}");
             CombatHealth bossHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
             Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
             Assert.That(encounter.IsWon, Is.True);
@@ -838,6 +991,40 @@ namespace DimensionBrawl.Tests
             }
 
             Button retryButton = ReadPrivateField<Button>(clearPresenter, "retryButton");
+            Assert.That(clearPresenter.IsConfigured, Is.True, clearPresenter.LastActionError);
+            Assert.That(clearPresenter.ResultSummary.Outcome, Is.EqualTo(StageRouteOutcome.Clear));
+            StageRunResultSummary fullRouteSummary = clearPresenter.ResultSummary;
+            Assert.That(fullRouteSummary.OutcomeFact.OutcomeDisposition, Is.EqualTo(StageOutcomeDisposition.Clear));
+            Assert.That(fullRouteSummary.OutcomeFact.ClearReason, Is.EqualTo(StageClearReason.BossTerminal));
+            Assert.That(fullRouteSummary.OutcomeFact.TotalActiveElapsedMilliseconds, Is.GreaterThan(0));
+            Assert.That(fullRouteSummary.OutcomeFact.CombatActiveElapsedMilliseconds, Is.GreaterThan(0));
+            Assert.That(
+                fullRouteSummary.OutcomeFact.TotalActiveElapsedMilliseconds,
+                Is.GreaterThan(fullRouteSummary.OutcomeFact.CombatActiveElapsedMilliseconds));
+            Assert.That(fullRouteSummary.SegmentResultCount, Is.EqualTo(2));
+            Assert.That(fullRouteSummary.GetSegmentResult(0).Completed, Is.True);
+            Assert.That(fullRouteSummary.GetSegmentResult(0).ActiveElapsedMilliseconds, Is.GreaterThan(0));
+            Assert.That(fullRouteSummary.GetSegmentResult(1).Completed, Is.True);
+            Assert.That(
+                fullRouteSummary.TutorialRouteSummaryFact.RouteState,
+                Is.EqualTo(StageTutorialRouteState.Completed));
+            Assert.That(
+                fullRouteSummary.TutorialRouteSummaryFact.ObservationElapsedMilliseconds,
+                Is.GreaterThan(0));
+            Assert.That(fullRouteSummary.TutorialRouteSummaryFact.CoverageCount, Is.EqualTo(7));
+            Assert.That(
+                fullRouteSummary.TutorialRouteSummaryFact.GetCoverage(0).LessonId,
+                Is.EqualTo("soldier_challenge"));
+            Assert.That(
+                fullRouteSummary.TutorialRouteSummaryFact.GetCoverage(6).LessonId,
+                Is.EqualTo("clear_targets"));
+            Assert.That(
+                fullRouteSummary.TryGetSemanticProof(
+                    StageRunFactVocabulary.SurvivalNoPlayerDownProofId,
+                    out StageRunSemanticProofFact fullRouteSurvivalProof),
+                Is.True);
+            Assert.That(fullRouteSurvivalProof.Qualified, Is.True);
+            Assert.That(clearPresenter.PrimaryActionId, Is.EqualTo("olympus-invasion.replay"));
             Assert.That(retryButton, Is.Not.Null);
             Assert.That(retryButton.IsInteractable(), Is.True);
             retryButton.onClick.Invoke();
@@ -846,14 +1033,14 @@ namespace DimensionBrawl.Tests
             OlympusCorridorCombatFlowController freshFlow =
                 RequireComponent<OlympusCorridorCombatFlowController>(
                     FlowRootName,
-                    "fresh retry flow controller");
+                    "fresh replay flow controller");
             GameObject freshPlayer = RequireSceneObject(PlayerRootName);
             Assert.That(freshFlow.StageCleared, Is.False);
             Assert.That(freshFlow.StageClearOverlayShown, Is.False);
             Assert.That(freshPlayer.activeInHierarchy, Is.False);
             Assert.That(SceneManager.GetSceneByName("UI_StageClear").isLoaded, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
-            report.AppendLine("- Retry loaded a fresh Corridor intro run.");
+            report.AppendLine("- Replay loaded a fresh Corridor intro run.");
             report.AppendLine();
             report.AppendLine("RESULT: PASS");
 
@@ -929,7 +1116,7 @@ namespace DimensionBrawl.Tests
                 yield return DriveUntilStep(
                     tutorialDirector,
                     "SwapToRanged",
-                    8f,
+                    12f,
                     "move input diagnostic",
                     report,
                     () => player.SetMoveInput(Vector2.up),
@@ -1077,9 +1264,594 @@ namespace DimensionBrawl.Tests
             AppendStepTiming(report, expectedStep, triggerLabel, frames, gameplayStartedAt);
         }
 
+        private sealed class MoveJoystickGesture
+        {
+            private readonly PointerEventData pointerData;
+            private readonly Vector2 center;
+            private readonly float dragDistance;
+            private bool released;
+
+            public MoveJoystickGesture(
+                Behaviour joystick,
+                PointerEventData newPointerData,
+                Vector2 newCenter,
+                float newDragDistance)
+            {
+                Joystick = joystick;
+                pointerData = newPointerData;
+                center = newCenter;
+                dragDistance = newDragDistance;
+            }
+
+            public Behaviour Joystick { get; }
+
+            public void Drag(Vector2 input)
+            {
+                Assert.IsFalse(released, "A released joystick pointer cannot be dragged again.");
+                Assert.IsNotNull(pointerData.pointerDrag, "The move joystick lost its drag handler.");
+                Vector2 clampedInput = Vector2.ClampMagnitude(input, 1f);
+                pointerData.position = center + clampedInput * dragDistance;
+                ExecuteEvents.Execute(pointerData.pointerDrag, pointerData, ExecuteEvents.dragHandler);
+            }
+
+            public void Release()
+            {
+                if (released)
+                {
+                    return;
+                }
+
+                released = true;
+                if (pointerData.pointerPress != null)
+                {
+                    ExecuteEvents.Execute(
+                        pointerData.pointerPress,
+                        pointerData,
+                        ExecuteEvents.pointerUpHandler);
+                }
+            }
+        }
+
+        private static MoveJoystickGesture BeginMoveJoystickGesture(
+            PlayerMovementController player,
+            int pointerId)
+        {
+            Behaviour joystick = RequireBehaviourByTypeName(
+                "MoveJoystickRing",
+                "DimensionBrawl.UI.CombatHudVirtualJoystick");
+            Image joystickImage = joystick.GetComponent<Image>();
+            Assert.IsNotNull(joystickImage, "The virtual joystick needs a Graphic for EventSystem raycasts.");
+            Assert.IsTrue(
+                joystickImage.raycastTarget,
+                "The virtual joystick Graphic must accept raycasts or real touch input cannot reach its pointer handlers.");
+            Assert.AreSame(
+                player,
+                ReadPrivateField<PlayerMovementController>(joystick, "movementController"),
+                "The scene joystick must drive the active corridor player.");
+
+            EventSystem eventSystem = EventSystem.current;
+            Assert.IsNotNull(eventSystem, "The corridor scene needs an active EventSystem for the virtual joystick.");
+
+            RectTransform joystickRect = joystick.GetComponent<RectTransform>();
+            Canvas canvas = joystick.GetComponentInParent<Canvas>();
+            Assert.IsNotNull(canvas, "The virtual joystick must be under a Canvas.");
+            Camera eventCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+            Vector2 center = RectTransformUtility.WorldToScreenPoint(
+                eventCamera,
+                joystickRect.TransformPoint(joystickRect.rect.center));
+
+            var pointerData = new PointerEventData(eventSystem)
+            {
+                pointerId = pointerId,
+                button = PointerEventData.InputButton.Left,
+                position = center,
+                pressPosition = center
+            };
+            var raycastResults = new List<RaycastResult>();
+            eventSystem.RaycastAll(pointerData, raycastResults);
+
+            GameObject raycastTarget = null;
+            RaycastResult joystickRaycast = default;
+            for (int i = 0; i < raycastResults.Count; i++)
+            {
+                RaycastResult candidate = raycastResults[i];
+                if (ExecuteEvents.GetEventHandler<IPointerDownHandler>(candidate.gameObject) != joystick.gameObject)
+                {
+                    continue;
+                }
+
+                raycastTarget = candidate.gameObject;
+                joystickRaycast = candidate;
+                break;
+            }
+
+            Assert.IsNotNull(
+                raycastTarget,
+                "A real EventSystem raycast at the visible move stick must resolve to the virtual joystick.");
+
+            pointerData.pointerCurrentRaycast = joystickRaycast;
+            pointerData.pointerPressRaycast = joystickRaycast;
+            pointerData.rawPointerPress = raycastTarget;
+            pointerData.pointerPress = ExecuteEvents.ExecuteHierarchy(
+                raycastTarget,
+                pointerData,
+                ExecuteEvents.pointerDownHandler);
+            pointerData.pointerDrag = ExecuteEvents.GetEventHandler<IDragHandler>(raycastTarget);
+            Assert.AreSame(
+                joystick.gameObject,
+                pointerData.pointerPress,
+                "The EventSystem should select the virtual joystick as the pointer-down handler.");
+            Assert.AreSame(
+                joystick.gameObject,
+                pointerData.pointerDrag,
+                "The EventSystem should select the virtual joystick as the drag handler.");
+
+            float dragDistance = Mathf.Max(48f, joystickRect.rect.width * 0.3f);
+            return new MoveJoystickGesture(joystick, pointerData, center, dragDistance);
+        }
+
+        private static IEnumerator WalkDownAuthoredStairsThroughJoystick(
+            OlympusCorridorCombatFlowController flowController,
+            PlayerMovementController player,
+            Camera combatCamera,
+            Scene expectedScene,
+            int expectedPlayerInstanceId,
+            string expectedRunId,
+            Vector3 positionBeforeTutorialCompletion,
+            StringBuilder report,
+            float timeoutSeconds)
+        {
+            Assert.IsNotNull(flowController);
+            Assert.IsNotNull(player);
+            Assert.IsNotNull(combatCamera);
+            Assert.That(expectedScene.IsValid(), Is.True);
+            Assert.That(expectedRunId, Is.Not.Empty, "The canonical run must exist before tutorial completion.");
+
+            Collider[] stairBlockers = ReadPrivateField<Collider[]>(flowController, "stairBlockers");
+            float readyStartedAt = Time.realtimeSinceStartup;
+            while (!flowController.TutorialCompleted
+                || player.IsCinematicMoveInputLocked
+                || HasEnabledCollider(stairBlockers))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - readyStartedAt,
+                    3f,
+                    "Tutorial completion did not release the player and stair blockers.");
+                AssertCanonicalTraversalContinuity(
+                    flowController,
+                    player,
+                    expectedScene,
+                    expectedPlayerInstanceId,
+                    expectedRunId);
+                yield return null;
+            }
+
+            Assert.That(flowController.CorridorCombatStarted, Is.False);
+            Assert.That(
+                Vector3.Distance(player.transform.position, positionBeforeTutorialCompletion),
+                Is.LessThan(1.25f),
+                "Tutorial completion must not teleport the player to the stair trigger.");
+
+            BoxCollider upperLandingSupport = RequireSceneObject(
+                "OlympusCorridor_IntroUpperLandingTraversalSupport").GetComponent<BoxCollider>();
+            BoxCollider stairTraversalSupport = RequireSceneObject(
+                "OlympusCorridor_IntroStairTraversalSupport").GetComponent<BoxCollider>();
+            Assert.IsNotNull(upperLandingSupport);
+            Assert.IsNotNull(stairTraversalSupport);
+            Assert.IsTrue(upperLandingSupport.enabled);
+            Assert.IsTrue(stairTraversalSupport.enabled);
+            Assert.IsFalse(upperLandingSupport.isTrigger);
+            Assert.IsFalse(stairTraversalSupport.isTrigger);
+            Assert.That(upperLandingSupport.gameObject.scene.handle, Is.EqualTo(expectedScene.handle));
+            Assert.That(stairTraversalSupport.gameObject.scene.handle, Is.EqualTo(expectedScene.handle));
+
+            GameObject triggerObject = RequireSceneObject("OlympusCorridor_StairToCorridorCombatTrigger");
+            SphereCollider stairTrigger = triggerObject.GetComponent<SphereCollider>();
+            Assert.IsNotNull(stairTrigger);
+            Assert.IsTrue(stairTrigger.enabled);
+            Assert.IsTrue(stairTrigger.isTrigger);
+            Assert.That(stairTrigger.gameObject.scene.handle, Is.EqualTo(expectedScene.handle));
+            Assert.AreSame(
+                stairTrigger.transform,
+                ReadPrivateField<Transform>(flowController, "stairTriggerCenter"));
+            float triggerRadius = ReadPrivateField<float>(flowController, "stairTriggerRadius");
+            Assert.That(triggerRadius, Is.EqualTo(stairTrigger.radius).Within(0.001f));
+
+            Assert.IsTrue(ReadPrivateField<bool>(player, "cameraRelativeMovement"));
+            Assert.AreSame(
+                combatCamera,
+                ReadPrivateField<Camera>(player, "referenceCamera"),
+                "The stair joystick projection must use the player's authored movement camera.");
+
+            CharacterController characterController = player.GetComponent<CharacterController>();
+            Assert.IsNotNull(characterController);
+            Assert.IsTrue(characterController.enabled);
+
+            Vector3 startPosition = player.transform.position;
+            Transform stairEntryAnchor = ReadPrivateField<Transform>(flowController, "stairEntryAnchor");
+            Assert.IsNotNull(stairEntryAnchor);
+            Vector3 triggerPosition = stairTrigger.transform.TransformPoint(stairTrigger.center);
+            Transform lowerPlayerStart = RequireSceneObject("PlayerStartAnchor").transform;
+            Assert.That(
+                Vector3.Distance(triggerPosition, lowerPlayerStart.position),
+                Is.LessThan(0.01f),
+                "The Station-entry trigger must use the authored lower PlayerStartAnchor instead of a hard-coded midpoint.");
+
+            Transform lowerCombatPlacement = RequireSceneObject("OlympusCorridor_CombatPocketPlacement").transform;
+            Transform lowerCombatRuntimeRoot = RequireSceneObject("OlympusStation_LowerCombatRuntimeRoot").transform;
+            Assert.That(
+                Vector3.Distance(lowerCombatRuntimeRoot.position, lowerCombatPlacement.position),
+                Is.LessThan(0.01f));
+            Assert.That(
+                Quaternion.Angle(lowerCombatRuntimeRoot.rotation, lowerCombatPlacement.rotation),
+                Is.LessThan(0.1f));
+            GameObject encounterObject = RequireSceneObject("CombatEncounter");
+            GameObject bossObject = RequireSceneObject("BossBarrageLaneReview_BossProxy_NeedleLock");
+            Assert.AreSame(lowerCombatRuntimeRoot, encounterObject.transform.parent);
+            Assert.AreSame(lowerCombatRuntimeRoot, bossObject.transform.parent);
+            Assert.That(
+                Vector3.Distance(encounterObject.transform.position, lowerCombatPlacement.position),
+                Is.LessThan(0.01f),
+                "The Station encounter must be restored to the authored lower combat frame.");
+            Assert.That(
+                Vector3.Distance(
+                    bossObject.transform.position,
+                    lowerCombatPlacement.TransformPoint(new Vector3(0f, 1.6f, 18f))),
+                Is.LessThan(0.02f),
+                "The Station boss must use its original direct-root pose under the lower combat frame.");
+            Vector3 canonicalRouteDirection = Vector3.ProjectOnPlane(
+                triggerPosition - stairEntryAnchor.position,
+                Vector3.up).normalized;
+            Vector3 canonicalRouteRight = Vector3.Cross(Vector3.up, canonicalRouteDirection).normalized;
+            float routeHalfWidth = Mathf.Min(
+                upperLandingSupport.size.x,
+                stairTraversalSupport.size.x) * 0.5f;
+            float startLateralOffset = Mathf.Abs(Vector3.Dot(
+                startPosition - stairEntryAnchor.position,
+                canonicalRouteRight));
+            Assert.That(
+                startLateralOffset,
+                Is.LessThanOrEqualTo(routeHalfWidth - characterController.radius + 0.25f),
+                "The tutorial must finish inside the authored upper landing route width.");
+
+            float directPlanarDistance = Vector3.ProjectOnPlane(triggerPosition - startPosition, Vector3.up).magnitude;
+            float expectedVerticalDescent = startPosition.y - triggerPosition.y;
+            Assert.That(directPlanarDistance, Is.GreaterThan(25f));
+            Assert.That(expectedVerticalDescent, Is.GreaterThan(5f));
+
+            float authoredMoveSpeed = ReadPrivateField<float>(player, "moveSpeed");
+            Assert.That(authoredMoveSpeed, Is.GreaterThan(0f));
+            float walkStartedAt = Time.realtimeSinceStartup;
+            float planarTravelDistance = 0f;
+            float furthestRouteProgress = Vector3.Dot(
+                Vector3.ProjectOnPlane(startPosition - stairEntryAnchor.position, Vector3.up),
+                canonicalRouteDirection);
+            int movementFrames = 0;
+            Vector3 previousPosition = startPosition;
+            var gesture = BeginMoveJoystickGesture(player, 72);
+            Assert.IsFalse(
+                ReadPublicProperty<bool>(gesture.Joystick, "IsInputBlocked"),
+                "The move joystick must be available after tutorial completion.");
+
+            try
+            {
+                while (!flowController.CorridorCombatStarted)
+                {
+                    Assert.Less(
+                        Time.realtimeSinceStartup - walkStartedAt,
+                        timeoutSeconds,
+                        "Timed out while physically walking down the authored stairs. "
+                        + $"start={startPosition}, player={player.transform.position}, trigger={triggerPosition}, "
+                        + $"distance={Vector3.Distance(player.transform.position, triggerPosition):0.00}, "
+                        + $"travel={planarTravelDistance:0.00}, "
+                        + $"upperLocal={upperLandingSupport.transform.InverseTransformPoint(player.transform.position)}, "
+                        + $"stairLocal={stairTraversalSupport.transform.InverseTransformPoint(player.transform.position)}, "
+                        + $"joystick={ReadPublicProperty<Vector2>(gesture.Joystick, "CurrentInput")}, "
+                        + $"mobile={ReadPrivateField<Vector2>(player, "mobileMoveInput")}, "
+                        + $"moveDirection={player.CurrentMoveDirection}, "
+                        + $"planarVelocity={player.PlanarVelocity}, "
+                        + $"cameraForward={Vector3.ProjectOnPlane(combatCamera.transform.forward, Vector3.up).normalized}, "
+                        + $"targetAlignment={Vector3.Dot(player.CurrentMoveDirection, Vector3.ProjectOnPlane(triggerPosition - player.transform.position, Vector3.up).normalized):0.000}, "
+                        + $"velocity={characterController.velocity}, "
+                        + $"nearby={DescribeNearbyColliders(player.transform.position)}, "
+                        + $"surfaces={DescribePathSurfaces(player.transform.position, triggerPosition)}.");
+                    AssertCanonicalTraversalContinuity(
+                        flowController,
+                        player,
+                        expectedScene,
+                        expectedPlayerInstanceId,
+                        expectedRunId);
+                    Assert.IsTrue(characterController.enabled);
+
+                    float distanceBeforeMove = Vector3.Distance(player.transform.position, triggerPosition);
+                    if (distanceBeforeMove > triggerRadius)
+                    {
+                        Assert.IsFalse(
+                            flowController.CorridorCombatStarted,
+                            "Lower combat must remain closed before the player physically reaches the trigger.");
+                        Vector2 joystickInput = ResolveCameraRelativeJoystickInput(
+                            player.transform.position,
+                            triggerPosition,
+                            combatCamera);
+                        gesture.Drag(joystickInput);
+                        Assert.That(
+                            ReadPublicProperty<Vector2>(gesture.Joystick, "CurrentInput").sqrMagnitude,
+                            Is.GreaterThan(0.5f),
+                            "The EventSystem drag must keep a real movement value on the virtual joystick.");
+                    }
+                    else
+                    {
+                        gesture.Drag(Vector2.zero);
+                    }
+
+                    yield return null;
+                    movementFrames++;
+
+                    Vector3 currentPosition = player.transform.position;
+                    float planarStep = Vector3.ProjectOnPlane(
+                        currentPosition - previousPosition,
+                        Vector3.up).magnitude;
+                    float maximumFrameStep = authoredMoveSpeed * Mathf.Max(Time.deltaTime, 0.001f) * 1.5f + 0.18f;
+                    Assert.That(
+                        planarStep,
+                        Is.LessThanOrEqualTo(maximumFrameStep),
+                        "Player displacement exceeded the authored walking budget; a transform snap likely occurred.");
+                    planarTravelDistance += planarStep;
+                    previousPosition = currentPosition;
+
+                    float routeProgress = Vector3.Dot(
+                        Vector3.ProjectOnPlane(currentPosition - stairEntryAnchor.position, Vector3.up),
+                        canonicalRouteDirection);
+                    float lateralOffset = Mathf.Abs(Vector3.Dot(
+                        currentPosition - stairEntryAnchor.position,
+                        canonicalRouteRight));
+                    Assert.That(
+                        lateralOffset,
+                        Is.LessThanOrEqualTo(routeHalfWidth - characterController.radius + 0.25f),
+                        "The joystick route left the authored stair width.");
+                    Assert.That(
+                        routeProgress,
+                        Is.GreaterThanOrEqualTo(furthestRouteProgress - 0.6f),
+                        "The stair traversal unexpectedly reversed instead of walking toward lower combat.");
+                    furthestRouteProgress = Mathf.Max(furthestRouteProgress, routeProgress);
+                    float supportDistance = Mathf.Min(
+                        Vector3.Distance(upperLandingSupport.ClosestPoint(currentPosition), currentPosition),
+                        Vector3.Distance(stairTraversalSupport.ClosestPoint(currentPosition), currentPosition));
+                    bool hasGroundRay = TryFindAuthoredGroundSurface(
+                        currentPosition,
+                        expectedScene,
+                        out RaycastHit groundHit);
+                    Assert.IsTrue(
+                        characterController.isGrounded || hasGroundRay,
+                        $"No authored non-trigger ground remained beneath the walking player at {currentPosition}; "
+                        + $"controllerGrounded={characterController.isGrounded}, "
+                        + $"routeProgress={routeProgress:0.00}, lateral={lateralOffset:0.00}, "
+                        + $"supportDistance={supportDistance:0.000}.");
+                    if (hasGroundRay)
+                    {
+                        Assert.That(
+                            currentPosition.y - groundHit.point.y,
+                            Is.InRange(-0.05f, 1.1f),
+                            $"The player lost contact with the authored stair/floor surface. "
+                            + $"surface={groundHit.collider.name}, hit={groundHit.point}, player={currentPosition}.");
+                    }
+
+                    if (flowController.CorridorCombatStarted)
+                    {
+                        Assert.That(
+                            Vector3.Distance(currentPosition, triggerPosition),
+                            Is.LessThanOrEqualTo(triggerRadius + 0.05f),
+                            "Lower combat opened before the player entered the three-dimensional trigger.");
+                    }
+                }
+            }
+            finally
+            {
+                gesture.Release();
+            }
+
+            yield return null;
+            Vector3 finalPosition = player.transform.position;
+            Assert.IsTrue(
+                player.LaneConstraintEnabled,
+                "The authored Station lane constraint must re-enable after the physical stair entry.");
+            float walkElapsedSeconds = Time.realtimeSinceStartup - walkStartedAt;
+            AssertCanonicalTraversalContinuity(
+                flowController,
+                player,
+                expectedScene,
+                expectedPlayerInstanceId,
+                expectedRunId);
+            Assert.That(flowController.CorridorCombatStarted, Is.True);
+            Assert.That(movementFrames, Is.GreaterThanOrEqualTo(30));
+            Assert.That(walkElapsedSeconds, Is.GreaterThanOrEqualTo(3f));
+            Assert.That(planarTravelDistance, Is.GreaterThanOrEqualTo(directPlanarDistance * 0.82f));
+            Assert.That(startPosition.y - finalPosition.y, Is.GreaterThanOrEqualTo(5f));
+            Assert.That(
+                Vector3.Distance(finalPosition, triggerPosition),
+                Is.LessThanOrEqualTo(triggerRadius + 0.05f));
+            Assert.IsFalse(ReadPublicProperty<bool>(gesture.Joystick, "IsPointerHeld"));
+            Assert.That(
+                ReadPublicProperty<Vector2>(gesture.Joystick, "CurrentInput").sqrMagnitude,
+                Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(ReadPrivateField<Vector2>(player, "mobileMoveInput").sqrMagnitude, Is.EqualTo(0f).Within(0.0001f));
+            Assert.IsFalse(player.HasMoveInput, "Pointer-up must leave no movement input behind.");
+
+            report.AppendLine(
+                $"- Stair traversal via EventSystem joystick: `{movementFrames}` frames, "
+                + $"`{walkElapsedSeconds:0.000}s`, `{planarTravelDistance:0.00}m` planar travel, "
+                + $"`{startPosition.y - finalPosition.y:0.00}m` descent.");
+        }
+
+        private static bool HasEnabledCollider(Collider[] colliders)
+        {
+            if (colliders == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].enabled)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string DescribeNearbyColliders(Vector3 position)
+        {
+            Collider[] nearby = Physics.OverlapSphere(
+                position,
+                2f,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+            var description = new StringBuilder();
+            for (int i = 0; i < nearby.Length; i++)
+            {
+                Collider collider = nearby[i];
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                if (description.Length > 0)
+                {
+                    description.Append('|');
+                }
+
+                description.Append(collider.name);
+                description.Append(':');
+                description.Append(collider.GetType().Name);
+            }
+
+            return description.ToString();
+        }
+
+        private static string DescribePathSurfaces(Vector3 position, Vector3 target)
+        {
+            Vector3 direction = Vector3.ProjectOnPlane(target - position, Vector3.up).normalized;
+            var description = new StringBuilder();
+            for (int sample = 0; sample < 5; sample++)
+            {
+                Vector3 samplePosition = position + direction * (sample * 0.75f);
+                RaycastHit[] hits = Physics.RaycastAll(
+                    samplePosition + Vector3.up * 4f,
+                    Vector3.down,
+                    8f,
+                    Physics.AllLayers,
+                    QueryTriggerInteraction.Ignore);
+                System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+                if (description.Length > 0)
+                {
+                    description.Append('/');
+                }
+
+                description.Append(sample);
+                description.Append('=');
+                int appended = 0;
+                for (int hitIndex = 0; hitIndex < hits.Length && appended < 3; hitIndex++)
+                {
+                    Collider collider = hits[hitIndex].collider;
+                    if (collider == null || collider is CharacterController)
+                    {
+                        continue;
+                    }
+
+                    if (appended > 0)
+                    {
+                        description.Append('|');
+                    }
+
+                    description.Append(collider.name);
+                    description.Append('@');
+                    description.Append(hits[hitIndex].point.y.ToString("0.00"));
+                    appended++;
+                }
+            }
+
+            return description.ToString();
+        }
+
+        private static bool TryFindAuthoredGroundSurface(
+            Vector3 playerPosition,
+            Scene expectedScene,
+            out RaycastHit groundHit)
+        {
+            RaycastHit[] hits = Physics.RaycastAll(
+                playerPosition + Vector3.up * 1.5f,
+                Vector3.down,
+                3f,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Collider collider = hits[i].collider;
+                if (collider == null
+                    || collider is CharacterController
+                    || collider.isTrigger
+                    || collider.gameObject.scene.handle != expectedScene.handle
+                    || hits[i].point.y > playerPosition.y + 0.05f)
+                {
+                    continue;
+                }
+
+                groundHit = hits[i];
+                return true;
+            }
+
+            groundHit = default;
+            return false;
+        }
+
+        private static void AssertCanonicalTraversalContinuity(
+            OlympusCorridorCombatFlowController flowController,
+            PlayerMovementController player,
+            Scene expectedScene,
+            int expectedPlayerInstanceId,
+            string expectedRunId)
+        {
+            Assert.That(SceneManager.GetActiveScene().handle, Is.EqualTo(expectedScene.handle));
+            Assert.That(player.gameObject.scene.handle, Is.EqualTo(expectedScene.handle));
+            Assert.That(player.gameObject.GetInstanceID(), Is.EqualTo(expectedPlayerInstanceId));
+            Assert.That(flowController.gameObject.scene.handle, Is.EqualTo(expectedScene.handle));
+            Assert.That(flowController.CanonicalStageRunId, Is.EqualTo(expectedRunId));
+            Assert.IsFalse(
+                SceneManager.GetSceneByPath(StationScenePath).isLoaded,
+                "The authored stair traversal must not load the duplicate Station scene.");
+        }
+
+        private static Vector2 ResolveCameraRelativeJoystickInput(
+            Vector3 playerPosition,
+            Vector3 targetPosition,
+            Camera movementCamera)
+        {
+            Vector3 desiredDirection = Vector3.ProjectOnPlane(targetPosition - playerPosition, Vector3.up);
+            Assert.That(desiredDirection.sqrMagnitude, Is.GreaterThan(0.0001f));
+            desiredDirection.Normalize();
+
+            Vector3 cameraForward = Vector3.ProjectOnPlane(movementCamera.transform.forward, Vector3.up);
+            Vector3 cameraRight = Vector3.ProjectOnPlane(movementCamera.transform.right, Vector3.up);
+            Assert.That(cameraForward.sqrMagnitude, Is.GreaterThan(0.0001f));
+            Assert.That(cameraRight.sqrMagnitude, Is.GreaterThan(0.0001f));
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+
+            return Vector2.ClampMagnitude(
+                new Vector2(
+                    Vector3.Dot(desiredDirection, cameraRight),
+                    Vector3.Dot(desiredDirection, cameraForward)),
+                1f);
+        }
+
         private static IEnumerator MoveUntilStep(
             OlympusCorridorTutorialDirector tutorialDirector,
             PlayerMovementController player,
+            OlympusCorridorCombatFlowController flowController,
+            Camera combatCamera,
             string expectedStep,
             float timeoutSeconds,
             StringBuilder report)
@@ -1165,8 +1937,20 @@ namespace DimensionBrawl.Tests
                 ReadPublicProperty<bool>(joystick, "IsPointerHeld"),
                 "A pointer pressed during the cue must not drive movement before the action window opens.");
 
+            Transform stairTriggerCenter = ReadPrivateField<Transform>(flowController, "stairTriggerCenter");
+            Assert.IsNotNull(stairTriggerCenter, "The Move lesson needs the authored stair destination.");
+            Assert.IsNotNull(combatCamera, "The Move lesson needs the player's authored movement camera.");
+            Assert.AreSame(
+                combatCamera,
+                ReadPrivateField<Camera>(player, "referenceCamera"),
+                "The Move lesson and the stair walk must use the same authored movement camera.");
+
             float dragDistance = Mathf.Max(48f, joystickRect.rect.width * 0.3f);
-            pointerData.position = center + Vector2.up * dragDistance;
+            Vector2 routeForwardInput = ResolveCameraRelativeJoystickInput(
+                player.transform.position,
+                stairTriggerCenter.position,
+                combatCamera);
+            pointerData.position = center + routeForwardInput * dragDistance;
             ExecuteEvents.Execute(pointerData.pointerDrag, pointerData, ExecuteEvents.dragHandler);
 
             while (tutorialDirector.CurrentPhaseId != "AwaitingAction")
@@ -1239,6 +2023,24 @@ namespace DimensionBrawl.Tests
                 movedDistance,
                 0.65f,
                 "Move tutorial should require a visible amount of player displacement, not only a run-start event.");
+            Vector3 routeDirection = Vector3.ProjectOnPlane(
+                stairTriggerCenter.position - startPosition,
+                Vector3.up).normalized;
+            Vector3 routeDisplacement = Vector3.ProjectOnPlane(
+                player.transform.position - startPosition,
+                Vector3.up);
+            Assert.That(
+                Vector3.Dot(routeDisplacement, routeDirection),
+                Is.GreaterThan(0.35f),
+                "The Move lesson must advance toward the authored stair route, not merely move in any direction.");
+            Assert.That(
+                Vector3.ProjectOnPlane(
+                    stairTriggerCenter.position - player.transform.position,
+                    Vector3.up).magnitude,
+                Is.LessThan(Vector3.ProjectOnPlane(
+                    stairTriggerCenter.position - startPosition,
+                    Vector3.up).magnitude - 0.4f),
+                "The Move lesson must reduce planar distance to the stair destination.");
             report.AppendLine($"- Move displacement before completion: `{movedDistance:0.00}m`.");
             AppendStepTiming(report, expectedStep, "EventSystem joystick drag", frames, gameplayStartedAt);
         }
@@ -1294,6 +2096,9 @@ namespace DimensionBrawl.Tests
         private static IEnumerator QueueDodgeUntilStep(
             OlympusCorridorTutorialDirector tutorialDirector,
             PlayerActionController actionController,
+            PlayerMovementController player,
+            OlympusCorridorCombatFlowController flowController,
+            Camera combatCamera,
             string expectedStep,
             float timeoutSeconds,
             StringBuilder report)
@@ -1301,18 +2106,41 @@ namespace DimensionBrawl.Tests
             float startedAt = Time.realtimeSinceStartup;
             float gameplayStartedAt = Time.time;
             int frames = 0;
-            while (tutorialDirector.CurrentStepId != expectedStep)
+            Transform stairTriggerCenter = ReadPrivateField<Transform>(flowController, "stairTriggerCenter");
+            Assert.IsNotNull(stairTriggerCenter, "The Dodge lesson needs the authored stair destination.");
+            var gesture = BeginMoveJoystickGesture(player, 73);
+            try
             {
-                Assert.Less(
-                    Time.realtimeSinceStartup - startedAt,
-                    timeoutSeconds,
-                    $"Timed out waiting for {expectedStep} from dodge input.");
-                actionController.QueueDodge();
-                frames++;
-                yield return null;
+                while (tutorialDirector.CurrentStepId != expectedStep)
+                {
+                    Assert.Less(
+                        Time.realtimeSinceStartup - startedAt,
+                        timeoutSeconds,
+                        $"Timed out waiting for {expectedStep} from directional dodge input.");
+                    Vector2 routeForwardInput = ResolveCameraRelativeJoystickInput(
+                        player.transform.position,
+                        stairTriggerCenter.position,
+                        combatCamera);
+                    gesture.Drag(routeForwardInput);
+                    if (!ReadPublicProperty<bool>(gesture.Joystick, "IsInputBlocked")
+                        && ReadPublicProperty<Vector2>(gesture.Joystick, "CurrentInput").sqrMagnitude > 0.5f)
+                    {
+                        actionController.QueueDodge();
+                    }
+
+                    frames++;
+                    yield return null;
+                }
+            }
+            finally
+            {
+                gesture.Release();
             }
 
-            AppendStepTiming(report, expectedStep, "dodge input", frames, gameplayStartedAt);
+            Assert.That(
+                ReadPublicProperty<Vector2>(gesture.Joystick, "CurrentInput").sqrMagnitude,
+                Is.EqualTo(0f).Within(0.0001f));
+            AppendStepTiming(report, expectedStep, "directional dodge input", frames, gameplayStartedAt);
         }
 
         private static IEnumerator DriveUntilStep(
@@ -1517,7 +2345,11 @@ namespace DimensionBrawl.Tests
                 return false;
             }
 
-            health.ResetHealthToFull();
+            if (!health.IsTerminalMutationBound)
+            {
+                health.ResetHealthToFull();
+            }
+
             return health.TryApplyDamage(new DamageInfo(
                 null,
                 sourceTeam,
@@ -1681,6 +2513,60 @@ namespace DimensionBrawl.Tests
             Assert.That(canvasGroup.alpha, Is.EqualTo(0f).Within(0.001f), $"HUD should be hidden {context}.");
             Assert.IsFalse(canvasGroup.interactable, $"HUD should not accept input {context}.");
             Assert.IsFalse(canvasGroup.blocksRaycasts, $"HUD should not block raycasts {context}.");
+        }
+
+        private static void AssertInputActionBinding(
+            InputActionReference actionReference,
+            string expectedActionName,
+            params string[] expectedPaths)
+        {
+            Assert.IsNotNull(actionReference, $"{expectedActionName} InputActionReference is not authored.");
+            Assert.IsNotNull(actionReference.action, $"{expectedActionName} InputActionReference has no action.");
+            Assert.That(actionReference.action.name, Is.EqualTo(expectedActionName));
+
+            for (int pathIndex = 0; pathIndex < expectedPaths.Length; pathIndex++)
+            {
+                string expectedPath = expectedPaths[pathIndex];
+                bool found = false;
+                for (int bindingIndex = 0; bindingIndex < actionReference.action.bindings.Count; bindingIndex++)
+                {
+                    string effectivePath = actionReference.action.bindings[bindingIndex].effectivePath;
+                    if (string.Equals(
+                        effectivePath,
+                        expectedPath,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                Assert.IsTrue(
+                    found,
+                    $"{expectedActionName} is missing authored desktop binding {expectedPath}.");
+            }
+        }
+
+        private static void AssertInputActionBindingAbsent(
+            InputActionReference actionReference,
+            string expectedActionName,
+            params string[] forbiddenPaths)
+        {
+            Assert.IsNotNull(actionReference, $"{expectedActionName} InputActionReference is not authored.");
+            Assert.IsNotNull(actionReference.action, $"{expectedActionName} InputActionReference has no action.");
+            for (int pathIndex = 0; pathIndex < forbiddenPaths.Length; pathIndex++)
+            {
+                string forbiddenPath = forbiddenPaths[pathIndex];
+                for (int bindingIndex = 0; bindingIndex < actionReference.action.bindings.Count; bindingIndex++)
+                {
+                    Assert.IsFalse(
+                        string.Equals(
+                            actionReference.action.bindings[bindingIndex].effectivePath,
+                            forbiddenPath,
+                            System.StringComparison.OrdinalIgnoreCase),
+                        $"{expectedActionName} must not consume {forbiddenPath}; that route belongs to UI/mobile input ownership.");
+                }
+            }
         }
 
         private static void AssertPrivateBoolFalse(object target, string fieldName, string message)

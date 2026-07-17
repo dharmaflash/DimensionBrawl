@@ -190,6 +190,7 @@ namespace DimensionBrawl.Combat
         private bool isDead;
         private DamageModificationContext reusableDamageModificationContext;
         private bool damageModificationInProgress;
+        private ICombatHealthMutationAuthority mutationAuthority;
 
         public event Action<DamageInfo> Damaged;
         public event Action<DamageModificationContext> DamageModifying;
@@ -204,6 +205,7 @@ namespace DimensionBrawl.Combat
         public float HealthRatio => maxHealth > 0f ? currentHealth / maxHealth : 0f;
         public bool IsAlive => !isDead;
         public bool IsInvulnerable => Time.time < invulnerableUntilTime;
+        public bool IsTerminalMutationBound => mutationAuthority != null;
         public static IReadOnlyList<CombatHealth> ActiveInstances => ActiveHealth;
         public static int CachedColliderBindingCount => ColliderHealthBindings.Count;
 
@@ -251,10 +253,15 @@ namespace DimensionBrawl.Combat
 
         public void ConfigureMaxHealth(float newMaxHealth, bool resetToFull = true)
         {
+            if (!TryAuthorizeBoundMutation(BoundHealthMutationKind.ConfigureMaxHealth))
+            {
+                return;
+            }
+
             maxHealth = Mathf.Max(1f, newMaxHealth);
             if (resetToFull)
             {
-                ResetHealthToFull();
+                ResetHealthToFullCore();
                 return;
             }
 
@@ -263,6 +270,16 @@ namespace DimensionBrawl.Combat
         }
 
         public void ResetHealthToFull()
+        {
+            if (!TryAuthorizeBoundMutation(BoundHealthMutationKind.ResetHealthToFull))
+            {
+                return;
+            }
+
+            ResetHealthToFullCore();
+        }
+
+        private void ResetHealthToFullCore()
         {
             currentHealth = maxHealth;
             invulnerableUntilTime = 0f;
@@ -311,6 +328,57 @@ namespace DimensionBrawl.Combat
         }
 
         public bool TryApplyDamage(DamageInfo damageInfo)
+        {
+            ICombatHealthMutationAuthority authority = mutationAuthority;
+            return authority != null
+                ? authority.TryApplyDamage(this, damageInfo)
+                : TryApplyDamageCore(damageInfo);
+        }
+
+        internal bool TryBindMutationAuthority(ICombatHealthMutationAuthority authority)
+        {
+            if (authority == null || (mutationAuthority != null && mutationAuthority != authority))
+            {
+                return false;
+            }
+
+            mutationAuthority = authority;
+            return true;
+        }
+
+        internal void UnbindMutationAuthority(ICombatHealthMutationAuthority authority)
+        {
+            if (mutationAuthority == authority)
+            {
+                mutationAuthority = null;
+            }
+        }
+
+        internal bool HasMutationAuthority(ICombatHealthMutationAuthority authority)
+        {
+            return authority != null && mutationAuthority == authority;
+        }
+
+        internal bool TryApplyDamageAuthorized(
+            DamageInfo damageInfo,
+            ICombatHealthMutationAuthority authority)
+        {
+            if (mutationAuthority != authority || !authority.IsAuthorizedDamageMutation(this))
+            {
+                authority?.ReportDirectMutationBypass(this);
+                return false;
+            }
+
+            return TryApplyDamageCore(damageInfo);
+        }
+
+        private bool TryAuthorizeBoundMutation(BoundHealthMutationKind mutationKind)
+        {
+            ICombatHealthMutationAuthority authority = mutationAuthority;
+            return authority == null || authority.TryAuthorizeBoundMutation(this, mutationKind);
+        }
+
+        private bool TryApplyDamageCore(DamageInfo damageInfo)
         {
             if (!IsAlive || damageInfo.Amount <= 0f)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DimensionBrawl.LevelDesign;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -24,10 +25,40 @@ namespace DimensionBrawl.UI
             public RectTransform ChapterTarget => chapterTarget;
         }
 
+        private sealed class SelectedRouteBundle
+        {
+            public SelectedRouteBundle(UIStageRouteProjection projection)
+            {
+                Projection = projection;
+                CatalogProjectionGeneration = projection.CatalogProjectionGeneration;
+                CanonicalProjectionDigest = projection.CanonicalProjectionDigest;
+                PlayableStage = projection.PlayableStage;
+                StageTemplate = projection.StageTemplate;
+                CanonicalReferenceDigest = projection.CanonicalReferenceDigest;
+                CanonicalTemplateDigest = projection.CanonicalTemplateDigest;
+                CanonicalBriefingDigest = projection.CanonicalBriefingDigest;
+                Briefing = projection.Briefing;
+                ResultProgressionJoinPreflight = projection.ResultProgressionJoinPreflight;
+            }
+
+            public UIStageRouteProjection Projection { get; }
+            public int CatalogProjectionGeneration { get; }
+            public string CanonicalProjectionDigest { get; }
+            public PlayableStageDefinition PlayableStage { get; }
+            public LinearStageTemplateProfile StageTemplate { get; }
+            public string CanonicalReferenceDigest { get; }
+            public string CanonicalTemplateDigest { get; }
+            public string CanonicalBriefingDigest { get; }
+            public StageBriefingReadModel Briefing { get; }
+            public StageRunResultProgressionJoinSnapshot ResultProgressionJoinPreflight { get; }
+            public bool RequestAccepted { get; set; }
+        }
+
         [SerializeField] private UIStageCatalog stageCatalog;
         [SerializeField] private string selectedStageId;
         [SerializeField] private Text stageNameText;
         [SerializeField] private Text summaryText;
+        [SerializeField] private Text combatLessonText;
         [SerializeField] private Text threatTagsText;
         [SerializeField] private Text summonHintText;
         [SerializeField] private Text rewardPreviewText;
@@ -58,6 +89,13 @@ namespace DimensionBrawl.UI
 
         private Coroutine focusRoutine;
         private bool sceneEnterSfxPlayed;
+        private SelectedRouteBundle selectedRouteBundle;
+        private UIStageRouteProjectionRejectReason selectedRouteRejectReason;
+
+        public bool HasSelectedRouteProjection => selectedRouteBundle != null;
+        public UIStageRouteProjection SelectedRouteProjection => selectedRouteBundle?.Projection;
+        public UIStageRouteProjectionRejectReason SelectedRouteRejectReason => selectedRouteRejectReason;
+        public bool HasAcceptedStartRequest => selectedRouteBundle?.RequestAccepted == true;
 
         private void OnEnable()
         {
@@ -82,6 +120,8 @@ namespace DimensionBrawl.UI
 
         private void OnDisable()
         {
+            InvalidateSelectedRouteBundle(UIStageRouteProjectionRejectReason.None);
+
             if (focusRoutine != null)
             {
                 StopCoroutine(focusRoutine);
@@ -109,8 +149,14 @@ namespace DimensionBrawl.UI
 
         public void SelectStage(string stageId)
         {
+            InvalidateSelectedRouteBundle(UIStageRouteProjectionRejectReason.None);
             if (string.IsNullOrWhiteSpace(stageId))
             {
+                selectedStageId = string.Empty;
+                selectedRouteRejectReason = UIStageRouteProjectionRejectReason.MissingCatalogEntryId;
+                ClearStageDetails();
+                SetText(statusText, "Stage route unavailable");
+                SetStartInteractable(false);
                 return;
             }
 
@@ -121,24 +167,90 @@ namespace DimensionBrawl.UI
 
         public void HandleStartClicked()
         {
-            if (router == null || router.IsRouting)
+            SelectedRouteBundle bundle = selectedRouteBundle;
+            if (bundle?.RequestAccepted == true || router == null || router.IsRouting)
             {
                 return;
             }
 
-            if (!TryResolveSelectedStage(out UIStageCatalog.StageEntry stage) || !stage.HasSceneRoute)
+            if (bundle == null)
             {
                 SetText(statusText, "Stage route unavailable");
                 return;
             }
 
+            UIStageRouteProjection projection = bundle.Projection;
+            if (projection == null
+                || projection.CatalogProjectionGeneration != bundle.CatalogProjectionGeneration
+                || !string.Equals(
+                    projection.CanonicalProjectionDigest,
+                    bundle.CanonicalProjectionDigest,
+                    StringComparison.Ordinal)
+                || !ReferenceEquals(projection.PlayableStage, bundle.PlayableStage)
+                || !ReferenceEquals(projection.StageTemplate, bundle.StageTemplate)
+                || !ReferenceEquals(projection.Briefing, bundle.Briefing)
+                || !ReferenceEquals(
+                    projection.ResultProgressionJoinPreflight,
+                    bundle.ResultProgressionJoinPreflight)
+                || projection.ResultProgressionJoinPreflight == null
+                || !projection.ResultProgressionJoinPreflight.TryValidateIntegrity(out _)
+                || !string.Equals(
+                    projection.CanonicalReferenceDigest,
+                    bundle.CanonicalReferenceDigest,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    projection.CanonicalTemplateDigest,
+                    bundle.CanonicalTemplateDigest,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    projection.CanonicalBriefingDigest,
+                    bundle.CanonicalBriefingDigest,
+                    StringComparison.Ordinal)
+                || projection.Briefing == null
+                || !string.Equals(
+                    projection.Briefing.CanonicalBriefingDigest,
+                    bundle.CanonicalBriefingDigest,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    selectedStageId,
+                    projection.CatalogEntryId,
+                    StringComparison.Ordinal))
+            {
+                RejectSelectedRoute(UIStageRouteProjectionRejectReason.StaleProjectionBundle);
+                return;
+            }
+
+            UIStageRouteProjectionRejectReason rejectReason =
+                UIStageRouteProjectionRejectReason.SourceObjectMismatch;
+            if (stageCatalog == null
+                || !stageCatalog.IsProjectionCurrent(
+                    projection,
+                    startRoute,
+                    out rejectReason))
+            {
+                RejectSelectedRoute(
+                    stageCatalog == null
+                        ? UIStageRouteProjectionRejectReason.SourceObjectMismatch
+                        : rejectReason);
+                return;
+            }
+
+            bool accepted = router.RequestRouteWithScene(
+                projection.UiRouteId,
+                projection.EntrySceneName,
+                projection.EntryScenePath,
+                projection.LoadingCardId);
+            if (!accepted)
+            {
+                SetText(statusText, "Stage route unavailable");
+                return;
+            }
+
+            bundle.RequestAccepted = true;
+            SetStartInteractable(false);
+            SetText(statusText, string.Empty);
             startRequested.Invoke();
             PlayOneShot(startButtonSfx, startButtonSfxVolume);
-            router.RequestRouteWithScene(
-                startRoute,
-                stage.SceneName,
-                stage.ScenePath,
-                stage.LoadingCardId);
         }
 
         public void HandleBackClicked()
@@ -159,44 +271,81 @@ namespace DimensionBrawl.UI
 
         private void ApplySelectedStage()
         {
-            if (TryResolveSelectedStage(out UIStageCatalog.StageEntry stage))
+            InvalidateSelectedRouteBundle(UIStageRouteProjectionRejectReason.None);
+
+            bool projected = false;
+            UIStageRouteProjection projection = null;
+            UIStageRouteProjectionRejectReason rejectReason =
+                UIStageRouteProjectionRejectReason.CatalogEntryNotFound;
+            if (stageCatalog != null)
             {
-                SetText(stageNameText, stage.DisplayName);
-                SetText(summaryText, stage.Summary);
-                SetText(threatTagsText, stage.ThreatTags);
-                SetText(summonHintText, stage.RecommendedSummonRole);
-                SetText(rewardPreviewText, stage.MockRewardPreview);
+                projected = string.IsNullOrWhiteSpace(selectedStageId)
+                    ? stageCatalog.TryCreateFirstRouteProjection(
+                        startRoute,
+                        out projection,
+                        out rejectReason)
+                    : stageCatalog.TryCreateRouteProjection(
+                        selectedStageId,
+                        startRoute,
+                        out projection,
+                        out rejectReason);
+            }
+
+            if (projected)
+            {
+                selectedStageId = projection.CatalogEntryId;
+                selectedRouteBundle = new SelectedRouteBundle(projection);
+                selectedRouteRejectReason = UIStageRouteProjectionRejectReason.None;
+                StageBriefingReadModel briefing = projection.Briefing;
+                SetText(stageNameText, briefing.Title);
+                SetText(summaryText, briefing.Objective);
+                SetOptionalText(combatLessonText, briefing.CombatLesson);
+                SetOptionalText(threatTagsText, projection.ThreatTags);
+                SetOptionalText(summonHintText, projection.RecommendedSummonRole);
+                SetOptionalText(rewardPreviewText, projection.RewardPreview);
                 SetText(statusText, string.Empty);
+                SetStartInteractable(true);
                 return;
             }
 
+            selectedRouteRejectReason = stageCatalog == null
+                ? UIStageRouteProjectionRejectReason.SourceObjectMismatch
+                : rejectReason;
             ClearStageDetails();
+            SetText(statusText, "Stage route unavailable");
+            SetStartInteractable(false);
         }
 
-        private bool TryResolveSelectedStage(out UIStageCatalog.StageEntry stage)
+        private void InvalidateSelectedRouteBundle(
+            UIStageRouteProjectionRejectReason rejectReason)
         {
-            if (stageCatalog == null)
-            {
-                stage = default;
-                return false;
-            }
+            selectedRouteBundle = null;
+            selectedRouteRejectReason = rejectReason;
+        }
 
-            if (string.IsNullOrWhiteSpace(selectedStageId))
-            {
-                return stageCatalog.TryGetFirstStage(out stage);
-            }
-
-            return stageCatalog.TryGetStage(selectedStageId, out stage);
+        private void RejectSelectedRoute(UIStageRouteProjectionRejectReason rejectReason)
+        {
+            InvalidateSelectedRouteBundle(rejectReason);
+            SetText(statusText, "Stage route unavailable");
+            SetStartInteractable(false);
         }
 
         private void ClearStageDetails()
         {
             SetText(stageNameText, string.Empty);
             SetText(summaryText, string.Empty);
-            SetText(threatTagsText, string.Empty);
-            SetText(summonHintText, string.Empty);
-            SetText(rewardPreviewText, string.Empty);
-            SetText(statusText, string.Empty);
+            SetOptionalText(combatLessonText, string.Empty);
+            SetOptionalText(threatTagsText, string.Empty);
+            SetOptionalText(summonHintText, string.Empty);
+            SetOptionalText(rewardPreviewText, string.Empty);
+        }
+
+        private void SetStartInteractable(bool interactable)
+        {
+            if (startButton != null)
+            {
+                startButton.interactable = interactable;
+            }
         }
 
         private void QueueSelectedStageFocus(bool animate)
@@ -263,6 +412,18 @@ namespace DimensionBrawl.UI
             {
                 target.text = value;
             }
+        }
+
+        private static void SetOptionalText(Text target, string value)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            bool hasValue = !string.IsNullOrWhiteSpace(value);
+            target.text = hasValue ? value : string.Empty;
+            target.gameObject.SetActive(hasValue);
         }
 
         private static bool WasBackPressedThisFrame()

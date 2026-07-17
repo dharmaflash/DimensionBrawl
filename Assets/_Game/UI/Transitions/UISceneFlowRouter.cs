@@ -13,6 +13,7 @@ namespace DimensionBrawl.UI
 
         private bool isRouting;
         private bool routeLoadFailed;
+        private int routeRequestCount;
         private UISceneFlowState currentState = UISceneFlowState.Idle;
 
         public event Action<UISceneFlowState> StateChanged;
@@ -20,6 +21,7 @@ namespace DimensionBrawl.UI
 
         public UISceneFlowState CurrentState => currentState;
         public bool IsRouting => isRouting;
+        public int RouteRequestCount => routeRequestCount;
 
         public void RequestDefaultRoute()
         {
@@ -28,6 +30,7 @@ namespace DimensionBrawl.UI
 
         public bool RequestRoute(UIRouteId routeId)
         {
+            routeRequestCount++;
             if (!CanStartRoute(routeId))
             {
                 return false;
@@ -48,6 +51,7 @@ namespace DimensionBrawl.UI
             string scenePath,
             string loadingCardId = null)
         {
+            routeRequestCount++;
             if (!CanStartRoute(routeId))
             {
                 return false;

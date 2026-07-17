@@ -1173,6 +1173,7 @@ GameObject:
   - component: {fileID: 774663809}
   - component: {fileID: 774663808}
   - component: {fileID: 774663812}
+  - component: {fileID: 774663813}
   m_Layer: 0
   m_Name: StageClearCanvas
   m_TagString: Untagged
@@ -1218,18 +1219,43 @@ MonoBehaviour:
   lobbyButton: {fileID: 1639807292}
   canvasGroup: {fileID: 774663812}
   motionRoot: {fileID: 1748636532}
+  uiRouteResolverBehaviour: {fileID: 774663813}
+  presentationCatalog: {fileID: 11400000, guid: f4aa9682b7b84d9f953874c1f31e2e12, type: 2}
+  localeId: ko-KR
+  primaryActionText: {fileID: 484610301}
+  lobbyActionText: {fileID: 1399218742}
+  stageNameText: {fileID: 938135571}
+  stageNumberText: {fileID: 1775155864}
+  totalActiveTimeLabelText: {fileID: 487069023}
+  totalActiveTimeValueText: {fileID: 321799494}
+  combatActiveTimeLabelText: {fileID: 365524590}
+  combatActiveTimeValueText: {fileID: 1920665205}
+  recordsCategoryText: {fileID: 1224268312}
+  proofRowTexts:
+  - {fileID: 1017600195}
+  - {fileID: 877294589}
+  - {fileID: 1415433352}
   clearBgmSource: {fileID: 0}
   clearBgmClip: {fileID: 8300000, guid: e55ff22a828ced04ab9a3b5e2418dd38, type: 3}
   clearBgmVolume: 0.9
-  retrySceneName: OlympusCorridorInvasionStage
-  retryScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
-  lobbySceneName: UI_Lobby
-  lobbyScenePath: Assets/_Game/Scenes/UI/UI_Lobby.unity
   playEntranceOnEnable: 1
   entranceDelaySeconds: 0.02
   entranceDurationSeconds: 0.42
   entranceStartScale: 0.94
   entranceOffset: {x: 96, y: -8}
+--- !u!114 &774663813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 774663806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2c7a109e8d34b65a4f1c9037d2e568b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.StageClear.StageRunUiRouteResolver
+  routeTable: {fileID: 11400000, guid: b0dbdc40200b17c4c97d1067e3045079, type: 2}
 --- !u!114 &774663809
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -393,7 +393,7 @@ namespace DimensionBrawl.Player
                 return scriptedMoveInputOverride;
             }
 
-            if (IsSharedMoveInputBlocked)
+            if (IsCinematicMoveInputLocked || IsSharedMoveInputBlocked)
             {
                 return Vector2.zero;
             }
@@ -420,7 +420,17 @@ namespace DimensionBrawl.Player
                 return Vector2.zero;
             }
 
-            return ReadSharedInput(lookAction, mobileLookInput);
+            Vector2 actionInput = Vector2.zero;
+            if (lookAction != null
+                && lookAction.action != null
+                && !(lookAction.action.activeControl?.device is Pointer))
+            {
+                actionInput = lookAction.action.ReadValue<Vector2>();
+            }
+
+            return mobileLookInput.sqrMagnitude > actionInput.sqrMagnitude
+                ? mobileLookInput
+                : actionInput;
         }
 
         private static Vector2 ReadSharedInput(InputActionReference actionReference, Vector2 mobileInput)

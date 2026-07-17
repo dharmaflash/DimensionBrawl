@@ -943,6 +943,18 @@ namespace DimensionBrawl.Editor
             RequireObjectReference(presenterObject, "lobbyButton", $"{scenePath} lobby button");
             RequireObjectReference(presenterObject, "canvasGroup", $"{scenePath} entrance canvas group");
             RequireObjectReference(presenterObject, "motionRoot", $"{scenePath} entrance motion root");
+            RequireObjectReference(
+                presenterObject,
+                "uiRouteResolverBehaviour",
+                $"{scenePath} canonical UI route resolver");
+            RequireObjectReference(
+                presenterObject,
+                "primaryActionText",
+                $"{scenePath} outcome action label");
+            RequireObjectReference(
+                presenterObject,
+                "stageNameText",
+                $"{scenePath} outcome stage label");
             RequireObjectReference(presenterObject, "clearBgmClip", $"{scenePath} clear BGM clip");
             RequireTrue(
                 presenterObject.FindProperty("playEntranceOnEnable").boolValue,
@@ -951,41 +963,32 @@ namespace DimensionBrawl.Editor
                 presenterObject.FindProperty("entranceDurationSeconds").floatValue,
                 $"{scenePath}.StageClearScreenPresenter.entranceDurationSeconds");
 
-            ValidateStageClearRoute(
-                presenterObject,
-                "retrySceneName",
-                "retryScenePath",
-                CanonicalCombatScenePath,
-                true,
-                $"{scenePath} retry route");
-            ValidateStageClearRoute(
-                presenterObject,
-                "lobbySceneName",
-                "lobbyScenePath",
-                LobbyScenePath,
-                false,
-                $"{scenePath} lobby route");
-        }
-
-        private static void ValidateStageClearRoute(
-            SerializedObject presenterObject,
-            string sceneNameProperty,
-            string scenePathProperty,
-            string expectedScenePath,
-            bool allowCanonicalCombatScene,
-            string label)
-        {
-            string sceneName = presenterObject.FindProperty(sceneNameProperty).stringValue;
-            string scenePath = presenterObject.FindProperty(scenePathProperty).stringValue;
-            RequireScenePath(scenePath, label, allowCanonicalCombatScene);
-            RequireSceneNameMatchesPath(sceneName, scenePath, label);
-            if (!string.Equals(
-                    scenePath.Replace('\\', '/'),
-                    expectedScenePath,
-                    StringComparison.Ordinal))
+            StageRunUiRouteResolver resolver =
+                presenterObject.FindProperty("uiRouteResolverBehaviour").objectReferenceValue
+                    as StageRunUiRouteResolver;
+            if (resolver == null)
             {
                 throw new InvalidOperationException(
-                    $"{label} must target {expectedScenePath}, found {scenePath}.");
+                    $"{scenePath} result presenter must reference a {nameof(StageRunUiRouteResolver)}.");
+            }
+
+            StageRunUiRouteResolver[] resolvers = GetComponentsInScene<StageRunUiRouteResolver>(roots);
+            if (resolvers.Length != 1 || !ReferenceEquals(resolvers[0], resolver))
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} must contain exactly one presenter-owned canonical UI route resolver.");
+            }
+
+            SerializedObject resolverObject = new SerializedObject(resolver);
+            UIScreenRouteTable expectedRouteTable =
+                AssetDatabase.LoadAssetAtPath<UIScreenRouteTable>(RouteTablePath);
+            if (expectedRouteTable == null
+                || !ReferenceEquals(
+                resolverObject.FindProperty("routeTable")?.objectReferenceValue,
+                expectedRouteTable))
+            {
+                throw new InvalidOperationException(
+                    $"{scenePath} result route resolver must reference {RouteTablePath}.");
             }
         }
 

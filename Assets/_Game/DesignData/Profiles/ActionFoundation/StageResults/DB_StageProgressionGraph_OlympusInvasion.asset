@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca0c2fea070555446babf9a6d4d1d3a9, type: 3}
+  m_Name: DB_StageProgressionGraph_OlympusInvasion
+  m_EditorClassIdentifier: DimensionBrawl.Runtime:DimensionBrawl.LevelDesign:StageProgressionGraph
+  schemaVersion: 1
+  progressionGraphId: olympus-invasion.progression-graph
+  revision: 2
+  cyclePolicy: 1
+  nodes:
+  - {fileID: 11400000, guid: c371d49d8e39c1a4991c8202cdbd2b87, type: 2}
+  canonicalDigest: 7132faaa2607da7ad62380d2d3301ed2bda50cf81ad26e0dd6cdd08e46154221

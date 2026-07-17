@@ -13,73 +13,43 @@ MonoBehaviour:
   m_Name: DB_Stage_OlympusCorridorIntroCombat
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionProfile
   stageId: OLYMPUS-CORRIDOR-INTRO-COMBAT-01
-  displayName: Olympus Corridor Invasion
+  displayName: Olympus Corridor Intro Tutorial
   chapterId: OLYMPUS-INVASION
   previousStageId: 
-  nextStageId: OLYMPUS-CORRIDOR-BOSS-CLEAR-01
+  nextStageId: 
   mapScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
   mapRootName: OlympusCorridorStageRoot
   mapContentRootName: OlympusCorridorStageMap
   mapScale: {x: 1.5, y: 1.5, z: 1.5}
   layoutId: OLYMPUS_CORRIDOR_LONG_01
-  scenePrefabSource:
-  objective: Intro cutscene, boss entrance, and combat start share the Olympus corridor
-    map, anchor set, and runtime state vocabulary.
-  clearCondition: Boss defeated or corridor exit state reached; reward payout and
-    combat balance are intentionally out of scope.
-  excludedScope: No enemy damage tuning, skill balance, reward payout, generated
-    fake geometry, or final NavMesh bake in this definition.
+  scenePrefabSource: 
+  objective: Intro presentation and the ordered melee, movement, ranged, dodge, and
+    target-clear tutorial run in this physical Corridor segment.
+  clearCondition: The tutorial facts seal, the stair route opens, and the player
+    reaches the lower Station-entry boundary in the same scene.
+  excludedScope: Station guide, boss terminal authority, result UI, enemy balance,
+    reward payout, and persistent progress remain separately owned.
   anchors:
   - anchorId: Player_LeftShoulderCameraAnchor
     groupId: CombatSpawnAnchors
     expectedPosition: {x: -51.402077, y: 9.785, z: -0.4110782}
-    expectedEuler: {x: -0, y: 90, z: 0}
-    purpose: Player camera/start read for intro handoff and combat entry.
-  - anchorId: Boss_CenterLaneAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 15.3, y: 0, z: 0}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Boss center spawn and reveal focus.
-  - anchorId: Add_LeftLaneAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 13.35, y: 0, z: -1.875}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Left add spawn lane.
-  - anchorId: Add_RightLaneAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 13.35, y: 0, z: 1.875}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Right add spawn lane.
-  - anchorId: Rift_BackdropAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 22.2, y: 3.975, z: 0}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Far rift/backdrop spatial reference.
+    expectedEuler: {x: 0, y: 90, z: 0}
+    purpose: Player camera and start read for the intro-to-tutorial handoff.
   - anchorId: IntroCutscene_End_PlayerHandoffAnchor
     groupId: CutsceneHandoffAnchors
     expectedPosition: {x: -51.402077, y: 9.785, z: -0.4110782}
-    expectedEuler: {x: -0, y: 90, z: 0}
-    purpose: Intro cutscene exits into this player-side view.
-  - anchorId: BossEntrance_BossRevealAnchor
-    groupId: CutsceneHandoffAnchors
-    expectedPosition: {x: 15.3, y: 1.6, z: 0}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Boss entrance reveal look/actor anchor.
+    expectedEuler: {x: 0, y: 90, z: 0}
+    purpose: Intro presentation exits into the Corridor tutorial view.
   - anchorId: Gameplay_CombatStartAnchor
     groupId: CutsceneHandoffAnchors
     expectedPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
-    expectedEuler: {x: -0, y: 90, z: 0}
-    purpose: Gameplay camera/input unlock handoff.
+    expectedEuler: {x: 0, y: 90, z: 0}
+    purpose: Corridor tutorial camera and input unlock handoff.
   - anchorId: StageSpawner_PlayerStart
     groupId: RuntimeStateAnchors
     expectedPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
-    expectedEuler: {x: -0, y: 90, z: 0}
-    purpose: Runtime PositionId for player start.
-  - anchorId: StageSpawner_BossCenter
-    groupId: RuntimeStateAnchors
-    expectedPosition: {x: 15.3, y: 0, z: 0}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Runtime PositionId for boss center.
+    expectedEuler: {x: 0, y: 90, z: 0}
+    purpose: Runtime position for the Corridor tutorial player start.
   spawns:
   - spawnId: player-start
     spawnKind: 0
@@ -88,97 +58,30 @@ MonoBehaviour:
     payloadId: PlayerParty
     count: 1
     delaySeconds: 0
-    note: Player spawn is a stage position, not a balance value.
-  - spawnId: boss-center
-    spawnKind: 1
-    positionId: 2001
-    anchorId: StageSpawner_BossCenter
-    payloadId: BossEntranceCandidate
-    count: 1
-    delaySeconds: 0
-    note: Boss actor spawns through boss entrance cutscene.
-  - spawnId: add-left
-    spawnKind: 2
-    positionId: 2101
-    anchorId: Add_LeftLaneAnchor
-    payloadId: OlympusAdd.Left
-    count: 1
-    delaySeconds: 0
-    note: Add payload is placeholder identity only.
-  - spawnId: add-right
-    spawnKind: 2
-    positionId: 2102
-    anchorId: Add_RightLaneAnchor
-    payloadId: OlympusAdd.Right
-    count: 1
-    delaySeconds: 0
-    note: Add payload is placeholder identity only.
-  - spawnId: rift-backdrop
-    spawnKind: 3
-    positionId: 3001
-    anchorId: Rift_BackdropAnchor
-    payloadId: OlympusRiftBackdrop
-    count: 1
-    delaySeconds: 0
-    note: Far rift visual context anchor.
+    note: Player spawn is a physical segment position, not a balance value.
   cutsceneHandoffs:
   - handoffId: intro-to-stage
     anchorId: IntroCutscene_End_PlayerHandoffAnchor
-    cinematicProfileId: DB_Cinematic_IntroGatePodAwakening
-    timelineAssetPath: Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening.playable
-    nextEventId: boss-entrance-ready
-    purpose: Intro cutscene should end in the same shared corridor stage.
-  - handoffId: boss-entrance
-    anchorId: BossEntrance_BossRevealAnchor
-    cinematicProfileId: DB_Cinematic_BossIntro
-    timelineAssetPath: 
-    nextEventId: combat-start-ready
-    purpose: Boss entrance reveal uses the shared stage anchor.
-  - handoffId: combat-start
-    anchorId: Gameplay_CombatStartAnchor
-    cinematicProfileId: DB_Cinematic_GameplayHandoff
-    timelineAssetPath: 
-    nextEventId: unlock-input
-    purpose: Gameplay handoff happens without changing map scene.
+    cinematicProfileId: DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude
+    timelineAssetPath: Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening_OlympusBombingPrelude.playable
+    nextEventId: corridor.tutorial.ready
+    purpose: The combined intro presentation hands control to the Corridor tutorial.
   runtimeStates:
   - stateId: position-player-start
     stateKind: 0
     positionId: 1001
     anchorId: StageSpawner_PlayerStart
-    conditionId: stage-open
-    note: PGR/NIKKE-style lightweight stage position record.
-  - stateId: position-boss-center
-    stateKind: 0
-    positionId: 2001
-    anchorId: StageSpawner_BossCenter
-    conditionId: boss-entrance-ready
-    note: Boss PositionId remains separate from combat tuning.
+    conditionId: run.entry.admitted
+    note: Corridor tutorial player entry position.
   - stateId: state-intro-handoff
     stateKind: 1
     positionId: 4001
     anchorId: IntroCutscene_End_PlayerHandoffAnchor
-    conditionId: intro-complete
-    note: Intro completion state feeds boss entrance staging.
-  - stateId: state-stage-clear
-    stateKind: 2
-    positionId: 9001
-    anchorId:
-    conditionId: boss-defeated
-    note: Authored additive stage-clear UI is presented immediately after the boss-defeated condition.
+    conditionId: corridor.tutorial.ready
+    note: Intro completion unlocks the tutorial segment; it does not imply Station
+      clear.
   sourceReferences:
-  - sourceId: ark-pgr-stage-layout
-    sourcePath: arkdata:PGR_Tutorial_Stage_Data_2026-06-19
-    localTakeaway: Use shared scene/layout definitions and lightweight stage records
-      instead of duplicating full scenes per logical stage.
-  - sourceId: ark-nikke-stagespawner
-    sourcePath: arkdata:NIKKE_LostSectorStageRuntime_ApplyData_2026-06-26
-    localTakeaway: Use StageSpawner/PositionId/ClearedStages naming as the runtime
-      state vocabulary.
-  - sourceId: ark-hi3-stage-context
-    sourcePath: arkdata:HI3_CombatCutscene_ApplyData_2026-06-26
-    localTakeaway: Use HI3 for camera/stage-context and combat presentation vocabulary,
-      not geometry recovery.
-  - sourceId: local-olympus-stage
+  - sourceId: local-olympus-corridor
     sourcePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
-    localTakeaway: The promoted runtime stage is the canonical authored geometry
-      after retiring the legacy lookdev source.
+    localTakeaway: This definition owns only the physical Corridor intro and tutorial
+      segment.

@@ -34,6 +34,73 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator CombatPointerGateAllowsAimSurfaceAndBlocksInteractiveUi()
+        {
+            GameObject eventSystemObject = new("CombatPointerGateEventSystem", typeof(EventSystem));
+            GameObject canvasObject = new(
+                "CombatPointerGateCanvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(GraphicRaycaster));
+            Canvas canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            GameObject aimObject = new("AimDragArea", typeof(RectTransform), typeof(Image));
+            aimObject.transform.SetParent(canvasObject.transform, false);
+            RectTransform aimRect = aimObject.GetComponent<RectTransform>();
+            aimRect.anchorMin = Vector2.zero;
+            aimRect.anchorMax = Vector2.one;
+            aimRect.offsetMin = Vector2.zero;
+            aimRect.offsetMax = Vector2.zero;
+            aimObject.GetComponent<Image>().color = Color.clear;
+            aimObject.AddComponent(RequireType("DimensionBrawl.UI.CombatHudAimDragInput"));
+
+            GameObject buttonObject = new(
+                "InteractiveCombatButton",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button));
+            buttonObject.transform.SetParent(canvasObject.transform, false);
+            RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+            buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+            buttonRect.sizeDelta = new Vector2(240f, 160f);
+
+            Type gateType = RequireType("DimensionBrawl.Player.CombatPointerInputGate");
+            MethodInfo gateMethod = gateType.GetMethod(
+                "CanConsumeAtScreenPosition",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(gateMethod);
+            Vector2 screenCenter = new(Screen.width * 0.5f, Screen.height * 0.5f);
+
+            try
+            {
+                Canvas.ForceUpdateCanvases();
+                yield return null;
+                Assert.IsFalse(
+                    (bool)gateMethod.Invoke(null, new object[] { screenCenter }),
+                    "An interactive UI control must own the pointer instead of leaking an Attack action.");
+
+                buttonObject.SetActive(false);
+                Canvas.ForceUpdateCanvases();
+                yield return null;
+                Assert.IsTrue(
+                    (bool)gateMethod.Invoke(null, new object[] { screenCenter }),
+                    "The full-screen authored aim surface must allow the same LMB to drive combat fire.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(buttonObject);
+                Object.DestroyImmediate(aimObject);
+                Object.DestroyImmediate(canvasObject);
+                Object.DestroyImmediate(eventSystemObject);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
         public IEnumerator PointerActionRequestsOnceAndKeepsItsOwningPointer()
         {
             GameObject eventSystemObject = new("PointerActionEventSystem", typeof(EventSystem));

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.UI;
@@ -12,6 +13,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -33,6 +35,26 @@ namespace DimensionBrawl.Tests
         private const string StageClearSceneName = "UI_StageClear";
         private const string RouteTablePath = "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
+        private const string StationDefinitionPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset";
+        private const string StationAddArchetypePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
+        private const string StationAddPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        private const string PlayableStagePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
+        private const string StageSelectPrefabPath =
+            "Assets/_Game/UI/StageSelect/PF_UI_StageSelectScreen.prefab";
+        private const string CanonicalProjectionDigest =
+            "571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d";
+        private const string CanonicalTemplateDigest =
+            "3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55";
+        private const string CanonicalReferenceDigest =
+            "eada6124fe3bed295bddaf3caeb0b53ff1510a2f790c2b76b8454410834a21ea";
+        private const string CanonicalBriefingDigest =
+            "e334d6bb63dc42d921e6d85bcca42cc628064d0d1b8fee1cc303d4ca223fab70";
+        private const string ResultPresentationCatalogPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentationCatalog.asset";
 
         private static readonly string[] ExpectedBuildScenePaths =
         {
@@ -47,6 +69,7 @@ namespace DimensionBrawl.Tests
         [TearDown]
         public void ReleaseUiSceneServiceOwnership()
         {
+            StageRunRuntime.ResetForTests();
             Time.timeScale = 1f;
             EventSystem[] eventSystems = UnityEngine.Object.FindObjectsByType<EventSystem>(
                 FindObjectsInactive.Include,
@@ -105,29 +128,98 @@ namespace DimensionBrawl.Tests
                 "OlympusCorridorInvasionStage",
                 CorridorScenePath);
 
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
             ScriptableObject stageCatalog = LoadRequired<ScriptableObject>(StageCatalogPath);
-            PropertyInfo stageCountProperty = RequireProperty(stageCatalog.GetType(), "StageCount");
-            MethodInfo getStageMethod = RequireMethod(stageCatalog.GetType(), "GetStage");
-            int stageCount = (int)stageCountProperty.GetValue(stageCatalog);
-            Assert.Greater(stageCount, 0, "The product stage catalog must expose at least one route.");
-
-            for (int i = 0; i < stageCount; i++)
-            {
-                object stage = getStageMethod.Invoke(stageCatalog, new object[] { i });
-                string stageId = (string)ReadProperty(stage, "Id");
-                string scenePath = (string)ReadProperty(stage, "ScenePath");
-                string sceneName = (string)ReadProperty(stage, "SceneName");
-                bool hasSceneRoute = (bool)ReadProperty(stage, "HasSceneRoute");
-
-                Assert.IsTrue(hasSceneRoute, $"Stage '{stageId}' has no authored scene route.");
-                Assert.AreEqual(
-                    Path.GetFileNameWithoutExtension(scenePath.Replace('\\', '/')),
-                    sceneName,
-                    $"Stage '{stageId}' resolves an inconsistent scene name.");
-                Assert.NotNull(
-                    AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath),
-                    $"Stage '{stageId}' references a missing scene at {scenePath}.");
-            }
+            Assert.That(catalogType.IsInstanceOfType(stageCatalog), Is.True);
+            Assert.That(
+                Convert.ToInt32(ReadProperty(stageCatalog, "ProjectionSchemaVersion")),
+                Is.EqualTo(1));
+            Assert.That(
+                Convert.ToInt32(ReadProperty(stageCatalog, "CatalogProjectionGeneration")),
+                Is.EqualTo(2));
+            Assert.That(Convert.ToInt32(ReadProperty(stageCatalog, "StageCount")), Is.EqualTo(1));
+            object stage = RequireMethod(catalogType, "GetStage").Invoke(stageCatalog, new object[] { 0 });
+            Assert.That(ReadProperty(stage, "Id"), Is.EqualTo("story_v1_training_route"));
+            Assert.That(
+                ReadProperty(stage, "PresentationProvenance").ToString(),
+                Is.EqualTo("LegacyPresentationOnly"));
+            Assert.That(ReadProperty(stage, "MockRewardPreview"), Is.Empty);
+            Assert.That(
+                ReadProperty(stage, "CanonicalProjectionDigest"),
+                Is.EqualTo(CanonicalProjectionDigest));
+            PlayableStageDefinition playableStage =
+                (PlayableStageDefinition)ReadProperty(stage, "PlayableStage");
+            Assert.That(playableStage, Is.Not.Null);
+            Assert.That(playableStage.PlayableStageId, Is.EqualTo("OLYMPUS-INVASION-01"));
+            object[] projectionArguments = { 0, ResolveUiRouteId(CombatRouteId), null, null };
+            Assert.That(
+                (bool)RequireMethod(
+                    catalogType,
+                    "TryCreateRouteProjection",
+                    4,
+                    typeof(int)).Invoke(stageCatalog, projectionArguments),
+                Is.True,
+                projectionArguments[3].ToString());
+            object projection = projectionArguments[2];
+            Assert.That(ReadProperty(projection, "PlayableStage"), Is.SameAs(playableStage));
+            Assert.That(
+                ReadProperty(projection, "EntryStageDefinition"),
+                Is.SameAs(playableStage.GetSceneSegment(0).StageDefinition));
+            Assert.That(
+                Convert.ToInt32(ReadProperty(projection, "RouteRevision")),
+                Is.EqualTo(playableStage.RouteRevision));
+            Assert.That(
+                ReadProperty(projection, "StoredCanonicalRouteDigest"),
+                Is.EqualTo(playableStage.CanonicalRouteDigest));
+            Assert.That(
+                ReadProperty(projection, "RecomputedCanonicalRouteDigest"),
+                Is.EqualTo(playableStage.ComputeCanonicalRouteDigest()));
+            Assert.That(
+                ReadProperty(projection, "CanonicalProjectionDigest"),
+                Is.EqualTo(CanonicalProjectionDigest));
+            Assert.That(
+                ReadProperty(projection, "StageTemplate"),
+                Is.SameAs(playableStage.ReferenceBlock.StageTemplate));
+            Assert.That(
+                ReadProperty(projection, "CanonicalReferenceDigest"),
+                Is.EqualTo(CanonicalReferenceDigest));
+            Assert.That(
+                ReadProperty(projection, "CanonicalTemplateDigest"),
+                Is.EqualTo(CanonicalTemplateDigest));
+            Assert.That(
+                ReadProperty(projection, "CanonicalBriefingDigest"),
+                Is.EqualTo(CanonicalBriefingDigest));
+            StageBriefingReadModel briefing =
+                (StageBriefingReadModel)ReadProperty(projection, "Briefing");
+            Assert.That(briefing, Is.Not.Null);
+            Assert.That(briefing.CanonicalBriefingDigest, Is.EqualTo(CanonicalBriefingDigest));
+            Assert.That(briefing.Title, Is.EqualTo("기억의 회랑"));
+            Assert.That(
+                briefing.Objective,
+                Is.EqualTo("하층 세계에서 발생한 차원의 미세한 균열.\n그 징후의 진원지를 조사하라."));
+            Assert.That(
+                briefing.CombatLesson,
+                Is.EqualTo("회랑에서 근접 공격, 이동, 원거리 전환과 사격, 회피, 표적 정리를 차례로 익힌다. 정거장에서는 레플리카 지급과 소환 안내를 확인한 뒤 보스 격파를 목표로 한다."));
+            Assert.That(ReadProperty(projection, "ThreatTags"), Is.Empty);
+            Assert.That(ReadProperty(projection, "RecommendedSummonRole"), Is.Empty);
+            Assert.That(ReadProperty(projection, "RewardPreview"), Is.Empty);
+            Assert.That(
+                Convert.ToInt32(ReadProperty(projection, "UiRouteId")),
+                Is.EqualTo(CombatRouteId));
+            Assert.That(Convert.ToInt32(ReadProperty(projection, "EntrySequenceIndex")), Is.Zero);
+            string entryScenePath = (string)ReadProperty(projection, "EntryScenePath");
+            Assert.That(entryScenePath, Is.EqualTo(CorridorScenePath));
+            Assert.That(
+                ReadProperty(projection, "EntrySceneName"),
+                Is.EqualTo("OlympusCorridorInvasionStage"));
+            Assert.NotNull(AssetDatabase.LoadAssetAtPath<SceneAsset>(entryScenePath));
+            object[] retiredStageArguments = { "story_v1_retry_route", null };
+            Assert.That(
+                (bool)RequireMethod(catalogType, "TryGetStage").Invoke(
+                    stageCatalog,
+                    retiredStageArguments),
+                Is.False);
+            Assert.That(ReadProperty(retiredStageArguments[1], "Id"), Is.Null);
         }
 
         [UnityTest]
@@ -137,14 +229,16 @@ namespace DimensionBrawl.Tests
             Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
             Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
             ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
-            StageDefinitionProfile primaryDefinition = CreateStageDefinition(
-                "Assets/Virtual/PrimaryCombat.unity");
             StageDefinitionProfile secondaryDefinition = CreateStageDefinition(
-                "Assets/Virtual/SecondaryCombat.unity");
-            ScriptableObject stageCatalog = CreateStageCatalog(
-                catalogType,
-                primaryDefinition,
+                "SECONDARY-SEGMENT",
+                StationScenePath);
+            PlayableStageDefinition secondaryRoute = CreatePlayableStageDefinition(
+                "SECONDARY-ROUTE",
+                "secondary-entry",
                 secondaryDefinition);
+            ScriptableObject stageCatalog =
+                CreateStageCatalog(catalogType, "secondary", secondaryRoute);
+            AudioClip startClip = AudioClip.Create("AcceptedStageStart", 64, 1, 44100, false);
             var root = new GameObject("Selected Stage Route Test");
             root.SetActive(false);
 
@@ -157,23 +251,811 @@ namespace DimensionBrawl.Tests
                 SetPrivateField(presenter, "selectedStageId", "secondary");
                 SetPrivateField(presenter, "router", router);
                 SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                UnityEvent startRequested = ReadPrivateField<UnityEvent>(presenter, "startRequested");
+                int requestCount = 0;
+                startRequested.AddListener(() => requestCount++);
                 root.SetActive(true);
 
+                Assert.That(root.GetComponent<AudioSource>(), Is.Null);
                 LogAssert.Expect(LogType.Warning, "UI scene route loader is not configured.");
                 RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
                 yield return null;
 
+                object projection = ReadProperty(presenter, "SelectedRouteProjection");
+                Assert.That(projection, Is.Not.Null);
+                Assert.That(ReadProperty(projection, "PlayableStage"), Is.SameAs(secondaryRoute));
+                Assert.That(
+                    ReadProperty(projection, "EntryScenePath"),
+                    Is.EqualTo(StationScenePath));
+                Assert.That(requestCount, Is.EqualTo(1));
+                Assert.That(root.GetComponent<AudioSource>(), Is.Not.Null);
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+                Assert.That(requestCount, Is.EqualTo(1));
+                Assert.That(
+                    Convert.ToBoolean(ReadProperty(presenter, "HasAcceptedStartRequest")),
+                    Is.True);
                 object state = RequireProperty(routerType, "CurrentState").GetValue(router);
                 Assert.AreEqual(CombatRouteId, Convert.ToInt32(ReadProperty(state, "RouteId")));
-                Assert.AreEqual("SecondaryCombat", ReadProperty(state, "SceneName"));
+                Assert.AreEqual("OlympusStationCombatStage", ReadProperty(state, "SceneName"));
                 Assert.AreEqual("Failed", ReadProperty(state, "Phase").ToString());
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
                 UnityEngine.Object.DestroyImmediate(stageCatalog);
-                UnityEngine.Object.DestroyImmediate(primaryDefinition);
+                DestroyPlayableStageDefinition(secondaryRoute);
                 UnityEngine.Object.DestroyImmediate(secondaryDefinition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [Test]
+        public void CatalogProjectionRejectsCanonicalDigestMismatch()
+        {
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "DIGEST-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "DIGEST-ROUTE",
+                "digest-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(catalogType, "digest", route);
+
+            try
+            {
+                SetPrivateField(route, "canonicalRouteDigest", "stale-digest");
+                object[] projectionArguments =
+                    { 0, ResolveUiRouteId(CombatRouteId), null, null };
+                Assert.That(
+                    (bool)RequireMethod(
+                        catalogType,
+                        "TryCreateRouteProjection",
+                        4,
+                        typeof(int)).Invoke(catalog, projectionArguments),
+                    Is.False);
+                Assert.That(projectionArguments[2], Is.Null);
+                Assert.That(
+                    projectionArguments[3].ToString(),
+                    Is.EqualTo("CanonicalRouteDigestMismatch"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void CatalogProjectionRejectsStoredProjectionDigestMismatch()
+        {
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "PROJECTION-DIGEST-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "PROJECTION-DIGEST-ROUTE",
+                "projection-digest-entry",
+                definition);
+            ScriptableObject catalog =
+                CreateStageCatalog(catalogType, "projection-digest", route);
+
+            try
+            {
+                var serializedCatalog = new SerializedObject(catalog);
+                serializedCatalog.FindProperty("stages")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("canonicalProjectionDigest")
+                    .stringValue = "stale-projection-digest";
+                serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+
+                object[] projectionArguments =
+                    { 0, ResolveUiRouteId(CombatRouteId), null, null };
+                Assert.That(
+                    (bool)RequireMethod(
+                        catalogType,
+                        "TryCreateRouteProjection",
+                        4,
+                        typeof(int)).Invoke(catalog, projectionArguments),
+                    Is.False);
+                Assert.That(projectionArguments[2], Is.Null);
+                Assert.That(
+                    projectionArguments[3].ToString(),
+                    Is.EqualTo("CanonicalProjectionDigestMismatch"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void CatalogProjectionRejectsTruthfulJoinMutationMatrix()
+        {
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "TRUTHFUL-JOIN-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "TRUTHFUL-JOIN-ROUTE",
+                "truthful-join-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(
+                catalogType,
+                "truthful-join",
+                route);
+            StageReferenceBlock reference = route.ReferenceBlock;
+            LinearStageTemplateProfile template = reference.StageTemplate;
+
+            try
+            {
+                AssertProjectionAccepted(catalogType, catalog);
+
+                SetPrivateField(reference, "enabled", false);
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "MissingStageReferenceBlock");
+                SetPrivateField(reference, "enabled", true);
+
+                string templateDigest = template.CanonicalTemplateDigest;
+                SetPrivateField(template, "canonicalTemplateDigest", "stale-template-digest");
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "CanonicalStageTemplateDigestMismatch");
+                SetPrivateField(template, "canonicalTemplateDigest", templateDigest);
+
+                string referenceDigest = reference.CanonicalReferenceDigest;
+                SetPrivateField(reference, "canonicalReferenceDigest", "stale-reference-digest");
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "CanonicalStageReferenceDigestMismatch");
+                SetPrivateField(reference, "canonicalReferenceDigest", referenceDigest);
+
+                string briefingDigest = reference.CanonicalBriefingDigest;
+                SetPrivateField(reference, "canonicalBriefingDigest", "stale-briefing-digest");
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "CanonicalStageBriefingDigestMismatch");
+                SetPrivateField(reference, "canonicalBriefingDigest", briefingDigest);
+
+                SetPrivateField(reference, "activeRunRestartPolicyDigest", "unexpected-policy");
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "InvalidActiveRunRestartPolicy");
+                SetPrivateField(reference, "activeRunRestartPolicyDigest", string.Empty);
+
+                SetPrivateField(
+                    reference,
+                    "activeRunRestartPolicyDisposition",
+                    StageBriefingValueDisposition.Present);
+                AssertProjectionRejected(
+                    catalogType,
+                    catalog,
+                    "InvalidActiveRunRestartPolicy");
+                SetPrivateField(
+                    reference,
+                    "activeRunRestartPolicyDisposition",
+                    StageBriefingValueDisposition.NotAdmittedByCurrentSchema);
+
+                AssertProjectionAccepted(catalogType, catalog);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void TruthfulJoinRejectsSegmentAndPocketPermutation()
+        {
+            PlayableStageDefinition source = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            for (int permutation = 0; permutation < 2; permutation++)
+            {
+                PlayableStageDefinition route = UnityEngine.Object.Instantiate(source);
+                LinearStageTemplateProfile template =
+                    UnityEngine.Object.Instantiate(source.ReferenceBlock.StageTemplate);
+                route.hideFlags = HideFlags.HideAndDontSave;
+                template.hideFlags = HideFlags.HideAndDontSave;
+                SetPrivateField(route.ReferenceBlock, "stageTemplate", template);
+
+                try
+                {
+                    var serializedTemplate = new SerializedObject(template);
+                    SerializedProperty segments =
+                        serializedTemplate.FindProperty("canonicalRouteSegments");
+                    if (permutation == 0)
+                    {
+                        segments.MoveArrayElement(0, 1);
+                    }
+                    else
+                    {
+                        segments.GetArrayElementAtIndex(1)
+                            .FindPropertyRelative("pockets")
+                            .MoveArrayElement(0, 1);
+                    }
+
+                    serializedTemplate.ApplyModifiedPropertiesWithoutUndo();
+                    serializedTemplate.Update();
+                    serializedTemplate.FindProperty("canonicalTemplateDigest").stringValue =
+                        template.ComputeCanonicalTemplateDigest();
+                    serializedTemplate.ApplyModifiedPropertiesWithoutUndo();
+
+                    Assert.That(
+                        route.TryCreateBriefingReadModel(
+                            out StageBriefingReadModel briefing,
+                            out StageBriefingBuildRejectReason rejectReason),
+                        Is.False,
+                        permutation == 0 ? "segment permutation" : "pocket permutation");
+                    Assert.That(briefing, Is.Null);
+                    Assert.That(
+                        rejectReason,
+                        Is.EqualTo(StageBriefingBuildRejectReason.RouteTemplateMismatch));
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(route);
+                    UnityEngine.Object.DestroyImmediate(template);
+                }
+            }
+        }
+
+        [Test]
+        public void StageSelectPrefabPreservesAuthoredBriefingAndHiddenRewardRows()
+        {
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            GameObject prefab = LoadRequired<GameObject>(StageSelectPrefabPath);
+            Component presenter = prefab.GetComponent(presenterType);
+            Assert.That(presenter, Is.Not.Null);
+
+            var serializedPresenter = new SerializedObject(presenter);
+            Text combatLessonText = serializedPresenter.FindProperty("combatLessonText")
+                ?.objectReferenceValue as Text;
+            Assert.That(combatLessonText, Is.Not.Null);
+            Assert.That(combatLessonText.gameObject.name, Is.EqualTo("CurrentChapterLessonText"));
+            Assert.That(combatLessonText.text, Is.Empty);
+            Assert.That(combatLessonText.gameObject.activeSelf, Is.True);
+            Text rewardPreviewText = serializedPresenter.FindProperty("rewardPreviewText")
+                ?.objectReferenceValue as Text;
+            Assert.That(rewardPreviewText, Is.Not.Null);
+            Assert.That(rewardPreviewText.gameObject.name, Is.EqualTo("CurrentChapterRewardText"));
+            Assert.That(rewardPreviewText.text, Is.Empty);
+            Assert.That(rewardPreviewText.gameObject.activeSelf, Is.False);
+            Assert.That(
+                combatLessonText.rectTransform.anchorMin.y,
+                Is.GreaterThanOrEqualTo(rewardPreviewText.rectTransform.anchorMax.y));
+        }
+
+        [UnityTest]
+        public IEnumerator StageSelectRendersImmutableBriefingWithoutLegacyOptionalFallback()
+        {
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "BRIEFING-RENDER-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "BRIEFING-RENDER-ROUTE",
+                "briefing-render-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(
+                catalogType,
+                "briefing-render",
+                route);
+            var root = new GameObject("Briefing Render Test");
+            root.SetActive(false);
+
+            Text CreateText(string name)
+            {
+                var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
+                textObject.transform.SetParent(root.transform, false);
+                return textObject.GetComponent<Text>();
+            }
+
+            Text titleText = CreateText("Title");
+            Text objectiveText = CreateText("Objective");
+            Text lessonText = CreateText("Lesson");
+            Text threatText = CreateText("Threat");
+            Text summonText = CreateText("Summon");
+            Text rewardText = CreateText("Reward");
+
+            try
+            {
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "briefing-render");
+                SetPrivateField(presenter, "stageNameText", titleText);
+                SetPrivateField(presenter, "summaryText", objectiveText);
+                SetPrivateField(presenter, "combatLessonText", lessonText);
+                SetPrivateField(presenter, "threatTagsText", threatText);
+                SetPrivateField(presenter, "summonHintText", summonText);
+                SetPrivateField(presenter, "rewardPreviewText", rewardText);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                root.SetActive(true);
+                yield return null;
+
+                object projection = ReadProperty(presenter, "SelectedRouteProjection");
+                StageBriefingReadModel briefing =
+                    (StageBriefingReadModel)ReadProperty(projection, "Briefing");
+                Assert.That(titleText.text, Is.EqualTo(briefing.Title));
+                Assert.That(objectiveText.text, Is.EqualTo(briefing.Objective));
+                Assert.That(lessonText.text, Is.EqualTo(briefing.CombatLesson));
+                Assert.That(lessonText.gameObject.activeSelf, Is.True);
+                Assert.That(threatText.text, Is.Empty);
+                Assert.That(summonText.text, Is.Empty);
+                Assert.That(rewardText.text, Is.Empty);
+                Assert.That(threatText.gameObject.activeSelf, Is.False);
+                Assert.That(summonText.gameObject.activeSelf, Is.False);
+                Assert.That(rewardText.gameObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ReplacedBriefingInstanceRejectsStartWithoutSideEffects()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "BRIEFING-INSTANCE-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "BRIEFING-INSTANCE-ROUTE",
+                "briefing-instance-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(
+                catalogType,
+                "briefing-instance",
+                route);
+            AudioClip startClip = AudioClip.Create("BriefingInstanceStart", 64, 1, 44100, false);
+            var root = new GameObject("Briefing Instance Start Test");
+            root.SetActive(false);
+
+            try
+            {
+                StageRunRuntime.ResetForTests();
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(router, "routeTable", routeTable);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "briefing-instance");
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                int eventCount = 0;
+                ReadPrivateField<UnityEvent>(presenter, "startRequested")
+                    .AddListener(() => eventCount++);
+                root.SetActive(true);
+
+                object projection = ReadProperty(presenter, "SelectedRouteProjection");
+                Assert.That(
+                    route.TryCreateBriefingReadModel(
+                        out StageBriefingReadModel replacement,
+                        out StageBriefingBuildRejectReason rejectReason),
+                    Is.True,
+                    rejectReason.ToString());
+                Assert.That(replacement, Is.Not.SameAs(ReadProperty(projection, "Briefing")));
+                SetPrivateField(projection, "<Briefing>k__BackingField", replacement);
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+
+                AssertRejectedStartHasNoSideEffects(
+                    presenter,
+                    router,
+                    eventCount,
+                    "StaleProjectionBundle");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ReplacedResultProgressionPreflightRejectsStartWithoutSideEffects()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "RESULT-PREFLIGHT-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "RESULT-PREFLIGHT-ROUTE",
+                "result-preflight-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(
+                catalogType,
+                "result-preflight",
+                route);
+            AudioClip startClip = AudioClip.Create("ResultPreflightStart", 64, 1, 44100, false);
+            var root = new GameObject("Result Preflight Start Test");
+            root.SetActive(false);
+
+            try
+            {
+                StageRunRuntime.ResetForTests();
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(router, "routeTable", routeTable);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "result-preflight");
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                int eventCount = 0;
+                ReadPrivateField<UnityEvent>(presenter, "startRequested")
+                    .AddListener(() => eventCount++);
+                root.SetActive(true);
+
+                object projection = ReadProperty(presenter, "SelectedRouteProjection");
+                StageRunResultProgressionJoinSnapshot original =
+                    (StageRunResultProgressionJoinSnapshot)ReadProperty(
+                        projection,
+                        "ResultProgressionJoinPreflight");
+                Assert.That(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        route,
+                        out StageRunResultProgressionJoinSnapshot replacement,
+                        out string replacementError),
+                    Is.True,
+                    replacementError);
+                Assert.That(replacement, Is.Not.SameAs(original));
+                Assert.That(replacement.CanonicalDigest, Is.EqualTo(original.CanonicalDigest));
+                SetPrivateField(
+                    projection,
+                    "<ResultProgressionJoinPreflight>k__BackingField",
+                    replacement);
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+
+                AssertRejectedStartHasNoSideEffects(
+                    presenter,
+                    router,
+                    eventCount,
+                    "StaleProjectionBundle");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ReplacedTemplateSourceRejectsStartWithoutSideEffects()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "TEMPLATE-SOURCE-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "TEMPLATE-SOURCE-ROUTE",
+                "template-source-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(
+                catalogType,
+                "template-source",
+                route);
+            LinearStageTemplateProfile originalTemplate = route.ReferenceBlock.StageTemplate;
+            LinearStageTemplateProfile replacementTemplate =
+                UnityEngine.Object.Instantiate(originalTemplate);
+            replacementTemplate.hideFlags = HideFlags.HideAndDontSave;
+            AudioClip startClip = AudioClip.Create("TemplateSourceStart", 64, 1, 44100, false);
+            var root = new GameObject("Template Source Start Test");
+            root.SetActive(false);
+
+            try
+            {
+                StageRunRuntime.ResetForTests();
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(router, "routeTable", routeTable);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "template-source");
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                int eventCount = 0;
+                ReadPrivateField<UnityEvent>(presenter, "startRequested")
+                    .AddListener(() => eventCount++);
+                root.SetActive(true);
+
+                Assert.That(
+                    Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                    Is.True);
+                SetPrivateField(route.ReferenceBlock, "stageTemplate", replacementTemplate);
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+
+                AssertRejectedStartHasNoSideEffects(
+                    presenter,
+                    router,
+                    eventCount,
+                    "SourceObjectMismatch");
+            }
+            finally
+            {
+                SetPrivateField(route.ReferenceBlock, "stageTemplate", originalTemplate);
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(replacementTemplate);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator StaleCatalogGenerationRejectsCachedStartAndHidesEmptyReward()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "STALE-GENERATION-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "STALE-GENERATION-ROUTE",
+                "stale-generation-entry",
+                definition);
+            ScriptableObject catalog =
+                CreateStageCatalog(catalogType, "primary", route);
+            AudioClip startClip = AudioClip.Create("StaleStageStart", 64, 1, 44100, false);
+            var root = new GameObject("Stale Stage Route Test");
+            root.SetActive(false);
+            var rewardObject = new GameObject("Reward Preview");
+            rewardObject.transform.SetParent(root.transform, false);
+            Text rewardText = rewardObject.AddComponent<Text>();
+
+            try
+            {
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(router, "routeTable", routeTable);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "primary");
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "rewardPreviewText", rewardText);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                UnityEvent startRequested = ReadPrivateField<UnityEvent>(presenter, "startRequested");
+                int requestCount = 0;
+                startRequested.AddListener(() => requestCount++);
+                root.SetActive(true);
+
+                Assert.That(
+                    Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                    Is.True);
+                Assert.That(rewardObject.activeSelf, Is.False);
+
+                var serializedCatalog = new SerializedObject(catalog);
+                serializedCatalog.FindProperty("catalogProjectionGeneration").intValue = 2;
+                serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+
+                Assert.That(requestCount, Is.Zero);
+                Assert.That(root.GetComponent<AudioSource>(), Is.Null);
+                Assert.That(
+                    Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                    Is.False);
+                Assert.That(
+                    ReadProperty(presenter, "SelectedRouteRejectReason").ToString(),
+                    Is.EqualTo("StaleProjectionGeneration"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator InvalidSelectionMatrixClearsCachedProjectionLatchAndSuppressesStart()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject routeTable = LoadRequired<ScriptableObject>(RouteTablePath);
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "EMPTY-SELECTION-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "EMPTY-SELECTION-ROUTE",
+                "empty-selection-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(catalogType, "primary", route);
+            AudioClip startClip = AudioClip.Create(
+                "InvalidSelectionStageStart",
+                64,
+                1,
+                44100,
+                false);
+            var root = new GameObject("Empty Stage Selection Test");
+            root.SetActive(false);
+            var buttonObject = new GameObject("Start Button", typeof(RectTransform), typeof(Button));
+            buttonObject.transform.SetParent(root.transform, false);
+            Button startButton = buttonObject.GetComponent<Button>();
+
+            try
+            {
+                StageRunRuntime.ResetForTests();
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(router, "routeTable", routeTable);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "primary");
+                SetPrivateField(presenter, "startButton", startButton);
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                UnityEvent startRequested = ReadPrivateField<UnityEvent>(presenter, "startRequested");
+                int eventCount = 0;
+                startRequested.AddListener(() => eventCount++);
+                root.SetActive(true);
+
+                (string Label, string Value, string ExpectedReason)[] invalidSelections =
+                {
+                    ("null", null, "MissingCatalogEntryId"),
+                    ("empty", string.Empty, "MissingCatalogEntryId"),
+                    ("whitespace", " \t\r\n ", "MissingCatalogEntryId"),
+                    ("unknown", "unknown-stage-id", "CatalogEntryNotFound")
+                };
+
+                for (int i = 0; i < invalidSelections.Length; i++)
+                {
+                    (string label, string value, string expectedReason) = invalidSelections[i];
+                    RequireMethod(presenterType, "SelectStage").Invoke(
+                        presenter,
+                        new object[] { "primary" });
+                    yield return null;
+
+                    Assert.That(
+                        Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                        Is.True,
+                        $"{label}: expected a cached valid projection before invalidation.");
+                    Assert.That(startButton.interactable, Is.True, label);
+                    object cachedBundle = ReadPrivateField<object>(
+                        presenter,
+                        "selectedRouteBundle");
+                    RequireProperty(cachedBundle.GetType(), "RequestAccepted")
+                        .SetValue(cachedBundle, true);
+                    Assert.That(
+                        Convert.ToBoolean(ReadProperty(presenter, "HasAcceptedStartRequest")),
+                        Is.True,
+                        $"{label}: expected the previous one-shot latch to be armed.");
+
+                    RequireMethod(presenterType, "SelectStage").Invoke(
+                        presenter,
+                        new object[] { value });
+                    yield return null;
+
+                    Assert.That(
+                        Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                        Is.False,
+                        label);
+                    Assert.That(
+                        Convert.ToBoolean(ReadProperty(presenter, "HasAcceptedStartRequest")),
+                        Is.False,
+                        $"{label}: invalidation must remove the old one-shot latch.");
+                    Assert.That(
+                        ReadProperty(presenter, "SelectedRouteRejectReason").ToString(),
+                        Is.EqualTo(expectedReason),
+                        label);
+                    Assert.That(startButton.interactable, Is.False, label);
+
+                    RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                    yield return null;
+
+                    Assert.That(
+                        Convert.ToInt32(ReadProperty(router, "RouteRequestCount")),
+                        Is.Zero,
+                        label);
+                    Assert.That(eventCount, Is.Zero, label);
+                    Assert.That(
+                        root.GetComponent<AudioSource>(),
+                        Is.Null,
+                        $"{label}: non-null start SFX must not be resolved or played.");
+                    Assert.That(StageRunRuntime.HasActiveContext, Is.False, label);
+                    Assert.That(StageRunRuntime.ActiveContext, Is.Null, label);
+                    Assert.That(StageRunRuntime.LastAbortRecord, Is.Null, label);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RejectedStageStartPublishesNoEventOrStartSfx()
+        {
+            Type routerType = RequireProductType("DimensionBrawl.UI.UISceneFlowRouter");
+            Type presenterType = RequireProductType("DimensionBrawl.UI.StageSelectScreenPresenter");
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            StageDefinitionProfile definition = CreateStageDefinition(
+                "REJECTED-SEGMENT",
+                CorridorScenePath);
+            PlayableStageDefinition route = CreatePlayableStageDefinition(
+                "REJECTED-ROUTE",
+                "rejected-entry",
+                definition);
+            ScriptableObject catalog = CreateStageCatalog(catalogType, "primary", route);
+            AudioClip startClip = AudioClip.Create("RejectedStageStart", 64, 1, 44100, false);
+            var root = new GameObject("Rejected Stage Route Test");
+            root.SetActive(false);
+
+            try
+            {
+                Component router = root.AddComponent(routerType);
+                Component presenter = root.AddComponent(presenterType);
+                SetPrivateField(presenter, "stageCatalog", catalog);
+                SetPrivateField(presenter, "selectedStageId", "primary");
+                SetPrivateField(presenter, "router", router);
+                SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
+                SetPrivateField(presenter, "startButtonSfx", startClip);
+                UnityEvent startRequested = ReadPrivateField<UnityEvent>(presenter, "startRequested");
+                int requestCount = 0;
+                startRequested.AddListener(() => requestCount++);
+                root.SetActive(true);
+
+                Assert.That(root.GetComponent<AudioSource>(), Is.Null);
+                LogAssert.Expect(LogType.Warning, "UI route is not configured: Combat");
+                RequireMethod(presenterType, "HandleStartClicked").Invoke(presenter, null);
+                yield return null;
+
+                Assert.That(requestCount, Is.Zero);
+                Assert.That(root.GetComponent<AudioSource>(), Is.Null);
+                Assert.That(
+                    Convert.ToBoolean(ReadProperty(presenter, "HasAcceptedStartRequest")),
+                    Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(catalog);
+                DestroyPlayableStageDefinition(route);
+                UnityEngine.Object.DestroyImmediate(definition);
+                UnityEngine.Object.DestroyImmediate(startClip);
             }
         }
 
@@ -200,13 +1082,13 @@ namespace DimensionBrawl.Tests
 
         [UnityTest]
         [Timeout(30000)]
-        public IEnumerator StationVictoryRetryButtonLoadsFreshCorridorRun()
+        public IEnumerator StationVictoryReplayButtonLoadsFreshCorridorRun()
         {
-            yield return LoadStationVictoryAndWaitForClearSurface();
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
 
             Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
             StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
-            AssertPresenterRoutes(presenter);
+            AssertPresenterRoutes(presenter, StageRouteOutcome.Clear);
             Button retryButton = ReadPrivateField<Button>(presenter, "retryButton");
             Assert.That(retryButton.IsInteractable(), Is.True);
 
@@ -224,18 +1106,18 @@ namespace DimensionBrawl.Tests
             Assert.That(flow.StageClearOverlayShown, Is.False);
             GameObject playerRoot = FindSceneObject(corridorScene, "Player_CombatGirl_ActionFoundation");
             Assert.That(playerRoot, Is.Not.Null);
-            Assert.That(playerRoot.activeInHierarchy, Is.False, "Retry must start a fresh intro run.");
+            Assert.That(playerRoot.activeInHierarchy, Is.False, "Replay must start a fresh intro run.");
         }
 
         [UnityTest]
         [Timeout(30000)]
         public IEnumerator StationVictoryLobbyButtonLoadsCanonicalLobby()
         {
-            yield return LoadStationVictoryAndWaitForClearSurface();
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
 
             Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
             StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
-            AssertPresenterRoutes(presenter);
+            AssertPresenterRoutes(presenter, StageRouteOutcome.Clear);
             Button lobbyButton = ReadPrivateField<Button>(presenter, "lobbyButton");
             Assert.That(lobbyButton.IsInteractable(), Is.True);
 
@@ -251,47 +1133,1306 @@ namespace DimensionBrawl.Tests
                 Is.EqualTo(1));
         }
 
-        private static IEnumerator LoadStationVictoryAndWaitForClearSurface()
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StationFailureRetryButtonLoadsFreshCorridorRun()
         {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Fail);
+
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            AssertPresenterRoutes(presenter, StageRouteOutcome.Fail);
+            Button retryButton = ReadPrivateField<Button>(presenter, "retryButton");
+            Assert.That(retryButton.IsInteractable(), Is.True);
+
+            retryButton.onClick.Invoke();
+            yield return WaitForActiveScenePath(CorridorScenePath, 8f);
+
+            Scene corridorScene = SceneManager.GetActiveScene();
+            OlympusCorridorCombatFlowController flow =
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
+            Assert.That(flow.HasCanonicalStageRun, Is.True);
+            Assert.That(flow.StageCleared, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StationFailureLobbyButtonLoadsCanonicalLobby()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Fail);
+
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            AssertPresenterRoutes(presenter, StageRouteOutcome.Fail);
+            Button lobbyButton = ReadPrivateField<Button>(presenter, "lobbyButton");
+            Assert.That(lobbyButton.IsInteractable(), Is.True);
+
+            lobbyButton.onClick.Invoke();
+            yield return WaitForActiveScenePath(LobbyScenePath, 8f);
+
+            Scene lobbyScene = SceneManager.GetActiveScene();
+            Assert.That(SceneManager.GetSceneByName(StageClearSceneName).isLoaded, Is.False);
+            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.False);
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(
+                CountSceneComponents(lobbyScene, RequireProductType("DimensionBrawl.UI.LobbyScreenPresenter")),
+                Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator TerminalActionResolverLoadFailureAndCompetingInputsStayFailClosed()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            StageRunResultSummary summary = presenter.ResultSummary;
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "injected single-load failure");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    new RejectingUiRouteResolver("injected resolver rejection"),
+                    out _,
+                    out string resolverError),
+                Is.False);
+            Assert.That(resolverError, Does.Contain("injected resolver rejection"));
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(loader.CallCount, Is.Zero);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.replay",
+                    null,
+                    out StageRunResolvedTerminalAction selectedReplay,
+                    out string loadError),
+                Is.False);
+            Assert.That(loadError, Does.Contain("injected single-load failure"));
+            Assert.That(selectedReplay, Is.Not.Null);
+            Assert.That(selectedReplay.ActionKind, Is.EqualTo(StageRouteActionKind.Replay));
+            Assert.That(context.SelectedTerminalAction, Is.SameAs(selectedReplay));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(context.FaultReason, Does.Contain("injected single-load failure"));
+            Assert.That(context.AbortRecord, Is.Null);
+            Assert.That(context.DispatchClosureFaultRecord, Is.Not.Null);
+            Assert.That(
+                context.DispatchClosureFaultRecord.FailedBoundary,
+                Is.EqualTo(StageDispatchClosureFailedBoundary.SceneLoad));
+            Assert.That(
+                context.DispatchClosureFaultRecord.ResultSummaryDigest,
+                Is.EqualTo(summary.ResultSummaryDigest));
+            Assert.That(
+                context.DispatchClosureFaultRecord.TerminalActionSelectionId,
+                Is.EqualTo(selectedReplay.SelectionId));
+            Assert.That(
+                context.DispatchClosureFaultRecord.TerminalActionSelectionDigest,
+                Is.EqualTo(selectedReplay.CanonicalDigest));
+            Assert.That(context.DispatchClosureFaultRecord.ClosureBarrierCount, Is.EqualTo(5));
+            Assert.That(context.DispatchClosureFaultRecord.PendingClosureOwnerCount, Is.Zero);
+            Assert.That(context.DispatchClosureFaultRecord.HasValidIntegrity(), Is.True);
+            Assert.That(loader.CallCount, Is.EqualTo(1));
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.replay",
+                    null,
+                    out _,
+                    out string duplicateError),
+                Is.False);
+            Assert.That(duplicateError, Does.Contain("already won selection"));
+            Assert.That(loader.CallCount, Is.EqualTo(1));
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    new FixedUiRouteResolver(
+                        StageUiRouteId.Lobby,
+                        "UI_Lobby",
+                        LobbyScenePath),
+                    out _,
+                    out string competingError),
+                Is.False);
+            Assert.That(competingError, Does.Contain("already won selection"));
+            Assert.That(loader.CallCount, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator TerminalActionClosureIntegrityFailurePreservesSelectionAndBlocksLoader()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+            StageRunRuntime.InjectTerminalActionClosureIntegrityFailureForTests();
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    presenter.ResultSummary,
+                    "olympus-invasion.replay",
+                    null,
+                    out StageRunResolvedTerminalAction selection,
+                    out string error),
+                Is.False);
+            Assert.That(error, Does.Contain("closure integrity"));
+            Assert.That(selection, Is.Not.Null);
+            Assert.That(context.SelectedTerminalAction, Is.SameAs(selection));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.DispatchClosureFaultRecord, Is.Not.Null);
+            Assert.That(
+                context.DispatchClosureFaultRecord.FailedBoundary,
+                Is.EqualTo(StageDispatchClosureFailedBoundary.ClosureIntegrity));
+            Assert.That(context.DispatchClosureFaultRecord.HasValidIntegrity(), Is.True);
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator UnexpectedTerminalActionSceneExitPreservesSelectionAndBlocksSuccess()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            var resolver = new FixedUiRouteResolver(
+                StageUiRouteId.Lobby,
+                "UI_Lobby",
+                LobbyScenePath);
+            var loader = new UnexpectedSceneChangingLoader();
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    presenter.ResultSummary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out StageRunResolvedTerminalAction selection,
+                    out string error),
+                Is.False);
+            Assert.That(error, Does.Contain("sealed destination scene"));
+            Assert.That(selection, Is.Not.Null);
+            Assert.That(context.SelectedTerminalAction, Is.SameAs(selection));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(loader.CallCount, Is.EqualTo(1));
+            Assert.That(context.DispatchClosureFaultRecord, Is.Not.Null);
+            Assert.That(
+                context.DispatchClosureFaultRecord.FailedBoundary,
+                Is.EqualTo(StageDispatchClosureFailedBoundary.UnexpectedSceneExit));
+            Assert.That(context.DispatchClosureFaultRecord.HasValidIntegrity(), Is.True);
+            Assert.That(StageRunRuntime.ActiveContext, Is.SameAs(context));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator ResultFromReplacedRunCannotDispatchAgainstFreshCorridorContext()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+            StageRunResultSummary staleSummary =
+                RequireSingleSceneComponent<StageClearScreenPresenter>(
+                    SceneManager.GetSceneByName(StageClearSceneName)).ResultSummary;
+            string staleRunId = staleSummary.Identity.RunId;
+
+            StageRunRuntime.ResetForTests();
             Time.timeScale = 1f;
             EditorSceneManager.LoadSceneInPlayMode(
-                StationScenePath,
+                CorridorScenePath,
                 new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
             yield return null;
 
+            StageRunContext freshContext = StageRunRuntime.ActiveContext;
+            Assert.That(freshContext, Is.Not.Null);
+            Assert.That(freshContext.Identity.RunId, Is.Not.EqualTo(staleRunId));
+            Assert.That(freshContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.CorridorActive));
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    staleSummary,
+                    "olympus-invasion.replay",
+                    null,
+                    out _,
+                    out string staleError),
+                Is.False);
+            Assert.That(staleError, Does.Contain("current presented result"));
+            Assert.That(freshContext.SelectedTerminalAction, Is.Null);
+            Assert.That(freshContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.CorridorActive));
+            Assert.That(loader.CallCount, Is.Zero);
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator MutatedCommittedResultDigestIsRejectedBeforeResolverOrLoader()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunResultSummary summary = presenter.ResultSummary;
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            string durableDigest = context.CommitReceipt.ResultSummaryDigest;
+            SetPrivateField(
+                summary,
+                "<ResultSummaryDigest>k__BackingField",
+                new string('0', 64));
+            var resolver = new FixedUiRouteResolver(
+                StageUiRouteId.Lobby,
+                "UI_Lobby",
+                LobbyScenePath);
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string error),
+                Is.False);
+            Assert.That(error, Does.Contain("integrity validation failed"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            Assert.That(context.DispatchClosureFaultRecord, Is.Null);
+            Assert.That(context.CommitReceipt.ResultSummaryDigest, Is.EqualTo(durableDigest));
+            Assert.That(summary.ResultSummaryDigest, Is.Not.EqualTo(durableDigest));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator MutatedRouteDigestIsRejectedBeforeResolverOrLoader()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunResultSummary summary = presenter.ResultSummary;
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            string committedResultDigest = summary.ResultSummaryDigest;
+            string durableRouteDigest = context.CommitReceipt.RouteDigest;
+            SetPrivateField(
+                summary.Identity,
+                "<RouteSnapshotDigest>k__BackingField",
+                new string('f', 64));
+            var resolver = new FixedUiRouteResolver(
+                StageUiRouteId.Lobby,
+                "UI_Lobby",
+                LobbyScenePath);
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string error),
+                Is.False);
+            Assert.That(error, Does.Contain("integrity validation failed"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            Assert.That(context.DispatchClosureFaultRecord, Is.Null);
+            Assert.That(summary.ResultSummaryDigest, Is.EqualTo(committedResultDigest));
+            Assert.That(context.CommitReceipt.RouteDigest, Is.EqualTo(durableRouteDigest));
+            Assert.That(summary.Identity.RouteSnapshotDigest, Is.Not.EqualTo(durableRouteDigest));
+        }
+
+        [UnityTest]
+        public IEnumerator MissingCommittedSummaryLeavesStandaloneResultSurfaceNonInteractive()
+        {
+            StageRunRuntime.ResetForTests();
+            EditorSceneManager.LoadSceneInPlayMode(
+                StageClearScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene clearScene = SceneManager.GetActiveScene();
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            presenter.ConfigureResult(null);
+            Button primaryButton = ReadPrivateField<Button>(presenter, "retryButton");
+            Button lobbyButton = ReadPrivateField<Button>(presenter, "lobbyButton");
+
+            Assert.That(presenter.IsConfigured, Is.False);
+            Assert.That(presenter.PresentationSnapshot, Is.Null);
+            Assert.That(presenter.LastActionError, Does.Contain("summary is missing"));
+            Assert.That(primaryButton.IsInteractable(), Is.False);
+            Assert.That(lobbyButton.IsInteractable(), Is.False);
+            Text unresolvedTime = ReadPrivateField<Text>(presenter, "totalActiveTimeValueText");
+            Assert.That(unresolvedTime.text, Is.Empty);
+            Assert.That(unresolvedTime.gameObject.activeSelf, Is.False);
+            Assert.That(StageRunRuntime.HasActiveContext, Is.False);
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator ResultProgressionAdmissionRequiresExactCanonicalPresentationSources()
+        {
+            StageRunRuntime.ResetForTests();
+            EditorSceneManager.LoadSceneInPlayMode(
+                CorridorScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene corridorScene = SceneManager.GetActiveScene();
+            Assert.That(corridorScene.path.Replace('\\', '/'), Is.EqualTo(CorridorScenePath));
+            StageRunRuntime.ResetForTests();
+
+            PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            StageResultDefinition result = route.ResultProgressionJoin.ResultDefinition;
+            StageResultPresentationCatalog catalog =
+                LoadRequired<StageResultPresentationCatalog>(ResultPresentationCatalogPath);
+            StageResultPresentationProfile canonicalProfile = result.PresentationProfile;
+            StageResultLocalizationTable canonicalLocalization = result.LocalizationTable;
+            StageResultPresentationCatalog catalogClone = UnityEngine.Object.Instantiate(catalog);
+            StageResultPresentationProfile profileClone = UnityEngine.Object.Instantiate(canonicalProfile);
+            StageResultLocalizationTable localizationClone =
+                UnityEngine.Object.Instantiate(canonicalLocalization);
+            catalogClone.hideFlags = HideFlags.HideAndDontSave;
+            profileClone.hideFlags = HideFlags.HideAndDontSave;
+            localizationClone.hideFlags = HideFlags.HideAndDontSave;
+
+            try
+            {
+                Assert.That(
+                    route.ResultProgressionJoin.CanonicalPresentationCatalog,
+                    Is.SameAs(catalog));
+                Assert.That(result.CanonicalPresentationCatalog, Is.SameAs(catalog));
+                Assert.That(catalog.GetProfile(0), Is.SameAs(canonicalProfile));
+                Assert.That(catalog.LocalizationTable, Is.SameAs(canonicalLocalization));
+                Assert.That(
+                    profileClone.ComputeCanonicalDigest(),
+                    Is.EqualTo(canonicalProfile.ComputeCanonicalDigest()));
+                Assert.That(
+                    localizationClone.ComputeCanonicalDigest(),
+                    Is.EqualTo(canonicalLocalization.ComputeCanonicalDigest()));
+
+                SetPrivateField(result, "canonicalPresentationCatalog", catalogClone);
+                Assert.That(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        route,
+                        out _,
+                        out string catalogError),
+                    Is.False);
+                Assert.That(catalogError, Does.Contain("route-owned canonical presentation catalog"));
+                Assert.That(
+                    StageRunRuntime.TryAdmitFirstSegment(
+                        route,
+                        corridorScene,
+                        out StageRunContext catalogCloneContext,
+                        out string catalogAdmissionError),
+                    Is.False);
+                Assert.That(catalogCloneContext, Is.Null);
+                Assert.That(
+                    catalogAdmissionError,
+                    Does.Contain("route-owned canonical presentation catalog"));
+                Assert.That(StageRunRuntime.HasActiveContext, Is.False);
+
+                SetPrivateField(catalogClone, "localizationTable", localizationClone);
+                SetPrivateField(
+                    catalogClone,
+                    "profiles",
+                    new[] { profileClone });
+                SetPrivateField(result, "presentationProfile", profileClone);
+                SetPrivateField(result, "localizationTable", localizationClone);
+                Assert.That(catalogClone.TryValidate(out string cloneError), Is.True, cloneError);
+                Assert.That(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        route,
+                        out _,
+                        out string coherentCloneError),
+                    Is.False);
+                Assert.That(
+                    coherentCloneError,
+                    Does.Contain("route-owned canonical presentation catalog"));
+                Assert.That(
+                    StageRunRuntime.TryAdmitFirstSegment(
+                        route,
+                        corridorScene,
+                        out StageRunContext coherentCloneContext,
+                        out string coherentCloneAdmissionError),
+                    Is.False);
+                Assert.That(coherentCloneContext, Is.Null);
+                Assert.That(
+                    coherentCloneAdmissionError,
+                    Does.Contain("route-owned canonical presentation catalog"));
+                Assert.That(StageRunRuntime.HasActiveContext, Is.False);
+
+                SetPrivateField(result, "canonicalPresentationCatalog", catalog);
+                SetPrivateField(result, "presentationProfile", canonicalProfile);
+                SetPrivateField(result, "localizationTable", canonicalLocalization);
+                SetPrivateField(result, "presentationProfile", profileClone);
+                Assert.That(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        route,
+                        out _,
+                        out string profileError),
+                    Is.False);
+                Assert.That(profileError, Does.Contain("exact canonical presentation profile"));
+
+                SetPrivateField(result, "presentationProfile", canonicalProfile);
+                SetPrivateField(result, "localizationTable", localizationClone);
+                Assert.That(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        route,
+                        out _,
+                        out string localizationError),
+                    Is.False);
+                Assert.That(localizationError, Does.Contain("exact canonical localization source"));
+            }
+            finally
+            {
+                SetPrivateField(result, "canonicalPresentationCatalog", catalog);
+                SetPrivateField(result, "presentationProfile", canonicalProfile);
+                SetPrivateField(result, "localizationTable", canonicalLocalization);
+                UnityEngine.Object.DestroyImmediate(catalogClone);
+                UnityEngine.Object.DestroyImmediate(profileClone);
+                UnityEngine.Object.DestroyImmediate(localizationClone);
+            }
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StationDefinitionAuthorsExactConcreteCountOneAddFixture()
+        {
+            StageDefinitionProfile station = LoadRequired<StageDefinitionProfile>(StationDefinitionPath);
+            Assert.That(station.AnchorCount, Is.EqualTo(1));
+            StageDefinitionProfile.AnchorRef anchor = station.GetAnchor(0);
+            Assert.That(anchor.AnchorId, Is.EqualTo("Add_LeftLaneAnchor"));
+            Assert.That(anchor.GroupId, Is.EqualTo("CombatSpawnAnchors"));
+            Assert.That(anchor.ExpectedPosition, Is.EqualTo(new Vector3(8.9f, 0f, -1.25f)));
+            Assert.That(anchor.ExpectedEuler, Is.EqualTo(Vector3.zero));
+
+            Assert.That(station.SpawnCount, Is.EqualTo(1));
+            StageDefinitionProfile.SpawnRef spawn = station.GetSpawn(0);
+            Assert.That(spawn.SpawnId, Is.EqualTo("add-left"));
+            Assert.That(spawn.SpawnKind, Is.EqualTo(StageSpawnKind.Add));
+            Assert.That(spawn.PositionId, Is.EqualTo(2101));
+            Assert.That(spawn.AnchorId, Is.EqualTo(anchor.AnchorId));
+            Assert.That(spawn.PayloadId, Is.EqualTo("SciFiSoldier.Melee"));
+            Assert.That(spawn.Count, Is.EqualTo(1));
+            Assert.That(spawn.DelaySeconds, Is.Zero);
+
+            CombatEnemyArchetypeProfile archetype =
+                LoadRequired<CombatEnemyArchetypeProfile>(StationAddArchetypePath);
+            GameObject gameplayPrefab = LoadRequired<GameObject>(StationAddPrefabPath);
+            Assert.That(archetype.ArchetypeId, Is.EqualTo(spawn.PayloadId));
+            Assert.That(archetype.GameplayPrefab, Is.SameAs(gameplayPrefab));
+            Assert.That(archetype.RequiresDedicatedPrefabPromotion, Is.False);
+
+            PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            Assert.That(route.GetSceneSegment(1).SegmentId, Is.EqualTo("station_entry_combat"));
+            Assert.That(route.GetSceneSegment(1).StageDefinition, Is.SameAs(station));
+            LinearStageTemplateProfile template = route.ReferenceBlock.StageTemplate;
+            StageTemplateRouteSegmentRef templateSegment = template.GetCanonicalRouteSegment(1);
+            Assert.That(
+                templateSegment.TemplateSegmentId,
+                Is.EqualTo("olympus-invasion.station-guide-combat"));
+            Assert.That(templateSegment.PocketCount, Is.EqualTo(2));
+            StageTemplatePocketRef pocket = templateSegment.GetPocket(1);
+            Assert.That(pocket.PocketId, Is.EqualTo("olympus-invasion.station.boss-encounter"));
+            Assert.That(
+                pocket.P1CAdmissionDisposition,
+                Is.EqualTo(StageTemplateP1CAdmissionDisposition.NotAdmitted));
+            Assert.That(pocket.EnemyRoleCount, Is.Zero);
+
+            Type validatorType = Type.GetType(
+                "DimensionBrawl.Editor.PlayableStageDefinitionValidator, Assembly-CSharp-Editor");
+            Assert.That(validatorType, Is.Not.Null);
+            MethodInfo validateStationAdd = validatorType.GetMethod(
+                "ValidateStationAddSceneAuthoring",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(validateStationAdd, Is.Not.Null);
+            MethodInfo validateSceneBinding = validatorType.GetMethod(
+                "ValidateSceneBinding",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(validateSceneBinding, Is.Not.Null);
+
+            StageRunRuntime.ResetForTests();
+            Time.timeScale = 1f;
+            EditorSceneManager.LoadSceneInPlayMode(
+                CorridorScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return WaitForActiveScenePath(CorridorScenePath, 10f);
+            yield return null;
+
+            Scene corridorScene = SceneManager.GetActiveScene();
+            StageDefinitionProfile corridor = route.GetSceneSegment(0).StageDefinition;
+            StageDefinitionSceneBinding corridorBinding =
+                RequireSceneBinding(corridorScene, corridor);
+            Assert.That(
+                corridorBinding.TryGetAnchorPoint(
+                    "Player_LeftShoulderCameraAnchor",
+                    out StageAnchorPoint corridorCameraAnchor),
+                Is.True);
+            Assert.That(corridorCameraAnchor.transform.IsChildOf(corridorBinding.transform), Is.True);
+            Assert.That(corridorCameraAnchor.transform.IsChildOf(corridorBinding.MapRoot), Is.False);
+            Assert.DoesNotThrow(
+                () => validateSceneBinding.Invoke(null, new object[] { corridorScene, corridor }));
+
+            Scene stationScene = corridorScene;
+            StageDefinitionSceneBinding binding =
+                RequireSceneBinding(stationScene, station);
+            Assert.That(binding.StageDefinition, Is.SameAs(station));
+            Assert.That(station.MapScenePath, Is.EqualTo(CorridorScenePath));
+            Assert.That(binding.MapRoot, Is.SameAs(corridorBinding.MapRoot));
+            Assert.That(binding.MapRoot, Is.Not.Null);
+            Assert.That(binding.TryGetAnchorPoint(anchor.AnchorId, out StageAnchorPoint liveAnchor), Is.True);
+            Assert.That(liveAnchor, Is.Not.Null);
+            Assert.That(liveAnchor.transform.IsChildOf(binding.MapRoot), Is.True);
+
+            Vector3 rootLocalPosition = binding.transform.InverseTransformPoint(liveAnchor.transform.position);
+            Quaternion rootLocalRotation = Quaternion.Inverse(binding.transform.rotation)
+                * liveAnchor.transform.rotation;
+            Assert.That(Vector3.Distance(rootLocalPosition, anchor.ExpectedPosition), Is.LessThan(0.0001f));
+            Assert.That(
+                Quaternion.Angle(rootLocalRotation, Quaternion.Euler(anchor.ExpectedEuler)),
+                Is.LessThan(0.001f));
+            Assert.DoesNotThrow(
+                () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
+            Assert.DoesNotThrow(
+                () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
+
+            Transform intermediate = liveAnchor.transform.parent;
+            Assert.That(intermediate, Is.Not.Null);
+            Assert.That(intermediate, Is.Not.SameAs(binding.MapRoot));
+            Assert.That(intermediate.IsChildOf(binding.MapRoot), Is.True);
+            Vector3 originalIntermediatePosition = intermediate.localPosition;
+            Quaternion originalIntermediateRotation = intermediate.localRotation;
+            Vector3 originalAnchorPosition = liveAnchor.transform.localPosition;
+            Quaternion originalAnchorRotation = liveAnchor.transform.localRotation;
+            try
+            {
+                intermediate.localPosition = originalIntermediatePosition + new Vector3(0.5f, 0f, 0f);
+                TargetInvocationException genericPositionError = Assert.Throws<TargetInvocationException>(
+                    () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
+                Assert.That(
+                    genericPositionError.InnerException?.Message,
+                    Does.Contain("binding-root-local position"));
+                TargetInvocationException positionError = Assert.Throws<TargetInvocationException>(
+                    () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
+                Assert.That(positionError.InnerException?.Message, Does.Contain("binding-root-local position"));
+
+                intermediate.localPosition = originalIntermediatePosition;
+                intermediate.localRotation = Quaternion.Euler(0f, 15f, 0f) * originalIntermediateRotation;
+                liveAnchor.transform.position = binding.transform.TransformPoint(anchor.ExpectedPosition);
+                TargetInvocationException genericRotationError = Assert.Throws<TargetInvocationException>(
+                    () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
+                Assert.That(
+                    genericRotationError.InnerException?.Message,
+                    Does.Contain("binding-root-local rotation"));
+                TargetInvocationException rotationError = Assert.Throws<TargetInvocationException>(
+                    () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
+                Assert.That(rotationError.InnerException?.Message, Does.Contain("binding-root-local rotation"));
+            }
+            finally
+            {
+                intermediate.localPosition = originalIntermediatePosition;
+                intermediate.localRotation = originalIntermediateRotation;
+                liveAnchor.transform.localPosition = originalAnchorPosition;
+                liveAnchor.transform.localRotation = originalAnchorRotation;
+            }
+
+            Assert.DoesNotThrow(
+                () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
+            Assert.DoesNotThrow(
+                () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
+        }
+
+        [Test]
+        public void ResultProgressionSnapshotDamageRejectsWithoutThrowAndLocalesResolveDeterministically()
+        {
+            PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            Assert.That(
+                StageRunResultProgressionJoinSnapshot.TryCreate(
+                    route,
+                    out StageRunResultProgressionJoinSnapshot join,
+                    out string createError),
+                Is.True,
+                createError);
+
+            StageResultLocalizationSnapshot localization = join.PresentationSource.Localization;
+            MethodInfo resolveLocale = RequireMethod(
+                typeof(StageResultLocalizationSnapshot),
+                "TryResolveLocale");
+            MethodInfo resolveText = RequireMethod(
+                typeof(StageResultLocalizationSnapshot),
+                "TryResolve");
+
+            object[] exactArguments = { "en-US", null, null };
+            Assert.That((bool)resolveLocale.Invoke(localization, exactArguments), Is.True);
+            Assert.That(exactArguments[1], Is.EqualTo("en-US"));
+
+            object[] languageArguments = { "en-GB", null, null };
+            Assert.That((bool)resolveLocale.Invoke(localization, languageArguments), Is.True);
+            Assert.That(languageArguments[1], Is.EqualTo("en-US"));
+
+            object[] defaultArguments = { "zz-ZZ", null, null };
+            Assert.That((bool)resolveLocale.Invoke(localization, defaultArguments), Is.True);
+            Assert.That(defaultArguments[1], Is.EqualTo("ko-KR"));
+
+            object[] missingTextArguments =
+                { "ko-KR", "stage_result.missing.required.text", null };
+            Assert.That((bool)resolveText.Invoke(localization, missingTextArguments), Is.False);
+            Assert.That(missingTextArguments[2], Is.EqualTo(string.Empty));
+
+            StageResultPresentationSourceSnapshot source = join.PresentationSource;
+            Array mappings = ReadPrivateField<Array>(source, "actionMappings");
+            try
+            {
+                SetPrivateField(source, "actionMappings", null);
+                bool valid = true;
+                string integrityError = string.Empty;
+                Assert.DoesNotThrow(() => valid = join.TryValidateIntegrity(out integrityError));
+                Assert.That(valid, Is.False);
+                Assert.That(integrityError, Does.Contain("damaged nested data"));
+            }
+            finally
+            {
+                SetPrivateField(source, "actionMappings", mappings);
+            }
+        }
+
+        [Test]
+        public void ProductionProgressionGraphRejectsInvalidEdgesAndAcceptsAsymmetricRelations()
+        {
+            PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            StageProgressionNode nodeTemplate = route.ResultProgressionJoin.ProgressionNode;
+            StageProgressionGraph graphTemplate = route.ResultProgressionJoin.ProgressionGraph;
+            var created = new List<UnityEngine.Object>();
+            const string GraphId = "test.result-progression.graph";
+
+            try
+            {
+                StageProgressionNode self = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.self",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    self,
+                    new[] { self },
+                    new[] { 1 },
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>());
+                Assert.That(
+                    self.TryComputeCanonicalDigests(out _, out _, out string selfError),
+                    Is.False);
+                Assert.That(selfError, Does.Contain("prerequisite").And.Contain("invalid"));
+
+                StageProgressionNode duplicateSource = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.duplicate-source",
+                    GraphId,
+                    created);
+                StageProgressionNode duplicateTarget = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.duplicate-target",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    duplicateSource,
+                    new[] { duplicateTarget, duplicateTarget },
+                    new[] { 1, 1 },
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>());
+                Assert.That(
+                    duplicateSource.TryComputeCanonicalDigests(
+                        out _,
+                        out _,
+                        out string duplicateEdgeError),
+                    Is.False);
+                Assert.That(duplicateEdgeError, Does.Contain("prerequisite").And.Contain("invalid"));
+
+                StageProgressionNode wrongRevisionSource = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.wrong-revision-source",
+                    GraphId,
+                    created);
+                StageProgressionNode wrongRevisionTarget = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.wrong-revision-target",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    wrongRevisionSource,
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>(),
+                    new[] { wrongRevisionTarget },
+                    new[] { 2 });
+                Assert.That(
+                    wrongRevisionSource.TryComputeCanonicalDigests(
+                        out _,
+                        out _,
+                        out string wrongRevisionError),
+                    Is.False);
+                Assert.That(wrongRevisionError, Does.Contain("recommended-next").And.Contain("invalid"));
+
+                StageProgressionNode unresolvedA = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.unresolved-a",
+                    GraphId,
+                    created);
+                StageProgressionNode unresolvedB = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.unresolved-b",
+                    GraphId,
+                    created);
+                StageProgressionNode unresolvedC = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.unresolved-c",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    unresolvedA,
+                    new[] { unresolvedC },
+                    new[] { 1 },
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>());
+                SealProgressionNode(unresolvedA);
+                SealProgressionNode(unresolvedB);
+                StageProgressionGraph unresolvedGraph = CreateProgressionGraphFixture(
+                    graphTemplate,
+                    GraphId,
+                    new[] { unresolvedA, unresolvedB },
+                    created);
+                Assert.That(
+                    unresolvedGraph.TryComputeCanonicalDigest(out _, out string unresolvedError),
+                    Is.False);
+                Assert.That(unresolvedError, Does.Contain("does not resolve exact graph identity"));
+
+                StageProgressionNode duplicateNodeA = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.duplicate-id",
+                    GraphId,
+                    created);
+                StageProgressionNode duplicateNodeB = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.duplicate-id",
+                    GraphId,
+                    created);
+                SealProgressionNode(duplicateNodeA);
+                SealProgressionNode(duplicateNodeB);
+                StageProgressionGraph duplicateNodeGraph = CreateProgressionGraphFixture(
+                    graphTemplate,
+                    GraphId,
+                    new[] { duplicateNodeA, duplicateNodeB },
+                    created);
+                Assert.That(
+                    duplicateNodeGraph.TryComputeCanonicalDigest(
+                        out _,
+                        out string duplicateNodeError),
+                    Is.False);
+                Assert.That(duplicateNodeError, Does.Contain("invalid or duplicated"));
+
+                StageProgressionNode cycleA = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.cycle-a",
+                    GraphId,
+                    created);
+                StageProgressionNode cycleB = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.cycle-b",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    cycleA,
+                    new[] { cycleB },
+                    new[] { 1 },
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>());
+                ConfigureProgressionNodeEdges(
+                    cycleB,
+                    new[] { cycleA },
+                    new[] { 1 },
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>());
+                SealProgressionNode(cycleA);
+                SealProgressionNode(cycleB);
+                StageProgressionGraph cycleGraph = CreateProgressionGraphFixture(
+                    graphTemplate,
+                    GraphId,
+                    new[] { cycleA, cycleB },
+                    created);
+                Assert.That(
+                    cycleGraph.TryComputeCanonicalDigest(out _, out string cycleError),
+                    Is.False);
+                Assert.That(cycleError, Does.Contain("cycle within one directed relation"));
+
+                StageProgressionNode asymmetricA = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.asymmetric-a",
+                    GraphId,
+                    created);
+                StageProgressionNode asymmetricB = CreateProgressionNodeFixture(
+                    nodeTemplate,
+                    "test.node.asymmetric-b",
+                    GraphId,
+                    created);
+                ConfigureProgressionNodeEdges(
+                    asymmetricA,
+                    Array.Empty<StageProgressionNode>(),
+                    Array.Empty<int>(),
+                    new[] { asymmetricB },
+                    new[] { 1 });
+                SealProgressionNode(asymmetricA);
+                SealProgressionNode(asymmetricB);
+                StageProgressionGraph asymmetricGraph = CreateProgressionGraphFixture(
+                    graphTemplate,
+                    GraphId,
+                    new[] { asymmetricA, asymmetricB },
+                    created);
+                Assert.That(
+                    asymmetricGraph.TryComputeCanonicalDigest(
+                        out string asymmetricDigest,
+                        out string asymmetricError),
+                    Is.True,
+                    asymmetricError);
+                SetPrivateField(asymmetricGraph, "canonicalDigest", asymmetricDigest);
+                Assert.That(
+                    asymmetricGraph.TryCreateSnapshot(
+                        out StageProgressionGraphSnapshot asymmetricSnapshot,
+                        out string asymmetricSnapshotError),
+                    Is.True,
+                    asymmetricSnapshotError);
+                Assert.That(asymmetricSnapshot.NodeCount, Is.EqualTo(2));
+                Assert.That(asymmetricSnapshot.GetNode(0).RecommendedNextCount, Is.EqualTo(1));
+                Assert.That(asymmetricSnapshot.GetNode(1).RecommendedNextCount, Is.Zero);
+            }
+            finally
+            {
+                for (int i = created.Count - 1; i >= 0; i--)
+                {
+                    UnityEngine.Object.DestroyImmediate(created[i]);
+                }
+            }
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator ResultPresentationUsesDeepCopiedAdmissionSourcesAndSealsAudit()
+        {
+            PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
+            Type catalogType = RequireProductType("DimensionBrawl.UI.UIStageCatalog");
+            ScriptableObject stageCatalog = LoadRequired<ScriptableObject>(StageCatalogPath);
+            object[] projectionArguments = { ResolveUiRouteId(CombatRouteId), null, null };
+            Assert.That(
+                (bool)RequireMethod(
+                    catalogType,
+                    "TryCreateFirstRouteProjection").Invoke(
+                    stageCatalog,
+                    projectionArguments),
+                Is.True,
+                projectionArguments[2]?.ToString());
+            StageRunResultProgressionJoinSnapshot selectionPreflight =
+                (StageRunResultProgressionJoinSnapshot)ReadProperty(
+                    projectionArguments[1],
+                    "ResultProgressionJoinPreflight");
+            StageResultDefinition resultDefinition =
+                route.ResultProgressionJoin.ResultDefinition;
+            StageResultPresentationProfile profile = resultDefinition.PresentationProfile;
+            StageResultLocalizationTable localization = resultDefinition.LocalizationTable;
+            StageResultActionPresentationMapping replayMapping =
+                resultDefinition.GetActionMapping(0);
+            string originalStageCode = ReadPrivateField<string>(profile, "stageCode");
+            string stageNameKey = ReadPrivateField<string>(profile, "stageNameKey");
+            string clearStatusKey = ReadPrivateField<string>(profile, "clearStatusKey");
+            string originalReplayLabelKey = replayMapping.LabelKey;
+            Assert.That(
+                localization.TryResolveLocale(
+                    "ko-KR",
+                    out string resolvedLocaleId,
+                    out string localeError),
+                Is.True,
+                localeError);
+            Assert.That(
+                localization.TryResolve(
+                    resolvedLocaleId,
+                    stageNameKey,
+                    out string originalStageName),
+                Is.True);
+            Assert.That(
+                localization.TryResolve(
+                    resolvedLocaleId,
+                    originalReplayLabelKey,
+                    out string originalReplayLabel),
+                Is.True);
+            StageResultLocalizedString stageNameEntry = FindLocalizationEntry(
+                localization,
+                resolvedLocaleId,
+                stageNameKey);
+            string originalStageNameValue = stageNameEntry.Value;
+            const string MutatedStageCode = "MUTATED-AFTER-ADMISSION";
+            const string MutatedStageName = "MUTATED LIVE SOURCE";
+            StageRunContext admittedContext = null;
+
+            try
+            {
+                yield return LoadCanonicalStationTerminalAndWaitForResultSurface(
+                    StageRouteOutcome.Clear,
+                    context =>
+                    {
+                        admittedContext = context;
+                        Assert.That(
+                            context.ResultProgressionJoinSnapshot,
+                            Is.Not.SameAs(selectionPreflight));
+                        Assert.That(
+                            context.ResultProgressionJoinSnapshot.CanonicalDigest,
+                            Is.EqualTo(selectionPreflight.CanonicalDigest));
+                        Assert.That(
+                            context.ResultProgressionJoinSnapshot.PresentationSource.Profile.StageCode,
+                            Is.EqualTo(originalStageCode));
+                        SetPrivateField(profile, "stageCode", MutatedStageCode);
+                        SetPrivateField(stageNameEntry, "value", MutatedStageName);
+                        SetPrivateField(replayMapping, "labelKey", clearStatusKey);
+                    });
+
+                Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+                StageClearScreenPresenter presenter =
+                    RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+                StageResultPresentationSnapshot presentation = presenter.PresentationSnapshot;
+                StageResultPresentationAuditEnvelope audit = presenter.PresentationAudit;
+
+                Assert.That(admittedContext, Is.Not.Null);
+                Assert.That(profile.ComputeCanonicalDigest(), Is.Not.EqualTo(
+                    admittedContext.ResultProgressionJoinSnapshot.PresentationSource.Profile.CanonicalDigest));
+                Assert.That(presentation, Is.Not.Null);
+                Assert.That(presentation.StageCode, Is.EqualTo(originalStageCode));
+                Assert.That(presentation.StageTitle, Does.Contain(originalStageName));
+                Assert.That(presentation.StageTitle, Does.Not.Contain(MutatedStageName));
+                Assert.That(presentation.PrimaryActionLabel, Is.EqualTo(originalReplayLabel));
+                Assert.That(audit, Is.Not.Null);
+                Assert.That(
+                    audit.TryValidate(
+                        presenter.ResultSummary,
+                        admittedContext.ResultProgressionJoinSnapshot,
+                        presentation,
+                        out string auditError),
+                    Is.True,
+                    auditError);
+                Assert.That(
+                    audit.JoinSnapshotDigest,
+                    Is.EqualTo(admittedContext.ResultProgressionJoinSnapshot.CanonicalDigest));
+                Assert.That(
+                    audit.PresentationSourceDigest,
+                    Is.EqualTo(
+                        admittedContext.ResultProgressionJoinSnapshot.PresentationSource.CanonicalDigest));
+                Assert.That(
+                    StageRunRuntime.TryPrepareResultPresentation(
+                        presenter.ResultSummary,
+                        selectionPreflight,
+                        presentation.LocaleId,
+                        out _,
+                        out _,
+                        out string foreignPreflightError),
+                    Is.False);
+                Assert.That(
+                    foreignPreflightError,
+                    Does.Contain("exact admission join snapshot"));
+            }
+            finally
+            {
+                SetPrivateField(profile, "stageCode", originalStageCode);
+                SetPrivateField(stageNameEntry, "value", originalStageNameValue);
+                SetPrivateField(replayMapping, "labelKey", originalReplayLabelKey);
+            }
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator PresentedTerminalActionRevalidatesJoinPresentationAndAuditBeforeSideEffects()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            StageRunResultSummary summary = presenter.ResultSummary;
+            StageResultPresentationSnapshot presentation = presenter.PresentationSnapshot;
+            StageResultPresentationAuditEnvelope audit = presenter.PresentationAudit;
+            var resolver = new FixedUiRouteResolver(
+                StageUiRouteId.Lobby,
+                "UI_Lobby",
+                LobbyScenePath);
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+
+            string originalLocaleId = audit.LocaleId;
+            SetPrivateField(audit, "<LocaleId>k__BackingField", "tampered-locale");
+            Assert.That(
+                audit.TryValidate(
+                    summary,
+                    context.ResultProgressionJoinSnapshot,
+                    presentation,
+                    out string auditIntegrityError),
+                Is.False);
+            Assert.That(auditIntegrityError, Does.Contain("audit envelope is damaged"));
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string damagedAuditError),
+                Is.False);
+            Assert.That(damagedAuditError, Does.Contain("presented result authority"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            SetPrivateField(audit, "<LocaleId>k__BackingField", originalLocaleId);
+
+            string originalStageCode = presentation.StageCode;
+            SetPrivateField(
+                presentation,
+                "<StageCode>k__BackingField",
+                "TAMPERED-PRESENTATION");
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string damagedPresentationError),
+                Is.False);
+            Assert.That(damagedPresentationError, Does.Contain("presented result authority"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            SetPrivateField(presentation, "<StageCode>k__BackingField", originalStageCode);
+
+            StageResultPresentationSourceSnapshot source =
+                context.ResultProgressionJoinSnapshot.PresentationSource;
+            Array mappings = ReadPrivateField<Array>(source, "actionMappings");
+            SetPrivateField(source, "actionMappings", null);
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string damagedJoinError),
+                Is.False);
+            Assert.That(damagedJoinError, Does.Contain("presented result authority"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(context.SelectedTerminalAction, Is.Null);
+            SetPrivateField(source, "actionMappings", mappings);
+
+            Assert.That(
+                context.ResultProgressionJoinSnapshot.TryValidateIntegrity(out string restoredJoinError),
+                Is.True,
+                restoredJoinError);
+            Assert.That(
+                audit.TryValidate(
+                    summary,
+                    context.ResultProgressionJoinSnapshot,
+                    presentation,
+                    out string restoredAuditError),
+                Is.True,
+                restoredAuditError);
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator ProcessLossDoesNotReconstructPresentationAuthorityOrDamageDurableDecision()
+        {
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
+
+            StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(
+                SceneManager.GetSceneByName(StageClearSceneName));
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            StageRunResultSummary summary = presenter.ResultSummary;
+            StageRunResultProgressionJoinSnapshot join = context.ResultProgressionJoinSnapshot;
+            StageRunResultCommitReceipt receipt = context.CommitReceipt;
+            string runId = context.Identity.RunId;
+            string decisionPath = StageRunRuntime.GetResultCommitDecisionPathForTests(runId);
+            Assert.That(File.Exists(decisionPath), Is.True);
+            byte[] durableDecisionBytes = File.ReadAllBytes(decisionPath);
+
+            StageRunRuntime.SimulateProcessLossForTests();
+
+            Assert.That(StageRunRuntime.HasActiveContext, Is.False);
+            Assert.That(
+                StageRunRuntime.TryReadCommittedResultDecision(
+                    runId,
+                    out StageRunResultCommitReceipt recoveredReceipt,
+                    out string recoveryError),
+                Is.True,
+                recoveryError);
+            Assert.That(
+                (bool)RequireMethod(
+                    typeof(StageRunResultCommitReceipt),
+                    "HasValidIntegrity").Invoke(recoveredReceipt, null),
+                Is.True);
+            Assert.That(recoveredReceipt.RunId, Is.EqualTo(receipt.RunId));
+            Assert.That(
+                recoveredReceipt.ResultSummaryDigest,
+                Is.EqualTo(receipt.ResultSummaryDigest));
+            Assert.That(
+                recoveredReceipt.TerminalFinalizationOwnerCoverageDigest,
+                Is.EqualTo(receipt.TerminalFinalizationOwnerCoverageDigest));
+            Assert.That(recoveredReceipt.CanonicalDigest, Is.EqualTo(receipt.CanonicalDigest));
+            Assert.That(recoveredReceipt.EnvelopeChecksum, Is.EqualTo(receipt.EnvelopeChecksum));
+            Assert.That(File.Exists(decisionPath), Is.True);
+            CollectionAssert.AreEqual(
+                durableDecisionBytes,
+                File.ReadAllBytes(decisionPath),
+                "Process-memory reset and durable reconciliation must not rewrite the sealed decision bytes.");
+            Assert.That(
+                Directory.GetFiles(
+                    Path.GetDirectoryName(decisionPath),
+                    Path.GetFileName(decisionPath) + ".corrupt*"),
+                Is.Empty);
+
+            Assert.That(
+                StageRunRuntime.TryPrepareResultPresentation(
+                    summary,
+                    join,
+                    "ko-KR",
+                    out _,
+                    out _,
+                    out string presentationError),
+                Is.False);
+            Assert.That(presentationError, Does.Contain("No active canonical stage run"));
+
+            var resolver = new FixedUiRouteResolver(
+                StageUiRouteId.Lobby,
+                "UI_Lobby",
+                LobbyScenePath);
+            var loader = new RecordingSceneLoader(shouldSucceed: false, "must not be called");
+            StageRunRuntime.SetSceneLoaderForTests(loader);
+            Assert.That(
+                StageRunRuntime.TryDispatchTerminalAction(
+                    summary,
+                    "olympus-invasion.to-lobby",
+                    resolver,
+                    out _,
+                    out string dispatchError),
+                Is.False);
+            Assert.That(dispatchError, Does.Contain("No active presented result"));
+            Assert.That(resolver.CallCount, Is.Zero);
+            Assert.That(loader.CallCount, Is.Zero);
+            Assert.That(File.Exists(decisionPath), Is.True);
+            CollectionAssert.AreEqual(durableDecisionBytes, File.ReadAllBytes(decisionPath));
+        }
+
+        private static IEnumerator LoadCanonicalStationTerminalAndWaitForResultSurface(
+            StageRouteOutcome outcome,
+            Action<StageRunContext> afterAdmission = null)
+        {
+            Time.timeScale = 1f;
+            StageRunRuntime.ResetForTests();
+            EditorSceneManager.LoadSceneInPlayMode(
+                CorridorScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene corridorScene = SceneManager.GetActiveScene();
+            Assert.AreEqual(CorridorScenePath, corridorScene.path.Replace('\\', '/'));
+            StageRunContext runContext = StageRunRuntime.ActiveContext;
+            Assert.That(runContext, Is.Not.Null, "Corridor must atomically admit a canonical stage run.");
+            Assert.That(runContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.CorridorActive));
+            afterAdmission?.Invoke(runContext);
+            OlympusCorridorCombatFlowController flow =
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
+            flow.SkipIntroCutscene();
+            yield return null;
+            yield return null;
+            Assert.That(flow.CanonicalStageRunId, Is.EqualTo(runContext.Identity.RunId));
+            Assert.That(
+                runContext.TrySealTutorialRouteCompletion(out string tutorialFactError),
+                Is.True,
+                tutorialFactError);
+            RequireMethod(
+                typeof(OlympusCorridorCombatFlowController),
+                "BeginWaitingForStairEntry").Invoke(flow, null);
+            RequireMethod(
+                typeof(OlympusCorridorCombatFlowController),
+                "BeginCorridorCombat").Invoke(flow, null);
+            StageSegmentEntryReceipt entryReceipt = runContext.SegmentEntryReceipt;
+            Assert.That(entryReceipt, Is.Not.Null);
+            Assert.That(entryReceipt.FromHandoffPending, Is.False);
+            Assert.That(entryReceipt.ActualScenePath, Is.EqualTo(CorridorScenePath));
+            yield return null;
+            yield return null;
+
             Scene stationScene = SceneManager.GetActiveScene();
-            Assert.AreEqual(StationScenePath, stationScene.path.Replace('\\', '/'));
+            Assert.AreEqual(CorridorScenePath, stationScene.path.Replace('\\', '/'));
+            Assert.IsTrue(
+                stationScene.handle == corridorScene.handle,
+                $"In-scene Station activation must retain Corridor scene handle {corridorScene.handle}; "
+                + $"actual={stationScene.handle}.");
+            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.False);
             Assert.That(CountSceneComponents<OlympusStationCombatResultPresenter>(stationScene), Is.EqualTo(1));
             Assert.That(CountSceneComponents<OlympusStageClearOverlay>(stationScene), Is.EqualTo(1));
             Assert.That(CountSceneComponents<CombatEncounterController>(stationScene), Is.EqualTo(1));
+            OlympusStationCombatResultPresenter resultPresenter =
+                RequireSingleSceneComponent<OlympusStationCombatResultPresenter>(stationScene);
+            Assert.That(resultPresenter.HasCanonicalStageRun, Is.True, resultPresenter.CanonicalStageRunEntryError);
+            Assert.That(StageRunRuntime.ActiveContext, Is.SameAs(runContext));
+            Assert.That(runContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
 
-            Behaviour entryGuide = RequireSingleSceneBehaviour(
-                stationScene,
-                RequireProductType("DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge"));
-            Behaviour entryNotice = RequireSingleSceneBehaviour(
-                stationScene,
-                RequireProductType("DimensionBrawl.UI.SceneEntryNoticeOverlay"));
-            entryGuide.enabled = false;
-            entryNotice.enabled = false;
-            yield return null;
+            yield return ReleaseStationEntryGuide(stationScene);
+            yield return new WaitForSecondsRealtime(0.05f);
             Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
 
             CombatEncounterController encounter = RequireSingleSceneComponent<CombatEncounterController>(stationScene);
-            CombatHealth enemyHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
-            enemyHealth.ResetHealthToFull();
+            CombatHealth terminalHealth = outcome == StageRouteOutcome.Clear
+                ? ReadPrivateField<CombatHealth>(encounter, "enemyHealth")
+                : ReadPrivateField<CombatHealth>(encounter, "playerHealth");
+            DamageTeam sourceTeam = outcome == StageRouteOutcome.Clear
+                ? DamageTeam.Player
+                : DamageTeam.Enemy;
+            float invulnerabilityDeadline = Time.realtimeSinceStartup + 1f;
+            while (terminalHealth.IsInvulnerable)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    invulnerabilityDeadline,
+                    "Tutorial invulnerability did not expire during the physical stair-entry interval.");
+                yield return null;
+            }
+            Assert.That(encounter.UsesCoordinatedTerminalResolution, Is.True);
             Assert.That(
-                enemyHealth.TryApplyDamage(new DamageInfo(
+                encounter.IsRunning,
+                Is.True,
+                $"Station encounter was not running before victory injection. "
+                + $"Won={encounter.IsWon}, Failed={encounter.IsFailed}, Faulted={encounter.IsFaulted}, "
+                + $"Diagnostic={encounter.Diagnostic.Reason}: {encounter.Diagnostic.Message}");
+            Assert.That(
+                terminalHealth.TryApplyDamage(new DamageInfo(
                     null,
-                    DamageTeam.Player,
-                    enemyHealth.MaxHealth + 1f,
-                    enemyHealth.transform.position,
+                    sourceTeam,
+                    terminalHealth.MaxHealth + 1f,
+                    terminalHealth.transform.position,
                     Vector3.forward,
                     0f,
                     DamageResponsePolicy.DamageOnly,
                     CombatControlLockPolicy.None)),
                 Is.True);
-            Assert.That(encounter.IsWon, Is.True);
+            Assert.That(encounter.IsWon, Is.EqualTo(outcome == StageRouteOutcome.Clear));
+            Assert.That(encounter.IsFailed, Is.EqualTo(outcome == StageRouteOutcome.Fail));
 
             float deadline = Time.realtimeSinceStartup + 8f;
             StageClearScreenPresenter presenter = null;
@@ -321,7 +2462,187 @@ namespace DimensionBrawl.Tests
 
             GameObject combatHud = FindSceneObject(stationScene, "BossBarrageLaneReview_CombatHudCanvas");
             Assert.That(combatHud, Is.Not.Null);
-            Assert.That(combatHud.activeSelf, Is.False, "The combat HUD must yield to the single clear surface.");
+            Assert.That(combatHud.activeSelf, Is.False, "The combat HUD must yield to the shared result surface.");
+
+            Assert.That(resultPresenter.CommittedSummary, Is.Not.Null);
+            Assert.That(resultPresenter.CommittedSummary.Outcome, Is.EqualTo(outcome));
+            StageRunResultSummary factSummary = resultPresenter.CommittedSummary;
+            Assert.That(factSummary.OutcomeFact, Is.Not.Null);
+            Assert.That(
+                factSummary.OutcomeFact.OutcomeDisposition,
+                Is.EqualTo(outcome == StageRouteOutcome.Clear
+                    ? StageOutcomeDisposition.Clear
+                    : StageOutcomeDisposition.Fail));
+            Assert.That(
+                factSummary.OutcomeFact.ClearReason,
+                Is.EqualTo(outcome == StageRouteOutcome.Clear
+                    ? StageClearReason.BossTerminal
+                    : StageClearReason.None));
+            Assert.That(
+                factSummary.OutcomeFact.FailureReason,
+                Is.EqualTo(outcome == StageRouteOutcome.Fail
+                    ? StageFailureReason.PlayerDefeated
+                    : StageFailureReason.None));
+            Assert.That(factSummary.OutcomeFact.TotalActiveElapsedMilliseconds, Is.GreaterThan(0));
+            Assert.That(factSummary.OutcomeFact.CombatActiveElapsedMilliseconds, Is.GreaterThan(0));
+            Assert.That(
+                factSummary.OutcomeFact.TotalActiveElapsedMilliseconds,
+                Is.GreaterThanOrEqualTo(factSummary.OutcomeFact.CombatActiveElapsedMilliseconds));
+            Assert.That(factSummary.SegmentResultCount, Is.EqualTo(2));
+            Assert.That(factSummary.GetSegmentResult(0).SegmentId, Is.EqualTo("corridor_intro_tutorial"));
+            Assert.That(factSummary.GetSegmentResult(1).SegmentId, Is.EqualTo("station_entry_combat"));
+            Assert.That(factSummary.GetSegmentResult(0).ExitReason, Is.EqualTo(StageSceneSegmentExitReason.Completed));
+            Assert.That(factSummary.GetSegmentResult(1).ExitReason, Is.EqualTo(StageSceneSegmentExitReason.Completed));
+            Assert.That(factSummary.TutorialRouteSummaryFact.RouteState, Is.EqualTo(StageTutorialRouteState.Completed));
+            Assert.That(
+                factSummary.TutorialRouteSummaryFact.PlanSemanticDigest,
+                Is.EqualTo(StageRunFactVocabulary.OlympusCorridorTutorialPlanSemanticDigest));
+            Assert.That(
+                factSummary.CombatFacts.PlayerDownCount,
+                Is.EqualTo(outcome == StageRouteOutcome.Fail ? 1 : 0));
+            Assert.That(
+                factSummary.TryGetSemanticProof(
+                    StageRunFactVocabulary.SurvivalNoPlayerDownProofId,
+                    out StageRunSemanticProofFact survivalProof),
+                Is.EqualTo(outcome == StageRouteOutcome.Clear));
+            if (survivalProof != null)
+            {
+                Assert.That(survivalProof.Qualified, Is.True);
+            }
+
+            Assert.That(resultPresenter.CommitReceipt, Is.Not.Null);
+            Assert.That(
+                resultPresenter.CommitReceipt.ResultSummaryDigest,
+                Is.EqualTo(factSummary.ResultSummaryDigest));
+            Assert.That(runContext.TerminalEpochClosureRecord, Is.Not.Null);
+            Assert.That(runContext.TerminalFinalizationAuthority, Is.Not.Null);
+            Assert.That(runContext.OwnerCoverageRecord, Is.Not.Null);
+            Assert.That(runContext.TerminalOrRestartLatch, Is.EqualTo(StageTerminalOrRestartLatchState.TerminalWon));
+            Assert.That(runContext.TerminalEpochClosureRecord.QueueDrainedAndSubjectsFinalized, Is.True);
+            Assert.That(runContext.TerminalEpochClosureRecord.ActiveTokenInvalidated, Is.True);
+            Assert.That(runContext.TerminalEpochClosureRecord.SubjectSnapshotCount, Is.EqualTo(2));
+            Assert.That(runContext.TerminalEpochClosureRecord.CandidateCoverageCount, Is.EqualTo(1));
+            Assert.That(
+                runContext.TerminalFinalizationAuthority.TerminalEpochClosureRecordId,
+                Is.EqualTo(runContext.TerminalEpochClosureRecord.TerminalEpochClosureRecordId));
+            Assert.That(
+                runContext.TerminalFinalizationAuthority.TerminalEpochClosureDigest,
+                Is.EqualTo(runContext.TerminalEpochClosureRecord.CanonicalDigest));
+            Assert.That(runContext.OwnerCoverageRecord.OwnerRowCount, Is.EqualTo(4));
+            Assert.That(runContext.OwnerCoverageRecord.ZeroPendingFinalizationOwners, Is.True);
+            for (int ownerIndex = 0; ownerIndex < runContext.OwnerCoverageRecord.OwnerRowCount; ownerIndex++)
+            {
+                TerminalFinalizationOwnerCoverageRow ownerRow =
+                    runContext.OwnerCoverageRecord.GetOwnerRow(ownerIndex);
+                Assert.That(
+                    (int)ownerRow.OwnerKind,
+                    Is.EqualTo(ownerIndex + 1),
+                    "Terminal-finalization owners must remain in the frozen fixed order.");
+                Assert.That(
+                    ownerRow.Disposition,
+                    Is.EqualTo(TerminalFinalizationOwnerDisposition.NotAdmitted));
+                Assert.That(ownerRow.HasTypedReceipt, Is.False);
+            }
+
+            Assert.That(
+                resultPresenter.CommitReceipt.TerminalFinalizationOwnerCoverageRecordId,
+                Is.EqualTo(runContext.OwnerCoverageRecord.TerminalFinalizationOwnerCoverageRecordId));
+            Assert.That(
+                resultPresenter.CommitReceipt.TerminalFinalizationOwnerCoverageDigest,
+                Is.EqualTo(runContext.OwnerCoverageRecord.CanonicalDigest));
+            Assert.That(runContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.Presented));
+            Assert.That(runContext.TerminalRecordReceiptCount, Is.EqualTo(1));
+            Assert.That(
+                StageRunRuntime.TryCommitTerminalResolution(
+                    encounter,
+                    encounter.TerminalResolution,
+                    out StageRunResultSummary duplicateSummary,
+                    out StageRunResultCommitReceipt duplicateReceipt,
+                    out string duplicateError),
+                Is.True,
+                duplicateError);
+            Assert.That(duplicateSummary, Is.SameAs(resultPresenter.CommittedSummary));
+            Assert.That(duplicateReceipt, Is.SameAs(resultPresenter.CommitReceipt));
+            Assert.That(runContext.TerminalRecordReceiptCount, Is.EqualTo(1));
+
+            string decisionPath =
+                StageRunRuntime.GetResultCommitDecisionPathForTests(runContext.Identity.RunId);
+            Assert.That(File.Exists(decisionPath), Is.True, "The run must own one durable decision slot.");
+            string receiptDigest = resultPresenter.CommitReceipt.CanonicalDigest;
+            string receiptChecksum = resultPresenter.CommitReceipt.EnvelopeChecksum;
+            StageRunRuntime.ClearResultCommitMemoryCacheForTests();
+            Assert.That(
+                StageRunRuntime.TryReadCommittedResultDecision(
+                    runContext.Identity.RunId,
+                    out StageRunResultCommitReceipt recoveredReceipt,
+                    out string recoveryError),
+                Is.True,
+                recoveryError);
+            Assert.That(recoveredReceipt, Is.Not.SameAs(resultPresenter.CommitReceipt));
+            Assert.That(recoveredReceipt.CanonicalDigest, Is.EqualTo(receiptDigest));
+            Assert.That(recoveredReceipt.EnvelopeChecksum, Is.EqualTo(receiptChecksum));
+            Assert.That(
+                recoveredReceipt.Preparation.Kind,
+                Is.EqualTo(StageRunResultCommitPreparationKind.NotRequired));
+            Assert.That(recoveredReceipt.SummaryCommittedAtSequence, Is.EqualTo(1));
+
+            Assert.That(
+                StageRunRuntime.TryCommitTerminalResolution(
+                    encounter,
+                    encounter.TerminalResolution,
+                    out StageRunResultSummary recoveredSummary,
+                    out StageRunResultCommitReceipt reconciledReceipt,
+                    out string reconcileError),
+                Is.True,
+                reconcileError);
+            Assert.That(recoveredSummary, Is.SameAs(resultPresenter.CommittedSummary));
+            Assert.That(reconciledReceipt.CanonicalDigest, Is.EqualTo(receiptDigest));
+            Assert.That(reconciledReceipt.EnvelopeChecksum, Is.EqualTo(receiptChecksum));
+            Assert.That(runContext.TerminalRecordReceiptCount, Is.EqualTo(1));
+        }
+
+        private static IEnumerator ReleaseStationEntryGuide(Scene stationScene)
+        {
+            ICombatEntryGuideGate gate = RequireSingleSceneInterface<ICombatEntryGuideGate>(stationScene);
+            Assert.That(
+                gate.State,
+                Is.Not.EqualTo(CombatEntryGuideState.Released),
+                "The initial non-playing state must not be mistaken for an already released guide.");
+            bool observedPlaying = gate.State == CombatEntryGuideState.Playing;
+            float deadline = Time.realtimeSinceStartup + 8f;
+            while (gate.State != CombatEntryGuideState.Released)
+            {
+                observedPlaying |= gate.State == CombatEntryGuideState.Playing;
+                Assert.That(
+                    gate.State,
+                    Is.Not.EqualTo(CombatEntryGuideState.Interrupted),
+                    "Station entry guide was interrupted before gameplay release.");
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    deadline,
+                    "Timed out waiting for the Station entry guide to release gameplay.");
+                if (gate.IsAwaitingAdvance)
+                {
+                    gate.RequestAdvance();
+                }
+
+                yield return null;
+            }
+
+            Assert.That(observedPlaying, Is.True, "Station guide never published its explicit Playing state.");
+        }
+
+        private static void ActivateHostedStationRoots(Scene scene)
+        {
+            OlympusCorridorCombatFlowController flow =
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(scene);
+            GameObject[] roots = ReadPrivateField<GameObject[]>(flow, "corridorCombatRoots");
+            Assert.That(roots, Is.Not.Null.And.Not.Empty);
+            for (int i = 0; i < roots.Length; i++)
+            {
+                Assert.That(roots[i], Is.Not.Null, $"Hosted Station root {i} is missing.");
+                roots[i].SetActive(true);
+            }
         }
 
         private static bool IsPresenterInteractive(StageClearScreenPresenter presenter)
@@ -335,12 +2656,116 @@ namespace DimensionBrawl.Tests
             return canvasGroup.interactable && canvasGroup.blocksRaycasts;
         }
 
-        private static void AssertPresenterRoutes(StageClearScreenPresenter presenter)
+        private static void AssertPresenterRoutes(
+            StageClearScreenPresenter presenter,
+            StageRouteOutcome outcome)
         {
-            Assert.AreEqual("OlympusCorridorInvasionStage", ReadPrivateField<string>(presenter, "retrySceneName"));
-            Assert.AreEqual(CorridorScenePath, ReadPrivateField<string>(presenter, "retryScenePath"));
-            Assert.AreEqual("UI_Lobby", ReadPrivateField<string>(presenter, "lobbySceneName"));
-            Assert.AreEqual(LobbyScenePath, ReadPrivateField<string>(presenter, "lobbyScenePath"));
+            Assert.That(presenter.IsConfigured, Is.True, presenter.LastActionError);
+            Assert.That(presenter.ResultSummary, Is.Not.Null);
+            Assert.That(presenter.ResultSummary.Outcome, Is.EqualTo(outcome));
+            Assert.That(
+                presenter.PrimaryActionId,
+                Is.EqualTo(outcome == StageRouteOutcome.Clear
+                    ? "olympus-invasion.replay"
+                    : "olympus-invasion.retry"));
+            Assert.That(presenter.LobbyActionId, Is.EqualTo("olympus-invasion.to-lobby"));
+            Assert.That(presenter.ResultSummary.OfferedActionCount, Is.EqualTo(2));
+            StageResultPresentationSnapshot presentation = presenter.PresentationSnapshot;
+            Assert.That(presentation, Is.Not.Null);
+            Assert.That(presentation.SourceResultSummaryId, Is.EqualTo(presenter.ResultSummary.ResultSummaryId));
+            Assert.That(
+                presentation.SourceResultSummaryDigest,
+                Is.EqualTo(presenter.ResultSummary.ResultSummaryDigest));
+            Assert.That(presentation.PlayableStageId, Is.EqualTo("OLYMPUS-INVASION-01"));
+            Assert.That(presentation.Outcome, Is.EqualTo(outcome));
+            Assert.That(presentation.ProfileId, Is.EqualTo("stage-result.olympus-invasion"));
+            Assert.That(presentation.ProfileRevision, Is.EqualTo(1));
+            Assert.That(presentation.LocaleId, Is.EqualTo("ko-KR"));
+            Assert.That(presentation.CanonicalDigest, Is.Not.Empty);
+            Assert.That(
+                presentation.TotalActiveElapsedMilliseconds,
+                Is.EqualTo(presenter.ResultSummary.OutcomeFact.TotalActiveElapsedMilliseconds));
+            Assert.That(
+                presentation.CombatActiveElapsedMilliseconds,
+                Is.EqualTo(presenter.ResultSummary.OutcomeFact.CombatActiveElapsedMilliseconds));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "stageNameText").text,
+                Is.EqualTo(presentation.StageTitle));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "stageNumberText").text,
+                Is.EqualTo(presentation.StageCode));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "totalActiveTimeLabelText").text,
+                Is.EqualTo(presentation.TotalActiveTimeLabel));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "totalActiveTimeValueText").text,
+                Is.EqualTo(presentation.TotalActiveTimeValue));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "combatActiveTimeLabelText").text,
+                Is.EqualTo(presentation.CombatActiveTimeLabel));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "combatActiveTimeValueText").text,
+                Is.EqualTo(presentation.CombatActiveTimeValue));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "primaryActionText").text,
+                Is.EqualTo(presentation.PrimaryActionLabel));
+            Assert.That(
+                ReadPrivateField<Text>(presenter, "lobbyActionText").text,
+                Is.EqualTo(presentation.LobbyActionLabel));
+
+            Text[] proofRowTexts = ReadPrivateField<Text[]>(presenter, "proofRowTexts");
+            Assert.That(proofRowTexts, Has.Length.EqualTo(3));
+            bool foundSurvivalRow = false;
+            for (int proofIndex = 0; proofIndex < proofRowTexts.Length; proofIndex++)
+            {
+                bool expectedActive = proofIndex < presentation.ProofRowCount;
+                Assert.That(proofRowTexts[proofIndex].gameObject.activeSelf, Is.EqualTo(expectedActive));
+                if (!expectedActive)
+                {
+                    continue;
+                }
+
+                StageResultPresentationRowSnapshot row = presentation.GetProofRow(proofIndex);
+                Assert.That(proofRowTexts[proofIndex].text, Is.EqualTo(row.LocalizedText));
+                if (row.ProofId == StageRunFactVocabulary.SurvivalNoPlayerDownProofId)
+                {
+                    foundSurvivalRow = true;
+                    Assert.That(
+                        presenter.ResultSummary.TryGetSemanticProof(row.ProofId, out StageRunSemanticProofFact proof),
+                        Is.True);
+                    Assert.That(row.ProofDigest, Is.EqualTo(proof.CanonicalDigest));
+                    Assert.That(proof.Qualified, Is.True);
+                }
+            }
+
+            Assert.That(foundSurvivalRow, Is.EqualTo(outcome == StageRouteOutcome.Clear));
+
+            StageResultPresentationCatalog catalog =
+                ReadPrivateField<StageResultPresentationCatalog>(presenter, "presentationCatalog");
+            Assert.That(catalog, Is.SameAs(LoadRequired<StageResultPresentationCatalog>(
+                ResultPresentationCatalogPath)));
+            Assert.That(catalog.TryValidate(out string catalogError), Is.True, catalogError);
+            string committedDigest = presenter.ResultSummary.ResultSummaryDigest;
+            Assert.That(
+                catalog.TryCreateSnapshot(
+                    presenter.ResultSummary,
+                    "en-US",
+                    out StageResultPresentationSnapshot englishPresentation,
+                    out string englishError),
+                Is.True,
+                englishError);
+            Assert.That(englishPresentation.LocaleId, Is.EqualTo("en-US"));
+            Assert.That(englishPresentation.SourceResultSummaryDigest, Is.EqualTo(committedDigest));
+            Assert.That(englishPresentation.StageTitle, Is.Not.EqualTo(presentation.StageTitle));
+            Assert.That(englishPresentation.TotalActiveElapsedMilliseconds,
+                Is.EqualTo(presentation.TotalActiveElapsedMilliseconds));
+            Assert.That(presenter.ResultSummary.ResultSummaryDigest, Is.EqualTo(committedDigest));
+            MonoBehaviour resolver =
+                ReadPrivateField<MonoBehaviour>(presenter, "uiRouteResolverBehaviour");
+            Assert.That(resolver, Is.Not.Null);
+            Assert.That(
+                resolver.GetType().FullName,
+                Is.EqualTo("DimensionBrawl.UI.StageClear.StageRunUiRouteResolver"));
         }
 
         private static IEnumerator WaitForActiveScenePath(string expectedPath, float timeoutSeconds)
@@ -481,6 +2906,63 @@ namespace DimensionBrawl.Tests
             return found;
         }
 
+        private static StageDefinitionSceneBinding RequireSceneBinding(
+            Scene scene,
+            StageDefinitionProfile expectedDefinition)
+        {
+            StageDefinitionSceneBinding found = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                StageDefinitionSceneBinding[] bindings =
+                    roots[rootIndex].GetComponentsInChildren<StageDefinitionSceneBinding>(true);
+                for (int bindingIndex = 0; bindingIndex < bindings.Length; bindingIndex++)
+                {
+                    StageDefinitionSceneBinding candidate = bindings[bindingIndex];
+                    if (candidate.StageDefinition != expectedDefinition)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(
+                        found,
+                        Is.Null,
+                        $"{scene.path} owns duplicate bindings for {expectedDefinition.StageId}.");
+                    found = candidate;
+                }
+            }
+
+            Assert.That(
+                found,
+                Is.Not.Null,
+                $"{scene.path} is missing the binding for {expectedDefinition.StageId}.");
+            return found;
+        }
+
+        private static T RequireSingleSceneInterface<T>(Scene scene)
+            where T : class
+        {
+            T found = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                MonoBehaviour[] behaviours = roots[rootIndex].GetComponentsInChildren<MonoBehaviour>(true);
+                for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
+                {
+                    if (behaviours[behaviourIndex] is not T candidate)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(found, Is.Null, $"{scene.path} owns duplicate {typeof(T).Name} implementations.");
+                    found = candidate;
+                }
+            }
+
+            Assert.That(found, Is.Not.Null, $"{scene.path} is missing {typeof(T).Name}.");
+            return found;
+        }
+
         private static Behaviour RequireSingleSceneBehaviour(Scene scene, Type behaviourType)
         {
             Behaviour found = null;
@@ -566,26 +3048,511 @@ namespace DimensionBrawl.Tests
             Assert.Fail($"Missing route id {routeId} in {RouteTablePath}.");
         }
 
-        private static StageDefinitionProfile CreateStageDefinition(string scenePath)
+        private static StageDefinitionProfile CreateStageDefinition(string stageId, string scenePath)
         {
             StageDefinitionProfile definition = ScriptableObject.CreateInstance<StageDefinitionProfile>();
             var serializedDefinition = new SerializedObject(definition);
+            serializedDefinition.FindProperty("stageId").stringValue = stageId;
             serializedDefinition.FindProperty("mapScenePath").stringValue = scenePath;
             serializedDefinition.ApplyModifiedPropertiesWithoutUndo();
             return definition;
         }
 
+        private static StageResultLocalizedString FindLocalizationEntry(
+            StageResultLocalizationTable table,
+            string localeId,
+            string key)
+        {
+            for (int localeIndex = 0; localeIndex < table.LocaleCount; localeIndex++)
+            {
+                StageResultLocaleDefinition locale = table.GetLocale(localeIndex);
+                if (!string.Equals(locale.LocaleId, localeId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                for (int entryIndex = 0; entryIndex < locale.EntryCount; entryIndex++)
+                {
+                    StageResultLocalizedString entry = locale.GetEntry(entryIndex);
+                    if (string.Equals(entry.Key, key, StringComparison.Ordinal))
+                    {
+                        return entry;
+                    }
+                }
+            }
+
+            Assert.Fail($"Missing localization entry {localeId}:{key}.");
+            return null;
+        }
+
+        private static PlayableStageDefinition CreatePlayableStageDefinition(
+            string playableStageId,
+            string entrySegmentId,
+            StageDefinitionProfile entryDefinition)
+        {
+            PlayableStageDefinition source = LoadRequired<PlayableStageDefinition>(
+                PlayableStagePath);
+            PlayableStageDefinition route = UnityEngine.Object.Instantiate(source);
+            route.name = playableStageId;
+            route.hideFlags = HideFlags.HideAndDontSave;
+            SetPrivateField(route, "terminalResolutionPolicy", null);
+            var serializedRoute = new SerializedObject(route);
+            serializedRoute.FindProperty("schemaVersion").intValue = 1;
+            serializedRoute.FindProperty("playableStageId").stringValue = source.PlayableStageId;
+            serializedRoute.FindProperty("routeRevision").intValue = 1;
+            SerializedProperty segments = serializedRoute.FindProperty("sceneSegments");
+            segments.arraySize = 0;
+            segments.arraySize = 1;
+            SerializedProperty entry = segments.GetArrayElementAtIndex(0);
+            entry.FindPropertyRelative("segmentId").stringValue = entrySegmentId;
+            entry.FindPropertyRelative("sequenceIndex").intValue = 0;
+            entry.FindPropertyRelative("stageDefinition").objectReferenceValue = entryDefinition;
+            serializedRoute.FindProperty("terminalActions").arraySize = 0;
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+
+            serializedRoute.Update();
+            serializedRoute.FindProperty("canonicalRouteDigest").stringValue = route.ComputeCanonicalRouteDigest();
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+
+            LinearStageTemplateProfile template = CreateStageTemplate(
+                source.PlayableStageId,
+                entrySegmentId);
+            serializedRoute.Update();
+            SerializedProperty reference = serializedRoute.FindProperty("referenceBlock");
+            reference.FindPropertyRelative("enabled").boolValue = true;
+            reference.FindPropertyRelative("schemaVersion").intValue = 1;
+            reference.FindPropertyRelative("revision").intValue = 1;
+            reference.FindPropertyRelative("canonicalReferenceDigest").stringValue = string.Empty;
+            reference.FindPropertyRelative("stageTemplate").objectReferenceValue = template;
+            reference.FindPropertyRelative("briefingSchemaVersion").intValue = 1;
+            reference.FindPropertyRelative("briefingRevision").intValue = 1;
+            reference.FindPropertyRelative("canonicalBriefingDigest").stringValue = string.Empty;
+            reference.FindPropertyRelative("storyEntryDisposition").intValue =
+                (int)StageReferenceDisposition.None;
+            reference.FindPropertyRelative("storyExitDisposition").intValue =
+                (int)StageReferenceDisposition.NoFinalSegmentExitPresentationAuthored;
+            reference.FindPropertyRelative("resultDefinitionDisposition").intValue =
+                (int)StageReferenceDisposition.NotAuthoredForCurrentSchema;
+            reference.FindPropertyRelative("progressionNodeDisposition").intValue =
+                (int)StageReferenceDisposition.NotAuthoredForCurrentSchema;
+            reference.FindPropertyRelative("ruleSetDisposition").intValue =
+                (int)StageReferenceDisposition.NotAdmittedByCurrentSchema;
+            reference.FindPropertyRelative("modifierDisposition").intValue =
+                (int)StageReferenceDisposition.NotAdmittedByCurrentSchema;
+            reference.FindPropertyRelative("enemyVariantDisposition").intValue =
+                (int)StageReferenceDisposition.NotAdmittedByCurrentSchema;
+            reference.FindPropertyRelative("tutorialCourseDisposition").intValue =
+                (int)StageReferenceDisposition.NotAdmittedByCurrentSchema;
+            reference.FindPropertyRelative("rewardPlanDisposition").intValue =
+                (int)StageReferenceDisposition.NoVerifiedSource;
+            reference.FindPropertyRelative("activeRunRestartPolicyDisposition").intValue =
+                (int)StageBriefingValueDisposition.NotAdmittedByCurrentSchema;
+            reference.FindPropertyRelative("activeRunRestartPolicyDigest").stringValue = string.Empty;
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+
+            serializedRoute.Update();
+            serializedRoute.FindProperty("referenceBlock")
+                .FindPropertyRelative("canonicalReferenceDigest")
+                .stringValue = route.ComputeCanonicalReferenceDigest();
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                route.TryComputeCanonicalBriefingDigest(
+                    out string briefingDigest,
+                    out StageBriefingBuildRejectReason computeRejectReason),
+                Is.True,
+                computeRejectReason.ToString());
+            serializedRoute.Update();
+            serializedRoute.FindProperty("referenceBlock")
+                .FindPropertyRelative("canonicalBriefingDigest")
+                .stringValue = briefingDigest;
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                route.TryCreateBriefingReadModel(
+                    out _,
+                    out StageBriefingBuildRejectReason createRejectReason),
+                Is.True,
+                createRejectReason.ToString());
+
+            StageResultProgressionJoinBlock sourceJoin = source.ResultProgressionJoin;
+            Assert.That(sourceJoin, Is.Not.Null);
+            Assert.That(sourceJoin.ResultDefinition, Is.Not.Null);
+            Assert.That(sourceJoin.ProgressionNode, Is.Not.Null);
+            Assert.That(sourceJoin.ProgressionGraph, Is.Not.Null);
+
+            StageProgressionNode node = UnityEngine.Object.Instantiate(
+                sourceJoin.ProgressionNode);
+            node.hideFlags = HideFlags.HideAndDontSave;
+            var serializedNode = new SerializedObject(node);
+            serializedNode.FindProperty("playableStageId").stringValue = route.PlayableStageId;
+            serializedNode.FindProperty("routeRevision").intValue = route.RouteRevision;
+            serializedNode.FindProperty("canonicalRouteDigest").stringValue =
+                route.CanonicalRouteDigest;
+            serializedNode.FindProperty("contentDigest").stringValue = string.Empty;
+            serializedNode.FindProperty("bindingDigest").stringValue = string.Empty;
+            serializedNode.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                node.TryComputeCanonicalDigests(
+                    out string nodeContentDigest,
+                    out string nodeBindingDigest,
+                    out string nodeDigestError),
+                Is.True,
+                nodeDigestError);
+            serializedNode.Update();
+            serializedNode.FindProperty("contentDigest").stringValue = nodeContentDigest;
+            serializedNode.FindProperty("bindingDigest").stringValue = nodeBindingDigest;
+            serializedNode.ApplyModifiedPropertiesWithoutUndo();
+
+            StageProgressionGraph graph = UnityEngine.Object.Instantiate(
+                sourceJoin.ProgressionGraph);
+            graph.hideFlags = HideFlags.HideAndDontSave;
+            var serializedGraph = new SerializedObject(graph);
+            SerializedProperty graphNodes = serializedGraph.FindProperty("nodes");
+            graphNodes.arraySize = 1;
+            graphNodes.GetArrayElementAtIndex(0).objectReferenceValue = node;
+            serializedGraph.FindProperty("canonicalDigest").stringValue = string.Empty;
+            serializedGraph.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                graph.TryComputeCanonicalDigest(
+                    out string graphDigest,
+                    out string graphDigestError),
+                Is.True,
+                graphDigestError);
+            serializedGraph.Update();
+            serializedGraph.FindProperty("canonicalDigest").stringValue = graphDigest;
+            serializedGraph.ApplyModifiedPropertiesWithoutUndo();
+
+            serializedRoute.Update();
+            SerializedProperty join = serializedRoute.FindProperty("resultProgressionJoin");
+            join.FindPropertyRelative("present").boolValue = true;
+            join.FindPropertyRelative("schemaVersion").intValue = 1;
+            join.FindPropertyRelative("revision").intValue = 1;
+            join.FindPropertyRelative("semanticCoupling").intValue =
+                (int)StageResultJoinSemanticCoupling
+                    .PresentationAuditSidecarOutsideP1ASemanticResult;
+            join.FindPropertyRelative("resultDefinitionDisposition").intValue =
+                (int)StageResultProgressionReferenceDisposition.Present;
+            join.FindPropertyRelative("resultDefinition").objectReferenceValue =
+                sourceJoin.ResultDefinition;
+            join.FindPropertyRelative("progressionNodeDisposition").intValue =
+                (int)StageResultProgressionReferenceDisposition.Present;
+            join.FindPropertyRelative("progressionNode").objectReferenceValue = node;
+            join.FindPropertyRelative("progressionGraphDisposition").intValue =
+                (int)StageResultProgressionReferenceDisposition.Present;
+            join.FindPropertyRelative("progressionGraph").objectReferenceValue = graph;
+            join.FindPropertyRelative("rewardPlanDisposition").intValue =
+                (int)StageResultProgressionReferenceDisposition.NotAdmittedByCurrentSchema;
+            join.FindPropertyRelative("rewardPlanDigest").stringValue = string.Empty;
+            join.FindPropertyRelative("canonicalDigest").stringValue = string.Empty;
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                route.TryComputeResultProgressionJoinDigest(
+                    out string joinDigest,
+                    out string joinDigestError),
+                Is.True,
+                joinDigestError);
+            serializedRoute.Update();
+            serializedRoute.FindProperty("resultProgressionJoin")
+                .FindPropertyRelative("canonicalDigest")
+                .stringValue = joinDigest;
+            serializedRoute.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(
+                StageRunResultProgressionJoinSnapshot.TryCreate(
+                    route,
+                    out _,
+                    out string joinError),
+                Is.True,
+                joinError);
+            return route;
+        }
+
+        private static StageProgressionNode CreateProgressionNodeFixture(
+            StageProgressionNode template,
+            string nodeId,
+            string graphId,
+            List<UnityEngine.Object> created)
+        {
+            StageProgressionNode node = UnityEngine.Object.Instantiate(template);
+            node.hideFlags = HideFlags.HideAndDontSave;
+            SetPrivateField(node, "progressionNodeId", nodeId);
+            SetPrivateField(node, "progressionGraphId", graphId);
+            SetPrivateField(
+                node,
+                "progressionGraphRevision",
+                template.ProgressionGraphRevision);
+            SetPrivateField(node, "prerequisites", Array.Empty<StageProgressionPrerequisiteRef>());
+            SetPrivateField(node, "recommendedNext", Array.Empty<StageProgressionRecommendedNextRef>());
+            SetPrivateField(node, "contentDigest", string.Empty);
+            SetPrivateField(node, "bindingDigest", string.Empty);
+            created.Add(node);
+            return node;
+        }
+
+        private static void ConfigureProgressionNodeEdges(
+            StageProgressionNode node,
+            StageProgressionNode[] prerequisiteTargets,
+            int[] prerequisiteRevisions,
+            StageProgressionNode[] recommendedTargets,
+            int[] recommendedRevisions)
+        {
+            Assert.That(prerequisiteTargets.Length, Is.EqualTo(prerequisiteRevisions.Length));
+            Assert.That(recommendedTargets.Length, Is.EqualTo(recommendedRevisions.Length));
+
+            var prerequisites = new StageProgressionPrerequisiteRef[prerequisiteTargets.Length];
+            for (int i = 0; i < prerequisites.Length; i++)
+            {
+                var edge = new StageProgressionPrerequisiteRef();
+                SetPrivateField(edge, "targetProgressionNode", prerequisiteTargets[i]);
+                SetPrivateField(edge, "targetProgressionNodeRevision", prerequisiteRevisions[i]);
+                SetPrivateField(edge, "requirementKind", StageProgressionRequirementKind.Cleared);
+                SetPrivateField(edge, "requiredObjectiveId", string.Empty);
+                prerequisites[i] = edge;
+            }
+
+            var recommended = new StageProgressionRecommendedNextRef[recommendedTargets.Length];
+            for (int i = 0; i < recommended.Length; i++)
+            {
+                var edge = new StageProgressionRecommendedNextRef();
+                SetPrivateField(edge, "targetProgressionNode", recommendedTargets[i]);
+                SetPrivateField(edge, "targetProgressionNodeRevision", recommendedRevisions[i]);
+                recommended[i] = edge;
+            }
+
+            SetPrivateField(node, "prerequisites", prerequisites);
+            SetPrivateField(node, "recommendedNext", recommended);
+            SetPrivateField(node, "contentDigest", string.Empty);
+            SetPrivateField(node, "bindingDigest", string.Empty);
+        }
+
+        private static void SealProgressionNode(StageProgressionNode node)
+        {
+            Assert.That(
+                node.TryComputeCanonicalDigests(
+                    out string contentDigest,
+                    out string bindingDigest,
+                    out string error),
+                Is.True,
+                error);
+            SetPrivateField(node, "contentDigest", contentDigest);
+            SetPrivateField(node, "bindingDigest", bindingDigest);
+        }
+
+        private static StageProgressionGraph CreateProgressionGraphFixture(
+            StageProgressionGraph template,
+            string graphId,
+            StageProgressionNode[] nodes,
+            List<UnityEngine.Object> created)
+        {
+            StageProgressionGraph graph = UnityEngine.Object.Instantiate(template);
+            graph.hideFlags = HideFlags.HideAndDontSave;
+            SetPrivateField(graph, "progressionGraphId", graphId);
+            SetPrivateField(graph, "nodes", nodes);
+            SetPrivateField(graph, "canonicalDigest", string.Empty);
+            created.Add(graph);
+            return graph;
+        }
+
+        private static LinearStageTemplateProfile CreateStageTemplate(
+            string playableStageId,
+            string entrySegmentId)
+        {
+            LinearStageTemplateProfile template =
+                ScriptableObject.CreateInstance<LinearStageTemplateProfile>();
+            template.hideFlags = HideFlags.HideAndDontSave;
+            var serializedTemplate = new SerializedObject(template);
+            serializedTemplate.FindProperty("stageTemplateId").stringValue =
+                playableStageId + ".template";
+            serializedTemplate.FindProperty("displayName").stringValue = playableStageId;
+            serializedTemplate.FindProperty("templateKind").intValue =
+                (int)LinearStageTemplateKind.TutorialRun;
+            serializedTemplate.FindProperty("templateSchemaVersion").intValue = 1;
+            serializedTemplate.FindProperty("templateRevision").intValue = 1;
+            serializedTemplate.FindProperty("canonicalTemplateDigest").stringValue = string.Empty;
+            serializedTemplate.FindProperty("titleDisposition").intValue =
+                (int)StageBriefingValueDisposition.Present;
+            serializedTemplate.FindProperty("title").stringValue = playableStageId;
+            serializedTemplate.FindProperty("titleLocalizationKeyDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("titleLocalizationKey").stringValue = string.Empty;
+            serializedTemplate.FindProperty("objectiveDisposition").intValue =
+                (int)StageBriefingValueDisposition.Present;
+            serializedTemplate.FindProperty("objective").stringValue = playableStageId + " summary";
+            serializedTemplate.FindProperty("combatLessonDisposition").intValue =
+                (int)StageBriefingValueDisposition.Present;
+            serializedTemplate.FindProperty("combatLesson").stringValue =
+                playableStageId + " combat lesson";
+            serializedTemplate.FindProperty("recommendedPowerDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("recommendedPowerTier").intValue = 0;
+            serializedTemplate.FindProperty("recommendedLoadoutDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("recommendedLoadout").stringValue = string.Empty;
+            serializedTemplate.FindProperty("targetRunDurationDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("targetRunDurationMilliseconds").intValue = 0;
+            serializedTemplate.FindProperty("targetRunDurationSeconds").floatValue = 0f;
+            serializedTemplate.FindProperty("featuredThreatDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("featuredThreat").stringValue = string.Empty;
+            serializedTemplate.FindProperty("featuredSummonNeedDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("featuredSummonNeed").intValue = (int)StageSummonNeed.None;
+            serializedTemplate.FindProperty("restrictionsDisposition").intValue =
+                (int)StageBriefingValueDisposition.NotAdmittedByCurrentSchema;
+            serializedTemplate.FindProperty("restrictionCount").intValue = 0;
+            serializedTemplate.FindProperty("masteryPreviewDisposition").intValue =
+                (int)StageBriefingValueDisposition.NotAuthoredForCurrentSchema;
+            serializedTemplate.FindProperty("masteryPreview").stringValue = string.Empty;
+            serializedTemplate.FindProperty("enemyPreviewDisposition").intValue =
+                (int)StageBriefingValueDisposition.NotAdmittedByCurrentSchema;
+            serializedTemplate.FindProperty("enemyPreviewCount").intValue = 0;
+            serializedTemplate.FindProperty("rewardPreviewDisposition").intValue =
+                (int)StageBriefingValueDisposition.NoVerifiedSource;
+            serializedTemplate.FindProperty("rewardPreview").stringValue = string.Empty;
+            serializedTemplate.FindProperty("courseSummaryDisposition").intValue =
+                (int)StageBriefingValueDisposition.NotAdmittedByCurrentSchema;
+            serializedTemplate.FindProperty("courseSummary").stringValue = string.Empty;
+            serializedTemplate.FindProperty("masteryObjective").stringValue = string.Empty;
+            serializedTemplate.FindProperty("rewardHook").stringValue = string.Empty;
+            serializedTemplate.FindProperty("segments").arraySize = 0;
+
+            SerializedProperty routeSegments =
+                serializedTemplate.FindProperty("canonicalRouteSegments");
+            routeSegments.arraySize = 1;
+            SerializedProperty segment = routeSegments.GetArrayElementAtIndex(0);
+            segment.FindPropertyRelative("templateSegmentId").stringValue =
+                playableStageId + ".segment";
+            segment.FindPropertyRelative("routeSegmentId").stringValue = entrySegmentId;
+            segment.FindPropertyRelative("routeSequenceIndex").intValue = 0;
+            SerializedProperty pockets = segment.FindPropertyRelative("pockets");
+            pockets.arraySize = 1;
+            SerializedProperty pocket = pockets.GetArrayElementAtIndex(0);
+            pocket.FindPropertyRelative("pocketId").stringValue = playableStageId + ".pocket";
+            pocket.FindPropertyRelative("sequenceIndex").intValue = 0;
+            pocket.FindPropertyRelative("objectiveKind").intValue =
+                (int)StageTemplatePocketObjectiveKind.CompleteTutorialPlan;
+            pocket.FindPropertyRelative("currentExecutionOwnerDisposition").intValue =
+                (int)StageTemplateCurrentExecutionOwnerDisposition.ExistingSceneOwner;
+            pocket.FindPropertyRelative("p1cAdmissionDisposition").intValue =
+                (int)StageTemplateP1CAdmissionDisposition.NotAdmitted;
+            pocket.FindPropertyRelative("sourceDisposition").intValue =
+                (int)StageTemplateSourceDisposition.CanonicalSemanticDigest;
+            pocket.FindPropertyRelative("sourceSemanticId").stringValue =
+                playableStageId + ".source";
+            pocket.FindPropertyRelative("sourceRevision").intValue = 1;
+            pocket.FindPropertyRelative("sourceSemanticDigest").stringValue =
+                new string('a', 64);
+            pocket.FindPropertyRelative("enemyRoleCount").intValue = 0;
+            serializedTemplate.ApplyModifiedPropertiesWithoutUndo();
+
+            serializedTemplate.Update();
+            serializedTemplate.FindProperty("canonicalTemplateDigest").stringValue =
+                template.ComputeCanonicalTemplateDigest();
+            serializedTemplate.ApplyModifiedPropertiesWithoutUndo();
+            return template;
+        }
+
+        private static void DestroyPlayableStageDefinition(PlayableStageDefinition route)
+        {
+            LinearStageTemplateProfile template = route?.ReferenceBlock?.StageTemplate;
+            StageProgressionNode node = route?.ResultProgressionJoin?.ProgressionNode;
+            StageProgressionGraph graph = route?.ResultProgressionJoin?.ProgressionGraph;
+            UnityEngine.Object.DestroyImmediate(route);
+            if (template != null && !EditorUtility.IsPersistent(template))
+            {
+                UnityEngine.Object.DestroyImmediate(template);
+            }
+
+            if (graph != null && !EditorUtility.IsPersistent(graph))
+            {
+                UnityEngine.Object.DestroyImmediate(graph);
+            }
+
+            if (node != null && !EditorUtility.IsPersistent(node))
+            {
+                UnityEngine.Object.DestroyImmediate(node);
+            }
+        }
+
+        private static void AssertProjectionAccepted(Type catalogType, ScriptableObject catalog)
+        {
+            object[] arguments = { 0, ResolveUiRouteId(CombatRouteId), null, null };
+            Assert.That(
+                (bool)RequireMethod(
+                    catalogType,
+                    "TryCreateRouteProjection",
+                    4,
+                    typeof(int)).Invoke(catalog, arguments),
+                Is.True,
+                arguments[3]?.ToString());
+            Assert.That(arguments[2], Is.Not.Null);
+        }
+
+        private static void AssertProjectionRejected(
+            Type catalogType,
+            ScriptableObject catalog,
+            string expectedReason)
+        {
+            object[] arguments = { 0, ResolveUiRouteId(CombatRouteId), null, null };
+            Assert.That(
+                (bool)RequireMethod(
+                    catalogType,
+                    "TryCreateRouteProjection",
+                    4,
+                    typeof(int)).Invoke(catalog, arguments),
+                Is.False);
+            Assert.That(arguments[2], Is.Null);
+            Assert.That(arguments[3]?.ToString(), Is.EqualTo(expectedReason));
+        }
+
+        private static void AssertRejectedStartHasNoSideEffects(
+            Component presenter,
+            Component router,
+            int eventCount,
+            string expectedReason)
+        {
+            Assert.That(eventCount, Is.Zero);
+            Assert.That(Convert.ToInt32(ReadProperty(router, "RouteRequestCount")), Is.Zero);
+            Assert.That(
+                Convert.ToBoolean(ReadProperty(presenter, "HasSelectedRouteProjection")),
+                Is.False);
+            Assert.That(
+                Convert.ToBoolean(ReadProperty(presenter, "HasAcceptedStartRequest")),
+                Is.False);
+            Assert.That(
+                ReadProperty(presenter, "SelectedRouteRejectReason").ToString(),
+                Is.EqualTo(expectedReason));
+            Assert.That(presenter.GetComponent<AudioSource>(), Is.Null);
+            Assert.That(StageRunRuntime.HasActiveContext, Is.False);
+            Assert.That(StageRunRuntime.ActiveContext, Is.Null);
+            Assert.That(StageRunRuntime.LastAbortRecord, Is.Null);
+        }
+
         private static ScriptableObject CreateStageCatalog(
             Type catalogType,
-            StageDefinitionProfile primaryDefinition,
-            StageDefinitionProfile secondaryDefinition)
+            string stageId,
+            PlayableStageDefinition route)
         {
             ScriptableObject catalog = ScriptableObject.CreateInstance(catalogType);
             var serializedCatalog = new SerializedObject(catalog);
+            serializedCatalog.FindProperty("projectionSchemaVersion").intValue = 1;
+            serializedCatalog.FindProperty("catalogProjectionGeneration").intValue = 1;
             SerializedProperty stages = serializedCatalog.FindProperty("stages");
-            stages.arraySize = 2;
-            ConfigureStageEntry(stages.GetArrayElementAtIndex(0), "primary", primaryDefinition);
-            ConfigureStageEntry(stages.GetArrayElementAtIndex(1), "secondary", secondaryDefinition);
+            stages.arraySize = 1;
+            ConfigureStageEntry(stages.GetArrayElementAtIndex(0), stageId, route);
+            serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+
+            object[] digestArguments = { 0, ResolveUiRouteId(CombatRouteId), null, null };
+            Assert.That(
+                (bool)RequireMethod(
+                    catalogType,
+                    "TryComputeCanonicalProjectionDigest").Invoke(catalog, digestArguments),
+                Is.True,
+                digestArguments[3]?.ToString());
+            serializedCatalog.Update();
+            serializedCatalog.FindProperty("stages")
+                .GetArrayElementAtIndex(0)
+                .FindPropertyRelative("canonicalProjectionDigest")
+                .stringValue = (string)digestArguments[2];
             serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
             return catalog;
         }
@@ -593,11 +3560,20 @@ namespace DimensionBrawl.Tests
         private static void ConfigureStageEntry(
             SerializedProperty entry,
             string stageId,
-            StageDefinitionProfile definition)
+            PlayableStageDefinition route)
         {
             entry.FindPropertyRelative("id").stringValue = stageId;
-            entry.FindPropertyRelative("stageDefinition").objectReferenceValue = definition;
+            entry.FindPropertyRelative("displayName").stringValue =
+                route.ReferenceBlock.StageTemplate.Title;
+            entry.FindPropertyRelative("summary").stringValue =
+                route.ReferenceBlock.StageTemplate.Objective;
+            entry.FindPropertyRelative("threatTags").stringValue = stageId + " threats";
+            entry.FindPropertyRelative("recommendedSummonRole").stringValue = stageId + " support";
+            entry.FindPropertyRelative("mockRewardPreview").stringValue = string.Empty;
+            entry.FindPropertyRelative("presentationProvenance").intValue = 1;
+            entry.FindPropertyRelative("playableStage").objectReferenceValue = route;
             entry.FindPropertyRelative("loadingCardId").stringValue = stageId + "_loading";
+            entry.FindPropertyRelative("canonicalProjectionDigest").stringValue = string.Empty;
         }
 
         private static Type RequireProductType(string fullName)
@@ -608,6 +3584,13 @@ namespace DimensionBrawl.Tests
             return type;
         }
 
+        private static object ResolveUiRouteId(int rawValue)
+        {
+            return Enum.ToObject(
+                RequireProductType("DimensionBrawl.UI.UIRouteId"),
+                rawValue);
+        }
+
         private static MethodInfo RequireMethod(Type type, string methodName)
         {
             MethodInfo method = type.GetMethod(
@@ -615,6 +3598,31 @@ namespace DimensionBrawl.Tests
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             Assert.NotNull(method, $"Missing method {type.Name}.{methodName}.");
             return method;
+        }
+
+        private static MethodInfo RequireMethod(
+            Type type,
+            string methodName,
+            int parameterCount,
+            Type firstParameterType)
+        {
+            MethodInfo[] methods = type.GetMethods(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                ParameterInfo[] parameters = methods[i].GetParameters();
+                if (string.Equals(methods[i].Name, methodName, StringComparison.Ordinal)
+                    && parameters.Length == parameterCount
+                    && parameters[0].ParameterType == firstParameterType)
+                {
+                    return methods[i];
+                }
+            }
+
+            Assert.Fail(
+                $"Missing method {type.Name}.{methodName} with {parameterCount} parameter(s) "
+                + $"starting with {firstParameterType.Name}.");
+            return null;
         }
 
         private static PropertyInfo RequireProperty(Type type, string propertyName)
@@ -649,6 +3657,93 @@ namespace DimensionBrawl.Tests
             object value = field.GetValue(target);
             Assert.That(value, Is.Not.Null, $"Missing value {target.GetType().Name}.{fieldName}.");
             return (T)value;
+        }
+
+        private sealed class RecordingSceneLoader : IStageRunSceneLoader
+        {
+            private readonly bool shouldSucceed;
+            private readonly string failure;
+
+            public RecordingSceneLoader(bool shouldSucceed, string failure)
+            {
+                this.shouldSucceed = shouldSucceed;
+                this.failure = failure ?? string.Empty;
+            }
+
+            public int CallCount { get; private set; }
+            public string LastSceneName { get; private set; } = string.Empty;
+            public string LastScenePath { get; private set; } = string.Empty;
+            public StageRunSceneLoadCompletionMode CompletionMode =>
+                StageRunSceneLoadCompletionMode.DestinationActivatedSynchronously;
+
+            public bool TryLoadSingle(string sceneName, string scenePath, out string error)
+            {
+                CallCount++;
+                LastSceneName = sceneName ?? string.Empty;
+                LastScenePath = scenePath ?? string.Empty;
+                error = shouldSucceed ? string.Empty : failure;
+                return shouldSucceed;
+            }
+        }
+
+        private sealed class UnexpectedSceneChangingLoader : IStageRunSceneLoader
+        {
+            public int CallCount { get; private set; }
+            public StageRunSceneLoadCompletionMode CompletionMode =>
+                StageRunSceneLoadCompletionMode.DestinationActivatedSynchronously;
+
+            public bool TryLoadSingle(string sceneName, string scenePath, out string error)
+            {
+                CallCount++;
+                Scene unexpected = SceneManager.CreateScene(
+                    "UnexpectedTerminalDispatch_" + Guid.NewGuid().ToString("N"));
+                SceneManager.SetActiveScene(unexpected);
+                error = string.Empty;
+                return true;
+            }
+        }
+
+        private sealed class RejectingUiRouteResolver : IStageRunUiRouteResolver
+        {
+            private readonly string failure;
+
+            public RejectingUiRouteResolver(string failure)
+            {
+                this.failure = failure ?? string.Empty;
+            }
+
+            public bool TryResolve(
+                StageUiRouteId routeId,
+                out StageRunUiRouteTarget target,
+                out string error)
+            {
+                target = null;
+                error = failure;
+                return false;
+            }
+        }
+
+        private sealed class FixedUiRouteResolver : IStageRunUiRouteResolver
+        {
+            private readonly StageRunUiRouteTarget target;
+
+            public FixedUiRouteResolver(StageUiRouteId routeId, string sceneName, string scenePath)
+            {
+                target = new StageRunUiRouteTarget(routeId, sceneName, scenePath);
+            }
+
+            public int CallCount { get; private set; }
+
+            public bool TryResolve(
+                StageUiRouteId routeId,
+                out StageRunUiRouteTarget resolved,
+                out string error)
+            {
+                CallCount++;
+                resolved = routeId == target.RouteId ? target : null;
+                error = resolved != null ? string.Empty : "route id mismatch";
+                return resolved != null;
+            }
         }
 
         private static T LoadRequired<T>(string assetPath)

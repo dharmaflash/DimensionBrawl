@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d6d80fc65a6a454594964c025d3aa64, type: 3}
+  m_Name: DB_StageTemplate_OlympusInvasionTutorialStationRun
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageTemplateProfile
+  stageTemplateId: olympus-invasion.tutorial-station-run
+  displayName: 기억의 회랑
+  templateKind: 0
+  templateSchemaVersion: 1
+  templateRevision: 1
+  canonicalTemplateDigest: 3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55
+  titleDisposition: 1
+  title: 기억의 회랑
+  titleLocalizationKeyDisposition: 2
+  titleLocalizationKey:
+  objectiveDisposition: 1
+  objective: "하층 세계에서 발생한 차원의 미세한 균열.\n그 징후의 진원지를 조사하라."
+  combatLessonDisposition: 1
+  recommendedPowerDisposition: 2
+  recommendedLoadoutDisposition: 2
+  recommendedLoadout:
+  targetRunDurationDisposition: 2
+  targetRunDurationMilliseconds: 0
+  featuredThreatDisposition: 2
+  featuredThreat:
+  featuredSummonNeedDisposition: 2
+  restrictionsDisposition: 3
+  restrictionCount: 0
+  masteryPreviewDisposition: 4
+  masteryPreview:
+  enemyPreviewDisposition: 3
+  enemyPreviewCount: 0
+  rewardPreviewDisposition: 2
+  rewardPreview:
+  courseSummaryDisposition: 3
+  courseSummary:
+  canonicalRouteSegments:
+  - templateSegmentId: olympus-invasion.corridor-tutorial
+    routeSegmentId: corridor_intro_tutorial
+    routeSequenceIndex: 0
+    pockets:
+    - pocketId: olympus-invasion.corridor.core-tutorial
+      sequenceIndex: 0
+      objectiveKind: 1
+      currentExecutionOwnerDisposition: 1
+      p1cAdmissionDisposition: 1
+      sourceDisposition: 1
+      sourceSemanticId: olympus.corridor.core-tutorial
+      sourceRevision: 1
+      sourceSemanticDigest: b1b00dd84e27fe8d06c6736d85b16ff6bfe141b7ccb70b01ea851144dd8182f2
+      enemyRoleCount: 0
+  - templateSegmentId: olympus-invasion.station-guide-combat
+    routeSegmentId: station_entry_combat
+    routeSequenceIndex: 1
+    pockets:
+    - pocketId: olympus-invasion.station.replica-summon-guide
+      sequenceIndex: 0
+      objectiveKind: 2
+      currentExecutionOwnerDisposition: 1
+      p1cAdmissionDisposition: 1
+      sourceDisposition: 2
+      sourceSemanticId: CombatEntryGuideState.Released
+      sourceRevision: 0
+      sourceSemanticDigest:
+      enemyRoleCount: 0
+    - pocketId: olympus-invasion.station.boss-encounter
+      sequenceIndex: 1
+      objectiveKind: 3
+      currentExecutionOwnerDisposition: 1
+      p1cAdmissionDisposition: 1
+      sourceDisposition: 3
+      sourceSemanticId: station.encounter.terminal
+      sourceRevision: 1
+      sourceSemanticDigest:
+      enemyRoleCount: 0
+  recommendedPowerTier: 0
+  targetRunDurationSeconds: 0
+  featuredSummonNeed: 0
+  combatLesson: 회랑에서 근접 공격, 이동, 원거리 전환과 사격, 회피, 표적 정리를 차례로 익힌다. 정거장에서는 레플리카 지급과 소환 안내를 확인한 뒤 보스 격파를 목표로 한다.
+  masteryObjective:
+  rewardHook:
+  segments: []
+  excludedScope: Current-route truthful reference contract only; runtime pocket execution remains owned by existing scene systems.

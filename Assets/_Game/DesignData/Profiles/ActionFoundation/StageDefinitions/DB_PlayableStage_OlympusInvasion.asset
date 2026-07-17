@@ -1,0 +1,159 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c0d53a6b8d74d3b9e2a6f1c5a907e11, type: 3}
+  m_Name: DB_PlayableStage_OlympusInvasion
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.PlayableStageDefinition
+  schemaVersion: 1
+  playableStageId: OLYMPUS-INVASION-01
+  routeRevision: 2
+  canonicalRouteDigest: 878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0
+  sceneSegments:
+  - segmentId: corridor_intro_tutorial
+    sequenceIndex: 0
+    stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+    entryConditionId: run.entry.admitted
+    entryConditionKind: 1
+    exitConditionId: corridor.station-entry.reached
+    exitConditionKind: 4
+    handoffPolicy: 4
+    successorKind: 1
+    destinationSceneKind: 1
+    transitionTokenKind: 1
+    loaderGenerationKind: 0
+    navigationAuthorityKind: 1
+    returnOwnerKind: 0
+    returnOwnerReceiptPolicy: 0
+    entryPresentation:
+      enabled: 1
+      stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+      handoffId: intro-to-stage
+      cinematicProfile: {fileID: 11400000, guid: 2392b944287ab3b4f8c3cff3318a7168, type: 2}
+      expectedPortId: intro-gatepod-port
+      expectedPlayableAsset: {fileID: 11400000, guid: 78db0cf6d732b004db26927620f65656, type: 2}
+      triggerConditionId: run.entry.admitted
+      completionConditionId: corridor.tutorial.ready
+    exitPresentation:
+      enabled: 0
+      stageDefinition: {fileID: 0}
+      handoffId: 
+      cinematicProfile: {fileID: 0}
+      expectedPortId: 
+      expectedPlayableAsset: {fileID: 0}
+      triggerConditionId: 
+      completionConditionId: 
+  - segmentId: station_entry_combat
+    sequenceIndex: 1
+    stageDefinition: {fileID: 11400000, guid: e7f3c6a9d2b140f5a8c4e1b7d9053f62, type: 2}
+    entryConditionId: corridor.station-entry.reached
+    entryConditionKind: 4
+    exitConditionId: station.encounter.terminal
+    exitConditionKind: 3
+    handoffPolicy: 3
+    successorKind: 0
+    destinationSceneKind: 0
+    transitionTokenKind: 0
+    loaderGenerationKind: 0
+    navigationAuthorityKind: 0
+    returnOwnerKind: 1
+    returnOwnerReceiptPolicy: 1
+    entryPresentation:
+      enabled: 0
+      stageDefinition: {fileID: 0}
+      handoffId: 
+      cinematicProfile: {fileID: 0}
+      expectedPortId: 
+      expectedPlayableAsset: {fileID: 0}
+      triggerConditionId: 
+      completionConditionId: 
+    exitPresentation:
+      enabled: 0
+      stageDefinition: {fileID: 0}
+      handoffId: 
+      cinematicProfile: {fileID: 0}
+      expectedPortId: 
+      expectedPlayableAsset: {fileID: 0}
+      triggerConditionId: 
+      completionConditionId: 
+  terminalActions:
+  - actionId: olympus-invasion.replay
+    actionKind: 2
+    targetPlayableStageId: OLYMPUS-INVASION-01
+    targetUiRouteId: 0
+    allowedOutcomes: 1
+  - actionId: olympus-invasion.retry
+    actionKind: 1
+    targetPlayableStageId: OLYMPUS-INVASION-01
+    targetUiRouteId: 0
+    allowedOutcomes: 2
+  - actionId: olympus-invasion.to-lobby
+    actionKind: 3
+    targetPlayableStageId: 
+    targetUiRouteId: 20
+    allowedOutcomes: 3
+  terminalResolutionPolicy:
+    terminalResolutionPolicyId: olympus-invasion.same-terminal-epoch
+    semanticRevision: 1
+    terminalResolutionPolicyDigest: f18fc51e2b65ae7e11b7e26866adc29f1f994c95be3591f2806bb846cd0bcaf2
+    windowKind: 1
+    batchOwnerKind: 1
+    rootAdmissionKind: 1
+    rootOrderKind: 1
+    rootIssuePoint: 1
+    batchBoundaryKind: 1
+    terminalSubjectRoles: 3
+    coveragePolicy: 1
+    workExecutionKind: 1
+    nestedRequestPolicy: 1
+    independentRequestPolicy: 1
+    epochStampKind: 1
+    coordinatorLifecycleKind: 1
+    subjectFinalizationKind: 1
+    tokenStatePolicy: 1
+    flushBarrier: 1
+    simultaneousOutcome: 1
+    requiresBossCandidateAndFinalDead: 1
+    requiresPlayerCandidateAndFinalDown: 1
+  referenceBlock:
+    enabled: 1
+    schemaVersion: 1
+    revision: 2
+    canonicalReferenceDigest: eada6124fe3bed295bddaf3caeb0b53ff1510a2f790c2b76b8454410834a21ea
+    stageTemplate: {fileID: 11400000, guid: c57d2f6a9b1348e7a40c15d9e62f3b81, type: 2}
+    briefingSchemaVersion: 1
+    briefingRevision: 2
+    canonicalBriefingDigest: e334d6bb63dc42d921e6d85bcca42cc628064d0d1b8fee1cc303d4ca223fab70
+    storyEntryDisposition: 1
+    storyExitDisposition: 5
+    resultDefinitionDisposition: 2
+    progressionNodeDisposition: 2
+    ruleSetDisposition: 3
+    modifierDisposition: 3
+    enemyVariantDisposition: 3
+    tutorialCourseDisposition: 3
+    rewardPlanDisposition: 4
+    activeRunRestartPolicyDisposition: 3
+    activeRunRestartPolicyDigest: 
+  resultProgressionJoin:
+    present: 1
+    schemaVersion: 1
+    revision: 2
+    semanticCoupling: 1
+    resultDefinitionDisposition: 1
+    resultDefinition: {fileID: 11400000, guid: 7f09b4148d9c7c349ab156c39faae017, type: 2}
+    canonicalPresentationCatalog: {fileID: 11400000, guid: f4aa9682b7b84d9f953874c1f31e2e12, type: 2}
+    progressionNodeDisposition: 1
+    progressionNode: {fileID: 11400000, guid: c371d49d8e39c1a4991c8202cdbd2b87, type: 2}
+    progressionGraphDisposition: 1
+    progressionGraph: {fileID: 11400000, guid: 2182ee6b0f5565648b4a09d17800ee8d, type: 2}
+    rewardPlanDisposition: 3
+    rewardPlanDigest: 
+    canonicalDigest: d389c587a17c29cb8e1df60222442ff4339f32fa5435b3586e8f49aa43461d71

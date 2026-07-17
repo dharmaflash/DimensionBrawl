@@ -4,7 +4,9 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -16,6 +18,12 @@ namespace DimensionBrawl.Tests
     public sealed class OlympusCorridorActualPlayPathTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string IntroProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude.asset";
+        private const string IntroPlayablePath =
+            "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening_OlympusBombingPrelude.playable";
+        private const string IntroProfileGuid = "2392b944287ab3b4f8c3cff3318a7168";
+        private const string IntroPlayableGuid = "78db0cf6d732b004db26927620f65656";
         private const string ReportPath = "C:/tmp/DimensionBrawl-OlympusActualPlayPathReport.md";
         private const string DirectorName = "IntroGatePodReview_TimelineDirector";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
@@ -37,6 +45,87 @@ namespace DimensionBrawl.Tests
         public IEnumerator ResetTimeScale()
         {
             Time.timeScale = 1f;
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CanonicalIntroPresentationSpineMatchesNaturalRuntimeConsumer()
+        {
+            OlympusCorridorCombatFlowController flow =
+                FindSceneComponent<OlympusCorridorCombatFlowController>(FlowRootName);
+            PlayableDirector director = FindSceneComponent<PlayableDirector>(DirectorName);
+            Assert.That(flow, Is.Not.Null);
+            Assert.That(director, Is.Not.Null);
+
+            PlayableStageDefinition route = ReadPrivateField<PlayableStageDefinition>(
+                flow,
+                "playableStageDefinition");
+            Assert.That(route, Is.Not.Null);
+            StageDefinitionProfile corridorDefinition = route.GetSceneSegment(0).StageDefinition;
+            StageDefinitionSceneBinding sceneBinding = FindSceneBinding(corridorDefinition);
+            Assert.That(sceneBinding, Is.Not.Null);
+            Assert.That(
+                route.CanonicalRouteDigest,
+                Is.EqualTo("878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0"));
+
+            StagePresentationHandoffRef presentation = route.GetSceneSegment(0).EntryPresentation;
+            Assert.That(presentation, Is.Not.Null);
+            Assert.That(presentation.IsPresent, Is.True);
+            Assert.That(sceneBinding.CutscenePortCount, Is.EqualTo(1));
+
+            StageDefinitionProfile stageDefinition = sceneBinding.StageDefinition;
+            Assert.That(stageDefinition, Is.Not.Null);
+            Assert.That(sceneBinding.AnchorPointCount, Is.EqualTo(stageDefinition.AnchorCount));
+            for (int i = 0; i < stageDefinition.AnchorCount; i++)
+            {
+                StageDefinitionProfile.AnchorRef expectedAnchor = stageDefinition.GetAnchor(i);
+                Assert.That(
+                    sceneBinding.TryGetAnchorPoint(expectedAnchor.AnchorId, out StageAnchorPoint sceneAnchor),
+                    Is.True,
+                    $"Definition anchor {expectedAnchor.AnchorId} is absent from the loaded Corridor scene.");
+                Assert.That(sceneAnchor, Is.Not.Null);
+                Assert.That(sceneAnchor.GroupId, Is.EqualTo(expectedAnchor.GroupId));
+            }
+
+            CinematicSequenceProfile profile =
+                AssetDatabase.LoadAssetAtPath<CinematicSequenceProfile>(IntroProfilePath);
+            PlayableAsset playable = AssetDatabase.LoadAssetAtPath<PlayableAsset>(IntroPlayablePath);
+            Assert.That(profile, Is.Not.Null);
+            Assert.That(playable, Is.Not.Null);
+            Assert.That(AssetDatabase.AssetPathToGUID(IntroProfilePath), Is.EqualTo(IntroProfileGuid));
+            Assert.That(AssetDatabase.AssetPathToGUID(IntroPlayablePath), Is.EqualTo(IntroPlayableGuid));
+            Assert.That(presentation.CinematicProfile, Is.SameAs(profile));
+            Assert.That(presentation.ExpectedPlayableAsset, Is.SameAs(playable));
+            Assert.That(presentation.StageDefinition, Is.SameAs(sceneBinding.StageDefinition));
+
+            Assert.That(
+                sceneBinding.TryGetCutscenePort(presentation.HandoffId, out StageCutscenePort port),
+                Is.True);
+            Assert.That(port.PortId, Is.EqualTo(presentation.ExpectedPortId));
+            Assert.That(port.PresentationProfile, Is.SameAs(profile));
+            Assert.That(port.RuntimeDirector, Is.SameAs(director));
+            Assert.That(director.playableAsset, Is.SameAs(playable));
+
+            int outputCount = 0;
+            foreach (PlayableBinding output in playable.outputs)
+            {
+                Assert.That(output.sourceObject, Is.Not.Null, $"{output.streamName} has no source object.");
+                Assert.That(
+                    AssetDatabase.GetAssetPath(output.sourceObject),
+                    Is.EqualTo(IntroPlayablePath),
+                    $"{output.streamName} does not belong to the canonical combined Timeline.");
+                Assert.That(
+                    director.GetGenericBinding(output.sourceObject),
+                    Is.Not.Null,
+                    $"{output.streamName} has no runtime scene binding.");
+                outputCount++;
+            }
+
+            Assert.That(outputCount, Is.EqualTo(39));
+            Assert.That(
+                ReadPrivateField<PlayableDirector>(flow, "introDirector"),
+                Is.SameAs(director));
+
             yield return null;
         }
 
@@ -263,6 +352,41 @@ namespace DimensionBrawl.Tests
 
             object value = field.GetValue(target);
             return value is double doubleValue ? doubleValue : fallback;
+        }
+
+        private static T ReadPrivateField<T>(object target, string fieldName)
+            where T : class
+        {
+            FieldInfo field = target?.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            return field?.GetValue(target) as T;
+        }
+
+        private static StageDefinitionSceneBinding FindSceneBinding(
+            StageDefinitionProfile expectedDefinition)
+        {
+            StageDefinitionSceneBinding result = null;
+            StageDefinitionSceneBinding[] components =
+                Resources.FindObjectsOfTypeAll<StageDefinitionSceneBinding>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                StageDefinitionSceneBinding candidate = components[i];
+                if (candidate == null
+                    || !candidate.gameObject.scene.IsValid()
+                    || candidate.StageDefinition != expectedDefinition)
+                {
+                    continue;
+                }
+
+                Assert.That(
+                    result,
+                    Is.Null,
+                    $"Expected one scene binding for {expectedDefinition?.StageId}.");
+                result = candidate;
+            }
+
+            return result;
         }
 
         private static T FindSceneComponent<T>(string objectName)
