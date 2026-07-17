@@ -1,0 +1,122 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4756a2e3696f1c341a3ef4dc8702a356, type: 3}
+  m_Name: DB_Narrative_OlympusChapterEntryReview
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.Narrative.NarrativeSequenceProfile
+  sequenceId: review.olympus.prologue.gate_signal
+  defaultAutoAdvanceSecondsPerCharacter: 0.042
+  lines:
+  - lineId: review.olympus.prologue.line.01
+    textLocalizationKey: review.olympus.prologue.line.01.text
+    stagingFallbackKorean: "\uC62C\uB9BC\uD3EC\uC2A4 \uAC8C\uC774\uD2B8 \uC2E0\uD638\uB97C
+      \uD3EC\uCC29\uD588\uC2B5\uB2C8\uB2E4. \uC0DD\uCCB4 \uBC18\uC751\uC744 \uD655\uC778\uD569\uB2C8\uB2E4."
+    speakerId: system
+    portraitSlot: 0
+    expressionId: signal
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.02
+    textLocalizationKey: review.olympus.prologue.line.02.text
+    stagingFallbackKorean: "\uC5EC\uAE30\uB294\u2026 \uAC8C\uC774\uD2B8 \uD3EC\uB4DC
+      \uB0B4\uBD80. \uD1B5\uC2E0 \uC0C1\uD0DC\uB97C \uD655\uC778\uD574 \uC918."
+    speakerId: field_agent
+    portraitSlot: 2
+    expressionId: neutral
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.03
+    textLocalizationKey: review.olympus.prologue.line.03.text
+    stagingFallbackKorean: "\uD1B5\uC2E0 \uC0C1\uD0DC\uB294 \uC591\uD638\uD569\uB2C8\uB2E4.
+      \uAC8C\uC774\uD2B8 \uB108\uBA38 \uBCF5\uB3C4\uC5D0\uC11C \uCC28\uC6D0 \uD3B8\uCC28\uAC00
+      \uBE60\uB974\uAC8C \uCEE4\uC9C0\uACE0 \uC788\uC5B4\uC694."
+    speakerId: operator
+    portraitSlot: 3
+    expressionId: alert
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 8300000, guid: 823e23b5e2213f94bb0ba38989c0ad0f, type: 3}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.04
+    textLocalizationKey: review.olympus.prologue.line.04.text
+    stagingFallbackKorean: "\uC678\uBD80 \uACA9\uBCBD \uAC1C\uBC29 \uC900\uBE44.
+      \uC794\uC5EC \uB3D9\uB825\uC740 62\uD37C\uC13C\uD2B8\uC785\uB2C8\uB2E4."
+    speakerId: system
+    portraitSlot: 0
+    expressionId: status
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.05
+    textLocalizationKey: review.olympus.prologue.line.05.text
+    stagingFallbackKorean: "\uBB38\uC774 \uC5F4\uB9AC\uBA74 \uC6B0\uCE21 \uC5C4\uD3D0\uC120\uC744
+      \uD655\uBCF4\uD558\uC138\uC694. \uBBF8\uD655\uC778 \uBC18\uC751\uC774 \uC811\uADFC
+      \uC911\uC785\uB2C8\uB2E4."
+    speakerId: operator
+    portraitSlot: 3
+    expressionId: focused
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.06
+    textLocalizationKey: review.olympus.prologue.line.06.text
+    stagingFallbackKorean: "\uC18C\uD658 \uC7A5\uBE44\uAC00 \uBD88\uC548\uC815\uD574.
+      \uADF8\uB798\uB3C4 \uD55C \uBC88\uC740 \uC804\uAC1C\uD560 \uC218 \uC788\uC5B4."
+    speakerId: field_agent
+    portraitSlot: 1
+    expressionId: alert
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
+  - lineId: review.olympus.prologue.line.07
+    textLocalizationKey: review.olympus.prologue.line.07.text
+    stagingFallbackKorean: "\uC9C4\uC785 \uD310\uB2E8\uC744 \uC694\uCCAD\uD569\uB2C8\uB2E4.
+      \uC5B4\uB290 \uCABD\uC774\uB4E0 \uAC19\uC740 \uAC8C\uC774\uD2B8 \uAC1C\uBC29
+      \uC808\uCC28\uB85C \uD569\uB958\uD569\uB2C8\uB2E4."
+    speakerId: operator
+    portraitSlot: 3
+    expressionId: decision
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices:
+    - choiceId: review.olympus.prologue.choice.enter_now
+      textLocalizationKey: review.olympus.prologue.choice.enter_now.text
+      stagingFallbackKorean: "\uC989\uC2DC \uC9C4\uC785\uD55C\uB2E4"
+      responseLineId: review.olympus.prologue.choice.enter_now.response
+      responseTextLocalizationKey: review.olympus.prologue.choice.enter_now.response.text
+      responseStagingFallbackKorean: "\uC54C\uACA0\uC2B5\uB2C8\uB2E4. \uC989\uC2DC
+        \uAC1C\uBC29 \uC808\uCC28\uB97C \uC2B9\uC778\uD569\uB2C8\uB2E4."
+    - choiceId: review.olympus.prologue.choice.scan_again
+      textLocalizationKey: review.olympus.prologue.choice.scan_again.text
+      stagingFallbackKorean: "\uC0C1\uD669\uC744 \uD55C \uBC88 \uB354 \uD655\uC778\uD55C\uB2E4"
+      responseLineId: review.olympus.prologue.choice.scan_again.response
+      responseTextLocalizationKey: review.olympus.prologue.choice.scan_again.response.text
+      responseStagingFallbackKorean: "\uCD94\uAC00 \uC2A4\uCE94 \uC644\uB8CC. \uC704\uD5D8\uB3C4\uB294
+        \uBCC0\uD568\uC5C6\uC2B5\uB2C8\uB2E4. \uAC1C\uBC29 \uC808\uCC28\uB97C \uC2B9\uC778\uD569\uB2C8\uB2E4."
+  - lineId: review.olympus.prologue.line.08
+    textLocalizationKey: review.olympus.prologue.line.08.text
+    stagingFallbackKorean: "\uC88B\uC544. \uAC8C\uC774\uD2B8\uB97C \uC5F0\uB2E4.
+      \uC791\uC804 \uC2DC\uC791."
+    speakerId: field_agent
+    portraitSlot: 2
+    expressionId: resolve
+    portraitSprite: {fileID: 0}
+    voiceClip: {fileID: 0}
+    autoAdvanceSecondsPerCharacterOverride: 0
+    choices: []
