@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-PGR-2020-GUIDEFIGHT-CONTROL-01",
+  "status": "exact-static-negative-control-no-payload",
+  "createdAt": "2026-07-15T19:51:21+09:00",
+  "purpose": "A hash-addressed historical PGR GuideFight row-shape and drift control for the P1-B stage-spine packet. It records exact bounded provenance, three row summaries, and a conservative 3-by-14 semantic crosswalk without copying the raw source payload or claiming live admission.",
+  "source": {
+    "sourceId": "pgr-guidefight-2020-local-tab",
+    "sourceSnapshotId": "pgr-kengxxiao-d361356-guidefight",
+    "game": "Punishing: Gray Raven",
+    "repository": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab.git",
+    "localRepositoryRoot": "C:/tmp/cinematic_reference_sources/Punishing_GrayRaven_Tab_full",
+    "revision": "d36135613b5fc3323cabe42a1cb6238e7f4aea4f",
+    "committedAt": "2020-03-14T14:50:06+08:00",
+    "commitSubject": "[Liv Update] DocumentVersion:1.9.19",
+    "commitSignatureStatus": "unsigned",
+    "relativePath": "table/share/guide/GuideFight.tab",
+    "gitBlobId": "e24cd2b956cf4530ca64a001d70a2a060a78a9ef",
+    "sizeBytes": 174,
+    "sha256": "D846AB057E526ED4CD9DABAC534BA561D2A14A87FA605363B0730EF45A1BA590",
+    "recomputedGitBlobSha1": "e24cd2b956cf4530ca64a001d70a2a060a78a9ef",
+    "workingTreeState": "clean-for-target-path",
+    "repositoryCompleteness": "local-repository-target-object-verified-not-a-full-repository-or-gamewide-audit",
+    "targetObjectClosure": "commit-tree-and-target-blob-locally-verified",
+    "licenseStatus": "unresolved-no-license-file",
+    "rawEncoding": {
+      "utf8Valid": true,
+      "bom": false,
+      "lfCount": 4,
+      "crlfCount": 4,
+      "trailingLf": true
+    }
+  },
+  "reproduction": {
+    "workingDirectory": "C:/tmp/cinematic_reference_sources/Punishing_GrayRaven_Tab_full",
+    "toolVersions": {
+      "powershell": "5.1.26100.8655",
+      "git": "git version 2.54.0.windows.1"
+    },
+    "selector": "all three source rows in stable file order",
+    "sourceRowCount": 3,
+    "duplicateIdCount": 0,
+    "extractCommand": "$rows=Import-Csv -LiteralPath 'table/share/guide/GuideFight.tab' -Delimiter ([char]9); $json=$rows | ForEach-Object { [pscustomobject][ordered]@{'Id'=$_.Id;'StageId'=$_.StageId;'NpcId[1]'=$_.PSObject.Properties['NpcId[1]'].Value;'NpcId[2]'=$_.PSObject.Properties['NpcId[2]'].Value;'NpcId[3]'=$_.PSObject.Properties['NpcId[3]'].Value;'Weapon[1]'=$_.PSObject.Properties['Weapon[1]'].Value;'Weapon[2]'=$_.PSObject.Properties['Weapon[2]'].Value;'Weapon[3]'=$_.PSObject.Properties['Weapon[3]'].Value} } | ConvertTo-Json -Compress; $json",
+    "derivedProjection": {
+      "normalization": "UTF-8 bytes of PowerShell ConvertTo-Json -Compress output with stable source-row order, ordered fields Id, StageId, NpcId[1..3], Weapon[1..3], and no BOM or trailing newline",
+      "sizeBytes": 409,
+      "sha256": "21E7FD9E328D60782FE477DC2D71D31C4F478FEF03B5E40F46C289F2BDDAE053",
+      "payloadStoredVerbatim": false
+    }
+  },
+  "boundedExactRows": [
+    {
+      "sourceOrdinal": 1,
+      "id": "100001",
+      "stageId": "10010001",
+      "npcIds": ["19990", "", ""],
+      "weaponIds": ["2022001", "", ""],
+      "remainingBoundedSlotsEmpty": true
+    },
+    {
+      "sourceOrdinal": 2,
+      "id": "100002",
+      "stageId": "10010002",
+      "npcIds": ["19990", "", ""],
+      "weaponIds": ["2022001", "", ""],
+      "remainingBoundedSlotsEmpty": true
+    },
+    {
+      "sourceOrdinal": 3,
+      "id": "100003",
+      "stageId": "10010003",
+      "npcIds": ["19990", "", ""],
+      "weaponIds": ["2022001", "", ""],
+      "remainingBoundedSlotsEmpty": true
+    }
+  ],
+  "crosswalkContract": {
+    "schemaVersion": 2,
+    "cellIdentity": "foreignSourceId + foreignSourceSnapshotId + foreignRowOrKey + semanticSlotId",
+    "foreignSourceId": "pgr-guidefight-2020-local-tab",
+    "foreignSourceSnapshotId": "pgr-kengxxiao-d361356-guidefight",
+    "historicalControlOnly": true,
+    "livePacketOrdinal": null,
+    "semanticSlotOrder": [
+      "logicalStageId",
+      "physicalSceneOrScript",
+      "briefingAndCatalog",
+      "recommendedPowerOrLevel",
+      "loadout",
+      "restrictions",
+      "entryCost",
+      "recordOrTargetTime",
+      "prerequisite",
+      "recommendedNext",
+      "storyEntry",
+      "storyExit",
+      "challengeReference",
+      "resultReference"
+    ],
+    "historicalRowCount": 3,
+    "semanticSlotCountPerRow": 14,
+    "totalCellCount": 42,
+    "valueStateCounts": {
+      "present": 6,
+      "absent": 0,
+      "not-applicable": 0,
+      "unresolved": 36
+    },
+    "classificationCounts": {
+      "proven-static": 6,
+      "proven-runtime": 0,
+      "unknown": 36,
+      "rejected": 0
+    },
+    "sharedBoundaries": {
+      "dimensionBrawlOwnerBoundary": "This historical foreign control does not assert a DimensionBrawl owner mapping.",
+      "NO-GAMEWIDE-ABSENCE-01": "No matching field is visible inside this exact eight-column historical row. The cell remains unresolved/unknown: it does not prove absence from linked PGR tables, client consumers, runtime behavior, later snapshots, or the gamewide schema."
+    },
+    "rows": [
+      {
+        "historicalControlRowOrdinal": 1,
+        "foreignRowOrKey": "Id=100001",
+        "valueStateCounts": {"present": 2, "unresolved": 12},
+        "classificationCounts": {"proven-static": 2, "unknown": 12},
+        "cells": [
+          {"semanticSlotId": "logicalStageId", "valueState": "present", "foreignFieldPaths": ["Id", "StageId"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "The exact row maps Id 100001 to StageId 10010001.", "negativeBoundary": "The static pair does not prove runtime admission, scene routing, progression identity, or parity with DimensionBrawl identifiers.", "sourceValueCopied": true},
+          {"semanticSlotId": "physicalSceneOrScript", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No physical scene or script field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "briefingAndCatalog", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No briefing or catalog field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedPowerOrLevel", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-power or level field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "loadout", "valueState": "present", "foreignFieldPaths": ["NpcId[1]", "NpcId[2]", "NpcId[3]", "Weapon[1]", "Weapon[2]", "Weapon[3]"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "NpcId[1]=19990 and Weapon[1]=2022001 are present; the remaining bounded NPC and weapon slots are empty.", "negativeBoundary": "The tuple proves static slot authoring only; entity meaning, equipment semantics, selection rules, and runtime consumption remain unverified.", "sourceValueCopied": true},
+          {"semanticSlotId": "restrictions", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No restriction field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "entryCost", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No entry-cost field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recordOrTargetTime", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No record or target-time field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "prerequisite", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No prerequisite field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedNext", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-next field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyEntry", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-entry field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyExit", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-exit field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "challengeReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No challenge-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "resultReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No result-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false}
+        ]
+      },
+      {
+        "historicalControlRowOrdinal": 2,
+        "foreignRowOrKey": "Id=100002",
+        "valueStateCounts": {"present": 2, "unresolved": 12},
+        "classificationCounts": {"proven-static": 2, "unknown": 12},
+        "cells": [
+          {"semanticSlotId": "logicalStageId", "valueState": "present", "foreignFieldPaths": ["Id", "StageId"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "The exact row maps Id 100002 to StageId 10010002.", "negativeBoundary": "The static pair does not prove runtime admission, scene routing, progression identity, or parity with DimensionBrawl identifiers.", "sourceValueCopied": true},
+          {"semanticSlotId": "physicalSceneOrScript", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No physical scene or script field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "briefingAndCatalog", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No briefing or catalog field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedPowerOrLevel", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-power or level field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "loadout", "valueState": "present", "foreignFieldPaths": ["NpcId[1]", "NpcId[2]", "NpcId[3]", "Weapon[1]", "Weapon[2]", "Weapon[3]"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "NpcId[1]=19990 and Weapon[1]=2022001 are present; the remaining bounded NPC and weapon slots are empty.", "negativeBoundary": "The tuple proves static slot authoring only; entity meaning, equipment semantics, selection rules, and runtime consumption remain unverified.", "sourceValueCopied": true},
+          {"semanticSlotId": "restrictions", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No restriction field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "entryCost", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No entry-cost field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recordOrTargetTime", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No record or target-time field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "prerequisite", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No prerequisite field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedNext", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-next field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyEntry", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-entry field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyExit", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-exit field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "challengeReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No challenge-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "resultReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No result-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false}
+        ]
+      },
+      {
+        "historicalControlRowOrdinal": 3,
+        "foreignRowOrKey": "Id=100003",
+        "valueStateCounts": {"present": 2, "unresolved": 12},
+        "classificationCounts": {"proven-static": 2, "unknown": 12},
+        "cells": [
+          {"semanticSlotId": "logicalStageId", "valueState": "present", "foreignFieldPaths": ["Id", "StageId"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "The exact row maps Id 100003 to StageId 10010003.", "negativeBoundary": "The static pair does not prove runtime admission, scene routing, progression identity, or parity with DimensionBrawl identifiers.", "sourceValueCopied": true},
+          {"semanticSlotId": "physicalSceneOrScript", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No physical scene or script field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "briefingAndCatalog", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No briefing or catalog field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedPowerOrLevel", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-power or level field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "loadout", "valueState": "present", "foreignFieldPaths": ["NpcId[1]", "NpcId[2]", "NpcId[3]", "Weapon[1]", "Weapon[2]", "Weapon[3]"], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "proven-static", "supportedStatement": "NpcId[1]=19990 and Weapon[1]=2022001 are present; the remaining bounded NPC and weapon slots are empty.", "negativeBoundary": "The tuple proves static slot authoring only; entity meaning, equipment semantics, selection rules, and runtime consumption remain unverified.", "sourceValueCopied": true},
+          {"semanticSlotId": "restrictions", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No restriction field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "entryCost", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No entry-cost field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recordOrTargetTime", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No record or target-time field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "prerequisite", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No prerequisite field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "recommendedNext", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No recommended-next field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyEntry", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-entry field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "storyExit", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No story-exit field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "challengeReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No challenge-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false},
+          {"semanticSlotId": "resultReference", "valueState": "unresolved", "foreignFieldPaths": [], "dimensionBrawlOwnerState": "unresolved", "dimensionBrawlOwner": null, "dimensionBrawlField": null, "dimensionBrawlOwnerBoundaryRef": "dimensionBrawlOwnerBoundary", "classification": "unknown", "supportedStatement": "No result-reference field is identified in the exact bounded row.", "negativeBoundaryRef": "NO-GAMEWIDE-ABSENCE-01", "sourceValueCopied": false}
+        ]
+      }
+    ]
+  },
+  "doesNotSupport": [
+    "a live or current Ark snapshot",
+    "the unidentified fourth PGR GuideFight row required by P1B-PGR-HI3-STAGE-SPINE-01",
+    "the live five-row schema-2 report or any of its seventy accepted cells",
+    "gamewide absence for any unresolved semantic slot",
+    "briefing, scene/script, restriction, cost, time, prerequisite, next, story, challenge, result, retry, progress, reward, or persistence ownership",
+    "runtime stage admission, loadout selection, encounter execution, or cleanup",
+    "DimensionBrawl feature parity, product priority, or implementation authorization"
+  ],
+  "acceptanceEffect": {
+    "packetAcceptanceClosed": 0,
+    "liveSourceAdmissionChanged": false,
+    "productGateChanged": false,
+    "productPriorityChanged": false,
+    "permittedUse": "historical three-row static shape and drift control only",
+    "requiredLiveFollowup": "Admit one exact Ark-selected live PGR snapshot with four identified GuideFight rows and all fourteen cells per row, then classify added, removed, and changed rows against this control without unioning snapshots. Admit the live HI3 row separately to form the required five-row and seventy-cell packet."
+  },
+  "boundedProjectionValuesRecorded": true,
+  "rawSourcePayloadCopied": false
+}

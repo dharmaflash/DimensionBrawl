@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "auditId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-V1-PACKAGE-AUDIT-01",
+  "contractId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-01",
+  "status": "pass-exact-static-candidate-not-admitted",
+  "auditedAt": "2026-07-16T01:05:00+09:00",
+  "packageFiles": [
+    {
+      "role": "main-generator",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs",
+      "sizeBytes": 37178,
+      "sha256": "3284524cec2eb68ccc430aabeec4b08fc9bb70fedb03715b178814d12bc92f87"
+    },
+    {
+      "role": "read-first-report",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_READFIRST_V1.md",
+      "sizeBytes": 5526,
+      "sha256": "f606f014a3e12101bae89918c16ac68c6184eeca0290b82800b5e50dae2c7caf"
+    },
+    {
+      "role": "summary",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_READFIRST_V1_SUMMARY.json",
+      "sizeBytes": 19861,
+      "sha256": "f400b09476b33c338c8b5f670d263d0152a0201c2c92078963bf3ae30bc276bb"
+    },
+    {
+      "role": "label-context",
+      "path": "_Game/DesignDocs/P1B_PGR_GUIDEFIGHT_STAGE_LABEL_CONTEXT_V1.csv",
+      "sizeBytes": 8694,
+      "sha256": "0159d965438aa23b60b1e6b66cf7c1bff8b4edc21f8e0a50531d92266357d153"
+    },
+    {
+      "role": "reading-links",
+      "path": "_Game/DesignDocs/P1B_PGR_GUIDEFIGHT_STAGE_READING_LINKS_V1.csv",
+      "sizeBytes": 18714,
+      "sha256": "312811436a34b38888582289a93c6a60e6f2ccd44b6d22eef88c6c5bc4e6170d"
+    },
+    {
+      "role": "provenance-generator",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PROVENANCE_GENERATOR.mjs",
+      "sizeBytes": 14296,
+      "sha256": "ff06cdb7b07351caf5dad28db8a893e24c7dd8d95b73c43c0fbc563ebe71fb6f"
+    },
+    {
+      "role": "source-record",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_SOURCE_RECORD.json",
+      "sizeBytes": 13036,
+      "sha256": "1972dd751ce99e4d1d6bd44727413077975693198136e3894b1dae5626ebf51c"
+    },
+    {
+      "role": "producer-manifest",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PRODUCER_MANIFEST.json",
+      "sizeBytes": 12684,
+      "sha256": "0a1f29d657d8360d2b1f6b22e59adfba9e496ca3728c182de6ab6bc51d4f4a6e"
+    }
+  ],
+  "packageDigestEncoding": "ordered role|path|sizeBytes|lowercaseSha256 rows; LF; final LF; UTF-8; SHA-256 lowercase",
+  "packageDigest": "09ca47fa01a1c457f4270e3cd696d0652849fad32f4adf19e9d705b06d74e800",
+  "canonicalDigests": {
+    "report": "39c8136d6e0813f83a78c11e1a7ada648506d204fd59548a7e509bbdfb6eedd0",
+    "sourceRecord": "30eaa9972f58462e8d20cf338a789d0f668722abd42e4ba8d37f302ca6274ecf",
+    "producerManifest": "b27ddcda1401cd37812466f12a8cec8d01c09858eb30d85689ca9b3e3023b247"
+  },
+  "verifiedCounts": {
+    "packageFiles": 8,
+    "inputs": 15,
+    "outputs": 4,
+    "exactRows": 4,
+    "labelRows": 20,
+    "linkRows": 56,
+    "linkPresent": 32,
+    "linkAbsent": 20,
+    "linkUnresolved": 4,
+    "sourceValueCopied": 0
+  },
+  "admissionState": {
+    "candidateOutputsVerified": 4,
+    "supportingSourcesAdmitted": 0,
+    "supportingSourcesRequired": 9,
+    "liveRows": 0,
+    "liveRowsRequired": 5,
+    "liveCrosswalkCells": 0,
+    "liveCrosswalkCellsRequired": 70,
+    "acceptanceEffect": "none"
+  },
+  "blockersToAdmission": [
+    "PGR upstream license disposition remains unknown-review-needed.",
+    "HI3 replacement outputs and formal helper provenance are not yet complete.",
+    "The eleven-source cohort must be admitted atomically; this four-artifact candidate cannot be admitted alone."
+  ],
+  "negativeBoundary": "This audit authenticates only the deterministic candidate package. It does not reconstruct historical bytes, admit a source, authorize license reuse, populate packet claims/cells, or prove runtime/product behavior.",
+  "canonicalAuditDigest": "59d21e7da9c6b3e7d70201294830133a925ca56d4dbb067df5a846d8a99253f8"
+}

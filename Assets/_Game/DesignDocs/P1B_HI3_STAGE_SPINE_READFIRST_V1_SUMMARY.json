@@ -1,0 +1,752 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+  "artifactSetId": "HI3-STAGEDATA-STAGE-SPINE-NAIRIEBERRY-01D7AFB-V1",
+  "producerContractId": "HI3-STAGEDATA-STAGE-SPINE-PRODUCER-01",
+  "replacementContractId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-01",
+  "generatorId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-GENERATOR-01",
+  "status": "exact-static-replacement-candidate-not-admitted",
+  "generatedAt": "2026-07-16T02:30:00+09:00",
+  "replacesHistoricalSourceIds": [
+    "hi3-readfirst-md",
+    "hi3-readfirst-summary-json",
+    "hi3-readfirst-csv"
+  ],
+  "authority": {
+    "sourceSnapshotId": "hi3-nairieberry-01d7afb-global-stagedata-spine-v1",
+    "upstream": "nairieberry/HonkaiImpactData",
+    "branch": "master",
+    "revision": "01d7afbaf99ff7d3d027e27fe9a4b363a2db7cc1",
+    "committedAt": "2021-04-10T22:17:18Z",
+    "snapshotDate": "2026-06-15",
+    "locale": "Global",
+    "licenseDisposition": "none-detected-review-needed",
+    "authorityInputId": "hi3-global-stage-data-main",
+    "officialCurrentShippedBehaviorClaimed": false
+  },
+  "selection": {
+    "selector": "typeof row.levelId === number && row.levelId === 10101",
+    "sourceRowCount": 9642,
+    "duplicateLevelIdCount": 0,
+    "matchCount": 1,
+    "zeroBasedIndex": 1,
+    "oneBasedOrdinal": 2,
+    "rowKey": "levelId=10101",
+    "topLevelKeyCount": 67,
+    "canonicalRowSizeBytes": 1665,
+    "canonicalRowSha256": "93eb25ca807d6a7f5230cd1ca52e66d68c9f956db3eab25d8013d338699c968f",
+    "topLevelKeySetSizeBytes": 1037,
+    "topLevelKeySetSha256": "bf6bba4b74ba32cfc80828ba569dc3fc96ae578406c43ac160b4b2ad6a226eec"
+  },
+  "inputIntegrity": [
+    {
+      "inputId": "hi3-source-record",
+      "role": "source-record",
+      "relativePath": "source-record.md",
+      "sizeBytes": 938,
+      "sha256": "eaf1785b6fb0cddcecca59047d7de229a4130f5f67512c3e6839848c8286352e"
+    },
+    {
+      "inputId": "hi3-snapshot-manifest",
+      "role": "snapshot-manifest",
+      "relativePath": "manifest.yml",
+      "sizeBytes": 2004,
+      "sha256": "11e0be6d8e9f431d6f16da48213001edc033673e0709358798e5efe52d000faa"
+    },
+    {
+      "inputId": "hi3-file-manifest",
+      "role": "file-manifest",
+      "relativePath": "files/hi3-nairieberry-file-manifest.csv",
+      "sizeBytes": 646441,
+      "sha256": "c0c63cbf79f26d3e7f11e651c4fab6047b814b4aea3f17f9c8b9fafdb3c94cb8"
+    },
+    {
+      "inputId": "hi3-global-stage-data-main",
+      "role": "authoritative-level-10101-static-stage-row",
+      "relativePath": "files/extracted_repo/HonkaiImpactData-master/Global/ExcelOutputAsset/Decrypted/StageData_Main.json",
+      "sizeBytes": 30600482,
+      "sha256": "6ab32c175b399d89d035e9736d150760725dd4f85cc5bd9870c64093c51a7431"
+    }
+  ],
+  "fieldShapeContract": {
+    "schemaVersion": 1,
+    "fieldCount": 67,
+    "canonicalSizeBytes": 3907,
+    "canonicalSha256": "19833743758af7f5987d0fb591c82d9e275eb82e57d8c2d2c5ff806306abbb91",
+    "stateCounts": {
+      "number-zero": 16,
+      "array-empty": 5,
+      "number-nonzero": 25,
+      "object-present": 5,
+      "array-present": 11,
+      "string-empty": 2,
+      "string-present": 3
+    },
+    "fieldOrder": "top-level field path by ECMAScript default UTF-16 code-unit order",
+    "rows": [
+      {
+        "fieldPath": "BalanceModeType",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "FloatDrop",
+        "shapeState": "array-empty"
+      },
+      {
+        "fieldPath": "HardCoeff",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "LockedText",
+        "shapeState": "object-present"
+      },
+      {
+        "fieldPath": "MonsterAttrShow",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "PreMissionLink",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "PreMissionLinkParamStr",
+        "shapeState": "string-empty"
+      },
+      {
+        "fieldPath": "PreMissionLinkParams",
+        "shapeState": "array-empty"
+      },
+      {
+        "fieldPath": "PreMissionList",
+        "shapeState": "array-empty"
+      },
+      {
+        "fieldPath": "RecordLevelType",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "ReviveUseTypeList",
+        "shapeState": "array-empty"
+      },
+      {
+        "fieldPath": "StageEntryNameList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "UnlockedLink",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "UnlockedLinkParamStr",
+        "shapeState": "string-empty"
+      },
+      {
+        "fieldPath": "UnlockedLinkParams",
+        "shapeState": "array-empty"
+      },
+      {
+        "fieldPath": "UnlockedText",
+        "shapeState": "object-present"
+      },
+      {
+        "fieldPath": "UseDynamicHardLv",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "actId",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "avatarExpInside",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "avatarExpReward",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "battleType",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "bits1",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "briefPicPath",
+        "shapeState": "string-present"
+      },
+      {
+        "fieldPath": "challengeList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "chapterId",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "costMaterialId",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "costMaterialNum",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "detailPicPath",
+        "shapeState": "string-present"
+      },
+      {
+        "fieldPath": "difficulty",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "displayDetail",
+        "shapeState": "object-present"
+      },
+      {
+        "fieldPath": "displayTitle",
+        "shapeState": "object-present"
+      },
+      {
+        "fieldPath": "dropList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "enterTimes",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "enterTimesType",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "fastBonusTime",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "firstCostMaterialNum",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "firstVRDropList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "hardLevel",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "hardLevelGroup",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "highlightDisplayDropIdList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "isEnterWithElf",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "levelId",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "loseDescList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "luaFile",
+        "shapeState": "string-present"
+      },
+      {
+        "fieldPath": "maxNumList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "maxProgress",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "maxScoinReward",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "name",
+        "shapeState": "object-present"
+      },
+      {
+        "fieldPath": "preLevelID",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "recommendPlayerLevel",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "resetCoinID",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "resetCostType",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "resetTimes",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "resetType",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "restrictList",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "reviveCostType",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "reviveTimes",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "scoinInside",
+        "shapeState": "number-zero"
+      },
+      {
+        "fieldPath": "scoinReward",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "sectionId",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "sonicBonusTime",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "staminaCost",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "tag",
+        "shapeState": "array-present"
+      },
+      {
+        "fieldPath": "teamNum",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "type",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "unlockPlayerLevel",
+        "shapeState": "number-nonzero"
+      },
+      {
+        "fieldPath": "unlockStarNum",
+        "shapeState": "number-zero"
+      }
+    ],
+    "sourceValuesStored": false
+  },
+  "nestedObjectKeySets": [
+    {
+      "fieldPath": "name",
+      "keyCount": 1,
+      "keySetSha256": "00d76cc309abe4b0cd59e29a6aa5cc627033020210758a7cefa08d4465a617a0"
+    },
+    {
+      "fieldPath": "displayTitle",
+      "keyCount": 1,
+      "keySetSha256": "00d76cc309abe4b0cd59e29a6aa5cc627033020210758a7cefa08d4465a617a0"
+    },
+    {
+      "fieldPath": "displayDetail",
+      "keyCount": 1,
+      "keySetSha256": "00d76cc309abe4b0cd59e29a6aa5cc627033020210758a7cefa08d4465a617a0"
+    },
+    {
+      "fieldPath": "LockedText",
+      "keyCount": 1,
+      "keySetSha256": "00d76cc309abe4b0cd59e29a6aa5cc627033020210758a7cefa08d4465a617a0"
+    },
+    {
+      "fieldPath": "UnlockedText",
+      "keyCount": 1,
+      "keySetSha256": "00d76cc309abe4b0cd59e29a6aa5cc627033020210758a7cefa08d4465a617a0"
+    }
+  ],
+  "readingLinksContract": {
+    "schemaVersion": 1,
+    "rowCount": 14,
+    "sourceRowCount": 1,
+    "semanticSlotCountPerSourceRow": 14,
+    "semanticSlotOrder": [
+      "logicalStageId",
+      "physicalSceneOrScript",
+      "briefingAndCatalog",
+      "recommendedPowerOrLevel",
+      "loadout",
+      "restrictions",
+      "entryCost",
+      "recordOrTargetTime",
+      "prerequisite",
+      "recommendedNext",
+      "storyEntry",
+      "storyExit",
+      "challengeReference",
+      "resultReference"
+    ],
+    "headerOrder": [
+      "schema_version",
+      "artifact_set_id",
+      "source_snapshot_id",
+      "source_ordinal",
+      "row_key",
+      "source_row_sha256",
+      "semantic_slot_ordinal",
+      "semantic_slot_id",
+      "foreign_field_paths",
+      "field_shape_states",
+      "field_path_count",
+      "combined_value_state",
+      "foreign_classification",
+      "mapping_disposition",
+      "source_value_copied",
+      "negative_boundary_code"
+    ],
+    "valueStateCounts": {
+      "present": 10,
+      "unresolved": 4
+    },
+    "classificationCounts": {
+      "proven-static": 10,
+      "unknown": 4
+    },
+    "sourceValueCopiedCount": 0,
+    "rows": [
+      {
+        "ordinal": 0,
+        "semanticSlotId": "logicalStageId",
+        "foreignFieldPaths": [
+          "levelId",
+          "chapterId",
+          "actId",
+          "sectionId",
+          "difficulty",
+          "type",
+          "tag",
+          "battleType"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "identity-and-static-hierarchy-shape-only",
+        "supportedStatement": "The exact row contains a logical stage identity and static hierarchy/type field family.",
+        "negativeBoundary": "Field presence does not prove the runtime admission key, routing semantics, or parity with DimensionBrawl identifiers.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 1,
+        "semanticSlotId": "physicalSceneOrScript",
+        "foreignFieldPaths": [
+          "luaFile"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-script-reference-shape-only",
+        "supportedStatement": "The exact row contains one non-empty script-reference field.",
+        "negativeBoundary": "The script bytes and consumers were not inspected, so scene loading, wave execution, and cleanup ownership remain unproven.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 2,
+        "semanticSlotId": "briefingAndCatalog",
+        "foreignFieldPaths": [
+          "name.Hash",
+          "displayTitle.Hash",
+          "displayDetail.Hash",
+          "briefPicPath",
+          "detailPicPath"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "hashed-text-and-asset-reference-shape-only",
+        "supportedStatement": "The exact row contains hashed catalog text references and briefing/detail image-path fields.",
+        "negativeBoundary": "No localized text or image payload is copied, and field presence does not prove presentation runtime ownership.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 3,
+        "semanticSlotId": "recommendedPowerOrLevel",
+        "foreignFieldPaths": [
+          "recommendPlayerLevel",
+          "unlockPlayerLevel",
+          "hardLevel",
+          "hardLevelGroup"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-level-and-difficulty-shape-only",
+        "supportedStatement": "The exact row contains recommended, unlock, difficulty, and hard-level authoring fields.",
+        "negativeBoundary": "Numeric meanings, formulas, balancing policy, and runtime enforcement remain unverified.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 4,
+        "semanticSlotId": "loadout",
+        "foreignFieldPaths": [
+          "teamNum",
+          "maxNumList",
+          "isEnterWithElf",
+          "restrictList"
+        ],
+        "valueState": "unresolved",
+        "foreignClassification": "unknown",
+        "mappingDisposition": "formation-shape-without-loadout-identity",
+        "supportedStatement": "Formation-count and restriction-shaped fields exist, but no direct avatar, weapon, equipment, or named loadout identity is established.",
+        "negativeBoundary": "Do not reinterpret formation constraints as loadout references or infer array contents; linked tables and runtime owners remain outside scope.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 5,
+        "semanticSlotId": "restrictions",
+        "foreignFieldPaths": [
+          "restrictList",
+          "teamNum",
+          "maxNumList",
+          "isEnterWithElf",
+          "reviveTimes",
+          "reviveCostType",
+          "ReviveUseTypeList",
+          "enterTimes",
+          "enterTimesType",
+          "MonsterAttrShow",
+          "HardCoeff",
+          "UseDynamicHardLv",
+          "BalanceModeType"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-restriction-field-family-only",
+        "supportedStatement": "The exact row exposes static restriction, formation, revive, entry-count, monster-attribute, and balance-mode field families.",
+        "negativeBoundary": "Zero and empty states remain authored shape only; list meanings and runtime enforcement are not decoded.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 6,
+        "semanticSlotId": "entryCost",
+        "foreignFieldPaths": [
+          "staminaCost",
+          "costMaterialId",
+          "costMaterialNum",
+          "firstCostMaterialNum"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-entry-cost-field-family-only",
+        "supportedStatement": "The exact row contains stamina and material entry-cost authoring fields.",
+        "negativeBoundary": "Actual deduction, shortage handling, refund, reset-cost relation, and persistence ownership are unproven.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 7,
+        "semanticSlotId": "recordOrTargetTime",
+        "foreignFieldPaths": [
+          "fastBonusTime",
+          "sonicBonusTime",
+          "RecordLevelType"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-time-and-record-shape-only",
+        "supportedStatement": "The exact row contains time and record-level-type authoring fields.",
+        "negativeBoundary": "Units, comparison direction, scoring, qualification, and result persistence remain unverified.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 8,
+        "semanticSlotId": "prerequisite",
+        "foreignFieldPaths": [
+          "preLevelID",
+          "unlockPlayerLevel",
+          "unlockStarNum",
+          "PreMissionList",
+          "PreMissionLink",
+          "PreMissionLinkParams",
+          "PreMissionLinkParamStr",
+          "LockedText.Hash"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-predecessor-and-unlock-shape-only",
+        "supportedStatement": "The exact row contains predecessor, unlock, mission-link, and locked-text field families.",
+        "negativeBoundary": "Consumer semantics and unlock transaction ownership remain unverified; empty and zero states are not missing data.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 9,
+        "semanticSlotId": "recommendedNext",
+        "foreignFieldPaths": [
+          "UnlockedLink",
+          "UnlockedLinkParams",
+          "UnlockedLinkParamStr",
+          "UnlockedText.Hash",
+          "preLevelID"
+        ],
+        "valueState": "unresolved",
+        "foreignClassification": "unknown",
+        "mappingDisposition": "no-direct-next-stage-identity",
+        "supportedStatement": "No direct next-stage identity field was established, while generic unlock-link and predecessor-shaped fields remain structurally present.",
+        "negativeBoundary": "Do not reverse prerequisites into recommendations or interpret generic links as stage identities.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 10,
+        "semanticSlotId": "storyEntry",
+        "foreignFieldPaths": [
+          "StageEntryNameList",
+          "luaFile",
+          "displayDetail.Hash"
+        ],
+        "valueState": "unresolved",
+        "foreignClassification": "unknown",
+        "mappingDisposition": "entry-shaped-fields-without-consumer",
+        "supportedStatement": "Entry-name, script-reference, and display-detail fields are structurally present, but no consumer proves a story-entry contract.",
+        "negativeBoundary": "Names and scripts are not decoded or executed; this row cannot establish narrative entry ownership or ordering.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 11,
+        "semanticSlotId": "storyExit",
+        "foreignFieldPaths": [
+          "luaFile",
+          "loseDescList"
+        ],
+        "valueState": "unresolved",
+        "foreignClassification": "unknown",
+        "mappingDisposition": "no-exit-specific-field-or-consumer",
+        "supportedStatement": "No exit-specific field was established, while script and loss-description paths leave story-exit semantics unresolved.",
+        "negativeBoundary": "Do not reinterpret loss copy as story exit or claim absence inside Lua, linked tables, cutscenes, or wider-game behavior.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 12,
+        "semanticSlotId": "challengeReference",
+        "foreignFieldPaths": [
+          "challengeList"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-challenge-reference-shape-only",
+        "supportedStatement": "The exact row contains a non-empty challenge-reference list.",
+        "negativeBoundary": "Referenced challenge rows, condition meanings, evaluators, and mastery/progress consumers were not inspected.",
+        "sourceValueCopied": false
+      },
+      {
+        "ordinal": 13,
+        "semanticSlotId": "resultReference",
+        "foreignFieldPaths": [
+          "highlightDisplayDropIdList",
+          "firstVRDropList",
+          "dropList",
+          "avatarExpReward",
+          "scoinReward",
+          "maxScoinReward",
+          "loseDescList"
+        ],
+        "valueState": "present",
+        "foreignClassification": "proven-static",
+        "mappingDisposition": "static-result-facing-reference-shape-only",
+        "supportedStatement": "The exact row contains result-facing reward, drop, progress-cap, and loss-description field families.",
+        "negativeBoundary": "Static references do not prove result UI, clear/fail, retry, reward grant, progress persistence, or exactly-once ownership.",
+        "sourceValueCopied": false
+      }
+    ]
+  },
+  "siblingHelperBoundary": {
+    "helperSourceIds": [
+      "hi3-stage-summary-csv",
+      "hi3-stage-samples-csv"
+    ],
+    "usedAsProducerInputs": false,
+    "formalProvenanceAdmissionState": "open",
+    "reason": "The two replay-authenticated helpers are sibling evidence. Keeping them outside this producer avoids circular provenance and preserves their separate formal-admission audit.",
+    "samplesNegativeBoundary": "A truncated helper sample does not independently identify levelId 10101 and cannot replace the exact StageData_Main row."
+  },
+  "outputArtifacts": [
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-readfirst-md",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-MD",
+      "replacesHistoricalSourceId": "hi3-readfirst-md",
+      "format": "markdown",
+      "expectedDataRowCount": 1,
+      "admissionState": "candidate-not-admitted"
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-summary-json",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+      "replacesHistoricalSourceId": "hi3-readfirst-summary-json",
+      "format": "json",
+      "expectedDataRowCount": 1,
+      "admissionState": "candidate-not-admitted"
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-reading-links-csv",
+      "artifactId": "P1B-HI3-STAGEDATA-STAGE-READING-LINKS-V1-CSV",
+      "replacesHistoricalSourceId": "hi3-readfirst-csv",
+      "format": "csv",
+      "expectedDataRowCount": 14,
+      "admissionState": "candidate-not-admitted"
+    }
+  ],
+  "dimensionBrawlComparisonBoundary": {
+    "alreadyPresent": [
+      "typed playable-stage and route identity",
+      "immutable route snapshot and truthful briefing join",
+      "typed terminal actions and durable result receipt"
+    ],
+    "immediateProductOrder": [
+      "complete the separate result/progression join contract and implementation",
+      "close Station count-one Add authoring readiness",
+      "retain P1-C execution and P1-D mastery as later explicit owners"
+    ],
+    "laterCandidates": [
+      "typed entry restriction and cost authoring only after an accepted product owner exists",
+      "target-time and challenge evaluation only behind P1-D",
+      "loadout and reward truth only after separate authoritative joins exist"
+    ],
+    "rejectedInference": [
+      "A static luaFile reference is not stage execution, wave ownership, or cleanup.",
+      "Reward- and drop-shaped fields do not prove grant, persistence, or exactly-once settlement.",
+      "Numeric values, identifiers, list contents, story text, images, tuning, and economy values are not imported."
+    ]
+  },
+  "sourceValuePolicy": {
+    "foreignIdentityMetadataAllowed": [
+      "levelId=10101"
+    ],
+    "copiedPayloadValues": [],
+    "sourceValueCopiedCount": 0,
+    "withheldFamilies": [
+      "localized-hashes-and-text",
+      "script-and-image-path-values",
+      "list-and-reference-identifiers",
+      "level-time-cost-reward-and-tuning-values"
+    ]
+  },
+  "acceptanceEffect": "none; these three new versioned replacement candidates do not reuse historical source IDs, enter inScopeSourceIds, populate claim mappings/crosswalkRows, or pass any LiveAcceptance gate.",
+  "negativeBoundaries": [
+    "The package proves one exact retained StageData_Main row, its field shapes, and fourteen static semantic-slot dispositions only.",
+    "It does not claim a newer HI3 data state, official current shipped behavior, runtime execution, evaluator semantics, cleanup, persistence, or product parity.",
+    "It copies no authored string, path, identifier list, tuning, reward, economy, or narrative payload value.",
+    "The two existing helper CSVs remain separate unadmitted siblings and cannot fill or reinterpret this row."
+  ],
+  "normalization": "UTF-8 without BOM; LF; exactly one final LF; JSON property/array order authored by generator; canonicalReportDigest is recursive sorted-key compact JSON with itself omitted; CSV has fixed headers, every cell double-quoted, comma delimiter, and RFC4180 escaping.",
+  "canonicalReportDigest": "d20113431ca54b1da5bc1f6c477b32de0fa9eb205f67d3e33cdaaafe4f6f7101"
+}

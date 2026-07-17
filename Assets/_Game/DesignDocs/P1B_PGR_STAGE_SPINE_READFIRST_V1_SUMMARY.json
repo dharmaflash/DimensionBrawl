@@ -1,0 +1,513 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-PGR-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+  "artifactSetId": "PGR-GUIDEFIGHT-STAGE-SPINE-ALT3RI-856A0E45-V1",
+  "producerContractId": "PGR-GUIDEFIGHT-STAGE-SPINE-PRODUCER-01",
+  "replacementContractId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-01",
+  "generatorId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-V1-GENERATOR-01",
+  "status": "exact-static-replacement-candidate-not-admitted",
+  "generatedAt": "2026-07-16T00:25:00+09:00",
+  "replacesHistoricalSourceIds": [
+    "pgr-readfirst-md",
+    "pgr-readfirst-summary-json",
+    "pgr-guidefight-label-csv",
+    "pgr-guidefight-links-csv"
+  ],
+  "authority": {
+    "sourceSnapshotId": "pgr-alt3ri-856a0e45-en-guidefight-stage-v1",
+    "upstream": "alt3ri/PGR_Data",
+    "revision": "856a0e4534d0854fa440040e961b74a97ba732e2",
+    "snapshotDate": "2026-06-14",
+    "locale": "EN",
+    "licenseDisposition": "unknown-review-needed",
+    "guideFightInputId": "pgr-en-guide-fight",
+    "stageInputId": "pgr-en-stage"
+  },
+  "comparison": {
+    "locale": "ZH",
+    "guideFightInputId": "pgr-zh-guide-fight-compare-only",
+    "stageInputId": "pgr-zh-stage-compare-only",
+    "guideFightByteIdentical": true,
+    "stagePayloadByteIdentical": false,
+    "selectedIdentityAndOrdinalParity": true,
+    "snapshotsUnioned": false,
+    "zhValuesCopied": false
+  },
+  "selection": {
+    "requiredGuideFightIds": [
+      100001,
+      100002,
+      100003,
+      100004
+    ],
+    "requiredPairs": [
+      {
+        "guideFightId": 100001,
+        "stageId": 10010001
+      },
+      {
+        "guideFightId": 100002,
+        "stageId": 10010002
+      },
+      {
+        "guideFightId": 100003,
+        "stageId": 10010003
+      },
+      {
+        "guideFightId": 100004,
+        "stageId": 10010005
+      }
+    ],
+    "sort": "GuideFight.Id numeric ascending",
+    "guideFightRowCount": 4,
+    "stageJoinCount": 4,
+    "missingCount": 0,
+    "duplicateCount": 0,
+    "multiMatchCount": 0,
+    "enSelectionCanonicalSizeBytes": 352,
+    "enSelectionCanonicalDigest": "8b9342eb32e67527d29a05253a3f36bcbf9998b380cefb9b286916fe90414346"
+  },
+  "exactRows": [
+    {
+      "guideFightSourceOrdinal": 1,
+      "guideFightRowKey": "Id=100001",
+      "guideFightCanonicalRowSizeBytes": 84,
+      "guideFightCanonicalRowSha256": "11d8e073473a021e1d49a5374e9a7d523b377cd7ffa4da9cc1abfe09aa67d11e",
+      "stageSourceOrdinal": 3,
+      "stageRowKey": "StageId=10010001",
+      "stageCanonicalRowSizeBytes": 1976,
+      "stageCanonicalRowSha256": "1dc669e5321a634609e08f8255f1169fd2a4a5045e6c4cbaddd362767561ff1c",
+      "zhCompareStageSourceOrdinal": 3,
+      "zhCompareStageCanonicalRowSizeBytes": 1981,
+      "zhCompareStageCanonicalRowSha256": "6642439ac5c499bbfa3e48837a6972f27ac47c1d4cd980617a5564025f804862",
+      "joinCardinality": 1,
+      "sourceValueCopied": false
+    },
+    {
+      "guideFightSourceOrdinal": 2,
+      "guideFightRowKey": "Id=100002",
+      "guideFightCanonicalRowSizeBytes": 95,
+      "guideFightCanonicalRowSha256": "4b01ac60f053b72cd548346253eb7ed2ffc0d0d4850680c9ecb1fa85f8d8a7c3",
+      "stageSourceOrdinal": 4,
+      "stageRowKey": "StageId=10010002",
+      "stageCanonicalRowSizeBytes": 1876,
+      "stageCanonicalRowSha256": "d1f3da26a89670d8a924ebb5b1fe8941a2b8463ba8144bccc1d232adcf717b63",
+      "zhCompareStageSourceOrdinal": 4,
+      "zhCompareStageCanonicalRowSizeBytes": 1889,
+      "zhCompareStageCanonicalRowSha256": "93a627a20c81dde6fd68a384590d30c1b9d5cbe618bde6bc6bb4648a50f04401",
+      "joinCardinality": 1,
+      "sourceValueCopied": false
+    },
+    {
+      "guideFightSourceOrdinal": 3,
+      "guideFightRowKey": "Id=100003",
+      "guideFightCanonicalRowSizeBytes": 84,
+      "guideFightCanonicalRowSha256": "8b3770a8d5a720ff2b321d05ae514a522b09925bcc788f3db6f00fb201ab6a21",
+      "stageSourceOrdinal": 5,
+      "stageRowKey": "StageId=10010003",
+      "stageCanonicalRowSizeBytes": 1978,
+      "stageCanonicalRowSha256": "a081212fe17bf3bbac204308b1ed6822b1f7955d8fe80808e545c8e876efee78",
+      "zhCompareStageSourceOrdinal": 5,
+      "zhCompareStageCanonicalRowSizeBytes": 1973,
+      "zhCompareStageCanonicalRowSha256": "e2ac80b1a80e0e49117d963f865b38eeeb078b157bf5d275e2467f160813bc9b",
+      "joinCardinality": 1,
+      "sourceValueCopied": false
+    },
+    {
+      "guideFightSourceOrdinal": 4,
+      "guideFightRowKey": "Id=100004",
+      "guideFightCanonicalRowSizeBytes": 84,
+      "guideFightCanonicalRowSha256": "35f00689aa6b35af74555e21371b8cd2982626516fe2223f18165c94a19828cc",
+      "stageSourceOrdinal": 7,
+      "stageRowKey": "StageId=10010005",
+      "stageCanonicalRowSizeBytes": 1855,
+      "stageCanonicalRowSha256": "d165700b94b1b9b5316003a8302e4ce017d3f8b762c085fb1e8ff6e6685e4de7",
+      "zhCompareStageSourceOrdinal": 7,
+      "zhCompareStageCanonicalRowSizeBytes": 1877,
+      "zhCompareStageCanonicalRowSha256": "c678c8e8754254f1d373bfc020690d07ac2011b362986fcc962a8708eeb10a69",
+      "joinCardinality": 1,
+      "sourceValueCopied": false
+    }
+  ],
+  "inputIntegrity": [
+    {
+      "inputId": "pgr-source-record",
+      "locale": "provenance",
+      "role": "source-record",
+      "relativePath": "source-record.md",
+      "sizeBytes": 1118,
+      "sha256": "23cecc493fe4e69f59f73520e7da694c22ac76fc2283deb88070d165c37725ee"
+    },
+    {
+      "inputId": "pgr-snapshot-manifest",
+      "locale": "provenance",
+      "role": "snapshot-manifest",
+      "relativePath": "manifest.yml",
+      "sizeBytes": 1645,
+      "sha256": "00f535d4bb159a0f9a43a824bda3e9fad721ae3074717b01d0b68c4f1e86400d"
+    },
+    {
+      "inputId": "pgr-file-manifest",
+      "locale": "provenance",
+      "role": "file-manifest",
+      "relativePath": "file-manifest.csv",
+      "sizeBytes": 19913116,
+      "sha256": "f3909c0d8b24b9e2770cead82f86418a52536e6d2ab1602f43eae862bdc55115"
+    },
+    {
+      "inputId": "pgr-en-course-stage",
+      "locale": "EN",
+      "role": "course-stage-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseStage.json",
+      "sizeBytes": 4952,
+      "sha256": "c0919188664f4582d78aa9dd4eaa00c7039650c2b619f58aff5aa8d487532bc3"
+    },
+    {
+      "inputId": "pgr-en-course-chapter",
+      "locale": "EN",
+      "role": "course-chapter-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseChapter.json",
+      "sizeBytes": 3643,
+      "sha256": "bfd83777a16b1e14ce3b392523013b599bdd309e1ac4466c2a3db9723f735c35"
+    },
+    {
+      "inputId": "pgr-en-course-stage-show-type",
+      "locale": "EN",
+      "role": "course-presentation-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/course/CourseStageShowType.json",
+      "sizeBytes": 706,
+      "sha256": "5f2066cfb2bb756a5f6b599e98bfcbcea8770791997e7d5a409064c0116ce9d4"
+    },
+    {
+      "inputId": "pgr-en-practice-chapter",
+      "locale": "EN",
+      "role": "practice-chapter-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeChapter.json",
+      "sizeBytes": 2415,
+      "sha256": "e213fcac88ca56ba073195b45ca1d8bf9f3bb215e401929991f94f099376aa4c"
+    },
+    {
+      "inputId": "pgr-en-practice-group",
+      "locale": "EN",
+      "role": "practice-group-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeGroup.json",
+      "sizeBytes": 12767,
+      "sha256": "d38089295be9700ee8565a05e062a541eacb1bfcd6feee31722972ce8ac3d887"
+    },
+    {
+      "inputId": "pgr-en-practice-skill-details",
+      "locale": "EN",
+      "role": "practice-skill-presentation-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/practice/PracticeSkillDetails.json",
+      "sizeBytes": 46259,
+      "sha256": "63efabc9ac56ebe69bde10567390174e166d9dfa70cb7045c9f792c084e8b7c4"
+    },
+    {
+      "inputId": "pgr-en-teaching-activity",
+      "locale": "EN",
+      "role": "teaching-activity-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingActivity.json",
+      "sizeBytes": 72445,
+      "sha256": "9e7f2b476035b6c417443924f50238fec5d54d84e621dfe73bc7130bdbe8de4a"
+    },
+    {
+      "inputId": "pgr-en-teaching-robot",
+      "locale": "EN",
+      "role": "teaching-loadout-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingRobot.json",
+      "sizeBytes": 46467,
+      "sha256": "6d43c29629c6573ca1e95eb53e97eec327527c9b32f50769e6dacae062289c3b"
+    },
+    {
+      "inputId": "pgr-en-guide-fight",
+      "locale": "EN",
+      "role": "authoritative-four-row-guide-selection",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/guide/GuideFight.json",
+      "sizeBytes": 595,
+      "sha256": "62c184d70d88a3daf377ce6a2558c6e2cb192c4dbefbae3f02b4f549b6b46e7d"
+    },
+    {
+      "inputId": "pgr-en-stage",
+      "locale": "EN",
+      "role": "authoritative-stage-join-and-label-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/Stage.json",
+      "sizeBytes": 29637115,
+      "sha256": "7d553ada4ac1cd40e77054be70263260f7b2b2dd15948dc120e7ca806b26f940"
+    },
+    {
+      "inputId": "pgr-zh-guide-fight-compare-only",
+      "locale": "ZH",
+      "role": "compare-only-guide-byte-identity",
+      "relativePath": "files/extracted_repo/PGR_Data-master/ZH/bytes/share/guide/GuideFight.json",
+      "sizeBytes": 595,
+      "sha256": "62c184d70d88a3daf377ce6a2558c6e2cb192c4dbefbae3f02b4f549b6b46e7d"
+    },
+    {
+      "inputId": "pgr-zh-stage-compare-only",
+      "locale": "ZH",
+      "role": "compare-only-stage-join-and-label-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/ZH/bytes/share/fuben/Stage.json",
+      "sizeBytes": 30511512,
+      "sha256": "ca3ad74480538148e7bc9a1a129569437e45bc83c670c0397d8062133dc6ee3a"
+    }
+  ],
+  "tableShapes": [
+    {
+      "inputId": "pgr-en-course-stage",
+      "role": "course-stage-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseStage.json",
+      "rowCount": 30,
+      "unionKeyCount": 5,
+      "unionKeySetSha256": "3ef364a3170ff6d2ae196093bdee0333497d1b289724187116ce28aa745b4e97",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-course-chapter",
+      "role": "course-chapter-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseChapter.json",
+      "rowCount": 10,
+      "unionKeyCount": 10,
+      "unionKeySetSha256": "d1e8ba97cfdb42c20aa27a3744b87fb029012a5c6152eadf18d10cb3bb4354b0",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-course-stage-show-type",
+      "role": "course-presentation-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/course/CourseStageShowType.json",
+      "rowCount": 2,
+      "unionKeyCount": 6,
+      "unionKeySetSha256": "1cbec6e09f6531bd38f4e50f865394b498fbe7b950be8ab960360f4f8a9ed4c9",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-practice-chapter",
+      "role": "practice-chapter-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeChapter.json",
+      "rowCount": 8,
+      "unionKeyCount": 7,
+      "unionKeySetSha256": "d9ce2788229a23bd6773765dbe26444987488f57ae46a75cfc7d770b444fa375",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-practice-group",
+      "role": "practice-group-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeGroup.json",
+      "rowCount": 88,
+      "unionKeyCount": 4,
+      "unionKeySetSha256": "83f49ee8738b8b70efde68e3409ca8bce83f6048173c555989b566a169bbe9b5",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-practice-skill-details",
+      "role": "practice-skill-presentation-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/practice/PracticeSkillDetails.json",
+      "rowCount": 85,
+      "unionKeyCount": 5,
+      "unionKeySetSha256": "77274f81e1d19adeff84fd3ff666bc6eb88a9482f716fea33ef414329f20fb6d",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-teaching-activity",
+      "role": "teaching-activity-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingActivity.json",
+      "rowCount": 48,
+      "unionKeyCount": 29,
+      "unionKeySetSha256": "e7a6df5768b5a185f833e003489b54b0b56c1072fd0cd6a70419268984caad85",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-teaching-robot",
+      "role": "teaching-loadout-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingRobot.json",
+      "rowCount": 139,
+      "unionKeyCount": 5,
+      "unionKeySetSha256": "d5e5209cc30aa886416438b499b72e196bc8e48d97dfff7d8aa897b99afb5437",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-guide-fight",
+      "role": "authoritative-four-row-guide-selection",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/guide/GuideFight.json",
+      "rowCount": 4,
+      "unionKeyCount": 5,
+      "unionKeySetSha256": "bf016b2c2e9d7042d01d20e368ab839a10d2e159dd2a37044b1fb2615ecdf4e3",
+      "distinctRowKeySetCount": 1
+    },
+    {
+      "inputId": "pgr-en-stage",
+      "role": "authoritative-stage-join-and-label-shape",
+      "relativePath": "files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/Stage.json",
+      "rowCount": 10916,
+      "unionKeyCount": 83,
+      "unionKeySetSha256": "840b284d9ce57c7053165f1be5c563504fc1a1ba6554dc83415f3ba4d8955ec6",
+      "distinctRowKeySetCount": 1
+    }
+  ],
+  "labelContextContract": {
+    "schemaVersion": 1,
+    "rowCount": 20,
+    "sourceRowCount": 4,
+    "fieldsPerSourceRow": 5,
+    "fieldOrder": [
+      "Stage.Name",
+      "Stage.Description",
+      "Stage.RecommandLevel",
+      "Stage.RequireLevel",
+      "Stage.StarDesc"
+    ],
+    "headerOrder": [
+      "schema_version",
+      "artifact_set_id",
+      "source_snapshot_id",
+      "guide_fight_source_ordinal",
+      "guide_fight_row_key",
+      "stage_source_ordinal",
+      "stage_row_key",
+      "context_field_ordinal",
+      "field_path",
+      "semantic_role",
+      "en_observed_state",
+      "en_json_type",
+      "zh_observed_state",
+      "zh_json_type",
+      "en_stage_row_sha256",
+      "zh_compare_stage_row_sha256",
+      "en_zh_field_value_equal",
+      "source_value_copied",
+      "negative_boundary_code"
+    ],
+    "payloadValuesWithheld": true,
+    "sourceValueCopiedCount": 0
+  },
+  "readingLinksContract": {
+    "schemaVersion": 1,
+    "rowCount": 56,
+    "sourceRowCount": 4,
+    "semanticSlotCountPerSourceRow": 14,
+    "semanticSlotOrder": [
+      "logicalStageId",
+      "physicalSceneOrScript",
+      "briefingAndCatalog",
+      "recommendedPowerOrLevel",
+      "loadout",
+      "restrictions",
+      "entryCost",
+      "recordOrTargetTime",
+      "prerequisite",
+      "recommendedNext",
+      "storyEntry",
+      "storyExit",
+      "challengeReference",
+      "resultReference"
+    ],
+    "headerOrder": [
+      "schema_version",
+      "artifact_set_id",
+      "source_snapshot_id",
+      "guide_fight_source_ordinal",
+      "guide_fight_row_key",
+      "stage_source_ordinal",
+      "stage_row_key",
+      "semantic_slot_ordinal",
+      "semantic_slot_id",
+      "guide_fight_field_paths",
+      "stage_field_paths",
+      "guide_fight_observed_state",
+      "stage_observed_state",
+      "combined_value_state",
+      "foreign_classification",
+      "mapping_disposition",
+      "negative_boundary_code",
+      "source_value_copied"
+    ],
+    "stateCounts": {
+      "present": 32,
+      "absent": 20,
+      "unresolved": 4
+    },
+    "classificationCounts": {
+      "provenStatic": 52,
+      "unknown": 4
+    },
+    "sourceValueCopiedCount": 0
+  },
+  "outputArtifacts": [
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-readfirst-md",
+      "artifactId": "P1B-PGR-STAGE-SPINE-READFIRST-V1-MD",
+      "replacesHistoricalSourceId": "pgr-readfirst-md",
+      "format": "markdown",
+      "expectedDataRowCount": 1,
+      "admissionState": "candidate-not-admitted"
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-summary-json",
+      "artifactId": "P1B-PGR-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+      "replacesHistoricalSourceId": "pgr-readfirst-summary-json",
+      "format": "json",
+      "expectedDataRowCount": 1,
+      "admissionState": "candidate-not-admitted"
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-label-context-csv",
+      "artifactId": "P1B-PGR-GUIDEFIGHT-STAGE-LABEL-CONTEXT-V1-CSV",
+      "replacesHistoricalSourceId": "pgr-guidefight-label-csv",
+      "format": "csv",
+      "expectedDataRowCount": 20,
+      "admissionState": "candidate-not-admitted"
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-reading-links-csv",
+      "artifactId": "P1B-PGR-GUIDEFIGHT-STAGE-READING-LINKS-V1-CSV",
+      "replacesHistoricalSourceId": "pgr-guidefight-links-csv",
+      "format": "csv",
+      "expectedDataRowCount": 56,
+      "admissionState": "candidate-not-admitted"
+    }
+  ],
+  "dimensionBrawlComparisonBoundary": {
+    "alreadyPresent": [
+      "typed playable-stage and route identity",
+      "immutable route snapshot and truthful briefing join",
+      "typed terminal actions and durable result receipt"
+    ],
+    "nextProductGates": [
+      "implement the jointly frozen result/progression join",
+      "close the separate Station count-one Add authoring gate",
+      "retain P1-C execution and P1-D mastery as later explicit owners"
+    ],
+    "laterCandidates": [
+      "course/practice/teaching catalog separation after the P1-B spine is complete",
+      "typed target-time/mastery evaluation only under P1-D",
+      "loadout truth only after a distinct accepted loadout authority exists"
+    ],
+    "rejectedInference": [
+      "Static PGR table separation does not prove runtime execution, persistence, cleanup, reward settlement, or product parity.",
+      "A present loadout or time field does not authorize importing PGR loadout, record-time, signal-orb, three-ping, or QTE systems.",
+      "ZH is compare-only and cannot be unioned with EN or used to fill an EN absence."
+    ]
+  },
+  "sourceValuePolicy": {
+    "foreignIdentityMetadataAllowed": [
+      "GuideFight.Id",
+      "GuideFight.StageId",
+      "Stage.StageId"
+    ],
+    "copiedPayloadValues": [],
+    "sourceValueCopiedCount": 0,
+    "withheldFamilies": [
+      "labels-and-descriptions",
+      "npc-weapon-robot-identifiers",
+      "time-level-cost-reward-and-tuning-values"
+    ]
+  },
+  "acceptanceEffect": "none; these four new versioned replacement candidates do not reuse historical source IDs, enter inScopeSourceIds, populate claim mappings/crosswalkRows, or pass any LiveAcceptance gate.",
+  "negativeBoundaries": [
+    "The package proves exact static shapes and four EN GuideFight-to-Stage joins only.",
+    "It copies no authored label, description, loadout, record-time, course, practice, or teaching payload value.",
+    "Identity metadata does not prove a runtime consumer, evaluator, unlock transaction, persistence, reward settlement, or DimensionBrawl product requirement.",
+    "ZH is compare-only and never fills an EN null or absence."
+  ],
+  "normalization": "UTF-8 without BOM; LF; exactly one final LF; JSON property/array order authored by generator; canonicalReportDigest is recursive sorted-key compact JSON with itself omitted; CSV has fixed headers, every cell double-quoted, comma delimiter, and RFC4180 escaping.",
+  "canonicalReportDigest": "39c8136d6e0813f83a78c11e1a7ada648506d204fd59548a7e509bbdfb6eedd0"
+}

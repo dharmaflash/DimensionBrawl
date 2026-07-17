@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "auditId": "P1B-HI3-STAGE-HELPER-PROVENANCE-V1-PACKAGE-AUDIT-01",
+  "contractId": "P1B-HI3-STAGE-HELPER-PROVENANCE-01",
+  "status": "pass-formal-provenance-candidates-not-admitted",
+  "auditedAt": "2026-07-16T04:05:00+09:00",
+  "packageFiles": [
+    {
+      "role": "inventory-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_INPUT_INVENTORY_V1_GENERATOR.mjs",
+      "sizeBytes": 13998,
+      "sha256": "8ac184f12fc3f7d5635628875745fa1a4986d5b3c51f13bee9c0c76833e1c5e3"
+    },
+    {
+      "role": "materialized-inventory",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_INPUT_INVENTORY_V1.csv",
+      "sizeBytes": 278176,
+      "sha256": "9eb12152642ff031d758415645b9ab95b6e312aab1a080e8775ea9dba653dc5c"
+    },
+    {
+      "role": "isolated-replay-wrapper",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY.py",
+      "sizeBytes": 6449,
+      "sha256": "4c4ff6ff726dfb0e24138a8d57dcd38efd83f70f279791ac62c924d398afe2ec"
+    },
+    {
+      "role": "isolated-replay-result",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY_RESULT.json",
+      "sizeBytes": 1155,
+      "sha256": "fc6fef25cb5eccff9e77170ee377c48bcda8819a86458e2d336d9ca2ea69f6f8"
+    },
+    {
+      "role": "provenance-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_GENERATOR.mjs",
+      "sizeBytes": 22493,
+      "sha256": "1091e0f312223c770a84b309fb429f3b1aefaf5bff3cbc6bc675f44de139ae9a"
+    },
+    {
+      "role": "source-record",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_SOURCE_RECORD.json",
+      "sizeBytes": 11522,
+      "sha256": "30d124125363ca55648f1956b89b574dee07ad3be6ac376042104a93734fce6d"
+    },
+    {
+      "role": "producer-manifest",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PRODUCER_MANIFEST.json",
+      "sizeBytes": 10809,
+      "sha256": "fa08d733ff9ead59468d4ac8f9317c196a034e84da000b974754bf1ec24c7296"
+    }
+  ],
+  "packageDigestEncoding": "ordered role|path|sizeBytes|lowercaseSha256 rows; LF; final LF; UTF-8; SHA-256 lowercase",
+  "packageDigest": "9de3bafab2b6695263f9c7e1e4d40ffa946a0656a3337de7b43c2cd19d3fea9a",
+  "canonicalDigests": {
+    "sourceRecord": "271fbe9d5177480caa2749082ce932e62f51e6a2051894ce72482845ed742913",
+    "producerManifest": "bc5d98de61475ac40c3b5645f5992aab22d3e64ce784572f651e8e7ac37d8b29",
+    "inputInventory": "3b00de9a3cc41d63c7576a1958c0d01fe098e412a2c98e43aba0b1e6d544e662"
+  },
+  "verifiedCounts": {
+    "packageFiles": 7,
+    "provenanceDependencies": 15,
+    "upstreamSnapshots": 3,
+    "selectedInputs": 1509,
+    "selectedInputBytes": 456457979,
+    "targetOutputs": 2,
+    "targetDataRows": 16364,
+    "excludedScratchByproducts": 1,
+    "excludedScratchRows": 3788,
+    "boundedGlobalStageDataSamples": 12
+  },
+  "admissionState": {
+    "helperCandidatesVerified": 2,
+    "helperSourcesAdmitted": 0,
+    "helperSourcesRequired": 2,
+    "supportingSourcesAdmitted": 0,
+    "supportingSourcesRequired": 9,
+    "liveRows": 0,
+    "liveCrosswalkCells": 0,
+    "atomicElevenSourceEffect": "none",
+    "productAdoptionEffect": "none"
+  },
+  "blockersToAdmission": [
+    "The DevilProMT and nairieberry snapshots remain none-detected-review-needed, and the zero-contribution MskTmi snapshot remains AGPL-3.0-review-needed.",
+    "The two helpers cannot identify or substitute the exact HI3 levelId 10101 authority row.",
+    "The complete eleven-source cohort must be admitted atomically; helper provenance verification does not admit either source alone."
+  ],
+  "negativeBoundary": "This audit authenticates only two existing historical HI3 helper bytes as formal provenance candidates. It creates no successor source identity, admits neither helper, does not count the monster scratch output, does not identify the exact levelId 10101 authority row, does not resolve reuse licensing, does not populate a claim or crosswalk cell, and proves no runtime or current-product behavior.",
+  "canonicalAuditDigest": "b16247c0877cbfd0609241dbc85a9672955aee302190da64ff6e6f075757bda6"
+}

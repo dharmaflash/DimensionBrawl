@@ -1,7 +1,15 @@
 # Typed Mastery and Progress Application Spec
 
+## Current P1-B closure
+
+- P1-B Station Add and full-exit closure (2026-07-16): `SNAP-P1B-STATION-ADD-AUTHORING-REMEDIATION3-ACCEPTED-11` binds `C:\tmp\DimensionBrawl-P1B-StationAdd-Remediation3-Bundle.md` at SHA-256 `9378bc021b09495c350b331a85755eac7b956a2372d78ecca848a94c2d570c76`; source `128/128` matches digest `4c3dbe952bea5e4f5c57632d70e6fba815d7f6900dc9e1dcbee6af69bae86c89`, artifacts `11/11` match digest `eb5699917083d9be13d571f2a64aa0f69048304552b962df3467b89f3469ce2b`, validator/inventory `8/4/1/1/0`, integrated focused `8/8`, Canonical UI `34/34`, exact Victory-and-Replay full route `1/1`, and graphics aggregate `99/99` all pass with three independent audits at blocker `0`. Revision-1 pose remains relative to `StageDefinitionSceneBinding.transform`; Station `MapRoot` is topology containment only. `ACC-P1B-STATION-ADD-AUTHORING = PASS`; the foreign-evidence row remains PASS through explicit rejection only; `SNAP-P1B-FULL-EXIT-ACCEPTED-12` closes `ACC-P1B-FULL-EXIT-AUDIT = PASS`, so P1-B is **ACCEPTED / VERIFIED-COMPLETE**. This admits no P1-C runtime owner: only the prospective authoring-ledger freeze may start, and runtime work remains gated by `ACC-OPS-AUTHORING-LEDGER-CONTRACT-FROZEN`.
+
 ## Status
 
+- P1-B result/progression Remediation3 acceptance: `SNAP-P1B-RESULT-PROGRESSION-JOINS-REV3B-REMEDIATION3-ACCEPTED-08` binds `C:\tmp\DimensionBrawl-P1B-ResultProgression-Remediation3-Bundle.md` at SHA-256 `94fa969979bdb2a2b91dfbdf8a5395aed0a69ddd8907831bb7c99da06b139a5b`; source `116/116` matches digest `271793a22e2afc24779a3aeeace7cb9768aae77b7bbbf18a075fa15ea409efb2`, artifacts `14/14` match list digest `c3642305e13c085f710e8db62df807463aea58d8a57331cd7526460eb7a404fc`, validator/inventory `8/4/1/1/0`, focused `7/7`, Canonical UI `33/33`, exact Victory-and-Replay full route `1/1`, and graphics aggregate `98/98` all pass. Independent source, artifact/test, and semantic-contract audits find blocker `0`: route/sidecar-owned canonical catalog identity is independent of the result definition, public Corridor admission and the editor validator require exact object identity, and catalog-only plus coherent catalog/profile/localization clones reject before run creation. Frozen route/policy/join/lifetime digests remain unchanged. `ACC-P1B-RESULT-PROGRESSION-JOINS = PASS / VERIFIED PARTIAL`; Candidate-07 remains immutable historical FAIL. Station count-one Add authoring is now unheld as the next separate P1-B gate, while live PGR/HI3 disposition, P1-B full exit, and P1-C execution remain OPEN and no P1-D/P2-C owner is admitted.
+- P1-B result/progression Remediation2 candidate audit: `SNAP-P1B-RESULT-PROGRESSION-JOINS-REV3B-REMEDIATION2-CANDIDATE-07` binds `C:\tmp\DimensionBrawl-P1B-ResultProgression-Remediation2-Bundle.md` at SHA-256 `a4e2e2873ec4f53ba81a6c6a3269949b4b2f19255f566d333fcb058e3eeb6de8`; its submitted source manifest matches `116/116` with digest `f4c6f0a6065a2f304acd1a56f7d126b4b2be49582f752f707757d87f37c35583`, all `14/14` artifacts match list digest `96176b861dc7ce0a9aaccd86fe035aa59433513383713132248e51f974b6228a`, validator/inventory is `8/4/1/1/0`, focused `7/7`, Canonical UI `33/33`, exact full route `1/1`, and graphics aggregate `98/98` pass. Independent source/contract/test audits verify that Candidate-06's three blocker groups, locale/graph rows, and exact durable-decision byte preservation are closed, but `ACC-P1B-RESULT-PROGRESSION-JOINS = FAIL / VERIFIED-FAILED-CANDIDATE-PARTIAL` on one remaining admission defect: the result definition self-selects its catalog, so a catalog-only clone or coherent catalog/profile/localization clone can evade the intended exact-identity gate. The post-bundle route-owned catalog-anchor WIP changes five submitted files and cannot retroactively amend this cutoff. Station Add and P1-B full exit remain held until a new sealed-source candidate passes.
+- P1-B result/progression joint-freeze: `P1B-RESULT-PROGRESSION-JOINS-01` Rev3B proposal artifacts match SHA-256 `b6e63b11e3e270302dc33f95b7b69740565e4e27a13ffe017a17f2899256c88f` / `eb65cf30eb961a271f135bc38a9874cccae49e47d8a9d0af5a6dd5f0d7211199` / `933c13943e5397f5fa7a1be531ae34bd28f595e09feee14f18429daa81a8e603`. Fresh PowerShell, independent Node, and a third row reconstruction preserve the seven `15/35/15/17/8/9/38` blocks, sidecar/join snapshot digest `a2ae9df451bd6f2ff48b83098db3bfbdaf2120e23dfaf3612a31f18a022c41fa`, all predecessor digests, and the separate 11-row lifetime-contract digest `3b6cf33325a0a83db74ee2253da9799e589b5664f4fb677b2b021389b0714c0e`. Exact `(ID, revision)` edge resolution and the no-token `Stage Select A -> pre-admission mutation B -> fresh Corridor B` boundary pass. Verdict is **ACCEPT / JOINT-FROZEN / IMPLEMENTATION-ADMITTED**. This authorizes implementation only: `ACC-P1B-RESULT-PROGRESSION-JOINS`, Station Add, foreign evidence, and P1-B full exit remain **OPEN**, and no P1-C/P1-D/P2-C owner or P1-A digest change is admitted.
+- P1-B result/progression Rev3B implementation candidate audit: `C:\tmp\DimensionBrawl-P1B-ResultProgression-Implementation-Bundle.md` matches SHA-256 `35b1b1a5523bc457ad1936190d1d41143dd1bc8a3489624cdb600631c3a6daa1`; submitted source manifest `116/116` matches digest `1b3dba021b40a4be9d728c6fd4f2039864abb399bbff6d2907e4af274bec24ec`, all `14/14` declared artifacts match list digest `249da60824d3ef617937e648e1257b1fde9b50dc28082a904b78513ca7c76023`, both contract verifiers pass, validator/inventory is `8/4/1/1/0`, focused `2/2`, Canonical UI `28/28`, exact Victory-and-Replay full route `1/1`, and graphics aggregate `93/93` pass. These green artifacts are verified, but `ACC-P1B-RESULT-PROGRESSION-JOINS = FAIL / SOURCE-CONTRACT-FAILED-CANDIDATE`: canonical profile/localization object identity is not enforced at admission, the `Presented -> terminal action` path omits the exact pinned join/presentation/audit authority gate and audit self-integrity, and representative deep snapshot damage can throw instead of returning a typed rejection. Direct clone/damage/dispatch, recovery/process-loss, locale, and production graph acceptance rows remain open. The Rev3B joint freeze and every accepted predecessor cutoff/digest remain unchanged; Station Add and P1-B full exit stay held pending remediation and a new sealed-source bundle.
 - Drafted: 2026-07-14
 - Status: provisional P1-D review contract; analysis only
 - Roadmap source: [Subculture Dataset Gap Roadmap](SUBCULTURE_DATASET_GAP_ROADMAP.md), P1-D
@@ -13,6 +21,10 @@
 - Later reward extension: [Stage Progression and Reward Transaction Spec](STAGE_PROGRESSION_REWARD_TRANSACTION_SPEC.md), P2-C
 - Working archive root: `\\DESKTOP-69817L3\ArkData\SubcultureGameData`
 - Production order remains `P0 -> P1-0 -> P1-A -> P1-B -> P1-C -> P1-D`. This document does not authorize production work before those gates close.
+- P1-A predecessor update: historical 54/59/68/75 evidence remains non-additive. The final 11-source unchanged cutoff passes Combat 21/21, StageRun 23/23, UI 15/15, aggregate 79/79, full route 1/1, and validator checks and closes the four audited duplicate/replacement/diagnostic/snapshot-exception paths; P1-A current-schema full exit is **CLOSED**. This does not admit P1-D.
+- P1-B predecessor boundary: three accepted immutable local cutoffs verify the direct presentation identity, one-port/39-binding residue cleanup, and Corridor 4/4 plus Station 0/0 anchor/profile stage-context hygiene at 80/80. `SNAP-P1B-CATALOG-SELECTION-CANDIDATE-04` remains historically rejected because its submitted prefab lacked the authored hidden reward row and blank public selection retained its old bundle/latch; it is not retroactively accepted. The unchanged-source remediation `SNAP-P1B-CATALOG-SELECTION-CANDIDATE-05` passes validator, focused 8/8, Canonical UI 21/21, exact full route 1/1, and graphics-enabled aggregate 86/86, so `ACC-P1B-CANONICAL-SELECTION` is accepted only for the frozen one-row read-only route projection. At that cutoff the reference/template/briefing freeze remained open; rev2A later froze the contract, and the separate truthful-join implementation cutoff now passes while P1-B full exit remains OPEN. Result/progression joins, objective definitions, evaluator capability, mastery ownership, and durable progress application remain absent, so these artifacts do not admit P1-D.
+- P1-B truthful-join rev2A boundary: rev2A jointly freezes the 71/27/80 template/reference/briefing contract and admits its bounded implementation, while the first proposal and historical 71/27/78 rev2 remain AMEND. It preserves typed absence for mastery/progression and the current-schema absence of an active-run restart policy.
+- P1-B truthful-join implementation cutoff: the independently audited bundle `C:\tmp\DimensionBrawl-P1B-TruthfulJoins-Implementation-Bundle.md` matches SHA-256 `8ef3a8e234f53ef561dfdd5d805d0f69c8ddbb55d2a2534ca427f2da821a9d0a`; all 51 ordered sources match manifest digest `1d2fc6a142fa7582e76095c8a928ca1f61f4453ac7061f5d50525673d1480324`, all 13 declared artifacts match, PowerShell and Node reconstruct `71/27/80`, and the validator passes `8/4/1/1/0`. Focused 7/7, canonical UI 26/26, exact full route 1/1, and graphics aggregate 91/91 pass with 91 unique full names and class counts `26/21/3/2/16/23`; frozen route/policy/projection/template/reference/briefing digests match. `ACC-P1B-TRUTHFUL-JOINS` is **PASS / VERIFIED PARTIAL**, while P1-B full exit remains **OPEN**. At its later historical cutoff, Candidate-06 fails `ACC-P1B-RESULT-PROGRESSION-JOINS` on three blocker groups. Remediation2 Candidate-07 subsequently closes those groups but still fails one independent canonical-catalog identity anchor; a new sealed-source candidate is next, then Station Add, live PGR/HI3 foreign evidence, and full exit. This adds no P1-C execution owner, result/progression/reward join or owner, objective evaluator, mastery/progress writer, or pre-result active-run restart; P1-D stays blocked.
 
 P1-D turns a truthful run result into two things only:
 
@@ -25,16 +37,16 @@ It does not add rewards, currency, rank, score, generic achievements, or a chapt
 
 No P1-D fixture is freeze-ready.
 
-- No runtime `StageRunContext`, `RunResultSummary`, `StageResultDefinition`, typed `MasteryObjective`, `StageProgressionNode`, `StageProgressState`, application ledger, or gameplay save owner exists.
+- P1-A1 provides the immutable route snapshot/context and sealed handoff. P1-A2 commits a durably decided summary/receipt with `masteryEvaluationState = NotEvaluated` and revision-1 facts. Separate 45/49/54/59/68/75 cutoffs retain their bounded meanings and the final 79/79 cutoff closes P1-A current-schema exit without evaluating mastery. Preparation remains `NotRequired`: no `P1DProgressPrepared` arm, objective snapshot, evaluator, progress application, typed mastery/progression definition, ledger, or gameplay save owner exists.
 - `LinearStageTemplateProfile.masteryObjective`, `StageDefinitionProfile.clearCondition`, reward hooks, and current result readouts are prose. They are not evaluator input and must not be auto-migrated.
-- `CombatEncounterController` owns only scene-local `Running / Won / Failed` state. `OlympusStationCombatResultPresenter` listens directly to raw `Won`, so it is not yet a committed-summary seam.
+- Canonical Station opts `CombatEncounterController` into the frozen terminal coordinator. After entering `TerminalClosed` the coordinator seals immutable epoch evidence before publishing `Resolved`; P1-A derives the current-schema closure, finalization authority, and fixed four-row coverage before committing the fact-bearing summary. Those four future lifecycle-owner rows remain `NotAdmitted`; the later tested abort/dispatch rows are also zero-admission and do not prove admitted-owner aggregate closure. P1-D preparation remains absent, and the accepted schema-2 result-decision store with `NotRequired` preparation is not a progress intent, application ledger, or save-profile owner.
 - `BossBarrageEncounterController.RouteResultRecord` is a useful scene-local proof adapter, but it lacks canonical run/stage identity, objective definitions, a digest, and persistence.
 - The five linear templates are not joined to the product route. Their target times and mastery prose are not approved thresholds.
 - Chapter-map scripts serialize `locked` and `cleared` presentation booleans, remain clickable while locked, and have no scene/prefab instance in the audited workspace. They are not a current persistence fixture.
-- The active stage-select surface now forwards the selected row's scene route and loading card, but both catalog rows still resolve the same Corridor definition and no canonical playable-stage identity is carried. P1-B must replace that raw/aliased projection before P1-D may bind persistent state to it.
+- Candidate-05 now provides the accepted canonical presentation-selection projection for one stage entry, while Candidate-04 remains the historical failed cutoff. This acceptance proves authored empty reward-row preservation and fail-closed invalid-selection invalidation only; it does not turn the catalog ID, projection digest, or route object into a persistence key, result/progression join, mastery definition, or save owner.
 - No PlayerPrefs, database, transaction library, or runtime gameplay-progress repository was found. Runtime writes found in the audit are benchmark/probe/capture/debug outputs; editor tooling also writes generated assets and reports, but neither is a player-progress owner.
 
-The first persistent projection should therefore target the one corrected canonical stage-select entry after P1-B, not claim coverage from a nonexistent chapter-map instance. A later real chapter node must derive from the same state instead of reviving serialized clear/lock booleans.
+The first persistent projection should therefore target the Candidate-05 canonical stage-select entry only after P1-B full exit and the separate P1-D result/progression identity and writer contracts are admitted; Candidate-04 and a nonexistent chapter-map instance remain invalid anchors. A later real chapter node must derive from the same committed state instead of reviving serialized clear/lock booleans.
 
 ## Evidence Boundary
 
@@ -144,7 +156,7 @@ First closed condition vocabulary:
 | `PerfectDodgeCount` | positive `minimumCount` | Clear and canonical count `>= minimumCount` |
 | `UseSummonForNeed` | one qualified `semanticProofId` and positive `minimumQualifiedCount` | Clear and matching qualified semantic-proof occurrences `>= minimumQualifiedCount` |
 
-`metricKind` is closed to P1-A's `TotalActive` or `CombatActive` measures. The persistent first-slice best result is explicitly `bestTotalActive = None | Present(totalActiveElapsedMilliseconds, winningRunId)`. No objective is authored from `LinearStageTemplateProfile.targetRunDurationSeconds` until the target and integer fact contract are reviewed.
+`metricKind` is closed to P1-A's now-emitted integer `TotalActive` or `CombatActive` measures. The persistent first-slice best result is explicitly `bestTotalActive = None | Present(totalActiveElapsedMilliseconds, winningRunId)`. No objective is authored from `LinearStageTemplateProfile.targetRunDurationSeconds` until a product threshold and the P1-D fact-capability/evaluation snapshot are reviewed.
 
 `UseSummonForNeed` never counts raw summon button use, slot use, energy spend, a result readout string, or a P1-C completion gate. It consumes only a P1-A `SemanticProofFact` whose exact proof ID and qualification adapter were admitted with the run.
 
@@ -212,13 +224,13 @@ P1-C sequence/group completion and completion-gate satisfaction remain execution
 
 For a P1-D-only run:
 
-`TerminalClosed -> TerminalFinalizing -> OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed -> CommitRequested -> Committed`
+`TerminalClosed -> TerminalFinalizing -> TerminalFinalizationOwnersSealed -> OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed -> [Clear: PreparationRequested -> PreparationPrepared; Fail: commitPreparation=NotRequired] -> CommitRequested -> Committed`
 
 For a combined P1-D + P2-A run, the admitted variability barrier remains between mastery and commit:
 
-`TerminalClosed -> TerminalFinalizing -> OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed -> VariabilityClosing -> VariabilitySealed -> CommitRequested -> Committed`
+`TerminalClosed -> TerminalFinalizing -> TerminalFinalizationOwnersSealed -> OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed -> VariabilityClosing -> VariabilitySealed -> [Clear: PreparationRequested -> PreparationPrepared; Fail: commitPreparation=NotRequired] -> CommitRequested -> Committed`
 
-`OutcomeFactsSealed`, `MasteryEvaluating`, and every later admitted pre-commit barrier occur before `CommitRequested` so an integrity failure has a truthful pre-publication fault path. No objective evaluator runs in UI, after summary commit, or against mutable latest authoring.
+`OutcomeFactsSealed`, `MasteryEvaluating`, and every later admitted pre-commit barrier occur before the commit branch. Clear then prepares the exact durable handoff to close the result-to-writer crash window before `CommitRequested`; Fail has no progress intent/application record and uses `commitPreparation=NotRequired` directly. Gameplay/closure faults retain a truthful abort path only before Clear preparation or Fail `CommitRequested`, while preparation or commit uncertainty follows its dedicated recovery/quarantine states. No objective evaluator runs in UI, after summary commit, or against mutable latest authoring.
 
 The evaluator is a total pure function:
 
@@ -228,10 +240,10 @@ It does not use scene objects, services, save state, asset lookup, localization 
 
 ### `ImmutableRunFactCandidate`
 
-P1-A seals one runtime-issued `runFactCandidateId` at `OutcomeFactsSealed`. It contains run/stage/route identity and route digest; exact `StageOutcomeFact` plus `stageOutcomeFactDigest`; canonical nonnegative integer total/combat active milliseconds; and the following canonical collections. Embedded segment/combat/proof types are inlined, while P1-A tutorial facts use their now-defined exact envelopes:
+P1-A seals one runtime-issued `runFactCandidateId` at `OutcomeFactsSealed`. It contains run/stage/route identity and route digest; exact `StageOutcomeFact` plus `stageOutcomeFactDigest`, whose single authoritative fields already contain canonical nonnegative integer total/combat active milliseconds; and the following canonical collections. Embedded segment/combat/proof types are inlined, while P1-A tutorial facts use their now-defined exact envelopes:
 
 - segment rows containing every `StageSceneSegmentState` field, ordered by unique `segmentSequenceIndex`;
-- tutorial rows containing exact `tutorialFactId`/`tutorialAttemptFactDigest` plus the complete fact-scope/attempt-state/termination/proof-disposition/value/elapsed/segment fields and, for P1-E rows, complete plan/lesson/attempt/generation/evaluation/collector/disposition provenance; the route-summary row also carries exact `tutorialFactCoverageDigest`; rows order route-summary first and then snapshotted plan ordinal plus attempt ordinal, and recomputing any fact digest must match its envelope;
+- tutorial rows containing exact `tutorialFactId`/`tutorialAttemptFactDigest` and the complete closed P1-A payload arm: `TutorialRouteSummary` with its whole-tutorial source proof and exact `tutorialFactCoverageDigest`, or `LessonAttempt` with complete plan/lesson/attempt/host-scope/result/evaluation/collector/gameplay-disposition provenance and exact copied outcome proof; rows order route-summary first and then snapshotted plan ordinal plus attempt ordinal, and recomputing any payload-arm digest must match its envelope;
 - one fixed combat row containing resolved damage/down/dodge/summon records and closed typed `None | Present` arms for forward-risk and structure-break values; summon records use their stable admission sequence;
 - semantic-proof value rows containing `proofId`, `sourceKind`, count, typed actual value, first-observed segment milliseconds, and qualified state, ordered by `(proofId, sourceKind)` with duplicate keys rejected; and
 - exactly one `BoundComplete(capabilityId, collectorGeneration, boundStartSequence, boundEndSequence, coverageDigest)` row for every capability promised by the entry snapshot, in immutable capability ordinal.
@@ -273,7 +285,7 @@ Each row is one closed union:
 
 ## Durable Progress Handoff
 
-Atomic state-plus-record publication alone does not close the process-crash window between an in-memory summary commit and the writer receiving it. P1-D therefore adds an internal durable intent.
+P1-A's durable result-decision slot preserves the summary digest plus decision/receipt, but not the complete summary payload, and it does not atomically prepare or apply P1-D progress. A distinct crash window remains between a truthful result candidate and the progress writer's durable acknowledgment/application. P1-D therefore adds an internal durable intent before the result decision for its new schema cohort.
 
 ### `StageProgressApplicationIntent`
 
@@ -282,18 +294,19 @@ Atomic state-plus-record publication alone does not close the process-crash wind
 - `playableStageId` and route revision/digest
 - `progressionNodeId` and binding digest
 - final candidate `resultSummaryDigest`
+- exact summary-external `TerminalFinalizationOwnerCoverageRecord` ID and canonical digest
 - authoritative Clear outcome
 - aggregate mastery state
 - ordered achieved mastery IDs only when the bundle is `Evaluated`
 - `totalActiveElapsedMilliseconds`
 - objective-set ID plus semantic-content digest and `evaluationSnapshotDigest`
 - self-contained canonical `inputFingerprint`
-- preparation generation and checksum
+- `resultCommitPreparationGeneration` and checksum
 - internal state `Prepared`
 
-For a P1-D Clear, preparing this exact self-contained intent in the progress store is the durable result-commit boundary. Only after the store acknowledges the `Prepared` generation may the immutable summary transition to `Committed`. An exact prepared intent is recoverable on startup even if the process dies before the in-memory commit event or writer response. The candidate `resultSummaryDigest` already contains `outcomeFactsSealedAtSequence` and every final semantic fact; it never contains the later actual commit sequence. P1-A records that later sequence only in the exact `RunResultCommitReceipt` sealed with `CommitRequested -> Committed`, outside this intent's fingerprint and outside `resultSummaryDigest`, so acknowledging `Prepared` cannot require a post-prepare digest rewrite.
+For a P1-D Clear, preparing this exact self-contained intent in the progress store is the durable pre-commit handoff boundary that closes the result-to-writer crash window; the Prepared intent is not itself a committed outcome. The intent constructs `P1DProgressPrepared(runId, progressionNodeId, resultSummaryDigest, terminalFinalizationOwnerCoverageRecordId, terminalFinalizationOwnerCoverageDigest, resultCommitPreparationGeneration, inputFingerprint)`. Only after the store acknowledges the exact `Prepared` generation may P1-A address the single durable run-ID decision slot with `(resultSummaryDigest, exact terminal-finalization coverage ID/digest, complete P1DProgressPrepared arm)`, transition the immutable summary to `Committed`, and return its one `RunResultCommitReceipt`. The coverage ref in the arm, separate comparison value, source intent, and returned receipt must be byte-identical. An unknown/transient prepare response leaves the same candidate in P1-A `PreparationRecoveryPending`, retries/queries only the identical generation/payload, and forbids the result-commit CAS. After exact Prepared acknowledgment, an unknown commit response uses the distinct `CommitRecoveryPending` state and retries only the identical complete comparison value. A proven conflicting/corrupt preparation seals `PreparationPersistenceFaulted`; a proven conflicting/corrupt result decision seals `CommitPersistenceFaulted`; neither permits result UI, action, application, or reward. An exact prepared intent is recoverable on startup even if the process dies before the in-memory commit event or writer response because its durable bytes preserve that exact coverage ref. The candidate `resultSummaryDigest` already contains `outcomeFactsSealedAtSequence` and every final semantic fact; it never contains the later actual commit sequence. P1-A records that later sequence only in the exact receipt sealed with `CommitRequested -> Committed`, outside this intent's fingerprint and outside `resultSummaryDigest`, so acknowledging `Prepared` cannot require a post-prepare digest rewrite.
 
-`inputFingerprint` canonically covers, in order, `intentSchemaVersion`; run ID; playable-stage ID; route revision/digest; progression-node ID and binding digest; final `resultSummaryDigest`; fixed Clear outcome; aggregate mastery arm; achieved mastery IDs in immutable snapshot-objective ordinal (or a typed empty array for `InvalidDefinition`); integer total-active milliseconds; objective-set ID/semantic-content digest; and `evaluationSnapshotDigest`. It includes every typed empty/absence arm and excludes the fingerprint itself, preparation generation, internal `Prepared` state, checksum, presentation metadata, and later commit/application fields. Exact duplicates compare this complete tuple, not a caller-selected subset.
+`inputFingerprint` canonically covers, in order, `intentSchemaVersion`; run ID; playable-stage ID; route revision/digest; progression-node ID and binding digest; final `resultSummaryDigest`; fixed Clear outcome; aggregate mastery arm; achieved mastery IDs in immutable snapshot-objective ordinal (or a typed empty array for `InvalidDefinition`); integer total-active milliseconds; objective-set ID/semantic-content digest; and `evaluationSnapshotDigest`. It includes every typed empty/absence arm and excludes the fingerprint itself, the summary-external terminal-finalization coverage ref, `resultCommitPreparationGeneration`, internal `Prepared` state, checksum, presentation metadata, and later commit/application fields. That exclusion keeps the fingerprint semantic; exact durable-intent duplicate identity still compares the complete canonical intent tuple, including the separate coverage ID/digest and preparation generation, rather than a caller-selected subset.
 
 A Fail result creates no progress intent or application record. An abort, stale callback, direct-Station diagnostic run, or P1-A `NotEvaluated` legacy summary also creates none.
 
@@ -348,13 +361,14 @@ The first-clear `Established` arm requires prior clear count zero/`firstClear=No
 - globally unique `runId`
 - `progressionNodeId`
 - `resultSummaryDigest` and input fingerprint
+- exact P1-A `RunResultCommitReceipt` ID/canonical digest
 - objective-set ID plus semantic-content digest and `evaluationSnapshotDigest`
 - prior and committed `stateRevision`
 - `StageProgressAppliedDelta`
 - store commit generation and stable audit sequence
 - public `status = Committed`
 
-Exact duplicate `{ runId, progressionNodeId, resultSummaryDigest, evaluationSnapshotDigest, inputFingerprint }` returns the stored record and delta. These identities exclude presentation/global-manifest churn. The same run ID with a different node or semantic digest/fingerprint is rejected and audited without changing the healthy intent/record/state. Retention covers the supported save lifetime; `lastAppliedRunId` is forbidden.
+Exact duplicate `{ runId, progressionNodeId, resultSummaryDigest, evaluationSnapshotDigest, inputFingerprint, RunResultCommitReceipt ID/digest }` returns the stored record and delta. The commit receipt is exact lifecycle/audit evidence but remains outside the semantic input fingerprint. These identities exclude presentation/global-manifest churn. The same run ID with a different node, receipt, or semantic digest/fingerprint is rejected and audited without changing the healthy intent/record/state. Retention covers the supported save lifetime; `lastAppliedRunId` is forbidden.
 
 The UUID namespace is a fixed schema constant and cannot vary by install/profile. A generated ID collision whose stored tuple differs is a corruption/integrity fault; the writer neither overwrites that record nor retries under a random ID.
 
@@ -375,11 +389,11 @@ One versioned logical aggregate contains:
 
 P1-D0 must select one concrete local implementation that can fault-inject this boundary. The first implementation may use an atomic transactional backend or a checksummed generation/journal with an atomic publish pointer. Separate state and record files, PlayerPrefs, and fire-and-forget writes do not satisfy the contract.
 
-Readers observe only a completely published valid generation. Startup chooses the newest valid committed generation and recovers every exact Prepared intent before accepting state-dependent navigation or another conflicting application. A corrupt newest generation falls back only when the prior generation is independently valid and the publish protocol proves the corrupt candidate was never committed; ambiguous committed corruption is quarantined, not guessed or re-applied.
+Readers observe only a completely published valid generation. Startup chooses the newest valid committed generation and, for every exact Prepared intent, first invokes P1-A's idempotent commit compare-and-set to recover the byte-identical `RunResultCommitReceipt`, then applies the intent before accepting state-dependent navigation or another conflicting application. A corrupt newest generation falls back only when the prior generation is independently valid and the publish protocol proves the corrupt candidate was never committed; ambiguous committed corruption is quarantined, not guessed or re-applied.
 
 ## Application Algorithm
 
-1. Accept only the exact prepared intent/source fingerprint created by the authoritative P1-D Clear commit.
+1. Accept only the exact prepared intent/source fingerprint plus the byte-identical `RunResultCommitReceipt` returned by P1-A's live or recovery commit compare-and-set; a Prepared intent alone cannot apply progress.
 2. Look up the global run ledger.
 3. Return an exact existing record/delta; reject a same-run mismatch.
 4. Look up the exact prepared intent. Missing intent with no record is corruption, not permission to synthesize from current assets.
@@ -410,13 +424,15 @@ For a later course-capable run, Clear without the exact `UseSummonForNeed` row A
 
 ## First Product Fixture
 
-After P0 through P1-C close:
+Before P1-C starts, P1-B must already close an identity-only result/progression join: exactly one direct `StageResultDefinition`, one separate progression node, and one UnityObject-free entry snapshot on the approved Olympus route. That P1-B revision keeps mastery-objective and fact-capability payloads truthfully `NotAdmittedByCurrentSchema`; it owns no evaluator, progress application, store, reward, or settlement. This removes the former P1-C-to-P1-B circular dependency.
 
-1. P1-B authors one real `StageResultDefinition` and one explicit progression-node join on the approved Olympus playable-stage route.
-2. P1-A supplies complete integer-time, player-down, perfect-dodge, and semantic-proof coverage.
+After P0 through P1-C close and P1-D0 approves the objective/capability identities:
+
+1. P1-D consumes the accepted P1-B result/progression identity snapshot and promotes objective/fact-capability semantics only through a new explicitly versioned result-definition/join revision; it never retroactively reinterprets the P1-B typed-absence cohort.
+2. Consume the verified current-route P1-A integer-time, player-down, perfect-dodge, and semantic-proof payload through that newly admitted fact-capability snapshot; its current-schema NotAdmitted-only `TerminalFinalizationOwnerCoverageRecord` is valid result lifecycle evidence but does not itself admit P1-D preparation, evaluation, application, or persistence.
 3. The shared result shell renders one control objective, `NoPlayerDown`.
-4. Add one identity objective, `UseSummonForNeed`, only after product review freezes one actually emitted qualified semantic proof ID. If that proof is not ready, ship the one-objective fixture rather than a placeholder or raw summon-use check.
-5. Define `ClearStage`, `PerfectDodgeCount`, and `ClearUnderTime` in evaluator unit coverage, but do not author a product time objective until the active-time integer fact and target threshold are approved.
+4. Add one identity objective, `UseSummonForNeed`, only after product review selects and freezes one of the actually emitted qualified semantic proof IDs as product objective semantics. Existing proof vocabulary alone is not that approval; if no ID is selected, ship the one-objective fixture rather than a placeholder or raw summon-use check.
+5. Define `ClearStage`, `PerfectDodgeCount`, and `ClearUnderTime` in evaluator unit coverage, but do not author a product time objective merely because active-time integer facts now exist; the threshold and objective identity still require approval.
 6. Apply the result to one progression node and project `clearCount > 0` plus achieved IDs into the corrected canonical stage-select entry.
 7. Keep prototype chapter `locked/cleared` fields ignored or warning-only. Bind a chapter node only after a real instance and typed prerequisite projection exist.
 
@@ -463,7 +479,7 @@ The exact objective IDs, proof ID, progression-node ID, save-profile namespace, 
 | invalid objective bundle on otherwise truthful Clear | summary marks `InvalidDefinition`; clear/count/best may persist; no mastery ID persists |
 | evaluator exception/digest mismatch | pre-publication diagnostic finalization fault; no intent/state/record |
 | crash before intent prepare | no acknowledged Clear and no store mutation |
-| crash after Prepared before in-memory response | startup recovers exact intent and applies once |
+| crash after Prepared before in-memory response | startup completes/replays P1-A's exact commit CAS, recovers the one commit receipt, then applies the exact intent once |
 | interruption during atomic application | old state plus Prepared intent remains; no partial record/state |
 | crash after commit before response | exact lookup returns the same record and delta |
 | exact duplicate after restart | same record/delta, no second increment |
@@ -483,19 +499,19 @@ The exact objective IDs, proof ID, progression-node ID, save-profile namespace, 
 
 - close P0/P1-0/P1-A/P1-B/P1-C gates;
 - approve objective ID permanence/identity manifest, objective-set canonicalization, invalid-bundle policy, time metric, durable-intent acknowledgment boundary, save-profile namespace, and concrete atomic store;
-- author the result definition, progression-node join, corrected stage-select projection, and exact first proof fixture;
+- consume the accepted P1-B identity-only result/progression join, then author a new P1-D result-definition/objective-capability revision, corrected stage-select projection, and exact first proof fixture without mutating the historical typed-absence snapshot;
 - identify automated test owners.
 
 ### P1-D1 — Definition, snapshot, and pure evaluator
 
 - add the closed objective union and authoring validator;
 - deep-snapshot result/progression/objective/fact-capability identity at entry;
-- add integer fact finalization and coverage proof;
+- validate and consume the admitted P1-A integer fact/proof capability coverage without creating a second collector;
 - test every first vocabulary kind without UI or persistence.
 
 ### P1-D2 — Result finalization integration
 
-- add `OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed` before `CommitRequested`;
+- add `TerminalFinalizationOwnersSealed -> OutcomeFactsSealed -> MasteryEvaluating -> MasterySealed -> PreparationRequested -> PreparationPrepared` before `CommitRequested` for Clear;
 - finalize aggregate state, typed rows, and result digest exactly once;
 - keep P1-A legacy summaries immutable and `NotEvaluated`.
 

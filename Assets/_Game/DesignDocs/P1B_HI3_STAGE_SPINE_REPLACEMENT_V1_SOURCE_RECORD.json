@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "sourceRecordId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-SOURCE-RECORD-01",
+  "contractId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-01",
+  "producerContractId": "HI3-STAGEDATA-STAGE-SPINE-PRODUCER-01",
+  "artifactSetId": "HI3-STAGEDATA-STAGE-SPINE-NAIRIEBERRY-01D7AFB-V1",
+  "sourceSnapshotId": "hi3-nairieberry-01d7afb-global-stagedata-spine-v1",
+  "status": "exact-static-replacement-candidate-not-admitted",
+  "recordedAt": "2026-07-16T02:45:00+09:00",
+  "game": "Honkai Impact 3rd",
+  "upstream": {
+    "name": "nairieberry/HonkaiImpactData",
+    "url": "https://github.com/nairieberry/HonkaiImpactData",
+    "branch": "master",
+    "commit": "01d7afbaf99ff7d3d027e27fe9a4b363a2db7cc1",
+    "commitDate": "2021-04-10T22:17:18Z",
+    "snapshotDate": "2026-06-15",
+    "licenseStatus": "none-detected-review-needed"
+  },
+  "sourceRoot": {
+    "path": "C:/Ark/SubcultureGameData",
+    "scope": "local-retained-mirror-bounded-candidate",
+    "snapshotRelativeRoot": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15"
+  },
+  "authorityBoundary": {
+    "authorityLocale": "Global",
+    "crossLocaleUnionAllowed": false,
+    "exactIdentityMetadataAllowed": [
+      "StageData_Main.levelId=10101"
+    ],
+    "authoredPayloadValueCopiedCount": 0,
+    "officialCurrentShippedBehaviorClaimed": false,
+    "newerDataStateClaimed": false
+  },
+  "mainGenerator": {
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs",
+    "sizeBytes": 30987,
+    "sha256": "b35c7eedf641af69fcf4969bb8042171dfe959223c2c44c2a06b0af433cf94e3",
+    "generatorId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-GENERATOR-01",
+    "runtime": "Node.js v24.14.0 built-ins only"
+  },
+  "execution": {
+    "workingDirectory": "C:/Git/DimensionBrawl/Assets",
+    "arkSubcultureRoot": "default C:/Ark/SubcultureGameData",
+    "generateCommand": "& 'C:\\Users\\dharm\\AppData\\Local\\OpenAI\\Codex\\bin\\node.exe' '_Game\\DesignDocs\\P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs'",
+    "verifyCommand": "& 'C:\\Users\\dharm\\AppData\\Local\\OpenAI\\Codex\\bin\\node.exe' '_Game\\DesignDocs\\P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs' --verify",
+    "generateExitCode": 0,
+    "verifyExitCode": 0
+  },
+  "inputs": [
+    {
+      "ordinal": 0,
+      "inputId": "hi3-source-record",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "source-record",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/source-record.md",
+      "sizeBytes": 938,
+      "sha256": "eaf1785b6fb0cddcecca59047d7de229a4130f5f67512c3e6839848c8286352e"
+    },
+    {
+      "ordinal": 1,
+      "inputId": "hi3-snapshot-manifest",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "snapshot-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/manifest.yml",
+      "sizeBytes": 2004,
+      "sha256": "11e0be6d8e9f431d6f16da48213001edc033673e0709358798e5efe52d000faa"
+    },
+    {
+      "ordinal": 2,
+      "inputId": "hi3-file-manifest",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "file-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/files/hi3-nairieberry-file-manifest.csv",
+      "sizeBytes": 646441,
+      "sha256": "c0c63cbf79f26d3e7f11e651c4fab6047b814b4aea3f17f9c8b9fafdb3c94cb8"
+    },
+    {
+      "ordinal": 3,
+      "inputId": "hi3-global-stage-data-main",
+      "sourceId": "hi3-stagedata-main-nairieberry-01d7afb-global-json",
+      "locale": "Global",
+      "role": "authoritative-level-10101-static-stage-row",
+      "authorityDisposition": "authoritative-exact-row-selection-input",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/files/extracted_repo/HonkaiImpactData-master/Global/ExcelOutputAsset/Decrypted/StageData_Main.json",
+      "sizeBytes": 30600482,
+      "sha256": "6ab32c175b399d89d035e9736d150760725dd4f85cc5bd9870c64093c51a7431"
+    }
+  ],
+  "outputs": [
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-readfirst-md",
+      "predecessorSourceId": "hi3-readfirst-md",
+      "kind": "report",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-MD",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1.md",
+      "sizeBytes": 5319,
+      "sha256": "6a54ed0b916f22d21e0b2edeee8481cb4e75425b5f994f186adb93b59b0e6db4",
+      "schemaVersion": 1,
+      "dataRowCount": 1
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-summary-json",
+      "predecessorSourceId": "hi3-readfirst-summary-json",
+      "kind": "derived",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1_SUMMARY.json",
+      "sizeBytes": 25723,
+      "sha256": "379bc89fd6bd80854acc90c074dc4ce8e13491e08f4e5360edb061bd97592e87",
+      "schemaVersion": 1,
+      "dataRowCount": 1,
+      "canonicalReportDigest": "d20113431ca54b1da5bc1f6c477b32de0fa9eb205f67d3e33cdaaafe4f6f7101"
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-reading-links-csv",
+      "predecessorSourceId": "hi3-readfirst-csv",
+      "kind": "derived",
+      "artifactId": "P1B-HI3-STAGEDATA-STAGE-READING-LINKS-V1-CSV",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGEDATA_STAGE_READING_LINKS_V1.csv",
+      "sizeBytes": 7735,
+      "sha256": "2657ab04fa749d5e1f945037e3e49efc6fd62a8ef2c9fec9a5eeb1273a06e639",
+      "schemaVersion": 1,
+      "dataRowCount": 14
+    }
+  ],
+  "replacementBoundary": {
+    "relation": "new-versioned-semantic-successor-not-historical-byte-reconstruction",
+    "historicalSourceIdsPreserved": [
+      "hi3-readfirst-md",
+      "hi3-readfirst-summary-json",
+      "hi3-readfirst-csv"
+    ],
+    "historicalPathsReused": false,
+    "partialAdmissionAllowed": false
+  },
+  "siblingHelperBoundary": {
+    "sourceIds": [
+      "hi3-stage-summary-csv",
+      "hi3-stage-samples-csv"
+    ],
+    "producerInputCount": 0,
+    "provenanceDisposition": "byte-exact-replay-authenticated-formal-admission-open",
+    "samplesNegativeBoundary": "The truncated sample helper does not independently identify levelId 10101."
+  },
+  "evidenceBoundary": {
+    "evidenceGrade": "exact-static-derived-structural",
+    "runtimeTraceEvidenceRefs": [],
+    "productAdoptionEffect": "none",
+    "elevenSourceAdmissionEffect": "none",
+    "admittedSupportingSourceCount": 0,
+    "requiredSupportingSourceCount": 9,
+    "liveForeignRowCount": 0,
+    "liveCrosswalkCellCount": 0
+  },
+  "admissionBlockedReasons": [
+    "HI3 upstream license disposition remains none-detected-review-needed.",
+    "The two HI3 replay-authenticated helper outputs still require formal provenance records and admission metadata.",
+    "The eleven-source cohort must be admitted atomically; this three-artifact candidate cannot be admitted alone."
+  ],
+  "sourceRecordPath": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_SOURCE_RECORD.json",
+  "producerManifestPath": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PRODUCER_MANIFEST.json",
+  "canonicalSourceRecordDigest": "b5507feab0b0b7ce902610cd5eed07fb9e397534f828dbcb08e9278f4e09edc3"
+}

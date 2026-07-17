@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-STAGE-SPINE-LOCAL-PREFLIGHT-01",
+  "observedAt": "2026-07-15T12:15:56+09:00",
+  "scope": "DimensionBrawl local stage-spine owners only. No Ark source row or proprietary payload was read or copied.",
+  "snapshotState": "historical-local-preflight-partially-replayable",
+  "foreignRowsMaterialized": false,
+  "manifestAlgorithm": "SHA-256 over UTF-8 source rows in recorded array order, each forward-slash path=SHA256 row joined by LF with no trailing LF",
+  "sourceManifestDigest": "EFE54EB3463E0EC58B2A9A12EC71157984A2CE00E32DF73637CEBB5B7ED5F418",
+  "replayStatus": {
+    "recordedSourceCount": 20,
+    "currentReplayMatchCountAtLastAudit": 19,
+    "knownDriftedPath": "_Game/Scripts/LevelDesign/StageRunRuntime.cs",
+    "historicalInputBytesAvailable": false,
+    "meaning": "The report bytes and recorded manifest arithmetic are verified. The historical input snapshot is no longer source-level exact-replayable because one uncommitted production file changed after the cutoff."
+  },
+  "sources": [
+    {"path": "_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "sizeBytes": 22827, "sha256": "DB139E90688D3E2FC7DBB86D3672F936BBF76523B83291A47A2649A78E347840"},
+    {"path": "_Game/Scripts/LevelDesign/StageDefinitionProfile.cs", "sizeBytes": 8900, "sha256": "081928C887969E9794B747672E4000341665778BB6279EB63B5F2A4E318BFC95"},
+    {"path": "_Game/Scripts/LevelDesign/StageRunRouteSnapshot.cs", "sizeBytes": 21293, "sha256": "C48D808EDCE7B57FA53E6AF4477630F4C420FECCFD20B5E428D8E79DCED8C7B2"},
+    {"path": "_Game/Scripts/LevelDesign/StageRunRuntime.cs", "sizeBytes": 71690, "sha256": "695F0857275C6EDD3B8089181CE0BE12800F71F11EBD131CF4863AB0E1A447B9"},
+    {"path": "_Game/Scripts/LevelDesign/LinearStageTemplateProfile.cs", "sizeBytes": 2450, "sha256": "4C9990C53C888DB9781A9F837570E3A9C2C52E24E8897238ED45DD23B36B21CF"},
+    {"path": "_Game/UI/StageSelect/UIStageCatalog.cs", "sizeBytes": 3086, "sha256": "58F8CAD08A45EA1392FE66E189B5DFAE07D06E6AF1A384F86BC79ACDA157D729"},
+    {"path": "_Game/UI/StageSelect/StageSelectScreenPresenter.cs", "sizeBytes": 10353, "sha256": "D8FCD37B81CA652F593942DE7B6114D562C555DBCAAF630FB143D7673F716958"},
+    {"path": "_Game/Scripts/UI/StageClear/StageResultPresentationProfile.cs", "sizeBytes": 26895, "sha256": "291B74CBF974EC71B5B32BF6B29EFF8B024A78A48208A7990E05132D1A8A9992"},
+    {"path": "_Game/Editor/PlayableStageDefinitionValidator.cs", "sizeBytes": 45675, "sha256": "FA0C16ECE276E32ABABB016A8E046A77709FA0C613301EEEFA7FD24CC32CE0D8"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset", "sizeBytes": 2862, "sha256": "AA3041BA43E34199084F434DC2C0B167E6F1F023D529833971873AA3079BDF5A"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset", "sizeBytes": 3707, "sha256": "EB036E93B8B24964BA033482F517342DB20A9C5DDA1B7D120C404686565FAD3E"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset", "sizeBytes": 1838, "sha256": "A7C013BAF3CA0890027B6E1A1E7A6D64E1E196F491D13583B54B5E58D235E373"},
+    {"path": "_Game/DesignData/UI/DB_UIStageCatalog.asset", "sizeBytes": 2066, "sha256": "8BA53A0D0306775B0E47C327C6604CB547EC7C9209C3875EFD66D4E64065C235"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentation_OlympusInvasion.asset", "sizeBytes": 1991, "sha256": "B68B692F0B5DA9E66633154BAC188ACB29408445A54F1C067BD36D59CB1397AB"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentationCatalog.asset", "sizeBytes": 765, "sha256": "B4B30EA9EC334FDA72796388295370A29E5264E648B3A3FA13ACBD11C83BDDA0"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_1_BreakGate.asset", "sizeBytes": 1268, "sha256": "4D80EC17E40B4ECEC172A3178DBDDC4C3C86B179B7B1344706A1755304ED1D15"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_2_BacklineSignal.asset", "sizeBytes": 1316, "sha256": "368776EFD230AAD34BDE666CE7556FEF02AF4F591EB3F945360188C36E0482D6"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_3_TankRescue.asset", "sizeBytes": 1320, "sha256": "EF964F72B56EEE0CEF3721A1C91657EFE718463D03D36E9B25CC4F3A2B3A0D73"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_4_HealPocket.asset", "sizeBytes": 1365, "sha256": "AF61535F9588ADB5ED2136AFEBB7E5436BC9B3D37DC6DB68498D96DC6146D5ED"},
+    {"path": "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_5_BossStand.asset", "sizeBytes": 1569, "sha256": "BC9C003C8C0EF32CA5DF61217EFD2C64FE9D2E3453ACD2D478DCF0D654DCD053"}
+  ],
+  "boundedNegativeSearchEvidence": {
+    "observedAt": "2026-07-15T12:32:24+09:00",
+    "rgVersion": "ripgrep 15.1.0 (rev af60c2de9d)",
+    "normalization": "Scope manifests and result digests use forward-slash paths or result rows sorted with ordinal comparison, joined by LF with no trailing LF, then SHA-256 over UTF-8 bytes.",
+    "templateRuntimeConsumer": {
+      "roots": ["_Game/Scripts", "_Game/UI", "_Game/Rendering"],
+      "scope": "production C# files, excluding the LinearStageTemplateProfile class definition itself",
+      "scopeFileCount": 305,
+      "scopeFileManifestDigest": "E91352C87A5A7784D6A460ECA5CDBCB4F4B5E93AC51086DEF73D0071D4344726",
+      "command": "rg -n --no-heading --color never --glob '*.cs' --glob '!LinearStageTemplateProfile.cs' '\\bLinearStageTemplateProfile\\b|DB_StageTemplate_|StageDesign[\\\\/]+Templates' _Game/Scripts _Game/UI _Game/Rendering",
+      "exitCode": 1,
+      "resultLineCount": 0,
+      "normalizedOutputSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "conclusion": "No direct static production C# consumer was found in the bounded roots."
+    },
+    "templateSerializedReference": {
+      "scope": "all non-meta files under _Game excluding DesignDocs",
+      "scopeFileCount": 3517,
+      "scopeFileManifestDigest": "9B7EC0A165264C7B85D5F68884352A0A0C72A41B19504BAEF371FC4E0D0E87E6",
+      "command": "rg -n --no-heading --color never --glob '!*.meta' --glob '!_Game/DesignDocs/**' 'd5e7ac9949f71b14fb8e5ac42ae9c2c2|5724c66e382c60441aa290481e2b9416|45f0c077e7ff1644588d3474fb6aa06e|a4541ed6a8305c84d80bb094bb5dfaac|ea50cb4015be99346b8e5e9f369dd4b1' _Game",
+      "exitCode": 1,
+      "resultLineCount": 0,
+      "normalizedOutputSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "conclusion": "No direct serialized or code reference to the five template asset GUIDs was found in the bounded non-document scope."
+    },
+    "chapterMapAuthoredInstances": {
+      "scope": "all authored scene, prefab, and ScriptableObject YAML files under _Game",
+      "scopeFileCount": 743,
+      "scopeBreakdown": {"scene": 7, "prefab": 314, "asset": 422},
+      "scopeFileManifestDigest": "E3F73357B7EABBFF05FF8DAFAAC954AF3EE63F253C0519181483117B2ED3DF80",
+      "command": "rg -n --no-heading --color never --glob '*.unity' --glob '*.prefab' --glob '*.asset' 'db83e835e2674564ba327fcc555ea5b8|2e42c06be87bf8b4aacd127b299c6a2c' _Game",
+      "exitCode": 1,
+      "resultLineCount": 0,
+      "normalizedOutputSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "conclusion": "No serialized ChapterMapPrototypeController or ChapterMapPrototypeStageNode instance was found in the bounded authored YAML scope."
+    },
+    "chapterMapExternalCodeReference": {
+      "roots": ["_Game/Scripts", "_Game/UI", "_Game/Rendering", "_Game/Editor", "_Game/Tests"],
+      "scope": "C# files excluding the two ChapterMap prototype class files",
+      "scopeFileCount": 373,
+      "scopeFileManifestDigest": "D64A8311708DC5AE5C169A2C0E8CBD60B352C4A245B61B03147E4902B9880BD3",
+      "command": "rg -n --no-heading --color never --glob '*.cs' --glob '!ChapterMapPrototypeController.cs' --glob '!ChapterMapPrototypeStageNode.cs' '\\bChapterMapPrototypeController\\b|\\bChapterMapPrototypeStageNode\\b' _Game/Scripts _Game/UI _Game/Rendering _Game/Editor _Game/Tests",
+      "exitCode": 1,
+      "resultLineCount": 0,
+      "normalizedOutputSha256": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855",
+      "conclusion": "No external static C# reference was found in the bounded project roots."
+    },
+    "negativeBoundary": "These searches prove only direct static references in the named current _Game scopes. They do not prove absence from reflection, packages, Addressables outside this tree, runtime dynamic construction, or future files."
+  },
+  "canonicalStage": {
+    "playableStageId": "OLYMPUS-INVASION-01",
+    "schemaVersion": 1,
+    "routeRevision": 1,
+    "canonicalRouteDigest": "2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9",
+    "terminalPolicyDigest": "f18fc51e2b65ae7e11b7e26866adc29f1f994c95be3591f2806bb846cd0bcaf2",
+    "segments": [
+      {"sequence": 0, "segmentId": "corridor_intro_tutorial", "stageDefinitionId": "OLYMPUS-CORRIDOR-INTRO-COMBAT-01", "scenePath": "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity", "entryConditionId": "run.entry.admitted", "exitConditionId": "corridor.tutorial.completed", "handoff": "SingleLoad"},
+      {"sequence": 1, "segmentId": "station_entry_combat", "stageDefinitionId": "OLYMPUS-STATION-COMBAT-01", "scenePath": "Assets/_Game/Scenes/OlympusStationCombatStage.unity", "entryConditionId": "corridor.tutorial.completed", "exitConditionId": "station.encounter.terminal", "handoff": "ReturnToOwner"}
+    ],
+    "terminalActions": [
+      {"actionId": "olympus-invasion.replay", "kind": "Replay", "allowedOutcome": "Clear", "target": "OLYMPUS-INVASION-01"},
+      {"actionId": "olympus-invasion.retry", "kind": "Retry", "allowedOutcome": "Fail", "target": "OLYMPUS-INVASION-01"},
+      {"actionId": "olympus-invasion.to-lobby", "kind": "UIRoute", "allowedOutcome": "Clear|Fail", "target": "Lobby"}
+    ]
+  },
+  "selectionProjection": {
+    "catalogRowCount": 2,
+    "catalogRowIds": ["story_v1_training_route", "story_v1_retry_route"],
+    "bothRowsReferenceStageDefinitionId": "OLYMPUS-CORRIDOR-INTRO-COMBAT-01",
+    "playableStageReferenceFieldExists": false,
+    "briefingSource": "copied UIStageCatalog display prose",
+    "launchAuthority": "StageSelectScreenPresenter passes StageDefinitionProfile.MapScenePath directly to RequestRouteWithScene",
+    "classification": "duplicate-alias-to-one-physical-segment-without-logical-stage-join"
+  },
+  "templateInventory": {
+    "templateCount": 5,
+    "templateIds": ["S1-1.BreakGate", "S1-2.BacklineSignal", "S1-3.TankRescue", "S1-4.HealPocket", "S1-5.BossStand"],
+    "recommendedPowerTierRange": [0, 4],
+    "targetRunDurationSecondsRange": [165, 250],
+    "runtimeConsumerCount": 0,
+    "truthfulPlayableStageJoinCount": 0
+  },
+  "axisRows": [
+    {
+      "axisId": "logicalStageId",
+      "classification": "proven-runtime",
+      "currentOwner": "PlayableStageDefinition and StageRunRouteSnapshot",
+      "currentValue": "OLYMPUS-INVASION-01 schema 1 route revision 1",
+      "gap": "UIStageCatalog does not reference this logical identity.",
+      "recommendedP1BDisposition": "Make stage selection resolve one immutable playable-stage snapshot instead of a physical scene alias.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/Scripts/LevelDesign/StageRunRouteSnapshot.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset"]
+    },
+    {
+      "axisId": "physicalSceneOrScript",
+      "classification": "proven-runtime",
+      "currentOwner": "PlayableStageDefinition ordered segments and StageDefinitionProfile",
+      "currentValue": "Corridor SingleLoad to Station, then ReturnToOwner",
+      "gap": "Selection bypasses the logical route and launches only the aliased Corridor definition.",
+      "recommendedP1BDisposition": "Resolve physical scenes only through the admitted playable-stage snapshot.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/Scripts/LevelDesign/StageRunRuntime.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset"]
+    },
+    {
+      "axisId": "briefingAndCatalog",
+      "classification": "proven-runtime",
+      "currentOwner": "UIStageCatalog and StageSelectScreenPresenter",
+      "currentValue": "Two displayed catalog rows with copied prose and one shared Corridor StageDefinitionProfile",
+      "gap": "No playable-stage reference, no derived StageBriefingReadModel, and no duplicate-alias classification at runtime.",
+      "recommendedP1BDisposition": "Author one canonical catalog row and derive a read-only briefing from the playable-stage/template snapshot; keep any alternate card as an explicit alias.",
+      "evidencePaths": ["_Game/UI/StageSelect/UIStageCatalog.cs", "_Game/UI/StageSelect/StageSelectScreenPresenter.cs", "_Game/DesignData/UI/DB_UIStageCatalog.asset"]
+    },
+    {
+      "axisId": "recommendedPowerOrLevel",
+      "classification": "proven-static",
+      "currentOwner": "LinearStageTemplateProfile",
+      "currentValue": "Five unjoined template tiers 0 through 4",
+      "gap": "No canonical template selection, playable-stage join, briefing projection, or runtime consumer.",
+      "recommendedP1BDisposition": "Use typed absence for revision 1 unless one reviewed template is explicitly joined to new runs.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/LinearStageTemplateProfile.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_1_BreakGate.asset", "_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_S1_5_BossStand.asset"]
+    },
+    {
+      "axisId": "loadout",
+      "classification": "unknown",
+      "currentOwner": "none on the canonical stage spine",
+      "currentValue": "UI recommendation prose is not a player, summon, NPC, weapon, or equipment reference.",
+      "gap": "No typed loadout identity or validation owner.",
+      "recommendedP1BDisposition": "Record typed absence; do not infer loadout from foreign rows or copied UI text.",
+      "evidencePaths": ["_Game/UI/StageSelect/UIStageCatalog.cs", "_Game/DesignData/UI/DB_UIStageCatalog.asset"]
+    },
+    {
+      "axisId": "restrictions",
+      "classification": "unknown",
+      "currentOwner": "none on the canonical stage spine",
+      "currentValue": "Design excluded-scope prose is not an entry restriction.",
+      "gap": "No typed restriction set or admission consumer.",
+      "recommendedP1BDisposition": "Record typed absence until a product restriction is approved and validated.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/StageDefinitionProfile.cs", "_Game/Scripts/LevelDesign/PlayableStageDefinition.cs"]
+    },
+    {
+      "axisId": "entryCost",
+      "classification": "unknown",
+      "currentOwner": "none",
+      "currentValue": "No stamina, ticket, currency, or cost field participates in stage admission.",
+      "gap": "No economy owner or transaction contract exists.",
+      "recommendedP1BDisposition": "Preserve typed absence; defer any spend semantics to the later progression/reward transaction contract.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/Scripts/LevelDesign/StageRunRuntime.cs"]
+    },
+    {
+      "axisId": "recordOrTargetTime",
+      "classification": "proven-static",
+      "currentOwner": "LinearStageTemplateProfile",
+      "currentValue": "Unjoined target durations 165 through 250 seconds; runtime result separately records actual active milliseconds.",
+      "gap": "No reviewed template-to-playable-stage join and no target-time briefing policy.",
+      "recommendedP1BDisposition": "Keep actual result time separate; expose target time only after a template snapshot is truthfully joined.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/LinearStageTemplateProfile.cs", "_Game/Scripts/UI/StageClear/StageResultPresentationProfile.cs"]
+    },
+    {
+      "axisId": "prerequisite",
+      "classification": "proven-static",
+      "currentOwner": "StageDefinitionProfile physical previousStageId",
+      "currentValue": "Station statically names Corridor as previous; the logical playable stage has no unlock prerequisite.",
+      "gap": "Physical segment ordering is not account or catalog eligibility.",
+      "recommendedP1BDisposition": "Project route order separately from a typed-absent logical unlock prerequisite.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/StageDefinitionProfile.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset"]
+    },
+    {
+      "axisId": "recommendedNext",
+      "classification": "proven-runtime",
+      "currentOwner": "PlayableStageDefinition terminal actions and P1-A route owner",
+      "currentValue": "Clear offers Replay and Lobby; Fail offers Retry and Lobby; no next playable stage exists.",
+      "gap": "Catalog progression and next-stage recommendation are typed absent.",
+      "recommendedP1BDisposition": "Keep terminal actions authoritative and represent next-stage recommendation as a separate optional field.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset"]
+    },
+    {
+      "axisId": "storyEntry",
+      "classification": "proven-static",
+      "currentOwner": "Corridor StageDefinitionProfile.CutsceneHandoffRef",
+      "currentValue": "intro-to-stage stores a cinematic profile ID, Timeline path, anchor, and next event",
+      "gap": "This 20-source preflight proves only the definition-level profile ID and stored Timeline path. The direct profile asset, actual PlayableDirector asset, and runtime consumer are outside its manifest, so no truthful runtime cinematic join or drift classification is proven here.",
+      "recommendedP1BDisposition": "Bind the exact reviewed cinematic profile and actual Timeline through one validated handoff reference.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/StageDefinitionProfile.cs", "_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset"],
+      "evidenceLimitation": "Corridor scene, cinematic profile, Timeline assets and their GUID metadata are not part of this source manifest."
+    },
+    {
+      "axisId": "storyExit",
+      "classification": "unknown",
+      "currentOwner": "none on the Station definition",
+      "currentValue": "Station has no cutscene handoff; result presentation is additive and is not story exit.",
+      "gap": "No typed story-exit reference or runtime consumer.",
+      "recommendedP1BDisposition": "Record typed absence rather than treating result UI as a story hook.",
+      "evidencePaths": ["_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset", "_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentation_OlympusInvasion.asset"]
+    },
+    {
+      "axisId": "challengeReference",
+      "classification": "unknown",
+      "currentOwner": "none on the canonical stage spine",
+      "currentValue": "Route condition IDs and unjoined template mastery prose are not a challenge definition.",
+      "gap": "No typed challenge/mastery definition reference or evaluator join.",
+      "recommendedP1BDisposition": "Preserve typed absence until P1-D supplies a reviewed objective snapshot and evaluator.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/Scripts/LevelDesign/LinearStageTemplateProfile.cs"]
+    },
+    {
+      "axisId": "resultReference",
+      "classification": "proven-runtime",
+      "currentOwner": "PlayableStageDefinition terminal actions and StageResultPresentationCatalog/Profile",
+      "currentValue": "One OLYMPUS-INVASION-01 result profile projects committed Clear/Fail facts and three typed actions.",
+      "gap": "The stage-selection catalog still cannot navigate to this logical result identity through a playable-stage reference.",
+      "recommendedP1BDisposition": "Join selection, run, and result by the same playableStageId without giving UI outcome or navigation authority.",
+      "evidencePaths": ["_Game/Scripts/LevelDesign/PlayableStageDefinition.cs", "_Game/Scripts/UI/StageClear/StageResultPresentationProfile.cs", "_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentation_OlympusInvasion.asset"]
+    }
+  ],
+  "classificationCounts": {"proven-runtime": 5, "proven-static": 4, "unknown": 5, "rejected": 0},
+  "rejectedMappingCandidates": [
+    "Do not substitute UI catalog row ID or physical StageDefinitionProfile.stageId for the logical playableStageId.",
+    "Do not infer a typed loadout from recommendation prose.",
+    "Do not infer runtime restrictions from excluded-scope design prose.",
+    "Do not infer entry cost, account prerequisite, or progression state from prototype UI fields or physical segment ordering.",
+    "Do not project power tier, target duration, lesson, or mastery from an unjoined LinearStageTemplateProfile.",
+    "Do not treat terminal result UI as a story-exit reference.",
+    "Do not treat route condition IDs or mastery prose as a typed challenge definition.",
+    "Do not claim a runtime cinematic join from a profile ID and stored path without the profile, scene director asset, GUID chain, and consumer evidence."
+  ],
+  "priorityFindings": [
+    {
+      "priority": 1,
+      "findingId": "P1B-LOCAL-SELECTION-LOGICAL-JOIN",
+      "finding": "Stage selection currently owns two aliases to one physical Corridor definition and launches its raw scene instead of admitting OLYMPUS-INVASION-01.",
+      "effect": "A single truthful selection row can launch the complete Corridor-to-Station route and remove catalog/result identity drift.",
+      "dependency": "P1-A full exit must be accepted before product P1-B implementation; the evidence packet may proceed earlier.",
+      "risk": "A second load authority or copied route fields would split run identity."
+    },
+    {
+      "priority": 2,
+      "findingId": "P1B-LOCAL-BRIEFING-TYPED-ABSENCE",
+      "finding": "Power, target time, summon need, lesson, and mastery prose exist only in unjoined templates; loadout, restrictions, cost, story exit, and challenge references have no canonical owner.",
+      "effect": "A derived StageBriefingReadModel can expose only reviewed values and make every unsupported field explicitly absent.",
+      "dependency": "One reviewed template choice or explicit no-template arm for each new run.",
+      "risk": "Copying current strings into the catalog would preserve drift and make presentation look authoritative."
+    },
+    {
+      "priority": 3,
+      "findingId": "P1B-LOCAL-CINEMATIC-DIRECT-JOIN",
+      "finding": "The Corridor definition stores a story-entry profile ID and Timeline path, but this preflight does not include the profile asset, actual PlayableDirector asset, GUID chain, or runtime consumer needed to classify their join.",
+      "effect": "A direct handoff reference makes complete/skip/cancel ownership auditable without importing foreign story structures.",
+      "dependency": "P1-B static spine join plus the existing P2-B lifecycle contract.",
+      "risk": "Treating a profile name or path as runtime proof can leave input, camera, HUD, or time-scale ownership split."
+    }
+  ],
+  "negativeBoundary": "This report proves the named local report bytes, recorded 20-source manifest arithmetic, and the separately timestamped bounded negative searches only. The historical source snapshot currently replays 19/20; segment, pocket, role-slot, template-reference-count, and runtime cinematic-chain claims remain outside that manifest. It proves no PGR or HI3 row, does not authorize foreign IDs/text/formulas/layouts/assets, and does not close P1-B product acceptance."
+}

@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "producerManifestId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-V1-PRODUCER-MANIFEST-01",
+  "contractId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-01",
+  "producerContractId": "PGR-GUIDEFIGHT-STAGE-SPINE-PRODUCER-01",
+  "artifactSetId": "PGR-GUIDEFIGHT-STAGE-SPINE-ALT3RI-856A0E45-V1",
+  "sourceSnapshotId": "pgr-alt3ri-856a0e45-en-guidefight-stage-v1",
+  "status": "verified-candidate-not-admitted",
+  "generator": {
+    "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs",
+    "sizeBytes": 37178,
+    "sha256": "3284524cec2eb68ccc430aabeec4b08fc9bb70fedb03715b178814d12bc92f87",
+    "generatorId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-V1-GENERATOR-01",
+    "runtime": "Node.js v24.14.0 built-ins only"
+  },
+  "orderedInputs": [
+    {
+      "ordinal": 0,
+      "inputId": "pgr-source-record",
+      "sourceId": null,
+      "locale": "provenance",
+      "role": "source-record",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/source-record.md",
+      "sizeBytes": 1118,
+      "sha256": "23cecc493fe4e69f59f73520e7da694c22ac76fc2283deb88070d165c37725ee"
+    },
+    {
+      "ordinal": 1,
+      "inputId": "pgr-snapshot-manifest",
+      "sourceId": null,
+      "locale": "provenance",
+      "role": "snapshot-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/manifest.yml",
+      "sizeBytes": 1645,
+      "sha256": "00f535d4bb159a0f9a43a824bda3e9fad721ae3074717b01d0b68c4f1e86400d"
+    },
+    {
+      "ordinal": 2,
+      "inputId": "pgr-file-manifest",
+      "sourceId": null,
+      "locale": "provenance",
+      "role": "file-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/file-manifest.csv",
+      "sizeBytes": 19913116,
+      "sha256": "f3909c0d8b24b9e2770cead82f86418a52536e6d2ab1602f43eae862bdc55115"
+    },
+    {
+      "ordinal": 3,
+      "inputId": "pgr-en-course-stage",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "course-stage-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseStage.json",
+      "sizeBytes": 4952,
+      "sha256": "c0919188664f4582d78aa9dd4eaa00c7039650c2b619f58aff5aa8d487532bc3"
+    },
+    {
+      "ordinal": 4,
+      "inputId": "pgr-en-course-chapter",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "course-chapter-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/course/CourseChapter.json",
+      "sizeBytes": 3643,
+      "sha256": "bfd83777a16b1e14ce3b392523013b599bdd309e1ac4466c2a3db9723f735c35"
+    },
+    {
+      "ordinal": 5,
+      "inputId": "pgr-en-course-stage-show-type",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "course-presentation-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/course/CourseStageShowType.json",
+      "sizeBytes": 706,
+      "sha256": "5f2066cfb2bb756a5f6b599e98bfcbcea8770791997e7d5a409064c0116ce9d4"
+    },
+    {
+      "ordinal": 6,
+      "inputId": "pgr-en-practice-chapter",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "practice-chapter-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeChapter.json",
+      "sizeBytes": 2415,
+      "sha256": "e213fcac88ca56ba073195b45ca1d8bf9f3bb215e401929991f94f099376aa4c"
+    },
+    {
+      "ordinal": 7,
+      "inputId": "pgr-en-practice-group",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "practice-group-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/practice/PracticeGroup.json",
+      "sizeBytes": 12767,
+      "sha256": "d38089295be9700ee8565a05e062a541eacb1bfcd6feee31722972ce8ac3d887"
+    },
+    {
+      "ordinal": 8,
+      "inputId": "pgr-en-practice-skill-details",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "practice-skill-presentation-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/client/fuben/practice/PracticeSkillDetails.json",
+      "sizeBytes": 46259,
+      "sha256": "63efabc9ac56ebe69bde10567390174e166d9dfa70cb7045c9f792c084e8b7c4"
+    },
+    {
+      "ordinal": 9,
+      "inputId": "pgr-en-teaching-activity",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "teaching-activity-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingActivity.json",
+      "sizeBytes": 72445,
+      "sha256": "9e7f2b476035b6c417443924f50238fec5d54d84e621dfe73bc7130bdbe8de4a"
+    },
+    {
+      "ordinal": 10,
+      "inputId": "pgr-en-teaching-robot",
+      "sourceId": null,
+      "locale": "EN",
+      "role": "teaching-loadout-shape",
+      "authorityDisposition": "structural-observation-only",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/teaching/TeachingRobot.json",
+      "sizeBytes": 46467,
+      "sha256": "6d43c29629c6573ca1e95eb53e97eec327527c9b32f50769e6dacae062289c3b"
+    },
+    {
+      "ordinal": 11,
+      "inputId": "pgr-en-guide-fight",
+      "sourceId": "pgr-guidefight-alt3ri-856a0e45-en-json",
+      "locale": "EN",
+      "role": "authoritative-four-row-guide-selection",
+      "authorityDisposition": "authoritative-row-selection-input",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/guide/GuideFight.json",
+      "sizeBytes": 595,
+      "sha256": "62c184d70d88a3daf377ce6a2558c6e2cb192c4dbefbae3f02b4f549b6b46e7d"
+    },
+    {
+      "ordinal": 12,
+      "inputId": "pgr-en-stage",
+      "sourceId": "pgr-stage-alt3ri-856a0e45-en-json",
+      "locale": "EN",
+      "role": "authoritative-stage-join-and-label-shape",
+      "authorityDisposition": "authoritative-stage-join-input-outside-eleven-source-cohort",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/EN/bytes/share/fuben/Stage.json",
+      "sizeBytes": 29637115,
+      "sha256": "7d553ada4ac1cd40e77054be70263260f7b2b2dd15948dc120e7ca806b26f940"
+    },
+    {
+      "ordinal": 13,
+      "inputId": "pgr-zh-guide-fight-compare-only",
+      "sourceId": null,
+      "locale": "ZH",
+      "role": "compare-only-guide-byte-identity",
+      "authorityDisposition": "compare-only-never-unioned-never-fills-en-absence",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/ZH/bytes/share/guide/GuideFight.json",
+      "sizeBytes": 595,
+      "sha256": "62c184d70d88a3daf377ce6a2558c6e2cb192c4dbefbae3f02b4f549b6b46e7d"
+    },
+    {
+      "ordinal": 14,
+      "inputId": "pgr-zh-stage-compare-only",
+      "sourceId": null,
+      "locale": "ZH",
+      "role": "compare-only-stage-join-and-label-shape",
+      "authorityDisposition": "compare-only-never-unioned-never-fills-en-absence",
+      "path": "games/punishing-gray-raven/raw/alt3ri-pgr-data/2026-06-14/files/extracted_repo/PGR_Data-master/ZH/bytes/share/fuben/Stage.json",
+      "sizeBytes": 30511512,
+      "sha256": "ca3ad74480538148e7bc9a1a129569437e45bc83c670c0397d8062133dc6ee3a"
+    }
+  ],
+  "orderedOutputs": [
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-readfirst-md",
+      "predecessorSourceId": "pgr-readfirst-md",
+      "kind": "report",
+      "artifactId": "P1B-PGR-STAGE-SPINE-READFIRST-V1-MD",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_READFIRST_V1.md",
+      "sizeBytes": 5526,
+      "sha256": "f606f014a3e12101bae89918c16ac68c6184eeca0290b82800b5e50dae2c7caf",
+      "schemaVersion": 1,
+      "dataRowCount": 1
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-summary-json",
+      "predecessorSourceId": "pgr-readfirst-summary-json",
+      "kind": "derived",
+      "artifactId": "P1B-PGR-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_READFIRST_V1_SUMMARY.json",
+      "sizeBytes": 19861,
+      "sha256": "f400b09476b33c338c8b5f670d263d0152a0201c2c92078963bf3ae30bc276bb",
+      "schemaVersion": 1,
+      "dataRowCount": 1,
+      "canonicalReportDigest": "39c8136d6e0813f83a78c11e1a7ada648506d204fd59548a7e509bbdfb6eedd0"
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-label-context-csv",
+      "predecessorSourceId": "pgr-guidefight-label-csv",
+      "kind": "derived",
+      "artifactId": "P1B-PGR-GUIDEFIGHT-STAGE-LABEL-CONTEXT-V1-CSV",
+      "path": "_Game/DesignDocs/P1B_PGR_GUIDEFIGHT_STAGE_LABEL_CONTEXT_V1.csv",
+      "sizeBytes": 8694,
+      "sha256": "0159d965438aa23b60b1e6b66cf7c1bff8b4edc21f8e0a50531d92266357d153",
+      "schemaVersion": 1,
+      "dataRowCount": 20
+    },
+    {
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-reading-links-csv",
+      "predecessorSourceId": "pgr-guidefight-links-csv",
+      "kind": "derived",
+      "artifactId": "P1B-PGR-GUIDEFIGHT-STAGE-READING-LINKS-V1-CSV",
+      "path": "_Game/DesignDocs/P1B_PGR_GUIDEFIGHT_STAGE_READING_LINKS_V1.csv",
+      "sizeBytes": 18714,
+      "sha256": "312811436a34b38888582289a93c6a60e6f2ccd44b6d22eef88c6c5bc4e6170d",
+      "schemaVersion": 1,
+      "dataRowCount": 56
+    }
+  ],
+  "selectionInvariant": {
+    "sort": "GuideFight.Id numeric ascending",
+    "exactGuideFightToStagePairs": [
+      "100001->10010001",
+      "100002->10010002",
+      "100003->10010003",
+      "100004->10010005"
+    ],
+    "guideFightRows": 4,
+    "enStageJoinRows": 4,
+    "zhCompareStageJoinRows": 4,
+    "missing": 0,
+    "duplicates": 0,
+    "multiMatches": 0
+  },
+  "labelContextInvariant": {
+    "schemaVersion": 1,
+    "dataRows": 20,
+    "sourceRows": 4,
+    "fieldsPerSourceRow": 5,
+    "fieldOrder": [
+      "Stage.Name",
+      "Stage.Description",
+      "Stage.RecommandLevel",
+      "Stage.RequireLevel",
+      "Stage.StarDesc"
+    ],
+    "enPresentNonempty": 20,
+    "zhPresentNonempty": 20,
+    "enTypes": {
+      "string": 12,
+      "number": 8
+    },
+    "zhTypes": {
+      "string": 12,
+      "number": 8
+    },
+    "enZhEqual": 8,
+    "enZhDifferent": 12,
+    "lowEntropyFieldValueHashesEmitted": false
+  },
+  "readingLinksInvariant": {
+    "schemaVersion": 1,
+    "dataRows": 56,
+    "sourceRows": 4,
+    "semanticSlotsPerSourceRow": 14,
+    "stateCounts": {
+      "present": 32,
+      "absent": 20,
+      "unresolved": 4
+    },
+    "classificationCounts": {
+      "provenStatic": 52,
+      "unknown": 4
+    },
+    "physicalConsumerRows": {
+      "state": "unresolved",
+      "count": 4
+    }
+  },
+  "normalization": {
+    "encoding": "UTF-8",
+    "bom": false,
+    "newline": "LF",
+    "exactlyOneFinalLf": true,
+    "jsonIndentSpaces": 2,
+    "canonicalDigest": "recursive ordinal-sorted object keys; compact JSON; arrays preserve authored order; SHA-256 lowercase",
+    "csvDelimiter": ",",
+    "csvEveryCellDoubleQuoted": true,
+    "csvEscaping": "RFC4180 double-quote doubling",
+    "localeDependentFormatting": false
+  },
+  "negativeBoundaries": [
+    "ZH is compare-only and never unions with EN or fills an EN null.",
+    "Identity metadata is not source payload adoption.",
+    "Labels, descriptions, NPC/weapon/robot IDs, time, level, cost, reward, story, and tuning payload values are withheld.",
+    "Static field families do not prove runtime consumers, evaluators, persistence, transactions, cleanup, rewards, or product parity.",
+    "No PGR signal-orb, three-ping, QTE, loadout, or target-time system is imported."
+  ],
+  "verificationResult": {
+    "mainGenerate": "PASS exit 0",
+    "mainVerify": "PASS exit 0",
+    "sourceValueCopied": 0,
+    "admissionEffect": "none"
+  },
+  "canonicalProducerManifestDigest": "b27ddcda1401cd37812466f12a8cec8d01c09858eb30d85689ca9b3e3023b247"
+}

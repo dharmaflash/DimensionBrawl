@@ -1,0 +1,29 @@
+{
+  "inputBytes": 456457979,
+  "inputCount": 1509,
+  "inputInventorySha256": "3b00de9a3cc41d63c7576a1958c0d01fe098e412a2c98e43aba0b1e6d544e662",
+  "outputs": [
+    {
+      "dataRows": 1509,
+      "name": "hi3-stage-table-summary.csv",
+      "path": "C:/tmp/DimensionBrawl-HI3-StageHelper-ContractReplay-20260715/games/honkai-impact-3rd/enemies-stages/hi3-stage-table-summary.csv",
+      "sha256": "d8292d42ef71a5d63b1288820475c20061526abf6f894fbf2fd0e73aba96f5e7",
+      "sizeBytes": 295098
+    },
+    {
+      "dataRows": 14855,
+      "name": "hi3-stage-row-samples.csv",
+      "path": "C:/tmp/DimensionBrawl-HI3-StageHelper-ContractReplay-20260715/games/honkai-impact-3rd/enemies-stages/hi3-stage-row-samples.csv",
+      "sha256": "5067a78931a114658a4026889fcb9bff91c327fa7356bb5f75f8927123e95d92",
+      "sizeBytes": 4459588
+    }
+  ],
+  "producerCounts": {
+    "monster_rows": 3788,
+    "stage_sample_rows": 14855,
+    "stage_table_rows": 1509
+  },
+  "producerPath": "C:/Ark/SubcultureGameData/_tools/analyze_honkai_impact_3rd_full_repos.py",
+  "producerSha256": "39daaf45913281619c054eabf71de2fde00e435f7efd0d5c3823f23a816953ea",
+  "status": "PASS"
+}

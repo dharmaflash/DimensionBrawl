@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "sourceRecordId": "P1B-HI3-STAGE-HELPER-PROVENANCE-V1-SOURCE-RECORD-01",
+  "contractId": "P1B-HI3-STAGE-HELPER-PROVENANCE-01",
+  "producerContractId": "HI3-STAGE-HELPERS-REPLAY-PRODUCER-01",
+  "artifactSetId": "HI3-STAGE-HELPERS-MIXED-20260615-V1",
+  "status": "formal-provenance-candidate-verified-admission-open",
+  "recordedAt": "2026-07-16T03:35:00+09:00",
+  "game": "Honkai Impact 3rd",
+  "sourceRoot": {
+    "path": "C:/Ark/SubcultureGameData",
+    "scope": "local-retained-mirror-mixed-snapshot-helper-provenance-candidate"
+  },
+  "historicalIdentityBoundary": {
+    "targetSourceIds": [
+      "hi3-stage-summary-csv",
+      "hi3-stage-samples-csv"
+    ],
+    "identityDisposition": "existing historical output bytes retained under existing source IDs; no successor identity created",
+    "partialAdmissionAllowed": false
+  },
+  "upstreamSnapshots": [
+    {
+      "ordinal": 0,
+      "sourceShort": "devilpromt",
+      "snapshotId": "hi3-devilpromt-e92b3bd-full-repo",
+      "upstream": "DevilProMT/BH3-Data",
+      "url": "https://github.com/DevilProMT/BH3-Data",
+      "branch": "main",
+      "revision": "e92b3bdb413e74241f6f4a417a786c2704055997",
+      "committedAt": "2025-01-25T04:48:13Z",
+      "snapshotDate": "2026-06-15",
+      "snapshotRelativeRoot": "games/honkai-impact-3rd/raw/devilpromt-bh3-data/2026-06-15",
+      "sourceRecord": {
+        "path": "source-record.md",
+        "sizeBytes": 899,
+        "sha256": "ccdd783e53d93fb078db806be964958da47ceb8a7cd88fda483e2b3d0e2d9d36"
+      },
+      "manifest": {
+        "path": "manifest.yml",
+        "sizeBytes": 1939,
+        "sha256": "f0d99eb5a0d6ce8a8b5716b04248129e7220e4bdd5b989041b1f8d5412d2135c"
+      },
+      "zip": {
+        "path": "files/DevilProMT-BH3-Data-main.zip",
+        "sizeBytes": 30555318,
+        "sha256": "6c9ee52e068805b1a8d4a0e7cfb0de7d75959c7a18cc5449475e740141267ea3"
+      },
+      "licenseDisposition": "none-detected-review-needed",
+      "selectedInputCount": 371,
+      "selectedInputBytes": 155164987
+    },
+    {
+      "ordinal": 1,
+      "sourceShort": "nairieberry",
+      "snapshotId": "hi3-nairieberry-01d7afb-full-repo",
+      "upstream": "nairieberry/HonkaiImpactData",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "branch": "master",
+      "revision": "01d7afbaf99ff7d3d027e27fe9a4b363a2db7cc1",
+      "committedAt": "2021-04-10T22:17:18Z",
+      "snapshotDate": "2026-06-15",
+      "snapshotRelativeRoot": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15",
+      "sourceRecord": {
+        "path": "source-record.md",
+        "sizeBytes": 938,
+        "sha256": "eaf1785b6fb0cddcecca59047d7de229a4130f5f67512c3e6839848c8286352e"
+      },
+      "manifest": {
+        "path": "manifest.yml",
+        "sizeBytes": 2004,
+        "sha256": "11e0be6d8e9f431d6f16da48213001edc033673e0709358798e5efe52d000faa"
+      },
+      "zip": {
+        "path": "files/nairieberry-HonkaiImpactData-master.zip",
+        "sizeBytes": 121793389,
+        "sha256": "4184868dfcb9ebf2a07060e8f5c599df31c5e01ca1c20fbdffe952d6d6cafd6d"
+      },
+      "licenseDisposition": "none-detected-review-needed",
+      "selectedInputCount": 1138,
+      "selectedInputBytes": 301292992
+    },
+    {
+      "ordinal": 2,
+      "sourceShort": "msktmi",
+      "snapshotId": "hi3-msktmi-1debfbd-full-repo",
+      "upstream": "MskTmi/ElysianRealm-Data",
+      "url": "https://github.com/MskTmi/ElysianRealm-Data",
+      "branch": "master",
+      "revision": "1debfbd44dc823b1864bc8a88f84c64c9a61499c",
+      "committedAt": "2026-06-05T12:59:23Z",
+      "snapshotDate": "2026-06-15",
+      "snapshotRelativeRoot": "games/honkai-impact-3rd/raw/msktmi-elysianrealm-data/2026-06-15",
+      "sourceRecord": {
+        "path": "source-record.md",
+        "sizeBytes": 909,
+        "sha256": "97d7c4a414232254b9f2f86f171e71e6a2cc616fae492129cd30e2884bfa586e"
+      },
+      "manifest": {
+        "path": "manifest.yml",
+        "sizeBytes": 1970,
+        "sha256": "204584b565ad899a1bb3e3433c6a3cfb9e75a30442261662c0103888bce20437"
+      },
+      "zip": {
+        "path": "files/MskTmi-ElysianRealm-Data-master.zip",
+        "sizeBytes": 49267918,
+        "sha256": "5c7a6a67c1e07803d8865cea1254416bb0d27558f2a83ecb268facc745dbe5ab"
+      },
+      "licenseDisposition": "agpl-3.0-review-needed",
+      "selectedInputCount": 0,
+      "selectedInputBytes": 0
+    }
+  ],
+  "combinedManifest": {
+    "path": "games/honkai-impact-3rd/raw/_full-repo-analysis/2026-06-15/manifest.yml",
+    "sizeBytes": 1192,
+    "sha256": "254f661c290ad29cd05c141cd9e4df131251adf58391b5f56a4e762082c33e33"
+  },
+  "retainedProducer": {
+    "path": "_tools/analyze_honkai_impact_3rd_full_repos.py",
+    "sizeBytes": 54701,
+    "sha256": "39daaf45913281619c054eabf71de2fde00e435f7efd0d5c3823f23a816953ea",
+    "function": "make_stage_helpers",
+    "runtime": "CPython 3.12.13 on Windows"
+  },
+  "inventoryGenerator": {
+    "generatorId": "P1B-HI3-STAGE-HELPER-INPUT-INVENTORY-V1-GENERATOR-01",
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_INPUT_INVENTORY_V1_GENERATOR.mjs",
+    "sizeBytes": 13998,
+    "sha256": "8ac184f12fc3f7d5635628875745fa1a4986d5b3c51f13bee9c0c76833e1c5e3",
+    "runtime": "Node.js v24.14.0 built-ins only"
+  },
+  "inventoryArtifact": {
+    "artifactId": "P1B-HI3-STAGE-HELPER-INPUT-INVENTORY-V1-CSV",
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_INPUT_INVENTORY_V1.csv",
+    "sizeBytes": 278176,
+    "sha256": "9eb12152642ff031d758415645b9ab95b6e312aab1a080e8775ea9dba653dc5c",
+    "dataRows": 1509,
+    "inputBytes": 456457979,
+    "canonicalInventoryDigest": "3b00de9a3cc41d63c7576a1958c0d01fe098e412a2c98e43aba0b1e6d544e662"
+  },
+  "replayWrapper": {
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY.py",
+    "sizeBytes": 6449,
+    "sha256": "4c4ff6ff726dfb0e24138a8d57dcd38efd83f70f279791ac62c924d398afe2ec"
+  },
+  "replayResult": {
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY_RESULT.json",
+    "sizeBytes": 1155,
+    "sha256": "fc6fef25cb5eccff9e77170ee377c48bcda8819a86458e2d336d9ca2ea69f6f8"
+  },
+  "execution": {
+    "workingDirectory": "C:/Git/DimensionBrawl/Assets",
+    "platformBoundary": "Windows filesystem ordering plus CPython 3.12.13 is frozen for byte-exact historical-output replay",
+    "arkRoot": "C:/Ark/SubcultureGameData",
+    "scratchOutputRoot": "C:/tmp/DimensionBrawl-HI3-StageHelper-ContractReplay-20260715",
+    "command": "& 'C:/Users/dharm/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' 'C:/Git/DimensionBrawl/Assets/_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY.py' --ark-root 'C:/Ark/SubcultureGameData' --output-root 'C:/tmp/DimensionBrawl-HI3-StageHelper-ContractReplay-20260715' --result-path 'C:/Git/DimensionBrawl/Assets/_Game/DesignDocs/P1B_HI3_STAGE_HELPER_ISOLATED_REPLAY_RESULT.json'",
+    "runtime": "CPython 3.12.13",
+    "exitCode": 0,
+    "sourceMutation": "none; wrapper rejects output paths inside Ark",
+    "result": "PASS"
+  },
+  "targetOutputs": [
+    {
+      "ordinal": 0,
+      "sourceId": "hi3-stage-summary-csv",
+      "identityDisposition": "existing-historical-output-retained-not-successor",
+      "path": "games/honkai-impact-3rd/enemies-stages/hi3-stage-table-summary.csv",
+      "sizeBytes": 295098,
+      "sha256": "d8292d42ef71a5d63b1288820475c20061526abf6f894fbf2fd0e73aba96f5e7",
+      "dataRows": 1509,
+      "header": [
+        "source",
+        "region",
+        "source_path",
+        "table",
+        "row_count",
+        "bytes",
+        "domains",
+        "sample_keys"
+      ],
+      "encoding": "UTF-8 no BOM; csv.DictWriter Excel dialect; CRLF; exactly one final CRLF",
+      "evidenceGrade": "exact-static-derived-helper-provenance-candidate",
+      "claimBoundary": "Table identity, source path, source row count, bytes, domains, and sample-key shape only; no exact 10101 row or runtime meaning.",
+      "admissionState": "formal-provenance-candidate-not-admitted"
+    },
+    {
+      "ordinal": 1,
+      "sourceId": "hi3-stage-samples-csv",
+      "identityDisposition": "existing-historical-output-retained-not-successor",
+      "path": "games/honkai-impact-3rd/enemies-stages/hi3-stage-row-samples.csv",
+      "sizeBytes": 4459588,
+      "sha256": "5067a78931a114658a4026889fcb9bff91c327fa7356bb5f75f8927123e95d92",
+      "dataRows": 14855,
+      "header": [
+        "source",
+        "region",
+        "source_path",
+        "table",
+        "row_index",
+        "id",
+        "name",
+        "level",
+        "cost",
+        "sample_json"
+      ],
+      "encoding": "UTF-8 no BOM; csv.DictWriter Excel dialect; CRLF; exactly one final CRLF",
+      "evidenceGrade": "exact-static-derived-helper-provenance-candidate",
+      "claimBoundary": "Truncated first-twelve-row previews only; the Global StageData_Main sample does not include or independently identify levelId 10101.",
+      "admissionState": "formal-provenance-candidate-not-admitted"
+    }
+  ],
+  "scratchByproduct": {
+    "sourceId": "hi3-monster-summary-csv",
+    "outputSetDisposition": "verified-scratch-byproduct-excluded-from-supporting-nine",
+    "path": "games/honkai-impact-3rd/enemies-stages/hi3-monster-summary.csv",
+    "sizeBytes": 732650,
+    "sha256": "cffb5d4785fd2bf42eefed7a514fa5c45feaf14e54038d6e558e99513c47889b",
+    "dataRows": 3788,
+    "countedAsTargetOutput": false,
+    "countedInSupportingNine": false
+  },
+  "selectionBoundary": {
+    "sourceOrder": [
+      "devilpromt",
+      "nairieberry",
+      "msktmi"
+    ],
+    "fileDiscovery": "recursive *.json under each extracted root",
+    "matchRule": "case-insensitive Stage|Monster|Level|MapSite substring in filename stem or relative path",
+    "parseRule": "include only JSON parse success",
+    "producerIterationBoundary": "historical byte replay retains Windows Path ordering; materialized inventory canonicalizes source then relative path by ordinal string order",
+    "inputCount": 1509,
+    "inputBytes": 456457979,
+    "canonicalInventoryDigest": "3b00de9a3cc41d63c7576a1958c0d01fe098e412a2c98e43aba0b1e6d544e662"
+  },
+  "evidenceBoundary": {
+    "evidenceGrade": "exact-static-derived-helper-provenance-candidate",
+    "claimMapping": [
+      "hi3-stage-summary-csv supports table/source/path/count/size/domain/sample-key shape only",
+      "hi3-stage-samples-csv supports bounded truncated sample presence only and cannot independently identify levelId 10101"
+    ],
+    "runtimeTraceEvidenceRefs": [],
+    "productAdoptionEffect": "none",
+    "elevenSourceAdmissionEffect": "none",
+    "helperFormalProvenanceCandidatesVerified": 2,
+    "helperSourcesAdmitted": 0,
+    "helperSourcesRequired": 2,
+    "admittedSupportingSourceCount": 0,
+    "requiredSupportingSourceCount": 9,
+    "liveForeignRowCount": 0,
+    "liveCrosswalkCellCount": 0
+  },
+  "admissionBlockedReasons": [
+    "The DevilProMT and nairieberry snapshots remain none-detected-review-needed, and the zero-contribution MskTmi snapshot remains AGPL-3.0-review-needed.",
+    "The two helpers cannot identify or substitute the exact HI3 levelId 10101 authority row.",
+    "The complete eleven-source cohort must be admitted atomically; helper provenance verification does not admit either source alone."
+  ],
+  "sourceRecordPath": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_SOURCE_RECORD.json",
+  "producerManifestPath": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PRODUCER_MANIFEST.json",
+  "canonicalSourceRecordDigest": "271fbe9d5177480caa2749082ce932e62f51e6a2051894ce72482845ed742913"
+}

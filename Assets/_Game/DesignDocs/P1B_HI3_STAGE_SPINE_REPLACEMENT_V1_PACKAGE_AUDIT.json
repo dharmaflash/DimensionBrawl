@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "auditId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-PACKAGE-AUDIT-01",
+  "contractId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-01",
+  "status": "pass-exact-static-candidate-not-admitted",
+  "auditedAt": "2026-07-16T03:00:00+09:00",
+  "packageFiles": [
+    {
+      "role": "main-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs",
+      "sizeBytes": 30987,
+      "sha256": "b35c7eedf641af69fcf4969bb8042171dfe959223c2c44c2a06b0af433cf94e3"
+    },
+    {
+      "role": "read-first-report",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1.md",
+      "sizeBytes": 5319,
+      "sha256": "6a54ed0b916f22d21e0b2edeee8481cb4e75425b5f994f186adb93b59b0e6db4"
+    },
+    {
+      "role": "summary",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1_SUMMARY.json",
+      "sizeBytes": 25723,
+      "sha256": "379bc89fd6bd80854acc90c074dc4ce8e13491e08f4e5360edb061bd97592e87"
+    },
+    {
+      "role": "reading-links",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGEDATA_STAGE_READING_LINKS_V1.csv",
+      "sizeBytes": 7735,
+      "sha256": "2657ab04fa749d5e1f945037e3e49efc6fd62a8ef2c9fec9a5eeb1273a06e639"
+    },
+    {
+      "role": "provenance-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PROVENANCE_GENERATOR.mjs",
+      "sizeBytes": 14206,
+      "sha256": "e479714740c5dcc58becef6d3a7338d63ff3ba7c9cc706e798f9421a21846f8e"
+    },
+    {
+      "role": "source-record",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_SOURCE_RECORD.json",
+      "sizeBytes": 7377,
+      "sha256": "6cbd00c4376976435869d336333188ccfeaea89ff72ae9ac50647c0c938d5cd5"
+    },
+    {
+      "role": "producer-manifest",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PRODUCER_MANIFEST.json",
+      "sizeBytes": 6773,
+      "sha256": "a79380decc3be34e409b4bdf3c1fb085f11cc77514a2cb88fcd63919be99e6bd"
+    }
+  ],
+  "packageDigestEncoding": "ordered role|path|sizeBytes|lowercaseSha256 rows; LF; final LF; UTF-8; SHA-256 lowercase",
+  "packageDigest": "d8819674053194e69fb5b39393f58e6ead0d82d6620cf9673a012abf1c60dc44",
+  "canonicalDigests": {
+    "report": "d20113431ca54b1da5bc1f6c477b32de0fa9eb205f67d3e33cdaaafe4f6f7101",
+    "sourceRecord": "b5507feab0b0b7ce902610cd5eed07fb9e397534f828dbcb08e9278f4e09edc3",
+    "producerManifest": "5090255852cb6aac3038a5c3f93799dbc2f3daeb1341bc5606ec4a59dfeee01a"
+  },
+  "verifiedCounts": {
+    "packageFiles": 7,
+    "inputs": 4,
+    "outputs": 3,
+    "exactRows": 1,
+    "fieldShapeRows": 67,
+    "linkRows": 14,
+    "linkPresent": 10,
+    "linkUnresolved": 4,
+    "sourceValueCopied": 0,
+    "helperInputs": 0
+  },
+  "admissionState": {
+    "candidateOutputsVerified": 3,
+    "supportingSourcesAdmitted": 0,
+    "supportingSourcesRequired": 9,
+    "liveRows": 0,
+    "liveRowsRequired": 5,
+    "liveCrosswalkCells": 0,
+    "liveCrosswalkCellsRequired": 70,
+    "acceptanceEffect": "none"
+  },
+  "blockersToAdmission": [
+    "HI3 upstream license disposition remains none-detected-review-needed.",
+    "The two HI3 replay-authenticated helper outputs still require formal provenance records and admission metadata.",
+    "The eleven-source cohort must be admitted atomically; this three-artifact candidate cannot be admitted alone."
+  ],
+  "negativeBoundary": "This audit authenticates only the deterministic HI3 candidate package. It does not reconstruct historical bytes, admit a source, authorize license reuse, promote either helper, populate packet claims/cells, or prove runtime/current-product behavior.",
+  "canonicalAuditDigest": "7f9558bcbcfb41c65cc7abbbd9471704dfba5143c6ff1f6cb20222eb3da7a867"
+}

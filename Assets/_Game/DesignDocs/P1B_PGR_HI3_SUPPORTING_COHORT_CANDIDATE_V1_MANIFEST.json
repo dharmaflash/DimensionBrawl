@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "P1B-PGR-HI3-SUPPORTING-COHORT-CANDIDATE-V1-MANIFEST-01",
+  "status": "pass-nine-supporting-candidates-verified-zero-admitted",
+  "recordedAt": "2026-07-16T11:39:00+09:00",
+  "targetPacketId": "P1B-PGR-HI3-STAGE-SPINE-01",
+  "scope": "Cumulative candidate-only cutoff for the four PGR replacements, three HI3 replacements, two HI3 helper provenance candidates, and their factual repository-license signal audit.",
+  "packageAudits": [
+    {
+      "ordinal": 0,
+      "family": "pgr-replacement",
+      "auditId": "P1B-PGR-STAGE-SPINE-REPLACEMENT-V1-PACKAGE-AUDIT-01",
+      "auditPath": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT.json",
+      "auditSizeBytes": 3822,
+      "auditSha256": "54b4cf14c6d72cf14415b301fa8b2bb79d801e329c28773d65c01b7b6f08ebd2",
+      "auditGeneratorPath": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "auditGeneratorSizeBytes": 11298,
+      "auditGeneratorSha256": "c02d100ebdab0f65a44219a6932a1c76e47ec2b687d7f5426b7bd9b4232b8c91",
+      "canonicalAuditDigest": "59d21e7da9c6b3e7d70201294830133a925ca56d4dbb067df5a846d8a99253f8",
+      "packageDigest": "09ca47fa01a1c457f4270e3cd696d0652849fad32f4adf19e9d705b06d74e800",
+      "packageFileCount": 8,
+      "candidateSourceIds": [
+        "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-readfirst-md",
+        "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-summary-json",
+        "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-label-context-csv",
+        "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-reading-links-csv"
+      ]
+    },
+    {
+      "ordinal": 1,
+      "family": "hi3-replacement",
+      "auditId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-PACKAGE-AUDIT-01",
+      "auditPath": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT.json",
+      "auditSizeBytes": 3670,
+      "auditSha256": "cdbb662179c10b035ab889b583341134ab5daef442dcd760e65b3807d3fd0d06",
+      "auditGeneratorPath": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "auditGeneratorSizeBytes": 11335,
+      "auditGeneratorSha256": "ba1286afc284e37cbef40a889ca93624d1e6757b7f617922a9dfd973d1a4e7ef",
+      "canonicalAuditDigest": "7f9558bcbcfb41c65cc7abbbd9471704dfba5143c6ff1f6cb20222eb3da7a867",
+      "packageDigest": "d8819674053194e69fb5b39393f58e6ead0d82d6620cf9673a012abf1c60dc44",
+      "packageFileCount": 7,
+      "candidateSourceIds": [
+        "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-readfirst-md",
+        "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-summary-json",
+        "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-reading-links-csv"
+      ]
+    },
+    {
+      "ordinal": 2,
+      "family": "hi3-helper-provenance",
+      "auditId": "P1B-HI3-STAGE-HELPER-PROVENANCE-V1-PACKAGE-AUDIT-01",
+      "auditPath": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PACKAGE_AUDIT.json",
+      "auditSizeBytes": 4082,
+      "auditSha256": "383ba46684bcb51734c24073d65a95af31769633cf7d638cc2790a16198a706d",
+      "auditGeneratorPath": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "auditGeneratorSizeBytes": 17709,
+      "auditGeneratorSha256": "b3c1f90421fc60770388ee8e2eec8f0525d38c67da2e7637eae3ebb077e2377f",
+      "canonicalAuditDigest": "b16247c0877cbfd0609241dbc85a9672955aee302190da64ff6e6f075757bda6",
+      "packageDigest": "9de3bafab2b6695263f9c7e1e4d40ffa946a0656a3337de7b43c2cd19d3fea9a",
+      "packageFileCount": 7,
+      "candidateSourceIds": [
+        "hi3-stage-summary-csv",
+        "hi3-stage-samples-csv"
+      ]
+    }
+  ],
+  "licenseSignalAudit": {
+    "auditId": "P1B-PGR-HI3-LICENSE-SIGNAL-AUDIT-01",
+    "auditPath": "_Game/DesignDocs/P1B_PGR_HI3_LICENSE_SIGNAL_AUDIT.json",
+    "auditSizeBytes": 9166,
+    "auditSha256": "bc418a4d6bc6809b89832dec73efa6e3dca18bb3d0c1e21157adecd65f9145e6",
+    "auditGeneratorPath": "_Game/DesignDocs/P1B_PGR_HI3_LICENSE_SIGNAL_AUDIT_GENERATOR.mjs",
+    "auditGeneratorSizeBytes": 18085,
+    "auditGeneratorSha256": "3fb62d98d68f1ee99dc8ee940e71c624c4810d8aba9b0ff73d03ae0988dc0bb7",
+    "canonicalAuditDigest": "ec3e3a1e6500ddb96a8b6fb907d8e49e22627db8f1633b4cd45febebeec008e2",
+    "repositories": 4,
+    "noExplicitRepositoryLicenseSignal": 3,
+    "explicitRepositoryLicenseSignal": 1,
+    "rightsDisposition": "policy-or-rights-review-required-before-any-admission"
+  },
+  "cohortFiles": [
+    {
+      "role": "pgr-replacement-package-audit-generator",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "sizeBytes": 11298,
+      "sha256": "c02d100ebdab0f65a44219a6932a1c76e47ec2b687d7f5426b7bd9b4232b8c91"
+    },
+    {
+      "role": "pgr-replacement-package-audit",
+      "path": "_Game/DesignDocs/P1B_PGR_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT.json",
+      "sizeBytes": 3822,
+      "sha256": "54b4cf14c6d72cf14415b301fa8b2bb79d801e329c28773d65c01b7b6f08ebd2"
+    },
+    {
+      "role": "hi3-replacement-package-audit-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "sizeBytes": 11335,
+      "sha256": "ba1286afc284e37cbef40a889ca93624d1e6757b7f617922a9dfd973d1a4e7ef"
+    },
+    {
+      "role": "hi3-replacement-package-audit",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_PACKAGE_AUDIT.json",
+      "sizeBytes": 3670,
+      "sha256": "cdbb662179c10b035ab889b583341134ab5daef442dcd760e65b3807d3fd0d06"
+    },
+    {
+      "role": "hi3-helper-provenance-package-audit-generator",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PACKAGE_AUDIT_GENERATOR.mjs",
+      "sizeBytes": 17709,
+      "sha256": "b3c1f90421fc60770388ee8e2eec8f0525d38c67da2e7637eae3ebb077e2377f"
+    },
+    {
+      "role": "hi3-helper-provenance-package-audit",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_HELPER_PROVENANCE_V1_PACKAGE_AUDIT.json",
+      "sizeBytes": 4082,
+      "sha256": "383ba46684bcb51734c24073d65a95af31769633cf7d638cc2790a16198a706d"
+    },
+    {
+      "role": "license-signal-audit-generator",
+      "path": "_Game/DesignDocs/P1B_PGR_HI3_LICENSE_SIGNAL_AUDIT_GENERATOR.mjs",
+      "sizeBytes": 18085,
+      "sha256": "3fb62d98d68f1ee99dc8ee940e71c624c4810d8aba9b0ff73d03ae0988dc0bb7"
+    },
+    {
+      "role": "license-signal-audit",
+      "path": "_Game/DesignDocs/P1B_PGR_HI3_LICENSE_SIGNAL_AUDIT.json",
+      "sizeBytes": 9166,
+      "sha256": "bc418a4d6bc6809b89832dec73efa6e3dca18bb3d0c1e21157adecd65f9145e6"
+    }
+  ],
+  "cohortPackageDigestEncoding": "ordered role|path|sizeBytes|lowercaseSha256 rows; LF; final LF; UTF-8; SHA-256 lowercase",
+  "cohortPackageDigest": "d8f318474ca364cdd3791e60adb90b6897c411c92a6922618f3433dc2f58c5fe",
+  "candidateSources": [
+    {
+      "ordinal": 0,
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-readfirst-md",
+      "family": "pgr-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 1,
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-summary-json",
+      "family": "pgr-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 2,
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-label-context-csv",
+      "family": "pgr-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 3,
+      "sourceId": "pgr-guidefight-stage-spine-alt3ri-856a0e45-v1-reading-links-csv",
+      "family": "pgr-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 4,
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-readfirst-md",
+      "family": "hi3-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 5,
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-summary-json",
+      "family": "hi3-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 6,
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-reading-links-csv",
+      "family": "hi3-replacement",
+      "packetInScopeDisposition": "versioned-replacement-candidate-outside-packet-in-scope",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 7,
+      "sourceId": "hi3-stage-summary-csv",
+      "family": "hi3-helper-provenance",
+      "packetInScopeDisposition": "historical-source-id-inside-packet-in-scope-formal-admission-open",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    },
+    {
+      "ordinal": 8,
+      "sourceId": "hi3-stage-samples-csv",
+      "family": "hi3-helper-provenance",
+      "packetInScopeDisposition": "historical-source-id-inside-packet-in-scope-formal-admission-open",
+      "verificationState": "verified-candidate",
+      "admissionState": "not-admitted",
+      "admissionEffect": "none"
+    }
+  ],
+  "verifiedCounts": {
+    "supportingCandidates": 9,
+    "pgrReplacementCandidates": 4,
+    "hi3ReplacementCandidates": 3,
+    "hi3HelperProvenanceCandidates": 2,
+    "replacementCandidatesOutsidePacketInScope": 7,
+    "historicalHelperSourcesInsidePacketInScope": 2,
+    "formalHelperAdmissions": 0,
+    "admittedSupportingSources": 0,
+    "liveForeignRows": 0,
+    "liveCrosswalkCells": 0
+  },
+  "registryIntegrationBoundary": {
+    "requiredOperation": "id-based-compare-and-swap-merge-followed-by-dedicated-registry-validator",
+    "sourceInsertions": 3,
+    "historicalHelperSourceUpdates": 2,
+    "claimMutationAllowed": false,
+    "inScopeSourceIdMutationAllowedBeforeAtomicAdmission": false,
+    "crosswalkMutationAllowedBeforeAtomicAdmission": false,
+    "liveAcceptanceMutationAllowedBeforeAtomicAdmission": false
+  },
+  "admissionState": {
+    "candidateCohortVerified": true,
+    "candidateCohortAdmitted": false,
+    "supportingSourcesAdmitted": 0,
+    "requiredSupportingSources": 9,
+    "atomicElevenSourceAdmissionPassed": false,
+    "productAdoptionEffect": "none"
+  },
+  "currentBlockers": [
+    "The exact retained PGR, nairieberry, and DevilProMT snapshots expose no explicit repository reuse grant; an explicit policy/rights disposition or admissible replacement lineage is required.",
+    "The MskTmi AGPL-3.0 repository contributes zero selected helper inputs and does not establish rights to third-party game data or media.",
+    "The nine supporting candidates and the two raw authority sources must pass one atomic eleven-source provenance, row, drift, and registry admission cutoff before any live claim or crosswalk promotion."
+  ],
+  "negativeBoundary": "This manifest is a cumulative candidate-cohort integrity cutoff, not an atomic admission manifest, legal clearance, runtime trace, product-parity claim, or authorization to copy foreign authored data. It changes no source admission, claim mapping, crosswalk row, product owner, priority, or implementation gate.",
+  "canonicalManifestDigest": "e9fc1d979b3fc44b17b161bb72511402c2ccc771853172ecee83a5517c861ac7"
+}

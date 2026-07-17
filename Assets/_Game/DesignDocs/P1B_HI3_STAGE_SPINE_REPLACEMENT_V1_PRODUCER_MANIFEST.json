@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "producerManifestId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-PRODUCER-MANIFEST-01",
+  "contractId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-01",
+  "producerContractId": "HI3-STAGEDATA-STAGE-SPINE-PRODUCER-01",
+  "artifactSetId": "HI3-STAGEDATA-STAGE-SPINE-NAIRIEBERRY-01D7AFB-V1",
+  "sourceSnapshotId": "hi3-nairieberry-01d7afb-global-stagedata-spine-v1",
+  "status": "verified-candidate-not-admitted",
+  "generator": {
+    "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_REPLACEMENT_V1_GENERATOR.mjs",
+    "sizeBytes": 30987,
+    "sha256": "b35c7eedf641af69fcf4969bb8042171dfe959223c2c44c2a06b0af433cf94e3",
+    "generatorId": "P1B-HI3-STAGE-SPINE-REPLACEMENT-V1-GENERATOR-01",
+    "runtime": "Node.js v24.14.0 built-ins only"
+  },
+  "orderedInputs": [
+    {
+      "ordinal": 0,
+      "inputId": "hi3-source-record",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "source-record",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/source-record.md",
+      "sizeBytes": 938,
+      "sha256": "eaf1785b6fb0cddcecca59047d7de229a4130f5f67512c3e6839848c8286352e"
+    },
+    {
+      "ordinal": 1,
+      "inputId": "hi3-snapshot-manifest",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "snapshot-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/manifest.yml",
+      "sizeBytes": 2004,
+      "sha256": "11e0be6d8e9f431d6f16da48213001edc033673e0709358798e5efe52d000faa"
+    },
+    {
+      "ordinal": 2,
+      "inputId": "hi3-file-manifest",
+      "sourceId": null,
+      "locale": "Global",
+      "role": "file-manifest",
+      "authorityDisposition": "snapshot-provenance-binding",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/files/hi3-nairieberry-file-manifest.csv",
+      "sizeBytes": 646441,
+      "sha256": "c0c63cbf79f26d3e7f11e651c4fab6047b814b4aea3f17f9c8b9fafdb3c94cb8"
+    },
+    {
+      "ordinal": 3,
+      "inputId": "hi3-global-stage-data-main",
+      "sourceId": "hi3-stagedata-main-nairieberry-01d7afb-global-json",
+      "locale": "Global",
+      "role": "authoritative-level-10101-static-stage-row",
+      "authorityDisposition": "authoritative-exact-row-selection-input",
+      "path": "games/honkai-impact-3rd/raw/nairieberry-honkaiimpactdata/2026-06-15/files/extracted_repo/HonkaiImpactData-master/Global/ExcelOutputAsset/Decrypted/StageData_Main.json",
+      "sizeBytes": 30600482,
+      "sha256": "6ab32c175b399d89d035e9736d150760725dd4f85cc5bd9870c64093c51a7431"
+    }
+  ],
+  "orderedOutputs": [
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-readfirst-md",
+      "predecessorSourceId": "hi3-readfirst-md",
+      "kind": "report",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-MD",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1.md",
+      "sizeBytes": 5319,
+      "sha256": "6a54ed0b916f22d21e0b2edeee8481cb4e75425b5f994f186adb93b59b0e6db4",
+      "schemaVersion": 1,
+      "dataRowCount": 1
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-summary-json",
+      "predecessorSourceId": "hi3-readfirst-summary-json",
+      "kind": "derived",
+      "artifactId": "P1B-HI3-STAGE-SPINE-READFIRST-V1-SUMMARY-JSON",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGE_SPINE_READFIRST_V1_SUMMARY.json",
+      "sizeBytes": 25723,
+      "sha256": "379bc89fd6bd80854acc90c074dc4ce8e13491e08f4e5360edb061bd97592e87",
+      "schemaVersion": 1,
+      "dataRowCount": 1,
+      "canonicalReportDigest": "d20113431ca54b1da5bc1f6c477b32de0fa9eb205f67d3e33cdaaafe4f6f7101"
+    },
+    {
+      "sourceId": "hi3-stagedata-stage-spine-nairieberry-01d7afb-global-v1-reading-links-csv",
+      "predecessorSourceId": "hi3-readfirst-csv",
+      "kind": "derived",
+      "artifactId": "P1B-HI3-STAGEDATA-STAGE-READING-LINKS-V1-CSV",
+      "path": "_Game/DesignDocs/P1B_HI3_STAGEDATA_STAGE_READING_LINKS_V1.csv",
+      "sizeBytes": 7735,
+      "sha256": "2657ab04fa749d5e1f945037e3e49efc6fd62a8ef2c9fec9a5eeb1273a06e639",
+      "schemaVersion": 1,
+      "dataRowCount": 14
+    }
+  ],
+  "selectionInvariant": {
+    "selector": "typeof row.levelId === number && row.levelId === 10101",
+    "sourceRows": 9642,
+    "duplicateLevelIds": 0,
+    "matches": 1,
+    "sourceOrdinal": 2,
+    "targetKey": "levelId=10101",
+    "topLevelFields": 67,
+    "canonicalRowSizeBytes": 1665,
+    "canonicalRowSha256": "93eb25ca807d6a7f5230cd1ca52e66d68c9f956db3eab25d8013d338699c968f",
+    "keySetSha256": "bf6bba4b74ba32cfc80828ba569dc3fc96ae578406c43ac160b4b2ad6a226eec"
+  },
+  "fieldShapeInvariant": {
+    "schemaVersion": 1,
+    "fieldRows": 67,
+    "canonicalSizeBytes": 3907,
+    "canonicalSha256": "19833743758af7f5987d0fb591c82d9e275eb82e57d8c2d2c5ff806306abbb91",
+    "stateCounts": {
+      "arrayEmpty": 5,
+      "arrayPresent": 11,
+      "numberNonzero": 25,
+      "numberZero": 16,
+      "objectPresent": 5,
+      "stringEmpty": 2,
+      "stringPresent": 3
+    },
+    "sourceValuesStored": false
+  },
+  "readingLinksInvariant": {
+    "schemaVersion": 1,
+    "dataRows": 14,
+    "sourceRows": 1,
+    "semanticSlotsPerSourceRow": 14,
+    "stateCounts": {
+      "present": 10,
+      "unresolved": 4
+    },
+    "classificationCounts": {
+      "provenStatic": 10,
+      "unknown": 4
+    },
+    "sourceValueCopied": 0
+  },
+  "normalization": {
+    "encoding": "UTF-8",
+    "bom": false,
+    "newline": "LF",
+    "exactlyOneFinalLf": true,
+    "jsonIndentSpaces": 2,
+    "canonicalDigest": "recursive ordinal-sorted object keys; compact JSON; arrays preserve authored order; SHA-256 lowercase",
+    "csvDelimiter": ",",
+    "csvEveryCellDoubleQuoted": true,
+    "csvEscaping": "RFC4180 double-quote doubling",
+    "localeDependentFormatting": false
+  },
+  "negativeBoundaries": [
+    "The selected upstream commit is from 2021 and proves no newer or official current shipped HI3 state.",
+    "The exact levelId is identity metadata, not source payload adoption.",
+    "Localized hashes/text, script/image paths, list contents, linked identifiers, time, level, cost, reward, story, and tuning values are withheld.",
+    "Static field families do not prove runtime consumers, evaluators, persistence, transactions, cleanup, rewards, or product parity.",
+    "The two replay-authenticated helper outputs are sibling evidence, not this producer's inputs."
+  ],
+  "verificationResult": {
+    "mainGenerate": "PASS exit 0",
+    "mainVerify": "PASS exit 0",
+    "sourceValueCopied": 0,
+    "admissionEffect": "none"
+  },
+  "canonicalProducerManifestDigest": "5090255852cb6aac3038a5c3f93799dbc2f3daeb1341bc5606ec4a59dfeee01a"
+}

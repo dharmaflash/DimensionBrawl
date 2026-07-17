@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-HI3-2021-STAGEDATA-10101-CONTROL-01",
+  "status": "exact-static-negative-control-no-payload",
+  "createdAt": "2026-07-15T14:26:28+09:00",
+  "purpose": "A hash-addressed historical HI3 StageData_Main row-shape control for the P1-B stage-spine packet. It records provenance, field paths, value-state classifications, and negative boundaries without copying source values.",
+  "source": {
+    "sourceId": "hi3-stagedata-main-2021-local-json-control",
+    "sourceSnapshotId": "hi3-nairieberry-01d7afb-global-stagedata-main",
+    "game": "Honkai Impact 3rd",
+    "repository": "https://github.com/nairieberry/HonkaiImpactData.git",
+    "localRepositoryRoot": "C:/tmp/cinematic_reference_sources/HonkaiImpactData_sparse",
+    "revision": "01d7afbaf99ff7d3d027e27fe9a4b363a2db7cc1",
+    "committedAt": "2021-04-10T19:17:18-03:00",
+    "commitSubject": "[zh-CN] v4.7.0_980657d4019",
+    "commitSignatureStatus": "unsigned",
+    "relativePath": "Global/ExcelOutputAsset/Decrypted/StageData_Main.json",
+    "gitBlobId": "590d7f11ede0ee8607d03114fe220060a3996ca0",
+    "sizeBytes": 30600482,
+    "sha256": "6AB32C175B399D89D035E9736D150760725DD4F85CC5BD9870C64093C51A7431",
+    "recomputedGitBlobSha1": "590d7f11ede0ee8607d03114fe220060a3996ca0",
+    "workingTreeState": "clean",
+    "repositoryCompleteness": "partial-clone-not-a-full-repository-audit",
+    "targetObjectClosure": "commit-tree-and-target-blob-locally-verified",
+    "licenseStatus": "unresolved-no-license-file",
+    "rawEncoding": {
+      "utf8Valid": true,
+      "bom": false,
+      "lfCount": 1208766,
+      "crlfCount": 1208766,
+      "trailingLf": false
+    }
+  },
+  "reproduction": {
+    "workingDirectory": "C:/tmp/cinematic_reference_sources/HonkaiImpactData_sparse",
+    "toolVersions": {
+      "node": "v24.14.0",
+      "git": "git version 2.54.0.windows.1"
+    },
+    "extractCommand": "& 'C:\\Users\\dharm\\AppData\\Local\\OpenAI\\Codex\\bin\\node.exe' -e \"const cp=require('child_process'),c=require('crypto');const revision='01d7afbaf99ff7d3d027e27fe9a4b363a2db7cc1',path='Global/ExcelOutputAsset/Decrypted/StageData_Main.json';const blobId=cp.execFileSync('git',['rev-parse',revision+':'+path],{encoding:'utf8'}).trim();const bytes=cp.execFileSync('git',['cat-file','blob',blobId],{maxBuffer:64*1024*1024});const root=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));const matches=root.map((row,index)=>({row,index})).filter(x=>typeof x.row.levelId==='number'&&x.row.levelId===10101);if(matches.length!==1)throw new Error('expected exactly one numeric levelId=10101; got '+matches.length);const canonicalize=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?'['+v.map(canonicalize).join(',')+']':'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonicalize(v[k])).join(',')+'}';const canonicalBytes=Buffer.from(canonicalize(matches[0].row),'utf8');const keySetBytes=Buffer.from(JSON.stringify(Object.keys(matches[0].row).sort()),'utf8');const blobGitSha1=c.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\\0')).update(bytes).digest('hex');const lf=(bytes.toString('binary').match(/\\n/g)||[]).length,crlf=(bytes.toString('binary').match(/\\r\\n/g)||[]).length;console.log(JSON.stringify({tool:{node:process.version,git:cp.execFileSync('git',['--version'],{encoding:'utf8'}).trim()},revision,path,blobId,blobSizeBytes:bytes.length,blobSha256:c.createHash('sha256').update(bytes).digest('hex').toUpperCase(),recomputedGitBlobSha1:blobGitSha1,rawEncoding:{utf8Valid:true,bom:bytes.subarray(0,3).equals(Buffer.from([239,187,191])),lfCount:lf,crlfCount:crlf,trailingLf:bytes.at(-1)===10},root:{kind:Array.isArray(root)?'array':typeof root,rowCount:root.length,duplicateLevelIdCount:root.length-new Set(root.map(x=>String(x.levelId))).size},target:{selector:'typeof row.levelId === number && row.levelId === 10101',matchCount:matches.length,zeroBasedIndex:matches[0].index,oneBasedOrdinal:matches[0].index+1,topLevelKeyCount:Object.keys(matches[0].row).length,canonicalization:'recursive object keys sorted by ECMAScript default UTF-16 code-unit order; arrays preserve source order; keys and primitives use JSON.stringify; compact UTF-8; no BOM; no whitespace; no trailing newline',canonicalSizeBytes:canonicalBytes.length,canonicalSha256:c.createHash('sha256').update(canonicalBytes).digest('hex').toUpperCase(),topLevelKeySetSizeBytes:keySetBytes.length,topLevelKeySetSha256:c.createHash('sha256').update(keySetBytes).digest('hex').toUpperCase()}},null,2));\"",
+    "selector": "typeof row.levelId === 'number' && row.levelId === 10101",
+    "sourceRowCount": 9642,
+    "duplicateLevelIdCount": 0,
+    "targetMatchCount": 1,
+    "targetZeroBasedIndex": 1,
+    "targetOneBasedOrdinal": 2,
+    "targetTopLevelFieldCount": 67,
+    "targetCanonicalProjection": {
+      "normalization": "recursive object keys sorted by ECMAScript default UTF-16 code-unit order; arrays preserve source order; keys and primitives use JSON.stringify; compact UTF-8; no BOM; no whitespace; no trailing newline",
+      "sizeBytes": 1665,
+      "sha256": "93EB25CA807D6A7F5230CD1CA52E66D68C9F956DB3EAB25D8013D338699C968F",
+      "payloadStored": false
+    },
+    "topLevelKeySetProjection": {
+      "normalization": "JSON.stringify of the 67 top-level key names sorted by ECMAScript default UTF-16 code-unit order; compact UTF-8; no BOM; no trailing newline",
+      "sizeBytes": 1037,
+      "sha256": "BF6BBA4B74BA32CFC80828BA569DC3FC96AE578406C43AC160B4B2AD6A226EEC",
+      "payloadStored": false
+    },
+    "fieldShapeProjection": {
+      "normalization": "JSON.stringify compact UTF-8 with fixed property order; 67 fieldStates sorted by ECMAScript default UTF-16 code-unit order; each row contains fieldPath and shapeState only; no BOM; no trailing newline",
+      "sizeBytes": 4240,
+      "sha256": "3AABD0417427B7DDD4D59A5C99F7B65B7C4710DC02839EA900825DF32A4627FD",
+      "shapeStateVocabulary": [
+        "null",
+        "array-empty",
+        "array-present",
+        "string-empty",
+        "string-present",
+        "object-present",
+        "boolean",
+        "number-zero",
+        "number-nonzero",
+        "other"
+      ],
+      "sourceValuesStored": false
+    },
+    "nestedObjectKeySets": [
+      {"fieldPath": "name", "keys": ["Hash"]},
+      {"fieldPath": "displayTitle", "keys": ["Hash"]},
+      {"fieldPath": "displayDetail", "keys": ["Hash"]},
+      {"fieldPath": "LockedText", "keys": ["Hash"]},
+      {"fieldPath": "UnlockedText", "keys": ["Hash"]}
+    ]
+  },
+  "crosswalkContract": {
+    "schemaVersion": 2,
+    "cellIdentity": "foreignSourceId + foreignSourceSnapshotId + foreignRowOrKey + semanticSlotId",
+    "foreignSourceId": "hi3-stagedata-main-2021-local-json-control",
+    "foreignSourceSnapshotId": "hi3-nairieberry-01d7afb-global-stagedata-main",
+    "foreignSourceOrdinal": 2,
+    "foreignRowOrKey": "levelId=10101",
+    "semanticSlotCount": 14,
+    "valueStateCounts": {
+      "present": 10,
+      "absent": 0,
+      "not-applicable": 0,
+      "unresolved": 4
+    },
+    "classificationCounts": {
+      "proven-static": 10,
+      "proven-runtime": 0,
+      "unknown": 4,
+      "rejected": 0
+    },
+    "cells": [
+      {
+        "semanticSlotId": "logicalStageId",
+        "valueState": "present",
+        "foreignFieldPaths": ["levelId", "chapterId", "actId", "sectionId", "difficulty", "type", "tag", "battleType"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains a logical stage identity and static hierarchy/type field family.",
+        "negativeBoundary": "Field presence does not prove the runtime admission key, routing semantics, or parity with DimensionBrawl identifiers.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "physicalSceneOrScript",
+        "valueState": "present",
+        "foreignFieldPaths": ["luaFile"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains one non-empty script-reference field.",
+        "negativeBoundary": "The script bytes and consumers were not inspected, so scene loading, wave execution, and cleanup ownership remain unproven.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "briefingAndCatalog",
+        "valueState": "present",
+        "foreignFieldPaths": ["name.Hash", "displayTitle.Hash", "displayDetail.Hash", "briefPicPath", "detailPicPath"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains hashed catalog text references and non-empty briefing/detail image-path fields.",
+        "negativeBoundary": "No localized text or image payload is copied, and field presence does not prove presentation runtime ownership.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "recommendedPowerOrLevel",
+        "valueState": "present",
+        "foreignFieldPaths": ["recommendPlayerLevel", "unlockPlayerLevel", "hardLevel", "hardLevelGroup"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains recommended, unlock, difficulty, and hard-level authoring fields.",
+        "negativeBoundary": "Numeric meanings, formulas, balancing policy, and runtime enforcement remain unverified.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "loadout",
+        "valueState": "unresolved",
+        "foreignFieldPaths": ["teamNum", "maxNumList", "isEnterWithElf", "restrictList"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "unknown",
+        "supportedStatement": "Formation-count and restriction-shaped fields exist, but no inspected path proves a direct avatar, weapon, equipment, or named loadout identity.",
+        "negativeBoundary": "Do not reinterpret formation constraints as loadout references or infer array contents; linked tables, scripts, and wider-game loadout ownership remain outside scope.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "restrictions",
+        "valueState": "present",
+        "foreignFieldPaths": ["restrictList", "teamNum", "maxNumList", "isEnterWithElf", "reviveTimes", "reviveCostType", "ReviveUseTypeList", "enterTimes", "enterTimesType", "MonsterAttrShow", "HardCoeff", "UseDynamicHardLv", "BalanceModeType"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row exposes static restriction, formation-capacity, revive, entry-count, loss-description, monster-attribute, and balance-mode field families.",
+        "negativeBoundary": "Some exact-row fields are zero or empty and numeric/list semantics are not decoded; runtime enforcement remains unproven.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "entryCost",
+        "valueState": "present",
+        "foreignFieldPaths": ["staminaCost", "costMaterialId", "costMaterialNum", "firstCostMaterialNum"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains stamina and material entry-cost authoring fields.",
+        "negativeBoundary": "Zero-valued material fields remain authored shape only; actual deduction, shortage handling, refund, reset-cost relation, and persistence ownership are unproven.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "recordOrTargetTime",
+        "valueState": "present",
+        "foreignFieldPaths": ["fastBonusTime", "sonicBonusTime", "RecordLevelType"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains two non-zero time fields and a record-level type field.",
+        "negativeBoundary": "Units, comparison direction, scoring, qualification, and result persistence remain unverified.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "prerequisite",
+        "valueState": "present",
+        "foreignFieldPaths": ["preLevelID", "unlockPlayerLevel", "unlockStarNum", "PreMissionList", "PreMissionLink", "PreMissionLinkParams", "PreMissionLinkParamStr", "LockedText.Hash"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains predecessor, unlock, mission-link, and locked/unlocked catalog field families.",
+        "negativeBoundary": "Several mission/link fields are empty or zero, and consumer semantics and unlock transaction ownership remain unverified.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "recommendedNext",
+        "valueState": "unresolved",
+        "foreignFieldPaths": ["UnlockedLink", "UnlockedLinkParams", "UnlockedLinkParamStr", "UnlockedText.Hash", "preLevelID"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "unknown",
+        "supportedStatement": "No direct next-stage identity field was identified, while generic unlock-link and predecessor-shaped fields remain structurally present.",
+        "negativeBoundary": "Do not reverse prerequisites into recommendations or interpret generic links as stage identities; consumer and wider-game navigation semantics remain unknown.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "storyEntry",
+        "valueState": "unresolved",
+        "foreignFieldPaths": ["StageEntryNameList", "luaFile", "displayDetail.Hash"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "unknown",
+        "supportedStatement": "Entry-name, script-reference, and display-detail fields are structurally present, but no inspected consumer proves a story-entry contract.",
+        "negativeBoundary": "Names and scripts are not decoded or executed; this row cannot establish narrative entry ownership or ordering.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "storyExit",
+        "valueState": "unresolved",
+        "foreignFieldPaths": ["luaFile", "loseDescList"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "unknown",
+        "supportedStatement": "No exit-specific field was identified, but script and loss-description paths leave story-exit semantics unresolved.",
+        "negativeBoundary": "Do not reinterpret loss copy as story exit or claim absence inside Lua, linked tables, cutscenes, or wider-game behavior.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "challengeReference",
+        "valueState": "present",
+        "foreignFieldPaths": ["challengeList"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains a non-empty challenge-reference list.",
+        "negativeBoundary": "Referenced challenge rows, condition-code meanings, evaluators, and mastery/progress consumers were not inspected.",
+        "sourceValueCopied": false
+      },
+      {
+        "semanticSlotId": "resultReference",
+        "valueState": "present",
+        "foreignFieldPaths": ["highlightDisplayDropIdList", "firstVRDropList", "dropList", "avatarExpReward", "scoinReward", "maxScoinReward", "loseDescList"],
+        "dimensionBrawlOwnerState": "unresolved",
+        "dimensionBrawlOwner": null,
+        "dimensionBrawlField": null,
+        "dimensionBrawlOwnerBoundary": "Historical foreign control does not assert a DimensionBrawl owner mapping.",
+        "classification": "proven-static",
+        "supportedStatement": "The exact row contains result-facing reward, drop, progress-cap, and loss-description field families.",
+        "negativeBoundary": "Static references do not prove result-screen, clear/fail, retry, reward grant, progress persistence, or exactly-once ownership.",
+        "sourceValueCopied": false
+      }
+    ]
+  },
+  "doesNotSupport": [
+    "a live or current Ark snapshot",
+    "admission of the HI3 source required by P1B-PGR-HI3-STAGE-SPINE-01",
+    "localized source text or media payload",
+    "field-value or opaque numeric-code semantics",
+    "Lua, encounter, challenge, result, retry, progress, reward, or persistence runtime ownership",
+    "DimensionBrawl feature parity or implementation priority changes",
+    "the five-row schema-2 live report or any of its required seventy accepted cells"
+  ],
+  "acceptanceEffect": {
+    "packetAcceptanceClosed": 0,
+    "liveSourceAdmissionChanged": false,
+    "productGateChanged": false,
+    "permittedUse": "historical row-shape and drift control only",
+    "requiredLiveFollowup": "Admit one exact Ark-selected StageData_Main raw file or explicitly bounded archive using its source record, producer manifest, byte size, SHA-256, retained extraction command, and one-snapshot identity; then reconcile target 10101 without unioning snapshots."
+  },
+  "rawSourcePayloadCopied": false
+}

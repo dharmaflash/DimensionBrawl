@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "reportId": "P1B-PGR-HI3-SUPPORTING-CITATION-RECOVERY-AUDIT-01",
+  "generatorId": "P1B-PGR-HI3-SUPPORTING-CITATION-RECOVERY-AUDIT-GENERATOR-01",
+  "observedAt": "2026-07-15T22:59:07+09:00",
+  "status": "historical-raw-candidate-reproducible-seven-supporting-paths-absent-two-present-unadmitted",
+  "purpose": "Correct the supporting-citation path inventory without rewriting the immutable five-row/seventy-cell raw candidate or admitting any foreign source into the active packet.",
+  "candidateBinding": {
+    "reportPath": "_Game/DesignDocs/P1B_PGR_HI3_STAGE_SPINE_RAW_CANDIDATE.json",
+    "reportId": "P1B-PGR-HI3-STAGE-SPINE-RAW-CANDIDATE-01",
+    "reportSizeBytes": 115910,
+    "reportSha256": "04ebf0a5be6db2535730088b3b7bcd7b6a50c48844292a43e1f9070418efed3d",
+    "canonicalPacketDigest": "f305cc6fdde04fa8b7a2e755b3995e62b297fa9bc08eac73550c00c3056d9b2d",
+    "generatorPath": "_Game/DesignDocs/P1B_PGR_HI3_STAGE_SPINE_RAW_CANDIDATE_GENERATOR.mjs",
+    "generatorSizeBytes": 29212,
+    "generatorSha256": "bb7f905d30ed38fe4121e62f44dfac009a55f7d3d74f60caf818f6644700883a",
+    "rawForeignSelectionState": "reproducible-four-pgr-plus-one-hi3-seventy-cells",
+    "packetAdmissionEffect": "none"
+  },
+  "controlIntegrityAudit": {
+    "pgrControlPath": "_Game/DesignDocs/P1B_PGR_2020_GUIDEFIGHT_CONTROL.json",
+    "pgrControlSizeBytes": 27682,
+    "pgrControlReportSha256": "652e18da6fb09321550529191cc677df27f977d9ec98472c63bcabdba4db45da",
+    "hi3ControlPath": "_Game/DesignDocs/P1B_HI3_2021_STAGEDATA_10101_CONTROL.json",
+    "hi3ControlSizeBytes": 19673,
+    "hi3ControlReportSha256": "46607e2bbf3fb9bdc62ce47b5ae06d46636238b5573813f95a6689e7f583747c",
+    "currentCandidateGeneratorGap": "The historical candidate generator validates selected control fields but does not pin either complete control-report artifact or every PGR loadout drift input. Its next revision must do both before promotion."
+  },
+  "supportingCitationSummary": {
+    "contractedSupportingSourceCount": 9,
+    "exactPathPresentCount": 2,
+    "absentAtRegisteredPathCount": 7,
+    "admittedSupportingSourceCount": 0,
+    "reproducibleRawCandidateSourceCount": 2,
+    "requiredAtomicCohortSourceCount": 11,
+    "blockingSupportingSourceIds": [
+      "pgr-readfirst-md",
+      "pgr-readfirst-summary-json",
+      "pgr-guidefight-label-csv",
+      "pgr-guidefight-links-csv",
+      "hi3-readfirst-md",
+      "hi3-readfirst-summary-json",
+      "hi3-readfirst-csv",
+      "hi3-stage-summary-csv",
+      "hi3-stage-samples-csv"
+    ],
+    "presentButUnadmittedSourceIds": [
+      "hi3-stage-summary-csv",
+      "hi3-stage-samples-csv"
+    ],
+    "absentSourceIds": [
+      "pgr-readfirst-md",
+      "pgr-readfirst-summary-json",
+      "pgr-guidefight-label-csv",
+      "pgr-guidefight-links-csv",
+      "hi3-readfirst-md",
+      "hi3-readfirst-summary-json",
+      "hi3-readfirst-csv"
+    ]
+  },
+  "supportingCitations": [
+    {
+      "sourceId": "pgr-readfirst-md",
+      "relativePath": "games/punishing-gray-raven/read-first/pgr-development-context-direct-readfirst-slices.md",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "pgr-readfirst-summary-json",
+      "relativePath": "games/punishing-gray-raven/read-first/pgr-development-context-direct-readfirst-slices-summary.json",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "pgr-guidefight-label-csv",
+      "relativePath": "games/punishing-gray-raven/enemies-stages/pgr-guidefight-stage-label-context.csv",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "pgr-guidefight-links-csv",
+      "relativePath": "games/punishing-gray-raven/enemies-stages/pgr-guidefight-stage-reading-links.csv",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "hi3-readfirst-md",
+      "relativePath": "games/honkai-impact-3rd/combat/hi3-combat-stage-direct-readfirst.md",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "hi3-readfirst-summary-json",
+      "relativePath": "games/honkai-impact-3rd/combat/hi3-combat-stage-direct-readfirst-summary.json",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "hi3-readfirst-csv",
+      "relativePath": "games/honkai-impact-3rd/combat/hi3-combat-stage-direct-readfirst.csv",
+      "pathState": "absent-at-registered-path",
+      "sizeBytes": null,
+      "sha256": null,
+      "boundedContentCheck": null,
+      "admissionState": "unadmitted-path-absent",
+      "remainingBlockers": [
+        "exact registered path absent",
+        "source record absent",
+        "producer manifest absent",
+        "bounded regeneration command absent",
+        "evidence grade and license disposition absent"
+      ]
+    },
+    {
+      "sourceId": "hi3-stage-summary-csv",
+      "relativePath": "games/honkai-impact-3rd/enemies-stages/hi3-stage-table-summary.csv",
+      "pathState": "present-exact-path-unadmitted",
+      "sizeBytes": 295098,
+      "sha256": "d8292d42ef71a5d63b1288820475c20061526abf6f894fbf2fd0e73aba96f5e7",
+      "boundedContentCheck": "nairieberry-global-stagedata-main-summary-row",
+      "admissionState": "unadmitted-provenance-incomplete",
+      "remainingBlockers": [
+        "registry source record path null",
+        "registry producer manifest path null",
+        "bounded regeneration command absent",
+        "upstream revision and license disposition unverified",
+        "computed size and SHA-256 not promoted into the atomic packet cohort"
+      ]
+    },
+    {
+      "sourceId": "hi3-stage-samples-csv",
+      "relativePath": "games/honkai-impact-3rd/enemies-stages/hi3-stage-row-samples.csv",
+      "pathState": "present-exact-path-unadmitted",
+      "sizeBytes": 4459588,
+      "sha256": "5067a78931a114658a4026889fcb9bff91c327fa7356bb5f75f8927123e95d92",
+      "boundedContentCheck": "nairieberry-global-stagedata-main-first-truncated-sample-row",
+      "admissionState": "unadmitted-provenance-incomplete",
+      "remainingBlockers": [
+        "registry source record path null",
+        "registry producer manifest path null",
+        "bounded regeneration command absent",
+        "upstream revision and license disposition unverified",
+        "the helper sample is truncated before levelId and cannot independently prove the 10101 target row",
+        "computed size and SHA-256 not promoted into the atomic packet cohort"
+      ]
+    }
+  ],
+  "currentDimensionBrawlComparisonBoundary": {
+    "historicalBriefingAndCatalogCellCount": 5,
+    "historicalLocalCutoffRef": "SNAP-P1B-CATALOG-SELECTION-CANDIDATE-05",
+    "currentAcceptedLocalCutoffRef": "SNAP-P1B-TRUTHFUL-JOINS-IMPLEMENTATION-04",
+    "regenerationRequired": true,
+    "reason": "The raw candidate foreign rows remain reproducible, but its DimensionBrawl briefing/catalog axis predates the accepted truthful-joins implementation and cannot be presented as a current-state local comparison.",
+    "effectOnForeignRowSelectionAndDrift": "none"
+  },
+  "nextBoundedOperations": [
+    "Preserve the immutable historical five-row/seventy-cell candidate and this correction separately.",
+    "Revise the candidate generator to pin both complete control reports, assert PGR control loadout inputs, record its exact runtime/command, and regenerate the local comparison axes from the accepted truthful-joins cutoff.",
+    "Recover or deterministically regenerate the seven absent supporting identities with exact source records, producer manifests, commands, evidence grades, and license dispositions.",
+    "Authenticate the two present HI3 helper CSVs against their producer provenance; their hashes and bounded row checks alone do not admit them.",
+    "Normalize both raw candidate records to the final validator-required snapshot, revision, command, and provenance fields.",
+    "Run the existing eleven-source atomic LiveAcceptance only after every supporting and raw record is complete; do not early-admit the two raw sources or the two present helpers."
+  ],
+  "acceptanceEffect": "none; active packet inScopeSourceIds, raw admissions, generated report path/hash, crosswalkRows, claim mappings, and all three live acceptance results remain unchanged and open.",
+  "negativeBoundary": "Exact path presence is not provenance, a helper report is not a raw authority, the combined HI3 helpers cannot identify one producer by themselves, and this audit does not copy payload values, promote a claim, choose a product requirement, or authorize implementation.",
+  "canonicalAuditDigest": "27398ca5a9d0dfae6f3fdd01fff9d42099d8cb546386dc8ddf6eaa243ee0c991"
+}
