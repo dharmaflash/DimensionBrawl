@@ -56,9 +56,114 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator DisablingDuringVisualNovelDetachesPriorSessionBeforeFreshGeneration()
+        {
+            using var fixture = new ControllerFixture(withChoiceResponsePortrait: false);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+
+            NarrativeSequenceSession priorSession = ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession");
+            long priorGeneration = ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration");
+
+            fixture.Root.SetActive(false);
+
+            NarrativeTutorialReviewReceipt disabledReceipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(disabledReceipt.Generation, Is.EqualTo(priorGeneration));
+            Assert.That(disabledReceipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.OwnerDisabled));
+            Assert.That(disabledReceipt.TutorialEntered, Is.False);
+            Assert.That(disabledReceipt.CleanupSucceeded, Is.True);
+            Assert.That(disabledReceipt.CanEnterReviewBriefing, Is.False);
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.Null);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+
+            long freshGeneration = ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration");
+            NarrativeSequenceSession freshSession = ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession");
+            Assert.That(freshGeneration, Is.GreaterThan(priorGeneration));
+            AssertPhase(fixture.Controller, "VisualNovel");
+
+            priorSession.Skip();
+
+            AssertPhase(fixture.Controller, "VisualNovel");
+            Assert.That(ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration"), Is.EqualTo(freshGeneration));
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.SameAs(freshSession));
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            Assert.That(ReadProperty<NarrativeTutorialReviewReceipt>(
+                fixture.Controller,
+                "LastReviewReceipt").IsValid, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator TutorialCannotBeginBeforeNarrativeSessionCompletes()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+
+            NarrativeSequenceSession session = ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession");
+            long generation = ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration");
+            Assert.That(session.IsCompleted, Is.False);
+
+            Invoke(fixture.Controller, "BeginTutorialCutscene");
+
+            AssertPhase(fixture.Controller, "VisualNovel");
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.SameAs(session));
+            Assert.That(ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration"), Is.EqualTo(generation));
+            Assert.That(ReadProperty<NarrativeTutorialReviewPhase>(
+                fixture.Controller,
+                "ReviewLifecyclePhase"), Is.EqualTo(
+                    NarrativeTutorialReviewPhase.VisualNovel));
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.False);
+            Assert.That(ReadProperty<NarrativeTutorialReviewReceipt>(
+                fixture.Controller,
+                "LastReviewReceipt").IsValid, Is.False);
+        }
+
+        [UnityTest]
         public IEnumerator ChoiceResponseClearsStalePortraitAndSkipFinalizesExactlyOnce()
         {
-            using var fixture = new ControllerFixture(withChoiceResponsePortrait: true);
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: true,
+                withCutscenePort: true);
 
             fixture.Root.SetActive(true);
             yield return null;
@@ -93,14 +198,31 @@ namespace DimensionBrawl.Tests
             Assert.That(fixture.SkipConfirmGroup.alpha, Is.EqualTo(1f));
             fixture.SkipConfirmButton.onClick.Invoke();
 
-            AssertPhase(fixture.Controller, "StageBriefing");
+            AssertPhase(fixture.Controller, "TutorialCutscene");
             Assert.That(session.IsCompleted, Is.True);
             Assert.That(
                 session.CompletionReason,
                 Is.EqualTo(NarrativeSequenceCompletionReason.Skipped));
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.Null);
+            Assert.That(ReadField<string>(
+                fixture.Controller,
+                "narrativeChoiceSummary"), Is.EqualTo(
+                    "review.olympus.prologue.choice.verify"));
+            Invoke(fixture.Controller, "SkipCutscene");
+
+            AssertPhase(fixture.Controller, "StageBriefing");
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Skipped));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.True);
 
             fixture.SkipConfirmButton.onClick.Invoke();
             Invoke(fixture.Controller, "SkipCutscene");
@@ -109,14 +231,22 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt afterDuplicateSignals =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(afterDuplicateSignals.Generation, Is.EqualTo(receipt.Generation));
+            Assert.That(afterDuplicateSignals.TerminalReason, Is.EqualTo(receipt.TerminalReason));
+            Assert.That(afterDuplicateSignals.CanEnterReviewBriefing, Is.True);
         }
 
         [UnityTest]
-        public IEnumerator PortOnlyDirectorStopNaturallyFinalizesToBriefingOnce()
+        public IEnumerator UnscaledDirectorEndBoundaryFinalizesWhileGameTimeIsPaused()
         {
             using var fixture = new ControllerFixture(
                 withChoiceResponsePortrait: false,
-                withCutscenePort: true);
+                withCutscenePort: true,
+                cutsceneUpdateMode: DirectorUpdateMode.UnscaledGameTime);
 
             fixture.Root.SetActive(true);
             yield return null;
@@ -134,10 +264,21 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadField<PlayableDirector>(
                 fixture.Controller,
                 "cutsceneDirector"), Is.SameAs(fixture.CutsceneDirector));
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.Null);
             Assert.That(fixture.CutsceneDirector.state, Is.EqualTo(PlayState.Playing));
 
-            fixture.CutsceneDirector.Stop();
-            yield return null;
+            float previousTimeScale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 0f;
+                yield return WaitForDirectorToStop(fixture.CutsceneDirector);
+            }
+            finally
+            {
+                Time.timeScale = previousTimeScale;
+            }
 
             AssertPhase(fixture.Controller, "StageBriefing");
             Assert.That(ReadProperty<int>(
@@ -151,10 +292,165 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Completed));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.True);
         }
 
         [UnityTest]
-        public IEnumerator DisablingDuringCutsceneStopsDirectorAndFinalizesOnce()
+        public IEnumerator GameTimeDirectorEndBoundaryFinalizesAtNonDefaultTimeScale()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            Assert.That(fixture.CutsceneDirector.timeUpdateMode,
+                Is.EqualTo(DirectorUpdateMode.GameTime));
+            float previousTimeScale = Time.timeScale;
+            try
+            {
+                Time.timeScale = 0.5f;
+                yield return WaitForDirectorToStop(fixture.CutsceneDirector);
+            }
+            finally
+            {
+                Time.timeScale = previousTimeScale;
+            }
+
+            AssertPhase(fixture.Controller, "StageBriefing");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Completed));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator StoppingCutsceneBeforeEndFailsClosedWithoutBriefingReadiness()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(fixture.CutsceneDirector.time,
+                Is.LessThan(fixture.CutsceneDirector.duration));
+            fixture.CutsceneDirector.Stop();
+            yield return null;
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Cancelled));
+            Assert.That(receipt.TutorialEntered, Is.True);
+            Assert.That(receipt.CleanupSucceeded, Is.True);
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator RuntimeReconfigurationDuringTutorialCannotDropOwnedDirectorGraph()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.True);
+            TargetInvocationException exception = Assert.Throws<TargetInvocationException>(
+                () => Invoke(
+                    fixture.Controller,
+                    "ConfigureCore",
+                    fixture.Profile,
+                    null,
+                    null,
+                    null,
+                    null));
+            Assert.That(exception.InnerException, Is.TypeOf<InvalidOperationException>());
+            Assert.That(ReadField<PlayableDirector>(
+                fixture.Controller,
+                "cutsceneDirector"), Is.SameAs(fixture.CutsceneDirector));
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.True);
+
+            fixture.CutsceneDirector.Stop();
+            yield return null;
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Cancelled));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator SkippingPausedCutsceneAppliesEndStateAndReleasesGraph()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+            fixture.CutsceneDirector.Pause();
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.True);
+            Assert.That(fixture.CutsceneEndStateObserved, Is.False);
+            Invoke(fixture.Controller, "SkipCutscene");
+
+            AssertPhase(fixture.Controller, "StageBriefing");
+            Assert.That(fixture.CutsceneEndStateObserved, Is.True);
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.False);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Skipped));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator DisablingDuringCutsceneStopsDirectorWithoutBriefingReadiness()
         {
             using var fixture = new ControllerFixture(
                 withChoiceResponsePortrait: false,
@@ -171,27 +467,208 @@ namespace DimensionBrawl.Tests
             fixture.Root.SetActive(false);
 
             Assert.That(fixture.CutsceneDirector.state, Is.Not.EqualTo(PlayState.Playing));
-            AssertPhase(fixture.Controller, "StageBriefing");
+            AssertPhase(fixture.Controller, "TutorialCutscene");
             Assert.That(ReadProperty<NarrativeSequenceSession>(
                 fixture.Controller,
                 "NarrativeSession"), Is.Null);
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
-                "CompletionDispatchCount"), Is.EqualTo(1));
+                "CompletionDispatchCount"), Is.Zero);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.OwnerDisabled));
+            Assert.That(receipt.CleanupSucceeded, Is.True);
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
 
             fixture.CutsceneDirector.Stop();
             Invoke(fixture.Controller, "SkipCutscene");
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            NarrativeTutorialReviewReceipt afterStaleSignals =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(afterStaleSignals.Generation, Is.EqualTo(receipt.Generation));
+            Assert.That(afterStaleSignals.TerminalReason, Is.EqualTo(receipt.TerminalReason));
+        }
+
+        [UnityTest]
+        public IEnumerator DisablingPausedCutsceneReleasesGraphWithoutBriefingReadiness()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+            fixture.CutsceneDirector.Pause();
+
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.True);
+            fixture.Root.SetActive(false);
+
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.False);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.OwnerDisabled));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator ResettingPausedCutsceneReleasesGraphAndClearsPriorReceipt()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+            fixture.CutsceneDirector.Pause();
+
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.True);
+            Invoke(fixture.Controller, "BeginChapterEntry");
+
+            AssertPhase(fixture.Controller, "ChapterEntry");
+            Assert.That(fixture.CutsceneDirector.playableGraph.IsValid(), Is.False);
+            Assert.That(ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration"), Is.Zero);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            Assert.That(ReadProperty<NarrativeTutorialReviewReceipt>(
+                fixture.Controller,
+                "LastReviewReceipt").IsValid, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator PriorGenerationCutsceneStopCannotFinalizeFreshTutorial()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            long priorGeneration = ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration");
+            Invoke(fixture.Controller, "SkipCutscene");
+            AssertPhase(fixture.Controller, "StageBriefing");
+
+            Invoke(fixture.Controller, "BeginChapterEntry");
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            long freshGeneration = ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration");
+            Assert.That(freshGeneration, Is.GreaterThan(priorGeneration));
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(fixture.CutsceneDirector.state, Is.EqualTo(PlayState.Playing));
+
+            Invoke(
+                fixture.Controller,
+                "HandleCutsceneStopped",
+                fixture.CutsceneDirector,
+                priorGeneration);
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<long>(
+                fixture.Controller,
+                "ActiveReviewGeneration"), Is.EqualTo(freshGeneration));
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            Assert.That(ReadProperty<NarrativeTutorialReviewReceipt>(
+                fixture.Controller,
+                "LastReviewReceipt").IsValid, Is.False);
+            Assert.That(fixture.CutsceneDirector.state, Is.EqualTo(PlayState.Playing));
+
+            yield return WaitForDirectorToStop(fixture.CutsceneDirector);
 
             AssertPhase(fixture.Controller, "StageBriefing");
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.EqualTo(1));
+            NarrativeTutorialReviewReceipt freshReceipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(freshReceipt.Generation, Is.EqualTo(freshGeneration));
+            Assert.That(freshReceipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Completed));
+            Assert.That(freshReceipt.CanEnterReviewBriefing, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator MissingCutsceneBoundaryFailsClosedWithoutBriefing()
+        {
+            using var fixture = new ControllerFixture(withChoiceResponsePortrait: false);
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
+            Assert.That(ReadProperty<bool>(
+                fixture.Controller,
+                "CanEnterReviewBriefing"), Is.False);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.BindingUnavailable));
+            Assert.That(receipt.TutorialEntered, Is.True);
+            Assert.That(receipt.CleanupSucceeded, Is.True);
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+
+            Invoke(fixture.Controller, "SkipCutscene");
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "CompletionDispatchCount"), Is.Zero);
         }
 
         private static void AssertPhase(Component controller, string expectedPhase)
         {
             object phase = ReadProperty(controller, "CurrentPhase");
             Assert.That(phase.ToString(), Is.EqualTo(expectedPhase));
+        }
+
+        private static IEnumerator WaitForDirectorToStop(PlayableDirector director)
+        {
+            float deadline = Time.realtimeSinceStartup + 1f;
+            while (director.state == PlayState.Playing
+                && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            Assert.That(director.state, Is.Not.EqualTo(PlayState.Playing));
         }
 
         private static Type RequireControllerType()
@@ -251,8 +728,10 @@ namespace DimensionBrawl.Tests
         {
             public ControllerFixture(
                 bool withChoiceResponsePortrait,
-                bool withCutscenePort = false)
+                bool withCutscenePort = false,
+                DirectorUpdateMode cutsceneUpdateMode = DirectorUpdateMode.GameTime)
             {
+                initialTimeScale = Time.timeScale;
                 MarkerTexture = new Texture2D(2, 2)
                 {
                     name = "NarrativeReviewPortraitMarkerTexture"
@@ -275,6 +754,8 @@ namespace DimensionBrawl.Tests
                     cutsceneOwner.transform.SetParent(Root.transform, false);
                     CutsceneDirector = cutsceneOwner.AddComponent<PlayableDirector>();
                     CutsceneDirector.playOnAwake = false;
+                    CutsceneDirector.extrapolationMode = DirectorWrapMode.None;
+                    CutsceneDirector.timeUpdateMode = cutsceneUpdateMode;
                     CutsceneAsset = ScriptableObject.CreateInstance<ReviewPlayableAsset>();
                     CutsceneAsset.name = "NarrativeReviewTestPlayable";
                     CutsceneDirector.playableAsset = CutsceneAsset;
@@ -349,9 +830,14 @@ namespace DimensionBrawl.Tests
             public Button SecondChoiceButton { get; }
             public Button SkipConfirmButton { get; }
             public Button SkipCancelButton { get; }
+            public bool CutsceneEndStateObserved =>
+                CutsceneAsset is ReviewPlayableAsset asset && asset.EndStateObserved;
+
+            private readonly float initialTimeScale;
 
             public void Dispose()
             {
+                Time.timeScale = initialTimeScale;
                 UnityEngine.Object.DestroyImmediate(Root);
                 UnityEngine.Object.DestroyImmediate(Profile);
                 UnityEngine.Object.DestroyImmediate(CutsceneAsset);
@@ -495,11 +981,44 @@ namespace DimensionBrawl.Tests
 
         private sealed class ReviewPlayableAsset : PlayableAsset
         {
-            public override double duration => 5d;
+            public override double duration => 0.15d;
+            public bool EndStateObserved { get; private set; }
 
             public override Playable CreatePlayable(PlayableGraph graph, GameObject owner)
             {
-                return Playable.Create(graph);
+                EndStateObserved = false;
+                ScriptPlayable<ReviewEndStateProbeBehaviour> playable =
+                    ScriptPlayable<ReviewEndStateProbeBehaviour>.Create(graph);
+                playable.SetDuration(duration);
+                playable.GetBehaviour().Configure(this);
+                return playable;
+            }
+
+            public void ObserveTime(double observedTime)
+            {
+                if (observedTime >= duration - 0.001d)
+                {
+                    EndStateObserved = true;
+                }
+            }
+        }
+
+        private sealed class ReviewEndStateProbeBehaviour : PlayableBehaviour
+        {
+            private ReviewPlayableAsset owner;
+
+            public ReviewEndStateProbeBehaviour()
+            {
+            }
+
+            public void Configure(ReviewPlayableAsset newOwner)
+            {
+                owner = newOwner;
+            }
+
+            public override void PrepareFrame(Playable playable, FrameData info)
+            {
+                owner?.ObserveTime(playable.GetTime());
             }
         }
     }

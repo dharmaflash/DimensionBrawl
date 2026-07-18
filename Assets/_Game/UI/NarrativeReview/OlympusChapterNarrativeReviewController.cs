@@ -118,6 +118,13 @@ namespace DimensionBrawl.UI.NarrativeReview
         private int completionDispatchCount;
         private float nextNarrativeInputAllowedAt;
         private string currentVisibleLineText = string.Empty;
+        private string narrativeChoiceSummary = "none";
+        private readonly NarrativeTutorialReviewLifecycleSession reviewLifecycle =
+            new NarrativeTutorialReviewLifecycleSession();
+        private long activeReviewGeneration;
+        private NarrativeTutorialReviewReceipt lastReviewReceipt;
+        private PlayableDirector subscribedCutsceneDirector;
+        private Action<PlayableDirector> cutsceneStoppedHandler;
 
         public NarrativeReviewPhase CurrentPhase { get; private set; }
         public NarrativeSequenceSession NarrativeSession => narrativeSession;
@@ -125,6 +132,10 @@ namespace DimensionBrawl.UI.NarrativeReview
         public int CompletionDispatchCount => completionDispatchCount;
         public bool AutoAdvanceEnabled => autoAdvanceEnabled;
         public bool HasValidCutsceneBoundary => TryResolveCutsceneBoundary(out _);
+        public NarrativeTutorialReviewPhase ReviewLifecyclePhase => reviewLifecycle.Phase;
+        public NarrativeTutorialReviewReceipt LastReviewReceipt => lastReviewReceipt;
+        public long ActiveReviewGeneration => activeReviewGeneration;
+        public bool CanEnterReviewBriefing => lastReviewReceipt.CanEnterReviewBriefing;
 
         public void ConfigureCore(
             NarrativeSequenceProfile newNarrativeProfile,
@@ -133,6 +144,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             StageCutscenePort newCutscenePort,
             AudioSource newVoiceAudioSource)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -154,6 +166,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             CanvasGroup newStageBriefingGroup,
             CanvasGroup newCompleteGroup)
         {
+            EnsureRuntimeConfigurationCanMutate();
             chapterEntryGroup = newChapterEntryGroup;
             visualNovelGroup = newVisualNovelGroup;
             cutsceneControlsGroup = newCutsceneControlsGroup;
@@ -169,6 +182,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             TMP_Text status,
             Button enterButton)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -206,6 +220,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             Button choiceBButton,
             TMP_Text choiceBText)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -240,6 +255,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             TMP_Text progress,
             Button skipButton)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -265,6 +281,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             TMP_Text status,
             Button completeButton)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -290,6 +307,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             TMP_Text summary,
             Button newRestartButton)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -310,6 +328,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             Button newSkipConfirmButton,
             Button newSkipCancelButton)
         {
+            EnsureRuntimeConfigurationCanMutate();
             bool rebind = interactionsBound;
             if (rebind)
             {
@@ -360,12 +379,6 @@ namespace DimensionBrawl.UI.NarrativeReview
             AddButtonListener(skipConfirmButton, ConfirmNarrativeSkip);
             AddButtonListener(skipCancelButton, HideSkipConfirmation);
 
-            if (cutsceneDirector != null)
-            {
-                cutsceneDirector.stopped -= HandleCutsceneStopped;
-                cutsceneDirector.stopped += HandleCutsceneStopped;
-            }
-
             interactionsBound = true;
         }
 
@@ -377,8 +390,24 @@ namespace DimensionBrawl.UI.NarrativeReview
         private void Update()
         {
             if (CurrentPhase != NarrativeReviewPhase.TutorialCutscene
-                || cutsceneProgressText == null
                 || cutsceneDirector == null)
+            {
+                return;
+            }
+
+            if (!cutsceneCompletionIssued
+                && cutsceneDirector.state == PlayState.Playing
+                && IsEnteringMandatoryCutsceneEndFrame(cutsceneDirector))
+            {
+                FinalizeTutorialCutscene(
+                    activeReviewGeneration,
+                    NarrativeTutorialReviewTerminalReason.Completed,
+                    applyMandatoryFinalState: true,
+                    stopPlayback: true);
+                return;
+            }
+
+            if (cutsceneProgressText == null)
             {
                 return;
             }
@@ -395,22 +424,28 @@ namespace DimensionBrawl.UI.NarrativeReview
                 return;
             }
 
-            if (CurrentPhase == NarrativeReviewPhase.TutorialCutscene
-                && !cutsceneCompletionIssued)
-            {
-                if (cutsceneDirector != null)
-                {
-                    cutsceneDirector.stopped -= HandleCutsceneStopped;
-                    cutsceneDirector.Stop();
-                }
+            long generation = activeReviewGeneration;
+            NarrativeTutorialReviewSignalResult terminalRequest =
+                RequestReviewTerminal(
+                    generation,
+                    NarrativeTutorialReviewTerminalReason.OwnerDisabled);
 
-                CompleteTutorialCutscene();
+            UnsubscribeCutsceneStopped();
+            if (CurrentPhase == NarrativeReviewPhase.TutorialCutscene
+                && cutsceneDirector != null
+                && cutsceneDirector.playableGraph.IsValid())
+            {
+                cutsceneDirector.Stop();
             }
 
             UnbindInteractions();
             ReleaseNarrativeSession();
             StopNarrativeRoutines();
             StopVoice();
+            if (terminalRequest == NarrativeTutorialReviewSignalResult.Accepted)
+            {
+                SealReviewRelease(generation, cleanupSucceeded: true);
+            }
         }
 
         private void UnbindInteractions()
@@ -433,11 +468,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             RemoveButtonListener(logCloseButton, HideLog);
             RemoveButtonListener(skipConfirmButton, ConfirmNarrativeSkip);
             RemoveButtonListener(skipCancelButton, HideSkipConfirmation);
-
-            if (cutsceneDirector != null)
-            {
-                cutsceneDirector.stopped -= HandleCutsceneStopped;
-            }
+            UnsubscribeCutsceneStopped();
 
             interactionsBound = false;
         }
@@ -450,8 +481,21 @@ namespace DimensionBrawl.UI.NarrativeReview
             }
         }
 
+        private void EnsureRuntimeConfigurationCanMutate()
+        {
+            if (Application.isPlaying
+                && isActiveAndEnabled
+                && (CurrentPhase == NarrativeReviewPhase.VisualNovel
+                    || CurrentPhase == NarrativeReviewPhase.TutorialCutscene))
+            {
+                throw new InvalidOperationException(
+                    "Runtime configuration cannot change during an active narrative or tutorial review.");
+            }
+        }
+
         public void BeginChapterEntry()
         {
+            CancelActiveReviewForReset();
             ReleaseNarrativeSession();
             StopNarrativeRoutines();
             StopVoice();
@@ -459,9 +503,12 @@ namespace DimensionBrawl.UI.NarrativeReview
             presentingChoiceResponse = false;
             nextNarrativeInputAllowedAt = 0f;
             currentVisibleLineText = string.Empty;
+            narrativeChoiceSummary = "none";
             UpdateAutoButtonLabel();
             cutsceneCompletionIssued = false;
             completionDispatchCount = 0;
+            activeReviewGeneration = 0;
+            lastReviewReceipt = default;
             ResolveStageProjection();
             CurrentPhase = NarrativeReviewPhase.ChapterEntry;
             ShowOnly(chapterEntryGroup);
@@ -485,6 +532,8 @@ namespace DimensionBrawl.UI.NarrativeReview
             }
 
             ReleaseNarrativeSession();
+            activeReviewGeneration = reviewLifecycle.Begin();
+            lastReviewReceipt = default;
             narrativeSession = new NarrativeSequenceSession(narrativeProfile);
             narrativeSession.Completed += HandleNarrativeCompleted;
             CurrentPhase = NarrativeReviewPhase.VisualNovel;
@@ -904,13 +953,23 @@ namespace DimensionBrawl.UI.NarrativeReview
             BeginTutorialCutscene();
         }
 
-        public void BeginTutorialCutscene()
+        private void BeginTutorialCutscene()
         {
-            if (CurrentPhase != NarrativeReviewPhase.VisualNovel)
+            if (CurrentPhase != NarrativeReviewPhase.VisualNovel
+                || narrativeSession == null
+                || !narrativeSession.IsCompleted)
             {
                 return;
             }
 
+            long generation = activeReviewGeneration;
+            if (!reviewLifecycle.TryBeginTutorial(generation))
+            {
+                return;
+            }
+
+            CaptureNarrativeChoiceSummary();
+            ReleaseNarrativeSession();
             StopNarrativeRoutines();
             StopVoice();
             HideUtilityPanels();
@@ -923,12 +982,19 @@ namespace DimensionBrawl.UI.NarrativeReview
             if (!TryResolveCutsceneBoundary(out PlayableDirector resolvedDirector)
                 || resolvedDirector.playableAsset == null)
             {
-                SetText(cutsceneProgressText, "CUTSCENE BOUNDARY UNAVAILABLE / FAIL-SAFE");
-                CompleteTutorialCutscene();
+                SetText(
+                    cutsceneProgressText,
+                    "CUTSCENE BOUNDARY UNAVAILABLE / REVIEW BRIEFING BLOCKED");
+                FinalizeTutorialCutscene(
+                    generation,
+                    NarrativeTutorialReviewTerminalReason.BindingUnavailable,
+                    applyMandatoryFinalState: false,
+                    stopPlayback: false);
                 return;
             }
 
             BindResolvedCutsceneDirector(resolvedDirector);
+            SubscribeCutsceneStopped(resolvedDirector, generation);
             cutsceneDirector.time = 0d;
             cutsceneDirector.Evaluate();
             cutsceneDirector.Play();
@@ -941,33 +1007,110 @@ namespace DimensionBrawl.UI.NarrativeReview
                 return;
             }
 
-            if (cutsceneDirector != null)
-            {
-                cutsceneDirector.time = Math.Max(0d, cutsceneDirector.duration);
-                cutsceneDirector.Evaluate();
-                cutsceneDirector.Stop();
-            }
-
-            CompleteTutorialCutscene();
+            FinalizeTutorialCutscene(
+                activeReviewGeneration,
+                NarrativeTutorialReviewTerminalReason.Skipped,
+                applyMandatoryFinalState: true,
+                stopPlayback: true);
         }
 
-        private void HandleCutsceneStopped(PlayableDirector stoppedDirector)
+        private void HandleCutsceneStopped(PlayableDirector stoppedDirector, long callbackGeneration)
         {
             if (stoppedDirector == cutsceneDirector
                 && CurrentPhase == NarrativeReviewPhase.TutorialCutscene)
             {
-                CompleteTutorialCutscene();
+                FinalizeTutorialCutscene(
+                    callbackGeneration,
+                    HasReachedMandatoryCutsceneEnd(stoppedDirector)
+                        ? NarrativeTutorialReviewTerminalReason.Completed
+                        : NarrativeTutorialReviewTerminalReason.Cancelled,
+                    applyMandatoryFinalState: false,
+                    stopPlayback: false);
             }
         }
 
-        private void CompleteTutorialCutscene()
+        private static bool HasReachedMandatoryCutsceneEnd(PlayableDirector director)
         {
-            if (cutsceneCompletionIssued)
+            if (director == null)
+            {
+                return false;
+            }
+
+            double duration = director.duration;
+            if (double.IsNaN(duration) || double.IsInfinity(duration) || duration <= 0d)
+            {
+                return false;
+            }
+
+            double tolerance = Math.Max(0.001d, duration * 0.0001d);
+            return director.time >= duration - tolerance;
+        }
+
+        private static bool IsEnteringMandatoryCutsceneEndFrame(PlayableDirector director)
+        {
+            if (director == null || director.time <= 0d)
+            {
+                return false;
+            }
+
+            double duration = director.duration;
+            if (double.IsNaN(duration) || double.IsInfinity(duration) || duration <= 0d)
+            {
+                return false;
+            }
+
+            double clockDelta = director.timeUpdateMode == DirectorUpdateMode.GameTime
+                ? Time.deltaTime
+                : director.timeUpdateMode == DirectorUpdateMode.UnscaledGameTime
+                    ? Time.unscaledDeltaTime
+                    : 0d;
+            double frameAdvance = Math.Max(0.001d, clockDelta * 1.5d);
+            return director.time + frameAdvance >= duration;
+        }
+
+        private void FinalizeTutorialCutscene(
+            long generation,
+            NarrativeTutorialReviewTerminalReason terminalReason,
+            bool applyMandatoryFinalState,
+            bool stopPlayback)
+        {
+            NarrativeTutorialReviewSignalResult terminalRequest =
+                RequestReviewTerminal(generation, terminalReason);
+            if (terminalRequest != NarrativeTutorialReviewSignalResult.Accepted)
             {
                 return;
             }
 
             cutsceneCompletionIssued = true;
+            if (terminalReason == NarrativeTutorialReviewTerminalReason.Cancelled)
+            {
+                SetText(
+                    cutsceneProgressText,
+                    "CUTSCENE STOPPED EARLY / REVIEW BRIEFING BLOCKED");
+            }
+
+            UnsubscribeCutsceneStopped();
+            if (cutsceneDirector != null)
+            {
+                if (applyMandatoryFinalState)
+                {
+                    cutsceneDirector.time = Math.Max(0d, cutsceneDirector.duration);
+                    cutsceneDirector.Evaluate();
+                }
+
+                if (stopPlayback && cutsceneDirector.playableGraph.IsValid())
+                {
+                    cutsceneDirector.Stop();
+                }
+            }
+
+            StopVoice();
+            if (!SealReviewRelease(generation, cleanupSucceeded: true)
+                || !lastReviewReceipt.CanEnterReviewBriefing)
+            {
+                return;
+            }
+
             completionDispatchCount++;
             BeginStageBriefing();
         }
@@ -996,33 +1139,90 @@ namespace DimensionBrawl.UI.NarrativeReview
 
         private void BindResolvedCutsceneDirector(PlayableDirector resolvedDirector)
         {
-            if (cutsceneDirector == resolvedDirector)
-            {
-                if (interactionsBound && cutsceneDirector != null)
-                {
-                    cutsceneDirector.stopped -= HandleCutsceneStopped;
-                    cutsceneDirector.stopped += HandleCutsceneStopped;
-                }
+            cutsceneDirector = resolvedDirector;
+        }
 
+        private void SubscribeCutsceneStopped(PlayableDirector director, long generation)
+        {
+            UnsubscribeCutsceneStopped();
+            if (director == null || generation <= 0)
+            {
                 return;
             }
 
-            if (interactionsBound && cutsceneDirector != null)
+            subscribedCutsceneDirector = director;
+            cutsceneStoppedHandler = stoppedDirector =>
+                HandleCutsceneStopped(stoppedDirector, generation);
+            subscribedCutsceneDirector.stopped += cutsceneStoppedHandler;
+        }
+
+        private void UnsubscribeCutsceneStopped()
+        {
+            if (subscribedCutsceneDirector != null && cutsceneStoppedHandler != null)
             {
-                cutsceneDirector.stopped -= HandleCutsceneStopped;
+                subscribedCutsceneDirector.stopped -= cutsceneStoppedHandler;
             }
 
-            cutsceneDirector = resolvedDirector;
-            if (interactionsBound && cutsceneDirector != null)
+            subscribedCutsceneDirector = null;
+            cutsceneStoppedHandler = null;
+        }
+
+        private NarrativeTutorialReviewSignalResult RequestReviewTerminal(
+            long generation,
+            NarrativeTutorialReviewTerminalReason terminalReason)
+        {
+            if (generation <= 0)
             {
-                cutsceneDirector.stopped -= HandleCutsceneStopped;
-                cutsceneDirector.stopped += HandleCutsceneStopped;
+                return NarrativeTutorialReviewSignalResult.StaleGeneration;
             }
+
+            return reviewLifecycle.TryRequestTerminal(generation, terminalReason);
+        }
+
+        private bool SealReviewRelease(long generation, bool cleanupSucceeded)
+        {
+            NarrativeTutorialReviewSignalResult sealResult =
+                reviewLifecycle.TrySealRelease(
+                    generation,
+                    cleanupSucceeded,
+                    out NarrativeTutorialReviewReceipt receipt);
+            if (sealResult != NarrativeTutorialReviewSignalResult.Accepted)
+            {
+                return false;
+            }
+
+            lastReviewReceipt = receipt;
+            return true;
+        }
+
+        private void CancelActiveReviewForReset()
+        {
+            long generation = activeReviewGeneration;
+            NarrativeTutorialReviewSignalResult terminalRequest =
+                RequestReviewTerminal(
+                    generation,
+                    NarrativeTutorialReviewTerminalReason.Cancelled);
+            if (terminalRequest != NarrativeTutorialReviewSignalResult.Accepted)
+            {
+                return;
+            }
+
+            UnsubscribeCutsceneStopped();
+            if (cutsceneDirector != null && cutsceneDirector.playableGraph.IsValid())
+            {
+                cutsceneDirector.Stop();
+            }
+
+            ReleaseNarrativeSession();
+            StopNarrativeRoutines();
+            StopVoice();
+            SealReviewRelease(generation, cleanupSucceeded: true);
         }
 
         public void BeginStageBriefing()
         {
-            if (CurrentPhase != NarrativeReviewPhase.TutorialCutscene)
+            if (CurrentPhase != NarrativeReviewPhase.TutorialCutscene
+                || !lastReviewReceipt.CanEnterReviewBriefing)
             {
                 return;
             }
@@ -1062,7 +1262,9 @@ namespace DimensionBrawl.UI.NarrativeReview
 
             SetText(briefingRewardText, hasReward ? stageProjection.RewardPreview : string.Empty);
             SetText(briefingDigestText, $"BRIEFING DIGEST  {ShortDigest(stageProjection.CanonicalBriefingDigest)}");
-            SetText(briefingStatusText, "CANONICAL DATA / REWARD HIDDEN WHEN UNVERIFIED");
+            SetText(
+                briefingStatusText,
+                "REVIEW BRIEFING READY / NO STAGERUN MUTATION");
             SetButtonInteractable(briefingCompleteButton, true);
         }
 
@@ -1076,14 +1278,13 @@ namespace DimensionBrawl.UI.NarrativeReview
             CurrentPhase = NarrativeReviewPhase.Complete;
             ShowOnly(completeGroup);
             SetText(completeTitleText, "REVIEW FLOW COMPLETE");
-            string choices = narrativeSession != null && narrativeSession.SelectedChoiceIds.Count > 0
-                ? string.Join(", ", narrativeSession.SelectedChoiceIds)
-                : "none";
             SetText(
                 completeSummaryText,
                 "ChapterEntry → VisualNovel → TutorialCutscene → StageBriefing\n"
-                + $"choice: {choices}\n"
-                + $"cutscene finalizer dispatch: {completionDispatchCount}\n"
+                + $"choice: {narrativeChoiceSummary}\n"
+                + $"review generation: {lastReviewReceipt.Generation}\n"
+                + $"terminal: {lastReviewReceipt.TerminalReason}\n"
+                + $"review briefing dispatch: {completionDispatchCount}\n"
                 + "StageRun mutation: none");
         }
 
@@ -1104,6 +1305,14 @@ namespace DimensionBrawl.UI.NarrativeReview
         private bool IsNarrativeProfileValid()
         {
             return narrativeProfile != null && narrativeProfile.TryValidate(out _);
+        }
+
+        private void CaptureNarrativeChoiceSummary()
+        {
+            narrativeChoiceSummary = narrativeSession != null
+                && narrativeSession.SelectedChoiceIds.Count > 0
+                    ? string.Join(", ", narrativeSession.SelectedChoiceIds)
+                    : "none";
         }
 
         private void ReleaseNarrativeSession()

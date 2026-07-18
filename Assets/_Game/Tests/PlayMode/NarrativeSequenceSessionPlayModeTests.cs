@@ -248,6 +248,134 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [Test]
+        public void ReviewLifecycleAllowsBriefingOnlyAfterTutorialCleanupSeals()
+        {
+            var session = new NarrativeTutorialReviewLifecycleSession();
+            int releaseCount = 0;
+            session.Released += _ => releaseCount++;
+
+            long generation = session.Begin();
+            Assert.That(session.TryBeginTutorial(generation), Is.True);
+            Assert.That(
+                session.TryRequestTerminal(
+                    generation,
+                    NarrativeTutorialReviewTerminalReason.Completed),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            Assert.That(session.Phase, Is.EqualTo(NarrativeTutorialReviewPhase.Terminating));
+            Assert.That(session.IsCurrentLiveGeneration(generation), Is.False);
+            Assert.That(session.HasReceipt, Is.False);
+            Assert.That(releaseCount, Is.Zero);
+
+            Assert.That(
+                session.TrySealRelease(generation, true, out var receipt),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            Assert.That(receipt.CanEnterReviewBriefing, Is.True);
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(NarrativeTutorialReviewTerminalReason.Completed));
+            Assert.That(releaseCount, Is.EqualTo(1));
+
+            Assert.That(
+                session.TryRequestTerminal(
+                    generation,
+                    NarrativeTutorialReviewTerminalReason.Skipped),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.AlreadyAccepted));
+            Assert.That(
+                session.TrySealRelease(generation, true, out var duplicateReceipt),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.AlreadyAccepted));
+            Assert.That(duplicateReceipt.Generation, Is.EqualTo(receipt.Generation));
+            Assert.That(duplicateReceipt.TerminalReason, Is.EqualTo(receipt.TerminalReason));
+            Assert.That(releaseCount, Is.EqualTo(1));
+        }
+
+        [TestCase(NarrativeTutorialReviewTerminalReason.Cancelled)]
+        [TestCase(NarrativeTutorialReviewTerminalReason.OwnerDisabled)]
+        [TestCase(NarrativeTutorialReviewTerminalReason.SceneUnloading)]
+        public void ReviewLifecycleInterruptionsSealWithoutBriefingReadiness(
+            NarrativeTutorialReviewTerminalReason terminalReason)
+        {
+            var session = new NarrativeTutorialReviewLifecycleSession();
+            long generation = session.Begin();
+
+            Assert.That(
+                session.TryRequestTerminal(generation, terminalReason),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            Assert.That(
+                session.TrySealRelease(generation, true, out var receipt),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            Assert.That(receipt.CleanupSucceeded, Is.True);
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+            Assert.That(receipt.TerminalReason, Is.EqualTo(terminalReason));
+        }
+
+        [Test]
+        public void ReviewLifecycleBindingFailureAndCleanupFailureFailClosed()
+        {
+            var bindingFailure = new NarrativeTutorialReviewLifecycleSession();
+            long bindingGeneration = bindingFailure.Begin();
+            Assert.That(bindingFailure.TryBeginTutorial(bindingGeneration), Is.True);
+            Assert.That(
+                bindingFailure.TryRequestTerminal(
+                    bindingGeneration,
+                    NarrativeTutorialReviewTerminalReason.BindingUnavailable),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            bindingFailure.TrySealRelease(bindingGeneration, true, out var bindingReceipt);
+            Assert.That(bindingReceipt.CanEnterReviewBriefing, Is.False);
+
+            var cleanupFailure = new NarrativeTutorialReviewLifecycleSession();
+            long cleanupGeneration = cleanupFailure.Begin();
+            Assert.That(cleanupFailure.TryBeginTutorial(cleanupGeneration), Is.True);
+            Assert.That(
+                cleanupFailure.TryRequestTerminal(
+                    cleanupGeneration,
+                    NarrativeTutorialReviewTerminalReason.Completed),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.Accepted));
+            cleanupFailure.TrySealRelease(cleanupGeneration, false, out var cleanupReceipt);
+            Assert.That(cleanupReceipt.CleanupSucceeded, Is.False);
+            Assert.That(cleanupReceipt.CanEnterReviewBriefing, Is.False);
+        }
+
+        [TestCase(NarrativeTutorialReviewTerminalReason.Completed)]
+        [TestCase(NarrativeTutorialReviewTerminalReason.Skipped)]
+        [TestCase(NarrativeTutorialReviewTerminalReason.BindingUnavailable)]
+        public void ReviewLifecycleCannotAcceptTutorialTerminalBeforeTutorialBegins(
+            NarrativeTutorialReviewTerminalReason terminalReason)
+        {
+            var session = new NarrativeTutorialReviewLifecycleSession();
+            long generation = session.Begin();
+
+            Assert.That(
+                session.TryRequestTerminal(generation, terminalReason),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.InvalidPhase));
+            Assert.That(session.Phase, Is.EqualTo(NarrativeTutorialReviewPhase.VisualNovel));
+            Assert.That(session.HasReceipt, Is.False);
+        }
+
+        [Test]
+        public void ReviewLifecycleRejectsPriorGenerationSignalsAfterFreshBegin()
+        {
+            var session = new NarrativeTutorialReviewLifecycleSession();
+            long firstGeneration = session.Begin();
+            session.TryRequestTerminal(
+                firstGeneration,
+                NarrativeTutorialReviewTerminalReason.Cancelled);
+            session.TrySealRelease(firstGeneration, true, out _);
+
+            long secondGeneration = session.Begin();
+            Assert.That(secondGeneration, Is.GreaterThan(firstGeneration));
+            Assert.That(
+                session.TryRequestTerminal(
+                    firstGeneration,
+                    NarrativeTutorialReviewTerminalReason.Completed),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.StaleGeneration));
+            Assert.That(
+                session.TrySealRelease(firstGeneration, true, out _),
+                Is.EqualTo(NarrativeTutorialReviewSignalResult.StaleGeneration));
+            Assert.That(session.CurrentGeneration, Is.EqualTo(secondGeneration));
+            Assert.That(session.Phase, Is.EqualTo(NarrativeTutorialReviewPhase.VisualNovel));
+            Assert.That(session.IsCurrentLiveGeneration(secondGeneration), Is.True);
+        }
+
         private static NarrativeSequenceProfile CreateProfile(
             params NarrativeSequenceProfile.LineEntry[] lines)
         {

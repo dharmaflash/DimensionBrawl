@@ -213,6 +213,12 @@ ST-01 may evaluate handoff clarity and restoration behavior only. Until a route-
 product authority is approved, it must not mutate the canonical scene flow, tutorial
 facts, result ownership, catalog, save, or progression.
 
+A prerequisite terminal-lifecycle hardening lab is implemented and verified in
+`NARRATIVE_TUTORIAL_REVIEW_TERMINAL_LAB.md`. It fixes false-success, stale-generation, and
+owned-work cleanup behavior from the existing review tutorial into its review briefing.
+It is not the ST-01 story-to-tutorial receipt or acceptance fixture. ST-01 remains open,
+including gameplay camera, HUD, input, listener, time, and tutorial-start proof.
+
 ### VN-02 — reusable multi-character narrative presenter
 
 Review a reusable presenter with a DimensionBrawl-owned speaker presentation catalog,
