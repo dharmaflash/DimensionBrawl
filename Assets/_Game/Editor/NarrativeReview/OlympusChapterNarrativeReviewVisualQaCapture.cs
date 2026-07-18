@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Presentation.Narrative;
 using DimensionBrawl.UI.NarrativeReview;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -67,6 +68,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
         private static readonly List<CaptureRecord> Records = new List<CaptureRecord>();
 
         private static OlympusChapterNarrativeReviewController controller;
+        private static Camera gameplayReviewCamera;
+        private static Camera narrativeReviewCamera;
         private static Camera reviewCamera;
         private static Canvas reviewCanvas;
         private static CanvasScaler reviewCanvasScaler;
@@ -273,7 +276,26 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
 
             controller = FindSingleInScene<OlympusChapterNarrativeReviewController>(activeScene);
-            reviewCamera = FindSingleInScene<Camera>(activeScene);
+            Camera[] cameras = FindAllInScene<Camera>(activeScene);
+            gameplayReviewCamera = cameras.SingleOrDefault(candidate =>
+                string.Equals(
+                    candidate.gameObject.name,
+                    "ReviewCutsceneCamera",
+                    StringComparison.Ordinal));
+            narrativeReviewCamera = cameras.SingleOrDefault(candidate =>
+                string.Equals(
+                    candidate.gameObject.name,
+                    "ReviewNarrativePresentationCamera",
+                    StringComparison.Ordinal));
+            if (cameras.Length != 2
+                || gameplayReviewCamera == null
+                || narrativeReviewCamera == null)
+            {
+                throw new InvalidOperationException(
+                    "Narrative review must expose its exact gameplay and narrative cameras.");
+            }
+
+            reviewCamera = gameplayReviewCamera;
             reviewCanvas = FindSingleInScene<Canvas>(activeScene);
             reviewCanvasScaler = reviewCanvas.GetComponent<CanvasScaler>()
                 ?? throw new InvalidOperationException(
@@ -359,16 +381,32 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     $"Canonical UIStageCatalog projection is unavailable in {expected}.");
             }
 
-            bool requiresCompletedNarrative =
+            bool requiresReleasedStory =
                 state == ReviewCaptureState.TutorialCutscene
                 || state == ReviewCaptureState.StageBriefing
                 || state == ReviewCaptureState.Complete;
-            if (requiresCompletedNarrative
-                && controller.NarrativeSession?.IsCompleted != true)
+            if (requiresReleasedStory
+                && (!controller.LastStoryTutorialReceipt.CanDispatchReviewTutorialStart
+                    || controller.LastStoryTutorialReceipt.Generation
+                        != controller.ActiveReviewGeneration
+                    || controller.NarrativeSession != null
+                    || !controller.HasConfirmedTutorialStartForActiveGeneration))
             {
                 throw new InvalidOperationException(
-                    $"Narrative session must be completed before capturing {state}.");
+                    $"Story release receipt and confirmed tutorial start are required for {state}.");
             }
+
+            bool narrativeCameraExpected = state == ReviewCaptureState.VisualNovel;
+            if (gameplayReviewCamera.enabled == narrativeCameraExpected
+                || narrativeReviewCamera.enabled != narrativeCameraExpected)
+            {
+                throw new InvalidOperationException(
+                    $"Review camera ownership is stale while capturing {state}.");
+            }
+
+            reviewCamera = narrativeCameraExpected
+                ? narrativeReviewCamera
+                : gameplayReviewCamera;
 
             int expectedFinalizerCount =
                 state == ReviewCaptureState.StageBriefing
@@ -818,6 +856,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
         private static void ResetRuntimeFields()
         {
             controller = null;
+            gameplayReviewCamera = null;
+            narrativeReviewCamera = null;
             reviewCamera = null;
             reviewCanvas = null;
             reviewCanvasScaler = null;

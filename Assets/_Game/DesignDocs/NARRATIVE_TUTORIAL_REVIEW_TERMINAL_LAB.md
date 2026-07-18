@@ -18,8 +18,9 @@ or the controller-observed mandatory end frame can make the review briefing elig
 
 This is prerequisite hardening discovered while scoping ST-01. It is a
 `TutorialCutscene -> StageBriefing` terminal lab, not ST-01's story-completion -> tutorial-
-start receipt or acceptance fixture. It is not the product P2-B adapter and does not attach
-a visual novel to the canonical Olympus route. ST-01 remains open.
+start receipt or acceptance fixture. The follow-on review-local boundary is now implemented
+in `STORY_TUTORIAL_REVIEW_TRANSITION_LAB.md`. Neither lab is the product P2-B adapter or
+attaches a visual novel to the canonical Olympus route.
 
 ## Product boundary
 

@@ -18,7 +18,8 @@ namespace DimensionBrawl.Presentation.Narrative
         Cancelled = 2,
         OwnerDisabled = 3,
         SceneUnloading = 4,
-        BindingUnavailable = 5
+        BindingUnavailable = 5,
+        StoryTransitionUnavailable = 6
     }
 
     public enum NarrativeTutorialReviewSignalResult

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Reflection;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation.Narrative;
+using DimensionBrawl.UI.NarrativeReview;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -89,6 +90,15 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.Zero);
+            Assert.That(fixture.GameplayCamera.enabled, Is.True);
+            Assert.That(fixture.NarrativeCamera.enabled, Is.False);
+            Assert.That(fixture.GameplayListener.enabled, Is.True);
+            Assert.That(fixture.NarrativeListener.enabled, Is.False);
+            Assert.That(fixture.GameplayInput.enabled, Is.True);
+            Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.True);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "TutorialStartProbeCount"), Is.Zero);
 
             fixture.Root.SetActive(true);
             yield return null;
@@ -159,6 +169,116 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator MissingStoryTransitionGateFailsClosedBeforeAnyPresentationMutation()
+        {
+            using var fixture = new ControllerFixture(withChoiceResponsePortrait: false);
+            Invoke(
+                fixture.Controller,
+                "ConfigureStoryTutorialTransitionGate",
+                new object[] { null });
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+
+            AssertPhase(fixture.Controller, "ChapterEntry");
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.Null);
+            Assert.That(fixture.GameplayCamera.enabled, Is.True);
+            Assert.That(fixture.NarrativeCamera.enabled, Is.False);
+            Assert.That(fixture.GameplayListener.enabled, Is.True);
+            Assert.That(fixture.NarrativeListener.enabled, Is.False);
+            Assert.That(fixture.GameplayInput.enabled, Is.True);
+            Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.True);
+            NarrativeTutorialReviewReceipt receipt =
+                ReadProperty<NarrativeTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastReviewReceipt");
+            Assert.That(receipt.TerminalReason,
+                Is.EqualTo(
+                    NarrativeTutorialReviewTerminalReason.StoryTransitionUnavailable));
+            Assert.That(receipt.TutorialEntered, Is.False);
+            Assert.That(receipt.CleanupSucceeded, Is.True);
+            Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator NormalStoryCompletionRestoresEveryReviewDomainBeforeTutorialPlay()
+        {
+            using var fixture = new ControllerFixture(
+                withChoiceResponsePortrait: false,
+                withCutscenePort: true);
+
+            Time.timeScale = 0.5f;
+            fixture.GameplayHud.alpha = 0.37f;
+            fixture.GameplayHud.interactable = false;
+            fixture.GameplayHud.blocksRaycasts = true;
+            fixture.GameplayInput.enabled = true;
+            fixture.GameplayCamera.enabled = true;
+            fixture.NarrativeCamera.enabled = false;
+            fixture.GameplayListener.enabled = true;
+            fixture.NarrativeListener.enabled = false;
+            StageRunContext runContextBefore = StageRunRuntime.ActiveContext;
+            StageRunAbortRecord abortRecordBefore = StageRunRuntime.LastAbortRecord;
+
+            bool tutorialPlayedAfterRestore = false;
+            fixture.CutsceneDirector.played += _ =>
+            {
+                StoryTutorialReviewReceipt receipt =
+                    ReadProperty<StoryTutorialReviewReceipt>(
+                        fixture.Controller,
+                        "LastStoryTutorialReceipt");
+                Assert.That(receipt.CanDispatchReviewTutorialStart, Is.True);
+                Assert.That(Time.timeScale, Is.EqualTo(0.5f));
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.NarrativeCamera.enabled, Is.False);
+                Assert.That(fixture.GameplayListener.enabled, Is.True);
+                Assert.That(fixture.NarrativeListener.enabled, Is.False);
+                Assert.That(fixture.GameplayInput.enabled, Is.True);
+                Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.True);
+                Assert.That(fixture.GameplayHud.alpha, Is.EqualTo(0.37f));
+                Assert.That(fixture.GameplayHud.interactable, Is.False);
+                Assert.That(fixture.GameplayHud.blocksRaycasts, Is.True);
+                tutorialPlayedAfterRestore = true;
+            };
+
+            fixture.Root.SetActive(true);
+            yield return null;
+            fixture.ChapterEnterButton.onClick.Invoke();
+
+            AssertPhase(fixture.Controller, "VisualNovel");
+            Assert.That(Time.timeScale, Is.Zero);
+            Assert.That(fixture.GameplayCamera.enabled, Is.False);
+            Assert.That(fixture.NarrativeCamera.enabled, Is.True);
+            Assert.That(fixture.GameplayListener.enabled, Is.False);
+            Assert.That(fixture.NarrativeListener.enabled, Is.True);
+            Assert.That(fixture.GameplayInput.enabled, Is.False);
+            Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.False);
+
+            fixture.NarrativeNextButton.onClick.Invoke();
+
+            Assert.That(tutorialPlayedAfterRestore, Is.True);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "TutorialStartProbeCount"), Is.EqualTo(1));
+            AssertPhase(fixture.Controller, "TutorialCutscene");
+            Assert.That(ReadProperty<NarrativeSequenceSession>(
+                fixture.Controller,
+                "NarrativeSession"), Is.Null);
+            StoryTutorialReviewReceipt finalReceipt =
+                ReadProperty<StoryTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastStoryTutorialReceipt");
+            Assert.That(finalReceipt.TerminalReason,
+                Is.EqualTo(StoryTutorialReviewTerminalReason.Completed));
+            Assert.That(finalReceipt.StoryOwnedWorkReleased, Is.True);
+            Assert.That(finalReceipt.StateRestoreSucceeded, Is.True);
+            Assert.That(StageRunRuntime.ActiveContext, Is.SameAs(runContextBefore));
+            Assert.That(StageRunRuntime.LastAbortRecord, Is.SameAs(abortRecordBefore));
+        }
+
+        [UnityTest]
         public IEnumerator ChoiceResponseClearsStalePortraitAndSkipFinalizesExactlyOnce()
         {
             using var fixture = new ControllerFixture(
@@ -223,6 +343,16 @@ namespace DimensionBrawl.Tests
             Assert.That(receipt.TerminalReason,
                 Is.EqualTo(NarrativeTutorialReviewTerminalReason.Skipped));
             Assert.That(receipt.CanEnterReviewBriefing, Is.True);
+            StoryTutorialReviewReceipt storyReceipt =
+                ReadProperty<StoryTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastStoryTutorialReceipt");
+            Assert.That(storyReceipt.TerminalReason,
+                Is.EqualTo(StoryTutorialReviewTerminalReason.Skipped));
+            Assert.That(storyReceipt.CanDispatchReviewTutorialStart, Is.True);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "TutorialStartProbeCount"), Is.EqualTo(1));
 
             fixture.SkipConfirmButton.onClick.Invoke();
             Invoke(fixture.Controller, "SkipCutscene");
@@ -474,6 +604,15 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.Zero);
+            Assert.That(fixture.GameplayCamera.enabled, Is.True);
+            Assert.That(fixture.NarrativeCamera.enabled, Is.False);
+            Assert.That(fixture.GameplayListener.enabled, Is.True);
+            Assert.That(fixture.NarrativeListener.enabled, Is.False);
+            Assert.That(fixture.GameplayInput.enabled, Is.True);
+            Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.True);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "TutorialStartProbeCount"), Is.EqualTo(1));
             NarrativeTutorialReviewReceipt receipt =
                 ReadProperty<NarrativeTutorialReviewReceipt>(
                     fixture.Controller,
@@ -629,7 +768,7 @@ namespace DimensionBrawl.Tests
             fixture.ChapterEnterButton.onClick.Invoke();
             fixture.NarrativeNextButton.onClick.Invoke();
 
-            AssertPhase(fixture.Controller, "TutorialCutscene");
+            AssertPhase(fixture.Controller, "StoryTransitionBlocked");
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.Zero);
@@ -641,13 +780,30 @@ namespace DimensionBrawl.Tests
                     fixture.Controller,
                     "LastReviewReceipt");
             Assert.That(receipt.TerminalReason,
-                Is.EqualTo(NarrativeTutorialReviewTerminalReason.BindingUnavailable));
-            Assert.That(receipt.TutorialEntered, Is.True);
+                Is.EqualTo(
+                    NarrativeTutorialReviewTerminalReason.StoryTransitionUnavailable));
+            Assert.That(receipt.TutorialEntered, Is.False);
             Assert.That(receipt.CleanupSucceeded, Is.True);
             Assert.That(receipt.CanEnterReviewBriefing, Is.False);
+            StoryTutorialReviewReceipt storyReceipt =
+                ReadProperty<StoryTutorialReviewReceipt>(
+                    fixture.Controller,
+                    "LastStoryTutorialReceipt");
+            Assert.That(storyReceipt.StateRestoreSucceeded, Is.True);
+            Assert.That(storyReceipt.TutorialTargetAvailable, Is.False);
+            Assert.That(storyReceipt.CanDispatchReviewTutorialStart, Is.False);
+            Assert.That(ReadProperty<int>(
+                fixture.Controller,
+                "TutorialStartProbeCount"), Is.Zero);
+            Assert.That(fixture.GameplayCamera.enabled, Is.True);
+            Assert.That(fixture.NarrativeCamera.enabled, Is.False);
+            Assert.That(fixture.GameplayListener.enabled, Is.True);
+            Assert.That(fixture.NarrativeListener.enabled, Is.False);
+            Assert.That(fixture.GameplayInput.enabled, Is.True);
+            Assert.That(fixture.GameplayHud.gameObject.activeSelf, Is.True);
 
             Invoke(fixture.Controller, "SkipCutscene");
-            AssertPhase(fixture.Controller, "TutorialCutscene");
+            AssertPhase(fixture.Controller, "StoryTransitionBlocked");
             Assert.That(ReadProperty<int>(
                 fixture.Controller,
                 "CompletionDispatchCount"), Is.Zero);
@@ -748,6 +904,34 @@ namespace DimensionBrawl.Tests
                 Root = new GameObject("OlympusNarrativeReviewControllerTest");
                 Root.SetActive(false);
                 Controller = Root.AddComponent(RequireControllerType());
+
+                GameObject gameplayCameraOwner = new GameObject("GameplayCamera");
+                gameplayCameraOwner.transform.SetParent(Root.transform, false);
+                GameplayCamera = gameplayCameraOwner.AddComponent<Camera>();
+                GameplayListener = gameplayCameraOwner.AddComponent<AudioListener>();
+                GameObject narrativeCameraOwner = new GameObject("NarrativeCamera");
+                narrativeCameraOwner.transform.SetParent(Root.transform, false);
+                NarrativeCamera = narrativeCameraOwner.AddComponent<Camera>();
+                NarrativeCamera.enabled = false;
+                NarrativeListener = narrativeCameraOwner.AddComponent<AudioListener>();
+                NarrativeListener.enabled = false;
+
+                GameplayHud = CreateGroup(Root.transform, "GameplayHud");
+                GameplayHud.alpha = 0.73f;
+                GameplayHud.interactable = true;
+                GameplayHud.blocksRaycasts = false;
+                GameplayInput = Root.AddComponent<ReviewGameplayInputProbe>();
+                TutorialStartProbe = Root.AddComponent<ReviewTutorialStartProbe>();
+                TransitionGate =
+                    Root.AddComponent<OlympusStoryTutorialTransitionReviewGate>();
+                TransitionGate.Configure(
+                    GameplayCamera,
+                    NarrativeCamera,
+                    GameplayHud,
+                    GameplayInput,
+                    GameplayListener,
+                    NarrativeListener,
+                    TutorialStartProbe);
                 if (withCutscenePort)
                 {
                     GameObject cutsceneOwner = new GameObject("CutscenePayloadRoot");
@@ -809,6 +993,14 @@ namespace DimensionBrawl.Tests
             public PlayableAsset CutsceneAsset { get; }
             public PlayableDirector CutsceneDirector { get; }
             public StageCutscenePort CutscenePort { get; }
+            public Camera GameplayCamera { get; }
+            public Camera NarrativeCamera { get; }
+            public AudioListener GameplayListener { get; }
+            public AudioListener NarrativeListener { get; }
+            public CanvasGroup GameplayHud { get; }
+            public ReviewGameplayInputProbe GameplayInput { get; }
+            public ReviewTutorialStartProbe TutorialStartProbe { get; }
+            public OlympusStoryTutorialTransitionReviewGate TransitionGate { get; }
             public CanvasGroup ChapterEntryGroup { get; }
             public CanvasGroup VisualNovelGroup { get; }
             public CanvasGroup CutsceneGroup { get; }
@@ -848,6 +1040,10 @@ namespace DimensionBrawl.Tests
             private void ConfigureController()
             {
                 Invoke(Controller, "ConfigureCore", Profile, null, null, CutscenePort, null);
+                Invoke(
+                    Controller,
+                    "ConfigureStoryTutorialTransitionGate",
+                    TransitionGate);
                 Invoke(
                     Controller,
                     "ConfigureFlowGroups",

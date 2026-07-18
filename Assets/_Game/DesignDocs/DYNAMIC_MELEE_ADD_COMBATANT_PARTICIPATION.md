@@ -203,21 +203,24 @@ source-boundary record and independent DimensionBrawl naming and implementation.
 
 ## Queued review-only presentation slices
 
-The next presentation work is recorded as a queue, not admitted product authority.
+The presentation work is recorded as review-only evidence and a queue, not admitted
+product authority.
 
 ### ST-01 — VN -> tutorial handoff
 
-Review an explicit story-presentation completion/skip boundary that restores the existing
-gameplay camera, HUD, input, listener, and time state before the current tutorial begins.
-ST-01 may evaluate handoff clarity and restoration behavior only. Until a route-owned
-product authority is approved, it must not mutate the canonical scene flow, tutorial
-facts, result ownership, catalog, save, or progression.
+Implemented and verified as an isolated review-local acceptance lab. Normal completion and
+skip release story-owned work, restore exact local camera, HUD, input, listener, and time
+state, seal a generation-scoped receipt, and confirm tutorial start only after the existing
+sole review Director enters `PlayState.Playing`. Missing bindings or target, restore/start
+failure, disable, duplicate, and stale signals authorize nothing.
 
-A prerequisite terminal-lifecycle hardening lab is implemented and verified in
-`NARRATIVE_TUTORIAL_REVIEW_TERMINAL_LAB.md`. It fixes false-success, stale-generation, and
-owned-work cleanup behavior from the existing review tutorial into its review briefing.
-It is not the ST-01 story-to-tutorial receipt or acceptance fixture. ST-01 remains open,
-including gameplay camera, HUD, input, listener, time, and tutorial-start proof.
+The prerequisite tutorial-terminal lab remains documented in
+`NARRATIVE_TUTORIAL_REVIEW_TERMINAL_LAB.md`; the completed story-to-tutorial half, direct
+review bindings, tests, visual QA, and promotion boundaries are documented in
+`STORY_TUTORIAL_REVIEW_TRANSITION_LAB.md`. ST-01 changes no canonical scene flow, tutorial
+facts, result ownership, catalog, save, or progression. Its input, HUD, camera/listener,
+time, receipt, and start probe remain review stand-ins rather than route-owned product
+authority.
 
 ### VN-02 — reusable multi-character narrative presenter
 

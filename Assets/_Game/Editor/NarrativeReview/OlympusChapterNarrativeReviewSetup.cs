@@ -141,7 +141,10 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 typeof(PlayableDirector),
                 typeof(StageCutscenePort),
                 typeof(AudioSource),
-                typeof(OlympusChapterNarrativeReviewController));
+                typeof(OlympusChapterNarrativeReviewController),
+                typeof(ReviewTutorialStartProbe),
+                typeof(ReviewGameplayInputProbe),
+                typeof(OlympusStoryTutorialTransitionReviewGate));
             flowObject.transform.SetParent(sceneRoot.transform, false);
 
             PlayableDirector director = flowObject.GetComponent<PlayableDirector>();
@@ -170,6 +173,20 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             OlympusChapterNarrativeReviewController controller =
                 flowObject.GetComponent<OlympusChapterNarrativeReviewController>();
+            ReviewTutorialStartProbe tutorialStartProbe =
+                flowObject.GetComponent<ReviewTutorialStartProbe>();
+            ReviewGameplayInputProbe gameplayInputProbe =
+                flowObject.GetComponent<ReviewGameplayInputProbe>();
+            OlympusStoryTutorialTransitionReviewGate transitionGate =
+                flowObject.GetComponent<OlympusStoryTutorialTransitionReviewGate>();
+            transitionGate.Configure(
+                diorama.Camera,
+                diorama.NarrativeCamera,
+                ui.GameplayHudProbeGroup,
+                gameplayInputProbe,
+                diorama.Listener,
+                diorama.NarrativeListener,
+                tutorialStartProbe);
             ConfigureController(
                 controller,
                 narrativeProfile,
@@ -177,10 +194,14 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 director,
                 cutscenePort,
                 voiceSource,
-                ui);
+                ui,
+                transitionGate);
 
             SetInitialVisibility(ui);
             EditorUtility.SetDirty(controller);
+            EditorUtility.SetDirty(transitionGate);
+            EditorUtility.SetDirty(tutorialStartProbe);
+            EditorUtility.SetDirty(gameplayInputProbe);
             EditorUtility.SetDirty(cutscenePort);
             EditorUtility.SetDirty(director);
             EditorUtility.SetDirty(sceneRoot);
@@ -457,7 +478,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
             PlayableDirector director,
             StageCutscenePort cutscenePort,
             AudioSource voiceSource,
-            ReviewUiRefs ui)
+            ReviewUiRefs ui,
+            OlympusStoryTutorialTransitionReviewGate transitionGate)
         {
             controller.ConfigureCore(
                 narrativeProfile,
@@ -465,6 +487,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 director,
                 cutscenePort,
                 voiceSource);
+            controller.ConfigureStoryTutorialTransitionGate(transitionGate);
             controller.ConfigureFlowGroups(
                 ui.ChapterEntryGroup,
                 ui.VisualNovelGroup,
@@ -698,12 +721,35 @@ namespace DimensionBrawl.Editor.NarrativeReview
             camera.nearClipPlane = 0.06f;
             camera.farClipPlane = 120f;
             camera.depth = 0f;
-            cameraTransform.gameObject.AddComponent<AudioListener>();
+            AudioListener listener = cameraTransform.gameObject.AddComponent<AudioListener>();
             Animator animator = cameraTransform.gameObject.AddComponent<Animator>();
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
 
-            return new DioramaRefs(root, camera, animator);
+            Transform narrativeCameraTransform =
+                CreateChild(parent, "ReviewNarrativePresentationCamera");
+            narrativeCameraTransform.localPosition = cameraTransform.localPosition;
+            narrativeCameraTransform.localRotation = cameraTransform.localRotation;
+            Camera narrativeCamera = narrativeCameraTransform.gameObject.AddComponent<Camera>();
+            narrativeCamera.tag = "Untagged";
+            narrativeCamera.clearFlags = camera.clearFlags;
+            narrativeCamera.backgroundColor = camera.backgroundColor;
+            narrativeCamera.fieldOfView = camera.fieldOfView;
+            narrativeCamera.nearClipPlane = camera.nearClipPlane;
+            narrativeCamera.farClipPlane = camera.farClipPlane;
+            narrativeCamera.depth = camera.depth;
+            narrativeCamera.enabled = false;
+            AudioListener narrativeListener =
+                narrativeCameraTransform.gameObject.AddComponent<AudioListener>();
+            narrativeListener.enabled = false;
+
+            return new DioramaRefs(
+                root,
+                camera,
+                listener,
+                animator,
+                narrativeCamera,
+                narrativeListener);
         }
 
         private static ReviewUiRefs CreateReviewUi(
@@ -765,6 +811,32 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             refs.CompleteGroup = CreateFlowGroup(canvasRect, "Complete", false);
             BuildComplete(refs.CompleteGroup.transform as RectTransform, mediumFont, semiBoldFont, refs);
+
+            Image gameplayHudProbe = CreateImage(
+                canvasRect,
+                "ReviewGameplayHudProbe",
+                new Color(0.025f, 0.09f, 0.12f, 0.88f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -18f),
+                new Vector2(360f, 46f));
+            refs.GameplayHudProbeGroup =
+                gameplayHudProbe.gameObject.AddComponent<CanvasGroup>();
+            refs.GameplayHudProbeGroup.alpha = 0.86f;
+            refs.GameplayHudProbeGroup.interactable = false;
+            refs.GameplayHudProbeGroup.blocksRaycasts = false;
+            CreateText(
+                gameplayHudProbe.rectTransform,
+                "ReviewGameplayHudProbeLabel",
+                "LOCAL GAMEPLAY HUD  /  RESTORE PROBE",
+                semiBoldFont,
+                18f,
+                new Color(0.42f, 0.92f, 1f, 1f),
+                TextAlignmentOptions.Center,
+                Vector2.zero,
+                Vector2.one,
+                Vector2.zero,
+                Vector2.zero);
 
             BuildCutsceneDialogueOverlay(canvasRect, mediumFont, semiBoldFont, refs);
             BuildLogModal(canvasRect, mediumFont, semiBoldFont, refs);
@@ -2243,9 +2315,9 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
 
             if (EditorBuildSettings.scenes.Any(
-                    entry => entry.enabled && string.Equals(entry.path, ScenePath, StringComparison.Ordinal)))
+                    entry => string.Equals(entry.path, ScenePath, StringComparison.Ordinal)))
             {
-                issues.Add("Review scene must remain outside enabled build settings.");
+                issues.Add("Review scene must remain entirely outside build settings.");
             }
 
             NarrativeSequenceProfile profile =
@@ -2334,6 +2406,14 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 issues.Add("PlayableDirector is not assigned to the review tutorial Timeline.");
             }
 
+            if (director != null
+                && (director.playOnAwake
+                    || director.extrapolationMode != DirectorWrapMode.None
+                    || director.timeUpdateMode != DirectorUpdateMode.GameTime))
+            {
+                issues.Add("Review PlayableDirector must be stopped-on-load, non-looping, and GameTime driven.");
+            }
+
             if (timeline != null && director != null)
             {
                 AnimationTrack cameraTrack = FindTrack<AnimationTrack>(timeline, CameraTrackName);
@@ -2409,9 +2489,22 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     issues.Add("StageCutscenePort review metadata is incomplete or stale.");
                 }
 
-                if (!port.HasPayloadRoot || port.RuntimeDirector != director)
+                if (!port.HasPayloadRoot
+                    || port.RuntimeDirector != director
+                    || port.PresentationProfile != null)
                 {
-                    issues.Add("StageCutscenePort payload/director binding is incomplete.");
+                    issues.Add("StageCutscenePort review payload/director/profile binding is stale.");
+                }
+
+                if (director != null
+                    && (port.gameObject != director.gameObject
+                        || port.PayloadRoot == null
+                        || !string.Equals(
+                            port.PayloadRoot.gameObject.scene.path,
+                            ScenePath,
+                            StringComparison.Ordinal)))
+                {
+                    issues.Add("Review port, Director, and payload must remain local to the review flow/scene.");
                 }
             }
 
@@ -2424,7 +2517,12 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
             else
             {
-                ValidateControllerReferences(controllers[0], profile, director, issues);
+                ValidateControllerReferences(
+                    controllers[0],
+                    profile,
+                    director,
+                    ports.Length == 1 ? ports[0] : null,
+                    issues);
             }
 
             Canvas[] canvases = FindComponentsInScene<Canvas>(scene);
@@ -2480,9 +2578,113 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
 
             Camera[] cameras = FindComponentsInScene<Camera>(scene);
-            if (cameras.Length != 1 || !string.Equals(cameras[0].tag, "MainCamera", StringComparison.Ordinal))
+            Camera gameplayCamera = cameras.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.gameObject.name,
+                    "ReviewCutsceneCamera",
+                    StringComparison.Ordinal));
+            Camera narrativeCamera = cameras.FirstOrDefault(
+                candidate => string.Equals(
+                    candidate.gameObject.name,
+                    "ReviewNarrativePresentationCamera",
+                    StringComparison.Ordinal));
+            if (cameras.Length != 2
+                || gameplayCamera == null
+                || narrativeCamera == null
+                || !string.Equals(gameplayCamera.tag, "MainCamera", StringComparison.Ordinal)
+                || !gameplayCamera.enabled
+                || !string.Equals(narrativeCamera.tag, "Untagged", StringComparison.Ordinal)
+                || narrativeCamera.enabled)
             {
-                issues.Add("Review diorama needs exactly one MainCamera.");
+                issues.Add(
+                    "Review scene needs one enabled gameplay MainCamera and one disabled narrative presentation camera.");
+            }
+
+            AudioListener[] listeners = FindComponentsInScene<AudioListener>(scene);
+            if (listeners.Length != 2
+                || gameplayCamera == null
+                || narrativeCamera == null
+                || gameplayCamera.GetComponent<AudioListener>() == null
+                || !gameplayCamera.GetComponent<AudioListener>().enabled
+                || narrativeCamera.GetComponent<AudioListener>() == null
+                || narrativeCamera.GetComponent<AudioListener>().enabled)
+            {
+                issues.Add(
+                    "Review cameras need distinct gameplay/narrative listeners with exact initial enabled states.");
+            }
+
+            OlympusStoryTutorialTransitionReviewGate[] transitionGates =
+                FindComponentsInScene<OlympusStoryTutorialTransitionReviewGate>(scene);
+            ReviewTutorialStartProbe[] tutorialStartProbes =
+                FindComponentsInScene<ReviewTutorialStartProbe>(scene);
+            ReviewGameplayInputProbe[] gameplayInputProbes =
+                FindComponentsInScene<ReviewGameplayInputProbe>(scene);
+            if (transitionGates.Length != 1
+                || tutorialStartProbes.Length != 1
+                || gameplayInputProbes.Length != 1)
+            {
+                issues.Add(
+                    "Review scene needs exactly one story transition gate, tutorial-start probe, and gameplay-input probe.");
+            }
+            else
+            {
+                OlympusStoryTutorialTransitionReviewGate gate = transitionGates[0];
+                if (!gate.HasValidBindings
+                    || gate.GameplayCamera != gameplayCamera
+                    || gate.NarrativePresentationCamera != narrativeCamera
+                    || gate.GameplayListener
+                        != (gameplayCamera != null
+                            ? gameplayCamera.GetComponent<AudioListener>()
+                            : null)
+                    || gate.NarrativePresentationListener
+                        != (narrativeCamera != null
+                            ? narrativeCamera.GetComponent<AudioListener>()
+                            : null)
+                    || gate.GameplayInput != gameplayInputProbes[0]
+                    || gate.TutorialStartProbe != tutorialStartProbes[0]
+                    || gate.GameplayHud == null
+                    || !string.Equals(
+                        gate.GameplayHud.gameObject.name,
+                        "ReviewGameplayHudProbe",
+                        StringComparison.Ordinal))
+                {
+                    issues.Add("Story transition gate direct bindings are missing, indirect, or stale.");
+                }
+            }
+
+            Button[] reviewButtons = FindComponentsInScene<Button>(scene);
+            if (reviewButtons.Any(button => button.onClick.GetPersistentEventCount() != 0))
+            {
+                issues.Add("Review buttons must not contain serialized route or runtime callbacks.");
+            }
+
+            var allowedDimensionBrawlBehaviourTypes = new HashSet<string>(
+                new[]
+                {
+                    "DimensionBrawl.LevelDesign.StageCutscenePort",
+                    "DimensionBrawl.Presentation.IntroGatePodDialogueOverlay",
+                    "DimensionBrawl.UI.NarrativeReview.OlympusChapterNarrativeReviewController",
+                    "DimensionBrawl.UI.NarrativeReview.OlympusStoryTutorialTransitionReviewGate",
+                    "DimensionBrawl.UI.NarrativeReview.ReviewGameplayInputProbe",
+                    "DimensionBrawl.UI.NarrativeReview.ReviewTutorialStartProbe"
+                },
+                StringComparer.Ordinal);
+            MonoBehaviour[] behaviours = FindComponentsInScene<MonoBehaviour>(scene);
+            string[] unexpectedProductBehaviours = behaviours
+                .Where(component => component != null)
+                .Select(component => component.GetType().FullName)
+                .Where(typeName =>
+                    !string.IsNullOrWhiteSpace(typeName)
+                    && typeName.StartsWith("DimensionBrawl.", StringComparison.Ordinal)
+                    && !allowedDimensionBrawlBehaviourTypes.Contains(typeName))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(typeName => typeName, StringComparer.Ordinal)
+                .ToArray();
+            if (unexpectedProductBehaviours.Length > 0)
+            {
+                issues.Add(
+                    "Review scene contains non-allowlisted DimensionBrawl runtime owners: "
+                    + string.Join(", ", unexpectedProductBehaviours));
             }
 
             return issues;
@@ -2492,6 +2694,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
             OlympusChapterNarrativeReviewController controller,
             NarrativeSequenceProfile profile,
             PlayableDirector director,
+            StageCutscenePort cutscenePort,
             List<string> issues)
         {
             SerializedObject serialized = new SerializedObject(controller);
@@ -2502,10 +2705,18 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 AssetDatabase.LoadAssetAtPath<UIStageCatalog>(StageCatalogPath),
                 issues);
             ValidateObjectReference(serialized, "cutsceneDirector", director, issues);
+            ValidateObjectReference(serialized, "cutscenePort", cutscenePort, issues);
+
+            OlympusStoryTutorialTransitionReviewGate transitionGate =
+                controller.GetComponent<OlympusStoryTutorialTransitionReviewGate>();
+            ValidateObjectReference(
+                serialized,
+                "storyTutorialTransitionGate",
+                transitionGate,
+                issues);
 
             string[] requiredReferences =
             {
-                "cutscenePort",
                 "chapterEntryGroup",
                 "visualNovelGroup",
                 "cutsceneControlsGroup",
@@ -2672,16 +2883,28 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
         private readonly struct DioramaRefs
         {
-            public DioramaRefs(Transform payloadRoot, Camera camera, Animator cameraAnimator)
+            public DioramaRefs(
+                Transform payloadRoot,
+                Camera camera,
+                AudioListener listener,
+                Animator cameraAnimator,
+                Camera narrativeCamera,
+                AudioListener narrativeListener)
             {
                 PayloadRoot = payloadRoot;
                 Camera = camera;
+                Listener = listener;
                 CameraAnimator = cameraAnimator;
+                NarrativeCamera = narrativeCamera;
+                NarrativeListener = narrativeListener;
             }
 
             public Transform PayloadRoot { get; }
             public Camera Camera { get; }
+            public AudioListener Listener { get; }
             public Animator CameraAnimator { get; }
+            public Camera NarrativeCamera { get; }
+            public AudioListener NarrativeListener { get; }
         }
 
         private readonly struct PortraitRefs
@@ -2742,6 +2965,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
             public CanvasGroup CutsceneControlsGroup;
             public CanvasGroup StageBriefingGroup;
             public CanvasGroup CompleteGroup;
+            public CanvasGroup GameplayHudProbeGroup;
 
             public TMP_Text ChapterEyebrow;
             public TMP_Text ChapterTitle;
