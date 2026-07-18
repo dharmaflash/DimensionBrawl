@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd4501f44e347244aa81e3b286976c0, type: 3}
+  m_Name: DB_UIStagePreparation_OlympusReview
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.StagePreparationReview.StagePreparationReviewProfile
+  reviewId: PREP-01
+  canonicalCatalogEntryId: story_v1_training_route
+  titleLocalizationKey: ui.review.stage_preparation.olympus.title
+  titleFallback: "\uC62C\uB9BC\uD3EC\uC2A4 \uC2A4\uD14C\uC774\uC9C0 \uC900\uBE44
+    \uAC80\uD1A0"
+  pilotPresentationId: review.pilot.fixed.olympus
+  pilotTitleLocalizationKey: ui.review.stage_preparation.fixed_pilot.title
+  pilotTitleFallback: "\uACE0\uC815 \uD30C\uC77C\uB7FF \uD504\uB808\uC820\uD14C\uC774\uC158"
+  pilotBoundaryFallback: "\uB85C\uCEEC \uAC80\uD1A0\uC6A9 \uACE0\uC815 \uD504\uB808\uC820\uD14C\uC774\uC158\uC774\uBA70
+    \uC2A4\uD14C\uC774\uC9C0 \uCD94\uCC9C\uC774 \uC544\uB2D9\uB2C8\uB2E4."
+  slots:
+  - slotId: SummonSlot1
+    titleLocalizationKey: ui.review.stage_preparation.summon_slot1.title
+    titleFallback: "\uCC28\uC9C0 \uBE0C\uB8E8\uC800"
+    roleFallback: "\uC800\uC7A5 EN \uC804\uC5F4 \uB3CC\uD30C"
+    actionProfile: {fileID: 11400000, guid: 81a9e63aa866c9f4b8e2988a77a5a2f8, type: 2}
+    icon: {fileID: 21300000, guid: 5b785c85ce0419143a78ad730d2a070b, type: 3}
+  - slotId: SummonSlot2
+    titleLocalizationKey: ui.review.stage_preparation.summon_slot2.title
+    titleFallback: "\uB808\uC774\uC800 \uC194\uC800"
+    roleFallback: "\uC800\uBE44\uC6A9 \uD6C4\uC5F4 \uC6D0\uAC70\uB9AC \uC555\uBC15"
+    actionProfile: {fileID: 11400000, guid: 27a60a5e55626974282eae0192593fef, type: 2}
+    icon: {fileID: 21300000, guid: f11889d0607a11b46a31501b3df455bb, type: 3}
+  - slotId: SummonSlot3
+    titleLocalizationKey: ui.review.stage_preparation.summon_slot3.title
+    titleFallback: "\uD30C\uC774\uC5B4 \uB4DC\uB798\uACE4"
+    roleFallback: "\uACE0\uBE44\uC6A9 \uAD11\uC5ED \uD654\uB825"
+    actionProfile: {fileID: 11400000, guid: 9bc7fbdb97b406b42855197bfae07908, type: 2}
+    icon: {fileID: 21300000, guid: 83e9dd753190e9d47b9440642f3cf222, type: 3}
