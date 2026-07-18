@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9dc38d06a9b1a4abb266a094b779f2, type: 3}
+  m_Name: DB_ContentFactoryEncounterPlan_CF01
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageEncounterPlanProfile
+  schemaVersion: 1
+  revision: 1
+  planId: cf01.review.encounter-plan
+  stageId: cf01.review.stage
+  canonicalDigest: 4d9c363cf83a7bf6aa42a606b4d2699d70a2eb7f00c930c441343ed20d8414d5
+  admissionDisposition: 1
+  outcomeOwner: 1
+  rewardOwner: 1
+  encounter:
+    encounterId: cf01.review.encounter.required
+    waves:
+    - waveId: cf01.review.wave.01-entry
+      waveIndex: 0
+      activation: 1
+      objective: 1
+      spawns:
+      - spawnId: cf01.review.spawn.01-entry-left
+        payloadId: dimensionbrawl.enemy.melee-probe
+        anchorId: cf01.review.anchor.entry-left
+        count: 2
+        delaySeconds: 0
+    - waveId: cf01.review.wave.02-crossfire
+      waveIndex: 1
+      activation: 2
+      objective: 1
+      spawns:
+      - spawnId: cf01.review.spawn.02-crossfire-left
+        payloadId: dimensionbrawl.enemy.ranged-probe
+        anchorId: cf01.review.anchor.crossfire-left
+        count: 1
+        delaySeconds: 0.25
+      - spawnId: cf01.review.spawn.02-crossfire-right
+        payloadId: dimensionbrawl.enemy.melee-probe
+        anchorId: cf01.review.anchor.crossfire-right
+        count: 2
+        delaySeconds: 0.75
+    - waveId: cf01.review.wave.03-final
+      waveIndex: 2
+      activation: 2
+      objective: 1
+      spawns:
+      - spawnId: cf01.review.spawn.03-final-center
+        payloadId: dimensionbrawl.enemy.guard-probe
+        anchorId: cf01.review.anchor.final-center
+        count: 1
+        delaySeconds: 0
+      - spawnId: cf01.review.spawn.03-final-rear
+        payloadId: dimensionbrawl.enemy.ranged-probe
+        anchorId: cf01.review.anchor.final-rear
+        count: 1
+        delaySeconds: 0.5
