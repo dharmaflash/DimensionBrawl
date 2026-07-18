@@ -1731,7 +1731,10 @@ namespace DimensionBrawl.Tests
             Assert.That(executor.OwnedSensor, Is.Null);
             Assert.That(executor.HasCombatantParticipation, Is.False);
             Assert.That(executor.HasSceneLease, Is.True);
-            Assert.That(ownedRoot.activeSelf, Is.False);
+            Assert.That(
+                ownedRoot == null || !ownedRoot.activeSelf,
+                Is.True,
+                "Fault cleanup must destroy or deactivate the owned Add root.");
             Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
             Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
             Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);

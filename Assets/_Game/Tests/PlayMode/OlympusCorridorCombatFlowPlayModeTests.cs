@@ -1113,14 +1113,14 @@ namespace DimensionBrawl.Tests
                     "melee hit diagnostic",
                     report,
                     actionController.QueueBasicAttack);
-                yield return DriveUntilStep(
+                yield return MoveUntilStep(
                     tutorialDirector,
+                    player,
+                    flowController,
+                    combatCamera,
                     "SwapToRanged",
                     12f,
-                    "move input diagnostic",
-                    report,
-                    () => player.SetMoveInput(Vector2.up),
-                    () => player.SetMoveInput(Vector2.zero));
+                    report);
 
                 preFireFieldOfView = combatCamera.fieldOfView;
                 preFireCameraPosition = combatCamera.transform.position;

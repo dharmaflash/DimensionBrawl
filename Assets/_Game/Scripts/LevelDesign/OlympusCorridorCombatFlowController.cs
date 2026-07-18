@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 
 namespace DimensionBrawl.LevelDesign
@@ -625,7 +626,7 @@ namespace DimensionBrawl.LevelDesign
             SnapPlayerToHandoffGround();
             SetCombatHealthRootsActive(introSwordEnemies, true);
             SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
-            SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
+            SetTutorialEnemyGameplayEnabled(introSwordEnemyGameplayBehaviours, false);
             UnregisterIntroSwordEnemyHandlers();
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
@@ -702,7 +703,12 @@ namespace DimensionBrawl.LevelDesign
 
         private void HandleIntroDirectorStopped(PlayableDirector stoppedDirector)
         {
-            if (!Application.isPlaying || stoppedDirector != introDirector)
+            Scene ownerScene = gameObject.scene;
+            if (!Application.isPlaying
+                || !isActiveAndEnabled
+                || !ownerScene.IsValid()
+                || !ownerScene.isLoaded
+                || stoppedDirector != introDirector)
             {
                 return;
             }
@@ -1725,6 +1731,27 @@ namespace DimensionBrawl.LevelDesign
             if (behaviour != null)
             {
                 behaviour.enabled = enabled;
+            }
+        }
+
+        private static void SetTutorialEnemyGameplayEnabled(Behaviour[] behaviours, bool enabled)
+        {
+            if (behaviours == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                Behaviour behaviour = behaviours[i];
+                if (behaviour == null)
+                {
+                    continue;
+                }
+
+                // Passive tutorial targets must stay resolvable and damageable while their
+                // AI, sensors, and presentation behaviours are intentionally quiesced.
+                behaviour.enabled = behaviour is CombatHealth || enabled;
             }
         }
     }

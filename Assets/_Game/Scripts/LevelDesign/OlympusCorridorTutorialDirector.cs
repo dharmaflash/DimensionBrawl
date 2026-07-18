@@ -340,7 +340,7 @@ namespace DimensionBrawl.LevelDesign
             SetRangedBasicAttackInputLocked(false);
             promptPresenter?.HidePrompt();
             overlayPresenter?.Hide();
-            SetEnemyGameplayEnabled(false);
+            SetEnemyGameplayEnabled(false, keepHealthDamageable: false);
             RestoreBossTelegraphs();
             RestoreActionEnabledStates();
             step = TutorialStep.Inactive;
@@ -609,7 +609,7 @@ namespace DimensionBrawl.LevelDesign
             SetCombatModeInputLocked(false);
             SetRangedBasicAttackInputLocked(false);
             UnsubscribeObservers();
-            SetEnemyGameplayEnabled(false);
+            SetEnemyGameplayEnabled(false, keepHealthDamageable: false);
             SetCombatHealthRootCollidersEnabled(tutorialTargets, false);
             SetCombatHealthRootsActive(tutorialTargets, false);
             SetCollidersEnabled(tutorialRouteBlockers, false);
@@ -1772,7 +1772,7 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
-        private void SetEnemyGameplayEnabled(bool enabled)
+        private void SetEnemyGameplayEnabled(bool enabled, bool keepHealthDamageable = true)
         {
             if (tutorialEnemyGameplayBehaviours == null)
             {
@@ -1781,10 +1781,17 @@ namespace DimensionBrawl.LevelDesign
 
             for (int i = 0; i < tutorialEnemyGameplayBehaviours.Length; i++)
             {
-                if (tutorialEnemyGameplayBehaviours[i] != null)
+                Behaviour behaviour = tutorialEnemyGameplayBehaviours[i];
+                if (behaviour == null)
                 {
-                    tutorialEnemyGameplayBehaviours[i].enabled = enabled;
+                    continue;
                 }
+
+                // Active tutorial targets remain damageable while their AI, sensors, and
+                // presenters are quiesced. Terminal cleanup may disable health explicitly.
+                behaviour.enabled = behaviour is CombatHealth
+                    ? keepHealthDamageable || enabled
+                    : enabled;
             }
         }
 
