@@ -4,7 +4,9 @@ using System.IO;
 using System.Reflection;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
@@ -41,7 +43,9 @@ namespace DimensionBrawl.Editor
         private const string StationAddArchetypePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
         private const string StationAddPrefabPath =
-            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
+        private const string StationAddPatternPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
         private const string StageTemplatePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_OlympusInvasionTutorialStationRun.asset";
         private const string StageSelectPrefabPath =
@@ -1342,6 +1346,8 @@ namespace DimensionBrawl.Editor
             CombatEnemyArchetypeProfile addArchetype =
                 LoadRequiredAsset<CombatEnemyArchetypeProfile>(StationAddArchetypePath);
             GameObject addPrefab = LoadRequiredAsset<GameObject>(StationAddPrefabPath);
+            CombatAiPatternProfile addPattern =
+                LoadRequiredAsset<CombatAiPatternProfile>(StationAddPatternPath);
             RequireEqual(addArchetype.ArchetypeId, StationAddPayloadId, "Station Add archetypeId");
             Require(
                 ReferenceEquals(addArchetype.GameplayPrefab, addPrefab),
@@ -1349,6 +1355,57 @@ namespace DimensionBrawl.Editor
             Require(
                 !addArchetype.RequiresDedicatedPrefabPromotion,
                 "Station Add archetype still requires dedicated prefab promotion.");
+            CombatHealth[] addPrefabHealth =
+                addPrefab.GetComponentsInChildren<CombatHealth>(true);
+            Require(
+                addPrefabHealth.Length == 1
+                && addPrefabHealth[0].Team == DamageTeam.Enemy
+                && addPrefabHealth[0].enabled
+                && addPrefabHealth[0].gameObject.activeSelf,
+                "Station Add prefab must contain exactly one enabled, active-self Enemy CombatHealth.");
+            Require(
+                addPrefab.GetComponentsInChildren<SummonFrontlineProxy>(true).Length == 0,
+                "Station Add prefab must not carry a summon-frontline proxy lifecycle.");
+            ICombatAiAgent addAgent = null;
+            int addAgentCount = 0;
+            MonoBehaviour[] addBehaviours =
+                addPrefab.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < addBehaviours.Length; i++)
+            {
+                if (addBehaviours[i] is ICombatAiAgent candidate)
+                {
+                    addAgent = candidate;
+                    addAgentCount++;
+                }
+            }
+
+            Require(addAgentCount == 1, "Station Add prefab must contain exactly one combat AI agent.");
+            MonoBehaviour addAgentBehaviour = addAgent as MonoBehaviour;
+            BasicSoldierEnemy addSoldier = addAgent as BasicSoldierEnemy;
+            CombatTargetSensor[] addSensors =
+                addPrefab.GetComponentsInChildren<CombatTargetSensor>(true);
+            Require(
+                addAgent != null
+                && addAgentBehaviour != null
+                && addSoldier != null
+                && addAgentBehaviour.enabled
+                && addAgentBehaviour.gameObject.activeSelf
+                && ReferenceEquals(addAgent.SelfHealth, addPrefabHealth[0])
+                && ReferenceEquals(addAgent.PatternProfile, addPattern)
+                && addSoldier.PatternDeck == null
+                && addPattern.AttackShape == CombatAiAttackShape.MeleeArc
+                && addAgent.TargetSensor != null
+                && addAgent.TargetSensor.enabled
+                && addAgent.TargetSensor.gameObject.activeSelf
+                && addSensors.Length == 1
+                && ReferenceEquals(addSensors[0], addAgent.TargetSensor)
+                && ReferenceEquals(addAgent.TargetSensor.SelfHealth, addPrefabHealth[0])
+                && addPattern.AttackRange <= addAgent.TargetSensor.SearchRadius
+                && addAgent.TargetSensor.TargetCandidateCount == 0,
+                "Station Add AI agent must coherently own the reviewed HeavyWindup melee loadout, Enemy health, and empty runtime-injected target sensor.");
+            Require(
+                addPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true).Length == 0,
+                "Station HeavyWindup Add prefab must not carry a projectile attack driver.");
             Require(station.RuntimeStateCount == 1, "Station definition must contain one terminal runtime state.");
             StageDefinitionProfile.RuntimeStateRef terminal = station.GetRuntimeState(0);
             Require(terminal.StateKind == StageRuntimeStateKind.StageClear, "Station terminal runtime state kind is invalid.");
@@ -1690,6 +1747,31 @@ namespace DimensionBrawl.Editor
             Require(
                 ReferenceEquals(executor.GetPayloadMapping(0), addArchetype),
                 "Station count-one executor must reference the canonical melee soldier archetype.");
+
+            CombatEncounterController[] terminalEncounters =
+                CollectSceneComponents<CombatEncounterController>(scene);
+            Require(
+                terminalEncounters.Length == 1,
+                "Station Add participation requires exactly one terminal encounter owner.");
+            CombatEncounterController terminalEncounter = terminalEncounters[0];
+            Require(
+                terminalEncounter.PlayerHealth != null
+                && terminalEncounter.EnemyHealth != null
+                && terminalEncounter.PlayerHealth.gameObject.scene == scene
+                && terminalEncounter.EnemyHealth.gameObject.scene == scene
+                && terminalEncounter.PlayerHealth.Team == DamageTeam.Player
+                && terminalEncounter.EnemyHealth.Team == DamageTeam.Enemy
+                && terminalEncounter.PlayerHealth.enabled
+                && terminalEncounter.EnemyHealth.enabled,
+                "Station terminal encounter must expose the exact scene-local, enabled Player/Enemy health pair.");
+            PlayerCombatTargetSelector[] playerSelectors =
+                terminalEncounter.PlayerHealth.GetComponents<PlayerCombatTargetSelector>();
+            Require(
+                playerSelectors.Length == 1
+                && ReferenceEquals(playerSelectors[0].SelfHealth, terminalEncounter.PlayerHealth)
+                && playerSelectors[0].enabled
+                && playerSelectors[0].ContainsAuthoredTargetCandidate(terminalEncounter.EnemyHealth),
+                "Station player selector must retain the authored boss while admitting runtime Add candidates separately.");
         }
 
         private static void ValidateIntroPresentationSceneContract(

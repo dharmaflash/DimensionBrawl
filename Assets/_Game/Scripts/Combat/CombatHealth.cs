@@ -178,6 +178,7 @@ namespace DimensionBrawl.Combat
 
         private static readonly List<CombatHealth> ActiveHealth = new();
         private static readonly Dictionary<int, ColliderHealthBinding> ColliderHealthBindings = new(128);
+        private static readonly List<int> ColliderBindingPurgeKeys = new(16);
 
         [SerializeField] private DamageTeam team = DamageTeam.Neutral;
         [SerializeField, Min(1f)] private float maxHealth = 100f;
@@ -214,6 +215,7 @@ namespace DimensionBrawl.Combat
         {
             ActiveHealth.Clear();
             ColliderHealthBindings.Clear();
+            ColliderBindingPurgeKeys.Clear();
             BecameActive = null;
             BecameInactive = null;
         }
@@ -226,21 +228,32 @@ namespace DimensionBrawl.Combat
             }
 
             int id = collider.GetInstanceID();
+            if (!collider.enabled || !collider.gameObject.activeInHierarchy)
+            {
+                ColliderHealthBindings.Remove(id);
+                return null;
+            }
+
             if (ColliderHealthBindings.TryGetValue(id, out ColliderHealthBinding binding)
                 && binding.Collider == collider
-                && binding.Health != null)
+                && binding.Health != null
+                && binding.Health.isActiveAndEnabled
+                && binding.Health.gameObject.activeInHierarchy)
             {
                 return binding.Health;
             }
 
             CombatHealth health = collider.GetComponentInParent<CombatHealth>();
-            if (health != null)
+            if (health != null
+                && health.isActiveAndEnabled
+                && health.gameObject.activeInHierarchy)
             {
                 ColliderHealthBindings[id] = new ColliderHealthBinding(collider, health);
             }
             else
             {
                 ColliderHealthBindings.Remove(id);
+                health = null;
             }
 
             return health;
@@ -303,6 +316,7 @@ namespace DimensionBrawl.Combat
 
         private void OnDisable()
         {
+            PurgeColliderBindings(this);
             if (ActiveHealth.Remove(this))
             {
                 BecameInactive?.Invoke(this);
@@ -311,10 +325,33 @@ namespace DimensionBrawl.Combat
 
         private void OnDestroy()
         {
+            PurgeColliderBindings(this);
             if (ActiveHealth.Remove(this))
             {
                 BecameInactive?.Invoke(this);
             }
+        }
+
+        private static void PurgeColliderBindings(CombatHealth health)
+        {
+            ColliderBindingPurgeKeys.Clear();
+            foreach (KeyValuePair<int, ColliderHealthBinding> pair in ColliderHealthBindings)
+            {
+                ColliderHealthBinding binding = pair.Value;
+                if (binding.Collider == null
+                    || binding.Health == null
+                    || ReferenceEquals(binding.Health, health))
+                {
+                    ColliderBindingPurgeKeys.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < ColliderBindingPurgeKeys.Count; i++)
+            {
+                ColliderHealthBindings.Remove(ColliderBindingPurgeKeys[i]);
+            }
+
+            ColliderBindingPurgeKeys.Clear();
         }
 
         public void SetTemporaryInvulnerability(float seconds)

@@ -29,6 +29,24 @@ namespace DimensionBrawl.AI
         public float SearchRadius => searchRadius;
         public int TargetCandidateCount => targetCandidates != null ? targetCandidates.Length : 0;
 
+        public bool ContainsTargetCandidate(CombatHealth candidate)
+        {
+            if (ReferenceEquals(candidate, null) || targetCandidates == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < targetCandidates.Length; i++)
+            {
+                if (ReferenceEquals(targetCandidates[i], candidate))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public bool TryGetCurrentTarget(out Transform target, out CombatHealth targetHealth)
         {
             if (ShouldRefreshTarget())
@@ -123,7 +141,11 @@ namespace DimensionBrawl.AI
 
         private bool IsValidTarget(CombatHealth candidate)
         {
-            if (candidate == null || candidate == selfHealth || !candidate.IsAlive)
+            if (candidate == null
+                || candidate == selfHealth
+                || !candidate.IsAlive
+                || !candidate.isActiveAndEnabled
+                || !candidate.gameObject.activeInHierarchy)
             {
                 return false;
             }

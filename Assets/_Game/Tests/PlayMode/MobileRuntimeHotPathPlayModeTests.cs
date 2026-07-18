@@ -167,12 +167,13 @@ namespace DimensionBrawl.Tests
             hitbox.transform.SetParent(root.transform, worldPositionStays: false);
             SphereCollider collider = hitbox.AddComponent<SphereCollider>();
             CombatHealth health = root.AddComponent<CombatHealth>();
+            int initialCacheCount = -1;
 
             try
             {
                 yield return null;
 
-                int initialCacheCount = CombatHealth.CachedColliderBindingCount;
+                initialCacheCount = CombatHealth.CachedColliderBindingCount;
                 Assert.AreSame(health, CombatHealth.ResolveFromCollider(collider));
                 Assert.AreEqual(initialCacheCount + 1, CombatHealth.CachedColliderBindingCount);
                 Assert.AreSame(health, CombatHealth.ResolveFromCollider(collider));
@@ -180,7 +181,33 @@ namespace DimensionBrawl.Tests
 
                 Object.Destroy(health);
                 yield return null;
+                Assert.AreEqual(initialCacheCount, CombatHealth.CachedColliderBindingCount);
+
                 CombatHealth replacementHealth = root.AddComponent<CombatHealth>();
+                Assert.AreSame(replacementHealth, CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount + 1, CombatHealth.CachedColliderBindingCount);
+
+                collider.enabled = false;
+                Assert.IsNull(CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount, CombatHealth.CachedColliderBindingCount);
+
+                collider.enabled = true;
+                Assert.AreSame(replacementHealth, CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount + 1, CombatHealth.CachedColliderBindingCount);
+
+                root.SetActive(false);
+                Assert.IsNull(CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount, CombatHealth.CachedColliderBindingCount);
+
+                root.SetActive(true);
+                Assert.AreSame(replacementHealth, CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount + 1, CombatHealth.CachedColliderBindingCount);
+
+                replacementHealth.enabled = false;
+                Assert.IsNull(CombatHealth.ResolveFromCollider(collider));
+                Assert.AreEqual(initialCacheCount, CombatHealth.CachedColliderBindingCount);
+
+                replacementHealth.enabled = true;
                 Assert.AreSame(replacementHealth, CombatHealth.ResolveFromCollider(collider));
                 Assert.AreEqual(initialCacheCount + 1, CombatHealth.CachedColliderBindingCount);
             }
@@ -190,6 +217,7 @@ namespace DimensionBrawl.Tests
             }
 
             yield return null;
+            Assert.AreEqual(initialCacheCount, CombatHealth.CachedColliderBindingCount);
         }
 
         [UnityTest]

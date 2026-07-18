@@ -36,6 +36,8 @@ namespace DimensionBrawl.Combat
         public bool IsWon => state == EncounterState.Won;
         public bool IsFailed => state == EncounterState.Failed;
         public bool IsFaulted => state == EncounterState.Faulted;
+        public CombatHealth PlayerHealth => playerHealth;
+        public CombatHealth EnemyHealth => enemyHealth;
         public bool UsesCoordinatedTerminalResolution => useCoordinatedTerminalResolution;
         public long RunGeneration => terminalCoordinator?.RunGeneration ?? 0;
         public EncounterTerminalResolutionCoordinator TerminalCoordinator => terminalCoordinator;

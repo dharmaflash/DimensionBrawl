@@ -12,11 +12,15 @@ namespace DimensionBrawl.Editor
     public static class ActionFoundationEnemyPrefabSetup
     {
         public const string PrefabRoot = "Assets/_Game/Prefabs/Enemies/ActionFoundation";
-        public const string MeleeSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        public const string MeleeSoldierRoleSourcePrefabPath =
+            PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        public const string MeleeSoldierPrefabPath =
+            PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
         public const string GeneralDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         public const string EliteDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
 
-        private const string MeleeSoldierPrefabName = "PF_Enemy_SciFiSoldier_Melee_ClosePunish";
+        private const string MeleeSoldierRoleSourcePrefabName = "PF_Enemy_SciFiSoldier_Melee_ClosePunish";
+        private const string MeleeSoldierPrefabName = "PF_Enemy_SciFiSoldier_Melee_HeavyWindup";
         private const string GeneralDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_GeneralDeck";
         private const string EliteDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_EliteDeck";
         private const string VfxPoolChildName = "CombatVfxPool";
@@ -43,6 +47,8 @@ namespace DimensionBrawl.Editor
 
             CombatAiPatternProfile closePunishProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternProfile heavyWindupProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
             CombatAiPatternProfile guardBreakProfile =
@@ -54,9 +60,17 @@ namespace DimensionBrawl.Editor
             ActionFoundationSciFiEliteSoldierVisualSetup.EnsureEliteDeckVisualAssets();
 
             EnsureSoldierPrefabCandidate(
-                MeleeSoldierPrefabName,
-                MeleeSoldierPrefabPath,
+                MeleeSoldierRoleSourcePrefabName,
+                MeleeSoldierRoleSourcePrefabPath,
                 closePunishProfile,
+                null,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.MaintenanceWorker);
+            EnsureSoldierPrefabCandidateFromSource(
+                MeleeSoldierPrefabName,
+                MeleeSoldierRoleSourcePrefabPath,
+                MeleeSoldierPrefabPath,
+                heavyWindupProfile,
                 null,
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.MaintenanceWorker);
@@ -81,8 +95,16 @@ namespace DimensionBrawl.Editor
 
         public static void ValidateEnemyPrefabCandidates()
         {
-            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(MeleeSoldierPrefabPath);
-            if (prefabAsset == null)
+            GameObject meleeRoleSourcePrefabAsset =
+                AssetDatabase.LoadAssetAtPath<GameObject>(MeleeSoldierRoleSourcePrefabPath);
+            if (meleeRoleSourcePrefabAsset == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing melee soldier role source prefab at {MeleeSoldierRoleSourcePrefabPath}.");
+            }
+
+            GameObject meleePrefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(MeleeSoldierPrefabPath);
+            if (meleePrefabAsset == null)
             {
                 throw new InvalidOperationException($"Missing melee soldier prefab candidate at {MeleeSoldierPrefabPath}.");
             }
@@ -101,6 +123,8 @@ namespace DimensionBrawl.Editor
 
             CombatAiPatternProfile closePunishProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternProfile heavyWindupProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
             CombatAiPatternProfile guardBreakProfile =
@@ -110,12 +134,20 @@ namespace DimensionBrawl.Editor
             CombatAiElitePatternProfile[] eliteProfiles = LoadEliteProfiles();
 
             ValidateSoldierPrefabAsset(
-                MeleeSoldierPrefabPath,
-                MeleeSoldierPrefabName,
+                MeleeSoldierRoleSourcePrefabPath,
+                MeleeSoldierRoleSourcePrefabName,
                 closePunishProfile,
                 null,
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.MaintenanceWorker);
+            ValidateSoldierPrefabAsset(
+                MeleeSoldierPrefabPath,
+                MeleeSoldierPrefabName,
+                heavyWindupProfile,
+                null,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.MaintenanceWorker);
+            ValidateMeleeParticipationPrefabAsset(MeleeSoldierPrefabPath, heavyWindupProfile);
             ValidateSoldierPrefabAsset(
                 GeneralDeckSoldierPrefabPath,
                 GeneralDeckSoldierPrefabName,
@@ -167,13 +199,32 @@ namespace DimensionBrawl.Editor
             CombatAiElitePatternProfile[] eliteProfiles,
             SoldierVisualCandidate visualCandidate)
         {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+            EnsureSoldierPrefabCandidateFromSource(
+                prefabName,
+                prefabPath,
+                prefabPath,
+                startingProfile,
+                patternDeck,
+                eliteProfiles,
+                visualCandidate);
+        }
+
+        private static void EnsureSoldierPrefabCandidateFromSource(
+            string prefabName,
+            string sourcePrefabPath,
+            string targetPrefabPath,
+            CombatAiPatternProfile startingProfile,
+            CombatAiPatternDeck patternDeck,
+            CombatAiElitePatternProfile[] eliteProfiles,
+            SoldierVisualCandidate visualCandidate)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(sourcePrefabPath) == null)
             {
                 throw new InvalidOperationException(
-                    $"Missing source prefab {prefabPath}; retired review scenes are no longer used to bootstrap enemy prefabs.");
+                    $"Missing source prefab {sourcePrefabPath}; retired review scenes are no longer used to bootstrap enemy prefabs.");
             }
 
-            GameObject candidate = PrefabUtility.LoadPrefabContents(prefabPath);
+            GameObject candidate = PrefabUtility.LoadPrefabContents(sourcePrefabPath);
             try
             {
                 candidate.name = prefabName;
@@ -193,9 +244,10 @@ namespace DimensionBrawl.Editor
                     ActionFoundationSciFiEliteSoldierVisualSetup.ApplyEliteDeckVisual(candidate);
                 }
 
-                if (PrefabUtility.SaveAsPrefabAsset(candidate, prefabPath) == null)
+                if (PrefabUtility.SaveAsPrefabAsset(candidate, targetPrefabPath) == null)
                 {
-                    throw new InvalidOperationException($"Failed to refresh enemy prefab candidate at {prefabPath}.");
+                    throw new InvalidOperationException(
+                        $"Failed to refresh enemy prefab candidate at {targetPrefabPath} from {sourcePrefabPath}.");
                 }
             }
             finally
@@ -216,6 +268,42 @@ namespace DimensionBrawl.Editor
             try
             {
                 ValidateSoldierPrefab(prefabRoot, expectedName, expectedProfile, expectedDeck, expectedEliteProfiles, visualCandidate);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void ValidateMeleeParticipationPrefabAsset(
+            string prefabPath,
+            CombatAiPatternProfile expectedProfile)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(prefabRoot, prefabRoot.name);
+                CombatTargetSensor targetSensor =
+                    RequireComponent<CombatTargetSensor>(prefabRoot, prefabRoot.name);
+                if (!ReferenceEquals(soldier.PatternProfile, expectedProfile)
+                    || soldier.PatternDeck != null
+                    || expectedProfile.AttackShape == CombatAiAttackShape.ProjectileLine)
+                {
+                    throw new InvalidOperationException(
+                        $"{prefabRoot.name} must use the exact non-projectile melee profile without a pattern deck.");
+                }
+
+                if (expectedProfile.AttackRange > targetSensor.SearchRadius)
+                {
+                    throw new InvalidOperationException(
+                        $"{prefabRoot.name} attack range {expectedProfile.AttackRange:0.###} exceeds sensor radius {targetSensor.SearchRadius:0.###}.");
+                }
+
+                if (prefabRoot.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true).Length != 0)
+                {
+                    throw new InvalidOperationException(
+                        $"{prefabRoot.name} must not carry a projectile attack driver for melee participation.");
+                }
             }
             finally
             {

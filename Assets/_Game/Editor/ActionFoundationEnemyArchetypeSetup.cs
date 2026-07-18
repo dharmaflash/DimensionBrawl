@@ -22,7 +22,8 @@ namespace DimensionBrawl.Editor
         public const string DragonBossFuturePath = ArchetypeRoot + "/DB_Archetype_DragonBoss_Future.asset";
 
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
-        private const string MeleeSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        private const string MeleeSoldierGameplayPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
         private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
         private const string SummonCallerBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_SummonCallerElite.prefab";
@@ -155,7 +156,7 @@ namespace DimensionBrawl.Editor
                 true,
                 "Promoted game-owned MaintenanceWorker visual.",
                 meleeSoldierPrefab != null
-                    ? "Use the authored `_Game` melee soldier prefab candidate as the first reusable close-combat baseline."
+                    ? "Use the authored `_Game` HeavyWindup melee soldier prefab as the first reusable close-combat baseline."
                     : "Generate the authored melee soldier prefab candidate before assigning reusable gameplay prefab refs.",
                 "Covers close guard, chase, skirmish, and entry-read roles without changing role decks.");
 

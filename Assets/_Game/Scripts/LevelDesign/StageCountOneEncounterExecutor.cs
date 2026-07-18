@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Player;
 using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -48,9 +49,15 @@ namespace DimensionBrawl.LevelDesign
         private GameObject configuredPrefab;
         private ICombatEntryGuideGate guideGate;
         private CombatEncounterController terminalEncounter;
+        private CombatHealth terminalPlayerHealth;
+        private PlayerCombatTargetSelector playerTargetSelector;
         private GameObject ownedRoot;
         private CombatHealth ownedHealth;
+        private ICombatAiAgent ownedAgent;
+        private CombatTargetSensor ownedSensor;
+        private bool ownedParticipationRegistered;
         private bool runtimeInitialized;
+        private bool activationInProgress;
         private bool activationDelayArmed;
         private float activationReadyTime;
 
@@ -62,7 +69,12 @@ namespace DimensionBrawl.LevelDesign
         public int PayloadMappingCount => payloadMappings != null ? payloadMappings.Length : 0;
         public StageCountOneEncounterState State { get; private set; }
         public string LastError { get; private set; } = string.Empty;
+        public GameObject OwnedRoot => ownedRoot;
         public CombatHealth OwnedHealth => ownedHealth;
+        public ICombatAiAgent OwnedAgent => ownedAgent;
+        public CombatTargetSensor OwnedSensor => ownedSensor;
+        public PlayerCombatTargetSelector PlayerTargetSelector => playerTargetSelector;
+        public bool HasCombatantParticipation => ownedParticipationRegistered;
         public int OwnedObjectCount => ownedRoot != null ? 1 : 0;
         public bool HasSceneLease { get; private set; }
         public int ActivationCount { get; private set; }
@@ -133,14 +145,21 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
-            if (!TryAcquireSceneLease(out error))
+            if (activationInProgress)
             {
-                Fail(error);
+                error = "The count-one encounter activation is already in progress.";
                 return false;
             }
 
+            activationInProgress = true;
             try
             {
+                if (!TryAcquireSceneLease(out error))
+                {
+                    Fail(error);
+                    return false;
+                }
+
                 GameObject root = new GameObject($"[Runtime] Stage Encounter {spawnId}");
                 root.SetActive(false);
                 SceneManager.MoveGameObjectToScene(root, gameObject.scene);
@@ -155,19 +174,73 @@ namespace DimensionBrawl.LevelDesign
                     LastSpawnRotation,
                     root.transform);
                 CombatHealth[] healthComponents = instance.GetComponentsInChildren<CombatHealth>(true);
-                if (healthComponents.Length != 1 || healthComponents[0].Team != DamageTeam.Enemy)
+                if (healthComponents.Length != 1
+                    || healthComponents[0].Team != DamageTeam.Enemy
+                    || !healthComponents[0].enabled
+                    || !healthComponents[0].gameObject.activeSelf)
                 {
-                    error = "The instantiated payload must contain exactly one Enemy CombatHealth.";
+                    error = "The instantiated payload must contain exactly one enabled, active-self Enemy CombatHealth.";
                     Fail(error);
                     return false;
                 }
 
                 ownedHealth = healthComponents[0];
+                if (!TryPrepareOwnedCombatant(instance, out error))
+                {
+                    Fail(error);
+                    return false;
+                }
+
                 ownedHealth.Died += HandleOwnedHealthDied;
+                CombatHealth.BecameInactive += HandleCombatHealthBecameInactive;
+                root.SetActive(true);
+                MonoBehaviour activeAgentBehaviour = ownedAgent as MonoBehaviour;
+                if (activeAgentBehaviour == null
+                    || !activeAgentBehaviour.isActiveAndEnabled
+                    || !ownedSensor.isActiveAndEnabled)
+                {
+                    error = "The activated Add AI agent and sensor must both be active.";
+                    Fail(error);
+                    return false;
+                }
+
+                bool acquiredInitialSensorTarget = ownedSensor.RefreshTarget();
+                if (acquiredInitialSensorTarget
+                    && !ReferenceEquals(ownedSensor.CurrentTargetHealth, terminalPlayerHealth))
+                {
+                    error = "The activated Add sensor acquired a subject other than the exact terminal player.";
+                    Fail(error);
+                    return false;
+                }
+
+                if (!playerTargetSelector.TryRegisterRuntimeTargetCandidate(
+                        ownedHealth,
+                        out string registrationError,
+                        refreshNow: false))
+                {
+                    error = $"The player selector rejected the Add participation lease: {registrationError}";
+                    Fail(error);
+                    return false;
+                }
+
+                ownedParticipationRegistered = true;
+                if (IsTerminalState()
+                    || ownedRoot == null
+                    || ownedHealth == null
+                    || !playerTargetSelector.ContainsRuntimeTargetCandidate(ownedHealth))
+                {
+                    error = "The Add participation lease was invalidated during activation.";
+                    if (!IsTerminalState())
+                    {
+                        Fail(error);
+                    }
+
+                    return false;
+                }
+
                 State = StageCountOneEncounterState.Active;
                 LastError = string.Empty;
                 ActivationCount++;
-                root.SetActive(true);
                 return true;
             }
             catch (Exception exception)
@@ -175,6 +248,10 @@ namespace DimensionBrawl.LevelDesign
                 error = $"Count-one payload activation failed: {exception.GetType().Name}: {exception.Message}";
                 Fail(error);
                 return false;
+            }
+            finally
+            {
+                activationInProgress = false;
             }
         }
 
@@ -196,6 +273,40 @@ namespace DimensionBrawl.LevelDesign
                 if (!ownedRoot.activeInHierarchy || !ownedHealth.isActiveAndEnabled)
                 {
                     Fail("The active count-one payload was disabled outside its executor.");
+                    return;
+                }
+
+                MonoBehaviour activeAgentBehaviour = ownedAgent as MonoBehaviour;
+                CombatHealth terminalEnemyHealth = terminalEncounter != null
+                    ? terminalEncounter.EnemyHealth
+                    : null;
+                if (activeAgentBehaviour == null
+                    || !activeAgentBehaviour.isActiveAndEnabled
+                    || ownedSensor == null
+                    || !ownedSensor.isActiveAndEnabled
+                    || !ReferenceEquals(ownedAgent.SelfHealth, ownedHealth)
+                    || !ReferenceEquals(ownedAgent.TargetSensor, ownedSensor)
+                    || ownedSensor.TargetCandidateCount != 1
+                    || !ownedSensor.ContainsTargetCandidate(terminalPlayerHealth)
+                    || terminalPlayerHealth == null
+                    || !terminalPlayerHealth.IsAlive
+                    || !terminalPlayerHealth.isActiveAndEnabled
+                    || playerTargetSelector == null
+                    || !playerTargetSelector.isActiveAndEnabled
+                    || !ownedParticipationRegistered
+                    || !playerTargetSelector.ContainsRuntimeTargetCandidate(ownedHealth)
+                    || terminalEnemyHealth == null
+                    || !playerTargetSelector.ContainsAuthoredTargetCandidate(terminalEnemyHealth))
+                {
+                    Fail("The active Add lost its exact bidirectional combatant participation lease.");
+                    return;
+                }
+
+                if ((ownedAgent.CurrentPatternState == CombatAiPatternState.Windup
+                        || ownedAgent.CurrentPatternState == CombatAiPatternState.AttackActive)
+                    && !ReferenceEquals(ownedSensor.CurrentTargetHealth, terminalPlayerHealth))
+                {
+                    Fail("The active Add entered an attack phase before its sensor acquired the exact terminal player.");
                     return;
                 }
 
@@ -298,7 +409,8 @@ namespace DimensionBrawl.LevelDesign
 
             if (!TryResolveAuthoring(out error)
                 || !TryResolveGuideGate(out error)
-                || !TryResolveTerminalEncounter(out error))
+                || !TryResolveTerminalEncounter(out error)
+                || !TryResolveCombatantParticipationOwner(out error))
             {
                 return false;
             }
@@ -309,7 +421,7 @@ namespace DimensionBrawl.LevelDesign
                 guideGate.StateChanged += HandleGuideStateChanged;
             }
 
-            if (terminalEncounter != null)
+            if (terminalEncounter != null && cancelOnTerminalEncounter)
             {
                 terminalEncounter.Won -= HandleTerminalEncounterEnded;
                 terminalEncounter.Failed -= HandleTerminalEncounterEnded;
@@ -320,6 +432,126 @@ namespace DimensionBrawl.LevelDesign
             }
 
             runtimeInitialized = true;
+            return true;
+        }
+
+        private bool TryResolveCombatantParticipationOwner(out string error)
+        {
+            error = string.Empty;
+            Scene scene = gameObject.scene;
+            terminalPlayerHealth = terminalEncounter != null ? terminalEncounter.PlayerHealth : null;
+            CombatHealth terminalEnemyHealth = terminalEncounter != null
+                ? terminalEncounter.EnemyHealth
+                : null;
+            if (terminalPlayerHealth == null
+                || terminalEnemyHealth == null
+                || terminalPlayerHealth.gameObject.scene != scene
+                || terminalEnemyHealth.gameObject.scene != scene
+                || terminalPlayerHealth.Team != DamageTeam.Player
+                || terminalEnemyHealth.Team != DamageTeam.Enemy)
+            {
+                error = "Add participation requires the exact scene-local terminal player and boss health pair.";
+                return false;
+            }
+
+            PlayerCombatTargetSelector[] selectors =
+                terminalPlayerHealth.GetComponents<PlayerCombatTargetSelector>();
+            if (selectors.Length != 1
+                || !ReferenceEquals(selectors[0].SelfHealth, terminalPlayerHealth)
+                || !selectors[0].ContainsAuthoredTargetCandidate(terminalEnemyHealth))
+            {
+                error = "Add participation requires one player selector that retains the authored terminal boss.";
+                return false;
+            }
+
+            playerTargetSelector = selectors[0];
+            return true;
+        }
+
+        private bool TryPrepareOwnedCombatant(GameObject instance, out string error)
+        {
+            error = string.Empty;
+            if (instance == null || ownedHealth == null)
+            {
+                error = "The Add instance and Enemy health must exist before participation preparation.";
+                return false;
+            }
+
+            ICombatAiAgent resolvedAgent = null;
+            int agentCount = 0;
+            MonoBehaviour[] behaviours = instance.GetComponentsInChildren<MonoBehaviour>(true);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is ICombatAiAgent candidate)
+                {
+                    resolvedAgent = candidate;
+                    agentCount++;
+                }
+            }
+
+            CombatTargetSensor resolvedSensor = resolvedAgent?.TargetSensor;
+            MonoBehaviour resolvedAgentBehaviour = resolvedAgent as MonoBehaviour;
+            CombatTargetSensor[] resolvedSensors =
+                instance.GetComponentsInChildren<CombatTargetSensor>(true);
+            SummonFrontlineProxy[] summonProxies =
+                instance.GetComponentsInChildren<SummonFrontlineProxy>(true);
+            if (agentCount != 1
+                || resolvedAgent == null
+                || resolvedAgentBehaviour == null
+                || !resolvedAgentBehaviour.enabled
+                || !resolvedAgentBehaviour.gameObject.activeSelf
+                || !ReferenceEquals(resolvedAgent.SelfHealth, ownedHealth)
+                || resolvedSensor == null
+                || !resolvedSensor.enabled
+                || !resolvedSensor.gameObject.activeSelf
+                || resolvedSensors.Length != 1
+                || !ReferenceEquals(resolvedSensors[0], resolvedSensor)
+                || !ReferenceEquals(resolvedSensor.SelfHealth, ownedHealth)
+                || (resolvedSensor.transform != instance.transform
+                    && !resolvedSensor.transform.IsChildOf(instance.transform))
+                || resolvedSensor.TargetCandidateCount != 0
+                || summonProxies.Length != 0)
+            {
+                error = "The Add payload must contain one coherent AI agent, one empty scene-injected target sensor, and no summon proxy.";
+                return false;
+            }
+
+            CombatAiPatternProfile participationPattern = resolvedAgent.PatternProfile;
+            if (participationPattern == null
+                || participationPattern.AttackShape == CombatAiAttackShape.ProjectileLine
+                || (resolvedSensor.SearchRadius > 0f
+                    && resolvedSensor.SearchRadius + PositionTolerance
+                        < participationPattern.AttackRange))
+            {
+                error = "The Add AI requires a non-projectile pattern whose attack range is covered by its target sensor.";
+                return false;
+            }
+
+            CombatHealth terminalEnemyHealth = terminalEncounter != null
+                ? terminalEncounter.EnemyHealth
+                : null;
+            if (terminalPlayerHealth == null
+                || terminalEnemyHealth == null
+                || playerTargetSelector == null
+                || !terminalPlayerHealth.IsAlive
+                || !terminalEnemyHealth.IsAlive
+                || !terminalPlayerHealth.isActiveAndEnabled
+                || !terminalEnemyHealth.isActiveAndEnabled
+                || !terminalPlayerHealth.gameObject.activeInHierarchy
+                || !terminalEnemyHealth.gameObject.activeInHierarchy
+                || !playerTargetSelector.isActiveAndEnabled
+                || !playerTargetSelector.gameObject.activeInHierarchy)
+            {
+                error = "The exact terminal player, boss, and selector must be active before Add participation starts.";
+                return false;
+            }
+
+            ownedAgent = resolvedAgent;
+            ownedSensor = resolvedSensor;
+            ownedAgent.ConfigureTarget(terminalPlayerHealth.transform, terminalPlayerHealth);
+            ownedSensor.ConfigureTargetCandidates(
+                new[] { terminalPlayerHealth },
+                refreshNow: false);
             return true;
         }
 
@@ -451,9 +683,11 @@ namespace DimensionBrawl.LevelDesign
             if (payloadMatchCount != 1
                 || configuredPrefab == null
                 || prefabHealth.Length != 1
-                || prefabHealth[0].Team != DamageTeam.Enemy)
+                || prefabHealth[0].Team != DamageTeam.Enemy
+                || !prefabHealth[0].enabled
+                || !prefabHealth[0].gameObject.activeSelf)
             {
-                error = "The Add payload must map to one prefab with exactly one Enemy CombatHealth.";
+                error = "The Add payload must map to one prefab with exactly one enabled, active-self Enemy CombatHealth.";
                 return false;
             }
 
@@ -496,12 +730,6 @@ namespace DimensionBrawl.LevelDesign
         private bool TryResolveTerminalEncounter(out string error)
         {
             error = string.Empty;
-            if (!cancelOnTerminalEncounter)
-            {
-                terminalEncounter = null;
-                return true;
-            }
-
             int matchCount = 0;
             GameObject[] roots = gameObject.scene.GetRootGameObjects();
             for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
@@ -517,7 +745,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (matchCount != 1)
             {
-                error = "Terminal cancellation requires exactly one scene-local CombatEncounterController.";
+                error = "Count-one Add participation requires exactly one scene-local CombatEncounterController.";
                 return false;
             }
 
@@ -618,6 +846,45 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
+        private void HandleCombatHealthBecameInactive(CombatHealth health)
+        {
+            CombatHealth terminalEnemyHealth = terminalEncounter != null
+                ? terminalEncounter.EnemyHealth
+                : null;
+            if (ReferenceEquals(health, terminalPlayerHealth)
+                || ReferenceEquals(health, terminalEnemyHealth))
+            {
+                if (State == StageCountOneEncounterState.Active)
+                {
+                    Cancel("An authoritative terminal combat subject became inactive during Add participation.");
+                }
+
+                return;
+            }
+
+            if (!ReferenceEquals(health, ownedHealth))
+            {
+                return;
+            }
+
+            if (State == StageCountOneEncounterState.Active)
+            {
+                Scene ownerScene = gameObject.scene;
+                Scene activeScene = SceneManager.GetActiveScene();
+                bool sceneExitInProgress = !ownerScene.isLoaded
+                    || !activeScene.IsValid()
+                    || activeScene.handle != ownerScene.handle;
+                if (sceneExitInProgress)
+                {
+                    Cancel("The owning Station scene exited while the Add participation lease was active.");
+                }
+                else
+                {
+                    Fail("The active Add health became inactive outside its executor cleanup.");
+                }
+            }
+        }
+
         private void HandleTerminalEncounterEnded()
         {
             Cancel("The authoritative Station encounter reached a terminal outcome.");
@@ -670,26 +937,94 @@ namespace DimensionBrawl.LevelDesign
         {
             CombatHealth health = ownedHealth;
             GameObject root = ownedRoot;
-            ownedHealth = null;
-            ownedRoot = null;
+            ICombatAiAgent agent = ownedAgent;
+            CombatTargetSensor sensor = ownedSensor;
+            PlayerCombatTargetSelector selector = playerTargetSelector;
+            bool participationRegistered = ownedParticipationRegistered;
+            Exception cleanupException = null;
 
-            if (health != null)
+            if (!ReferenceEquals(health, null))
             {
                 health.Died -= HandleOwnedHealthDied;
             }
 
-            if (root == null)
+            CombatHealth.BecameInactive -= HandleCombatHealthBecameInactive;
+            try
             {
-                return;
+                if (!ReferenceEquals(sensor, null))
+                {
+                    sensor.ConfigureTargetCandidates(Array.Empty<CombatHealth>(), refreshNow: false);
+                    sensor.enabled = false;
+                }
+            }
+            catch (Exception exception)
+            {
+                cleanupException = exception;
             }
 
-            if (Application.isPlaying)
+            try
             {
-                Destroy(root);
+                MonoBehaviour agentBehaviour = agent as MonoBehaviour;
+                if (!ReferenceEquals(agentBehaviour, null))
+                {
+                    agent.ConfigureTarget(null, null);
+                    agentBehaviour.enabled = false;
+                }
             }
-            else
+            catch (Exception exception)
             {
-                DestroyImmediate(root);
+                cleanupException ??= exception;
+            }
+
+            try
+            {
+                if (!ReferenceEquals(root, null) && root != null)
+                {
+                    root.SetActive(false);
+                }
+            }
+            catch (Exception exception)
+            {
+                cleanupException ??= exception;
+            }
+
+            try
+            {
+                if (participationRegistered
+                    && !ReferenceEquals(selector, null)
+                    && !ReferenceEquals(health, null))
+                {
+                    selector.UnregisterRuntimeTargetCandidate(health, refreshNow: false);
+                }
+            }
+            catch (Exception exception)
+            {
+                cleanupException ??= exception;
+            }
+            finally
+            {
+                ownedHealth = null;
+                ownedRoot = null;
+                ownedAgent = null;
+                ownedSensor = null;
+                ownedParticipationRegistered = false;
+
+                if (!ReferenceEquals(root, null) && root != null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        Destroy(root);
+                    }
+                    else
+                    {
+                        DestroyImmediate(root);
+                    }
+                }
+            }
+
+            if (cleanupException != null)
+            {
+                Debug.LogException(cleanupException, this);
             }
         }
 

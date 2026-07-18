@@ -57,6 +57,8 @@ namespace DimensionBrawl.Player
         private float nextRetargetTime;
         private readonly Dictionary<CombatHealth, TargetCandidateCache> targetCandidateCache =
             new Dictionary<CombatHealth, TargetCandidateCache>();
+        private readonly List<CombatHealth> runtimeTargetCandidates = new List<CombatHealth>(4);
+        private bool runtimeCandidateRegistrationBlocked;
 
         public CombatHealth SelfHealth => selfHealth;
         public Transform SelectionOrigin => selectionOrigin != null ? selectionOrigin : transform;
@@ -66,12 +68,21 @@ namespace DimensionBrawl.Player
         public float SelectionRadius => selectionRadius;
         public float AttackAimRadius => attackAimRadius;
         public int TargetCandidateCount => targetCandidates != null ? targetCandidates.Length : 0;
+        public int RuntimeTargetCandidateCount => runtimeTargetCandidates.Count;
         public bool IncludesActiveHostileSummons => includeActiveHostileSummons;
 
         public event Action<CombatHealth> TargetChanged;
 
         public bool TryGetCurrentTarget(out Transform target, out CombatHealth targetHealth)
         {
+            if (!CanSelectTargets())
+            {
+                ClearCurrentTargetWithoutNotification();
+                target = null;
+                targetHealth = null;
+                return false;
+            }
+
             if (ShouldRefreshTarget())
             {
                 RefreshTarget();
@@ -97,6 +108,13 @@ namespace DimensionBrawl.Player
             out CombatHealth targetHealth)
         {
             Vector3 fallbackPlanarDirection = ResolvePlanarDirection(fallbackDirection, ResolvePlanarForward(SelectionOrigin));
+            if (!CanSelectTargets())
+            {
+                ClearCurrentTargetWithoutNotification();
+                direction = fallbackPlanarDirection;
+                targetHealth = null;
+                return false;
+            }
 
             if (ShouldRefreshTarget())
             {
@@ -144,6 +162,15 @@ namespace DimensionBrawl.Player
             out CombatHealth targetHealth)
         {
             Vector3 rawPlanarDirection = ResolvePlanarDirection(rawAimDirection, ResolvePlanarForward(SelectionOrigin));
+            if (!CanSelectTargets())
+            {
+                ClearCurrentTargetWithoutNotification();
+                aimPoint = default;
+                direction = rawPlanarDirection;
+                targetHealth = null;
+                return false;
+            }
+
             targetHealth = FindBestAimAssistTarget(originPosition, rawPlanarDirection, maxDistance, maxAngleDegrees);
             if (targetHealth == null)
             {
@@ -176,8 +203,9 @@ namespace DimensionBrawl.Player
             targetHealth = null;
             lockPoint = default;
             strength01 = 0f;
-            if (maxDistance <= 0f || maxAngleDegrees <= 0f)
+            if (!CanSelectTargets() || maxDistance <= 0f || maxAngleDegrees <= 0f)
             {
+                ClearCurrentTargetWithoutNotification();
                 return false;
             }
 
@@ -205,6 +233,15 @@ namespace DimensionBrawl.Player
                 }
             }
 
+            ConsiderRuntimeLockTargets(
+                originPosition,
+                planarViewDirection,
+                maxDistance,
+                maxAngleDegrees,
+                preferredTarget,
+                preferredTargetBonus,
+                ref bestTarget,
+                ref bestScore);
             ConsiderActiveSummonLockTargets(
                 originPosition,
                 planarViewDirection,
@@ -235,6 +272,12 @@ namespace DimensionBrawl.Player
 
         public bool RefreshTarget()
         {
+            if (!CanSelectTargets())
+            {
+                ClearCurrentTargetWithoutNotification();
+                return false;
+            }
+
             if (IsValidTarget(currentTargetHealth) && Time.time < nextRetargetTime)
             {
                 currentTarget = currentTargetHealth.transform;
@@ -249,7 +292,7 @@ namespace DimensionBrawl.Player
 
         public void NotifyTargetContact(CombatHealth contactedTarget)
         {
-            if (!IsValidTarget(contactedTarget))
+            if (!CanSelectTargets() || !IsValidTarget(contactedTarget))
             {
                 return;
             }
@@ -268,6 +311,152 @@ namespace DimensionBrawl.Player
             {
                 RefreshTarget();
             }
+        }
+
+        public bool ContainsAuthoredTargetCandidate(CombatHealth candidate)
+        {
+            if (ReferenceEquals(candidate, null) || targetCandidates == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < targetCandidates.Length; i++)
+            {
+                if (ReferenceEquals(targetCandidates[i], candidate))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool ContainsRuntimeTargetCandidate(CombatHealth candidate)
+        {
+            if (ReferenceEquals(candidate, null))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < runtimeTargetCandidates.Count; i++)
+            {
+                if (ReferenceEquals(runtimeTargetCandidates[i], candidate))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryRegisterRuntimeTargetCandidate(
+            CombatHealth candidate,
+            out string error,
+            bool refreshNow = true)
+        {
+            error = string.Empty;
+            if (runtimeCandidateRegistrationBlocked)
+            {
+                error = "Runtime target registration is blocked while the selector is shutting down.";
+                return false;
+            }
+
+            if (candidate == null)
+            {
+                error = "The runtime target candidate is missing.";
+                return false;
+            }
+
+            if (selfHealth == null || candidate == selfHealth)
+            {
+                error = "The runtime target candidate requires a distinct configured owner health.";
+                return false;
+            }
+
+            if (!isActiveAndEnabled
+                || !gameObject.activeInHierarchy
+                || !selfHealth.IsAlive
+                || !selfHealth.isActiveAndEnabled
+                || !selfHealth.gameObject.activeInHierarchy)
+            {
+                error = "The runtime target candidate requires an active, living selector owner.";
+                return false;
+            }
+
+            if (candidate.gameObject.scene != gameObject.scene)
+            {
+                error = "The runtime target candidate must belong to the selector scene.";
+                return false;
+            }
+
+            if (!candidate.IsAlive
+                || !candidate.isActiveAndEnabled
+                || !candidate.gameObject.activeInHierarchy
+                || !CombatTeamUtility.AreHostile(selfHealth.Team, candidate.Team))
+            {
+                error = "The runtime target candidate must be an active, living hostile.";
+                return false;
+            }
+
+            if (!ContainsRuntimeTargetCandidate(candidate))
+            {
+                runtimeTargetCandidates.Add(candidate);
+            }
+
+            nextRetargetTime = 0f;
+            if (refreshNow && isActiveAndEnabled)
+            {
+                RefreshTarget();
+            }
+
+            if (!isActiveAndEnabled
+                || !gameObject.activeInHierarchy
+                || !selfHealth.IsAlive
+                || !selfHealth.isActiveAndEnabled
+                || !selfHealth.gameObject.activeInHierarchy
+                || !ContainsRuntimeTargetCandidate(candidate)
+                || !IsValidTarget(candidate))
+            {
+                UnregisterRuntimeTargetCandidate(candidate, refreshNow: false);
+                error = "The runtime target candidate lost eligibility during registration.";
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool UnregisterRuntimeTargetCandidate(
+            CombatHealth candidate,
+            bool refreshNow = true)
+        {
+            if (ReferenceEquals(candidate, null))
+            {
+                return false;
+            }
+
+            bool removed = false;
+            for (int i = runtimeTargetCandidates.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(runtimeTargetCandidates[i], candidate))
+                {
+                    runtimeTargetCandidates.RemoveAt(i);
+                    removed = true;
+                }
+            }
+
+            targetCandidateCache.Remove(candidate);
+            if (ReferenceEquals(currentTargetHealth, candidate))
+            {
+                SetCurrentTarget(null);
+            }
+
+            nextRetargetTime = 0f;
+            if (removed && refreshNow && isActiveAndEnabled)
+            {
+                RefreshTarget();
+            }
+
+            return removed;
         }
 
         private void Awake()
@@ -292,13 +481,26 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
-            CombatHealth.BecameInactive -= HandleCandidateInactive;
+            runtimeCandidateRegistrationBlocked = true;
+            try
+            {
+                CombatHealth.BecameInactive -= HandleCandidateInactive;
+                runtimeTargetCandidates.Clear();
+                targetCandidateCache.Clear();
+                SetCurrentTarget(null);
+                nextRetargetTime = 0f;
+            }
+            finally
+            {
+                runtimeCandidateRegistrationBlocked = false;
+            }
         }
 
         private void HandleCandidateInactive(CombatHealth candidate)
         {
             if (!ReferenceEquals(candidate, null))
             {
+                UnregisterRuntimeTargetCandidate(candidate, refreshNow: false);
                 targetCandidateCache.Remove(candidate);
             }
         }
@@ -332,6 +534,7 @@ namespace DimensionBrawl.Player
                 }
             }
 
+            ConsiderRuntimeTargets(ref bestTarget, ref bestScore);
             ConsiderActiveSummonTargets(ref bestTarget, ref bestScore);
             return bestTarget;
         }
@@ -356,6 +559,11 @@ namespace DimensionBrawl.Player
                 }
             }
 
+            ConsiderRuntimeAttackTargets(
+                fallbackDirection,
+                preferredContactDistance,
+                ref bestTarget,
+                ref bestScore);
             ConsiderActiveSummonAttackTargets(
                 fallbackDirection,
                 preferredContactDistance,
@@ -397,6 +605,13 @@ namespace DimensionBrawl.Player
                 }
             }
 
+            ConsiderRuntimeAimTargets(
+                originPosition,
+                rawAimDirection,
+                maxDistance,
+                maxAngleDegrees,
+                ref bestTarget,
+                ref bestScore);
             ConsiderActiveSummonAimTargets(
                 originPosition,
                 rawAimDirection,
@@ -405,6 +620,111 @@ namespace DimensionBrawl.Player
                 ref bestTarget,
                 ref bestScore);
             return bestTarget;
+        }
+
+        private void ConsiderRuntimeTargets(ref CombatHealth bestTarget, ref float bestScore)
+        {
+            for (int i = 0; i < runtimeTargetCandidates.Count; i++)
+            {
+                CombatHealth candidate = runtimeTargetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                ConsiderScoredCandidate(
+                    candidate,
+                    ScoreCandidate(candidate),
+                    0f,
+                    ref bestTarget,
+                    ref bestScore);
+            }
+        }
+
+        private void ConsiderRuntimeAttackTargets(
+            Vector3 fallbackDirection,
+            float preferredContactDistance,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            for (int i = 0; i < runtimeTargetCandidates.Count; i++)
+            {
+                CombatHealth candidate = runtimeTargetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                ConsiderScoredCandidate(
+                    candidate,
+                    ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance),
+                    0f,
+                    ref bestTarget,
+                    ref bestScore);
+            }
+        }
+
+        private void ConsiderRuntimeAimTargets(
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            for (int i = 0; i < runtimeTargetCandidates.Count; i++)
+            {
+                CombatHealth candidate = runtimeTargetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                ConsiderScoredCandidate(
+                    candidate,
+                    ScoreAimAssistCandidate(
+                        candidate,
+                        originPosition,
+                        rawAimDirection,
+                        maxDistance,
+                        maxAngleDegrees),
+                    0f,
+                    ref bestTarget,
+                    ref bestScore);
+            }
+        }
+
+        private void ConsiderRuntimeLockTargets(
+            Vector3 originPosition,
+            Vector3 viewDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            CombatHealth preferredTarget,
+            float preferredTargetBonus,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            for (int i = 0; i < runtimeTargetCandidates.Count; i++)
+            {
+                CombatHealth candidate = runtimeTargetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                ConsiderScoredCandidate(
+                    candidate,
+                    ScoreLockTargetCandidate(
+                        candidate,
+                        originPosition,
+                        viewDirection,
+                        maxDistance,
+                        maxAngleDegrees,
+                        candidate == preferredTarget ? preferredTargetBonus : 0f),
+                    0f,
+                    ref bestTarget,
+                    ref bestScore);
+            }
         }
 
         private void ConsiderActiveSummonTargets(ref CombatHealth bestTarget, ref float bestScore)
@@ -900,7 +1220,11 @@ namespace DimensionBrawl.Player
 
         private bool IsValidTarget(CombatHealth candidate)
         {
-            if (candidate == null || candidate == selfHealth || !candidate.IsAlive)
+            if (candidate == null
+                || candidate == selfHealth
+                || !candidate.IsAlive
+                || !candidate.isActiveAndEnabled
+                || !candidate.gameObject.activeInHierarchy)
             {
                 return false;
             }
@@ -911,6 +1235,23 @@ namespace DimensionBrawl.Player
             }
 
             return CombatTeamUtility.AreHostile(selfHealth.Team, candidate.Team);
+        }
+
+        private bool CanSelectTargets()
+        {
+            return isActiveAndEnabled
+                && gameObject.activeInHierarchy
+                && selfHealth != null
+                && selfHealth.IsAlive
+                && selfHealth.isActiveAndEnabled
+                && selfHealth.gameObject.activeInHierarchy;
+        }
+
+        private void ClearCurrentTargetWithoutNotification()
+        {
+            currentTargetHealth = null;
+            currentTarget = null;
+            nextRetargetTime = 0f;
         }
 
         private void SetCurrentTarget(CombatHealth nextTarget)

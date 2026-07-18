@@ -1186,6 +1186,187 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerTargetSelectorKeepsAuthoredBossWhileRuntimeCandidatesComeAndGo()
+        {
+            GameObject playerObject = new GameObject("RuntimeCandidatePlayer");
+            GameObject bossObject = new GameObject("AuthoredBoss");
+            GameObject firstAddObject = new GameObject("RuntimeAddA");
+            GameObject secondAddObject = new GameObject("RuntimeAddB");
+            try
+            {
+                playerObject.transform.position = Vector3.zero;
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                PlayerCombatTargetSelector targetSelector =
+                    playerObject.AddComponent<PlayerCombatTargetSelector>();
+
+                bossObject.transform.position = new Vector3(0f, 0f, 8f);
+                CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+                bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                firstAddObject.transform.position = new Vector3(0f, 0f, 2f);
+                CombatHealth firstAddHealth = firstAddObject.AddComponent<CombatHealth>();
+                firstAddHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                secondAddObject.transform.position = new Vector3(0f, 0f, 3f);
+                CombatHealth secondAddHealth = secondAddObject.AddComponent<CombatHealth>();
+                secondAddHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                targetSelector.ConfigureTargetCandidates(new[] { bossHealth }, refreshNow: false);
+                Assert.That(targetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+                Assert.That(
+                    targetSelector.TryRegisterRuntimeTargetCandidate(
+                        firstAddHealth,
+                        out string firstError,
+                        refreshNow: false),
+                    Is.True,
+                    firstError);
+                Assert.That(
+                    targetSelector.TryRegisterRuntimeTargetCandidate(
+                        secondAddHealth,
+                        out string secondError,
+                        refreshNow: false),
+                    Is.True,
+                    secondError);
+                Assert.That(
+                    targetSelector.TryRegisterRuntimeTargetCandidate(
+                        firstAddHealth,
+                        out string duplicateError,
+                        refreshNow: false),
+                    Is.True,
+                    duplicateError);
+
+                Assert.That(targetSelector.TargetCandidateCount, Is.EqualTo(1));
+                Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.EqualTo(2));
+                Assert.That(targetSelector.RefreshTarget(), Is.True);
+                Assert.That(targetSelector.CurrentTargetHealth, Is.SameAs(firstAddHealth));
+                Assert.That(
+                    targetSelector.TryGetAttackAimDirection(
+                        Vector3.forward,
+                        2.5f,
+                        out Vector3 meleeAimDirection,
+                        out CombatHealth meleeAimTarget),
+                    Is.True);
+                Assert.That(meleeAimTarget, Is.SameAs(firstAddHealth));
+                Assert.That(Vector3.Dot(meleeAimDirection, Vector3.forward), Is.GreaterThan(0.99f));
+                Assert.That(
+                    targetSelector.TryGetRangedAimAssistDirection(
+                        playerObject.transform.position,
+                        Vector3.forward,
+                        10f,
+                        45f,
+                        out Vector3 rangedAimDirection,
+                        out CombatHealth rangedAimTarget),
+                    Is.True);
+                Assert.That(rangedAimTarget, Is.SameAs(firstAddHealth));
+                Assert.That(Vector3.Dot(rangedAimDirection, Vector3.forward), Is.GreaterThan(0.99f));
+                Assert.That(
+                    targetSelector.TryGetBestLockTarget(
+                        playerObject.transform.position,
+                        Vector3.forward,
+                        10f,
+                        45f,
+                        null,
+                        0f,
+                        out CombatHealth lockTarget,
+                        out Vector3 _,
+                        out float _),
+                    Is.True);
+                Assert.That(lockTarget, Is.SameAs(firstAddHealth));
+
+                Assert.That(
+                    targetSelector.UnregisterRuntimeTargetCandidate(firstAddHealth),
+                    Is.True);
+                Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.EqualTo(1));
+                Assert.That(targetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+                Assert.That(targetSelector.CurrentTargetHealth, Is.SameAs(secondAddHealth));
+
+                secondAddObject.SetActive(false);
+                Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.Zero);
+                Assert.That(targetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.False);
+                Assert.That(targetSelector.RefreshTarget(), Is.True);
+                Assert.That(targetSelector.CurrentTargetHealth, Is.SameAs(bossHealth));
+            }
+            finally
+            {
+                Object.DestroyImmediate(secondAddObject);
+                Object.DestroyImmediate(firstAddObject);
+                Object.DestroyImmediate(bossObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
+        public void PlayerTargetSelectorDisableRejectsReentrantRuntimeCandidateRegistration()
+        {
+            GameObject playerObject = new GameObject("ReentrantRuntimeCandidatePlayer");
+            GameObject bossObject = new GameObject("ReentrantAuthoredBoss");
+            GameObject addObject = new GameObject("ReentrantRuntimeAdd");
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                PlayerCombatTargetSelector targetSelector =
+                    playerObject.AddComponent<PlayerCombatTargetSelector>();
+
+                bossObject.transform.position = new Vector3(0f, 0f, 8f);
+                CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+                bossHealth.ConfigureTeam(DamageTeam.Enemy);
+                targetSelector.ConfigureTargetCandidates(new[] { bossHealth }, refreshNow: false);
+
+                addObject.transform.position = new Vector3(0f, 0f, 2f);
+                CombatHealth addHealth = addObject.AddComponent<CombatHealth>();
+                addHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                Assert.That(
+                    targetSelector.TryRegisterRuntimeTargetCandidate(
+                        addHealth,
+                        out string registrationError),
+                    Is.True,
+                    registrationError);
+                Assert.That(targetSelector.CurrentTargetHealth, Is.SameAs(addHealth));
+
+                int nullTargetCallbackCount = 0;
+                bool reentrantQueryAccepted = true;
+                bool reentrantRegistrationAccepted = true;
+                string reentrantError = string.Empty;
+                targetSelector.TargetChanged += HandleTargetChanged;
+
+                targetSelector.enabled = false;
+
+                Assert.That(nullTargetCallbackCount, Is.EqualTo(1));
+                Assert.That(reentrantQueryAccepted, Is.False);
+                Assert.That(reentrantRegistrationAccepted, Is.False);
+                Assert.That(reentrantError, Does.Contain("blocked"));
+                Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.Zero);
+                Assert.That(targetSelector.CurrentTargetHealth, Is.Null);
+
+                void HandleTargetChanged(CombatHealth nextTarget)
+                {
+                    if (!ReferenceEquals(nextTarget, null))
+                    {
+                        return;
+                    }
+
+                    nullTargetCallbackCount++;
+                    reentrantQueryAccepted =
+                        targetSelector.TryGetCurrentTarget(out Transform _, out CombatHealth _);
+                    reentrantRegistrationAccepted =
+                        targetSelector.TryRegisterRuntimeTargetCandidate(
+                            addHealth,
+                            out reentrantError,
+                            refreshNow: false);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(addObject);
+                Object.DestroyImmediate(bossObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void RangedBasicManualAimStillAppliesWeakAssistForCloseThreat()
         {
             GameObject playerObject = new GameObject("Player");

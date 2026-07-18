@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
@@ -40,7 +41,9 @@ namespace DimensionBrawl.Tests
         private const string StationAddArchetypePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
         private const string StationAddPrefabPath =
-            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
+        private const string StationAddPatternPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
         private const string PlayableStagePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
         private const string StageSelectPrefabPath =
@@ -1139,6 +1142,32 @@ namespace DimensionBrawl.Tests
         {
             yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Fail);
 
+            Scene retiredCorridorScene = SceneManager.GetSceneByPath(CorridorScenePath);
+            Assert.That(retiredCorridorScene.IsValid(), Is.True);
+            Assert.That(retiredCorridorScene.isLoaded, Is.True);
+            int retiredSceneHandle = retiredCorridorScene.handle;
+            StageRunContext retiredContext = StageRunRuntime.ActiveContext;
+            Assert.That(retiredContext, Is.Not.Null);
+            string retiredRunId = retiredContext.Identity.RunId;
+            StageCountOneEncounterExecutor retiredExecutor =
+                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(retiredCorridorScene);
+            Assert.That(
+                retiredExecutor.State,
+                Is.EqualTo(StageCountOneEncounterState.Cancelled));
+            Assert.That(retiredExecutor.ActivationCount, Is.EqualTo(1));
+            Assert.That(retiredExecutor.CompletionCount, Is.Zero);
+            Assert.That(retiredExecutor.CancellationCount, Is.EqualTo(1));
+            Assert.That(retiredExecutor.OwnedObjectCount, Is.Zero);
+            Assert.That(retiredExecutor.OwnedRoot, Is.Null);
+            Assert.That(retiredExecutor.OwnedHealth, Is.Null);
+            Assert.That(retiredExecutor.OwnedAgent, Is.Null);
+            Assert.That(retiredExecutor.OwnedSensor, Is.Null);
+            Assert.That(retiredExecutor.HasCombatantParticipation, Is.False);
+            Assert.That(retiredExecutor.PlayerTargetSelector, Is.Not.Null);
+            Assert.That(
+                retiredExecutor.PlayerTargetSelector.RuntimeTargetCandidateCount,
+                Is.Zero);
+
             Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
             StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
             AssertPresenterRoutes(presenter, StageRouteOutcome.Fail);
@@ -1149,6 +1178,32 @@ namespace DimensionBrawl.Tests
             yield return WaitForActiveScenePath(CorridorScenePath, 8f);
 
             Scene corridorScene = SceneManager.GetActiveScene();
+            Assert.That(SceneManager.GetSceneByName(StageClearSceneName).isLoaded, Is.False);
+            Assert.That(retiredCorridorScene.isLoaded, Is.False);
+            Assert.That(retiredExecutor == null, Is.True);
+            Assert.That(corridorScene.handle, Is.Not.EqualTo(retiredSceneHandle));
+            StageRunContext freshContext = StageRunRuntime.ActiveContext;
+            Assert.That(freshContext, Is.Not.Null);
+            Assert.That(freshContext, Is.Not.SameAs(retiredContext));
+            Assert.That(freshContext.Identity.RunId, Is.Not.EqualTo(retiredRunId));
+            Assert.That(
+                freshContext.LifecycleState,
+                Is.EqualTo(StageRunLifecycleState.CorridorActive));
+            StageCountOneEncounterExecutor freshExecutor =
+                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(corridorScene);
+            Assert.That(ReferenceEquals(freshExecutor, retiredExecutor), Is.False);
+            Assert.That(
+                freshExecutor.State,
+                Is.EqualTo(StageCountOneEncounterState.WaitingForRun));
+            Assert.That(
+                freshExecutor.LastError,
+                Does.Contain("does not own this exact Station segment"));
+            Assert.That(freshExecutor.ActivationCount, Is.Zero);
+            Assert.That(freshExecutor.CompletionCount, Is.Zero);
+            Assert.That(freshExecutor.CancellationCount, Is.Zero);
+            Assert.That(freshExecutor.OwnedObjectCount, Is.Zero);
+            Assert.That(freshExecutor.HasCombatantParticipation, Is.False);
+            Assert.That(freshExecutor.HasSceneLease, Is.False);
             OlympusCorridorCombatFlowController flow =
                 RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
             Assert.That(flow.HasCanonicalStageRun, Is.True);
@@ -1636,9 +1691,22 @@ namespace DimensionBrawl.Tests
             CombatEnemyArchetypeProfile archetype =
                 LoadRequired<CombatEnemyArchetypeProfile>(StationAddArchetypePath);
             GameObject gameplayPrefab = LoadRequired<GameObject>(StationAddPrefabPath);
+            CombatAiPatternProfile meleePattern =
+                LoadRequired<CombatAiPatternProfile>(StationAddPatternPath);
             Assert.That(archetype.ArchetypeId, Is.EqualTo(spawn.PayloadId));
             Assert.That(archetype.GameplayPrefab, Is.SameAs(gameplayPrefab));
             Assert.That(archetype.RequiresDedicatedPrefabPromotion, Is.False);
+            BasicSoldierEnemy meleeSoldier = gameplayPrefab.GetComponent<BasicSoldierEnemy>();
+            CombatTargetSensor meleeSensor = gameplayPrefab.GetComponent<CombatTargetSensor>();
+            Assert.That(meleeSoldier, Is.Not.Null);
+            Assert.That(meleeSensor, Is.Not.Null);
+            Assert.That(meleeSoldier.PatternProfile, Is.SameAs(meleePattern));
+            Assert.That(meleeSoldier.PatternDeck, Is.Null);
+            Assert.That(meleePattern.AttackShape, Is.EqualTo(CombatAiAttackShape.MeleeArc));
+            Assert.That(meleePattern.AttackRange, Is.LessThanOrEqualTo(meleeSensor.SearchRadius));
+            Assert.That(
+                gameplayPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true),
+                Is.Empty);
 
             PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
             Assert.That(route.GetSceneSegment(1).SegmentId, Is.EqualTo("station_entry_combat"));

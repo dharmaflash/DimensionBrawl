@@ -277,7 +277,7 @@ namespace DimensionBrawl.Editor
                 CreateSpec(
                     refs.EntryProbe,
                     refs.MeleeArchetype,
-                    ActionFoundationEnemyPrefabSetup.MeleeSoldierPrefabPath,
+                    ActionFoundationEnemyPrefabSetup.MeleeSoldierRoleSourcePrefabPath,
                     "PF_Enemy_Role_EntryProbe",
                     EntryProbePrefabPath,
                     EntryProbeCandidateProfilePath,
@@ -287,7 +287,7 @@ namespace DimensionBrawl.Editor
                 CreateSpec(
                     refs.CloseGuard,
                     refs.MeleeArchetype,
-                    ActionFoundationEnemyPrefabSetup.MeleeSoldierPrefabPath,
+                    ActionFoundationEnemyPrefabSetup.MeleeSoldierRoleSourcePrefabPath,
                     "PF_Enemy_Role_CloseGuard",
                     CloseGuardPrefabPath,
                     CloseGuardCandidateProfilePath,
@@ -297,7 +297,7 @@ namespace DimensionBrawl.Editor
                 CreateSpec(
                     refs.LungeChaser,
                     refs.MeleeArchetype,
-                    ActionFoundationEnemyPrefabSetup.MeleeSoldierPrefabPath,
+                    ActionFoundationEnemyPrefabSetup.MeleeSoldierRoleSourcePrefabPath,
                     "PF_Enemy_Role_LungeChaser",
                     LungeChaserPrefabPath,
                     LungeChaserCandidateProfilePath,
@@ -337,7 +337,7 @@ namespace DimensionBrawl.Editor
                 CreateSpec(
                     refs.Skirmisher,
                     refs.MeleeArchetype,
-                    ActionFoundationEnemyPrefabSetup.MeleeSoldierPrefabPath,
+                    ActionFoundationEnemyPrefabSetup.MeleeSoldierRoleSourcePrefabPath,
                     "PF_Enemy_Role_Skirmisher",
                     SkirmisherPrefabPath,
                     SkirmisherCandidateProfilePath,

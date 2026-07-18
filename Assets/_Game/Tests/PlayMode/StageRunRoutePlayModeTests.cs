@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -1242,6 +1243,43 @@ namespace DimensionBrawl.Tests
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(station);
             EncounterTerminalResolutionCoordinator coordinator = encounter.TerminalCoordinator;
+            StageCountOneEncounterExecutor executor =
+                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
+            float activationDeadline = Time.realtimeSinceStartup + 2f;
+            while (executor.State != StageCountOneEncounterState.Active)
+            {
+                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
+                yield return null;
+            }
+
+            Assert.That(executor.ActivationCount, Is.EqualTo(1));
+            Assert.That(executor.OwnedObjectCount, Is.EqualTo(1));
+            Assert.That(executor.HasCombatantParticipation, Is.True);
+            Assert.That(executor.HasSceneLease, Is.True);
+
+            int executorDisableCallbackCount = 0;
+            StageCountOneEncounterState executorStateAtDisable = default;
+            int executorCancellationCountAtDisable = -1;
+            int executorCompletionCountAtDisable = -1;
+            bool executorOwnershipClearedAtDisable = false;
+            bool executorParticipationClearedAtDisable = false;
+            bool executorSceneLeaseReleasedAtDisable = false;
+            StageCountOneExecutorShutdownProbe shutdownProbe =
+                executor.gameObject.AddComponent<StageCountOneExecutorShutdownProbe>();
+            shutdownProbe.Disabled = () =>
+            {
+                executorDisableCallbackCount++;
+                executorStateAtDisable = executor.State;
+                executorCancellationCountAtDisable = executor.CancellationCount;
+                executorCompletionCountAtDisable = executor.CompletionCount;
+                executorOwnershipClearedAtDisable = executor.OwnedObjectCount == 0
+                    && executor.OwnedRoot == null
+                    && executor.OwnedHealth == null
+                    && executor.OwnedAgent == null
+                    && executor.OwnedSensor == null;
+                executorParticipationClearedAtDisable = !executor.HasCombatantParticipation;
+                executorSceneLeaseReleasedAtDisable = !executor.HasSceneLease;
+            };
             SceneManager.CreateScene("StageRunRouteUnloadHost");
 
             AsyncOperation unload = SceneManager.UnloadSceneAsync(station);
@@ -1252,6 +1290,24 @@ namespace DimensionBrawl.Tests
             }
 
             yield return null;
+            Assert.That(executorDisableCallbackCount, Is.EqualTo(1));
+            Assert.That(
+                executorStateAtDisable,
+                Is.EqualTo(StageCountOneEncounterState.Cancelled));
+            Assert.That(executorCancellationCountAtDisable, Is.EqualTo(1));
+            Assert.That(executorCompletionCountAtDisable, Is.Zero);
+            Assert.That(
+                executorOwnershipClearedAtDisable,
+                Is.True,
+                "Scene unload must clear the runtime Add ownership before the executor disable boundary returns.");
+            Assert.That(
+                executorParticipationClearedAtDisable,
+                Is.True,
+                "Scene unload must clear the Add participation lease before the executor disable boundary returns.");
+            Assert.That(
+                executorSceneLeaseReleasedAtDisable,
+                Is.True,
+                "Scene unload must release the count-one scene lease before the executor disable boundary returns.");
             Assert.That(coordinator.State, Is.EqualTo(EncounterTerminalCoordinatorState.Cancelled));
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Disposed));
             Assert.That(context.CommittedSummary, Is.Null);
@@ -1303,23 +1359,188 @@ namespace DimensionBrawl.Tests
             }
 
             CombatHealth addHealth = executor.OwnedHealth;
+            ICombatAiAgent addAgent = executor.OwnedAgent;
+            CombatTargetSensor addSensor = executor.OwnedSensor;
+            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
+            GameObject ownedRoot = executor.OwnedRoot;
+            CombatEncounterController encounter =
+                RequireSingleSceneComponent<CombatEncounterController>(station);
+            CombatHealth playerHealth = encounter.PlayerHealth;
+            CombatHealth bossHealth = encounter.EnemyHealth;
             Assert.That(addHealth, Is.Not.Null);
             Assert.That(addHealth.Team, Is.EqualTo(DamageTeam.Enemy));
             Assert.That(addHealth.IsAlive, Is.True);
+            Assert.That(addAgent, Is.Not.Null);
+            Assert.That(addAgent.SelfHealth, Is.SameAs(addHealth));
+            Assert.That(addAgent.PatternProfile, Is.Not.Null);
+            Assert.That(addAgent.PatternProfile.PatternId, Is.EqualTo("HeavyWindup"));
+            Assert.That(addAgent.PatternProfile.AttackShape, Is.EqualTo(CombatAiAttackShape.MeleeArc));
+            Assert.That(addSensor, Is.Not.Null);
+            Assert.That(
+                addSensor.SearchRadius,
+                Is.GreaterThanOrEqualTo(addAgent.PatternProfile.AttackRange));
+            Assert.That(addAgent.TargetSensor, Is.SameAs(addSensor));
+            Assert.That(addSensor.SelfHealth, Is.SameAs(addHealth));
+            Assert.That(playerHealth, Is.Not.Null);
+            Assert.That(bossHealth, Is.Not.Null);
+            Assert.That(bossHealth, Is.Not.SameAs(addHealth));
+            Assert.That(playerTargetSelector, Is.Not.Null);
+            Assert.That(playerTargetSelector.SelfHealth, Is.SameAs(playerHealth));
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
+            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.EqualTo(1));
+            Assert.That(executor.HasCombatantParticipation, Is.True);
+            Assert.That(addSensor.TargetCandidateCount, Is.EqualTo(1));
+            Assert.That(addSensor.ContainsTargetCandidate(playerHealth), Is.True);
+            if (addSensor.TryGetCurrentTarget(out _, out CombatHealth initialSensedHealth))
+            {
+                Assert.That(initialSensedHealth, Is.SameAs(playerHealth));
+            }
             Assert.That(executor.ActivationCount, Is.EqualTo(1));
             Assert.That(executor.OwnedObjectCount, Is.EqualTo(1));
             Assert.That(executor.HasSceneLease, Is.True);
             Assert.That(executor.TryActivate(out string duplicateError), Is.True, duplicateError);
             Assert.That(executor.ActivationCount, Is.EqualTo(1));
 
-            Assert.That(ApplyLethalDamage(addHealth, DamageTeam.Player), Is.True);
+            Vector3 lockViewDirection = Vector3.ProjectOnPlane(
+                addHealth.transform.position - playerHealth.transform.position,
+                Vector3.up).normalized;
+            Assert.That(lockViewDirection.sqrMagnitude, Is.GreaterThan(0.99f));
+            Assert.That(
+                playerTargetSelector.TryGetBestLockTarget(
+                    playerHealth.transform.position,
+                    lockViewDirection,
+                    50f,
+                    15f,
+                    addHealth,
+                    10f,
+                    out CombatHealth lockTarget,
+                    out _,
+                    out _),
+                Is.True,
+                "The player's directed lock query did not admit the runtime Add candidate.");
+            Assert.That(lockTarget, Is.SameAs(addHealth));
+
+            Vector3 initialAddPosition = addHealth.transform.position;
+            float initialPlanarDistance = Vector3.ProjectOnPlane(
+                addHealth.transform.position - playerHealth.transform.position,
+                Vector3.up).magnitude;
+            float closestPlanarDistance = initialPlanarDistance;
+            float approachProofDeadline = Time.realtimeSinceStartup + 3f;
+            while (initialPlanarDistance - closestPlanarDistance < 0.25f)
+            {
+                closestPlanarDistance = Mathf.Min(
+                    closestPlanarDistance,
+                    Vector3.ProjectOnPlane(
+                        addHealth.transform.position - playerHealth.transform.position,
+                        Vector3.up).magnitude);
+                Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    approachProofDeadline,
+                    "The runtime Add did not begin authored approach motion toward the lower entry position.");
+                yield return null;
+            }
+
+            Transform playerForwardBoundary = RequireSingleSceneTransform(
+                station,
+                "PlayerForwardBoundaryAnchor");
+            MoveCombatSubjectToAnchor(playerHealth, playerForwardBoundary);
             yield return null;
+
+            float playerHealthBeforeAddAttack = playerHealth.CurrentHealth;
+            bool observedWindup = addAgent.CurrentPatternState == CombatAiPatternState.Windup;
+            int exactAddDamageCount = 0;
+            DamageInfo exactAddDamage = default;
+            playerHealth.Damaged += HandlePlayerDamaged;
+            addAgent.PatternStateChanged += HandleAddPatternStateChanged;
+            try
+            {
+                float attackDeadline = Time.realtimeSinceStartup + 18f;
+                while (exactAddDamageCount == 0)
+                {
+                    closestPlanarDistance = Mathf.Min(
+                        closestPlanarDistance,
+                        Vector3.ProjectOnPlane(
+                            addHealth.transform.position - playerHealth.transform.position,
+                            Vector3.up).magnitude);
+                    observedWindup |= addAgent.CurrentPatternState == CombatAiPatternState.Windup;
+                    Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
+                    Assert.That(addHealth.IsAlive, Is.True);
+                    Assert.Less(
+                        Time.realtimeSinceStartup,
+                        attackDeadline,
+                        "Timed out waiting for the runtime Add to approach, wind up, and damage the player. "
+                        + $"initialDistance={initialPlanarDistance:F2}, closestDistance={closestPlanarDistance:F2}, "
+                        + $"currentDistance={Vector3.ProjectOnPlane(addHealth.transform.position - playerHealth.transform.position, Vector3.up).magnitude:F2}, "
+                        + $"initialAdd={initialAddPosition:F2}, currentAdd={addHealth.transform.position:F2}, player={playerHealth.transform.position:F2}, "
+                        + $"state={addAgent.CurrentPatternState}, sensorTarget={addSensor.CurrentTargetHealth?.name ?? "none"}, "
+                        + $"timeScale={Time.timeScale:F2}.");
+                    yield return null;
+                }
+            }
+            finally
+            {
+                playerHealth.Damaged -= HandlePlayerDamaged;
+                addAgent.PatternStateChanged -= HandleAddPatternStateChanged;
+            }
+
+            Assert.That(
+                closestPlanarDistance,
+                Is.LessThan(initialPlanarDistance - 0.1f),
+                "The runtime Add never closed measurable planar distance toward the terminal player.");
+            Assert.That(observedWindup, Is.True, "The runtime Add never published a Windup state.");
+            Assert.That(exactAddDamageCount, Is.EqualTo(1));
+            Assert.That(exactAddDamage.Source, Is.SameAs(addHealth));
+            Assert.That(exactAddDamage.SourceTeam, Is.EqualTo(DamageTeam.Enemy));
+            Assert.That(exactAddDamage.Amount, Is.GreaterThan(0f));
+            Assert.That(playerHealth.CurrentHealth, Is.LessThan(playerHealthBeforeAddAttack));
+            Assert.That(
+                addSensor.TryGetCurrentTarget(
+                    out Transform sensedPlayerTransform,
+                    out CombatHealth sensedPlayerHealth),
+                Is.True,
+                "The runtime Add reached attack range without its sensor acquiring the exact player.");
+            Assert.That(sensedPlayerHealth, Is.SameAs(playerHealth));
+            Assert.That(sensedPlayerTransform, Is.SameAs(playerHealth.transform));
+
+            Assert.That(ApplyLethalDamage(addHealth, DamageTeam.Player), Is.True);
+            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
 
             Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Completed));
             Assert.That(executor.CompletionCount, Is.EqualTo(1));
             Assert.That(executor.CancellationCount, Is.Zero);
             Assert.That(executor.OwnedObjectCount, Is.Zero);
+            Assert.That(executor.OwnedRoot, Is.Null);
+            Assert.That(executor.OwnedHealth, Is.Null);
+            Assert.That(executor.OwnedAgent, Is.Null);
+            Assert.That(executor.OwnedSensor, Is.Null);
+            Assert.That(executor.HasCombatantParticipation, Is.False);
             Assert.That(executor.HasSceneLease, Is.True);
+            Assert.That(ownedRoot.activeSelf, Is.False);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
+            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
+            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
+
+            void HandlePlayerDamaged(DamageInfo damageInfo)
+            {
+                if (!ReferenceEquals(damageInfo.Source, addHealth))
+                {
+                    return;
+                }
+
+                exactAddDamage = damageInfo;
+                exactAddDamageCount++;
+            }
+
+            void HandleAddPatternStateChanged(
+                CombatAiPatternState state,
+                CombatAiPatternProfile _)
+            {
+                observedWindup |= state == CombatAiPatternState.Windup;
+            }
         }
 
         [UnityTest]
@@ -1339,22 +1560,188 @@ namespace DimensionBrawl.Tests
             }
 
             CombatHealth addHealth = executor.OwnedHealth;
+            ICombatAiAgent addAgent = executor.OwnedAgent;
+            CombatTargetSensor addSensor = executor.OwnedSensor;
+            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
+            GameObject ownedRoot = executor.OwnedRoot;
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(station);
-            CombatHealth bossHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
+            CombatHealth playerHealth = encounter.PlayerHealth;
+            CombatHealth bossHealth = encounter.EnemyHealth;
+            Assert.That(addHealth, Is.Not.Null);
+            Assert.That(addAgent, Is.Not.Null);
+            Assert.That(addSensor, Is.Not.Null);
+            Assert.That(playerTargetSelector, Is.Not.Null);
+            Assert.That(ownedRoot, Is.Not.Null);
             Assert.That(bossHealth, Is.Not.SameAs(addHealth));
-            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
 
-            float cancellationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Cancelled)
+            Transform playerForwardBoundary = RequireSingleSceneTransform(
+                station,
+                "PlayerForwardBoundaryAnchor");
+            MoveCombatSubjectToAnchor(playerHealth, playerForwardBoundary);
+            yield return null;
+
+            int exactAddDamageCount = 0;
+            playerHealth.Damaged += HandlePlayerDamaged;
+            float windupDeadline = Time.realtimeSinceStartup + 18f;
+            while (addAgent.CurrentPatternState != CombatAiPatternState.Windup)
             {
-                Assert.Less(Time.realtimeSinceStartup, cancellationDeadline, executor.LastError);
+                Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
+                Assert.That(addHealth.IsAlive, Is.True);
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    windupDeadline,
+                    "Timed out waiting to cancel the runtime Add during its authored Windup. "
+                    + $"distance={Vector3.ProjectOnPlane(addHealth.transform.position - playerHealth.transform.position, Vector3.up).magnitude:F2}, "
+                    + $"state={addAgent.CurrentPatternState}, sensorTarget={addSensor.CurrentTargetHealth?.name ?? "none"}, "
+                    + $"timeScale={Time.timeScale:F2}.");
                 yield return null;
             }
 
+            int damageCountAtTerminal = exactAddDamageCount;
+            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
+
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
             Assert.That(executor.ActivationCount, Is.EqualTo(1));
             Assert.That(executor.CompletionCount, Is.Zero);
             Assert.That(executor.CancellationCount, Is.EqualTo(1));
+            Assert.That(executor.OwnedObjectCount, Is.Zero);
+            Assert.That(executor.HasCombatantParticipation, Is.False);
+            Assert.That(ownedRoot.activeSelf, Is.False);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
+            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
+            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
+
+            yield return new WaitForSecondsRealtime(1.25f);
+            playerHealth.Damaged -= HandlePlayerDamaged;
+            Assert.That(
+                exactAddDamageCount,
+                Is.EqualTo(damageCountAtTerminal),
+                "The cancelled Add applied delayed damage after the boss terminal boundary.");
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
+            Assert.That(executor.CancellationCount, Is.EqualTo(1));
+
+            void HandlePlayerDamaged(DamageInfo damageInfo)
+            {
+                if (ReferenceEquals(damageInfo.Source, addHealth))
+                {
+                    exactAddDamageCount++;
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CanonicalStationExecutorDisableSynchronouslyCleansCountOneAddWithoutRespawn()
+        {
+            StageRunRuntime.ResetForTests();
+            yield return EnterCanonicalStation();
+
+            Scene station = SceneManager.GetActiveScene();
+            StageCountOneEncounterExecutor executor =
+                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
+            float activationDeadline = Time.realtimeSinceStartup + 2f;
+            while (executor.State != StageCountOneEncounterState.Active)
+            {
+                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
+                yield return null;
+            }
+
+            CombatHealth addHealth = executor.OwnedHealth;
+            CombatTargetSensor addSensor = executor.OwnedSensor;
+            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
+            GameObject ownedRoot = executor.OwnedRoot;
+            CombatHealth bossHealth =
+                RequireSingleSceneComponent<CombatEncounterController>(station).EnemyHealth;
+            Assert.That(addHealth, Is.Not.Null);
+            Assert.That(addSensor, Is.Not.Null);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(executor.HasSceneLease, Is.True);
+
+            executor.enabled = false;
+
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
+            Assert.That(executor.ActivationCount, Is.EqualTo(1));
+            Assert.That(executor.CompletionCount, Is.Zero);
+            Assert.That(executor.CancellationCount, Is.EqualTo(1));
+            Assert.That(executor.OwnedObjectCount, Is.Zero);
+            Assert.That(executor.HasCombatantParticipation, Is.False);
+            Assert.That(executor.HasSceneLease, Is.False);
+            Assert.That(ownedRoot.activeSelf, Is.False);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
+            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
+            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
+
+            executor.enabled = true;
+            yield return null;
+            yield return null;
+
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
+            Assert.That(executor.ActivationCount, Is.EqualTo(1));
+            Assert.That(executor.CancellationCount, Is.EqualTo(1));
+            Assert.That(executor.OwnedObjectCount, Is.Zero);
+            Assert.That(executor.HasCombatantParticipation, Is.False);
+            Assert.That(executor.HasSceneLease, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator CanonicalStationSensorLeaseLossFaultsAndCleansCountOneAddWithoutRespawn()
+        {
+            StageRunRuntime.ResetForTests();
+            yield return EnterCanonicalStation();
+
+            Scene station = SceneManager.GetActiveScene();
+            StageCountOneEncounterExecutor executor =
+                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
+            float activationDeadline = Time.realtimeSinceStartup + 2f;
+            while (executor.State != StageCountOneEncounterState.Active)
+            {
+                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
+                yield return null;
+            }
+
+            CombatHealth addHealth = executor.OwnedHealth;
+            CombatTargetSensor addSensor = executor.OwnedSensor;
+            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
+            GameObject ownedRoot = executor.OwnedRoot;
+            CombatHealth bossHealth =
+                RequireSingleSceneComponent<CombatEncounterController>(station).EnemyHealth;
+            Assert.That(addHealth, Is.Not.Null);
+            Assert.That(addSensor, Is.Not.Null);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
+
+            addSensor.enabled = false;
+            yield return null;
+
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Faulted));
+            Assert.That(executor.LastError, Does.Contain("bidirectional combatant participation lease"));
+            Assert.That(executor.ActivationCount, Is.EqualTo(1));
+            Assert.That(executor.CompletionCount, Is.Zero);
+            Assert.That(executor.CancellationCount, Is.Zero);
+            Assert.That(executor.OwnedObjectCount, Is.Zero);
+            Assert.That(executor.OwnedRoot, Is.Null);
+            Assert.That(executor.OwnedHealth, Is.Null);
+            Assert.That(executor.OwnedAgent, Is.Null);
+            Assert.That(executor.OwnedSensor, Is.Null);
+            Assert.That(executor.HasCombatantParticipation, Is.False);
+            Assert.That(executor.HasSceneLease, Is.True);
+            Assert.That(ownedRoot.activeSelf, Is.False);
+            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
+            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
+            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
+            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
+            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
+
+            yield return null;
+            yield return null;
+            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Faulted));
+            Assert.That(executor.ActivationCount, Is.EqualTo(1));
             Assert.That(executor.OwnedObjectCount, Is.Zero);
         }
 
@@ -1400,7 +1787,7 @@ namespace DimensionBrawl.Tests
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(station);
             CombatHealth playerHealth = ReadPrivateField<CombatHealth>(encounter, "playerHealth");
-            float invulnerabilityDeadline = Time.realtimeSinceStartup + 1f;
+            float invulnerabilityDeadline = Time.realtimeSinceStartup + 2.25f;
             while (playerHealth.IsInvulnerable)
             {
                 Assert.Less(
@@ -1409,6 +1796,8 @@ namespace DimensionBrawl.Tests
                     "Tutorial invulnerability did not expire during the physical stair-entry interval.");
                 yield return null;
             }
+
+            Time.timeScale = 1f;
         }
 
         private static StageDefinitionSceneBinding RequireStationSceneBinding(Scene scene)
@@ -1695,6 +2084,55 @@ namespace DimensionBrawl.Tests
             return found;
         }
 
+        private static Transform RequireSingleSceneTransform(Scene scene, string objectName)
+        {
+            Transform found = null;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                Transform[] transforms = roots[rootIndex].GetComponentsInChildren<Transform>(true);
+                for (int transformIndex = 0; transformIndex < transforms.Length; transformIndex++)
+                {
+                    Transform candidate = transforms[transformIndex];
+                    if (!string.Equals(candidate.name, objectName, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    Assert.That(
+                        found,
+                        Is.Null,
+                        $"Scene {scene.path} contains duplicate transform name {objectName}.");
+                    found = candidate;
+                }
+            }
+
+            Assert.That(found, Is.Not.Null, $"Scene {scene.path} is missing transform {objectName}.");
+            return found;
+        }
+
+        private static void MoveCombatSubjectToAnchor(CombatHealth health, Transform anchor)
+        {
+            Assert.That(health, Is.Not.Null);
+            Assert.That(anchor, Is.Not.Null);
+            CharacterController controller = health.GetComponent<CharacterController>();
+            bool restoreController = controller != null && controller.enabled;
+            if (restoreController)
+            {
+                controller.enabled = false;
+            }
+
+            Vector3 destination = anchor.position;
+            destination.y = health.transform.position.y;
+            health.transform.position = destination;
+            if (restoreController)
+            {
+                controller.enabled = true;
+            }
+
+            Physics.SyncTransforms();
+        }
+
         private static T ReadPrivateField<T>(object owner, string fieldName)
         {
             FieldInfo field = owner.GetType().GetField(
@@ -1726,6 +2164,17 @@ namespace DimensionBrawl.Tests
                     Is.False,
                     $"{type.FullName}.{fields[i].Name} retains a Unity object reference.");
             }
+        }
+    }
+
+    [DefaultExecutionOrder(10000)]
+    public sealed class StageCountOneExecutorShutdownProbe : MonoBehaviour
+    {
+        public Action Disabled { get; set; }
+
+        private void OnDisable()
+        {
+            Disabled?.Invoke();
         }
     }
 }
