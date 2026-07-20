@@ -27,6 +27,7 @@ namespace DimensionBrawl.Tests
         private const string DirectorName = "IntroGatePodReview_TimelineDirector";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
         private const string PlayerRootName = "Player_CombatGirl_ActionFoundation";
+        private const string PlayerVisualRootName = "CombatGirlSwordShield_PlayerVisual";
         private const string CombatPackageRootName = "OlympusCorridor_BossBarrageCombatPackage";
         private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
         private const string IntroSwordGateRootName = "OlympusCorridor_IntroSwordGate";
@@ -220,6 +221,88 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(playerRoot.activeSelf, "Player root activeSelf should stay true after director end.");
             Assert.IsTrue(playerRoot.activeInHierarchy, "Player root should stay active after director end.");
             Assert.IsTrue(introSwordGateRoot.activeInHierarchy, "Intro sword gate should stay active after director end.");
+        }
+
+        [UnityTest]
+        public IEnumerator IntroNaturalTailPauseReleasesTimelineAndRestoresPlayerPoseBeforeHandoff()
+        {
+            PlayableDirector director =
+                RequireComponent<PlayableDirector>(DirectorName, "Olympus intro PlayableDirector");
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    FlowRootName,
+                    "Olympus corridor combat flow controller");
+            Transform playerRoot = RequireSceneObject(PlayerRootName).transform;
+            Transform playerVisualRoot = RequireSceneObject(PlayerVisualRootName).transform;
+            Vector3 expectedPlayerLocalPosition = playerRoot.localPosition;
+            Quaternion expectedPlayerLocalRotation = playerRoot.localRotation;
+            Vector3 expectedVisualLocalPosition = playerVisualRoot.localPosition;
+            Quaternion expectedVisualLocalRotation = playerVisualRoot.localRotation;
+
+            director.time = director.duration;
+            director.Evaluate();
+            director.Pause();
+
+            Assert.IsTrue(
+                director.playableGraph.IsValid(),
+                "The reproduction requires the Timeline graph to remain held at its natural tail.");
+
+            yield return null;
+            yield return null;
+
+            Assert.IsTrue(
+                flowController.TutorialRunning,
+                "The held natural tail should still hand off into the tutorial.");
+            Assert.IsFalse(
+                director.playableGraph.IsValid(),
+                "Gameplay handoff must release a held Timeline graph so it cannot keep driving player transforms.");
+            Assert.That(
+                Vector3.Distance(
+                    Vector3.ProjectOnPlane(playerRoot.localPosition, Vector3.up),
+                    Vector3.ProjectOnPlane(expectedPlayerLocalPosition, Vector3.up)),
+                Is.LessThanOrEqualTo(0.001f),
+                "The player root must begin gameplay at its canonical authored planar pose.");
+            Assert.That(
+                Quaternion.Angle(playerRoot.localRotation, expectedPlayerLocalRotation),
+                Is.LessThanOrEqualTo(0.1f),
+                "The player root rotation must match the canonical authored pose.");
+            Assert.That(
+                Vector3.Distance(playerVisualRoot.localPosition, expectedVisualLocalPosition),
+                Is.LessThanOrEqualTo(0.001f),
+                "The Timeline-bound player visual must not retain the cutscene tail offset.");
+            Assert.That(
+                Quaternion.Angle(playerVisualRoot.localRotation, expectedVisualLocalRotation),
+                Is.LessThanOrEqualTo(0.1f),
+                "The Timeline-bound player visual must not retain the cutscene tail rotation.");
+        }
+
+        [UnityTest]
+        public IEnumerator IntroPlayerRevealDoesNotMoveGameplayRootBeforeHandoff()
+        {
+            PlayableDirector director =
+                RequireComponent<PlayableDirector>(DirectorName, "Olympus intro PlayableDirector");
+            Transform playerRoot = RequireSceneObject(PlayerRootName).transform;
+            Vector3 expectedWorldPosition = playerRoot.position;
+            Quaternion expectedWorldRotation = playerRoot.rotation;
+
+            director.time = 29d;
+            director.Evaluate();
+
+            Assert.IsTrue(
+                playerRoot.gameObject.activeInHierarchy,
+                "The Timeline reproduction point should activate the gameplay player for the reveal shot.");
+
+            yield return null;
+            yield return null;
+
+            Assert.That(
+                Vector3.Distance(playerRoot.position, expectedWorldPosition),
+                Is.LessThanOrEqualTo(0.001f),
+                "The reveal shot must not let gameplay movement or lane clamping relocate the player root.");
+            Assert.That(
+                Quaternion.Angle(playerRoot.rotation, expectedWorldRotation),
+                Is.LessThanOrEqualTo(0.1f),
+                "The reveal shot must preserve the authored gameplay facing until handoff.");
         }
 
         [UnityTest]

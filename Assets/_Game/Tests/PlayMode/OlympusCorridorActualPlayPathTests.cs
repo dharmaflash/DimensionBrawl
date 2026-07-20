@@ -170,6 +170,8 @@ namespace DimensionBrawl.Tests
             PlayState initialState = director.state;
             bool playerInitiallyHidden = !playerRoot.activeInHierarchy;
             bool gateInitiallyHidden = !introSwordGateRoot.activeInHierarchy;
+            Vector3 authoredPlayerPosition = playerRoot.transform.position;
+            Quaternion authoredPlayerRotation = playerRoot.transform.rotation;
             string initialActiveCameras = CaptureActiveCameraNames();
 
             report.AppendLine("## Initial State");
@@ -180,6 +182,7 @@ namespace DimensionBrawl.Tests
             report.AppendLine($"- director.timeUpdateMode: `{director.timeUpdateMode}`");
             report.AppendLine($"- handoffSeconds: `{handoffSeconds:0.000}`");
             report.AppendLine($"- player.activeInHierarchy: `{playerRoot.activeInHierarchy}`");
+            report.AppendLine($"- player authored position: `{authoredPlayerPosition}`");
             report.AppendLine($"- introSwordGate.activeInHierarchy: `{introSwordGateRoot.activeInHierarchy}`");
             report.AppendLine($"- combatCamera.activeInHierarchy: `{combatCamera.gameObject.activeInHierarchy}`");
             report.AppendLine($"- active cameras: `{initialActiveCameras}`");
@@ -278,6 +281,17 @@ namespace DimensionBrawl.Tests
             report.AppendLine($"- directorResetBeforeHandoff: `{directorResetBeforeHandoff}`");
             report.AppendLine($"- final player.activeSelf: `{playerRoot.activeSelf}`");
             report.AppendLine($"- final player.activeInHierarchy: `{playerRoot.activeInHierarchy}`");
+            Vector3 finalPlayerPosition = playerRoot.transform.position;
+            Quaternion finalPlayerRotation = playerRoot.transform.rotation;
+            float finalPlayerPlanarOffset = Vector3.Distance(
+                Vector3.ProjectOnPlane(finalPlayerPosition, Vector3.up),
+                Vector3.ProjectOnPlane(authoredPlayerPosition, Vector3.up));
+            float finalPlayerRotationOffset = Quaternion.Angle(finalPlayerRotation, authoredPlayerRotation);
+            bool directorGraphReleased = !director.playableGraph.IsValid();
+            report.AppendLine($"- final player.position: `{finalPlayerPosition}`");
+            report.AppendLine($"- final player planar offset: `{finalPlayerPlanarOffset:0.000}m`");
+            report.AppendLine($"- final player rotation offset: `{finalPlayerRotationOffset:0.000}deg`");
+            report.AppendLine($"- director graph released: `{directorGraphReleased}`");
             report.AppendLine($"- final introSwordGate.activeInHierarchy: `{introSwordGateRoot.activeInHierarchy}`");
             report.AppendLine();
 
@@ -299,6 +313,18 @@ namespace DimensionBrawl.Tests
             AppendIssueIf(issues, actualPlaybackStarted && string.IsNullOrWhiteSpace(handoffActiveCameras), "No active camera was available at the handoff sample.");
             AppendIssueIf(issues, actualPlaybackStarted && !finalPlayerActiveSelf, "Player ended inactive after the natural handoff sample.");
             AppendIssueIf(issues, actualPlaybackStarted && !finalPlayerActiveInHierarchy, "Player ended inactive in hierarchy after the natural handoff sample.");
+            AppendIssueIf(
+                issues,
+                actualPlaybackStarted && finalPlayerPlanarOffset > 0.02f,
+                $"Player left the authored handoff plane by {finalPlayerPlanarOffset:0.000}m during natural playback.");
+            AppendIssueIf(
+                issues,
+                actualPlaybackStarted && finalPlayerRotationOffset > 0.5f,
+                $"Player facing changed by {finalPlayerRotationOffset:0.000} degrees during natural playback.");
+            AppendIssueIf(
+                issues,
+                actualPlaybackStarted && !directorGraphReleased,
+                "PlayableDirector graph remained valid after the natural gameplay handoff.");
             AppendIssueIf(issues, actualPlaybackStarted && !finalIntroSwordGateActive, "Intro sword gate ended inactive after the natural handoff sample.");
 
             bool passed = issues.Length == 0;

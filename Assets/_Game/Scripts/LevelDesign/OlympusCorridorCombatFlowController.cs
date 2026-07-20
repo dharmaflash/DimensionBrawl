@@ -457,6 +457,7 @@ namespace DimensionBrawl.LevelDesign
 
             SetObjectsActive(handoffRoots, false);
             SetObjectActive(player != null ? player.gameObject : null, false);
+            SetPlayerMovementEnabled(false);
             SetObjectsActive(alwaysDisabledRoots, false);
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
@@ -466,7 +467,9 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
-            SetPlayerLaneConstraintEnabled(true);
+            // The Timeline activates the gameplay player for its final reveal shot.
+            // Its lower-combat lane space must not clamp the upper intro pose before handoff.
+            SetPlayerLaneConstraintEnabled(false);
         }
 
         public void SkipIntroCutscene()
@@ -676,11 +679,13 @@ namespace DimensionBrawl.LevelDesign
 
         private void StopIntroDirectorForHandoff()
         {
-            if (introDirector == null || introDirector.state != PlayState.Playing)
+            if (introDirector == null)
             {
                 return;
             }
 
+            // A Hold-mode Director is paused, not playing, after natural completion.
+            // Stop it as well so Timeline bindings cannot keep driving the player pose.
             introDirector.Stop();
         }
 
@@ -1218,16 +1223,21 @@ namespace DimensionBrawl.LevelDesign
 
         private void EnsurePlayerMovementEnabled()
         {
+            SetPlayerMovementEnabled(true);
+        }
+
+        private void SetPlayerMovementEnabled(bool enabled)
+        {
             if (player == null)
             {
                 return;
             }
 
-            player.enabled = true;
+            player.enabled = enabled;
             CharacterController characterController = player.GetComponent<CharacterController>();
             if (characterController != null)
             {
-                characterController.enabled = true;
+                characterController.enabled = enabled;
             }
         }
 
@@ -1453,6 +1463,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void SetPlayerCombatInputLocked(bool locked)
         {
+            player?.SetCinematicMoveInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);
             if (player != null && player.TryGetComponent(out PlayerActionController actionController))
             {
                 actionController.SetCinematicInputLocked(PlayerInputLockSource.CorridorCombatFlow, locked);

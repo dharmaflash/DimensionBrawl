@@ -692,7 +692,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 materials.Warning,
                 new Vector3(90f, 0f, 0f));
 
-            Light keyLight = CreateLight(
+            CreateLight(
                 root,
                 "GateCyanKey",
                 LightType.Point,
@@ -700,7 +700,6 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 new Color(0.18f, 0.78f, 1f),
                 13f,
                 15f);
-            keyLight.shadows = LightShadows.Soft;
             CreateLight(
                 root,
                 "GateWarmAccent",
@@ -2611,6 +2610,15 @@ namespace DimensionBrawl.Editor.NarrativeReview
             {
                 issues.Add(
                     "Review cameras need distinct gameplay/narrative listeners with exact initial enabled states.");
+            }
+
+            Light[] reviewLights = FindComponentsInScene<Light>(scene);
+            if (reviewLights.Length != 2
+                || reviewLights.Any(light => light.shadows != LightShadows.None))
+            {
+                issues.Add(
+                    "Review diorama must contain exactly two shadow-free lights; realtime shadows "
+                    + "are outside this UI transition lab's graphics budget.");
             }
 
             OlympusStoryTutorialTransitionReviewGate[] transitionGates =
