@@ -279,7 +279,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator ChoiceResponseClearsStalePortraitAndSkipFinalizesExactlyOnce()
+        public IEnumerator ChoiceResponsePreservesPriorPortraitAndSkipFinalizesExactlyOnce()
         {
             using var fixture = new ControllerFixture(
                 withChoiceResponsePortrait: true,
@@ -309,10 +309,17 @@ namespace DimensionBrawl.Tests
 
             Assert.That(session.CurrentLine.LineId, Is.EqualTo(
                 "review.olympus.prologue.line.rejoin"));
-            Assert.That(fixture.LeftPortraitImage.sprite, Is.Null);
+            Assert.That(fixture.LeftPortraitImage.sprite, Is.SameAs(fixture.MarkerSprite));
             Assert.That(fixture.RightPortraitImage.sprite, Is.Null);
-            Assert.That(fixture.LeftPortraitGroup.alpha, Is.Zero);
+            Assert.That(fixture.LeftPortraitGroup.alpha, Is.EqualTo(0.48f).Within(0.001f));
             Assert.That(fixture.RightPortraitGroup.alpha, Is.Zero);
+            NarrativeVisualNovelPresentationSnapshot presentation =
+                ReadProperty<NarrativeVisualNovelPresentationSnapshot>(
+                    fixture.Controller,
+                    "NarrativePresentationSnapshot");
+            Assert.That(presentation.Left.SpeakerId, Is.EqualTo("operator"));
+            Assert.That(presentation.Left.IsFocused, Is.False);
+            Assert.That(presentation.Right.IsOccupied, Is.False);
 
             fixture.NarrativeSkipButton.onClick.Invoke();
             Assert.That(fixture.SkipConfirmGroup.alpha, Is.EqualTo(1f));
@@ -904,6 +911,7 @@ namespace DimensionBrawl.Tests
                 Root = new GameObject("OlympusNarrativeReviewControllerTest");
                 Root.SetActive(false);
                 Controller = Root.AddComponent(RequireControllerType());
+                Presenter = Root.AddComponent<NarrativeVisualNovelPresenter>();
 
                 GameObject gameplayCameraOwner = new GameObject("GameplayCamera");
                 gameplayCameraOwner.transform.SetParent(Root.transform, false);
@@ -987,6 +995,7 @@ namespace DimensionBrawl.Tests
 
             public GameObject Root { get; }
             public Component Controller { get; }
+            public NarrativeVisualNovelPresenter Presenter { get; }
             public NarrativeSequenceProfile Profile { get; }
             public Texture2D MarkerTexture { get; }
             public Sprite MarkerSprite { get; }
@@ -1039,7 +1048,19 @@ namespace DimensionBrawl.Tests
 
             private void ConfigureController()
             {
+                Presenter.Configure(
+                    null,
+                    LeftPortraitGroup,
+                    CenterPortraitGroup,
+                    RightPortraitGroup,
+                    LeftPortraitImage,
+                    CenterPortraitImage,
+                    RightPortraitImage,
+                    null,
+                    null,
+                    null);
                 Invoke(Controller, "ConfigureCore", Profile, null, null, CutscenePort, null);
+                Invoke(Controller, "ConfigureNarrativePresenter", Presenter);
                 Invoke(
                     Controller,
                     "ConfigureStoryTutorialTransitionGate",

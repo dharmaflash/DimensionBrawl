@@ -104,10 +104,18 @@ namespace DimensionBrawl.LevelDesign
             TerminalRecord = terminalRecord;
             if (factBundle == null
                 || factBundle.Outcome == null
-                || factBundle.TutorialRouteSummary == null
                 || factBundle.CombatFacts == null)
             {
                 throw new ArgumentNullException(nameof(factBundle));
+            }
+
+            bool requiresTutorialFacts = routeSnapshot.TutorialFactRequirement
+                == StageRunTutorialFactRequirement.LegacyCorridorCompletion;
+            if (requiresTutorialFacts != (factBundle.TutorialRouteSummary != null))
+            {
+                throw new ArgumentException(
+                    "Tutorial fact presence does not match the admitted route requirement.",
+                    nameof(factBundle));
             }
 
             OutcomeFact = factBundle.Outcome;
@@ -139,6 +147,9 @@ namespace DimensionBrawl.LevelDesign
         public StageRunTerminalRecord TerminalRecord { get; }
         public StageOutcomeFact OutcomeFact { get; }
         public StageTutorialRouteSummaryFact TutorialRouteSummaryFact { get; }
+        public bool HasTutorialRouteSummaryFact => TutorialRouteSummaryFact != null;
+        public string TutorialRouteSummaryFactDigest =>
+            TutorialRouteSummaryFact?.CanonicalDigest ?? string.Empty;
         public StageRunCombatFacts CombatFacts { get; }
         public StageRouteOutcome Outcome { get; }
         public StageRunMasteryEvaluationState MasteryEvaluationState { get; }
@@ -351,7 +362,7 @@ namespace DimensionBrawl.LevelDesign
             StageCanonicalDigest.Append(
                 builder,
                 "result.tutorialRouteSummaryFactDigest",
-                TutorialRouteSummaryFact.CanonicalDigest);
+                TutorialRouteSummaryFactDigest);
             StageCanonicalDigest.Append(builder, "result.combatFactsDigest", CombatFacts.CanonicalDigest);
             StageCanonicalDigest.Append(builder, "result.segmentResultCount", segmentResults.Length);
             for (int i = 0; i < segmentResults.Length; i++)

@@ -56,6 +56,7 @@ MonoBehaviour:
     positionId: 1001
     anchorId: StageSpawner_PlayerStart
     payloadId: PlayerParty
+    payloadArchetype: {fileID: 0}
     count: 1
     delaySeconds: 0
     note: Player spawn is a physical segment position, not a balance value.

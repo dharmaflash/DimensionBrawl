@@ -4,6 +4,7 @@
     "references": [
         "DimensionBrawl.Runtime",
         "Unity.InputSystem",
+        "Unity.TextMeshPro",
         "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],

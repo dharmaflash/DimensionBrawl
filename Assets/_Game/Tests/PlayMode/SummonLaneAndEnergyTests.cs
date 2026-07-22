@@ -1923,13 +1923,11 @@ namespace DimensionBrawl.Tests
             LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
             projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
 
-            Assert.IsFalse(
+            Assert.IsTrue(
                 projectile.TryApplyImpact(screenCollider, Vector3.zero),
-                "Pressure-screen contact should be handled by the screen, not by summon body health.");
-            Assert.AreEqual(ProjectileImpactResult.IgnoredPressureScreen, projectile.LastImpactResult);
+                "Hostile pressure-screen contact should synchronously consume the projectile.");
             Assert.AreEqual(1f, actorHealth.HealthRatio, 0.001f);
-
-            Assert.IsTrue(pressureScreen.TryIntercept(projectile));
+            Assert.AreEqual(1, pressureScreen.InterceptedProjectiles);
             Assert.IsFalse(projectile.IsActive);
 
             projectileObject.SetActive(true);
@@ -1938,6 +1936,91 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
             Assert.AreSame(actorHealth, projectile.LastImpactTargetHealth);
             Assert.Less(actorHealth.HealthRatio, 1f);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
+        public void LaneActionProjectileSweepHitsPressureScreenBeforePlayer()
+        {
+            GameObject targetObject = new GameObject("LaneProjectileSweepCoveredTarget");
+            targetObject.transform.position = Vector3.zero;
+            targetObject.AddComponent<SphereCollider>().radius = 0.5f;
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Player);
+            targetHealth.ResetHealthToFull();
+            float healthBefore = targetHealth.CurrentHealth;
+
+            GameObject screenObject = new GameObject("LaneProjectileSweepPressureScreen");
+            screenObject.transform.position = Vector3.forward * 2f;
+            screenObject.AddComponent<SphereCollider>().radius = 0.75f;
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = screenObject.AddComponent<SummonPressureScreen>();
+            int interceptEventCount = 0;
+            pressureScreen.ActionProjectileIntercepted += (_, _) => interceptEventCount++;
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 0.75f, 1f);
+
+            GameObject projectileObject = new GameObject("LaneProjectileSweepScreenSource");
+            projectileObject.transform.position = Vector3.forward * 5f;
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 20f, 1f, 0.2f);
+            Physics.SyncTransforms();
+
+            projectile.Tick(0.5f);
+
+            Assert.AreEqual(1, pressureScreen.InterceptedProjectiles);
+            Assert.AreEqual(1, interceptEventCount);
+            Assert.AreEqual(healthBefore, targetHealth.CurrentHealth, 0.001f);
+            Assert.IsFalse(projectile.IsActive);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(screenObject);
+            Object.DestroyImmediate(targetObject);
+        }
+
+        [Test]
+        public void LaneActionProjectileGivesActivePressureScreenPriorityOverSummonBody()
+        {
+            GameObject actorObject = new GameObject("LaneScreenedAllySummonActor");
+            SphereCollider bodyCollider = actorObject.AddComponent<SphereCollider>();
+            CombatHealth actorHealth = actorObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.AllySummon);
+            actorHealth.ResetHealthToFull();
+            SummonFrontlineProxy proxy = actorObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(actorHealth);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 1f, 0.1f);
+
+            GameObject screenObject = new GameObject("LaneAllyPressureScreen");
+            screenObject.transform.SetParent(actorObject.transform, worldPositionStays: false);
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = screenObject.AddComponent<SummonPressureScreen>();
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 1f, 1f);
+
+            GameObject projectileObject = new GameObject("LaneScreenPriorityProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
+
+            Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.AreEqual(1, pressureScreen.InterceptedProjectiles);
+            Assert.AreEqual(1f, actorHealth.HealthRatio, 0.001f);
+            Assert.IsTrue(proxy.IsActive);
+            Assert.IsFalse(projectile.IsActive);
+
+            screenObject.transform.localPosition = Vector3.forward * 5f;
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 1f, 1f);
+            projectileObject.SetActive(true);
+            projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
+            Physics.SyncTransforms();
+
+            Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.Less(actorHealth.HealthRatio, 1f);
+            Assert.IsFalse(proxy.IsActive);
 
             Object.DestroyImmediate(projectileObject);
             Object.DestroyImmediate(actorObject);
@@ -2003,6 +2086,7 @@ namespace DimensionBrawl.Tests
             LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
 
             projectile.Configure(null, DamageTeam.Player, 10f, Vector3.forward, 0f, 1f, 0.2f);
+            Assert.AreEqual(0f, projectile.HitStopSeconds, 0.001f);
             Assert.AreEqual(DamageResponsePolicy.FlashOnly, projectile.ResponsePolicy);
             Assert.AreEqual(CombatControlLockPolicy.None, projectile.ControlLockPolicy);
             Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
@@ -2019,11 +2103,14 @@ namespace DimensionBrawl.Tests
                 1f,
                 0.2f,
                 DamageResponsePolicy.Stagger,
-                CombatControlLockPolicy.InterruptAction);
+                CombatControlLockPolicy.InterruptAction,
+                0.035f);
+            Assert.AreEqual(0.035f, projectile.HitStopSeconds, 0.001f);
             Assert.AreEqual(DamageResponsePolicy.Stagger, projectile.ResponsePolicy);
             Assert.AreEqual(CombatControlLockPolicy.InterruptAction, projectile.ControlLockPolicy);
             Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
             Assert.IsTrue(lastDamageInfo.HasValue);
+            Assert.AreEqual(0.035f, lastDamageInfo.Value.HitStopSeconds, 0.001f);
             Assert.AreEqual(DamageResponsePolicy.Stagger, lastDamageInfo.Value.ResponsePolicy);
             Assert.AreEqual(CombatControlLockPolicy.InterruptAction, lastDamageInfo.Value.ControlLockPolicy);
 

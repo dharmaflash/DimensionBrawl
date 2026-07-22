@@ -208,6 +208,64 @@ namespace DimensionBrawl.Tests
             LogAssert.NoUnexpectedReceived();
         }
 
+        [Test]
+        public void StageClearOverlayRestoresOwnedTimeScaleOnNonTerminalDisable()
+        {
+            const float combatTimeScale = 0.35f;
+            GameObject overlayRoot = new GameObject("OwnedStageClearTimeScaleTest");
+            float initialTimeScale = Time.timeScale;
+            try
+            {
+                overlayRoot.SetActive(false);
+                var overlay = overlayRoot.AddComponent<
+                    DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
+                overlayRoot.SetActive(true);
+                Time.timeScale = combatTimeScale;
+
+                overlay.Show();
+                Assert.That(Time.timeScale, Is.Zero);
+
+                overlayRoot.SetActive(false);
+
+                Assert.That(Time.timeScale, Is.EqualTo(combatTimeScale).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(overlayRoot);
+                Time.timeScale = initialTimeScale;
+            }
+        }
+
+        [Test]
+        public void StageClearOverlayDoesNotRestoreAfterTerminalLoaderSupersedesTimeScale()
+        {
+            const float combatTimeScale = 0.35f;
+            const float terminalTimeScale = 1f;
+            GameObject overlayRoot = new GameObject("SupersededStageClearTimeScaleTest");
+            float initialTimeScale = Time.timeScale;
+            try
+            {
+                overlayRoot.SetActive(false);
+                var overlay = overlayRoot.AddComponent<
+                    DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
+                overlayRoot.SetActive(true);
+                Time.timeScale = combatTimeScale;
+
+                overlay.Show();
+                Assert.That(Time.timeScale, Is.Zero);
+
+                Time.timeScale = terminalTimeScale;
+                overlayRoot.SetActive(false);
+
+                Assert.That(Time.timeScale, Is.EqualTo(terminalTimeScale).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(overlayRoot);
+                Time.timeScale = initialTimeScale;
+            }
+        }
+
         [UnityTest]
         public IEnumerator CombatModeQueueExecutesImmediatelyAndHonorsCinematicLock()
         {

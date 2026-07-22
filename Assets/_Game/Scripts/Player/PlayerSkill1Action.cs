@@ -103,6 +103,7 @@ namespace DimensionBrawl.Player
         private string lastBlockedReason;
         private PlayerInputLockSource cinematicInputLockSources;
         private InputAction subscribedSkillInputAction;
+        private InputAction keyboardFallbackAction;
         private Coroutine feedbackRoutine;
 
         public int LastSpentTier => lastSpentTier;
@@ -158,20 +159,9 @@ namespace DimensionBrawl.Player
             actionEnabledHere = false;
         }
 
-        private void Update()
+        private void OnDestroy()
         {
-            if (!useKeyboardWhenActionMissing
-                || !IsActionMissing(skillAction)
-                || keyboardTestKey == Key.None
-                || Keyboard.current == null
-                || Keyboard.current[keyboardTestKey] == null
-                || !Keyboard.current[keyboardTestKey].wasPressedThisFrame
-                || !CanAcceptQueuedInput())
-            {
-                return;
-            }
-
-            TryUseSkill1();
+            UnsubscribeInput();
         }
 
         public void ConfigureReferences(
@@ -449,33 +439,56 @@ namespace DimensionBrawl.Player
 
         private void SubscribeInput()
         {
+            UnsubscribeInput();
+
             InputAction action = skillAction != null ? skillAction.action : null;
-            if (action == null)
+            if (action != null)
+            {
+                subscribedSkillInputAction = action;
+                subscribedSkillInputAction.performed += HandleSkillPerformed;
+                return;
+            }
+
+            if (!useKeyboardWhenActionMissing || keyboardTestKey == Key.None)
             {
                 return;
             }
 
-            subscribedSkillInputAction = action;
-            subscribedSkillInputAction.performed += HandleSkillPerformed;
+            keyboardFallbackAction = new InputAction(
+                "Skill1.KeyboardFallback",
+                InputActionType.Button,
+                $"<Keyboard>/{keyboardTestKey}");
+            keyboardFallbackAction.performed += HandleSkillPerformed;
+            keyboardFallbackAction.Enable();
         }
 
         private void UnsubscribeInput()
         {
-            if (subscribedSkillInputAction == null)
+            if (subscribedSkillInputAction != null)
+            {
+                subscribedSkillInputAction.performed -= HandleSkillPerformed;
+                subscribedSkillInputAction = null;
+            }
+
+            if (keyboardFallbackAction == null)
             {
                 return;
             }
 
-            subscribedSkillInputAction.performed -= HandleSkillPerformed;
-            subscribedSkillInputAction = null;
+            keyboardFallbackAction.performed -= HandleSkillPerformed;
+            keyboardFallbackAction.Disable();
+            keyboardFallbackAction.Dispose();
+            keyboardFallbackAction = null;
         }
 
         private void HandleSkillPerformed(InputAction.CallbackContext context)
         {
-            if (CanAcceptQueuedInput())
+            if (this == null || !CanAcceptQueuedInput())
             {
-                TryUseSkill1();
+                return;
             }
+
+            TryUseSkill1();
         }
 
         private void ConsumeQueuedSkill()
@@ -533,9 +546,5 @@ namespace DimensionBrawl.Player
             }
         }
 
-        private static bool IsActionMissing(InputActionReference actionReference)
-        {
-            return actionReference == null || actionReference.action == null;
-        }
     }
 }

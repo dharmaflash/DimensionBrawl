@@ -227,7 +227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   target: {fileID: 4001}
   threat: {fileID: 1932639514}
@@ -116199,6 +116199,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 675697027}
+  - component: {fileID: 675697028}
   m_Layer: 0
   m_Name: Add_RightLaneAnchor
   m_TagString: Untagged
@@ -116221,6 +116222,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1721229256}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &675697028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 675697026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
+  anchorId: Add_RightLaneAnchor
+  groupId: CombatSpawnAnchors
+  usageKind: 1
+  positionId: 2102
+  spawnKind: 2
+  runtimeStateKind: 0
+  purpose: Second mirrored Station Add ticket with source-order activation.
 --- !u!1 &676756768
 GameObject:
   m_ObjectHideFlags: 0
@@ -215195,9 +215215,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageCountOneEncounterExecutor
   sceneBinding: {fileID: 1316854896}
-  spawnId: add-left
-  payloadMappings:
-  - {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
   activationKind: 1
   requireActiveStageRun: 1
   cancelOnTerminalEncounter: 1
@@ -215217,6 +215234,7 @@ MonoBehaviour:
   mapRoot: {fileID: 1316854894}
   anchorPoints:
   - {fileID: 1696939611}
+  - {fileID: 675697028}
   cutscenePorts: []
 --- !u!1 &1317956255
 GameObject:
@@ -273869,7 +273887,7 @@ MonoBehaviour:
   positionId: 2101
   spawnKind: 2
   runtimeStateKind: 0
-  purpose: Canonical count-one Station Add spawn in the continuous Corridor host.
+  purpose: First source-ordered Station Add ticket in the continuous Corridor host.
 --- !u!1 &1697415778
 GameObject:
   m_ObjectHideFlags: 0

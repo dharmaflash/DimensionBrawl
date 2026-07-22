@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
@@ -326,7 +327,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
             controller.BeginVisualNovel();
             if (state == ReviewCaptureState.VisualNovel)
             {
-                controller.RevealCurrentNarrativeLine();
+                PrepareMultiCharacterVisualNovelState();
                 return;
             }
 
@@ -432,6 +433,83 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 throw new InvalidOperationException(
                     "Canonical stage briefing read model is unavailable.");
             }
+
+            if (state == ReviewCaptureState.VisualNovel)
+            {
+                NarrativeVisualNovelPresentationSnapshot presentation =
+                    controller.NarrativePresentationSnapshot;
+                if (!presentation.Center.IsOccupied
+                    || !presentation.Center.HasPortraitSprite
+                    || presentation.Center.IsFocused
+                    || !string.Equals(
+                        presentation.Center.SpeakerId,
+                        "field_agent",
+                        StringComparison.Ordinal)
+                    || !presentation.Right.IsOccupied
+                    || !presentation.Right.HasPortraitSprite
+                    || !presentation.Right.IsFocused
+                    || !string.Equals(
+                        presentation.Right.SpeakerId,
+                        "operator",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        presentation.Right.ExpressionId,
+                        "alert",
+                        StringComparison.Ordinal))
+                {
+                    NarrativeVisualNovelPresenter presenter =
+                        FindSingleInScene<NarrativeVisualNovelPresenter>(
+                            SceneManager.GetActiveScene());
+                    NarrativeSequenceProfile.LineEntry liveLine =
+                        controller.NarrativeSession?.CurrentLine;
+                    NarrativeSequenceProfile.PortraitCommandEntry liveCommand =
+                        liveLine?.PortraitCommands.FirstOrDefault();
+                    NarrativeSpeakerPresentation resolvedPresentation = default;
+                    bool catalogResolved = liveCommand != null
+                        && presenter.SpeakerCatalog != null
+                        && presenter.SpeakerCatalog.TryResolve(
+                            liveCommand.SpeakerId,
+                            liveCommand.ExpressionId,
+                            out resolvedPresentation);
+                    throw new InvalidOperationException(
+                        "VN-02 capture requires a persistent field-agent portrait and focused alert operator portrait. "
+                        + $"current={presentation.CurrentLineId}; "
+                        + $"center={presentation.Center.SpeakerId}/{presentation.Center.ExpressionId}/"
+                        + $"occupied:{presentation.Center.IsOccupied}/sprite:{presentation.Center.HasPortraitSprite}/"
+                        + $"focused:{presentation.Center.IsFocused}; "
+                        + $"right={presentation.Right.SpeakerId}/{presentation.Right.ExpressionId}/"
+                        + $"occupied:{presentation.Right.IsOccupied}/sprite:{presentation.Right.HasPortraitSprite}/"
+                        + $"focused:{presentation.Right.IsFocused}; "
+                        + $"command={liveCommand?.CommandType}/{liveCommand?.SpeakerId}/"
+                        + $"{liveCommand?.PortraitSlot}/{liveCommand?.ExpressionId}; "
+                        + $"catalog={presenter.SpeakerCatalog?.CatalogId ?? "null"}/"
+                        + $"resolved:{catalogResolved}/sprite:"
+                        + $"{(catalogResolved ? resolvedPresentation.PortraitSprite?.name : "none")}; "
+                        + $"last={presenter.LastPortraitCommandStatus}.");
+                }
+            }
+        }
+
+        private static void PrepareMultiCharacterVisualNovelState()
+        {
+            MethodInfo advance = typeof(OlympusChapterNarrativeReviewController).GetMethod(
+                "HandleNarrativeNextClicked",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Could not resolve the review-only narrative advance method.");
+            FieldInfo inputGate = typeof(OlympusChapterNarrativeReviewController).GetField(
+                "nextNarrativeInputAllowedAt",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Could not resolve the review-only narrative input gate.");
+
+            controller.RevealCurrentNarrativeLine();
+            inputGate.SetValue(controller, 0f);
+            advance.Invoke(controller, null);
+            controller.RevealCurrentNarrativeLine();
+            inputGate.SetValue(controller, 0f);
+            advance.Invoke(controller, null);
+            controller.RevealCurrentNarrativeLine();
         }
 
         private static CaptureRecord CapturePlanFrame(CapturePlan plan)

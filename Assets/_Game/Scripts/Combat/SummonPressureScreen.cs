@@ -304,6 +304,45 @@ namespace DimensionBrawl.Combat
                 pruneInactive: true);
         }
 
+        public static bool TryInterceptAnyOverlapping(
+            LaneActionProjectile projectile,
+            Vector3 impactPoint,
+            float extraRadius = 0f)
+        {
+            if (projectile == null || !projectile.IsActive)
+            {
+                return false;
+            }
+
+            for (int i = ActiveScreens.Count - 1; i >= 0; i--)
+            {
+                SummonPressureScreen screen = ActiveScreens[i];
+                if (screen == null || !screen.IsActive)
+                {
+                    ActiveScreens.RemoveAt(i);
+                    continue;
+                }
+
+                if (!CombatTeamUtility.AreHostile(screen.OwnerTeam, projectile.SourceTeam))
+                {
+                    continue;
+                }
+
+                float radius = screen.ActiveRadius + Mathf.Max(0f, extraRadius);
+                if ((screen.transform.position - impactPoint).sqrMagnitude > radius * radius)
+                {
+                    continue;
+                }
+
+                if (screen.TryIntercept(projectile))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool TryInterceptAnyOverlapping(
             IList<SummonPressureScreen> screens,
             BossBarrageProjectile projectile,

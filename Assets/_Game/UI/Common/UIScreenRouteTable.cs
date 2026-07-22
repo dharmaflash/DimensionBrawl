@@ -59,6 +59,18 @@ namespace DimensionBrawl.UI
 
         [SerializeField] private Route[] routes = Array.Empty<Route>();
 
+        public int RouteCount => routes != null ? routes.Length : 0;
+
+        public Route GetRoute(int index)
+        {
+            if (routes == null || index < 0 || index >= routes.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return routes[index];
+        }
+
         public bool TryGetRoute(UIRouteId routeId, out Route route)
         {
             for (int i = 0; i < routes.Length; i++)

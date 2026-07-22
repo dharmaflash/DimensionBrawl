@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using UnityEngine;
 using UnityEngine.Events;
@@ -17,10 +18,12 @@ namespace DimensionBrawl.UI
         private struct StageFocusEntry
         {
             [SerializeField] private string stageId;
+            [SerializeField] private Button selectionButton;
             [SerializeField] private RectTransform stageTarget;
             [SerializeField] private RectTransform chapterTarget;
 
             public string StageId => stageId;
+            public Button SelectionButton => selectionButton;
             public RectTransform StageTarget => stageTarget;
             public RectTransform ChapterTarget => chapterTarget;
         }
@@ -73,6 +76,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private UIScrollRectMotionPresenter stageScrollMotion;
         [SerializeField] private UIScrollRectMotionPresenter chapterScrollMotion;
         [SerializeField] private StageFocusEntry[] stageFocusEntries = Array.Empty<StageFocusEntry>();
+        [SerializeField] private bool requireExactStageCardBindings;
         [SerializeField] private bool focusSelectedStageOnEnable = true;
         [SerializeField] private bool backWithEscape = true;
         [SerializeField, Min(0f)] private float focusDelaySeconds = 0.02f;
@@ -91,6 +95,8 @@ namespace DimensionBrawl.UI
         private bool sceneEnterSfxPlayed;
         private SelectedRouteBundle selectedRouteBundle;
         private UIStageRouteProjectionRejectReason selectedRouteRejectReason;
+        private Button[] boundStageSelectionButtons = Array.Empty<Button>();
+        private UnityAction[] boundStageSelectionActions = Array.Empty<UnityAction>();
 
         public bool HasSelectedRouteProjection => selectedRouteBundle != null;
         public UIStageRouteProjection SelectedRouteProjection => selectedRouteBundle?.Projection;
@@ -99,7 +105,17 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
-            ApplySelectedStage();
+            bool stageBindingsValid = BindStageSelectionListeners();
+            if (requireExactStageCardBindings && !stageBindingsValid)
+            {
+                RejectSelectedRoute(
+                    UIStageRouteProjectionRejectReason.InvalidStageSelectionBindings);
+            }
+            else
+            {
+                ApplySelectedStage();
+            }
+
             PlaySceneEnterSfxOnce();
 
             if (startButton != null)
@@ -112,7 +128,7 @@ namespace DimensionBrawl.UI
                 backButton.onClick.AddListener(HandleBackClicked);
             }
 
-            if (focusSelectedStageOnEnable)
+            if (focusSelectedStageOnEnable && selectedRouteBundle != null)
             {
                 QueueSelectedStageFocus(false);
             }
@@ -121,6 +137,7 @@ namespace DimensionBrawl.UI
         private void OnDisable()
         {
             InvalidateSelectedRouteBundle(UIStageRouteProjectionRejectReason.None);
+            RemoveStageSelectionListeners();
 
             if (focusRoutine != null)
             {
@@ -273,6 +290,16 @@ namespace DimensionBrawl.UI
         {
             InvalidateSelectedRouteBundle(UIStageRouteProjectionRejectReason.None);
 
+            if (requireExactStageCardBindings && !TryValidateStageCardBindings())
+            {
+                selectedRouteRejectReason =
+                    UIStageRouteProjectionRejectReason.InvalidStageSelectionBindings;
+                ClearStageDetails();
+                SetText(statusText, "Stage route unavailable");
+                SetStartInteractable(false);
+                return;
+            }
+
             bool projected = false;
             UIStageRouteProjection projection = null;
             UIStageRouteProjectionRejectReason rejectReason =
@@ -346,6 +373,102 @@ namespace DimensionBrawl.UI
             {
                 startButton.interactable = interactable;
             }
+        }
+
+        private bool BindStageSelectionListeners()
+        {
+            RemoveStageSelectionListeners();
+            if (!TryValidateStageCardBindings())
+            {
+                return false;
+            }
+
+            if (stageFocusEntries == null || stageFocusEntries.Length == 0)
+            {
+                return true;
+            }
+
+            boundStageSelectionButtons = new Button[stageFocusEntries.Length];
+            boundStageSelectionActions = new UnityAction[stageFocusEntries.Length];
+            for (int i = 0; i < stageFocusEntries.Length; i++)
+            {
+                StageFocusEntry entry = stageFocusEntries[i];
+                string stageId = entry.StageId;
+                Button button = entry.SelectionButton;
+                UnityAction action = () => SelectStage(stageId);
+                boundStageSelectionButtons[i] = button;
+                boundStageSelectionActions[i] = action;
+                button.onClick.AddListener(action);
+            }
+
+            return true;
+        }
+
+        private void RemoveStageSelectionListeners()
+        {
+            int count = Math.Min(
+                boundStageSelectionButtons?.Length ?? 0,
+                boundStageSelectionActions?.Length ?? 0);
+            for (int i = 0; i < count; i++)
+            {
+                Button button = boundStageSelectionButtons[i];
+                UnityAction action = boundStageSelectionActions[i];
+                if (button != null && action != null)
+                {
+                    button.onClick.RemoveListener(action);
+                }
+            }
+
+            boundStageSelectionButtons = Array.Empty<Button>();
+            boundStageSelectionActions = Array.Empty<UnityAction>();
+        }
+
+        private bool TryValidateStageCardBindings()
+        {
+            if (stageFocusEntries == null || stageFocusEntries.Length == 0)
+            {
+                return !requireExactStageCardBindings;
+            }
+
+            if (stageCatalog == null
+                || !stageCatalog.TryValidateEntryIdentities(out _)
+                || (requireExactStageCardBindings
+                    && stageFocusEntries.Length != stageCatalog.StageCount))
+            {
+                return false;
+            }
+
+            var stageIds = new HashSet<string>(StringComparer.Ordinal);
+            var buttons = new HashSet<Button>();
+            for (int i = 0; i < stageFocusEntries.Length; i++)
+            {
+                StageFocusEntry entry = stageFocusEntries[i];
+                if (string.IsNullOrWhiteSpace(entry.StageId)
+                    || entry.SelectionButton == null
+                    || entry.StageTarget == null
+                    || entry.SelectionButton.transform != entry.StageTarget
+                    || !stageIds.Add(entry.StageId)
+                    || !buttons.Add(entry.SelectionButton)
+                    || !stageCatalog.TryGetStage(entry.StageId, out _))
+                {
+                    return false;
+                }
+            }
+
+            if (!requireExactStageCardBindings)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < stageCatalog.StageCount; i++)
+            {
+                if (!stageIds.Contains(stageCatalog.GetStage(i).Id))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void QueueSelectedStageFocus(bool animate)

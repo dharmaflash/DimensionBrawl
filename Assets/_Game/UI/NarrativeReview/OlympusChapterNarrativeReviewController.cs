@@ -27,6 +27,7 @@ namespace DimensionBrawl.UI.NarrativeReview
     public sealed class OlympusChapterNarrativeReviewController : MonoBehaviour
     {
         private const string ReviewStageLabel = "REVIEW SAMPLE / TEMP_DO_NOT_SHIP";
+        private const string CanonicalCatalogEntryId = "story_v1_training_route";
 
         [Header("Canonical Data")]
         [SerializeField] private NarrativeSequenceProfile narrativeProfile;
@@ -53,6 +54,7 @@ namespace DimensionBrawl.UI.NarrativeReview
         [SerializeField] private Button chapterEnterButton;
 
         [Header("Visual Novel")]
+        [SerializeField] private NarrativeVisualNovelPresenter narrativePresenter;
         [SerializeField] private TMP_Text narrativeSequenceText;
         [SerializeField] private TMP_Text narrativeSpeakerText;
         [SerializeField] private TMP_Text narrativeLineText;
@@ -137,6 +139,8 @@ namespace DimensionBrawl.UI.NarrativeReview
         public UIStageRouteProjection StageProjection => stageProjection;
         public int CompletionDispatchCount => completionDispatchCount;
         public bool AutoAdvanceEnabled => autoAdvanceEnabled;
+        public NarrativeVisualNovelPresentationSnapshot NarrativePresentationSnapshot =>
+            narrativePresenter != null ? narrativePresenter.Snapshot : default;
         public bool HasValidCutsceneBoundary => TryResolveCutsceneBoundary(out _);
         public NarrativeTutorialReviewPhase ReviewLifecyclePhase => reviewLifecycle.Phase;
         public NarrativeTutorialReviewReceipt LastReviewReceipt => lastReviewReceipt;
@@ -283,6 +287,13 @@ namespace DimensionBrawl.UI.NarrativeReview
             secondChoiceButton = choiceBButton;
             secondChoiceText = choiceBText;
             RebindAfterRuntimeConfiguration(rebind);
+        }
+
+        public void ConfigureNarrativePresenter(
+            NarrativeVisualNovelPresenter newNarrativePresenter)
+        {
+            EnsureRuntimeConfigurationCanMutate();
+            narrativePresenter = newNarrativePresenter;
         }
 
         public void ConfigureCutsceneView(
@@ -481,6 +492,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             ReleaseNarrativeSession();
             StopNarrativeRoutines();
             StopVoice();
+            narrativePresenter?.ResetPresentation();
             if (storyTerminalRequest == StoryTutorialReviewSignalResult.Accepted
                 || storyTerminalRequest == StoryTutorialReviewSignalResult.AlreadyAccepted)
             {
@@ -554,6 +566,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             currentVisibleLineText = string.Empty;
             narrativeChoiceSummary = "none";
             UpdateAutoButtonLabel();
+            narrativePresenter?.ResetPresentation();
             cutsceneCompletionIssued = false;
             completionDispatchCount = 0;
             activeReviewGeneration = 0;
@@ -730,7 +743,14 @@ namespace DimensionBrawl.UI.NarrativeReview
             SetText(
                 narrativeProgressText,
                 $"{narrativeSession.CurrentLineIndex + 1:00} / {narrativeProfile.LineCount:00}");
-            ApplyPortrait(line);
+            if (narrativePresenter != null)
+            {
+                narrativePresenter.PresentLine(line);
+            }
+            else
+            {
+                ApplyPortrait(line);
+            }
 
             if (voiceAudioSource != null && line.VoiceClip != null)
             {
@@ -762,7 +782,14 @@ namespace DimensionBrawl.UI.NarrativeReview
             SetText(narrativeSpeakerText, ResolveSpeakerName(sourceLine.SpeakerId));
             SetText(narrativeLineText, currentVisibleLineText);
             SetText(narrativeProgressText, "CHOICE RESPONSE");
-            ApplyPortrait(sourceLine);
+            if (narrativePresenter != null)
+            {
+                narrativePresenter.PresentChoiceResponse(sourceLine, choice.ResponseLineId);
+            }
+            else
+            {
+                ApplyPortrait(sourceLine);
+            }
             lineFullyRevealed = false;
             SetButtonInteractable(narrativeNextButton, true);
             typewriterRoutine = StartCoroutine(TypeCurrentLineRoutine());
@@ -773,6 +800,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             if (narrativeLineText == null)
             {
                 lineFullyRevealed = true;
+                narrativePresenter?.SetLineFullyRevealed(true);
                 FinishCurrentLineReveal();
                 yield break;
             }
@@ -796,6 +824,7 @@ namespace DimensionBrawl.UI.NarrativeReview
 
             typewriterRoutine = null;
             lineFullyRevealed = true;
+            narrativePresenter?.SetLineFullyRevealed(true);
             FinishCurrentLineReveal();
         }
 
@@ -813,6 +842,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             }
 
             lineFullyRevealed = true;
+            narrativePresenter?.SetLineFullyRevealed(true);
             FinishCurrentLineReveal();
         }
 
@@ -859,6 +889,7 @@ namespace DimensionBrawl.UI.NarrativeReview
             }
 
             SetGroupVisible(narrativeChoiceGroup, true);
+            narrativePresenter?.SetChoicesVisible(true);
             ConfigureChoice(firstChoiceButton, firstChoiceText, choices, 0);
             ConfigureChoice(secondChoiceButton, secondChoiceText, choices, 1);
             StopAutoAdvanceRoutine();
@@ -890,6 +921,7 @@ namespace DimensionBrawl.UI.NarrativeReview
         private void HideChoices()
         {
             SetGroupVisible(narrativeChoiceGroup, false);
+            narrativePresenter?.SetChoicesVisible(false);
         }
 
         private void ToggleAutoAdvance()
@@ -914,6 +946,7 @@ namespace DimensionBrawl.UI.NarrativeReview
         private void UpdateAutoButtonLabel()
         {
             SetText(narrativeAutoButtonText, autoAdvanceEnabled ? "AUTO  ON" : "AUTO  OFF");
+            narrativePresenter?.SetAutoAdvanceEnabled(autoAdvanceEnabled);
         }
 
         private void QueueAutoAdvance()
@@ -968,17 +1001,20 @@ namespace DimensionBrawl.UI.NarrativeReview
 
             StopAutoAdvanceRoutine();
             SetGroupVisible(skipConfirmGroup, true);
+            narrativePresenter?.SetSkipConfirmationVisible(true);
         }
 
         private void HideSkipConfirmation()
         {
             SetGroupVisible(skipConfirmGroup, false);
+            narrativePresenter?.SetSkipConfirmationVisible(false);
             QueueAutoAdvance();
         }
 
         private void ConfirmNarrativeSkip()
         {
             SetGroupVisible(skipConfirmGroup, false);
+            narrativePresenter?.SetSkipConfirmationVisible(false);
             narrativeSession?.Skip();
         }
 
@@ -992,11 +1028,13 @@ namespace DimensionBrawl.UI.NarrativeReview
             StopAutoAdvanceRoutine();
             SetText(logText, BuildNarrativeLog());
             SetGroupVisible(logGroup, true);
+            narrativePresenter?.SetLogVisible(true);
         }
 
         private void HideLog()
         {
             SetGroupVisible(logGroup, false);
+            narrativePresenter?.SetLogVisible(false);
             QueueAutoAdvance();
         }
 
@@ -1527,7 +1565,8 @@ namespace DimensionBrawl.UI.NarrativeReview
                 return;
             }
 
-            stageCatalog.TryCreateFirstRouteProjection(
+            stageCatalog.TryCreateRouteProjection(
+                CanonicalCatalogEntryId,
                 UIRouteId.Combat,
                 out stageProjection,
                 out _);
@@ -1640,6 +1679,8 @@ namespace DimensionBrawl.UI.NarrativeReview
         {
             SetGroupVisible(logGroup, false);
             SetGroupVisible(skipConfirmGroup, false);
+            narrativePresenter?.SetLogVisible(false);
+            narrativePresenter?.SetSkipConfirmationVisible(false);
             HideChoices();
         }
 
@@ -1697,8 +1738,14 @@ namespace DimensionBrawl.UI.NarrativeReview
             }
         }
 
-        private static string ResolveSpeakerName(string speakerId)
+        private string ResolveSpeakerName(string speakerId)
         {
+            if (narrativePresenter != null
+                && narrativePresenter.TryResolveDisplayName(speakerId, out string displayName))
+            {
+                return displayName;
+            }
+
             return speakerId switch
             {
                 "system" => "SYSTEM",

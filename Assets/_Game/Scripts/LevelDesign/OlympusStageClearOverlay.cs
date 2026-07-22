@@ -15,7 +15,7 @@ namespace DimensionBrawl.LevelDesign
 {
     [DefaultExecutionOrder(1600)]
     [DisallowMultipleComponent]
-    public sealed class OlympusStageClearOverlay : MonoBehaviour
+    public sealed class OlympusStageClearOverlay : MonoBehaviour, IStageRunResultOverlay
     {
         private const string ClearUiSceneName = "UI_StageClear";
         private const string ClearUiScenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
@@ -37,13 +37,32 @@ namespace DimensionBrawl.LevelDesign
         private bool combatLocked;
         private float previousTimeScale = 1f;
         private StageRunResultSummary resultSummary;
+        private string presentedResultDigest = string.Empty;
 
         public bool IsShown => shown;
         public StageRunResultSummary ResultSummary => resultSummary;
+        public string PendingResultDigest => shown && string.IsNullOrEmpty(presentedResultDigest)
+            ? resultSummary?.ResultSummaryDigest ?? string.Empty
+            : string.Empty;
+        public string PresentedResultDigest => presentedResultDigest;
+        public string LastPresentationError { get; private set; } = string.Empty;
+
+        public event Action<StageRunResultSummary> PresentationSucceeded;
+        public event Action<StageRunResultSummary, string> PresentationFailed;
 
         private void OnDisable()
         {
+            bool presentationWasPending = shown
+                && resultSummary != null
+                && string.IsNullOrEmpty(presentedResultDigest);
             stageClearRoutine = null;
+            if (presentationWasPending)
+            {
+                FailPresentation(
+                    "The result overlay was disabled before presentation acknowledgement.",
+                    logAsError: false);
+            }
+
             RestoreCombatTimeScale();
         }
 
@@ -54,18 +73,44 @@ namespace DimensionBrawl.LevelDesign
 
         public void Show(StageRunResultSummary summary)
         {
+            if (!TryShow(summary, out string error) && !string.IsNullOrWhiteSpace(error))
+            {
+                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] {error}", this);
+            }
+        }
+
+        public bool TryShow(StageRunResultSummary summary, out string error)
+        {
+            error = string.Empty;
+            string requestedDigest = summary?.ResultSummaryDigest ?? string.Empty;
+            string currentDigest = resultSummary?.ResultSummaryDigest ?? string.Empty;
             if (shown)
             {
-                return;
+                if (ReferenceEquals(resultSummary, summary)
+                    || string.Equals(currentDigest, requestedDigest, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                error = "A different result presentation request is already active.";
+                return false;
             }
 
             resultSummary = summary;
+            presentedResultDigest = string.Empty;
+            LastPresentationError = string.Empty;
             shown = true;
             LockCombatAfterClear();
             if (isActiveAndEnabled)
             {
                 stageClearRoutine = StartCoroutine(ShowAuthoredStageClearSceneRoutine());
+                return true;
             }
+
+            shown = false;
+            error = "The result overlay is not active and enabled.";
+            LastPresentationError = error;
+            return false;
         }
 
         private IEnumerator ShowAuthoredStageClearSceneRoutine()
@@ -95,8 +140,7 @@ namespace DimensionBrawl.LevelDesign
             }
             catch (Exception exception)
             {
-                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Failed to load authored clear UI scene: {exception.Message}");
-                stageClearRoutine = null;
+                FailPresentation($"Failed to load authored clear UI scene: {exception.Message}");
                 yield break;
             }
 
@@ -123,10 +167,36 @@ namespace DimensionBrawl.LevelDesign
 
             if (!configured)
             {
-                Debug.LogError($"[{nameof(OlympusStageClearOverlay)}] Authored stage clear scene loaded without a {nameof(StageClearScreenPresenter)}.");
+                FailPresentation(
+                    $"Authored stage clear scene did not configure an exact {nameof(StageClearScreenPresenter)}.");
+                yield break;
             }
 
+            presentedResultDigest = resultSummary?.ResultSummaryDigest ?? string.Empty;
+            LastPresentationError = string.Empty;
             stageClearRoutine = null;
+            PresentationSucceeded?.Invoke(resultSummary);
+        }
+
+        private void FailPresentation(string error, bool logAsError = true)
+        {
+            LastPresentationError = error ?? string.Empty;
+            shown = false;
+            presentedResultDigest = string.Empty;
+            stageClearRoutine = null;
+            if (logAsError)
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusStageClearOverlay)}] {LastPresentationError}",
+                    this);
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[{nameof(OlympusStageClearOverlay)}] {LastPresentationError}",
+                    this);
+            }
+            PresentationFailed?.Invoke(resultSummary, LastPresentationError);
         }
 
         private IEnumerator PlayCombatHudExitRoutine()
@@ -270,8 +340,14 @@ namespace DimensionBrawl.LevelDesign
                 {
                     StageClearScreenPresenter presenter = presenters[presenterIndex];
                     presenter.ConfigureResult(summary);
-                    presenter.PlayEntrance();
-                    configuredAny = true;
+                    bool configured = summary == null
+                        || (presenter.IsConfigured
+                            && ReferenceEquals(presenter.ResultSummary, summary));
+                    if (configured)
+                    {
+                        presenter.PlayEntrance();
+                        configuredAny = true;
+                    }
                 }
             }
 
@@ -324,7 +400,11 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
-            Time.timeScale = previousTimeScale;
+            if (Mathf.Approximately(Time.timeScale, 0f))
+            {
+                Time.timeScale = previousTimeScale;
+            }
+
             combatLocked = false;
         }
 

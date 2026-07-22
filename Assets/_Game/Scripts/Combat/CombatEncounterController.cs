@@ -50,6 +50,7 @@ namespace DimensionBrawl.Combat
         public event Action Failed;
         public event Action<EncounterTerminalResolution> TerminalResolved;
         public event Action<EncounterTerminalDiagnostic> DiagnosticAborted;
+        public static event Action<CombatEncounterController> CoordinatedRunStarting;
         public static event Action<CombatEncounterController> CoordinatedRunStarted;
         public static event Action<CombatEncounterController> CoordinatedRunStopping;
 
@@ -57,6 +58,7 @@ namespace DimensionBrawl.Combat
         private static void ResetRunGeneration()
         {
             nextRunGeneration = 0;
+            CoordinatedRunStarting = null;
             CoordinatedRunStarted = null;
             CoordinatedRunStopping = null;
         }
@@ -141,6 +143,42 @@ namespace DimensionBrawl.Combat
                 producer);
         }
 
+#if UNITY_INCLUDE_TESTS
+        public bool TryRestartCoordinatedRunWithGenerationForTests(
+            long runGeneration,
+            out string error)
+        {
+            error = string.Empty;
+            if (!isActiveAndEnabled
+                || !useCoordinatedTerminalResolution
+                || playerHealth == null
+                || enemyHealth == null)
+            {
+                error = "A live coordinated encounter with both terminal subjects is required.";
+                return false;
+            }
+
+            StopRunBindings();
+            ResetRunState();
+            if (!EncounterTerminalResolutionCoordinator.TryCreate(
+                    runGeneration,
+                    playerHealth,
+                    enemyHealth,
+                    out terminalCoordinator,
+                    out EncounterTerminalDiagnostic diagnostic))
+            {
+                error = diagnostic.Message;
+                return false;
+            }
+
+            terminalCoordinator.Resolved += HandleTerminalResolved;
+            terminalCoordinator.DiagnosticAborted += HandleTerminalDiagnostic;
+            CoordinatedRunStarted?.Invoke(this);
+            SetMarkers();
+            return true;
+        }
+#endif
+
         private void OnEnable()
         {
             if (useCoordinatedTerminalResolution && !hasStarted)
@@ -174,6 +212,15 @@ namespace DimensionBrawl.Combat
 
         private void BeginRun()
         {
+            if (useCoordinatedTerminalResolution)
+            {
+                CoordinatedRunStarting?.Invoke(this);
+                if (!isActiveAndEnabled)
+                {
+                    return;
+                }
+            }
+
             StopRunBindings();
             ResetRunState();
 

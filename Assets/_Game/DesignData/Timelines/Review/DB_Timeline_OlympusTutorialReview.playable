@@ -1,6 +1,6 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-7298934463440037905
+--- !u!114 &-5777346790313951977
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -17,51 +17,7 @@ MonoBehaviour:
   fadeInSeconds: 0.12
   fadeOutSeconds: 0.16
   maxAlpha: 1
---- !u!114 &-5756027879022353602
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 030f85c3f73729f4f976f66ffb23b875, type: 3}
-  m_Name: DB_Anim_OlympusTutorialReviewCamera
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AnimationPlayableAsset
-  m_Clip: {fileID: 7400000, guid: 953ccc86d9a8b5b4b883982dbdfacbf7, type: 2}
-  m_Position: {x: 0, y: 0, z: 0}
-  m_EulerAngles: {x: 0, y: 0, z: 0}
-  m_UseTrackMatchFields: 1
-  m_MatchTargetFields: 63
-  m_RemoveStartOffset: 0
-  m_ApplyFootIK: 0
-  m_Loop: 2
-  m_Version: 1
-  m_Rotation: {x: 0, y: 0, z: 0, w: 1}
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
-  m_Name: DB_Timeline_OlympusTutorialReview
-  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.TimelineAsset
-  m_Version: 0
-  m_Tracks:
-  - {fileID: 2817968807227369028}
-  - {fileID: 4189438969359637299}
-  m_FixedDuration: 8
-  m_EditorSettings:
-    m_Framerate: 60
-    m_ScenePreview: 1
-  m_DurationMode: 1
-  m_MarkerTrack: {fileID: 0}
---- !u!114 &2817968807227369028
+--- !u!114 &-2178447479382581276
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -85,10 +41,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 0
-    m_Asset: {fileID: -5756027879022353602}
+    m_Asset: {fileID: 124840200665881773}
     m_Duration: 8
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 2817968807227369028}
+    m_ParentTrack: {fileID: -2178447479382581276}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0.35
     m_BlendInDuration: -1
@@ -171,7 +127,51 @@ MonoBehaviour:
   m_OpenClipOffsetRotation: {x: 0, y: 0, z: 0, w: 1}
   m_Rotation: {x: 0, y: 0, z: 0, w: 1}
   m_ApplyOffsets: 0
---- !u!114 &4189438969359637299
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfda56da833e2384a9677cd3c976a436, type: 3}
+  m_Name: DB_Timeline_OlympusTutorialReview
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.TimelineAsset
+  m_Version: 0
+  m_Tracks:
+  - {fileID: -2178447479382581276}
+  - {fileID: 1788910855481508523}
+  m_FixedDuration: 8
+  m_EditorSettings:
+    m_Framerate: 60
+    m_ScenePreview: 1
+  m_DurationMode: 1
+  m_MarkerTrack: {fileID: 0}
+--- !u!114 &124840200665881773
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 030f85c3f73729f4f976f66ffb23b875, type: 3}
+  m_Name: DB_Anim_OlympusTutorialReviewCamera
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.AnimationPlayableAsset
+  m_Clip: {fileID: 7400000, guid: 953ccc86d9a8b5b4b883982dbdfacbf7, type: 2}
+  m_Position: {x: 0, y: 0, z: 0}
+  m_EulerAngles: {x: 0, y: 0, z: 0}
+  m_UseTrackMatchFields: 1
+  m_MatchTargetFields: 63
+  m_RemoveStartOffset: 0
+  m_ApplyFootIK: 0
+  m_Loop: 2
+  m_Version: 1
+  m_Rotation: {x: 0, y: 0, z: 0, w: 1}
+--- !u!114 &1788910855481508523
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -195,10 +195,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0.45
     m_ClipIn: 0
-    m_Asset: {fileID: -7298934463440037905}
+    m_Asset: {fileID: -5777346790313951977}
     m_Duration: 2.15
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 4189438969359637299}
+    m_ParentTrack: {fileID: 1788910855481508523}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -264,10 +264,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 2.95
     m_ClipIn: 0
-    m_Asset: {fileID: 8970581599487263577}
+    m_Asset: {fileID: 8787882838260559114}
     m_Duration: 2.2
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 4189438969359637299}
+    m_ParentTrack: {fileID: 1788910855481508523}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -335,10 +335,10 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 5.55
     m_ClipIn: 0
-    m_Asset: {fileID: 8514946606930288351}
+    m_Asset: {fileID: 2706769751985741123}
     m_Duration: 1.95
     m_TimeScale: 1
-    m_ParentTrack: {fileID: 4189438969359637299}
+    m_ParentTrack: {fileID: 1788910855481508523}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
     m_BlendInDuration: -1
@@ -404,7 +404,7 @@ MonoBehaviour:
       \uC900\uBE44 \uC644\uB8CC."
   m_Markers:
     m_Objects: []
---- !u!114 &8514946606930288351
+--- !u!114 &2706769751985741123
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -421,7 +421,7 @@ MonoBehaviour:
   fadeInSeconds: 0.12
   fadeOutSeconds: 0.16
   maxAlpha: 1
---- !u!114 &8970581599487263577
+--- !u!114 &8787882838260559114
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using DimensionBrawl.Debugging;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
@@ -10,6 +11,12 @@ namespace DimensionBrawl.Tests
 {
     public sealed class MobilePerformanceBenchmarkPlayModeTests
     {
+        [UnityTearDown]
+        public IEnumerator RestoreNeutralRuntimeState()
+        {
+            yield return ResetRuntimeState();
+        }
+
         [Test]
         public void BenchmarkUsesOnlyCanonicalRuntimeCombatScenes()
         {
@@ -194,7 +201,17 @@ namespace DimensionBrawl.Tests
                 "Assets/_Game/Scenes/OlympusStationCombatStage.unity",
                 "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity"
             };
-            int[] maximumFrameLoopCounts = { 17, 20 };
+            int[] maximumFrameLoopCounts =
+            {
+                // The canonical continuous-stage permanently authorizes one Update each for
+                // OlympusStationRunFactCollector and StageCountOneEncounterExecutor.
+                // PlayerSkill1Action idle polling has been removed and is deliberately not
+                // included in this reviewed runtime callback budget.
+                19,
+                // The corridor keeps the generic StageCountOneEncounterExecutor active while
+                // the phase controller itself advances from finite observation routines.
+                21
+            };
             int[] expectedFootstepPresenterCounts = { 2, 0 };
 
             for (int sceneIndex = 0; sceneIndex < scenePaths.Length; sceneIndex++)
@@ -255,9 +272,11 @@ namespace DimensionBrawl.Tests
                     Debug.Log(
                         "[MobilePerformance] RuntimeFrameLoopTypes scene=OlympusCorridorPostHandoff "
                         + FormatFrameLoops(postHandoffResult));
+                    // The post-handoff inventory retains the same reviewed count-one executor
+                    // until the terminal encounter resolves; the flow controller has no Update.
                     Assert.That(
                         postHandoffResult.ActiveFrameLoopBehaviourCount,
-                        Is.LessThanOrEqualTo(14),
+                        Is.LessThanOrEqualTo(15),
                         "Olympus corridor gameplay handoff exceeded its reviewed runtime callback budget. "
                         + FormatFrameLoops(postHandoffResult));
                     MobilePerformanceFrameLoopInventory lockTargetLoop = FindFrameLoop(
@@ -317,6 +336,35 @@ namespace DimensionBrawl.Tests
             }
 
             return null;
+        }
+
+        private static IEnumerator ResetRuntimeState()
+        {
+            Time.timeScale = 1f;
+            Scene neutralScene = SceneManager.CreateScene(
+                $"MobilePerformanceNeutral_{System.Guid.NewGuid():N}");
+            SceneManager.SetActiveScene(neutralScene);
+
+            var scenesToUnload = new List<Scene>();
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(sceneIndex);
+                if (loadedScene != neutralScene)
+                {
+                    scenesToUnload.Add(loadedScene);
+                }
+            }
+
+            for (int sceneIndex = 0; sceneIndex < scenesToUnload.Count; sceneIndex++)
+            {
+                AsyncOperation unload = SceneManager.UnloadSceneAsync(scenesToUnload[sceneIndex]);
+                if (unload != null)
+                {
+                    yield return unload;
+                }
+            }
+
+            yield return null;
         }
 
         private static string FormatFrameLoops(MobilePerformanceSceneResult result)

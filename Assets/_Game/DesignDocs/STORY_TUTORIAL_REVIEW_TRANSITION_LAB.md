@@ -257,6 +257,9 @@ The gate's `ConfirmTutorialStarted()` method intentionally remains a review-loca
 does not accept Director evidence itself and must not be treated as product proof. Likewise,
 the review `Time.timeScale` snapshot is safe only in this isolated allowlisted scene.
 
-VN-02 remains next: a reusable multi-character narrative presenter with persistent
-left/center/right portraits, expression state, typewriter, auto, choices, log, and skip,
-still isolated until a separate product admission decision.
+VN-02 is now implemented and verified as a review-only reusable multi-character presenter.
+Persistent left/center/right portraits, expression resolution, and inspectable typewriter,
+Auto, choice, Log, and Skip state are recorded in
+`VN02_MULTI_CHARACTER_NARRATIVE_PRESENTER.md`. It remains isolated until a separate product
+admission decision. The next content-factory slice is the A1 ordered two-add encounter
+executor.

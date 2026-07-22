@@ -1,10 +1,25 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
 
 namespace DimensionBrawl.LevelDesign
 {
+    [Flags]
+    public enum StageRunSegmentRole
+    {
+        None = 0,
+        Entry = 1,
+        Terminal = 2
+    }
+
+    public enum StageRunTutorialFactRequirement
+    {
+        None = 0,
+        LegacyCorridorCompletion = 1
+    }
+
     public sealed class StageRunSegmentSnapshot
     {
         internal StageRunSegmentSnapshot(StageSceneSegmentRef source)
@@ -198,6 +213,8 @@ namespace DimensionBrawl.LevelDesign
         public int SegmentCount => segments.Length;
         public int ActionCount => actions.Length;
         public StageRunTerminalPolicySnapshot TerminalPolicy { get; }
+        public StageRunTutorialFactRequirement TutorialFactRequirement =>
+            ResolveTutorialFactRequirement();
 
         public StageRunSegmentSnapshot GetSegment(int index)
         {
@@ -217,6 +234,48 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return actions[index];
+        }
+
+        public StageRunSegmentRole GetSegmentRoles(int index)
+        {
+            StageRunSegmentSnapshot segment = GetSegment(index);
+            StageRunSegmentRole roles = index == 0
+                ? StageRunSegmentRole.Entry
+                : StageRunSegmentRole.None;
+            if (index == segments.Length - 1
+                && segment.HandoffPolicy == StageSceneHandoffPolicy.ReturnToOwner)
+            {
+                roles |= StageRunSegmentRole.Terminal;
+            }
+
+            return roles;
+        }
+
+        public bool IsEntrySegment(int index)
+        {
+            return (GetSegmentRoles(index) & StageRunSegmentRole.Entry) != 0;
+        }
+
+        public bool IsTerminalSegment(int index)
+        {
+            return (GetSegmentRoles(index) & StageRunSegmentRole.Terminal) != 0;
+        }
+
+        private StageRunTutorialFactRequirement ResolveTutorialFactRequirement()
+        {
+            if (segments.Length <= 1)
+            {
+                return StageRunTutorialFactRequirement.None;
+            }
+
+            StageSegmentConditionKind firstExitKind = segments[0].ExitConditionKind;
+            return firstExitKind
+                    == StageSegmentConditionKind.CorridorTutorialFactsAndClosureSealedForSingleLoad
+                || firstExitKind
+                    == StageSegmentConditionKind
+                        .CorridorTutorialFactsSealedAndStationEntryReachedForInSceneAdvance
+                    ? StageRunTutorialFactRequirement.LegacyCorridorCompletion
+                    : StageRunTutorialFactRequirement.None;
         }
 
         public bool TryGetAction(string actionId, out StageRunActionSnapshot action)
@@ -300,6 +359,14 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
+            if (definition.SchemaVersion != 1
+                || string.IsNullOrWhiteSpace(definition.PlayableStageId)
+                || definition.RouteRevision < 1)
+            {
+                error = "Playable stage route identity is invalid.";
+                return false;
+            }
+
             if (definition.SceneSegmentCount <= 0 || definition.TerminalResolutionPolicy == null)
             {
                 error = "Playable stage route is incomplete.";
@@ -326,6 +393,14 @@ namespace DimensionBrawl.LevelDesign
                 }
             }
 
+            if (!ValidateBoundedTopology(
+                    definition.PlayableStageId,
+                    copiedSegments,
+                    out error))
+            {
+                return false;
+            }
+
             if (!ValidateOlympusConditionSemantics(
                 definition.PlayableStageId,
                 definition.RouteRevision,
@@ -341,12 +416,15 @@ namespace DimensionBrawl.LevelDesign
             }
 
             StageRunActionSnapshot[] copiedActions = new StageRunActionSnapshot[definition.TerminalActionCount];
+            var actionIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < copiedActions.Length; i++)
             {
                 StageRouteActionRef source = definition.GetTerminalAction(i);
-                if (source == null || string.IsNullOrWhiteSpace(source.ActionId))
+                if (source == null
+                    || string.IsNullOrWhiteSpace(source.ActionId)
+                    || !actionIds.Add(source.ActionId))
                 {
-                    error = $"Route action {i.ToString(CultureInfo.InvariantCulture)} has incomplete identity.";
+                    error = $"Route action {i.ToString(CultureInfo.InvariantCulture)} has incomplete or duplicate identity.";
                     return false;
                 }
 
@@ -378,6 +456,124 @@ namespace DimensionBrawl.LevelDesign
             }
 
             snapshot = candidate;
+            return true;
+        }
+
+        private static bool ValidateBoundedTopology(
+            string playableStageId,
+            StageRunSegmentSnapshot[] copiedSegments,
+            out string error)
+        {
+            error = string.Empty;
+            if (copiedSegments.Length < 1 || copiedSegments.Length > 2)
+            {
+                error = "Playable stage route must contain one or two ordered segments.";
+                return false;
+            }
+
+            var segmentIds = new HashSet<string>(StringComparer.Ordinal);
+            var semanticConditionIds = new HashSet<string>(StringComparer.Ordinal)
+            {
+                copiedSegments[0].EntryConditionId
+            };
+            if (!string.Equals(
+                    copiedSegments[0].EntryConditionId,
+                    RunEntryConditionId,
+                    StringComparison.Ordinal)
+                || copiedSegments[0].EntryConditionKind
+                    != StageSegmentConditionKind.RunEntrySnapshotValidatedAndFirstSegmentActivated)
+            {
+                error = "First route segment must carry the exact run-entry admission condition.";
+                return false;
+            }
+
+            for (int i = 0; i < copiedSegments.Length; i++)
+            {
+                StageRunSegmentSnapshot segment = copiedSegments[i];
+                bool isFinal = i == copiedSegments.Length - 1;
+                if (segment.SequenceIndex != i
+                    || !segmentIds.Add(segment.SegmentId)
+                    || string.IsNullOrWhiteSpace(segment.EntryConditionId)
+                    || string.IsNullOrWhiteSpace(segment.ExitConditionId))
+                {
+                    error = $"Route segment {i.ToString(CultureInfo.InvariantCulture)} has invalid sequence, duplicate identity, or missing conditions.";
+                    return false;
+                }
+
+                if (i > 0)
+                {
+                    StageRunSegmentSnapshot source = copiedSegments[i - 1];
+                    if (!string.Equals(
+                            source.ExitConditionId,
+                            segment.EntryConditionId,
+                            StringComparison.Ordinal)
+                        || source.ExitConditionKind != segment.EntryConditionKind)
+                    {
+                        error = $"Route boundary before segment {i.ToString(CultureInfo.InvariantCulture)} does not preserve the exact exit/entry condition.";
+                        return false;
+                    }
+                }
+
+                if (!semanticConditionIds.Add(segment.ExitConditionId))
+                {
+                    error = $"Route segment {i.ToString(CultureInfo.InvariantCulture)} reuses a condition ID for a different semantic boundary.";
+                    return false;
+                }
+
+                if (isFinal)
+                {
+                    if (segment.ExitConditionKind
+                        != StageSegmentConditionKind
+                            .StationTerminalQueueDrainedSubjectsFinalizedAndEvidenceMatched)
+                    {
+                        error = "Final route segment must carry the terminal queue/finalization condition kind.";
+                        return false;
+                    }
+
+                    if (!string.Equals(
+                            playableStageId,
+                            OlympusInvasionPlayableStageId,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            segment.ExitConditionId,
+                            StationTerminalConditionId,
+                            StringComparison.Ordinal))
+                    {
+                        error = "A non-Olympus route must own a distinct terminal condition ID.";
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                StageSegmentConditionKind expectedBoundaryKind = segment.HandoffPolicy switch
+                {
+                    StageSceneHandoffPolicy.SingleLoad =>
+                        StageSegmentConditionKind
+                            .CorridorTutorialFactsAndClosureSealedForSingleLoad,
+                    StageSceneHandoffPolicy.InSceneAdvance =>
+                        StageSegmentConditionKind
+                            .CorridorTutorialFactsSealedAndStationEntryReachedForInSceneAdvance,
+                    _ => 0
+                };
+                if (expectedBoundaryKind == 0
+                    || segment.ExitConditionKind != expectedBoundaryKind)
+                {
+                    error = $"Non-final route segment {i.ToString(CultureInfo.InvariantCulture)} has an invalid typed boundary condition.";
+                    return false;
+                }
+
+                if (segment.HandoffPolicy == StageSceneHandoffPolicy.InSceneAdvance
+                    && !string.Equals(
+                        segment.ScenePath,
+                        copiedSegments[i + 1].ScenePath,
+                        StringComparison.Ordinal))
+                {
+                    error = $"In-scene route segment {i.ToString(CultureInfo.InvariantCulture)} does not share its successor scene.";
+                    return false;
+                }
+            }
+
             return true;
         }
 

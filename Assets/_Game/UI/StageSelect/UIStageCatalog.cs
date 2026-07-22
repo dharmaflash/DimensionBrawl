@@ -63,7 +63,8 @@ namespace DimensionBrawl.UI
         PresentationMirrorMismatch = 49,
         StaleBriefingBundle = 50,
         InvalidResultProgressionJoin = 51,
-        StaleResultProgressionPreflight = 52
+        StaleResultProgressionPreflight = 52,
+        InvalidStageSelectionBindings = 53
     }
 
     public enum UIStagePresentationProvenance
@@ -258,7 +259,8 @@ namespace DimensionBrawl.UI
 
         public bool TryGetStage(string id, out StageEntry stage)
         {
-            if (string.IsNullOrWhiteSpace(id) || stages == null)
+            if (string.IsNullOrWhiteSpace(id)
+                || !TryValidateEntryIdentities(out _))
             {
                 stage = default;
                 return false;
@@ -279,7 +281,7 @@ namespace DimensionBrawl.UI
 
         public bool TryGetFirstStage(out StageEntry stage)
         {
-            if (stages != null && stages.Length > 0)
+            if (TryValidateEntryIdentities(out _))
             {
                 stage = stages[0];
                 return true;
@@ -289,6 +291,38 @@ namespace DimensionBrawl.UI
             return false;
         }
 
+        public bool TryValidateEntryIdentities(
+            out UIStageRouteProjectionRejectReason rejectReason)
+        {
+            if (StageCount < 1)
+            {
+                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
+                return false;
+            }
+
+            for (int i = 0; i < stages.Length; i++)
+            {
+                string id = stages[i].Id;
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    rejectReason = UIStageRouteProjectionRejectReason.MissingCatalogEntryId;
+                    return false;
+                }
+
+                for (int previousIndex = 0; previousIndex < i; previousIndex++)
+                {
+                    if (string.Equals(stages[previousIndex].Id, id, StringComparison.Ordinal))
+                    {
+                        rejectReason = UIStageRouteProjectionRejectReason.DuplicateCatalogEntryId;
+                        return false;
+                    }
+                }
+            }
+
+            rejectReason = UIStageRouteProjectionRejectReason.None;
+            return true;
+        }
+
         public bool TryCreateRouteProjection(
             string catalogEntryId,
             UIRouteId uiRouteId,
@@ -296,9 +330,8 @@ namespace DimensionBrawl.UI
             out UIStageRouteProjectionRejectReason rejectReason)
         {
             projection = null;
-            if (StageCount != 1)
+            if (!TryValidateEntryIdentities(out rejectReason))
             {
-                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
                 return false;
             }
 
@@ -316,9 +349,8 @@ namespace DimensionBrawl.UI
             out UIStageRouteProjectionRejectReason rejectReason)
         {
             projection = null;
-            if (StageCount != 1)
+            if (!TryValidateEntryIdentities(out rejectReason))
             {
-                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
                 return false;
             }
 
@@ -332,9 +364,8 @@ namespace DimensionBrawl.UI
             out UIStageRouteProjectionRejectReason rejectReason)
         {
             projection = null;
-            if (StageCount != 1)
+            if (!TryValidateEntryIdentities(out rejectReason))
             {
-                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
                 return false;
             }
 
@@ -354,9 +385,8 @@ namespace DimensionBrawl.UI
             out UIStageRouteProjectionRejectReason rejectReason)
         {
             canonicalProjectionDigest = string.Empty;
-            if (StageCount != 1)
+            if (!TryValidateEntryIdentities(out rejectReason))
             {
-                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
                 return false;
             }
 
@@ -369,6 +399,7 @@ namespace DimensionBrawl.UI
             if (!TryBuildProjectionData(
                     stages[index],
                     uiRouteId,
+                    false,
                     false,
                     out ProjectionData data,
                     out rejectReason))
@@ -385,9 +416,8 @@ namespace DimensionBrawl.UI
             UIRouteId uiRouteId,
             out UIStageRouteProjectionRejectReason rejectReason)
         {
-            if (StageCount != 1)
+            if (!TryValidateEntryIdentities(out rejectReason))
             {
-                rejectReason = UIStageRouteProjectionRejectReason.InvalidCatalogEntryCount;
                 return false;
             }
 
@@ -434,6 +464,7 @@ namespace DimensionBrawl.UI
                     stage,
                     uiRouteId,
                     true,
+                    true,
                     out ProjectionData data,
                     out rejectReason))
             {
@@ -472,6 +503,7 @@ namespace DimensionBrawl.UI
             if (!TryBuildProjectionData(
                     stage,
                     uiRouteId,
+                    true,
                     true,
                     out ProjectionData data,
                     out rejectReason))
@@ -518,6 +550,7 @@ namespace DimensionBrawl.UI
             StageEntry stage,
             UIRouteId uiRouteId,
             bool requireStoredProjectionDigest,
+            bool requireEntrySceneInBuildSettings,
             out ProjectionData data,
             out UIStageRouteProjectionRejectReason rejectReason)
         {
@@ -658,7 +691,8 @@ namespace DimensionBrawl.UI
                 return false;
             }
 
-            if (SceneUtility.GetBuildIndexByScenePath(entryScenePath) < 0)
+            if (requireEntrySceneInBuildSettings
+                && SceneUtility.GetBuildIndexByScenePath(entryScenePath) < 0)
             {
                 rejectReason = UIStageRouteProjectionRejectReason.EntrySceneNotInBuildSettings;
                 return false;

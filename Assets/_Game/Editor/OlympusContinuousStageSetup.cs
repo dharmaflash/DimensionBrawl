@@ -25,6 +25,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string StationDefinitionPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset";
+        private const string StationLeftAddArchetypePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
+        private const string StationRightAddArchetypePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Ranged.asset";
         private const string ProgressionNodePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageProgressionNode_OlympusInvasion.asset";
         private const string ProgressionGraphPath =
@@ -34,8 +38,6 @@ namespace DimensionBrawl.Editor
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
         private const string GuidePrefabPath =
             "Assets/_Game/UI/Transitions/PF_UI_SceneEntryNoticeOverlay.prefab";
-        private const string AddProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
         private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
         private const string PlayerInputActionMapId = "df70fa95-8a34-4494-b137-73ab6b9c7d37";
 
@@ -45,9 +47,12 @@ namespace DimensionBrawl.Editor
         private const string LowerCombatPlacementName = "OlympusCorridor_CombatPocketPlacement";
         private const string LowerCombatRuntimeRootName = "OlympusStation_LowerCombatRuntimeRoot";
         private const string LowerPlayerStartAnchorName = "PlayerStartAnchor";
-        private const string AddAnchorPath =
+        private const string AddLeftAnchorPath =
             "OlympusCorridorInvasionLookdev_RuntimeFreePass/"
             + "OlympusCorridor_CombatReadAnchors/Add_LeftLaneAnchor";
+        private const string AddRightAnchorPath =
+            "OlympusCorridorInvasionLookdev_RuntimeFreePass/"
+            + "OlympusCorridor_CombatReadAnchors/Add_RightLaneAnchor";
         private const string ResultAdaptersName = "OlympusStation_ResultAdapters";
         private const string EntryGuideName = "OlympusStation_EntryGuide";
         private const string StairTraversalSupportName =
@@ -263,6 +268,7 @@ namespace DimensionBrawl.Editor
             station.FindProperty("mapRootName").stringValue = SharedMapName;
             station.FindProperty("mapContentRootName").stringValue = SharedMapName;
             station.FindProperty("mapScale").vector3Value = Vector3.one * 1.5f;
+            ConfigureStationOrderedAddDefinition(station);
             SerializedProperty stationSources = station.FindProperty("sourceReferences");
             Require(stationSources != null && stationSources.arraySize == 1,
                 "Station definition must have one provenance row.");
@@ -396,21 +402,31 @@ namespace DimensionBrawl.Editor
                 joinDigest);
 
             var serializedCatalog = new SerializedObject(stageCatalog);
-            serializedCatalog.FindProperty("catalogProjectionGeneration").intValue = 2;
-            serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+            SerializedProperty projectionGeneration =
+                serializedCatalog.FindProperty("catalogProjectionGeneration");
             Require(
-                stageCatalog.TryComputeCanonicalProjectionDigest(
-                    0,
-                    UIRouteId.Combat,
-                    out string projectionDigest,
-                    out UIStageRouteProjectionRejectReason projectionReject),
-                $"Stage catalog projection computation failed: {projectionReject}.");
-            serializedCatalog.Update();
+                projectionGeneration != null
+                    && projectionGeneration.intValue
+                        >= UIStageCatalog.InitialCatalogProjectionGeneration,
+                "Stage catalog projection generation must remain valid.");
             SerializedProperty catalogStages = serializedCatalog.FindProperty("stages");
-            Require(catalogStages != null && catalogStages.arraySize == 1,
-                "Canonical stage catalog must retain one entry.");
-            catalogStages.GetArrayElementAtIndex(0)
-                .FindPropertyRelative("canonicalProjectionDigest").stringValue = projectionDigest;
+            Require(
+                catalogStages != null
+                    && catalogStages.arraySize == stageCatalog.StageCount
+                    && stageCatalog.TryValidateEntryIdentities(out _),
+                "Stage catalog must retain one or more uniquely identified entries.");
+            for (int i = 0; i < stageCatalog.StageCount; i++)
+            {
+                Require(
+                    stageCatalog.TryComputeCanonicalProjectionDigest(
+                        i,
+                        UIRouteId.Combat,
+                        out string projectionDigest,
+                        out UIStageRouteProjectionRejectReason projectionReject),
+                    $"Stage catalog projection computation failed at row {i}: {projectionReject}.");
+                catalogStages.GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("canonicalProjectionDigest").stringValue = projectionDigest;
+            }
             serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
 
             Require(StageRunRouteSnapshot.TryCreate(route, out _, out string routeError), routeError);
@@ -424,6 +440,77 @@ namespace DimensionBrawl.Editor
                     out _,
                     out UIStageRouteProjectionRejectReason projectionBuildReject),
                 $"Stage catalog projection validation failed: {projectionBuildReject}.");
+        }
+
+        private static void ConfigureStationOrderedAddDefinition(SerializedObject station)
+        {
+            CombatEnemyArchetypeProfile meleeArchetype =
+                LoadRequired<CombatEnemyArchetypeProfile>(StationLeftAddArchetypePath);
+            CombatEnemyArchetypeProfile rangedArchetype =
+                LoadRequired<CombatEnemyArchetypeProfile>(StationRightAddArchetypePath);
+            SerializedProperty anchors = station.FindProperty("anchors");
+            Require(anchors != null, "Station definition is missing its anchor array.");
+            anchors.arraySize = 2;
+            ConfigureStationAddAnchor(
+                anchors.GetArrayElementAtIndex(0),
+                "Add_LeftLaneAnchor",
+                new Vector3(8.9f, 0f, -1.25f),
+                "Stable authoring anchor for the first count-one Station Add fixture.");
+            ConfigureStationAddAnchor(
+                anchors.GetArrayElementAtIndex(1),
+                "Add_RightLaneAnchor",
+                new Vector3(8.9f, 0f, 1.25f),
+                "Stable mirrored authoring anchor for the second ordered Station Add ticket.");
+
+            SerializedProperty spawns = station.FindProperty("spawns");
+            Require(spawns != null, "Station definition is missing its spawn array.");
+            spawns.arraySize = 2;
+            ConfigureStationAddSpawn(
+                spawns.GetArrayElementAtIndex(0),
+                "add-left",
+                2101,
+                "Add_LeftLaneAnchor",
+                meleeArchetype,
+                "First source-ordered count-one Add ticket; independently participates and completes without owning the boss result.");
+            ConfigureStationAddSpawn(
+                spawns.GetArrayElementAtIndex(1),
+                "add-right",
+                2102,
+                "Add_RightLaneAnchor",
+                rangedArchetype,
+                "Second equal-delay ticket; source order is the deterministic activation tiebreaker and the reviewed RifleCrossfire loadout owns physical mid-range pressure.");
+        }
+
+        private static void ConfigureStationAddAnchor(
+            SerializedProperty anchor,
+            string anchorId,
+            Vector3 expectedPosition,
+            string purpose)
+        {
+            anchor.FindPropertyRelative("anchorId").stringValue = anchorId;
+            anchor.FindPropertyRelative("groupId").stringValue = "CombatSpawnAnchors";
+            anchor.FindPropertyRelative("expectedPosition").vector3Value = expectedPosition;
+            anchor.FindPropertyRelative("expectedEuler").vector3Value = Vector3.zero;
+            anchor.FindPropertyRelative("purpose").stringValue = purpose;
+        }
+
+        private static void ConfigureStationAddSpawn(
+            SerializedProperty spawn,
+            string spawnId,
+            int positionId,
+            string anchorId,
+            CombatEnemyArchetypeProfile archetype,
+            string note)
+        {
+            spawn.FindPropertyRelative("spawnId").stringValue = spawnId;
+            spawn.FindPropertyRelative("spawnKind").intValue = (int)StageSpawnKind.Add;
+            spawn.FindPropertyRelative("positionId").intValue = positionId;
+            spawn.FindPropertyRelative("anchorId").stringValue = anchorId;
+            spawn.FindPropertyRelative("payloadId").stringValue = archetype.ArchetypeId;
+            spawn.FindPropertyRelative("payloadArchetype").objectReferenceValue = archetype;
+            spawn.FindPropertyRelative("count").intValue = 1;
+            spawn.FindPropertyRelative("delaySeconds").floatValue = 0f;
+            spawn.FindPropertyRelative("note").stringValue = note;
         }
 
         private static void ConfigureCorridorScene(
@@ -479,24 +566,42 @@ namespace DimensionBrawl.Editor
             Vector3 lowerRampEnd = stairTrigger.position + routeDirection;
             lowerRampEnd.y = lowerCombatPlacement.position.y;
             ConfigureTraversalSupport(stairTraversalSupport, lowerRampStart, lowerRampEnd);
-            Transform addAnchorTransform = sharedMap.transform.Find(AddAnchorPath);
-            Require(addAnchorTransform != null,
-                $"Missing canonical Station Add anchor path under {SharedMapName}: {AddAnchorPath}");
+            Transform addLeftAnchorTransform = sharedMap.transform.Find(AddLeftAnchorPath);
+            Transform addRightAnchorTransform = sharedMap.transform.Find(AddRightAnchorPath);
+            Require(addLeftAnchorTransform != null,
+                $"Missing canonical left Station Add anchor path under {SharedMapName}: {AddLeftAnchorPath}");
+            Require(addRightAnchorTransform != null,
+                $"Missing canonical right Station Add anchor path under {SharedMapName}: {AddRightAnchorPath}");
 
-            StageAnchorPoint addAnchor =
-                addAnchorTransform.GetComponent<StageAnchorPoint>()
-                ?? addAnchorTransform.gameObject.AddComponent<StageAnchorPoint>();
-            var serializedAnchor = new SerializedObject(addAnchor);
-            serializedAnchor.FindProperty("anchorId").stringValue = "Add_LeftLaneAnchor";
-            serializedAnchor.FindProperty("groupId").stringValue = "CombatSpawnAnchors";
-            serializedAnchor.FindProperty("usageKind").intValue =
+            StageAnchorPoint addLeftAnchor =
+                addLeftAnchorTransform.GetComponent<StageAnchorPoint>()
+                ?? addLeftAnchorTransform.gameObject.AddComponent<StageAnchorPoint>();
+            var serializedLeftAnchor = new SerializedObject(addLeftAnchor);
+            serializedLeftAnchor.FindProperty("anchorId").stringValue = "Add_LeftLaneAnchor";
+            serializedLeftAnchor.FindProperty("groupId").stringValue = "CombatSpawnAnchors";
+            serializedLeftAnchor.FindProperty("usageKind").intValue =
                 (int)StageAnchorUsageKind.CombatSpawn;
-            serializedAnchor.FindProperty("positionId").intValue = 2101;
-            serializedAnchor.FindProperty("spawnKind").intValue = (int)StageSpawnKind.Add;
-            serializedAnchor.FindProperty("runtimeStateKind").intValue = 0;
-            serializedAnchor.FindProperty("purpose").stringValue =
-                "Canonical count-one Station Add spawn in the continuous Corridor host.";
-            serializedAnchor.ApplyModifiedPropertiesWithoutUndo();
+            serializedLeftAnchor.FindProperty("positionId").intValue = 2101;
+            serializedLeftAnchor.FindProperty("spawnKind").intValue = (int)StageSpawnKind.Add;
+            serializedLeftAnchor.FindProperty("runtimeStateKind").intValue = 0;
+            serializedLeftAnchor.FindProperty("purpose").stringValue =
+                "First source-ordered Station Add ticket in the continuous Corridor host.";
+            serializedLeftAnchor.ApplyModifiedPropertiesWithoutUndo();
+
+            StageAnchorPoint addRightAnchor =
+                addRightAnchorTransform.GetComponent<StageAnchorPoint>()
+                ?? addRightAnchorTransform.gameObject.AddComponent<StageAnchorPoint>();
+            var serializedRightAnchor = new SerializedObject(addRightAnchor);
+            serializedRightAnchor.FindProperty("anchorId").stringValue = "Add_RightLaneAnchor";
+            serializedRightAnchor.FindProperty("groupId").stringValue = "CombatSpawnAnchors";
+            serializedRightAnchor.FindProperty("usageKind").intValue =
+                (int)StageAnchorUsageKind.CombatSpawn;
+            serializedRightAnchor.FindProperty("positionId").intValue = 2102;
+            serializedRightAnchor.FindProperty("spawnKind").intValue = (int)StageSpawnKind.Add;
+            serializedRightAnchor.FindProperty("runtimeStateKind").intValue = 0;
+            serializedRightAnchor.FindProperty("purpose").stringValue =
+                "Second mirrored Station Add ticket with source-order activation.";
+            serializedRightAnchor.ApplyModifiedPropertiesWithoutUndo();
 
             StageDefinitionSceneBinding stationBinding = null;
             StageDefinitionSceneBinding[] bindings = FindSceneComponents<StageDefinitionSceneBinding>(scene);
@@ -516,7 +621,7 @@ namespace DimensionBrawl.Editor
             stationBinding.Configure(
                 stationDefinition,
                 sharedMap.transform,
-                new[] { addAnchor },
+                new[] { addLeftAnchor, addRightAnchor },
                 Array.Empty<StageCutscenePort>());
 
             GameObject entryGuide = FindSceneObject(scene, EntryGuideName);
@@ -623,11 +728,6 @@ namespace DimensionBrawl.Editor
                 ?? sharedMap.AddComponent<StageCountOneEncounterExecutor>();
             var serializedExecutor = new SerializedObject(executor);
             serializedExecutor.FindProperty("sceneBinding").objectReferenceValue = stationBinding;
-            serializedExecutor.FindProperty("spawnId").stringValue = "add-left";
-            SerializedProperty payloads = serializedExecutor.FindProperty("payloadMappings");
-            payloads.arraySize = 1;
-            payloads.GetArrayElementAtIndex(0).objectReferenceValue =
-                LoadRequired<CombatEnemyArchetypeProfile>(AddProfilePath);
             serializedExecutor.FindProperty("activationKind").intValue =
                 (int)StageEncounterActivationKind.CombatEntryGuideReleased;
             serializedExecutor.FindProperty("requireActiveStageRun").boolValue = true;

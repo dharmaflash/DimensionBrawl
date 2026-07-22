@@ -1,11 +1,45 @@
 # Current Game Content Gap Diagnosis
 
+## 2026-07-21 milestone update
+
+Phase 0, A0, A1, A2, B0-1, B0-2, and B0-3 are now implemented and functionally verified.
+The bounded route layer now admits either one or two ordered logical segments, derives
+entry/terminal roles from topology, and admits an independent one-row entry/final route
+as terminal-active without fabricating handoff evidence. That route now also seals
+truthful segment-zero facts and commits Clear/Fail with an empty tutorial digest, one
+durable exact-run result, and one presentation. Neutral scene adapters now bind the exact
+bootstrap, encounter, fact, result, same-process recovery, overlay acknowledgement, and
+Replay/Retry/Lobby boundaries without copying Olympus scene components.
+The route is continuous in one physical scene; dynamic Adds participate in both
+directions; the Station executor consumes the exact ordered `add-left` and `add-right`
+rows with direct archetype ownership, transactional inactive staging, ticket-local death,
+whole-plan cleanup, and typed receipts. The left row remains HeavyWindup Melee, while the
+right row now uses the dedicated RifleCrossfire physical-projectile Ranged loadout. Current
+evidence is recorded in `A1_ORDERED_ADD_ENCOUNTER_EXECUTOR.md`,
+`A2_RIFLE_CROSSFIRE_RANGED_LOADOUT.md`,
+`B0_1_ROUTE_TOPOLOGY_ACTIVE_ROLE_SEAM.md`,
+`B0_2_TRUTHFUL_ONE_ROW_FACTS_RESULT.md`, and
+`B0_3_NEUTRAL_ONE_ROW_SCENE_ADAPTERS.md`; the dated diagnosis below remains useful as
+the reasoning record but its scalar/missing-A1/A2/B0-1/B0-2/B0-3 observations are superseded.
+
+The A2 loadout is functionally verified but still awaits human mobile-landscape visual
+review. The next bounded product gate is B0-4 multi-entry catalog/build plumbing. After
+B0, build one compact
+second playable stage and introduce only the required-defeat composition that stage
+actually needs. CF-01 remains review-only and is not a runtime shortcut.
+
 Date: 2026-07-16
 Status: read-only diagnosis and lightweight living backlog; not an implementation contract
 
 ## Executive decision
 
-DimensionBrawl does not currently lack a playable core. Its first problem is that the canonical Olympus route breaks an intended continuous play space into two copied scenes; its second problem is the lack of a cheap, neutral content-composition path. The next product work should first restore **tutorial -> stair descent -> lower combat** in one physical scene, then reduce the cost of adding the second encounter and second playable stage. It should not add another contract layer or broad live-service system.
+At the 2026-07-16 diagnosis cutoff, the first problem was a copied-scene break in the
+intended Olympus play space, followed by scalar Add execution and missing target
+participation. Phase 0, A0, A1, and A2 have since closed those problems. B0-1 through B0-3
+have closed the route topology, active-role, truthful one-row facts/result, and neutral
+scene-adapter seams. The current first problem is the remaining multi-entry catalog/build
+seam for a second playable stage. Begin with B0-4 and do not add another
+broad contract layer or live-service system.
 
 ## Current playable truth
 
@@ -13,14 +47,21 @@ DimensionBrawl does not currently lack a playable core. Its first problem is tha
 |---|---|
 | Selectable content | One catalog entry: `story_v1_training_route` |
 | Playable route | One route: `OLYMPUS-INVASION-01` |
-| Physical combat space | One intended Olympus environment, currently duplicated into Corridor and Station scenes with different root transforms |
+| Physical combat space | The admitted route now keeps tutorial and lower combat in `OlympusCorridorInvasionStage`; the legacy Station scene remains in the build list but is not the continuous product transition |
 | Build scenes | Six total: four UI scenes and two stage scenes |
 | Tutorial | Intro presentation plus melee, move, ranged swap, fire, dodge, and target-clear sequence |
-| Station encounter | Entry guide, one boss terminal owner, and one runtime-spawned `add-left` melee fixture after guide release; dynamic targeting is not yet wired |
+| Station encounter | Entry guide, one boss terminal owner, and two independently owned runtime Adds after guide release: `add-left` HeavyWindup Melee plus `add-right` RifleCrossfire Ranged; bidirectional targeting, exact physical projectile damage, terminal cleanup, unload, and Retry are functionally verified; human visual review remains pending |
 | Result loop | Shared Clear/Fail result shell with Replay/Retry/Lobby and durable run-result handling |
 | Progression/reward | Definitions and join data exist, but no player-facing unlock/reward application loop is admitted |
 
-The Station Add is more than authoring data, but less than a complete combatant. It requires the exact active canonical Station run, spawns after guide release, owns one Enemy `CombatHealth`, and schedules cleanup on death, boss terminal, disable, or unload. However, its prefab's `CombatTargetSensor` has an empty candidate list, the executor never supplies the player, and the player's Station target selector remains authored to the boss only. Current tests apply lethal damage directly and prove spawn/completion/cancellation, not autonomous approach, attack, or player lock-on. Cleanup also calls delayed `Destroy(root)` without first making the living hierarchy synchronously inactive, so a same-frame post-terminal action is not excluded. Treat it as a **runtime encounter fixture**, not yet a proven active threat.
+The Station Adds require the exact active canonical Station run and activate after guide
+release. Each ticket owns one Enemy `CombatHealth`, injects the exact terminal player into
+its agent/sensor, registers independently with the player's target selector without
+replacing the authored boss, and becomes synchronously inert before deferred destruction.
+Current integration tests prove real acquire/attack/damage, independent death, plan
+completion, boss/player terminal, driver/participation faults, disable, unload, and Retry.
+They are proven active threats but remain independent participants: only the authored boss
+and player own Clear/Fail. A2 presentation readability still awaits human visual review.
 
 ## Inventory breadth is not playable breadth
 
@@ -29,17 +70,28 @@ The repository contains six stage templates, eight segment profiles, nine enemy 
 - The five `S1_*` templates are not referenced by a runtime product asset; they are referenced by a local preflight document.
 - The eight legacy segment profiles feed those non-canonical templates and static supplements, not the active Olympus route.
 - All twelve enemy-role candidate assets have zero downstream product references.
-- Only `DB_Archetype_SciFiSoldier_Melee` is directly consumed by the live Station Add path. Other role/archetype graphs are mostly candidate or prototype inventory.
+- `DB_Archetype_SciFiSoldier_Melee` and the dedicated
+  `DB_Archetype_SciFiSoldier_Ranged` loadout are directly consumed by the live Station Add
+  path. Other role/archetype graphs remain candidate or prototype inventory.
 
 This distinction must remain explicit: authored candidates are useful raw material, but they are not content until the playable route consumes them.
 
 ## Why content work became slow
 
-### 1. One enemy is implemented as a special runtime product
+### 1. The Add executor is now reusable, but the route shell is still product-specific
 
-The current `StageCountOneEncounterExecutor` is 736 lines and owns authoring resolution, payload lookup, active-run validation, guide-state activation, scene singleton lease, instantiation, health completion, terminal cancellation, and cleanup. It accepts one `spawnId`, requires `SpawnKind.Add` and `Count == 1`, and permits one executor per loaded scene.
+The current `StageCountOneEncounterExecutor` enumerates every authored `SpawnKind.Add` row
+in source order, resolves each row's direct archetype, stages ticket-local objects
+transactionally, injects bidirectional participation, activates relative to one guide
+epoch, records independent death, and closes the whole plan on terminal/fault/unload. It
+still permits one plan executor lease per loaded scene and remains coupled to the exact
+Olympus Station active-run/guide/terminal subjects.
 
-The first Add therefore touched five logical production files: the Station definition, Station scene, the executor, the guide-gate interface, and the Station guide bridge. Existing model, animation, prefab, AI, and health code were successfully reused, but a second encounter in the same scene still requires runtime code changes.
+A1 proved that a second count-one Add could flow through the same executor and scene
+binding without a second runtime implementation. A2 then changed the right row's direct
+archetype/loadout while retaining the same ticket lifecycle. The remaining cost problem is
+not scalar Add execution; it is that a second playable route still cannot reuse a neutral
+entry/final lifecycle, fact/result collector, terminal adapter, catalog, and build path.
 
 Target cost for an encounter made from an existing enemy is:
 
@@ -47,11 +99,17 @@ Target cost for an encounter made from an existing enemy is:
 - one scene anchor and binding;
 - zero runtime code changes.
 
-That target also requires one stage-owned combatant registration path. A dynamically spawned enemy must receive the exact player target, appear in the player's target candidates, and unregister from both directions on death, cancellation, unload, or retry. Static scene arrays cannot be the long-term owner of a dynamic encounter.
+A0 now supplies the stage-owned combatant registration path: every admitted runtime Add
+receives the exact player target, appears in the player's runtime candidates, and
+unregisters from both directions on death, cancellation, unload, or Retry. Static authored
+arrays remain the boss baseline and are never replaced.
 
 ### 2. The run lifecycle is route-specific
 
-`StageRunRuntime` names and enforces `CorridorActive -> HandoffPending -> StationActive`, and current terminal/fact construction contains Corridor and Station identities. A new one-scene stage cannot currently reuse the route as a neutral composition without adapting route-specific runtime and validator assumptions.
+`StageRunRuntime` now admits the corrected same-scene Olympus transition, but its active
+roles, terminal/fact construction, bootstrap, and validators still contain Corridor and
+Station identities. A new one-scene stage cannot reuse that lifecycle as a neutral
+composition until B0 separates entry/final roles from those product names.
 
 ### 3. Validation and documentation outgrew the content
 
@@ -98,15 +156,15 @@ The labels below are product decisions, not certification phases. `Have` means t
 | Capability | DB status | Local evidence | Ark structural comparison | Decision | Effort / dependency / main risk |
 |---|---|---|---|---|---|
 | Combat feel, terminal ownership, result recovery, Replay/Retry/Lobby | **Have** | The Corridor-to-Station route, boss terminal owner, durable result, and shared result shell are all exercised by the canonical route | HI3 and PGR stage surfaces also separate the combat outcome from score/reward/navigation presentation | **Preserve**. Reuse this shell for every new stage | S per consumer / avoid changing the stable core while generalizing content |
-| Canonical spatial continuity | **Missing in the product path** | Tutorial completion immediately single-loads a transformed copy of the same 3,775-transform environment and bypasses the authored stair flow, replacing player/camera/HUD instances | Compared stage games commonly separate content phases from map identity; no foreign design is needed to justify preserving one local physical space | **Now: first**. Make the existing Olympus route one scene with an in-place logical segment transition | M / route revision plus Station runtime migration / duplicate terminal owners or scene-state leakage |
-| Ordered encounter and wave composition | **Partial** | Station has one `SpawnRef`; `StageCountOneEncounterExecutor` accepts one `Add` with `Count == 1` | PGR separates stage config from wave/spawn runtime; Aether Gazer stores ordered wave lists; ZZZ separates floors, groups, members, and placement | **Immediately after continuity**. Generalize existing `SpawnRef` consumption instead of adding another executor | M / needs multi-row activation, completion, cleanup / terminal and unload interference |
-| Dynamic combatant registration and target participation | **Missing for runtime spawns** | Corridor enemies and the Station boss use authored target arrays. The dynamic Add is not registered with the enemy sensor or player selector, and no behavior test proves it attacks | Foreign enemy/stage data supports separating spawned instance ownership from enemy configuration, but does not supply a local target-registry design | **After the lower-combat migration**. Close the current Add's player↔enemy registration before multiplying it | S-M / exact player and selector refs / stale targets, attacking after terminal, boss target loss |
-| A second encounter authored without code | **Missing** | The first Add required runtime, scene, definition, and guide bridge changes | The compared games repeatedly reuse enemy payloads and placements under different stage records | **Now**, immediately after the executor. Prove one logical definition entry plus one bound scene anchor, zero runtime changes | S after executor / existing enemy and anchor / hidden product-specific assumptions |
-| Neutral playable-stage lifecycle and second catalog entry | **Partial** | One route and one catalog row exist; lifecycle states and validators still name Corridor and Station | PGR stage rows combine control/map/story/time/reward references; HI3 and Aether reuse stage shells with different restrictions and goals | **Later**. First correct the current route's physical continuity, then build one small one-scene stage and relax only assumptions it disproves | M / continuous Olympus plus second encounter first / overbuilding a universal route engine |
+| Canonical spatial continuity | **Have** | Tutorial and lower combat now remain in `OlympusCorridorInvasionStage` through an in-place logical segment transition with the same player/camera/HUD ownership | Compared stage games commonly separate content phases from map identity; no foreign design is needed to justify preserving one local physical space | **Preserve** the corrected route and accepted identities | S regression per route change / accidental scene reload or duplicate owners |
+| Ordered encounter and wave composition | **Have for ordered count-one Adds; Wave owner missing** | Station consumes two source-ordered direct-archetype Add rows with independent tickets, whole-plan rollback/cleanup, and typed receipt | PGR separates stage config from wave/spawn runtime; Aether Gazer stores ordered wave lists; ZZZ separates floors, groups, members, and placement | **Preserve A1**. Add a Wave/required-defeat owner only when a real second-stage design needs it | M when required / objective and terminal boundary / promoting CF-01 wholesale |
+| Dynamic combatant registration and target participation | **Have for admitted runtime Adds** | Both Station Adds receive the exact player through agent/sensor injection, join the player's runtime candidates without replacing the boss, attack, and unregister synchronously on every stop path | Foreign enemy/stage data supports separating spawned instance ownership from enemy configuration, but does not supply a local target-registry design | **Preserve A0** and reuse the exact participation contract per new ticket | S per loadout / stale candidates, late attacks, boss target loss |
+| A second encounter authored without code | **Have for a second count-one Add** | A1 admitted `add-right` through the existing collection executor and bound anchor; A2 later changed only its reviewed payload/loadout contract | The compared games repeatedly reuse enemy payloads and placements under different stage records | **Preserve the zero-new-executor path**; do not confuse a second Add with a second playable stage | S / promoted archetype and anchor / unreviewed loadout assumptions |
+| Neutral playable-stage lifecycle and second catalog entry | **Partial; B0-1 through B0-3 complete** | A distinct one-row route admits terminal-active, seals truthful segment-zero Clear/Fail facts, recovers/presents the exact result through neutral adapters, and resolves Replay/Retry/Lobby; multi-entry catalog, Stage Select, validator, and build plumbing remain | PGR stage rows combine control/map/story/time/reward references; HI3 and Aether reuse stage shells with different restrictions and goals | **B0-4 next** before scene authoring | M across remaining B0 / preserving Olympus bytes and historical receipts / mutating frozen single-entry assumptions |
 | Reusable map or lean arena authoring | **Partial inventory, missing product path** | The two stage scenes are about 13.7 MiB/5,102 GameObjects and 8.9 MiB/4,344 GameObjects; `scenePrefabSource` is empty. The project does have promoted modular Olympus Temple and Spring Isles environment prefabs | PGR stage rows reference stage controls/maps; Aether wave-stage rows reference `map_id`; ZZZ separates stage-room and map families | **Next**, with the second stage. Build a lean arena from promoted modular prefabs; do not duplicate either full canonical scene | M / lighting, collision, NavMesh, camera bounds / scene-copy maintenance or a visually empty proof |
 | Objective and completion policies | **Partial** | Current product proves tutorial closure and boss terminal; the Add is independent and does not block clear | Aether exposes task/star conditions; HI3 exposes score/time/reward conditions; PGR exposes time limits and stage controls | **Next**. Start with `independent`, `required defeat`, `survive`, and `timed`; no general quest language | M / generic encounter lifecycle / combinatorial rules and unclear ownership |
 | First-clear unlock and persistent local progression | **Partial model, missing execution** | One progression node exists, with no prerequisite, recommended-next, reward, or applied unlock | Aether uses unlock-by-stage links; HI3 uses pre-mission/unlocked-link relations | **Next**, with the second stage. First clear unlocks one next entry and survives restart | M / second catalog entry / save migration and accidental relock |
-| Enemy role, stat, or behavior variants | **Partial authoring, missing product use** | Nine archetypes and many role/candidate assets exist, but the live Add consumes only `SciFiSoldier.Melee` | HI3 separates monster AI/stat data; Aether and ZZZ reuse enemy identities inside different stage compositions | **After A1**. Admit one reviewed Ranged loadout, not the whole role-candidate layer | M / target participation, projectile ownership, reviewed deck / multiplying untested candidate inventory |
+| Enemy role, stat, or behavior variants | **Have one reviewed variant; broader inventory unadmitted** | The live Station consumes `SciFiSoldier.Melee` and the dedicated `SciFiSoldier.Ranged` RifleCrossfire loadout; other role/candidate assets remain inventory | HI3 separates monster AI/stat data; Aether and ZZZ reuse enemy identities inside different stage compositions | **Preserve A2; do not promote the role layer wholesale**. Close mixed-deck/driver admission before any future Elite promotion | S-M per reviewed loadout / visual readability and candidate-deck compatibility |
 | Difficulty, affix, and restriction wrappers | **Missing** | Current route explicitly leaves rule set, modifier, enemy variant, course, and reward cohorts unadmitted | HI3 exposes stage condition/buff/difficulty; Aether exposes difficulty, team/hero restrictions, revive and affix-like surfaces | **Later**. Add one modifier to an existing stage, not a duplicate scene | M / objective and variant model / balance matrix growth |
 | Behavior-observed tutorial and practice flow | **Partial, strong example** | The Corridor observes melee, movement, ranged swap, fire, dodge, and target clear, but order, copy, locks, and observations are coupled to a 2,085-line director | PGR separates guide stages, groups, steps, overlays, teaching activities, and practice skill details | **Later**, after the second stage. Extract lesson order/copy/audio while preserving current observation adapters and feel | M / neutral lesson profile / tutorial regression and premature framework design |
 | Intro cinematic and gameplay handoff | **Have, route-specific** | `StageCutscenePort` plus the Corridor flow own PlayableDirector stop/skip, camera restoration, HUD enable, and gameplay handoff | PGR camera recipe cards and Aether transition data separate shot/cue/transition lifecycle | **Preserve**. Only prove the same port can be reused; do not replace it | S-M / second presentation consumer / camera, listener, input, or time-state restoration |
@@ -130,11 +188,14 @@ The common pattern is not that DimensionBrawl needs more managers. It already ha
 
 This section turns the comparison into the smallest useful implementation backlog. It is a decision aid, not a frozen schema.
 
-### What the current data already provides
+### Historical A0/A1 diagnosis baseline
 
-`SpawnRef` already carries `spawnId`, kind, position ID, anchor ID, payload ID, count, delay, and a note. `AnchorRef` separately carries anchor ID, group, expected position, and expected rotation. The missing capability is not another payload table; it is a runner that can consume more than one authored row safely.
+At the 2026-07-16 diagnosis cutoff, `SpawnRef` already carried `spawnId`, kind, position ID,
+anchor ID, payload ID, count, delay, and a note, while `AnchorRef` separately carried static
+pose identity. The missing capability at that cutoff was a runner that could consume more
+than one authored row safely.
 
-The present executor is scalar in every important place:
+The pre-A1 executor was scalar in every important place:
 
 - one serialized `spawnId`;
 - one resolved spawn, anchor, prefab, root, and health component;
@@ -142,6 +203,10 @@ The present executor is scalar in every important place:
 - one scene-local payload mapping list;
 - exactly one `Add` with `Count == 1`;
 - Station-specific active-run validation and one executor lease per scene.
+
+A0/A1 superseded the participation, scalar-resolution, payload-mapping, and collection
+gaps in this list. The one scene-plan lease and Station-specific active-run/guide/terminal
+dependency remain current and feed B0's route-neutralization priority.
 
 The separate `AnchorRef` means “one spawn row plus one anchor” is not literally one backing row today. The practical product target is therefore **one logical authoring action in the definition asset, one scene anchor/binding, and zero runtime code**. An editor helper may maintain the paired definition rows later, but it is not required for the first runtime proof.
 
@@ -160,7 +225,10 @@ PGR separates stage config, wave/spawn runtime, and enemy runtime. Aether Gazer 
 
 This is the correct destination, but not the correct first implementation size.
 
-### Phase A0 — make the existing Add a combatant
+### Phase A0 — historical acceptance plan (implemented)
+
+This subsection preserves the pre-implementation A0 acceptance plan. The current verified
+contract is `DYNAMIC_MELEE_ADD_COMBATANT_PARTICIPATION.md`.
 
 Before multiplying spawn rows, close the missing player↔enemy participation loop for `add-left`.
 
@@ -199,7 +267,10 @@ This slice is expected to touch seven existing files and no scene/prefab/data as
 
 The Melee A0 proof does not need a projectile assertion. Exact projectile fire, hit, expiry, and pooled cleanup belong to the first Ranged loadout smoke in A2.
 
-### Phase A1 — collection executor, no new wave schema
+### Phase A1 — historical acceptance plan (implemented)
+
+This subsection preserves the pre-implementation A1 acceptance plan. The current verified
+contract is `A1_ORDERED_ADD_ENCOUNTER_EXECUTOR.md`.
 
 Generalize the current executor only far enough to consume all eligible `Add` rows from the bound stage definition while preserving their source ordinal.
 
@@ -266,11 +337,26 @@ Assuming A0 is already complete, the generalized capability plus payload-owner c
 
 This “Melee Pincer” fixture has moderate player novelty but the strongest workflow evidence. It may remain only if two melee enemies do not make the boss space unreadable.
 
-### Phase A2 — verify and promote one Ranged loadout
+### Phase A2 — implemented: one reviewed Ranged loadout
 
-The static prefab inventory is promising, but the current `SciFiSoldier.Ranged` is not yet a truthful “Rifle Crossfire” product enemy.
+Post-A2 implementation status, 2026-07-21 KST: this phase is complete at the functional
+gate.
+The canonical `add-right` now resolves through a dedicated Ranged prefab, one-entry
+RifleCrossfire deck/profile, hostile-orange projectile, fixed ticket-owned projectile root,
+bounded three-instance reuse, profile-exact hit policy, elevation-aware warned-line aim,
+pressure-screen priority, and synchronous terminal/unload/Retry cleanup. The final relevant
+test classes passed 201/201, and route/policy/result identities remained unchanged. Human
+mobile-landscape visual review is still pending. See
+`A2_RIFLE_CROSSFIRE_RANGED_LOADOUT.md`.
 
-| Surface | Exact current truth | Consequence |
+The inventory and proposed proof below are the pre-implementation reasoning record. They
+explain why A2 used a dedicated narrow loadout instead of approving the shared General
+deck or the candidate role layer.
+
+The static prefab inventory was promising, but the pre-A2 `SciFiSoldier.Ranged` was not yet
+a truthful RifleCrossfire product enemy.
+
+| Surface | Exact pre-A2 truth at audit cutoff | Consequence |
 |---|---|---|
 | Archetype/prefab | The promoted archetype directly references game-owned `PF_Enemy_SciFiSoldier_GeneralDeck`, with dedicated promotion false | Reuse the visual, health, movement, sensor, and cue wiring; do not rebuild an enemy |
 | Actual projectile pattern | Of six General-deck rows, only `ClosePunish` is `ProjectileLine`; its selection range is 0–1.9 m | The current laser fires only at close range, not as backline rifle pressure |
@@ -317,11 +403,15 @@ Behavior admission is **M** rather than the earlier S-M estimate: the circuit sm
 
 The likely bounded change surface is the existing projectile driver, Ranged prefab, one existing PlayMode test, and validator/setup code, plus two new logical data assets: a reviewed rifle pattern and its narrow deck. The Station definition changes only when the loadout is actually admitted as content. No new enemy controller, role framework, route owner, or projectile manager is expected.
 
-### Enemy roster readiness
+### Enemy roster readiness — pre-A2 audit snapshot
 
-The nine archetype assets are not nine playable enemies:
+The current product roster is Melee plus the dedicated RifleCrossfire Ranged loadout. The
+table below preserves the pre-A2 inventory audit that drove the narrow-loadout decision;
+its Melee-only and Ranged-zero-use rows are historical, not current product claims.
 
-| Archetype cohort | Current runtime truth | Decision | Incremental effort after A0/A1 |
+The nine archetype assets were not nine playable enemies:
+
+| Archetype cohort | Truth at pre-A2 audit cutoff | Decision | Incremental effort after A0/A1 |
 |---|---|---|---:|
 | `SciFiSoldier.Melee` | Only product-consumed archetype. Static Corridor instance works; dynamic Station instance proves lifecycle but not target/attack participation | Finish A0, then use it for the zero-code Pincer authoring proof | S-M |
 | `SciFiSoldier.Ranged` | Promoted gameplay prefab with health, sensor, cues, and projectile driver, but only close-range `ClosePunish` launches a projectile; projectiles inherit a moving parent and inactive instances accumulate; zero scene use | Smoke only the current projectile circuit, repair ownership, then admit one reviewed mid-range deck or rename it honestly as a hybrid | M |
@@ -345,7 +435,11 @@ Ark evidence supports that boundary at a structural level:
 
 The safe destination is `Enemy archetype -> reviewed stat/behavior loadout -> stage wave/spawn placement -> optional difficulty modifier`. Stage data owns count, position, timing and completion; it does not own AI implementation or base stats. No foreign stat value, AI tier, role name, or difficulty formula is a product input.
 
-### Canonical continuity correction — restore the intended Olympus stage
+### Canonical continuity correction — historical Phase 0 acceptance plan (implemented)
+
+Phase 0 is complete. The following problem statement and acceptance list preserve the
+pre-implementation plan that produced the current same-scene route; present-tense and
+future-imperative wording below belongs to that historical plan.
 
 This precedes both encounter generalization and a second selectable stage. The current two-scene boundary is not a content requirement; it is a product-path regression.
 
@@ -427,8 +521,8 @@ The first second stage is not an asset-only task. Re-audit these locks after the
 
 1. Every public `UIStageCatalog` projection path rejects unless `StageCount == 1`, even though its internal projection builder is per entry.
 2. `PlayableStageDefinitionValidator` requires exactly one catalog row, one result definition, one progression node, one graph, and a one-node graph. Its build-readiness companion also appends `OlympusStationCombatStage` as the only combat continuation instead of walking every selected route segment.
-3. `StageRunRuntime` activates the first segment as `CorridorActive`, the next as `StationActive`, and permits terminal commit only from the Station state.
-4. `StageRunFacts` and `StageRunResultSummary` require segment zero's tutorial seal plus segment one's Station collector/guide/combat facts. A truthful one-scene combat route cannot manufacture these facts.
+3. **B0-1 through B0-3 closed route ownership through the neutral scene-runtime boundary:** `StageRunRuntime` derives entry and terminal eligibility from topology, facts/result derive the terminal row and typed tutorial requirement, and exact neutral adapters own bootstrap, fact, recovery, presentation, loss abort, and action routing. Catalog and build semantics remain single-entry.
+4. **B0-2/B0-3 closed the false tutorial/Station fact and scene-adapter locks:** a one-row combat route binds segment-zero facts, commits Clear/Fail without guide or handoff evidence, and reaches the shared result UI without copying Olympus components. The dynamic fixture proves the scene shell; it does not claim a second product scene.
 5. The admitted result/progression snapshot pins the exact result catalog, full localization table, result definition, node, and graph. Adding rows to those accepted Olympus sources would change the existing join identity, so the second stage cannot be introduced by silently expanding the first stage's frozen result sources.
 
 The existing Stage Select art contains several stage-card controls, but the product prefab has one selected ID, one focus entry, and no serialized card-to-`SelectStage` calls. This is reusable layout inventory, not yet a multi-stage selector.
@@ -469,20 +563,20 @@ Do not duplicate `OlympusCorridorCombatFlowController`, `OlympusStationRunFactCo
 The bounded foundation supports only the accepted two-segment route and one new one-segment combat route. It is not a general stage graph:
 
 1. Remove the catalog's exactly-one guard while retaining unique ID, exact projection, generation, digest, and stale-source rejection per entry.
-2. Add route-snapshot structural validation without adding a serialized field: segment count 1 or 2, contiguous sequence, unique IDs, exact first-entry semantics, a typed in-scene advance or `SingleLoad` only on a non-final row, and exactly one final `ReturnToOwner` row. The new route receives its own terminal condition ID; it must not reuse `station.encounter.terminal`. A neutral terminal-condition alias may retain the existing numeric kind only when the queue/finalization semantics are identical.
-3. Drive active and terminal eligibility from `current segment + final ReturnToOwner`, not the words Corridor or Station. Neutral helpers/aliases may retain the existing enum numbers so the accepted Olympus abort/result bytes remain unchanged.
-4. Let an already admitted first-and-final scene bind as the current combat segment without fabricating a handoff token, entry receipt, or handoff receipt. The existing pending-handoff path remains unchanged for Olympus.
-5. Make tutorial and guide facts conditional. For Olympus, keep the exact nonempty tutorial digest and guide-release gate. For a one-scene route, encode tutorial absence as the existing tutorial-digest field with an empty value, bind the combat collector to segment zero, and seal one segment result plus combat/outcome facts. Do not fabricate a completed tutorial.
-6. Extract a small common entry bootstrap and terminal-result service with thin scene adapters. The second stage should not need the Corridor director or Station guide, and it should not copy the Station presenter/recovery logic.
+2. **B0-1 complete.** Route-snapshot structural validation adds no serialized field: segment count 1 or 2, contiguous sequence, unique IDs, exact first-entry semantics, a typed in-scene advance or `SingleLoad` only on a non-final row, and exactly one final `ReturnToOwner` row. A non-Olympus route must own its terminal condition ID and cannot reuse `station.encounter.terminal`.
+3. **B0-1 complete.** Active and terminal eligibility derive from `current segment + final ReturnToOwner`, not the words Corridor or Station. Existing lifecycle enum numbers remain unchanged so accepted Olympus and historical receipt bytes are not reinterpreted.
+4. **B0-1 complete.** An admitted first-and-final scene binds segment zero terminal-active without a handoff token, entry receipt, or handoff receipt. Same-scene route/join replay is idempotent; the existing Olympus pending/in-scene handoff paths remain unchanged.
+5. **B0-2 complete.** Tutorial and guide facts are conditional. Olympus keeps the exact nonempty tutorial digest and guide-release gate; a one-scene route uses the existing empty tutorial-digest value, binds collection to segment zero, and seals one segment plus truthful combat/outcome facts without fabricating tutorial or handoff evidence.
+6. **B0-3 complete.** The small common entry bootstrap and thin fact/result/recovery adapters now let a lean scene avoid the Corridor director, Station guide, and copied Station presenter/recovery logic.
 7. Make the validator and build-readiness reporter enumerate every catalog entry and every route segment, while keeping the exact Olympus route as a named regression fixture. Remove the hard-coded Station continuation from build readiness.
 
 The exact implementation order is:
 
 | Ticket | Player/authoring outcome | Cost | Depends on |
 |---|---|---:|---|
-| B0-1 route topology and active-role seam | A valid one-row entry/final route can be admitted; malformed topology fails before a run exists | M | none |
-| B0-2 truthful one-row facts/result | One combat segment commits without fake tutorial/guide facts; Olympus result digest stays identical | L | B0-1 |
-| B0-3 neutral bootstrap and terminal adapter | A lean scene joins admission, coordinator, commit recovery, result UI, Replay/Retry/Lobby without Olympus component copies | M | B0-1, B0-2 |
+| B0-1 route topology and active-role seam | **Complete 2026-07-21:** a distinct one-row entry/final route admits terminal-active; malformed topology fails before a run exists | M | none |
+| B0-2 truthful one-row facts/result | **Complete 2026-07-21:** one combat segment commits Clear/Fail without fake tutorial/guide/handoff facts; exact coordinator/run receipt ownership and the fixed Olympus result digest remain verified | L | B0-1 |
+| B0-3 neutral bootstrap and terminal adapter | **Complete 2026-07-21:** a lean scene joins admission, exact facts/coordinator, commit recovery, acknowledged result UI, Replay/Retry/Lobby, and adapter-loss abort without Olympus component copies | M | B0-1, B0-2 |
 | B0-4 multi-entry catalog/build plumbing | Two unique cards project exact entry scenes; build readiness walks route data instead of appending Station | M | B0-1 |
 | B0-5 compatibility proof | The corrected continuous Olympus route, full route, endpoints, and new route/result identities remain stable; historical revision-1 receipts are preserved but never reinterpreted | M | B0-1 through B0-4 |
 | B1-1 isolated stage content pack | One lean arena and its ten logical assets are authored without mutating accepted Olympus result sources | M | B0 complete, reviewed ranged loadout |
@@ -493,14 +587,16 @@ B0 is **L** because fact/result neutralization is the dominant risk; B1 is **M**
 
 The likely B0 code surface is the four core route/fact/result files, `UIStageCatalog`, build readiness, the validator, two small bootstrap/adapter files, and focused route/UI tests. `StageRunAbort` or finalization types are touched only if neutral aliases are required; existing enum numbers and canonical rows must not move.
 
-Minimum B0 acceptance is deliberately small but adversarial:
+Minimum B0 acceptance is deliberately small but adversarial. Items 1-3 are complete in
+B0-1, item 4 is complete in B0-2, and items 5-6 are complete in B0-3. B0-4 still owns
+multi-entry projection, validator enumeration, and build-route walking:
 
-1. A one-row run-entry plus final `ReturnToOwner` route passes; a missing successor on `SingleLoad`, a successor on the final row, a duplicate ID, or a sequence gap fails before context creation.
-2. Direct one-scene admission makes segment zero terminal-active with no pending token or handoff receipts; same-scene/same-digest admission is idempotent and foreign or stale admission fails.
-3. The corrected route remains exactly `CorridorActive -> same-scene segment entry -> StationActive`, including its new-revision receipt and digest values; historical `CorridorActive -> HandoffPending -> StationActive` revision-1 evidence remains readable but is not a product path.
-4. One-scene terminal commit produces one completed segment, truthful combat/outcome facts, an absent tutorial fact, one durable summary/receipt, and one result presentation. Terminal before collector readiness or from the wrong scene/coordinator fails.
-5. Disable, unload, and unexpected exit cancel the coordinator and close exactly one diagnostic abort; fresh admission receives a new run ID.
-6. Actual Clear→Replay, Fail→Retry, and Lobby actions resolve the exact selected route entry. Existing Olympus full-route and result-store fault tests stay green.
+1. **B0-1 complete.** A one-row run-entry plus final `ReturnToOwner` route passes; a missing successor on `SingleLoad`, a successor on the final row, a duplicate ID, or a sequence gap fails before context creation.
+2. **B0-1 complete.** Direct one-scene admission makes segment zero terminal-active with no pending token or handoff receipts; same-scene/same-route-and-join admission is idempotent and foreign or stale admission fails.
+3. **B0-1 complete.** The corrected route remains exactly `CorridorActive -> same-scene segment entry -> StationActive`, including its revision-2 receipt and digest values; the historical revision-1 route digest and `SingleLoad` shape remain readable but are not a product path.
+4. **B0-2 complete.** One-scene terminal commit produces one completed segment, truthful combat/outcome facts, an absent tutorial fact, one durable exact-run summary/receipt, and one result presentation. Terminal before collector readiness, stale/foreign coordinator input, forged resolution, value-identical foreign replay, or misplaced decision lookup fails closed.
+5. **B0-3 complete.** Disable, unload, and unexpected exit cancel the coordinator and close exactly one diagnostic abort; fresh admission receives a new run ID.
+6. **B0-3 complete.** Actual Clear-to-Replay, Fail-to-Retry, and Lobby actions resolve the exact selected route entry. Existing Olympus full-route and result-store fault tests stay green.
 
 The Ark comparison supports only the data boundary here. PGR's reviewed PBR sample separates one stage from ordered waves and timed spawn groups, HI3 exposes explicit Wave1/2/3 slots, and Aether Gazer separates a level from its ordered `wave_list`. None of those sources proves that DimensionBrawl needs a foreign scene graph or the same lifecycle states. B0 therefore neutralizes local entry/final-segment assumptions; encounter/wave composition remains a separate stage-owned layer.
 
@@ -594,13 +690,28 @@ Do not delete shared visual prefabs, `FrontlineWaveStageProfile`, or combat comp
 
 ## Next five bounded tasks
 
-1. **Create a user-approved source checkpoint.** Preserve the working Station Add runtime fixture and current green route without another document/registry sync.
-2. **Restore one continuous Olympus play space.** Keep the Corridor map, release the stairs after tutorial completion, enter the lower combat segment in place, and migrate the Station guide/terminal/fact/result/Add responsibilities without replacing player, camera, HUD, or run state.
-3. **Finish the migrated Add's combat participation.** Register the exact player with the Add sensor and the Add with the player selector, preserving the boss. Prove acquire, move, telegraph, real damage, player aim, synchronous terminal stop, complete unregister, and no retry-time collider-cache growth.
-4. **Generalize the executor and run the two-file proof.** Consume every eligible one-instance `Add` row, move exact archetype ownership onto `SpawnRef`, and remove the scene payload mapping. Then bind `Add_RightLaneAnchor` and a second melee row; after generalization, the proof changes only the combined stage definition and continuous scene.
-5. **Smoke and admit one ranged loadout.** Use the existing close-range `ClosePunish` only to prove the projectile circuit, world-path independence, bounded repeated fire, and terminal cleanup. Then add one reviewed mid-range projectile profile/deck or honestly rename the enemy as a hybrid; do not ship the current General deck as Rifle Crossfire or activate the role-candidate layer.
+1. **Complete B0-4 multi-entry catalog and build plumbing.** A
+   second route must not copy Olympus-specific controllers or hard-code Station as a
+   continuation.
+2. **Close B0-5 compatibility after B0-4.** Preserve the corrected continuous Olympus
+   route, immutable identities, full route, historical revision-1 receipts, and the
+   neutral one-row result path under the multi-entry implementation.
+3. **Author B1-1's compact second playable stage after B0 is green.** Reuse promoted modular
+   environment pieces; do not copy either large Olympus scene.
+4. **Connect B1-2/B1-3 two-card presentation and end-to-end re-entry.** Both cards must
+   project and start their own immutable route, then Clear/Fail, Replay/Retry/Lobby,
+   unload, and fresh re-entry must remain exact.
+5. **Add only the breadth loop the stage proves.** Introduce a minimal required-defeat
+   owner if needed, then one persistent first-clear unlock;
+   CF-01, rewards, inventory, shops, stamina, and servers remain out.
 
-Immediate follow-up: build one small second playable stage, then connect minimal offline first-clear progression so the first route unlocks the second and survives restart. After that: extract tutorial lesson order/copy into data, add one enemy stat/behavior variant, attach event-bound spawn/terminal presentation cues, then delete or archive proven-unused prototype layers.
+Immediate follow-up: start with B0-4 catalog/build plumbing, not broad scene authoring. After B0-4 makes
+the neutral route/result foundation selectable and build-walked, build one small second
+playable stage and connect minimal offline
+first-clear progression so the first route unlocks the second and survives restart. After
+that: extract tutorial lesson order/copy into data, admit another reviewed enemy variant,
+attach event-bound spawn/terminal presentation cues, then delete or archive proven-unused
+prototype layers.
 
 ## Phased living roadmap
 

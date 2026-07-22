@@ -23,6 +23,8 @@ namespace DimensionBrawl.Editor
     {
         private const string RouteAssetPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
+        private const string CourtyardRouteAssetPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusCourtyardDrill.asset";
         private const string CorridorDefinitionPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string StationDefinitionPath =
@@ -40,12 +42,22 @@ namespace DimensionBrawl.Editor
         private const string StageProgressionGraphPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageProgressionGraph_OlympusInvasion.asset";
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
-        private const string StationAddArchetypePath =
+        private const string StationMeleeAddArchetypePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
-        private const string StationAddPrefabPath =
+        private const string StationRangedAddArchetypePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Ranged.asset";
+        private const string StationMeleeAddPrefabPath =
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
-        private const string StationAddPatternPath =
+        private const string StationRangedAddPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
+        private const string StationMeleeAddPatternPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
+        private const string StationRangedAddPatternPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfire.asset";
+        private const string StationRangedAddDeckPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfireDeck.asset";
+        private const string StationRangedProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab";
         private const string StageTemplatePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDesign/Templates/DB_StageTemplate_OlympusInvasionTutorialStationRun.asset";
         private const string StageSelectPrefabPath =
@@ -71,16 +83,26 @@ namespace DimensionBrawl.Editor
         private const string StationTerminalConditionId = "station.encounter.terminal";
         private const string StationAddSpawnId = "add-left";
         private const string StationAddAnchorId = "Add_LeftLaneAnchor";
+        private const string StationRightAddSpawnId = "add-right";
+        private const string StationRightAddAnchorId = "Add_RightLaneAnchor";
         private const string StationAddAnchorGroupId = "CombatSpawnAnchors";
-        private const string StationAddPayloadId = "SciFiSoldier.Melee";
+        private const string StationMeleeAddPayloadId = "SciFiSoldier.Melee";
+        private const string StationRangedAddPayloadId = "SciFiSoldier.Ranged";
         private const int StationAddPositionId = 2101;
+        private const int StationRightAddPositionId = 2102;
         private const string IntroHandoffId = "intro-to-stage";
         private const string IntroPortId = "intro-gatepod-port";
         private const string IntroCompletionConditionId = "corridor.tutorial.ready";
         private const string CanonicalCatalogEntryId = "story_v1_training_route";
+        private const string CourtyardCatalogEntryId = "story_v1_courtyard_drill_route";
         private const string CanonicalLoadingCardId = "stage_to_combat_mood_bridge";
         private const string CanonicalProjectionDigest =
-            "571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d";
+            "7bf7637516466673a3362b6caf761454632c6b1c7404d83d9c5e5ed2a6d59562";
+        private const string CourtyardProjectionDigest =
+            "588473db6022e05ccac3c8ebfe8c9cd5a5cf1ea50d1e02b5b6f4bce2e6594e34";
+        private const string CourtyardStageTitle = "Olympus Courtyard Drill";
+        private const string CourtyardStageObjective =
+            "Defeat the Courtyard terminal boss under Rifle Crossfire pressure.";
         private const string CanonicalTemplateDigest =
             "3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55";
         private const string CanonicalReferenceDigest =
@@ -168,6 +190,7 @@ namespace DimensionBrawl.Editor
             LinearStageTemplateProfile stageTemplate =
                 LoadRequiredAsset<LinearStageTemplateProfile>(StageTemplatePath);
 
+            ValidateStageCatalogInventory(stageCatalog);
             ValidateRouteContract(route, corridor, station, introProfile, introPlayable);
             ValidateTruthfulReferenceContract(route, stageTemplate, introProfile);
             ValidateResultProgressionJoin(route);
@@ -194,6 +217,12 @@ namespace DimensionBrawl.Editor
             CinematicSequenceProfile introProfile,
             PlayableAsset introPlayable)
         {
+            Require(
+                StageRunRouteSnapshot.TryCreate(
+                    route,
+                    out StageRunRouteSnapshot genericSnapshot,
+                    out string genericRouteError),
+                "Route must pass the bounded generic admission contract: " + genericRouteError);
             Require(route.SchemaVersion == 1, "Route schemaVersion must be 1.");
             RequireEqual(route.PlayableStageId, PlayableStageId, "playableStageId");
             Require(route.RouteRevision == 2, "Route revision must be 2.");
@@ -207,6 +236,12 @@ namespace DimensionBrawl.Editor
 
             StageSceneSegmentRef corridorSegment = route.GetSceneSegment(0);
             StageSceneSegmentRef stationSegment = route.GetSceneSegment(1);
+            Require(
+                genericSnapshot.GetSegmentRoles(0) == StageRunSegmentRole.Entry,
+                "Olympus Corridor must remain the non-terminal entry role.");
+            Require(
+                genericSnapshot.GetSegmentRoles(1) == StageRunSegmentRole.Terminal,
+                "Olympus Station must remain the final ReturnToOwner role.");
 
             ValidateSegmentIdentity(
                 corridorSegment,
@@ -587,15 +622,6 @@ namespace DimensionBrawl.Editor
                 LoadRequiredAsset<StageResultPresentationCatalog>(StageResultPresentationCatalogPath);
             StageResultProgressionJoinBlock block = route.ResultProgressionJoin;
 
-            Require(
-                AssetDatabase.FindAssets("t:StageResultDefinition").Length == 1,
-                "Exactly one StageResultDefinition must be authored for the current project slice.");
-            Require(
-                AssetDatabase.FindAssets("t:StageProgressionNode").Length == 1,
-                "Exactly one StageProgressionNode must be authored for the current project slice.");
-            Require(
-                AssetDatabase.FindAssets("t:StageProgressionGraph").Length == 1,
-                "Exactly one StageProgressionGraph must be authored for the current project slice.");
             Require(block != null && block.Present, "Result/progression sibling sidecar is missing.");
             Require(
                 block.SchemaVersion == 1 && block.Revision == 2,
@@ -920,6 +946,127 @@ namespace DimensionBrawl.Editor
                 "Combined profile runtime-state conditionId");
         }
 
+        private static void ValidateStageCatalogInventory(UIStageCatalog catalog)
+        {
+            Require(catalog != null, "Stage catalog is missing.");
+            Require(
+                catalog.TryValidateEntryIdentities(
+                    out UIStageRouteProjectionRejectReason identityRejectReason),
+                $"Stage catalog entry identities are invalid: {identityRejectReason}.");
+
+            var playableStageIds = new HashSet<string>(StringComparer.Ordinal);
+            var resultDefinitionIds = new HashSet<string>(StringComparer.Ordinal);
+            var progressionNodeIds = new HashSet<string>(StringComparer.Ordinal);
+            EditorBuildSettingsScene[] buildScenes = EditorBuildSettings.scenes;
+
+            for (int catalogIndex = 0; catalogIndex < catalog.StageCount; catalogIndex++)
+            {
+                UIStageCatalog.StageEntry entry = catalog.GetStage(catalogIndex);
+                string rowLabel = $"Stage catalog row {catalogIndex} ('{entry.Id}')";
+                Require(
+                    catalog.TryCreateRouteProjection(
+                        entry.Id,
+                        UIRouteId.Combat,
+                        out UIStageRouteProjection namedProjection,
+                        out UIStageRouteProjectionRejectReason namedRejectReason),
+                    $"{rowLabel} named projection is invalid: {namedRejectReason}.");
+                Require(
+                    catalog.TryCreateRouteProjection(
+                        catalogIndex,
+                        UIRouteId.Combat,
+                        out UIStageRouteProjection indexedProjection,
+                        out UIStageRouteProjectionRejectReason indexedRejectReason),
+                    $"{rowLabel} indexed projection is invalid: {indexedRejectReason}.");
+                Require(
+                    namedProjection != null
+                        && indexedProjection != null
+                        && ReferenceEquals(namedProjection.PlayableStage, entry.PlayableStage)
+                        && ReferenceEquals(indexedProjection.PlayableStage, entry.PlayableStage)
+                        && string.Equals(
+                            namedProjection.CatalogEntryId,
+                            indexedProjection.CatalogEntryId,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            namedProjection.CanonicalProjectionDigest,
+                            indexedProjection.CanonicalProjectionDigest,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            namedProjection.EntryScenePath,
+                            indexedProjection.EntryScenePath,
+                            StringComparison.Ordinal)
+                        && namedProjection.ResultProgressionJoinPreflight != null
+                        && indexedProjection.ResultProgressionJoinPreflight != null
+                        && string.Equals(
+                            namedProjection.ResultProgressionJoinPreflight.CanonicalDigest,
+                            indexedProjection.ResultProgressionJoinPreflight.CanonicalDigest,
+                            StringComparison.Ordinal),
+                    $"{rowLabel} named and indexed projections must resolve the same immutable route bundle.");
+                Require(
+                    catalog.IsProjectionCurrent(
+                        namedProjection,
+                        UIRouteId.Combat,
+                        out UIStageRouteProjectionRejectReason namedCurrentRejectReason),
+                    $"{rowLabel} named projection is stale: {namedCurrentRejectReason}.");
+                Require(
+                    catalog.IsProjectionCurrent(
+                        indexedProjection,
+                        UIRouteId.Combat,
+                        out UIStageRouteProjectionRejectReason indexedCurrentRejectReason),
+                    $"{rowLabel} indexed projection is stale: {indexedCurrentRejectReason}.");
+
+                PlayableStageDefinition playableStage = entry.PlayableStage;
+                Require(
+                    StageRunRouteSnapshot.TryCreate(
+                        playableStage,
+                        out StageRunRouteSnapshot routeSnapshot,
+                        out string routeSnapshotError),
+                    $"{rowLabel} route snapshot is invalid: {routeSnapshotError}");
+                Require(
+                    string.Equals(
+                        routeSnapshot.PlayableStageId,
+                        namedProjection.PlayableStageId,
+                        StringComparison.Ordinal),
+                    $"{rowLabel} route snapshot identity disagrees with its projection.");
+
+                Require(
+                    StageRunResultProgressionJoinSnapshot.TryCreate(
+                        playableStage,
+                        out StageRunResultProgressionJoinSnapshot joinSnapshot,
+                        out string joinSnapshotError),
+                    $"{rowLabel} result/progression join snapshot is invalid: {joinSnapshotError}");
+                Require(
+                    joinSnapshot.TryValidateIntegrity(out string joinIntegrityError),
+                    $"{rowLabel} result/progression join integrity is invalid: {joinIntegrityError}");
+                Require(
+                    string.Equals(
+                        joinSnapshot.CanonicalDigest,
+                        namedProjection.ResultProgressionJoinPreflight.CanonicalDigest,
+                        StringComparison.Ordinal),
+                    $"{rowLabel} projection result/progression preflight is stale.");
+
+                Require(
+                    playableStageIds.Add(routeSnapshot.PlayableStageId),
+                    $"Reachable playableStageId '{routeSnapshot.PlayableStageId}' must be unique across the stage catalog.");
+                Require(
+                    resultDefinitionIds.Add(joinSnapshot.ResultDefinition.ResultDefinitionId),
+                    $"Reachable resultDefinitionId '{joinSnapshot.ResultDefinition.ResultDefinitionId}' must be unique across the stage catalog.");
+                Require(
+                    progressionNodeIds.Add(joinSnapshot.ProgressionNode.ProgressionNodeId),
+                    $"Reachable progressionNodeId '{joinSnapshot.ProgressionNode.ProgressionNodeId}' must be unique across the stage catalog.");
+
+                for (int segmentIndex = 0; segmentIndex < routeSnapshot.SegmentCount; segmentIndex++)
+                {
+                    StageRunSegmentSnapshot segment = routeSnapshot.GetSegment(segmentIndex);
+                    Require(
+                        AssetDatabase.LoadAssetAtPath<SceneAsset>(segment.ScenePath) != null,
+                        $"{rowLabel} segment {segmentIndex} ('{segment.SegmentId}') scene asset is missing: {segment.ScenePath}.");
+                    Require(
+                        FindEnabledSceneIndex(buildScenes, segment.ScenePath) >= 0,
+                        $"{rowLabel} segment {segmentIndex} ('{segment.SegmentId}') scene must be enabled in Build Settings: {segment.ScenePath}.");
+                }
+            }
+        }
+
         private static void ValidateStageCatalogSelection(
             UIStageCatalog catalog,
             PlayableStageDefinition route,
@@ -929,10 +1076,22 @@ namespace DimensionBrawl.Editor
                 catalog.ProjectionSchemaVersion == UIStageCatalog.SupportedProjectionSchemaVersion,
                 "Stage catalog projection schema must be revision 1.");
             Require(
-                catalog.CatalogProjectionGeneration == 2,
-                "Stage catalog projection generation must be 2 for the revision-2 route.");
-            Require(catalog.StageCount == 1, "Stage catalog must expose exactly one canonical product entry.");
-            UIStageCatalog.StageEntry entry = catalog.GetStage(0);
+                catalog.CatalogProjectionGeneration == 3,
+                "Stage catalog projection generation must be 3 for the two-stage product cohort.");
+            Require(
+                catalog.StageCount == 2,
+                "Stage catalog must contain exactly the admitted training route and Courtyard drill route.");
+            RequireEqual(
+                catalog.GetStage(0).Id,
+                CanonicalCatalogEntryId,
+                "Stage catalog row 0 entry ID");
+            RequireEqual(
+                catalog.GetStage(1).Id,
+                CourtyardCatalogEntryId,
+                "Stage catalog row 1 entry ID");
+            Require(
+                catalog.TryGetStage(CanonicalCatalogEntryId, out UIStageCatalog.StageEntry entry),
+                "Stage catalog must expose the canonical Olympus product entry exactly once.");
             RequireEqual(entry.Id, CanonicalCatalogEntryId, "Canonical stage catalog entry ID");
             RequireEqual(entry.DisplayName, CanonicalStageTitle, "Legacy stage-title mirror");
             RequireEqual(entry.Summary, CanonicalStageObjective, "Legacy stage-objective mirror");
@@ -952,7 +1111,7 @@ namespace DimensionBrawl.Editor
                 "Stored canonical stage-selection projection digest");
             Require(
                 catalog.TryCreateRouteProjection(
-                    0,
+                    CanonicalCatalogEntryId,
                     UIRouteId.Combat,
                     out UIStageRouteProjection projection,
                     out UIStageRouteProjectionRejectReason rejectReason),
@@ -961,8 +1120,8 @@ namespace DimensionBrawl.Editor
                 projection.ProjectionSchemaVersion == 1,
                 "Catalog projection schema version must be 1.");
             Require(
-                projection.CatalogProjectionGeneration == 2,
-                "Catalog projection generation must be 2.");
+                projection.CatalogProjectionGeneration == 3,
+                "Catalog projection generation must be 3.");
             RequireEqual(
                 projection.CatalogEntryId,
                 CanonicalCatalogEntryId,
@@ -1049,6 +1208,8 @@ namespace DimensionBrawl.Editor
                 !catalog.TryGetStage("story_v1_retry_route", out _),
                 "Retry must remain a terminal action, not a second selectable stage entry.");
 
+            ValidateCourtyardCatalogSelection(catalog);
+
             UIScreenRouteTable routeTable = LoadRequiredAsset<UIScreenRouteTable>(UiRouteTablePath);
             Require(
                 routeTable.TryGetRoute(UIRouteId.Combat, out UIScreenRouteTable.Route combatRoute),
@@ -1069,11 +1230,29 @@ namespace DimensionBrawl.Editor
                 "Stage-select presenter must consume the canonical stage catalog.");
             RequireEqual(
                 serializedPresenter.FindProperty("selectedStageId")?.stringValue,
-                CanonicalCatalogEntryId,
+                catalog.GetStage(0).Id,
                 "Stage-select selectedStageId");
             Require(
                 serializedPresenter.FindProperty("startRoute")?.intValue == (int)UIRouteId.Combat,
                 "Stage-select prefab start route must be UIRouteId.Combat.");
+            Text stageNameText =
+                serializedPresenter.FindProperty("stageNameText")?.objectReferenceValue as Text;
+            Text summaryText =
+                serializedPresenter.FindProperty("summaryText")?.objectReferenceValue as Text;
+            Require(
+                stageNameText != null
+                    && string.Equals(
+                        stageNameText.gameObject.name,
+                        "CurrentChapterTitleText",
+                        StringComparison.Ordinal),
+                "Stage-select presenter must bind CurrentChapterTitleText as its stage-name row.");
+            Require(
+                summaryText != null
+                    && string.Equals(
+                        summaryText.gameObject.name,
+                        "CurrentChapterBodyText",
+                        StringComparison.Ordinal),
+                "Stage-select presenter must bind CurrentChapterBodyText as its objective row.");
             Text combatLessonText =
                 serializedPresenter.FindProperty("combatLessonText")?.objectReferenceValue as Text;
             Require(
@@ -1098,11 +1277,40 @@ namespace DimensionBrawl.Editor
             Require(
                 string.IsNullOrEmpty(rewardPreviewText.text) && !rewardPreviewText.gameObject.activeSelf,
                 "Stage-select unverified reward row must be authored empty and inactive.");
-            RectTransform lessonRect = combatLessonText.rectTransform;
-            RectTransform rewardRect = rewardPreviewText.rectTransform;
-            Require(
-                lessonRect.anchorMin.y >= rewardRect.anchorMax.y,
-                "Stage-select combat lesson and optional reward rows must not overlap.");
+            ValidateStageSelectDetailLayout(
+                prefab.transform,
+                stageNameText,
+                summaryText,
+                combatLessonText,
+                rewardPreviewText);
+            Button startButton =
+                serializedPresenter.FindProperty("startButton")?.objectReferenceValue as Button;
+            ValidateVisibleStageSelectStartButton(prefab.transform, startButton);
+            ValidateTruthfulStageSelectChapterInventory(prefab.transform);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "ChapterProgressLabel",
+                requireEmptyText: true);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "ChapterPercentText",
+                requireEmptyText: true);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "ChapterProgress",
+                requireEmptyText: false);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "ChapterProgressBackground",
+                requireEmptyText: false);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "SummaryFrame",
+                requireEmptyText: false);
+            ValidateHiddenStageSelectDetailObject(
+                prefab.transform,
+                "SummaryText",
+                requireEmptyText: true);
             SerializedProperty startRequested =
                 serializedPresenter.FindProperty("startRequested")
                     ?.FindPropertyRelative("m_PersistentCalls")
@@ -1110,29 +1318,8 @@ namespace DimensionBrawl.Editor
             Require(
                 startRequested != null && startRequested.arraySize == 0,
                 "Stage-select startRequested must have no admission or navigation listener.");
-            SerializedProperty focusEntries = serializedPresenter.FindProperty("stageFocusEntries");
-            Require(
-                focusEntries != null && focusEntries.isArray && focusEntries.arraySize == 1,
-                "Stage-select presenter must expose exactly one canonical focus entry.");
-            RequireEqual(
-                focusEntries.GetArrayElementAtIndex(0).FindPropertyRelative("stageId")?.stringValue,
-                CanonicalCatalogEntryId,
-                "Stage-select focus entry ID");
-
-            Transform[] transforms = prefab.GetComponentsInChildren<Transform>(true);
-            int retiredCardCount = 0;
-            for (int i = 0; i < transforms.Length; i++)
-            {
-                if (string.Equals(transforms[i].name, "01-2_StageCard", StringComparison.Ordinal))
-                {
-                    retiredCardCount++;
-                    Require(
-                        !transforms[i].gameObject.activeSelf,
-                        "The retired retry-route stage card must remain inactive.");
-                }
-            }
-
-            Require(retiredCardCount == 1, "Stage-select prefab must retain one inactive retired card shell.");
+            ValidateStageSelectCardBindings(prefab, serializedPresenter, catalog);
+            ValidateStageSelectRouteInteractableGate(prefab, serializedPresenter, catalog);
 
             WithLoadedScene(
                 StageSelectScenePath,
@@ -1207,6 +1394,617 @@ namespace DimensionBrawl.Editor
                     && !catalogSource.Contains("TryAdmitFirstSegment", StringComparison.Ordinal)
                     && !catalogSource.Contains("StageRunRuntime", StringComparison.Ordinal),
                 "Stage selection must not become a second route admission owner.");
+        }
+
+        private static void ValidateStageSelectDetailLayout(
+            Transform prefabRoot,
+            Text titleText,
+            Text objectiveText,
+            Text lessonText,
+            Text rewardText)
+        {
+            RectTransform titleRect = titleText.rectTransform;
+            RectTransform objectiveRect = objectiveText.rectTransform;
+            RectTransform lessonRect = lessonText.rectTransform;
+            RectTransform rewardRect = rewardText.rectTransform;
+            RectTransform numberRect = FindUniqueDescendant(
+                    prefabRoot,
+                    "CurrentChapterNumberText",
+                    "Stage-select truthful detail panel") as RectTransform;
+            RectTransform startRect = FindUniqueDescendant(
+                    prefabRoot,
+                    "StartButton",
+                    "Stage-select truthful detail panel") as RectTransform;
+            const float MinimumVerticalGap = 0.005f;
+            Require(
+                numberRect != null && startRect != null,
+                "Stage-select detail layout requires RectTransforms for its number and Start button.");
+            Require(
+                titleText.gameObject.activeSelf
+                    && objectiveText.gameObject.activeSelf
+                    && lessonText.gameObject.activeSelf,
+                "Stage-select title, objective, and combat-lesson rows must be authored active.");
+            Require(
+                titleRect.parent == numberRect.parent
+                    && titleRect.parent == objectiveRect.parent
+                    && titleRect.parent == lessonRect.parent
+                    && titleRect.parent == rewardRect.parent
+                    && titleRect.parent == startRect.parent
+                    && numberRect.anchorMin.y >= titleRect.anchorMax.y + MinimumVerticalGap
+                    && titleRect.anchorMin.y >= objectiveRect.anchorMax.y + MinimumVerticalGap
+                    && objectiveRect.anchorMin.y >= lessonRect.anchorMax.y + MinimumVerticalGap
+                    && lessonRect.anchorMin.y >= startRect.anchorMax.y + MinimumVerticalGap
+                    && lessonRect.anchorMin.y >= rewardRect.anchorMax.y + MinimumVerticalGap
+                    && rewardRect.anchorMax.x <= startRect.anchorMin.x - MinimumVerticalGap,
+                "Stage-select number, title, objective, lesson, optional reward, and Start control must have non-overlapping bounds.");
+            Require(
+                titleText.resizeTextForBestFit
+                    && objectiveText.resizeTextForBestFit
+                    && lessonText.resizeTextForBestFit
+                    && titleText.fontStyle == FontStyle.Bold
+                    && objectiveText.fontStyle == FontStyle.Normal
+                    && lessonText.fontStyle == FontStyle.Normal
+                    && !titleText.raycastTarget
+                    && !objectiveText.raycastTarget
+                    && !lessonText.raycastTarget
+                    && titleText.horizontalOverflow == HorizontalWrapMode.Wrap
+                    && objectiveText.horizontalOverflow == HorizontalWrapMode.Wrap
+                    && lessonText.horizontalOverflow == HorizontalWrapMode.Wrap
+                    && titleText.verticalOverflow == VerticalWrapMode.Truncate
+                    && objectiveText.verticalOverflow == VerticalWrapMode.Truncate
+                    && lessonText.verticalOverflow == VerticalWrapMode.Truncate,
+                "Stage-select title, objective, and lesson must use wrapped best-fit text inside bounded rows.");
+        }
+
+        private static void ValidateHiddenStageSelectDetailObject(
+            Transform prefabRoot,
+            string objectName,
+            bool requireEmptyText)
+        {
+            Transform target = FindUniqueDescendant(
+                prefabRoot,
+                objectName,
+                "Stage-select truthful detail panel");
+            Text text = target.GetComponent<Text>();
+            Require(
+                !target.gameObject.activeSelf
+                    && (!requireEmptyText
+                        || (text != null && string.IsNullOrEmpty(text.text))),
+                $"Stage-select '{objectName}' must be inactive"
+                + (requireEmptyText ? " and have empty text." : "."));
+        }
+
+        private static void ValidateVisibleStageSelectStartButton(
+            Transform prefabRoot,
+            Button startButton)
+        {
+            Transform exactStart = FindUniqueDescendant(
+                prefabRoot,
+                "StartButton",
+                "Stage-select truthful detail panel");
+            CanvasGroup canvasGroup = exactStart.GetComponent<CanvasGroup>();
+            Transform frame = FindUniqueDescendant(
+                exactStart,
+                "Frame",
+                "Stage-select Start button");
+            Graphic frameGraphic = frame.GetComponent<Graphic>();
+            Transform labelObject = FindUniqueDescendant(
+                exactStart,
+                "StageStartText",
+                "Stage-select Start button");
+            Text label = labelObject.GetComponent<Text>();
+            Require(
+                startButton != null
+                    && ReferenceEquals(startButton.transform, exactStart)
+                    && exactStart.gameObject.activeSelf
+                    && startButton.enabled
+                    && startButton.interactable
+                    && startButton.targetGraphic != null
+                    && startButton.targetGraphic.raycastTarget
+                    && canvasGroup != null
+                    && canvasGroup.alpha >= 0.99f
+                    && canvasGroup.interactable
+                    && canvasGroup.blocksRaycasts,
+                "Stage-select presenter must bind one active, interactable, raycastable Start button.");
+            Require(
+                frame.gameObject.activeSelf
+                    && frameGraphic != null
+                    && frameGraphic.color.a > 0.01f
+                    && label != null
+                    && label.gameObject.activeSelf
+                    && string.Equals(label.text, "작전 시작", StringComparison.Ordinal)
+                    && label.resizeTextForBestFit
+                    && label.resizeTextMinSize == 20
+                    && label.resizeTextMaxSize == 30
+                    && label.fontStyle == FontStyle.Bold
+                    && label.alignment == TextAnchor.MiddleCenter
+                    && !label.raycastTarget,
+                "Stage-select Start button must contain one visible frame and exact readable '작전 시작' label.");
+            RectTransform labelRect = label.rectTransform;
+            Require(
+                Mathf.Approximately(labelRect.anchorMin.x, 0.1f)
+                    && Mathf.Approximately(labelRect.anchorMin.y, 0.15f)
+                    && Mathf.Approximately(labelRect.anchorMax.x, 0.9f)
+                    && Mathf.Approximately(labelRect.anchorMax.y, 0.85f)
+                    && labelRect.anchoredPosition == Vector2.zero
+                    && labelRect.sizeDelta == Vector2.zero,
+                "Stage-select Start label must retain its full-width bounded layout.");
+        }
+
+        private static void ValidateTruthfulStageSelectChapterInventory(Transform prefabRoot)
+        {
+            Transform selected = FindUniqueDescendant(
+                prefabRoot,
+                "EP 01_SelectedChapterCard",
+                "Stage-select chapter inventory");
+            Button selectedButton = selected.GetComponent<Button>();
+            Text episode = FindUniqueDescendant(
+                    selected,
+                    "EpisodeText",
+                    "Stage-select selected chapter")
+                .GetComponent<Text>();
+            Text title = FindUniqueDescendant(
+                    selected,
+                    "TitleText",
+                    "Stage-select selected chapter")
+                .GetComponent<Text>();
+            Text percent = FindUniqueDescendant(
+                    selected,
+                    "PercentText",
+                    "Stage-select selected chapter")
+                .GetComponent<Text>();
+            Require(
+                selected.gameObject.activeSelf
+                    && selectedButton != null
+                    && selectedButton.enabled
+                    && !selectedButton.interactable
+                    && selectedButton.targetGraphic != null
+                    && !selectedButton.targetGraphic.raycastTarget
+                    && episode != null
+                    && episode.gameObject.activeSelf
+                    && string.Equals(episode.text, "EP 01", StringComparison.Ordinal)
+                    && title != null
+                    && title.gameObject.activeSelf
+                    && string.Equals(title.text, "차원 안정화", StringComparison.Ordinal)
+                    && percent != null
+                    && !percent.gameObject.activeSelf
+                    && string.IsNullOrEmpty(percent.text),
+                "Stage-select must expose only one truthful EP 01 / 차원 안정화 chapter card without false progress.");
+
+            string[] placeholders =
+            {
+                "EP 02_ChapterCard",
+                "EP 03_ChapterCard",
+                "EP 04_ChapterCard"
+            };
+            for (int i = 0; i < placeholders.Length; i++)
+            {
+                Transform placeholder = FindUniqueDescendant(
+                    prefabRoot,
+                    placeholders[i],
+                    "Stage-select chapter inventory");
+                Button button = placeholder.GetComponent<Button>();
+                CanvasGroup canvasGroup = placeholder.GetComponent<CanvasGroup>();
+                Require(
+                    !placeholder.gameObject.activeSelf
+                        && button != null
+                        && !button.interactable
+                        && (button.targetGraphic == null
+                            || !button.targetGraphic.raycastTarget)
+                        && (canvasGroup == null
+                            || (!canvasGroup.interactable
+                                && !canvasGroup.blocksRaycasts)),
+                    $"Unadmitted chapter placeholder '{placeholders[i]}' must be inactive and reject interaction.");
+            }
+        }
+
+        private static void ValidateStageSelectRouteInteractableGate(
+            GameObject prefab,
+            SerializedObject serializedPresenter,
+            UIStageCatalog catalog)
+        {
+            UIRouteInteractableGate[] gates =
+                prefab.GetComponentsInChildren<UIRouteInteractableGate>(true);
+            Require(
+                gates.Length == 1,
+                $"Stage-select prefab must contain exactly one route interactable gate, but found {gates.Length}.");
+
+            var expected = new HashSet<Selectable>();
+            Button backButton =
+                serializedPresenter.FindProperty("backButton")?.objectReferenceValue as Button;
+            Button startButton =
+                serializedPresenter.FindProperty("startButton")?.objectReferenceValue as Button;
+            Require(
+                backButton != null
+                    && startButton != null
+                    && expected.Add(backButton)
+                    && expected.Add(startButton),
+                "Stage-select route gate contract requires unique Back and Start buttons.");
+
+            SerializedProperty focusEntries = serializedPresenter.FindProperty("stageFocusEntries");
+            Require(
+                focusEntries != null
+                    && focusEntries.isArray
+                    && focusEntries.arraySize == catalog.StageCount,
+                "Stage-select route gate contract requires one focus entry per catalog row.");
+            for (int i = 0; i < focusEntries.arraySize; i++)
+            {
+                Selectable selectionButton = focusEntries.GetArrayElementAtIndex(i)
+                    .FindPropertyRelative("selectionButton")
+                    .objectReferenceValue as Selectable;
+                Require(
+                    selectionButton != null && expected.Add(selectionButton),
+                    $"Stage-select route gate contract has a missing or duplicate stage button at row {i}.");
+            }
+
+            SerializedObject serializedGate = new(gates[0]);
+            SerializedProperty selectables = serializedGate.FindProperty("selectables");
+            Require(
+                selectables != null
+                    && selectables.isArray
+                    && selectables.arraySize == expected.Count,
+                "Stage-select route gate must bind exactly Back, Start, and every admitted stage button.");
+            for (int i = 0; i < selectables.arraySize; i++)
+            {
+                Selectable selectable =
+                    selectables.GetArrayElementAtIndex(i).objectReferenceValue as Selectable;
+                Require(
+                    selectable != null && expected.Remove(selectable),
+                    "Stage-select route gate contains a missing, duplicate, or non-product control.");
+            }
+
+            Require(
+                expected.Count == 0,
+                "Stage-select route gate is missing an admitted product control.");
+        }
+
+        private static void ValidateCourtyardCatalogSelection(UIStageCatalog catalog)
+        {
+            PlayableStageDefinition courtyardRoute =
+                LoadRequiredAsset<PlayableStageDefinition>(CourtyardRouteAssetPath);
+            UIStageCatalog.StageEntry entry = catalog.GetStage(1);
+            RequireEqual(entry.Id, CourtyardCatalogEntryId, "Courtyard stage catalog entry ID");
+            RequireEqual(entry.DisplayName, CourtyardStageTitle, "Courtyard stage-title mirror");
+            RequireEqual(entry.Summary, CourtyardStageObjective, "Courtyard stage-objective mirror");
+            Require(
+                string.IsNullOrEmpty(entry.ThreatTags)
+                    && string.IsNullOrEmpty(entry.RecommendedSummonRole)
+                    && string.IsNullOrEmpty(entry.MockRewardPreview),
+                "Courtyard catalog optional presentation fields must remain authored empty.");
+            Require(
+                entry.PresentationProvenance
+                    == UIStagePresentationProvenance.LegacyPresentationOnly,
+                "Courtyard stage catalog copy must retain explicit legacy-only provenance.");
+            Require(
+                ReferenceEquals(entry.PlayableStage, courtyardRoute),
+                "Courtyard stage catalog entry must reference the exact admitted PlayableStage asset.");
+            RequireEqual(
+                AssetDatabase.GetAssetPath(entry.PlayableStage),
+                CourtyardRouteAssetPath,
+                "Courtyard stage catalog PlayableStage asset path");
+            RequireEqual(
+                entry.LoadingCardId,
+                CanonicalLoadingCardId,
+                "Courtyard stage catalog loadingCardId");
+            RequireEqual(
+                entry.CanonicalProjectionDigest,
+                CourtyardProjectionDigest,
+                "Stored Courtyard stage-selection projection digest");
+            Require(
+                catalog.TryGetStage(
+                    CourtyardCatalogEntryId,
+                    out UIStageCatalog.StageEntry namedEntry)
+                    && ReferenceEquals(namedEntry.PlayableStage, courtyardRoute),
+                "Courtyard catalog ID must resolve exactly to the admitted PlayableStage asset.");
+            Require(
+                catalog.TryCreateRouteProjection(
+                    CourtyardCatalogEntryId,
+                    UIRouteId.Combat,
+                    out UIStageRouteProjection projection,
+                    out UIStageRouteProjectionRejectReason rejectReason),
+                $"Courtyard stage catalog projection is invalid: {rejectReason}.");
+            Require(
+                projection.ProjectionSchemaVersion == UIStageCatalog.SupportedProjectionSchemaVersion
+                    && projection.CatalogProjectionGeneration == 3,
+                "Courtyard projection must belong to catalog projection generation 3.");
+            RequireEqual(
+                projection.CatalogEntryId,
+                CourtyardCatalogEntryId,
+                "Courtyard projection entry ID");
+            Require(
+                ReferenceEquals(projection.PlayableStage, courtyardRoute),
+                "Courtyard projection must retain the exact admitted PlayableStage asset.");
+            RequireEqual(
+                projection.CanonicalProjectionDigest,
+                CourtyardProjectionDigest,
+                "Courtyard projection digest");
+            RequireEqual(projection.DisplayName, CourtyardStageTitle, "Courtyard projection title");
+            RequireEqual(projection.Summary, CourtyardStageObjective, "Courtyard projection objective");
+            Require(
+                string.IsNullOrEmpty(projection.ThreatTags)
+                    && string.IsNullOrEmpty(projection.RecommendedSummonRole)
+                    && string.IsNullOrEmpty(projection.RewardPreview),
+                "Courtyard projection optional presentation fields must remain empty.");
+            RequireEqual(
+                projection.LoadingCardId,
+                CanonicalLoadingCardId,
+                "Courtyard projection loadingCardId");
+            Require(
+                projection.UiRouteId == UIRouteId.Combat,
+                "Courtyard projection must dispatch only UIRouteId.Combat.");
+            Require(
+                catalog.IsProjectionCurrent(
+                    projection,
+                    UIRouteId.Combat,
+                    out UIStageRouteProjectionRejectReason currentRejectReason),
+                $"Courtyard projection is stale: {currentRejectReason}.");
+        }
+
+        private static void ValidateStageSelectCardBindings(
+            GameObject prefab,
+            SerializedObject serializedPresenter,
+            UIStageCatalog catalog)
+        {
+            SerializedProperty exactBindings =
+                serializedPresenter.FindProperty("requireExactStageCardBindings");
+            Require(
+                exactBindings != null && exactBindings.boolValue,
+                "Stage-select prefab must require exact stage-card bindings.");
+
+            SerializedProperty focusEntries = serializedPresenter.FindProperty("stageFocusEntries");
+            Require(
+                focusEntries != null
+                    && focusEntries.isArray
+                    && focusEntries.arraySize == catalog.StageCount,
+                "Stage-select focus entries must map one-to-one to every catalog entry.");
+
+            var boundStageIds = new HashSet<string>(StringComparer.Ordinal);
+            var boundButtons = new HashSet<Button>();
+            var boundTargets = new HashSet<RectTransform>();
+            for (int focusIndex = 0; focusIndex < focusEntries.arraySize; focusIndex++)
+            {
+                SerializedProperty focusEntry = focusEntries.GetArrayElementAtIndex(focusIndex);
+                string stageId = focusEntry.FindPropertyRelative("stageId")?.stringValue;
+                UIStageCatalog.StageEntry catalogEntry = catalog.GetStage(focusIndex);
+                Button selectionButton =
+                    focusEntry.FindPropertyRelative("selectionButton")?.objectReferenceValue as Button;
+                RectTransform stageTarget =
+                    focusEntry.FindPropertyRelative("stageTarget")?.objectReferenceValue as RectTransform;
+
+                RequireEqual(
+                    stageId,
+                    catalogEntry.Id,
+                    $"Stage-select focus entry {focusIndex} catalog ID");
+                Require(
+                    !string.IsNullOrWhiteSpace(stageId)
+                        && boundStageIds.Add(stageId)
+                        && catalog.TryGetStage(stageId, out _),
+                    $"Stage-select focus entry {focusIndex} must reference one unique catalog ID.");
+                Require(
+                    selectionButton != null
+                        && stageTarget != null
+                        && ReferenceEquals(selectionButton.transform, stageTarget)
+                        && boundButtons.Add(selectionButton)
+                        && boundTargets.Add(stageTarget),
+                    $"Stage-select focus entry {focusIndex} must own one unique Button on its exact stage target.");
+                Require(
+                    IsStageCardShellName(stageTarget.name),
+                    $"Stage-select focus entry {focusIndex} target '{stageTarget.name}' is not a ??-?_StageCard shell.");
+                RequireEqual(
+                    stageTarget.name,
+                    $"01-{focusIndex + 1}_StageCard",
+                    $"Stage-select focus entry {focusIndex} shell name");
+                Require(
+                    stageTarget.gameObject.activeSelf
+                        && selectionButton.enabled
+                        && selectionButton.interactable,
+                    $"Bound stage-card shell '{stageTarget.name}' must be active and interactable.");
+                CanvasGroup boundCanvasGroup = stageTarget.GetComponent<CanvasGroup>();
+                Require(
+                    boundCanvasGroup == null
+                        || (boundCanvasGroup.interactable && boundCanvasGroup.blocksRaycasts),
+                    $"Bound stage-card shell '{stageTarget.name}' must accept canvas interaction and raycasts.");
+                Require(
+                    selectionButton.onClick.GetPersistentEventCount() == 0,
+                    $"Bound stage-card shell '{stageTarget.name}' must not serialize persistent onClick listeners.");
+                ValidateBoundStageCardPresentation(stageTarget, catalogEntry, focusIndex);
+            }
+
+            for (int catalogIndex = 0; catalogIndex < catalog.StageCount; catalogIndex++)
+            {
+                string catalogEntryId = catalog.GetStage(catalogIndex).Id;
+                Require(
+                    boundStageIds.Contains(catalogEntryId),
+                    $"Stage-select prefab is missing an exact card binding for catalog entry '{catalogEntryId}'.");
+            }
+
+            Transform[] transforms = prefab.GetComponentsInChildren<Transform>(true);
+            int stageCardShellCount = 0;
+            int boundShellCount = 0;
+            for (int transformIndex = 0; transformIndex < transforms.Length; transformIndex++)
+            {
+                Transform shell = transforms[transformIndex];
+                if (!IsStageCardShellName(shell.name))
+                {
+                    continue;
+                }
+
+                stageCardShellCount++;
+                Button shellButton = shell.GetComponent<Button>();
+                Require(
+                    shellButton != null,
+                    $"Stage-card shell '{shell.name}' must own a Button.");
+                Require(
+                    shellButton.onClick.GetPersistentEventCount() == 0,
+                    $"Stage-card shell '{shell.name}' must not serialize persistent onClick listeners.");
+
+                CanvasGroup shellCanvasGroup = shell.GetComponent<CanvasGroup>();
+                bool bound = boundButtons.Contains(shellButton);
+                if (bound)
+                {
+                    boundShellCount++;
+                    Require(
+                        boundTargets.Contains(shell as RectTransform)
+                            && shell.gameObject.activeSelf
+                            && shellButton.enabled
+                            && shellButton.interactable,
+                        $"Bound stage-card shell '{shell.name}' must be the exact active, interactable target.");
+                    Require(
+                        shellCanvasGroup == null
+                            || (shellCanvasGroup.interactable && shellCanvasGroup.blocksRaycasts),
+                        $"Bound stage-card shell '{shell.name}' must accept canvas interaction and raycasts.");
+                    continue;
+                }
+
+                Require(
+                    !shell.gameObject.activeSelf && !shellButton.interactable,
+                    $"Unbound stage-card shell '{shell.name}' must be inactive and non-interactable.");
+                Require(
+                    shellCanvasGroup == null
+                        || (!shellCanvasGroup.interactable && !shellCanvasGroup.blocksRaycasts),
+                    $"Unbound stage-card shell '{shell.name}' must reject canvas interaction and raycasts.");
+            }
+
+            Require(
+                stageCardShellCount >= catalog.StageCount
+                    && boundShellCount == boundButtons.Count,
+                "Every exact stage binding must resolve to one authored ??-?_StageCard shell.");
+        }
+
+        private static void ValidateBoundStageCardPresentation(
+            RectTransform stageTarget,
+            UIStageCatalog.StageEntry catalogEntry,
+            int catalogIndex)
+        {
+            Text stageNumberText = FindUniqueDescendant(
+                    stageTarget,
+                    "StageNumberText",
+                    $"Stage-select card {catalogIndex}")
+                .GetComponent<Text>();
+            Text stageTitleText = FindUniqueDescendant(
+                    stageTarget,
+                    "StageTitleText",
+                    $"Stage-select card {catalogIndex}")
+                .GetComponent<Text>();
+            Require(
+                stageNumberText != null && stageNumberText.gameObject.activeSelf,
+                $"Bound stage-card shell '{stageTarget.name}' must expose one active StageNumberText.");
+            Require(
+                stageTitleText != null && stageTitleText.gameObject.activeSelf,
+                $"Bound stage-card shell '{stageTarget.name}' must expose one active StageTitleText.");
+            Require(
+                stageNumberText.enabled
+                    && stageTitleText.enabled
+                    && stageNumberText.color.a > 0.01f
+                    && stageTitleText.color.a > 0.01f
+                    && stageNumberText.resizeTextForBestFit
+                    && stageTitleText.resizeTextForBestFit
+                    && stageNumberText.resizeTextMinSize == 16
+                    && stageNumberText.resizeTextMaxSize == 21
+                    && stageTitleText.resizeTextMinSize == 12
+                    && stageTitleText.resizeTextMaxSize == 22
+                    && stageNumberText.fontStyle == FontStyle.Bold
+                    && stageTitleText.fontStyle == FontStyle.Bold
+                    && stageNumberText.alignment == TextAnchor.MiddleLeft
+                    && stageTitleText.alignment == TextAnchor.MiddleLeft
+                    && !stageNumberText.raycastTarget
+                    && !stageTitleText.raycastTarget
+                    && stageNumberText.GetComponent<Outline>() != null
+                    && stageTitleText.GetComponent<Outline>() != null,
+                $"Bound stage-card shell '{stageTarget.name}' must expose readable outlined number and title labels.");
+            RequireEqual(
+                stageNumberText.text,
+                $"01-{catalogIndex + 1}",
+                $"Bound stage-card shell '{stageTarget.name}' number text");
+            RequireEqual(
+                stageTitleText.text,
+                catalogEntry.DisplayName,
+                $"Bound stage-card shell '{stageTarget.name}' title text");
+
+            string[] inactivePresentationObjects =
+            {
+                "StagePercentText",
+                "Star1",
+                "Star2",
+                "Star3"
+            };
+            for (int objectIndex = 0;
+                 objectIndex < inactivePresentationObjects.Length;
+                 objectIndex++)
+            {
+                string objectName = inactivePresentationObjects[objectIndex];
+                Transform presentationObject = FindUniqueDescendant(
+                    stageTarget,
+                    objectName,
+                    $"Stage-select card {catalogIndex}");
+                Text presentationText = presentationObject.GetComponent<Text>();
+                Require(
+                    !presentationObject.gameObject.activeSelf
+                        && (!string.Equals(
+                                objectName,
+                                "StagePercentText",
+                                StringComparison.Ordinal)
+                            || (presentationText != null
+                                && string.IsNullOrEmpty(presentationText.text))),
+                    $"Bound stage-card shell '{stageTarget.name}' must keep '{objectName}' inactive until verified progression data exists.");
+            }
+
+            Transform lockIcon = FindOptionalUniqueDescendant(
+                stageTarget,
+                "LockIcon",
+                $"Stage-select card {catalogIndex}");
+            Require(
+                lockIcon == null || !lockIcon.gameObject.activeSelf,
+                $"Bound stage-card shell '{stageTarget.name}' must not present a lock without an authoritative eligibility source.");
+        }
+
+        private static Transform FindUniqueDescendant(
+            Transform root,
+            string objectName,
+            string ownerLabel)
+        {
+            Transform match = FindOptionalUniqueDescendant(root, objectName, ownerLabel);
+            Require(
+                match != null,
+                $"{ownerLabel} must contain exactly one descendant named '{objectName}', actual=0.");
+            return match;
+        }
+
+        private static Transform FindOptionalUniqueDescendant(
+            Transform root,
+            string objectName,
+            string ownerLabel)
+        {
+            Transform match = null;
+            int matchCount = 0;
+            Transform[] descendants = root.GetComponentsInChildren<Transform>(true);
+            for (int descendantIndex = 0;
+                 descendantIndex < descendants.Length;
+                 descendantIndex++)
+            {
+                Transform candidate = descendants[descendantIndex];
+                if (!string.Equals(candidate.name, objectName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                match = candidate;
+                matchCount++;
+            }
+
+            Require(
+                matchCount <= 1,
+                $"{ownerLabel} must contain at most one descendant named '{objectName}', actual={matchCount}.");
+            return match;
+        }
+
+        private static bool IsStageCardShellName(string objectName)
+        {
+            const string suffix = "_StageCard";
+            return !string.IsNullOrEmpty(objectName)
+                && objectName.Length == 4 + suffix.Length
+                && objectName[2] == '-'
+                && objectName.EndsWith(suffix, StringComparison.Ordinal);
         }
 
         private static void ValidateAction(
@@ -1320,107 +2118,283 @@ namespace DimensionBrawl.Editor
                 station.MapScenePath,
                 corridor.MapScenePath,
                 "Corridor/Station shared-host mapScenePath");
-            Require(station.AnchorCount == 1, "Station definition must contain exactly one P1-B Add anchor.");
-            StageDefinitionProfile.AnchorRef addAnchor = station.GetAnchor(0);
-            RequireEqual(addAnchor.AnchorId, StationAddAnchorId, "Station Add anchorId");
-            RequireEqual(addAnchor.GroupId, StationAddAnchorGroupId, "Station Add anchor groupId");
+            ValidateStationAddRows(station);
             Require(
-                Approximately(addAnchor.ExpectedPosition, new Vector3(8.9f, 0f, -1.25f)),
-                "Station Add anchor position is invalid.");
-            Require(
-                ApproximatelyEuler(addAnchor.ExpectedEuler, Vector3.zero),
-                "Station Add anchor rotation is invalid.");
+                station.SpawnCount == 2 && station.AnchorCount == 2,
+                "A2 Station fixture must contain exactly two ordered Add rows and two anchors.");
+            CombatEnemyArchetypeProfile reviewedMeleeArchetype =
+                LoadRequiredAsset<CombatEnemyArchetypeProfile>(StationMeleeAddArchetypePath);
+            CombatEnemyArchetypeProfile reviewedRangedArchetype =
+                LoadRequiredAsset<CombatEnemyArchetypeProfile>(StationRangedAddArchetypePath);
+            ValidateExactStationAddFixtureRow(
+                station.GetSpawn(0),
+                station.GetAnchor(0),
+                StationAddSpawnId,
+                StationAddAnchorId,
+                StationAddPositionId,
+                new Vector3(8.9f, 0f, -1.25f),
+                StationMeleeAddPayloadId,
+                reviewedMeleeArchetype,
+                "left");
+            ValidateExactStationAddFixtureRow(
+                station.GetSpawn(1),
+                station.GetAnchor(1),
+                StationRightAddSpawnId,
+                StationRightAddAnchorId,
+                StationRightAddPositionId,
+                new Vector3(8.9f, 0f, 1.25f),
+                StationRangedAddPayloadId,
+                reviewedRangedArchetype,
+                "right");
 
-            Require(station.SpawnCount == 1, "Station definition must contain exactly one P1-B Add spawn.");
-            StageDefinitionProfile.SpawnRef addSpawn = station.GetSpawn(0);
-            RequireEqual(addSpawn.SpawnId, StationAddSpawnId, "Station Add spawnId");
-            Require(addSpawn.SpawnKind == StageSpawnKind.Add, "Station first fixture must use SpawnKind.Add.");
-            Require(addSpawn.PositionId == StationAddPositionId, "Station Add positionId is invalid.");
-            RequireEqual(addSpawn.AnchorId, StationAddAnchorId, "Station Add spawn anchorId");
-            RequireEqual(addSpawn.PayloadId, StationAddPayloadId, "Station Add payloadId");
-            Require(addSpawn.Count == 1, "Station first Add fixture must have count 1.");
+            GameObject reviewedPrefab = LoadRequiredAsset<GameObject>(StationMeleeAddPrefabPath);
+            CombatAiPatternProfile reviewedPattern =
+                LoadRequiredAsset<CombatAiPatternProfile>(StationMeleeAddPatternPath);
             Require(
-                float.IsFinite(addSpawn.DelaySeconds) && Mathf.Approximately(addSpawn.DelaySeconds, 0f),
-                "Station first Add fixture must have a finite zero delay.");
+                ReferenceEquals(reviewedMeleeArchetype.GameplayPrefab, reviewedPrefab),
+                "A1 Station Add archetype must retain the reviewed HeavyWindup gameplay prefab.");
+            BasicSoldierEnemy reviewedAgent = reviewedPrefab.GetComponent<BasicSoldierEnemy>();
+            CombatTargetSensor reviewedSensor = reviewedPrefab.GetComponent<CombatTargetSensor>();
+            Require(
+                reviewedAgent != null
+                && reviewedSensor != null
+                && ReferenceEquals(reviewedAgent.PatternProfile, reviewedPattern)
+                && reviewedAgent.PatternDeck == null
+                && reviewedPattern.AttackShape == CombatAiAttackShape.MeleeArc
+                && reviewedPattern.AttackRange <= reviewedSensor.SearchRadius
+                && reviewedPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true).Length == 0,
+                "A1 Station Add fixture drifted from the reviewed HeavyWindup melee contract.");
 
-            CombatEnemyArchetypeProfile addArchetype =
-                LoadRequiredAsset<CombatEnemyArchetypeProfile>(StationAddArchetypePath);
-            GameObject addPrefab = LoadRequiredAsset<GameObject>(StationAddPrefabPath);
-            CombatAiPatternProfile addPattern =
-                LoadRequiredAsset<CombatAiPatternProfile>(StationAddPatternPath);
-            RequireEqual(addArchetype.ArchetypeId, StationAddPayloadId, "Station Add archetypeId");
+            GameObject rangedPrefab = LoadRequiredAsset<GameObject>(StationRangedAddPrefabPath);
+            CombatAiPatternProfile rangedPattern =
+                LoadRequiredAsset<CombatAiPatternProfile>(StationRangedAddPatternPath);
+            CombatAiPatternDeck rangedDeck =
+                LoadRequiredAsset<CombatAiPatternDeck>(StationRangedAddDeckPath);
+            LaneActionProjectile rangedProjectile =
+                LoadRequiredAsset<GameObject>(StationRangedProjectilePrefabPath)
+                    .GetComponent<LaneActionProjectile>();
+            BasicSoldierEnemy rangedAgent = rangedPrefab.GetComponent<BasicSoldierEnemy>();
+            CombatTargetSensor rangedSensor = rangedPrefab.GetComponent<CombatTargetSensor>();
+            BasicSoldierProjectileAttackDriver[] rangedDrivers =
+                rangedPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true);
             Require(
-                ReferenceEquals(addArchetype.GameplayPrefab, addPrefab),
-                "Station Add archetype must reference the exact reviewed gameplay prefab.");
-            Require(
-                !addArchetype.RequiresDedicatedPrefabPromotion,
-                "Station Add archetype still requires dedicated prefab promotion.");
-            CombatHealth[] addPrefabHealth =
-                addPrefab.GetComponentsInChildren<CombatHealth>(true);
-            Require(
-                addPrefabHealth.Length == 1
-                && addPrefabHealth[0].Team == DamageTeam.Enemy
-                && addPrefabHealth[0].enabled
-                && addPrefabHealth[0].gameObject.activeSelf,
-                "Station Add prefab must contain exactly one enabled, active-self Enemy CombatHealth.");
-            Require(
-                addPrefab.GetComponentsInChildren<SummonFrontlineProxy>(true).Length == 0,
-                "Station Add prefab must not carry a summon-frontline proxy lifecycle.");
-            ICombatAiAgent addAgent = null;
-            int addAgentCount = 0;
-            MonoBehaviour[] addBehaviours =
-                addPrefab.GetComponentsInChildren<MonoBehaviour>(true);
-            for (int i = 0; i < addBehaviours.Length; i++)
-            {
-                if (addBehaviours[i] is ICombatAiAgent candidate)
-                {
-                    addAgent = candidate;
-                    addAgentCount++;
-                }
-            }
-
-            Require(addAgentCount == 1, "Station Add prefab must contain exactly one combat AI agent.");
-            MonoBehaviour addAgentBehaviour = addAgent as MonoBehaviour;
-            BasicSoldierEnemy addSoldier = addAgent as BasicSoldierEnemy;
-            CombatTargetSensor[] addSensors =
-                addPrefab.GetComponentsInChildren<CombatTargetSensor>(true);
-            Require(
-                addAgent != null
-                && addAgentBehaviour != null
-                && addSoldier != null
-                && addAgentBehaviour.enabled
-                && addAgentBehaviour.gameObject.activeSelf
-                && ReferenceEquals(addAgent.SelfHealth, addPrefabHealth[0])
-                && ReferenceEquals(addAgent.PatternProfile, addPattern)
-                && addSoldier.PatternDeck == null
-                && addPattern.AttackShape == CombatAiAttackShape.MeleeArc
-                && addAgent.TargetSensor != null
-                && addAgent.TargetSensor.enabled
-                && addAgent.TargetSensor.gameObject.activeSelf
-                && addSensors.Length == 1
-                && ReferenceEquals(addSensors[0], addAgent.TargetSensor)
-                && ReferenceEquals(addAgent.TargetSensor.SelfHealth, addPrefabHealth[0])
-                && addPattern.AttackRange <= addAgent.TargetSensor.SearchRadius
-                && addAgent.TargetSensor.TargetCandidateCount == 0,
-                "Station Add AI agent must coherently own the reviewed HeavyWindup melee loadout, Enemy health, and empty runtime-injected target sensor.");
-            Require(
-                addPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true).Length == 0,
-                "Station HeavyWindup Add prefab must not carry a projectile attack driver.");
+                ReferenceEquals(reviewedRangedArchetype.GameplayPrefab, rangedPrefab)
+                && rangedAgent != null
+                && rangedSensor != null
+                && ReferenceEquals(rangedAgent.PatternProfile, rangedPattern)
+                && ReferenceEquals(rangedAgent.PatternDeck, rangedDeck)
+                && rangedDeck.EntryCount == 1
+                && ReferenceEquals(rangedDeck.GetEntry(0).Profile, rangedPattern)
+                && rangedPattern.AttackShape == CombatAiAttackShape.ProjectileLine
+                && string.Equals(rangedPattern.PatternId, "RifleCrossfire", StringComparison.Ordinal)
+                && rangedPattern.AttackRange <= rangedSensor.SearchRadius
+                && rangedDrivers.Length == 1
+                && rangedDrivers[0].IsConfiguredFor(rangedAgent, rangedAgent.SelfHealth, rangedSensor)
+                && ReferenceEquals(rangedDrivers[0].ProjectilePrefab, rangedProjectile)
+                && rangedDrivers[0].MaxOwnedProjectileCount == 3,
+                "A2 Station right Add drifted from the reviewed RifleCrossfire projectile contract.");
             Require(station.RuntimeStateCount == 1, "Station definition must contain one terminal runtime state.");
             StageDefinitionProfile.RuntimeStateRef terminal = station.GetRuntimeState(0);
             Require(terminal.StateKind == StageRuntimeStateKind.StageClear, "Station terminal runtime state kind is invalid.");
             RequireEqual(terminal.ConditionId, StationTerminalConditionId, "Station terminal conditionId");
         }
 
+        private static void ValidateExactStationAddFixtureRow(
+            StageDefinitionProfile.SpawnRef spawn,
+            StageDefinitionProfile.AnchorRef anchor,
+            string expectedSpawnId,
+            string expectedAnchorId,
+            int expectedPositionId,
+            Vector3 expectedPosition,
+            string expectedPayloadId,
+            CombatEnemyArchetypeProfile expectedArchetype,
+            string laneName)
+        {
+            RequireEqual(spawn.SpawnId, expectedSpawnId, $"Station {laneName} Add spawnId");
+            Require(spawn.SpawnKind == StageSpawnKind.Add, $"Station {laneName} row must be an Add.");
+            Require(spawn.PositionId == expectedPositionId, $"Station {laneName} Add positionId is invalid.");
+            RequireEqual(spawn.AnchorId, expectedAnchorId, $"Station {laneName} Add spawn anchorId");
+            RequireEqual(spawn.PayloadId, expectedPayloadId, $"Station {laneName} Add payloadId");
+            Require(
+                ReferenceEquals(spawn.PayloadArchetype, expectedArchetype),
+                $"Station {laneName} Add must directly reference its reviewed archetype.");
+            Require(
+                spawn.AuthoredCount == 1 && spawn.AuthoredDelaySeconds == 0f,
+                $"Station {laneName} Add fixture must retain raw count one and zero delay.");
+            RequireEqual(anchor.AnchorId, expectedAnchorId, $"Station {laneName} Add anchorId");
+            RequireEqual(anchor.GroupId, StationAddAnchorGroupId, $"Station {laneName} Add anchor groupId");
+            Require(
+                Approximately(anchor.ExpectedPosition, expectedPosition),
+                $"Station {laneName} Add anchor position is invalid.");
+            Require(
+                ApproximatelyEuler(anchor.ExpectedEuler, Vector3.zero),
+                $"Station {laneName} Add anchor rotation is invalid.");
+        }
+
+        private static void ValidateStationAddRows(StageDefinitionProfile station)
+        {
+            var spawnIds = new HashSet<string>(StringComparer.Ordinal);
+            var anchorIds = new HashSet<string>(StringComparer.Ordinal);
+            var positionIds = new HashSet<int>();
+            var referencedAnchorIds = new HashSet<string>(StringComparer.Ordinal);
+            var serializedStation = new SerializedObject(station);
+            SerializedProperty serializedSpawns = serializedStation.FindProperty("spawns");
+            Require(serializedSpawns != null, "Station definition has no serialized spawn array.");
+
+            int addCount = 0;
+            float priorDelay = -1f;
+            for (int sourceOrdinal = 0; sourceOrdinal < station.SpawnCount; sourceOrdinal++)
+            {
+                StageDefinitionProfile.SpawnRef spawn = station.GetSpawn(sourceOrdinal);
+                if (spawn.SpawnKind != StageSpawnKind.Add)
+                {
+                    continue;
+                }
+
+                addCount++;
+                SerializedProperty serializedSpawn =
+                    serializedSpawns.GetArrayElementAtIndex(sourceOrdinal);
+                int rawCount = serializedSpawn.FindPropertyRelative("count").intValue;
+                float rawDelay = serializedSpawn.FindPropertyRelative("delaySeconds").floatValue;
+                Require(
+                    !string.IsNullOrWhiteSpace(spawn.SpawnId)
+                    && spawnIds.Add(spawn.SpawnId),
+                    $"Station Add row {sourceOrdinal} has an empty or duplicate spawnId.");
+                Require(
+                    !string.IsNullOrWhiteSpace(spawn.AnchorId)
+                    && anchorIds.Add(spawn.AnchorId),
+                    $"Station Add row '{spawn.SpawnId}' has an empty or duplicate anchorId.");
+                Require(
+                    spawn.PositionId > 0 && positionIds.Add(spawn.PositionId),
+                    $"Station Add row '{spawn.SpawnId}' has a non-positive or duplicate positionId.");
+                Require(
+                    rawCount == 1 && spawn.AuthoredCount == rawCount,
+                    $"Station Add row '{spawn.SpawnId}' must author exactly count 1 before runtime clamping.");
+                Require(
+                    float.IsFinite(rawDelay)
+                    && rawDelay >= 0f
+                    && Mathf.Approximately(spawn.AuthoredDelaySeconds, rawDelay),
+                    $"Station Add row '{spawn.SpawnId}' has an invalid raw delay.");
+                Require(
+                    rawDelay >= priorDelay,
+                    "Station Add delays must be nondecreasing in serialized source order.");
+                priorDelay = rawDelay;
+
+                int definitionAnchorCount = 0;
+                StageDefinitionProfile.AnchorRef definitionAnchor = default;
+                for (int anchorIndex = 0; anchorIndex < station.AnchorCount; anchorIndex++)
+                {
+                    StageDefinitionProfile.AnchorRef candidate = station.GetAnchor(anchorIndex);
+                    if (string.Equals(candidate.AnchorId, spawn.AnchorId, StringComparison.Ordinal))
+                    {
+                        definitionAnchor = candidate;
+                        definitionAnchorCount++;
+                    }
+                }
+
+                Require(
+                    definitionAnchorCount == 1,
+                    $"Station Add row '{spawn.SpawnId}' must resolve exactly one definition anchor.");
+                Require(
+                    !string.IsNullOrWhiteSpace(definitionAnchor.GroupId),
+                    $"Station Add anchor '{spawn.AnchorId}' has no groupId.");
+                Require(
+                    IsFinite(definitionAnchor.ExpectedPosition)
+                    && IsFinite(definitionAnchor.ExpectedEuler),
+                    $"Station Add anchor '{spawn.AnchorId}' has a non-finite authored pose.");
+                referencedAnchorIds.Add(spawn.AnchorId);
+
+                CombatEnemyArchetypeProfile archetype = spawn.PayloadArchetype;
+                Require(archetype != null, $"Station Add row '{spawn.SpawnId}' has no direct archetype reference.");
+                RequireEqual(
+                    spawn.PayloadId,
+                    archetype.ArchetypeId,
+                    $"Station Add row '{spawn.SpawnId}' payload/archetype identity");
+                Require(
+                    !archetype.RequiresDedicatedPrefabPromotion,
+                    $"Station Add row '{spawn.SpawnId}' archetype still requires prefab promotion.");
+                GameObject prefab = archetype.GameplayPrefab;
+                Require(prefab != null, $"Station Add row '{spawn.SpawnId}' archetype has no gameplay prefab.");
+                Require(
+                    AssetDatabase.GetAssetPath(prefab).StartsWith("Assets/_Game/", StringComparison.Ordinal),
+                    $"Station Add row '{spawn.SpawnId}' must use a game-owned gameplay prefab.");
+
+                CombatHealth[] health = prefab.GetComponentsInChildren<CombatHealth>(true);
+                Require(
+                    health.Length == 1
+                    && health[0].Team == DamageTeam.Enemy
+                    && health[0].enabled
+                    && health[0].gameObject.activeSelf,
+                    $"Station Add row '{spawn.SpawnId}' prefab must own exactly one enabled, active-self Enemy health.");
+                Require(
+                    prefab.GetComponentsInChildren<SummonFrontlineProxy>(true).Length == 0,
+                    $"Station Add row '{spawn.SpawnId}' prefab must not carry a summon-frontline proxy.");
+
+                ICombatAiAgent agent = null;
+                int agentCount = 0;
+                MonoBehaviour[] behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(true);
+                for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
+                {
+                    if (behaviours[behaviourIndex] is ICombatAiAgent candidate)
+                    {
+                        agent = candidate;
+                        agentCount++;
+                    }
+                }
+
+                CombatTargetSensor[] sensors =
+                    prefab.GetComponentsInChildren<CombatTargetSensor>(true);
+                BasicSoldierProjectileAttackDriver[] projectileDrivers =
+                    prefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true);
+                MonoBehaviour agentBehaviour = agent as MonoBehaviour;
+                Require(
+                    agentCount == 1
+                    && agent != null
+                    && agentBehaviour != null
+                    && agentBehaviour.enabled
+                    && agentBehaviour.gameObject.activeSelf
+                    && ReferenceEquals(agent.SelfHealth, health[0])
+                    && agent.PatternProfile != null
+                    && agent.TargetSensor != null
+                    && agent.TargetSensor.enabled
+                    && agent.TargetSensor.gameObject.activeSelf
+                    && sensors.Length == 1
+                    && ReferenceEquals(sensors[0], agent.TargetSensor)
+                    && ReferenceEquals(agent.TargetSensor.SelfHealth, health[0])
+                    && agent.PatternProfile.AttackRange <= agent.TargetSensor.SearchRadius
+                    && agent.TargetSensor.TargetCandidateCount == 0,
+                    $"Station Add row '{spawn.SpawnId}' prefab violates the A0 agent/sensor participation contract.");
+
+                if (agent.PatternProfile.AttackShape == CombatAiAttackShape.ProjectileLine)
+                {
+                    Require(
+                        agent is BasicSoldierEnemy projectileSoldier
+                        && projectileDrivers.Length == 1
+                        && projectileDrivers[0].enabled
+                        && projectileDrivers[0].gameObject.activeSelf
+                        && projectileDrivers[0].IsConfiguredFor(
+                            projectileSoldier,
+                            health[0],
+                            agent.TargetSensor),
+                        $"Station Add row '{spawn.SpawnId}' ProjectileLine prefab requires one coherent bounded projectile driver.");
+                }
+                else
+                {
+                    Require(
+                        projectileDrivers.Length == 0,
+                        $"Station Add row '{spawn.SpawnId}' non-projectile prefab must not carry a projectile driver.");
+                }
+            }
+
+            Require(addCount == 2, "A2 Station definition must author exactly two count-one Add rows.");
+            Require(
+                station.AnchorCount == referencedAnchorIds.Count,
+                "Station definition anchors must map one-to-one to its current ordered Add rows.");
+        }
+
         private static void ValidateBuildSettingsRoute()
         {
-            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
-            int corridorIndex = FindEnabledSceneIndex(scenes, CorridorScenePath);
-            int stageClearIndex = FindEnabledSceneIndex(scenes, StageClearScenePath);
-            Require(corridorIndex >= 0, "Corridor scene is missing or disabled in Build Settings.");
-            Require(
-                stageClearIndex >= 0 && stageClearIndex != corridorIndex,
-                "UI_StageClear must remain an enabled, separate presentation scene.");
+            UIV1BuildSettingsReadinessReporter.ValidateCurrentReadinessOrThrow();
         }
 
         private static int FindEnabledSceneIndex(EditorBuildSettingsScene[] scenes, string path)
@@ -1675,78 +2649,107 @@ namespace DimensionBrawl.Editor
         {
             Require(binding != null, "Station Add authoring requires the exact Station scene binding.");
             Require(binding.MapRoot != null, "Station Add authoring requires a binding MapRoot.");
-            Require(
-                binding.TryGetAnchorPoint(StationAddAnchorId, out StageAnchorPoint addAnchor),
-                "Station scene binding is missing the canonical Add anchor.");
-
+            StageDefinitionProfile definition = binding.StageDefinition;
+            Require(definition != null, "Station Add authoring requires its exact stage definition.");
             StageAnchorPoint[] authoredAnchors = CollectSceneComponents<StageAnchorPoint>(scene);
-            int matchingAddAnchorCount = 0;
             Require(
                 authoredAnchors.Length > 0,
                 "Shared Olympus host must contain authored StageAnchorPoints.");
-            for (int i = 0; i < authoredAnchors.Length; i++)
+            int addRowCount = 0;
+            for (int sourceOrdinal = 0; sourceOrdinal < definition.SpawnCount; sourceOrdinal++)
             {
-                StageAnchorPoint candidate = authoredAnchors[i];
-                if (candidate != null
-                    && string.Equals(candidate.AnchorId, StationAddAnchorId, StringComparison.Ordinal))
+                StageDefinitionProfile.SpawnRef spawn = definition.GetSpawn(sourceOrdinal);
+                if (spawn.SpawnKind != StageSpawnKind.Add)
                 {
-                    matchingAddAnchorCount++;
-                    Require(
-                        ReferenceEquals(candidate, addAnchor),
-                        "Station Add anchor ID must resolve only to the exact Station binding row.");
+                    continue;
                 }
+
+                addRowCount++;
+                Require(
+                    binding.TryGetAnchorPoint(spawn.AnchorId, out StageAnchorPoint addAnchor),
+                    $"Station scene binding is missing Add anchor '{spawn.AnchorId}'.");
+                int matchingAnchorCount = 0;
+                for (int anchorIndex = 0; anchorIndex < authoredAnchors.Length; anchorIndex++)
+                {
+                    StageAnchorPoint candidate = authoredAnchors[anchorIndex];
+                    if (candidate != null
+                        && string.Equals(candidate.AnchorId, spawn.AnchorId, StringComparison.Ordinal))
+                    {
+                        matchingAnchorCount++;
+                        Require(
+                            ReferenceEquals(candidate, addAnchor),
+                            $"Station Add anchor '{spawn.AnchorId}' must resolve only to the exact binding row.");
+                    }
+                }
+
+                StageDefinitionProfile.AnchorRef expectedAnchor = default;
+                int expectedAnchorCount = 0;
+                for (int anchorIndex = 0; anchorIndex < definition.AnchorCount; anchorIndex++)
+                {
+                    StageDefinitionProfile.AnchorRef candidate = definition.GetAnchor(anchorIndex);
+                    if (string.Equals(candidate.AnchorId, spawn.AnchorId, StringComparison.Ordinal))
+                    {
+                        expectedAnchor = candidate;
+                        expectedAnchorCount++;
+                    }
+                }
+
+                Require(
+                    matchingAnchorCount == 1 && expectedAnchorCount == 1,
+                    $"Shared Olympus host must contain exactly one Add anchor '{spawn.AnchorId}'.");
+                RequireEqual(addAnchor.name, spawn.AnchorId, "Station Add anchor GameObject name");
+                RequireEqual(
+                    addAnchor.GroupId,
+                    expectedAnchor.GroupId,
+                    $"Station Add '{spawn.SpawnId}' live anchor groupId");
+                Require(
+                    addAnchor.UsageKind == StageAnchorUsageKind.CombatSpawn,
+                    $"Station Add '{spawn.SpawnId}' live anchor must use CombatSpawn semantics.");
+                Require(
+                    addAnchor.PositionId == spawn.PositionId,
+                    $"Station Add '{spawn.SpawnId}' live anchor positionId is invalid.");
+                Require(
+                    addAnchor.SpawnKind == StageSpawnKind.Add,
+                    $"Station Add '{spawn.SpawnId}' live anchor must use SpawnKind.Add.");
+                Require(
+                    addAnchor.transform.IsChildOf(binding.MapRoot),
+                    $"Station Add '{spawn.SpawnId}' live anchor must descend from the binding MapRoot.");
+                ResolveBindingRootLocalPose(
+                    binding.transform,
+                    addAnchor.transform,
+                    out Vector3 bindingLocalPosition,
+                    out Quaternion bindingLocalRotation);
+                Require(
+                    Approximately(bindingLocalPosition, expectedAnchor.ExpectedPosition),
+                    $"Station Add '{spawn.SpawnId}' binding-root-local position is invalid.");
+                Require(
+                    ApproximatelyEuler(
+                        bindingLocalRotation.eulerAngles,
+                        expectedAnchor.ExpectedEuler),
+                    $"Station Add '{spawn.SpawnId}' binding-root-local rotation is invalid.");
             }
 
+            Require(addRowCount > 0, "Station scene requires at least one bound Add row.");
             Require(
-                matchingAddAnchorCount == 1,
-                "Shared Olympus host must contain exactly one canonical Station Add anchor ID.");
-            RequireEqual(addAnchor.name, StationAddAnchorId, "Station Add anchor GameObject name");
-            RequireEqual(addAnchor.GroupId, StationAddAnchorGroupId, "Station Add live anchor groupId");
-            Require(
-                addAnchor.UsageKind == StageAnchorUsageKind.CombatSpawn,
-                "Station Add live anchor must use CombatSpawn semantics.");
-            Require(addAnchor.PositionId == StationAddPositionId, "Station Add live anchor positionId is invalid.");
-            Require(
-                addAnchor.SpawnKind == StageSpawnKind.Add,
-                "Station Add live anchor must use SpawnKind.Add.");
-            Require(
-                addAnchor.transform.IsChildOf(binding.MapRoot),
-                "Station Add live anchor must be a descendant of the binding MapRoot.");
-            ResolveBindingRootLocalPose(
-                binding.transform,
-                addAnchor.transform,
-                out Vector3 bindingLocalPosition,
-                out Quaternion bindingLocalRotation);
-            Require(
-                Approximately(bindingLocalPosition, new Vector3(8.9f, 0f, -1.25f)),
-                "Station Add live anchor binding-root-local position is invalid.");
-            Require(
-                ApproximatelyEuler(bindingLocalRotation.eulerAngles, Vector3.zero),
-                "Station Add live anchor binding-root-local rotation is invalid.");
+                binding.AnchorPointCount == addRowCount,
+                "Station scene binding must expose exactly one live anchor per ordered Add row.");
 
             StageCountOneEncounterExecutor[] executors =
                 CollectSceneComponents<StageCountOneEncounterExecutor>(scene);
-            Require(executors.Length == 1, "Station must contain exactly one count-one encounter executor.");
+            Require(executors.Length == 1, "Station must contain exactly one ordered Add encounter executor.");
             StageCountOneEncounterExecutor executor = executors[0];
             Require(
                 ReferenceEquals(executor.SceneBinding, binding),
-                "Station count-one executor must consume the canonical scene binding.");
-            RequireEqual(executor.SpawnId, StationAddSpawnId, "Station count-one executor spawnId");
+                "Station ordered Add executor must consume the canonical scene binding.");
             Require(
                 executor.ActivationKind == StageEncounterActivationKind.CombatEntryGuideReleased,
-                "Station count-one executor must activate after the entry guide releases gameplay.");
+                "Station ordered Add executor must activate after the entry guide releases gameplay.");
             Require(
                 executor.RequiresActiveStageRun,
-                "Station count-one executor must require the exact active canonical run.");
+                "Station ordered Add executor must require the exact active canonical run.");
             Require(
                 executor.CancelsOnTerminalEncounter,
-                "Station count-one executor must cancel its Add on the authoritative terminal outcome.");
-            Require(executor.PayloadMappingCount == 1, "Station count-one executor requires one payload mapping.");
-            CombatEnemyArchetypeProfile addArchetype =
-                LoadRequiredAsset<CombatEnemyArchetypeProfile>(StationAddArchetypePath);
-            Require(
-                ReferenceEquals(executor.GetPayloadMapping(0), addArchetype),
-                "Station count-one executor must reference the canonical melee soldier archetype.");
+                "Station ordered Add executor must cancel unfinished tickets on the authoritative terminal outcome.");
 
             CombatEncounterController[] terminalEncounters =
                 CollectSceneComponents<CombatEncounterController>(scene);
@@ -2283,6 +3286,13 @@ namespace DimensionBrawl.Editor
             return Mathf.Abs(left.x - right.x) <= 0.0001f
                 && Mathf.Abs(left.y - right.y) <= 0.0001f
                 && Mathf.Abs(left.z - right.z) <= 0.0001f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x)
+                && float.IsFinite(value.y)
+                && float.IsFinite(value.z);
         }
 
         private static bool ApproximatelyEuler(Vector3 left, Vector3 right)

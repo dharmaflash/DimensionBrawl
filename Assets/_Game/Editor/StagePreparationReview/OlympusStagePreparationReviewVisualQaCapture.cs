@@ -461,10 +461,13 @@ namespace DimensionBrawl.Editor.StagePreparationReview
                     "PREP-01 profile is invalid: " + profileError);
             }
 
-            if (stageCatalog.StageCount != 1)
+            if (!stageCatalog.TryValidateEntryIdentities(out _)
+                || !stageCatalog.TryGetStage(
+                    OlympusStagePreparationReviewSetup.CanonicalCatalogEntryId,
+                    out _))
             {
                 throw new InvalidOperationException(
-                    $"PREP-01 requires one canonical catalog entry; found {stageCatalog.StageCount}.");
+                    "PREP-01 requires the Olympus entry inside a valid stage catalog.");
             }
 
             if (reviewCanvasScaler.uiScaleMode
@@ -964,7 +967,13 @@ namespace DimensionBrawl.Editor.StagePreparationReview
                     + $"is not visible in {state}.");
             }
 
-            UIStageCatalog.StageEntry rawCatalogEntry = stageCatalog.GetStage(0);
+            if (!stageCatalog.TryGetStage(
+                    OlympusStagePreparationReviewSetup.CanonicalCatalogEntryId,
+                    out UIStageCatalog.StageEntry rawCatalogEntry))
+            {
+                throw new InvalidOperationException(
+                    "PREP-01 canonical catalog entry is unavailable.");
+            }
             if (!string.Equals(
                     rawCatalogEntry.Id,
                     OlympusStagePreparationReviewSetup.CanonicalCatalogEntryId,
@@ -1689,7 +1698,12 @@ namespace DimensionBrawl.Editor.StagePreparationReview
 
         private static bool HasNoVisibleLegacyProjectionCopy()
         {
-            UIStageCatalog.StageEntry rawCatalogEntry = stageCatalog.GetStage(0);
+            if (!stageCatalog.TryGetStage(
+                    OlympusStagePreparationReviewSetup.CanonicalCatalogEntryId,
+                    out UIStageCatalog.StageEntry rawCatalogEntry))
+            {
+                return false;
+            }
             string combined = BuildVisibleTextAggregate();
             foreach (string legacy in new[]
             {

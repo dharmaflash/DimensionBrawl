@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c0d53a6b8d74d3b9e2a6f1c5a907e11, type: 3}
+  m_Name: DB_PlayableStage_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.PlayableStageDefinition
+  schemaVersion: 1
+  playableStageId: OLYMPUS-COURTYARD-DRILL-01
+  routeRevision: 1
+  canonicalRouteDigest: c900c97a840057b48b09f2e555900769c47747903879845aba948d6a6c634dc2
+  sceneSegments:
+  - segmentId: courtyard_drill_combat
+    sequenceIndex: 0
+    stageDefinition: {fileID: 11400000, guid: d5a58f1363673274a8ec0f03ce01b79b, type: 2}
+    entryConditionId: run.entry.admitted
+    entryConditionKind: 1
+    exitConditionId: courtyard-drill.encounter.terminal
+    exitConditionKind: 3
+    handoffPolicy: 3
+    successorKind: 0
+    destinationSceneKind: 0
+    transitionTokenKind: 0
+    loaderGenerationKind: 0
+    navigationAuthorityKind: 0
+    returnOwnerKind: 1
+    returnOwnerReceiptPolicy: 1
+    entryPresentation:
+      enabled: 0
+      stageDefinition: {fileID: 0}
+      handoffId:
+      cinematicProfile: {fileID: 0}
+      expectedPortId:
+      expectedPlayableAsset: {fileID: 0}
+      triggerConditionId:
+      completionConditionId:
+    exitPresentation:
+      enabled: 0
+      stageDefinition: {fileID: 0}
+      handoffId:
+      cinematicProfile: {fileID: 0}
+      expectedPortId:
+      expectedPlayableAsset: {fileID: 0}
+      triggerConditionId:
+      completionConditionId:
+  terminalActions:
+  - actionId: olympus-courtyard-drill.replay
+    actionKind: 2
+    targetPlayableStageId: OLYMPUS-COURTYARD-DRILL-01
+    targetUiRouteId: 0
+    allowedOutcomes: 1
+  - actionId: olympus-courtyard-drill.retry
+    actionKind: 1
+    targetPlayableStageId: OLYMPUS-COURTYARD-DRILL-01
+    targetUiRouteId: 0
+    allowedOutcomes: 2
+  - actionId: olympus-courtyard-drill.to-lobby
+    actionKind: 3
+    targetPlayableStageId:
+    targetUiRouteId: 20
+    allowedOutcomes: 3
+  terminalResolutionPolicy:
+    terminalResolutionPolicyId: olympus-courtyard-drill.same-terminal-epoch
+    semanticRevision: 1
+    terminalResolutionPolicyDigest: 8cf22bc4eb0da2c2adc0cf424ccce47ac810fbfd29cd9073bc9bd4621d8f33f4
+    windowKind: 1
+    batchOwnerKind: 1
+    rootAdmissionKind: 1
+    rootOrderKind: 1
+    rootIssuePoint: 1
+    batchBoundaryKind: 1
+    terminalSubjectRoles: 3
+    coveragePolicy: 1
+    workExecutionKind: 1
+    nestedRequestPolicy: 1
+    independentRequestPolicy: 1
+    epochStampKind: 1
+    coordinatorLifecycleKind: 1
+    subjectFinalizationKind: 1
+    tokenStatePolicy: 1
+    flushBarrier: 1
+    simultaneousOutcome: 1
+    requiresBossCandidateAndFinalDead: 1
+    requiresPlayerCandidateAndFinalDown: 1
+  referenceBlock:
+    enabled: 1
+    schemaVersion: 1
+    revision: 1
+    canonicalReferenceDigest: efdd212737174de3b61a1b47fe6cf969253442bca42cb1473b08cf00e64e5b13
+    stageTemplate: {fileID: 11400000, guid: 766b5ceb4ebd8954fab0d81a518e4131, type: 2}
+    briefingSchemaVersion: 1
+    briefingRevision: 1
+    canonicalBriefingDigest: cdace839fd4f3fc9f1e82a6a908b6d7bb6be4e243246245ee977a9346c03b711
+    storyEntryDisposition: 0
+    storyExitDisposition: 5
+    resultDefinitionDisposition: 2
+    progressionNodeDisposition: 2
+    ruleSetDisposition: 3
+    modifierDisposition: 3
+    enemyVariantDisposition: 3
+    tutorialCourseDisposition: 3
+    rewardPlanDisposition: 4
+    activeRunRestartPolicyDisposition: 3
+    activeRunRestartPolicyDigest:
+  resultProgressionJoin:
+    present: 1
+    schemaVersion: 1
+    revision: 1
+    semanticCoupling: 1
+    resultDefinitionDisposition: 1
+    resultDefinition: {fileID: 11400000, guid: 97772774619e11a48b04d25c017fa1e2, type: 2}
+    canonicalPresentationCatalog: {fileID: 11400000, guid: fb0099791faf6a241803d4806143646e, type: 2}
+    progressionNodeDisposition: 1
+    progressionNode: {fileID: 11400000, guid: 35cd27f44ee42a042b173e32b9d0ca2f, type: 2}
+    progressionGraphDisposition: 1
+    progressionGraph: {fileID: 11400000, guid: 0f07e253b4a26944a82ac9e09aa973e7, type: 2}
+    rewardPlanDisposition: 3
+    rewardPlanDigest:
+    canonicalDigest: 36eca65ccffef055b59c5c51547c053e5b368cbc7b0ba87a6330b646f461ee64

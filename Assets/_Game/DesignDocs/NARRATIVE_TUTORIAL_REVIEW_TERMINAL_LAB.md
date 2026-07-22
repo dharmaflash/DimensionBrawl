@@ -148,6 +148,7 @@ that a late coroutine cannot release a superseded bridge and a notice teardown c
 the bridge lock stranded. That debt was discovered during ST-01 scoping but is not changed
 or claimed fixed by this sample.
 
-VN-02 remains the next review-only presentation slice: a reusable multi-character
-presenter with persistent portrait state and inspectable typewriter, auto, choice, log, and
-skip behavior.
+VN-02 is now implemented and verified as a review-only presentation slice. The persistent
+multi-character stage and inspectable typewriter, Auto, choice, Log, and Skip state are
+documented in `VN02_MULTI_CHARACTER_NARRATIVE_PRESENTER.md`. The next content-factory slice
+is the A1 ordered two-add encounter executor.

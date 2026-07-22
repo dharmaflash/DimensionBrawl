@@ -12,6 +12,14 @@ namespace DimensionBrawl.Presentation.Narrative
         Right
     }
 
+    public enum NarrativePortraitCommandType
+    {
+        Present,
+        HideSpeaker,
+        ClearFocus,
+        ClearStage
+    }
+
     [CreateAssetMenu(
         menuName = "DimensionBrawl/Narrative/Narrative Sequence Profile",
         fileName = "DB_NarrativeSequence")]
@@ -86,6 +94,65 @@ namespace DimensionBrawl.Presentation.Narrative
         }
 
         [Serializable]
+        public sealed class PortraitCommandEntry
+        {
+            [SerializeField] private NarrativePortraitCommandType commandType;
+            [SerializeField] private string speakerId = string.Empty;
+            [SerializeField] private NarrativePortraitSlot portraitSlot;
+            [SerializeField] private string expressionId = string.Empty;
+            [SerializeField] private Sprite portraitSpriteOverride;
+
+            public PortraitCommandEntry()
+            {
+            }
+
+            public PortraitCommandEntry(
+                NarrativePortraitCommandType commandType,
+                string speakerId = "",
+                NarrativePortraitSlot portraitSlot = NarrativePortraitSlot.None,
+                string expressionId = "",
+                Sprite portraitSpriteOverride = null)
+            {
+                Configure(
+                    commandType,
+                    speakerId,
+                    portraitSlot,
+                    expressionId,
+                    portraitSpriteOverride);
+            }
+
+            public NarrativePortraitCommandType CommandType => commandType;
+            public string SpeakerId => speakerId;
+            public NarrativePortraitSlot PortraitSlot => portraitSlot;
+            public string ExpressionId => expressionId;
+            public Sprite PortraitSpriteOverride => portraitSpriteOverride;
+
+            public void Configure(
+                NarrativePortraitCommandType newCommandType,
+                string newSpeakerId,
+                NarrativePortraitSlot newPortraitSlot,
+                string newExpressionId,
+                Sprite newPortraitSpriteOverride)
+            {
+                commandType = newCommandType;
+                speakerId = newSpeakerId ?? string.Empty;
+                portraitSlot = newPortraitSlot;
+                expressionId = newExpressionId ?? string.Empty;
+                portraitSpriteOverride = newPortraitSpriteOverride;
+            }
+
+            internal PortraitCommandEntry DeepCopy()
+            {
+                return new PortraitCommandEntry(
+                    CommandType,
+                    SpeakerId,
+                    PortraitSlot,
+                    ExpressionId,
+                    PortraitSpriteOverride);
+            }
+        }
+
+        [Serializable]
         public sealed class LineEntry
         {
             [SerializeField] private string lineId = string.Empty;
@@ -98,6 +165,8 @@ namespace DimensionBrawl.Presentation.Narrative
             [SerializeField] private AudioClip voiceClip;
             [SerializeField, Min(0f)] private float autoAdvanceSecondsPerCharacterOverride;
             [SerializeField] private ChoiceEntry[] choices = Array.Empty<ChoiceEntry>();
+            [SerializeField] private PortraitCommandEntry[] portraitCommands =
+                Array.Empty<PortraitCommandEntry>();
 
             public LineEntry()
             {
@@ -113,7 +182,8 @@ namespace DimensionBrawl.Presentation.Narrative
                 Sprite portraitSprite = null,
                 AudioClip voiceClip = null,
                 float autoAdvanceSecondsPerCharacterOverride = 0f,
-                ChoiceEntry[] choices = null)
+                ChoiceEntry[] choices = null,
+                PortraitCommandEntry[] portraitCommands = null)
             {
                 Configure(
                     lineId,
@@ -125,7 +195,8 @@ namespace DimensionBrawl.Presentation.Narrative
                     portraitSprite,
                     voiceClip,
                     autoAdvanceSecondsPerCharacterOverride,
-                    choices);
+                    choices,
+                    portraitCommands);
             }
 
             public string LineId => lineId;
@@ -140,6 +211,10 @@ namespace DimensionBrawl.Presentation.Narrative
                 Mathf.Max(0f, autoAdvanceSecondsPerCharacterOverride);
             public ChoiceEntry[] Choices => CloneChoices(choices);
             public bool HasChoices => choices != null && choices.Length > 0;
+            public PortraitCommandEntry[] PortraitCommands =>
+                ClonePortraitCommands(portraitCommands);
+            public bool HasPortraitCommands =>
+                portraitCommands != null && portraitCommands.Length > 0;
 
             public void Configure(
                 string newLineId,
@@ -151,7 +226,8 @@ namespace DimensionBrawl.Presentation.Narrative
                 Sprite newPortraitSprite,
                 AudioClip newVoiceClip,
                 float newAutoAdvanceSecondsPerCharacterOverride,
-                ChoiceEntry[] newChoices)
+                ChoiceEntry[] newChoices,
+                PortraitCommandEntry[] newPortraitCommands = null)
             {
                 lineId = newLineId ?? string.Empty;
                 textLocalizationKey = newTextLocalizationKey ?? string.Empty;
@@ -164,6 +240,7 @@ namespace DimensionBrawl.Presentation.Narrative
                 autoAdvanceSecondsPerCharacterOverride =
                     Mathf.Max(0f, newAutoAdvanceSecondsPerCharacterOverride);
                 choices = CloneChoices(newChoices);
+                portraitCommands = ClonePortraitCommands(newPortraitCommands);
             }
 
             public float ResolveAutoAdvanceDelaySeconds(
@@ -188,7 +265,8 @@ namespace DimensionBrawl.Presentation.Narrative
                     PortraitSprite,
                     VoiceClip,
                     AutoAdvanceSecondsPerCharacterOverride,
-                    CloneChoices(choices));
+                    CloneChoices(choices),
+                    ClonePortraitCommands(portraitCommands));
             }
 
             private static ChoiceEntry[] CloneChoices(ChoiceEntry[] source)
@@ -199,6 +277,23 @@ namespace DimensionBrawl.Presentation.Narrative
                 }
 
                 var clone = new ChoiceEntry[source.Length];
+                for (int i = 0; i < source.Length; i++)
+                {
+                    clone[i] = source[i]?.DeepCopy();
+                }
+
+                return clone;
+            }
+
+            private static PortraitCommandEntry[] ClonePortraitCommands(
+                PortraitCommandEntry[] source)
+            {
+                if (source == null || source.Length == 0)
+                {
+                    return Array.Empty<PortraitCommandEntry>();
+                }
+
+                var clone = new PortraitCommandEntry[source.Length];
                 for (int i = 0; i < source.Length; i++)
                 {
                     clone[i] = source[i]?.DeepCopy();
@@ -366,6 +461,42 @@ namespace DimensionBrawl.Presentation.Narrative
                     {
                         issues.Add(
                             $"{profileLabel}: duplicate line id '{choice.ResponseLineId}'.");
+                    }
+                }
+
+                PortraitCommandEntry[] portraitCommands = line.PortraitCommands;
+                for (int commandIndex = 0; commandIndex < portraitCommands.Length; commandIndex++)
+                {
+                    PortraitCommandEntry command = portraitCommands[commandIndex];
+                    if (command == null)
+                    {
+                        issues.Add(
+                            $"{profileLabel}: line '{line.LineId}' portrait command {commandIndex} is null.");
+                        continue;
+                    }
+
+                    if (!Enum.IsDefined(
+                            typeof(NarrativePortraitCommandType),
+                            command.CommandType))
+                    {
+                        issues.Add(
+                            $"{profileLabel}: line '{line.LineId}' portrait command {commandIndex} has undefined command type '{(int)command.CommandType}'.");
+                    }
+
+                    if (!Enum.IsDefined(
+                            typeof(NarrativePortraitSlot),
+                            command.PortraitSlot))
+                    {
+                        issues.Add(
+                            $"{profileLabel}: line '{line.LineId}' portrait command {commandIndex} has undefined portrait slot '{(int)command.PortraitSlot}'.");
+                    }
+
+                    bool requiresSpeaker = command.CommandType == NarrativePortraitCommandType.Present
+                        || command.CommandType == NarrativePortraitCommandType.HideSpeaker;
+                    if (requiresSpeaker && string.IsNullOrWhiteSpace(command.SpeakerId))
+                    {
+                        issues.Add(
+                            $"{profileLabel}: line '{line.LineId}' portrait command {commandIndex} requires a speaker id.");
                     }
                 }
             }

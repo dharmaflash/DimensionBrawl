@@ -82,6 +82,11 @@ namespace DimensionBrawl.LevelDesign
         private StageRunResultCommitPreparation commitPreparation;
         private StageRunResultSummary committedSummary;
         private StageRunResultCommitReceipt commitReceipt;
+        private CombatEncounterController terminalEncounterAuthority;
+        private CombatEncounterController terminalAdmissionEncounterAuthority;
+        private Component terminalEntryBootstrapOwner;
+        private Component terminalFactAdapterOwner;
+        private Component terminalResultPresenterOwner;
         private StageRunResolvedTerminalAction selectedTerminalAction;
         private StageResultPresentationSnapshot resultPresentationSnapshot;
         private StageResultPresentationAuditEnvelope resultPresentationAudit;
@@ -112,7 +117,17 @@ namespace DimensionBrawl.LevelDesign
         public StageRunRouteSnapshot RouteSnapshot { get; }
         public StageRunResultProgressionJoinSnapshot ResultProgressionJoinSnapshot { get; }
         public StageRunLifecycleState LifecycleState { get; private set; }
+        public StageRunTutorialFactRequirement TutorialFactRequirement =>
+            RouteSnapshot.TutorialFactRequirement;
+        public int CurrentSegmentIndex => currentSegmentIndex;
         public StageRunSegmentSnapshot CurrentSegment => RouteSnapshot.GetSegment(currentSegmentIndex);
+        public StageRunSegmentRole CurrentSegmentRoles =>
+            RouteSnapshot.GetSegmentRoles(currentSegmentIndex);
+        public bool IsCurrentSegmentActive =>
+            LifecycleState == ResolveCurrentSegmentActiveLifecycleState();
+        public bool IsCurrentSegmentTerminalActive =>
+            RouteSnapshot.IsTerminalSegment(currentSegmentIndex)
+            && IsCurrentSegmentActive;
         public StageRunHandoffToken PendingHandoffToken => pendingDispatch?.Token;
         public StageSegmentEntryReceipt SegmentEntryReceipt => segmentEntryReceipt;
         public StageSegmentHandoffTerminalReceipt HandoffTerminalReceipt =>
@@ -139,6 +154,164 @@ namespace DimensionBrawl.LevelDesign
         public StageTutorialRouteSummaryFact TutorialRouteSummaryFact => factAccumulator.TutorialRouteSummary;
         public int TerminalRecordReceiptCount { get; private set; }
 
+        internal bool TrySealTerminalEncounterAuthority(
+            CombatEncounterController encounter,
+            out string error)
+        {
+            error = string.Empty;
+            if (encounter == null)
+            {
+                error = "A terminal commit cannot seal a missing encounter authority.";
+                return false;
+            }
+
+            if (terminalEncounterAuthority == null)
+            {
+                terminalEncounterAuthority = encounter;
+                return true;
+            }
+
+            if (ReferenceEquals(terminalEncounterAuthority, encounter))
+            {
+                return true;
+            }
+
+            error = "A different terminal encounter attempted to replace the sealed commit authority.";
+            return false;
+        }
+
+        internal bool IsTerminalEncounterAuthority(CombatEncounterController encounter)
+        {
+            return encounter != null
+                && ReferenceEquals(terminalEncounterAuthority, encounter);
+        }
+
+        internal bool TryBindTerminalAdmissionEncounter(
+            CombatEncounterController encounter,
+            out string error)
+        {
+            error = string.Empty;
+            if (encounter == null
+                || encounter.gameObject.scene.handle != currentSceneHandle
+                || !encounter.UsesCoordinatedTerminalResolution
+                || !OneRowStageRunAdapterContract.TryValidateContext(
+                    this,
+                    currentSceneHandle,
+                    out error))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "Terminal admission encounter does not belong to this one-row run scene.";
+                }
+
+                return false;
+            }
+
+            if (ReferenceEquals(terminalAdmissionEncounterAuthority, null))
+            {
+                terminalAdmissionEncounterAuthority = encounter;
+                return true;
+            }
+
+            if (ReferenceEquals(terminalAdmissionEncounterAuthority, encounter))
+            {
+                return true;
+            }
+
+            error = "A different coordinated encounter already owns this one-row admission.";
+            return false;
+        }
+
+        internal bool IsTerminalAdmissionEncounter(
+            CombatEncounterController encounter)
+        {
+            return encounter != null
+                && ReferenceEquals(terminalAdmissionEncounterAuthority, encounter);
+        }
+
+        internal bool HasTerminalAdmissionEncounterAuthority =>
+            !ReferenceEquals(terminalAdmissionEncounterAuthority, null);
+
+        internal bool TryBindTerminalStageAdapter(
+            Component adapter,
+            TerminalStageRunAdapterRole role,
+            out string error)
+        {
+            error = string.Empty;
+            if (adapter == null
+                || adapter.gameObject.scene.handle != currentSceneHandle
+                || !OneRowStageRunAdapterContract.TryValidateContext(
+                    this,
+                    currentSceneHandle,
+                    out error))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "Terminal stage adapter does not belong to this one-row run scene.";
+                }
+
+                return false;
+            }
+
+            Component currentOwner = GetTerminalStageAdapterOwner(role);
+            if (ReferenceEquals(currentOwner, adapter))
+            {
+                return true;
+            }
+
+            bool destroyedResultOwnerCanBeReplaced = !ReferenceEquals(currentOwner, null)
+                && currentOwner == null
+                && role == TerminalStageRunAdapterRole.ResultPresentation
+                && (LifecycleState == StageRunLifecycleState.CommitRecoveryPending
+                    || LifecycleState == StageRunLifecycleState.Committed
+                    || LifecycleState == StageRunLifecycleState.Presented);
+            if (!ReferenceEquals(currentOwner, null) && !destroyedResultOwnerCanBeReplaced)
+            {
+                error = $"A different {role} adapter already owns this one-row run.";
+                return false;
+            }
+
+            SetTerminalStageAdapterOwner(role, adapter);
+            return true;
+        }
+
+        internal bool IsTerminalStageAdapterOwner(
+            Component adapter,
+            TerminalStageRunAdapterRole role)
+        {
+            return adapter != null
+                && ReferenceEquals(GetTerminalStageAdapterOwner(role), adapter);
+        }
+
+        private Component GetTerminalStageAdapterOwner(TerminalStageRunAdapterRole role)
+        {
+            return role switch
+            {
+                TerminalStageRunAdapterRole.EntryBootstrap => terminalEntryBootstrapOwner,
+                TerminalStageRunAdapterRole.FactCollection => terminalFactAdapterOwner,
+                TerminalStageRunAdapterRole.ResultPresentation => terminalResultPresenterOwner,
+                _ => null
+            };
+        }
+
+        private void SetTerminalStageAdapterOwner(
+            TerminalStageRunAdapterRole role,
+            Component adapter)
+        {
+            switch (role)
+            {
+                case TerminalStageRunAdapterRole.EntryBootstrap:
+                    terminalEntryBootstrapOwner = adapter;
+                    break;
+                case TerminalStageRunAdapterRole.FactCollection:
+                    terminalFactAdapterOwner = adapter;
+                    break;
+                case TerminalStageRunAdapterRole.ResultPresentation:
+                    terminalResultPresenterOwner = adapter;
+                    break;
+            }
+        }
+
         internal void ActivateFirstSegment()
         {
             if (LifecycleState != StageRunLifecycleState.Created)
@@ -147,7 +320,19 @@ namespace DimensionBrawl.LevelDesign
             }
 
             factAccumulator.ActivateFirstSegment();
-            LifecycleState = StageRunLifecycleState.CorridorActive;
+            LifecycleState = ResolveCurrentSegmentActiveLifecycleState();
+        }
+
+        internal bool IsFirstSegmentActive()
+        {
+            return currentSegmentIndex == 0 && IsCurrentSegmentActive;
+        }
+
+        private StageRunLifecycleState ResolveCurrentSegmentActiveLifecycleState()
+        {
+            return RouteSnapshot.IsTerminalSegment(currentSegmentIndex)
+                ? StageRunLifecycleState.StationActive
+                : StageRunLifecycleState.CorridorActive;
         }
 
         public bool TryPulseActiveTime(
@@ -171,6 +356,12 @@ namespace DimensionBrawl.LevelDesign
         public bool TrySealTutorialRouteCompletion(out string error)
         {
             error = string.Empty;
+            if (TutorialFactRequirement == StageRunTutorialFactRequirement.None)
+            {
+                error = "The admitted route has no tutorial fact requirement.";
+                return false;
+            }
+
             if (LifecycleState != StageRunLifecycleState.CorridorActive)
             {
                 error = $"Tutorial route facts cannot seal from {LifecycleState}.";
@@ -180,27 +371,37 @@ namespace DimensionBrawl.LevelDesign
             return factAccumulator.TrySealTutorialRouteCompletion(out error);
         }
 
-        internal bool TryBindStationFactCollector(int sceneHandle, out string error)
+        internal bool TryBindTerminalFactCollector(int sceneHandle, out string error)
         {
             error = string.Empty;
             if (LifecycleState != StageRunLifecycleState.StationActive || sceneHandle != currentSceneHandle)
             {
-                error = "Station fact collector does not belong to the active Station run scene.";
+                error = "Terminal fact collector does not belong to the active terminal run scene.";
                 return false;
             }
 
-            return factAccumulator.TryBindStationCollector(out error);
+            return factAccumulator.TryBindTerminalCollector(out error);
+        }
+
+        internal bool TryBindStationFactCollector(int sceneHandle, out string error)
+        {
+            return TryBindTerminalFactCollector(sceneHandle, out error);
+        }
+
+        internal bool TryMarkTerminalGuideReleased(out string error)
+        {
+            if (LifecycleState != StageRunLifecycleState.StationActive)
+            {
+                error = $"Terminal guide release cannot be recorded from {LifecycleState}.";
+                return false;
+            }
+
+            return factAccumulator.TryMarkTerminalGuideReleased(out error);
         }
 
         internal bool TryMarkStationGuideReleased(out string error)
         {
-            if (LifecycleState != StageRunLifecycleState.StationActive)
-            {
-                error = $"Station guide release cannot be recorded from {LifecycleState}.";
-                return false;
-            }
-
-            return factAccumulator.TryMarkStationGuideReleased(out error);
+            return TryMarkTerminalGuideReleased(out error);
         }
 
         internal bool TryRecordResolvedPlayerDamage(float amount, out string error)
@@ -323,7 +524,7 @@ namespace DimensionBrawl.LevelDesign
         {
             receipt = null;
             error = string.Empty;
-            if (LifecycleState == StageRunLifecycleState.StationActive
+            if (IsCurrentSegmentTerminalActive
                 && currentSegmentIndex > 0
                 && currentSceneHandle == hostScene.handle
                 && segmentEntryReceipt != null
@@ -419,7 +620,7 @@ namespace DimensionBrawl.LevelDesign
             segmentEntryReceipt = candidateEntryReceipt;
             handoffTerminalReceipt = candidateTerminalReceipt;
             factAccumulator.EnterSegment(currentSegmentIndex);
-            LifecycleState = StageRunLifecycleState.StationActive;
+            LifecycleState = ResolveCurrentSegmentActiveLifecycleState();
             receipt = candidateEntryReceipt;
             return true;
         }
@@ -427,7 +628,7 @@ namespace DimensionBrawl.LevelDesign
         internal bool TryEnterPendingSegment(Scene scene, out string error)
         {
             error = string.Empty;
-            if (LifecycleState == StageRunLifecycleState.StationActive
+            if (IsCurrentSegmentTerminalActive
                 && currentSceneHandle == scene.handle
                 && string.Equals(CurrentSegment.ScenePath, NormalizePath(scene.path), StringComparison.Ordinal)
                 && segmentEntryReceipt != null
@@ -494,7 +695,7 @@ namespace DimensionBrawl.LevelDesign
             handoffTerminalReceipt = candidateTerminalReceipt;
             pendingDispatch = null;
             factAccumulator.EnterSegment(currentSegmentIndex);
-            LifecycleState = StageRunLifecycleState.StationActive;
+            LifecycleState = ResolveCurrentSegmentActiveLifecycleState();
             return true;
         }
 
@@ -542,7 +743,7 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
-            if (LifecycleState != StageRunLifecycleState.StationActive)
+            if (!IsCurrentSegmentTerminalActive)
             {
                 error = $"Terminal commit is not legal from {LifecycleState}.";
                 return false;
@@ -560,7 +761,7 @@ namespace DimensionBrawl.LevelDesign
                     != StageReturnOwnerReceiptPolicy.ExactTerminalRecordExactlyOnceToTerminalFinalizingCommittedPresented)
             {
                 return AbortTerminalFinalizationFailure(
-                    "Station segment does not carry the frozen ReturnToOwner contract.",
+                    "Current terminal segment does not carry the frozen ReturnToOwner contract.",
                     resolution,
                     out error);
             }
@@ -647,10 +848,15 @@ namespace DimensionBrawl.LevelDesign
 
             diagnosticOutcomeFactCandidate = factBundle.Outcome;
             long ownerCoverageSequence = ++finalizationSequence;
+            StageTerminalFinalizationContext finalizationContext =
+                TutorialFactRequirement
+                    == StageRunTutorialFactRequirement.LegacyCorridorCompletion
+                    ? StageTerminalFinalizationContext.NonCourseStationTerminal
+                    : StageTerminalFinalizationContext.NonCourseStageTerminal;
             if (!TerminalFinalizationOwnerCoverageRecord.TryCreateCurrentSnapshot(
                     Identity,
                     terminalFinalizationAuthority,
-                    StageTerminalFinalizationContext.NonCourseStationTerminal,
+                    finalizationContext,
                     ownerCoverageSequence,
                     out TerminalFinalizationOwnerCoverageRecord candidateCoverage,
                     out error))
@@ -1433,23 +1639,33 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
-            if (activeContext != null
-                && activeContext.CurrentSceneHandle == scene.handle
-                && activeContext.LifecycleState == StageRunLifecycleState.CorridorActive
-                && string.Equals(
-                    activeContext.Identity.RouteSnapshotDigest,
-                    snapshot.CanonicalDigest,
-                    StringComparison.Ordinal))
-            {
-                context = activeContext;
-                return true;
-            }
-
             if (!StageRunResultProgressionJoinSnapshot.TryCreate(
                     definition,
                     out StageRunResultProgressionJoinSnapshot resultProgressionJoinSnapshot,
                     out error))
             {
+                return false;
+            }
+
+            if (activeContext != null
+                && activeContext.CurrentSceneHandle == scene.handle
+                && activeContext.LifecycleState != StageRunLifecycleState.Disposed)
+            {
+                if (activeContext.IsFirstSegmentActive()
+                    && string.Equals(
+                        activeContext.Identity.RouteSnapshotDigest,
+                        snapshot.CanonicalDigest,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        activeContext.ResultProgressionJoinSnapshot.CanonicalDigest,
+                        resultProgressionJoinSnapshot.CanonicalDigest,
+                        StringComparison.Ordinal))
+                {
+                    context = activeContext;
+                    return true;
+                }
+
+                error = "First-segment admission is stale for a scene already owned by an active run.";
                 return false;
             }
 
@@ -1562,7 +1778,7 @@ namespace DimensionBrawl.LevelDesign
                 out error);
         }
 
-        internal static bool TryRegisterStationCoordinator(
+        internal static bool TryRegisterTerminalCoordinator(
             CombatEncounterController encounter,
             out string error)
         {
@@ -1574,9 +1790,16 @@ namespace DimensionBrawl.LevelDesign
                 || coordinator == null
                 || !encounter.UsesCoordinatedTerminalResolution
                 || encounter.gameObject.scene.handle != context.CurrentSceneHandle
-                || context.LifecycleState != StageRunLifecycleState.StationActive)
+                || !context.IsCurrentSegmentTerminalActive)
             {
-                error = "No exact live Station coordinator can be registered for the active run.";
+                error = "No exact live terminal coordinator can be registered for the active run.";
+                return false;
+            }
+
+            if (context.HasTerminalAdmissionEncounterAuthority
+                && !context.IsTerminalAdmissionEncounter(encounter))
+            {
+                error = "The terminal coordinator is not the encounter sealed by one-row admission.";
                 return false;
             }
 
@@ -1592,7 +1815,16 @@ namespace DimensionBrawl.LevelDesign
                     return true;
                 }
 
-                error = "A different Station coordinator is already registered for the active run.";
+                error = "A different terminal coordinator is already registered for the active run.";
+                return false;
+            }
+
+            if (!encounter.IsRunning
+                || encounter.HasTerminalResolution
+                || encounter.HasDiagnostic
+                || coordinator.State != EncounterTerminalCoordinatorState.Idle)
+            {
+                error = "A terminal coordinator must be live and Idle before first registration for the active run.";
                 return false;
             }
 
@@ -1600,6 +1832,13 @@ namespace DimensionBrawl.LevelDesign
             registeredStationCoordinatorSceneHandle = context.CurrentSceneHandle;
             registeredStationCoordinatorRunId = context.Identity.RunId;
             return true;
+        }
+
+        internal static bool TryRegisterStationCoordinator(
+            CombatEncounterController encounter,
+            out string error)
+        {
+            return TryRegisterTerminalCoordinator(encounter, out error);
         }
 
         public static bool TryAbortFromCoordinatorDiagnostic(
@@ -1661,6 +1900,8 @@ namespace DimensionBrawl.LevelDesign
                 || adapter.gameObject.scene.handle != context.CurrentSceneHandle
                 || encounter.gameObject.scene.handle != context.CurrentSceneHandle
                 || !encounter.UsesCoordinatedTerminalResolution
+                || (context.HasTerminalAdmissionEncounterAuthority
+                    && !context.IsTerminalAdmissionEncounter(encounter))
                 || !context.CanAbortBeforeCommit())
             {
                 error = "Station adapter loss does not belong to an abortable active run.";
@@ -1684,6 +1925,161 @@ namespace DimensionBrawl.LevelDesign
                 epoch,
                 out record,
                 out error);
+        }
+
+        public static bool TryAbortFromTerminalAdapterLoss(
+            Component adapter,
+            CombatEncounterController encounter,
+            StageRunAbortReason reason,
+            out StageRunAbortRecord record,
+            out string error)
+        {
+            record = null;
+            error = string.Empty;
+            StageRunContext context = activeContext;
+            bool validTypedAdapter = adapter is ITerminalStageRunAdapterLossOwner owner
+                && owner.AdapterLossReason == reason
+                && TryResolveTerminalAdapterRole(
+                    reason,
+                    out TerminalStageRunAdapterRole adapterRole)
+                && context != null
+                && context.IsTerminalStageAdapterOwner(adapter, adapterRole);
+            if (!validTypedAdapter
+                || context == null
+                || adapter == null
+                || encounter == null
+                || adapter.gameObject.scene.handle != context.CurrentSceneHandle
+                || encounter.gameObject.scene.handle != context.CurrentSceneHandle
+                || !encounter.UsesCoordinatedTerminalResolution
+                || (context.HasTerminalAdmissionEncounterAuthority
+                    && !context.IsTerminalAdmissionEncounter(encounter))
+                || !context.CanAbortBeforeCommit())
+            {
+                error = "Terminal adapter loss does not belong to an abortable active run.";
+                return false;
+            }
+
+            if (encounter.TerminalCoordinator == null)
+            {
+                bool preCoordinatorAborted = TryAbortActiveContext(
+                    reason,
+                    StageRunTerminalCoordinatorInvalidationDisposition
+                        .NotBoundBeforeTerminalCoordinator,
+                    0,
+                    0,
+                    out record,
+                    out error);
+                encounter.enabled = false;
+                return preCoordinatorAborted;
+            }
+
+            if (encounter.TerminalCoordinator.State
+                    == EncounterTerminalCoordinatorState.TerminalClosed
+                && encounter.HasTerminalResolution)
+            {
+                return TryAbortFromResolvedTerminalAdapterFailure(
+                    adapter,
+                    encounter,
+                    encounter.TerminalResolution,
+                    reason,
+                    out record,
+                    out error);
+            }
+
+            if (!TryCaptureAndCancelStationCoordinator(
+                    context,
+                    encounter,
+                    out long rootAdmissionSequence,
+                    out long epoch,
+                    out error))
+            {
+                context.FailAbortClosure(
+                    "Terminal adapter loss could not verify coordinator invalidation: "
+                    + error);
+                error = context.FaultReason;
+                encounter.enabled = false;
+                return false;
+            }
+
+            bool aborted = TryAbortActiveContext(
+                reason,
+                StageRunTerminalCoordinatorInvalidationDisposition.CancellationRequested,
+                rootAdmissionSequence,
+                epoch,
+                out record,
+                out error);
+            encounter.enabled = false;
+            return aborted;
+        }
+
+        public static bool TryAbortFromResolvedTerminalAdapterFailure(
+            Component adapter,
+            CombatEncounterController encounter,
+            EncounterTerminalResolution resolution,
+            StageRunAbortReason reason,
+            out StageRunAbortRecord record,
+            out string error)
+        {
+            record = null;
+            error = string.Empty;
+            StageRunContext context = activeContext;
+            bool validTypedAdapter = adapter is ITerminalStageRunAdapterLossOwner owner
+                && owner.AdapterLossReason == reason
+                && TryResolveTerminalAdapterRole(
+                    reason,
+                    out TerminalStageRunAdapterRole adapterRole)
+                && context != null
+                && context.IsTerminalStageAdapterOwner(adapter, adapterRole);
+            EncounterTerminalResolutionCoordinator coordinator = encounter?.TerminalCoordinator;
+            EncounterTerminalResolution exactClosedResolution = default;
+            if (!validTypedAdapter
+                || context == null
+                || adapter == null
+                || encounter == null
+                || coordinator == null
+                || adapter.gameObject.scene.handle != context.CurrentSceneHandle
+                || encounter.gameObject.scene.handle != context.CurrentSceneHandle
+                || !context.IsTerminalAdmissionEncounter(encounter)
+                || !encounter.UsesCoordinatedTerminalResolution
+                || !TryGetExactClosedTerminalResolution(
+                    context,
+                    encounter,
+                    out exactClosedResolution,
+                    out _)
+                || !TerminalResolutionsMatch(resolution, exactClosedResolution)
+                || !context.CanAbortBeforeCommit())
+            {
+                error = "Resolved terminal adapter failure does not belong to the exact abortable one-row run.";
+                return false;
+            }
+
+            bool aborted = TryAbortActiveContext(
+                reason,
+                StageRunTerminalCoordinatorInvalidationDisposition.TerminalAuthorityInvalidated,
+                resolution.RootAdmissionSequence,
+                resolution.Epoch,
+                out record,
+                out error);
+            encounter.enabled = false;
+            return aborted;
+        }
+
+        private static bool TryResolveTerminalAdapterRole(
+            StageRunAbortReason reason,
+            out TerminalStageRunAdapterRole role)
+        {
+            switch (reason)
+            {
+                case StageRunAbortReason.TerminalFactAdapterLost:
+                    role = TerminalStageRunAdapterRole.FactCollection;
+                    return true;
+                case StageRunAbortReason.TerminalResultPresenterLost:
+                    role = TerminalStageRunAdapterRole.ResultPresentation;
+                    return true;
+                default:
+                    role = default;
+                    return false;
+            }
         }
 
         public static bool TryEnterPendingSegment(Scene scene, out StageRunContext context, out string error)
@@ -1720,31 +2116,28 @@ namespace DimensionBrawl.LevelDesign
                 || !encounter.UsesCoordinatedTerminalResolution
                 || !encounter.HasTerminalResolution)
             {
-                error = "Terminal resolution does not belong to the active Station encounter.";
+                error = "Terminal resolution does not belong to the active terminal encounter.";
                 return false;
             }
 
+            bool encounterResolutionMatches = TerminalResolutionsMatch(
+                resolution,
+                encounter.TerminalResolution);
             if (context.CommittedSummary != null)
             {
-                EncounterTerminalResolutionCoordinator committedCoordinator =
-                    encounter.TerminalCoordinator;
                 if (context.TerminalRecord == null
                     || !context.TerminalRecord.Matches(resolution)
-                    || (committedCoordinator != null
-                        && committedCoordinator.HasTerminalEpochEvidence
-                        && (context.TerminalEpochClosureRecord == null
-                            || !context.TerminalEpochClosureRecord.Matches(
-                                committedCoordinator.TerminalEpochEvidence))))
+                    || !encounterResolutionMatches
+                    || !context.IsTerminalEncounterAuthority(encounter)
+                    || context.TerminalEpochClosureRecord == null)
                 {
-                    error = "A different terminal record attempted to replace the committed run result.";
+                    error = "A different terminal encounter or record attempted to replace the committed run result.";
                     return false;
                 }
 
                 return context.TryCommitTerminalResolution(
                     resolution,
-                    committedCoordinator != null && committedCoordinator.HasTerminalEpochEvidence
-                        ? committedCoordinator.TerminalEpochEvidence
-                        : null,
+                    null,
                     EncounterTerminalCoordinatorState.TerminalClosed,
                     out summary,
                     out receipt,
@@ -1752,12 +2145,44 @@ namespace DimensionBrawl.LevelDesign
             }
 
             EncounterTerminalResolutionCoordinator coordinator = encounter.TerminalCoordinator;
+            bool coordinatorResolutionMatches = coordinator != null
+                && coordinator.HasTerminalResolution
+                && TerminalResolutionsMatch(resolution, coordinator.TerminalResolution);
+            bool evidenceResolutionMatches = coordinator != null
+                && coordinator.HasTerminalEpochEvidence
+                && TerminalResolutionsMatch(
+                    resolution,
+                    coordinator.TerminalEpochEvidence.Resolution);
             if (coordinator == null
-                || coordinator.State != EncounterTerminalCoordinatorState.TerminalClosed
+                || !coordinator.HasTerminalResolution
+                || !coordinator.HasTerminalEpochEvidence
+                || !encounterResolutionMatches
+                || !coordinatorResolutionMatches
+                || !evidenceResolutionMatches)
+            {
+                error = "Supplied terminal resolution does not exactly match the encounter coordinator's sealed resolution and epoch evidence "
+                    + $"(encounter={encounterResolutionMatches}, "
+                    + $"coordinator={coordinatorResolutionMatches}, "
+                    + $"evidence={evidenceResolutionMatches}).";
+                return false;
+            }
+
+            if (!IsRegisteredStationCoordinatorFor(context, encounter.TerminalCoordinator))
+            {
+                error = "Terminal resolution does not belong to the exact registered current-run coordinator.";
+                return false;
+            }
+
+            if (coordinator.State != EncounterTerminalCoordinatorState.TerminalClosed
                 || coordinator.RunGeneration != resolution.RunGeneration
                 || !coordinator.HasTerminalEpochEvidence)
             {
-                error = "Terminal resolution or its epoch-closure evidence does not belong to the active Station coordinator.";
+                error = "Terminal resolution or its epoch-closure evidence does not belong to the active terminal coordinator.";
+                return false;
+            }
+
+            if (!context.TrySealTerminalEncounterAuthority(encounter, out error))
+            {
                 return false;
             }
 
@@ -1824,6 +2249,40 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return activeContext.TryRecoverPendingCommit(out summary, out receipt, out error);
+        }
+
+        internal static void ReleaseRecoveredContextIfOwnerSceneLost(string runId)
+        {
+            StageRunContext context = activeContext;
+            if (context == null
+                || context.LifecycleState != StageRunLifecycleState.Committed
+                || !string.Equals(context.Identity.RunId, runId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Scene ownerScene = default;
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene candidate = SceneManager.GetSceneAt(sceneIndex);
+                if (candidate.handle == context.CurrentSceneHandle)
+                {
+                    ownerScene = candidate;
+                    break;
+                }
+            }
+            if (ownerScene.IsValid() && ownerScene.isLoaded)
+            {
+                return;
+            }
+
+            context.DisposeForReplacement();
+            if (ReferenceEquals(activeContext, context))
+            {
+                activeContext = null;
+            }
+
+            ClearRegisteredStationCoordinator();
         }
 
         public static bool TryReadCommittedResultDecision(
@@ -1975,12 +2434,71 @@ namespace DimensionBrawl.LevelDesign
         public static void ResetForTests()
         {
             InstallSceneObservers();
+            StageRunCommitRecoveryPump.ResetForTests();
             activeContext?.DisposeForReplacement();
             activeContext = null;
             lastAbortRecord = null;
             sceneLoader = new UnityStageRunSceneLoader();
             ClearRegisteredStationCoordinator();
             StageRunResultCommitStore.ConfigureIsolatedTestStorage();
+        }
+
+        public static bool TryBindTerminalFactCollectorForTests(
+            int sceneHandle,
+            out string error)
+        {
+            if (activeContext == null)
+            {
+                error = "No active canonical stage run exists for terminal fact binding.";
+                return false;
+            }
+
+            return activeContext.TryBindTerminalFactCollector(sceneHandle, out error);
+        }
+
+        public static bool TryRegisterTerminalCoordinatorForTests(
+            CombatEncounterController encounter,
+            out string error)
+        {
+            return TryRegisterTerminalCoordinator(encounter, out error);
+        }
+
+        public static bool TryRecordResolvedPlayerDamageForTests(
+            float amount,
+            out string error)
+        {
+            if (activeContext == null)
+            {
+                error = "No active canonical stage run exists for damage fact recording.";
+                return false;
+            }
+
+            return activeContext.TryRecordResolvedPlayerDamage(amount, out error);
+        }
+
+        public static bool TryRecordPerfectDodgeForTests(out string error)
+        {
+            if (activeContext == null)
+            {
+                error = "No active canonical stage run exists for dodge fact recording.";
+                return false;
+            }
+
+            return activeContext.TryRecordPerfectDodge(out error);
+        }
+
+        public static bool TryRecordSummonUseForTests(
+            string slotRoleId,
+            int spentTier,
+            out string error)
+        {
+            if (activeContext == null)
+            {
+                error = "No active canonical stage run exists for summon fact recording.";
+                return false;
+            }
+
+            return activeContext.TryRecordSummonUse(slotRoleId, spentTier, out error);
         }
 
         public static void SetSceneLoaderForTests(IStageRunSceneLoader testSceneLoader)
@@ -2097,6 +2615,40 @@ namespace DimensionBrawl.LevelDesign
                 encounter.TerminalCoordinator.State,
                 out _,
                 out _,
+                out error);
+        }
+
+        public static bool TryCommitForgedTerminalResolutionForTests(
+            CombatEncounterController encounter,
+            out StageRunResultSummary summary,
+            out StageRunResultCommitReceipt receipt,
+            out string error)
+        {
+            summary = null;
+            receipt = null;
+            error = string.Empty;
+            if (encounter == null || !encounter.HasTerminalResolution)
+            {
+                error = "No terminal resolution is available for public-ingress forgery testing.";
+                return false;
+            }
+
+            EncounterTerminalResolution valid = encounter.TerminalResolution;
+            var forged = new EncounterTerminalResolution(
+                valid.RunGeneration,
+                valid.RootAdmissionSequence,
+                valid.Epoch,
+                valid.Outcome,
+                valid.Reason,
+                valid.PlayerDown,
+                valid.BossDead,
+                valid.PlayerHealth + 1f,
+                valid.BossHealth);
+            return TryCommitTerminalResolution(
+                encounter,
+                forged,
+                out summary,
+                out receipt,
                 out error);
         }
 
@@ -2250,19 +2802,52 @@ namespace DimensionBrawl.LevelDesign
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            CombatEncounterController.CoordinatedRunStarting -= HandleCoordinatedRunStarting;
+            CombatEncounterController.CoordinatedRunStarting += HandleCoordinatedRunStarting;
             CombatEncounterController.CoordinatedRunStarted -= HandleCoordinatedRunStarted;
             CombatEncounterController.CoordinatedRunStarted += HandleCoordinatedRunStarted;
             CombatEncounterController.CoordinatedRunStopping -= HandleCoordinatedRunStopping;
             CombatEncounterController.CoordinatedRunStopping += HandleCoordinatedRunStopping;
         }
 
+        private static void HandleCoordinatedRunStarting(CombatEncounterController encounter)
+        {
+            StageRunContext context = activeContext;
+            if (context == null
+                || encounter == null
+                || encounter.gameObject.scene.handle != context.CurrentSceneHandle
+                || !context.HasTerminalAdmissionEncounterAuthority)
+            {
+                return;
+            }
+
+            if (!context.IsTerminalAdmissionEncounter(encounter)
+                || !context.IsCurrentSegmentTerminalActive)
+            {
+                encounter.enabled = false;
+            }
+        }
+
         private static void HandleCoordinatedRunStarted(CombatEncounterController encounter)
         {
             StageRunContext context = activeContext;
             if (context == null
-                || context.LifecycleState != StageRunLifecycleState.StationActive
                 || encounter == null
                 || encounter.gameObject.scene.handle != context.CurrentSceneHandle)
+            {
+                return;
+            }
+
+            if (context.HasTerminalAdmissionEncounterAuthority)
+            {
+                if (!context.IsTerminalAdmissionEncounter(encounter)
+                    || !context.IsCurrentSegmentTerminalActive)
+                {
+                    encounter.enabled = false;
+                    return;
+                }
+            }
+            else if (!context.IsCurrentSegmentTerminalActive)
             {
                 return;
             }
@@ -2284,6 +2869,44 @@ namespace DimensionBrawl.LevelDesign
                 || context.LifecycleState == StageRunLifecycleState.CorridorActive
                 || context.LifecycleState == StageRunLifecycleState.HandoffPending)
             {
+                return;
+            }
+
+            if (context.HasTerminalAdmissionEncounterAuthority
+                && !context.IsTerminalAdmissionEncounter(encounter))
+            {
+                return;
+            }
+
+            if (encounter.TerminalCoordinator?.State
+                == EncounterTerminalCoordinatorState.TerminalClosed)
+            {
+                if (!TryGetExactClosedTerminalResolution(
+                        context,
+                        encounter,
+                        out EncounterTerminalResolution resolution,
+                        out string terminalEvidenceError))
+                {
+                    context.FailAbortClosure(
+                        "Station coordinator stopped with invalid terminal evidence: "
+                        + terminalEvidenceError);
+                    return;
+                }
+
+                if (!TryAbortActiveContext(
+                        StageRunAbortReason.UnexpectedSceneExit,
+                        StageRunTerminalCoordinatorInvalidationDisposition
+                            .TerminalAuthorityInvalidated,
+                        resolution.RootAdmissionSequence,
+                        resolution.Epoch,
+                        out _,
+                        out string terminalAbortError))
+                {
+                    context.FailAbortClosure(
+                        "Terminal-closed Station stop could not seal its abort record: "
+                        + terminalAbortError);
+                }
+
                 return;
             }
 
@@ -2483,6 +3106,14 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
+            if (encounter != null
+                && context.HasTerminalAdmissionEncounterAuthority
+                && !context.IsTerminalAdmissionEncounter(encounter))
+            {
+                error = "The supplied encounter is not the encounter sealed by one-row admission.";
+                return false;
+            }
+
             EncounterTerminalResolutionCoordinator coordinator;
             if (encounter != null)
             {
@@ -2569,6 +3200,53 @@ namespace DimensionBrawl.LevelDesign
                     registeredStationCoordinatorRunId,
                     context.Identity.RunId,
                     StringComparison.Ordinal);
+        }
+
+        private static bool TerminalResolutionsMatch(
+            EncounterTerminalResolution left,
+            EncounterTerminalResolution right)
+        {
+            return left.RunGeneration == right.RunGeneration
+                && left.RootAdmissionSequence == right.RootAdmissionSequence
+                && left.Epoch == right.Epoch
+                && left.Outcome == right.Outcome
+                && left.Reason == right.Reason
+                && left.PlayerDown == right.PlayerDown
+                && left.BossDead == right.BossDead
+                && left.PlayerHealth.Equals(right.PlayerHealth)
+                && left.BossHealth.Equals(right.BossHealth);
+        }
+
+        private static bool TryGetExactClosedTerminalResolution(
+            StageRunContext context,
+            CombatEncounterController encounter,
+            out EncounterTerminalResolution resolution,
+            out string error)
+        {
+            resolution = default;
+            error = string.Empty;
+            EncounterTerminalResolutionCoordinator coordinator = encounter?.TerminalCoordinator;
+            if (context == null
+                || encounter == null
+                || coordinator == null
+                || coordinator.State != EncounterTerminalCoordinatorState.TerminalClosed
+                || !encounter.HasTerminalResolution
+                || !coordinator.HasTerminalResolution
+                || !coordinator.HasTerminalEpochEvidence
+                || !IsRegisteredStationCoordinatorFor(context, coordinator)
+                || !TerminalResolutionsMatch(
+                    encounter.TerminalResolution,
+                    coordinator.TerminalResolution)
+                || !TerminalResolutionsMatch(
+                    encounter.TerminalResolution,
+                    coordinator.TerminalEpochEvidence.Resolution))
+            {
+                error = "The exact registered terminal coordinator has no matching closed resolution and epoch evidence.";
+                return false;
+            }
+
+            resolution = encounter.TerminalResolution;
+            return true;
         }
 
         private static void ClearRegisteredStationCoordinator()

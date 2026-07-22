@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6c4e7f0921a4d86af35c0e19b7d2a54, type: 3}
+  m_Name: DB_StageResultPresentation_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.StageClear.StageResultPresentationProfile
+  schemaVersion: 1
+  profileId: stage-result.olympus-courtyard-drill
+  profileRevision: 1
+  playableStageId: OLYMPUS-COURTYARD-DRILL-01
+  supportedRunSchemaVersion: 1
+  stageCode: 01-2
+  titleFormatKey: stage_result.title.format
+  stageNameKey: stage_result.courtyard_drill.stage_name
+  clearStatusKey: stage_result.status.clear
+  failStatusKey: stage_result.status.fail
+  totalActiveTimeLabelKey: stage_result.label.total_time
+  combatActiveTimeLabelKey: stage_result.label.combat_time
+  recordsCategoryKey: stage_result.label.records
+  replayActionKey: stage_result.action.replay
+  retryActionKey: stage_result.action.retry
+  lobbyActionKey: stage_result.action.lobby
+  proofRowLimit: 2
+  proofRules:
+  - proofId: survival.no_player_down
+    textKey: stage_result.courtyard_drill.proof.survival
+    requireQualified: 1
+    valueFormat: 0
+  - proofId: movement.forward_risk_time
+    textKey: stage_result.courtyard_drill.proof.forward_risk_time
+    requireQualified: 1
+    valueFormat: 3
+  clearTitleColor: {r: 0.06666667, g: 0.14901961, b: 0.34509805, a: 1}
+  failTitleColor: {r: 0.62, g: 0.08, b: 0.12, a: 1}

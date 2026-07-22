@@ -17,12 +17,21 @@ namespace DimensionBrawl.Editor
         public const string MeleeSoldierPrefabPath =
             PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
         public const string GeneralDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        public const string RifleCrossfireSoldierPrefabPath =
+            PrefabRoot + "/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
         public const string EliteDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
+        public const string RifleCrossfireProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab";
 
         private const string MeleeSoldierRoleSourcePrefabName = "PF_Enemy_SciFiSoldier_Melee_ClosePunish";
         private const string MeleeSoldierPrefabName = "PF_Enemy_SciFiSoldier_Melee_HeavyWindup";
         private const string GeneralDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_GeneralDeck";
+        private const string RifleCrossfireSoldierPrefabName =
+            "PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire";
         private const string EliteDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_EliteDeck";
+        private const string RifleCrossfireProjectilePrefabName = "PF_EnemyProjectile_RifleCrossfire";
+        private const string RifleCrossfireProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile.mat";
         private const string VfxPoolChildName = "CombatVfxPool";
         private const string ProjectileOriginChildName = "ProjectileOrigin";
 
@@ -51,6 +60,10 @@ namespace DimensionBrawl.Editor
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            CombatAiPatternProfile rifleCrossfireProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.RifleCrossfirePatternPath);
+            CombatAiPatternDeck rifleCrossfireDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.RifleCrossfirePatternDeckPath);
             CombatAiPatternProfile guardBreakProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath);
             CombatAiPatternDeck eliteDeck =
@@ -58,6 +71,7 @@ namespace DimensionBrawl.Editor
             CombatAiElitePatternProfile[] eliteProfiles = LoadEliteProfiles();
             ActionFoundationSciFiSoldier01VisualSetup.EnsureGeneralDeckVisualAssets();
             ActionFoundationSciFiEliteSoldierVisualSetup.EnsureEliteDeckVisualAssets();
+            EnsureRifleCrossfireProjectilePrefab();
 
             EnsureSoldierPrefabCandidate(
                 MeleeSoldierRoleSourcePrefabName,
@@ -79,6 +93,14 @@ namespace DimensionBrawl.Editor
                 GeneralDeckSoldierPrefabPath,
                 closePunishProfile,
                 generalDeck,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.GeneralDeckRifle);
+            EnsureSoldierPrefabCandidateFromSource(
+                RifleCrossfireSoldierPrefabName,
+                GeneralDeckSoldierPrefabPath,
+                RifleCrossfireSoldierPrefabPath,
+                rifleCrossfireProfile,
+                rifleCrossfireDeck,
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.GeneralDeckRifle);
             EnsureSoldierPrefabCandidate(
@@ -115,6 +137,14 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Missing general-deck soldier prefab candidate at {GeneralDeckSoldierPrefabPath}.");
             }
 
+            GameObject rifleCrossfirePrefabAsset =
+                AssetDatabase.LoadAssetAtPath<GameObject>(RifleCrossfireSoldierPrefabPath);
+            if (rifleCrossfirePrefabAsset == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing RifleCrossfire soldier prefab at {RifleCrossfireSoldierPrefabPath}.");
+            }
+
             GameObject eliteDeckPrefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(EliteDeckSoldierPrefabPath);
             if (eliteDeckPrefabAsset == null)
             {
@@ -127,6 +157,10 @@ namespace DimensionBrawl.Editor
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            CombatAiPatternProfile rifleCrossfireProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.RifleCrossfirePatternPath);
+            CombatAiPatternDeck rifleCrossfireDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.RifleCrossfirePatternDeckPath);
             CombatAiPatternProfile guardBreakProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath);
             CombatAiPatternDeck eliteDeck =
@@ -155,6 +189,18 @@ namespace DimensionBrawl.Editor
                 generalDeck,
                 Array.Empty<CombatAiElitePatternProfile>(),
                 SoldierVisualCandidate.GeneralDeckRifle);
+            ValidateRifleCrossfireProjectilePrefab();
+            ValidateSoldierPrefabAsset(
+                RifleCrossfireSoldierPrefabPath,
+                RifleCrossfireSoldierPrefabName,
+                rifleCrossfireProfile,
+                rifleCrossfireDeck,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.GeneralDeckRifle);
+            ValidateRifleCrossfireLoadout(
+                rifleCrossfirePrefabAsset,
+                rifleCrossfireProfile,
+                rifleCrossfireDeck);
             ValidateSoldierPrefabAsset(
                 EliteDeckSoldierPrefabPath,
                 EliteDeckSoldierPrefabName,
@@ -175,10 +221,10 @@ namespace DimensionBrawl.Editor
             CombatEnemyArchetypeProfile rangedArchetype =
                 LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiRangedSoldierPath);
             gameplayPrefabPath = AssetDatabase.GetAssetPath(rangedArchetype.GameplayPrefab).Replace('\\', '/');
-            if (!string.Equals(gameplayPrefabPath, GeneralDeckSoldierPrefabPath, StringComparison.Ordinal))
+            if (!string.Equals(gameplayPrefabPath, RifleCrossfireSoldierPrefabPath, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"Sci-fi ranged archetype should use {GeneralDeckSoldierPrefabPath}, found {gameplayPrefabPath}.");
+                    $"Sci-fi ranged archetype should use {RifleCrossfireSoldierPrefabPath}, found {gameplayPrefabPath}.");
             }
 
             CombatEnemyArchetypeProfile eliteArchetype =
@@ -188,6 +234,188 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException(
                     $"Sci-fi elite archetype should use {EliteDeckSoldierPrefabPath}, found {gameplayPrefabPath}.");
+            }
+        }
+
+        private static void EnsureRifleCrossfireProjectilePrefab()
+        {
+            GameObject source = LoadAsset<GameObject>(
+                ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath);
+            Material hostileMaterial = LoadAsset<Material>(RifleCrossfireProjectileMaterialPath);
+            GameObject candidate = PrefabUtility.LoadPrefabContents(
+                ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath);
+            try
+            {
+                candidate.name = RifleCrossfireProjectilePrefabName;
+                candidate.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                candidate.SetActive(true);
+
+                LaneActionProjectile[] projectiles =
+                    candidate.GetComponentsInChildren<LaneActionProjectile>(true);
+                if (projectiles.Length != 1 || projectiles[0].gameObject != candidate)
+                {
+                    throw new InvalidOperationException(
+                        $"{source.name} must contain one root LaneActionProjectile before enemy projectile promotion.");
+                }
+
+                LaneActionProjectile projectile = projectiles[0];
+                SetBool(projectile, "deactivateOnHit", true);
+                SetBool(projectile, "alignVisualToDirection", true);
+                SetBool(projectile, "allowVerticalTravel", true);
+                SphereCollider projectileCollider = candidate.GetComponent<SphereCollider>();
+                Rigidbody projectileRigidbody = candidate.GetComponent<Rigidbody>();
+                if (projectileCollider == null || projectileRigidbody == null)
+                {
+                    throw new InvalidOperationException(
+                        $"{source.name} must retain root projectile collider and rigidbody components.");
+                }
+
+                projectileCollider.isTrigger = true;
+                projectileRigidbody.useGravity = false;
+                projectileRigidbody.isKinematic = true;
+                EditorUtility.SetDirty(projectileCollider);
+                EditorUtility.SetDirty(projectileRigidbody);
+
+                Renderer[] renderers = candidate.GetComponentsInChildren<Renderer>(true);
+                if (renderers.Length == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"{source.name} has no renderer for hostile projectile readability.");
+                }
+
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Material[] materials = renderers[i].sharedMaterials;
+                    for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                    {
+                        materials[materialIndex] = hostileMaterial;
+                    }
+
+                    renderers[i].sharedMaterials = materials;
+                }
+
+                if (candidate.transform.childCount > 0)
+                {
+                    candidate.transform.GetChild(0).name = "EnemyRifleCrossfireProjectileVfx";
+                }
+
+                if (PrefabUtility.SaveAsPrefabAsset(candidate, RifleCrossfireProjectilePrefabPath) == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to save hostile RifleCrossfire projectile at {RifleCrossfireProjectilePrefabPath}.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(candidate);
+            }
+        }
+
+        private static void ValidateRifleCrossfireProjectilePrefab()
+        {
+            GameObject projectilePrefab = LoadAsset<GameObject>(RifleCrossfireProjectilePrefabPath);
+            if (!string.Equals(projectilePrefab.name, RifleCrossfireProjectilePrefabName, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"RifleCrossfire projectile must retain name {RifleCrossfireProjectilePrefabName}.");
+            }
+
+            LaneActionProjectile[] projectiles =
+                projectilePrefab.GetComponentsInChildren<LaneActionProjectile>(true);
+            if (projectiles.Length != 1 || projectiles[0].gameObject != projectilePrefab)
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire projectile must contain exactly one root LaneActionProjectile.");
+            }
+
+            ValidateBool(projectiles[0], "deactivateOnHit", true);
+            ValidateBool(projectiles[0], "alignVisualToDirection", true);
+            ValidateBool(projectiles[0], "allowVerticalTravel", true);
+            SphereCollider projectileCollider = projectilePrefab.GetComponent<SphereCollider>();
+            Rigidbody projectileRigidbody = projectilePrefab.GetComponent<Rigidbody>();
+            if (projectileCollider == null
+                || !projectileCollider.isTrigger
+                || projectileRigidbody == null
+                || projectileRigidbody.useGravity
+                || !projectileRigidbody.isKinematic)
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire projectile must retain its reviewed trigger and kinematic flight contract.");
+            }
+
+            Material hostileMaterial = LoadAsset<Material>(RifleCrossfireProjectileMaterialPath);
+            Renderer[] renderers = projectilePrefab.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("RifleCrossfire projectile requires a visible hostile renderer.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (!ReferenceEquals(materials[materialIndex], hostileMaterial))
+                    {
+                        throw new InvalidOperationException(
+                            "RifleCrossfire projectile renderers must use the reviewed hostile orange material.");
+                    }
+                }
+            }
+        }
+
+        private static void ValidateRifleCrossfireLoadout(
+            GameObject prefab,
+            CombatAiPatternProfile profile,
+            CombatAiPatternDeck deck)
+        {
+            if (!string.Equals(profile.ActorTypeId, "SciFiSoldier.Ranged", StringComparison.Ordinal)
+                || !string.Equals(profile.PatternId, "RifleCrossfire", StringComparison.Ordinal)
+                || profile.AttackShape != CombatAiAttackShape.ProjectileLine
+                || !Mathf.Approximately(profile.AttackRange, 6.4f)
+                || !Mathf.Approximately(profile.Damage, 14f)
+                || !Mathf.Approximately(profile.HitStopSeconds, 0.02f)
+                || profile.DamageResponsePolicy != DamageResponsePolicy.FlashOnly
+                || profile.ControlLockPolicy != CombatControlLockPolicy.None)
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire profile drifted from the reviewed Ranged ProjectileLine contract.");
+            }
+
+            if (!string.Equals(deck.DeckId, "SciFiSoldier.RifleCrossfire", StringComparison.Ordinal)
+                || deck.EntryCount != 1)
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire must retain one narrow product deck row.");
+            }
+
+            CombatAiPatternDeckEntry entry = deck.GetEntry(0);
+            if (!ReferenceEquals(entry.Profile, profile)
+                || !Mathf.Approximately(entry.MinimumDistance, 0f)
+                || !Mathf.Approximately(entry.MaximumDistance, 6.4f))
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire deck row must cover the exact reviewed physical-projectile profile.");
+            }
+
+            BasicSoldierEnemy soldier = prefab.GetComponent<BasicSoldierEnemy>();
+            BasicSoldierProjectileAttackDriver driver =
+                prefab.GetComponent<BasicSoldierProjectileAttackDriver>();
+            CombatHealth health = prefab.GetComponent<CombatHealth>();
+            CombatTargetSensor sensor = prefab.GetComponent<CombatTargetSensor>();
+            if (soldier == null
+                || driver == null
+                || health == null
+                || sensor == null
+                || !driver.IsConfiguredFor(soldier, health, sensor)
+                || driver.ProjectilePrefab == null
+                || !string.Equals(
+                    AssetDatabase.GetAssetPath(driver.ProjectilePrefab).Replace('\\', '/'),
+                    RifleCrossfireProjectilePrefabPath,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "RifleCrossfire prefab does not own the reviewed bounded hostile projectile driver.");
             }
         }
 
@@ -437,13 +665,13 @@ namespace DimensionBrawl.Editor
             projectileOrigin.localRotation = Quaternion.identity;
             projectileOrigin.localScale = Vector3.one;
 
-            GameObject projectilePrefabObject =
-                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath);
+            string projectilePrefabPath = ResolveProjectilePrefabPath(startingProfile);
+            GameObject projectilePrefabObject = LoadAsset<GameObject>(projectilePrefabPath);
             LaneActionProjectile projectilePrefab = projectilePrefabObject.GetComponent<LaneActionProjectile>();
             if (projectilePrefab == null)
             {
                 throw new InvalidOperationException(
-                    $"{ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath} is missing LaneActionProjectile.");
+                    $"{projectilePrefabPath} is missing LaneActionProjectile.");
             }
 
             SetObjectReference(driver, "soldier", soldier);
@@ -456,8 +684,19 @@ namespace DimensionBrawl.Editor
             SetFloat(driver, "projectileSpeed", 18f);
             SetFloat(driver, "projectileLifetimeSeconds", 1.25f);
             SetFloat(driver, "projectileRadius", 0.2f);
+            SetInt(driver, "maxOwnedProjectiles", 3);
             SetFloat(driver, "originHeight", 1.22f);
             SetFloat(driver, "targetHeightOffset", 0.9f);
+            SetInt(driver, "responsePolicy", (int)startingProfile.DamageResponsePolicy);
+            SetInt(driver, "controlLockPolicy", (int)startingProfile.ControlLockPolicy);
+        }
+
+        private static string ResolveProjectilePrefabPath(CombatAiPatternProfile startingProfile)
+        {
+            return startingProfile != null
+                && string.Equals(startingProfile.PatternId, "RifleCrossfire", StringComparison.Ordinal)
+                    ? RifleCrossfireProjectilePrefabPath
+                    : ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath;
         }
 
         private static void ConfigureEliteProfiles(GameObject root, CombatAiElitePatternProfile[] eliteProfiles)
@@ -649,12 +888,15 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 driver,
                 "projectilePrefab",
-                LoadAsset<GameObject>(ActionFoundationCombatAssetPaths.SummonSlot2ProjectilePrefabPath)
+                LoadAsset<GameObject>(ResolveProjectilePrefabPath(expectedProfile))
                     .GetComponent<LaneActionProjectile>());
             ValidateLocalReference(driver, "projectileRoot", root);
             ValidateFloat(driver, "projectileSpeed", 18f);
             ValidateFloat(driver, "projectileLifetimeSeconds", 1.25f);
             ValidateFloat(driver, "projectileRadius", 0.2f);
+            ValidateInt(driver, "maxOwnedProjectiles", 3);
+            ValidateInt(driver, "responsePolicy", (int)expectedProfile.DamageResponsePolicy);
+            ValidateInt(driver, "controlLockPolicy", (int)expectedProfile.ControlLockPolicy);
         }
 
         private static GameObject EnsureLocalTelegraphObject(
@@ -886,6 +1128,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetInt(UnityEngine.Object target, string propertyName, int value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).intValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
         {
             var serializedObject = new SerializedObject(target);
@@ -929,6 +1179,24 @@ namespace DimensionBrawl.Editor
         {
             float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
             if (!Mathf.Approximately(actual, expected))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateInt(UnityEngine.Object target, string propertyName, int expected)
+        {
+            int actual = RequireProperty(new SerializedObject(target), propertyName).intValue;
+            if (actual != expected)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateBool(UnityEngine.Object target, string propertyName, bool expected)
+        {
+            bool actual = RequireProperty(new SerializedObject(target), propertyName).boolValue;
+            if (actual != expected)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }

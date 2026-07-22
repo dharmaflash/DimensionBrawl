@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a8db1e4c6f24911a3d5e72b8f0c4a91, type: 3}
+  m_Name: DB_StageResultLocalization_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.StageClear.StageResultLocalizationTable
+  schemaVersion: 1
+  tableId: stage-result.localization.olympus-courtyard-drill
+  tableRevision: 1
+  defaultLocaleId: ko-KR
+  locales:
+  - localeId: en-US
+    entries:
+    - key: stage_result.action.lobby
+      value: LOBBY
+    - key: stage_result.action.replay
+      value: REPLAY
+    - key: stage_result.action.retry
+      value: RETRY
+    - key: stage_result.courtyard_drill.proof.forward_risk_time
+      value: Forward pressure {0}
+    - key: stage_result.courtyard_drill.proof.survival
+      value: No combat incapacitation
+    - key: stage_result.courtyard_drill.stage_name
+      value: OLYMPUS COURTYARD DRILL
+    - key: stage_result.label.combat_time
+      value: 'COMBAT TIME
+
+        COMBAT'
+    - key: stage_result.label.records
+      value: COMBAT RECORD
+    - key: stage_result.label.total_time
+      value: 'OPERATION TIME
+
+        TOTAL'
+    - key: stage_result.status.clear
+      value: CLEAR
+    - key: stage_result.status.fail
+      value: FAILED
+    - key: stage_result.title.format
+      value: '{0} / {1}'
+  - localeId: ko-KR
+    entries:
+    - key: stage_result.action.lobby
+      value: "\uB85C\uBE44\uB85C"
+    - key: stage_result.action.replay
+      value: "\uB2E4\uC2DC \uBCF4\uAE30"
+    - key: stage_result.action.retry
+      value: "\uC7AC\uB3C4\uC804"
+    - key: stage_result.courtyard_drill.proof.forward_risk_time
+      value: "\uC804\uC9C4 \uC555\uBC15 \uC720\uC9C0 {0}"
+    - key: stage_result.courtyard_drill.proof.survival
+      value: "\uC804\uD22C \uBD88\uB2A5 \uC5C6\uC774 \uC0DD\uC874"
+    - key: stage_result.courtyard_drill.stage_name
+      value: "\uC62C\uB9BC\uD478\uC2A4 \uC911\uC815 \uD6C8\uB828"
+    - key: stage_result.label.combat_time
+      value: "\uC804\uD22C \uC2DC\uAC04\nCOMBAT"
+    - key: stage_result.label.records
+      value: "\uC804\uD22C \uAE30\uB85D"
+    - key: stage_result.label.total_time
+      value: "\uC791\uC804 \uC2DC\uAC04\nTOTAL"
+    - key: stage_result.status.clear
+      value: "\uD074\uB9AC\uC5B4"
+    - key: stage_result.status.fail
+      value: "\uC2E4\uD328"
+    - key: stage_result.title.format
+      value: '{0} / {1}'

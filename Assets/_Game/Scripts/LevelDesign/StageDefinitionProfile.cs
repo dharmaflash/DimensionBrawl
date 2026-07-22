@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.AI;
 using UnityEngine;
 
 namespace DimensionBrawl.LevelDesign
@@ -49,6 +50,7 @@ namespace DimensionBrawl.LevelDesign
             [SerializeField] private int positionId;
             [SerializeField] private string anchorId;
             [SerializeField] private string payloadId;
+            [SerializeField] private CombatEnemyArchetypeProfile payloadArchetype;
             [SerializeField, Min(0)] private int count;
             [SerializeField, Min(0f)] private float delaySeconds;
             [TextArea, SerializeField] private string note;
@@ -58,6 +60,9 @@ namespace DimensionBrawl.LevelDesign
             public int PositionId => positionId;
             public string AnchorId => anchorId;
             public string PayloadId => payloadId;
+            public CombatEnemyArchetypeProfile PayloadArchetype => payloadArchetype;
+            public int AuthoredCount => count;
+            public float AuthoredDelaySeconds => delaySeconds;
             public int Count => Mathf.Max(0, count);
             public float DelaySeconds => Mathf.Max(0f, delaySeconds);
             public string Note => note;

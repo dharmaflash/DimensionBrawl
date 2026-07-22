@@ -224,15 +224,10 @@ namespace DimensionBrawl.LevelDesign
 
         private void Start()
         {
-            if (Application.isPlaying)
+            if (Application.isPlaying && EnsureCanonicalStageRunAdmission())
             {
-                EnsureCanonicalStageRunAdmission();
+                PulseCanonicalStageRunClock();
             }
-        }
-
-        private void Update()
-        {
-            PulseCanonicalStageRunClock();
         }
 
         private void OnDisable()
@@ -298,6 +293,7 @@ namespace DimensionBrawl.LevelDesign
             yield return null;
             while (isActiveAndEnabled && phase == FlowPhase.WaitingForIntroHandoff)
             {
+                PulseCanonicalStageRunClock();
                 UpdateIntroDirectorPlaybackObservation();
                 UpdateIntroSkipInput();
                 if (phase != FlowPhase.WaitingForIntroHandoff)
@@ -379,6 +375,7 @@ namespace DimensionBrawl.LevelDesign
                 && phase != FlowPhase.WaitingForIntroHandoff
                 && phase != FlowPhase.StageCleared)
             {
+                PulseCanonicalStageRunClock();
                 EvaluateActivePhase();
                 if (phase == FlowPhase.StageCleared)
                 {

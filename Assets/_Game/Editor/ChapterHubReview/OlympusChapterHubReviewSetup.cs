@@ -1169,9 +1169,10 @@ namespace DimensionBrawl.Editor.ChapterHubReview
 
             UIStageCatalog stageCatalog =
                 AssetDatabase.LoadAssetAtPath<UIStageCatalog>(StageCatalogPath);
-            if (stageCatalog == null || stageCatalog.StageCount != 1)
+            if (stageCatalog == null
+                || !stageCatalog.TryValidateEntryIdentities(out _))
             {
-                issues.Add("Canonical UI stage catalog must remain present with exactly one entry.");
+                issues.Add("Canonical UI stage catalog must retain uniquely identified entries.");
             }
             else if (!stageCatalog.TryCreateRouteProjection(
                          CanonicalCatalogEntryId,

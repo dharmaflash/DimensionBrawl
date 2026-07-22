@@ -11,9 +11,40 @@ pre-existing scene-unload/VFX-prewarm race, recorded separately below.
 
 Canonical product state changed: no
 
+## 2026-07-21 product update
+
+A1 is implemented and verified, and A2 is functionally verified with human visual review
+still pending, in the canonical continuous Station segment.
+The live executor consumes two ordered count-one `SpawnRef` rows with direct archetype ownership,
+inactive transactional staging, independent combat participation/death, whole-plan
+cleanup, and a typed receipt. The current left row is Melee and the right row is the
+physical-projectile RifleCrossfire Ranged loadout. See
+`A1_ORDERED_ADD_ENCOUNTER_EXECUTOR.md` and
+`A2_RIFLE_CROSSFIRE_RANGED_LOADOUT.md`.
+B0-1 is also implemented and verified: a distinct one-row route identity can now admit
+terminal-active, while malformed topology fails before a run exists and the accepted
+Olympus identities remain unchanged. B0-2 is now implemented and verified as well: that
+route can commit truthful Clear/Fail facts and a durable result without fake tutorial or
+handoff evidence. B0-3 is now implemented and verified as well: neutral scene adapters bind
+admission, exact facts, commit recovery, result acknowledgement, and Replay/Retry/Lobby.
+B0-4 multi-entry catalog/build plumbing is the next gate.
+
+This does **not** admit CF-01 into gameplay. `StageEncounterPlanProfile`, its Wave grammar,
+review session, controller, and review scene remain `TEMP_DO_NOT_SHIP`. A1/A2 deliberately
+stop below Encounter/Wave schema. The table and rationale below are a dated 2026-07-18
+review snapshot where scalar Add execution was still the product truth.
+
 ## Executive decision
 
-CF-01 is the next higher-value review slice than another tutorial, cinematic, chapter, preparation, or operations UI mock. The product already has a real tutorial-to-combat-to-result path and several isolated mobile UI review samples. Its limiting factor is that a second encounter or stage still requires product-specific runtime and scene work.
+At the time of review, CF-01 was the next higher-value review slice than another tutorial,
+cinematic, chapter, preparation, or operations UI mock. The product already had a real
+tutorial-to-combat-to-result path and several isolated mobile UI review samples. A1 has
+since removed the scalar Add runtime blocker, and A2 has admitted one reviewed Ranged
+loadout, B0-1 has closed the bounded route topology/active-role seam, and B0-2 has closed
+truthful one-row facts/result commit. B0-3 has now closed the neutral bootstrap/terminal
+adapter seam. The next product gate is B0-4 catalog/build plumbing before a second playable stage; an
+admitted Encounter/Wave owner remains future work only if real stage design
+requires it.
 
 CF-01 therefore reviews the smallest content-authoring grammar that can later make stages repeatable:
 
@@ -41,13 +72,18 @@ The repository already proves or reviews the major player-facing grammar around 
 - PREP-01 reviews stage intelligence and a disposable preparation presentation;
 - OPS-01 reviews notice, mail, mission, and event entry surfaces.
 
-Those samples are useful, but another isolated UI surface would not reduce the cost of producing the second, third, or fourth playable stage. Current product breadth remains one catalog entry and one route, while `StageCountOneEncounterExecutor` resolves one serialized `spawnId`, one `Add`, one payload mapping, one runtime root, and one health owner. The next leverage point is the path from an authored combat plan to repeatable content, not another rendering of the same single-stage perimeter.
+Those samples are useful, but another isolated UI surface would not reduce the cost of
+producing the second, third, or fourth playable stage. At the 2026-07-18 CF-01 review
+cutoff, product breadth was one catalog entry and one route while
+`StageCountOneEncounterExecutor` resolved one serialized `spawnId`, one `Add`, one payload
+mapping, one runtime root, and one health owner. A1/A2 later superseded those scalar and
+single-loadout facts; neutral route/catalog breadth remains the current leverage point.
 
 CF-01 is still a UI review slice, but its UI exists to make the content hierarchy inspectable and falsifiable. Its success criterion is a clearer and cheaper authoring contract, not another shipping-screen claim.
 
-## Current local evidence
+## 2026-07-18 review-cutoff local evidence
 
-| Local source | Current truth | Gap exposed by CF-01 |
+| Local source | Truth at 2026-07-18 cutoff | Gap exposed by CF-01 |
 |---|---|---|
 | `Assets/_Game/Scripts/LevelDesign/StageDefinitionProfile.cs` | `SpawnRef` already carries spawn kind, position, anchor, payload ID, count, delay, and note; `AnchorRef` separately carries identity and expected pose | Stage data has a useful spawn/placement base, but no admitted Encounter or Wave owner |
 | `Assets/_Game/Scripts/LevelDesign/StageCountOneEncounterExecutor.cs` | Resolves one serialized `spawnId`, requires one `Add` with `Count == 1`, and owns one active runtime object | A second row still breaks scalar assumptions instead of flowing through a collection contract |
@@ -487,11 +523,28 @@ CF-01 is Gate 0, not the second stage itself.
    focused tests, exact 21-capture matrix, separate human visual review, canonical UI
    regression, and Olympus actual-play regression are sealed. The ownership fields remain
    review-only and canonical product assets stay unchanged.
-2. **Combatant-participation gate.** Finish exact player/enemy target registration and synchronous cleanup for the current dynamic Melee Add. Prove real acquire, motion, telegraph, damage, player targeting, terminal stop, unload, and Retry cleanup.
-3. **Collection-executor gate.** Generalize the scalar Add executor to consume ordered count-one rows with direct archetype ownership, then prove a second Melee row through the stage definition and bound scene anchor without another runtime-code change.
-4. **Runtime Encounter/Wave gate.** Only when the lean second stage actually requires ordered waves, promote the reviewed sidecars into stage-owned runtime definitions. Implement all-or-nothing plan admission and one narrow `DefeatAll` objective resolver without changing boss/result ownership by accident.
-5. **Second-stage product gate.** Build one small one-scene arena from promoted local modular environment assets; neutralize only the route, catalog, validator, facts, and result assumptions that a truthful second route disproves. Reuse the existing result shell.
-6. **Offline progression gate.** After the second stage is real, add one monotonic local first-clear prerequisite so the first route unlocks the second across restart. Rewards, economy, account sync, and live service remain later decisions.
+2. **Combatant-participation gate.** Complete in A0: exact player/enemy registration,
+   acquire/attack/damage, synchronous terminal/unload/Retry cleanup, and preserved boss
+   ownership are verified for admitted runtime Adds.
+3. **Collection-executor gate.** Complete in A1: the executor consumes ordered count-one
+   rows with direct archetype ownership, independent tickets, whole-plan rollback/cleanup,
+   and a typed receipt.
+4. **Reviewed-loadout gate.** Functionally complete in A2, visual review pending: the
+   second ticket uses one dedicated RifleCrossfire physical-projectile loadout with bounded
+   ownership and actual Station damage evidence.
+5. **Neutral route foundation gate.** B0-1 route topology/active roles, B0-2 truthful
+   one-row facts/result, and B0-3 neutral bootstrap/terminal adapters are complete. Next
+   close B0-4 multi-entry catalog/build plumbing without changing accepted Olympus
+   identities.
+6. **Second-stage product gate.** After B0, build one small one-scene arena from promoted
+   local modular environment assets and reuse the neutral route/result shell.
+7. **Runtime Encounter/Wave gate.** Only if the lean second stage actually requires
+   ordered waves or ordinary-enemy roster completion, promote the minimum reviewed
+   composition owner and one narrow `DefeatAll` resolver. Do not change boss/result
+   ownership by accident.
+8. **Offline progression gate.** After the second stage is real, add one monotonic local
+   first-clear prerequisite so the first route unlocks the second across restart. Rewards,
+   economy, account sync, and live service remain later decisions.
 
 The stop rule is simple: if a gate starts cloning the Olympus route, reviving the disconnected `PveStageData`/`PveEncounterDirector` as a second authority, or building a general quest/live-service framework, stop and narrow the work back to the first unproven responsibility.
 

@@ -400,8 +400,11 @@ namespace DimensionBrawl.Tests
                     ? UnityEngine.Object.Instantiate(sourceCatalog)
                     : sourceCatalog;
                 ownsCatalog = cloneCatalog;
-                Assert.That(ReadProperty<int>(Catalog, "StageCount"), Is.EqualTo(1));
+                Assert.That(ReadProperty<int>(Catalog, "StageCount"), Is.GreaterThanOrEqualTo(1));
                 object catalogEntry = Invoke(Catalog, "GetStage", 0);
+                Assert.That(
+                    ReadProperty<string>(catalogEntry, "Id"),
+                    Is.EqualTo("story_v1_training_route"));
                 CanonicalCatalogEntryId = canonicalCatalogEntryId
                     ?? ReadProperty<string>(catalogEntry, "Id");
 

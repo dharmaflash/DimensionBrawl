@@ -19,7 +19,9 @@ namespace DimensionBrawl.LevelDesign
         TerminalFinalizationFailed = 5,
         ExplicitAbort = 6,
         StationFactCollectorLost = 7,
-        StationResultPresenterLost = 8
+        StationResultPresenterLost = 8,
+        TerminalFactAdapterLost = 9,
+        TerminalResultPresenterLost = 10
     }
 
     public enum StageRunTerminalCoordinatorInvalidationDisposition
@@ -27,7 +29,8 @@ namespace DimensionBrawl.LevelDesign
         NotBoundBeforeStation = 1,
         CancellationRequested = 2,
         Faulted = 3,
-        TerminalAuthorityInvalidated = 4
+        TerminalAuthorityInvalidated = 4,
+        NotBoundBeforeTerminalCoordinator = 5
     }
 
     public enum StageRunRouteHandoffCoverageDisposition

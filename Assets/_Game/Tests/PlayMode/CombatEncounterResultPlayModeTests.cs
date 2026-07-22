@@ -9,6 +9,9 @@ namespace DimensionBrawl.Tests
 {
     public sealed class CombatEncounterResultPlayModeTests
     {
+        private const string AcceptedOlympusCallbackOrderSummaryDigest =
+            "46d2754e32f77deba5d55cecae99da0c45673c0d163754f7556c58721635f8a2";
+
         [Test]
         public void EnemyDeathPublishesWinExactlyOnce()
         {
@@ -125,6 +128,9 @@ namespace DimensionBrawl.Tests
             Assert.That(
                 playerFirstSummaryDigest,
                 Is.EqualTo(bossFirstSummaryDigest));
+            Assert.That(
+                playerFirstSummaryDigest,
+                Is.EqualTo(AcceptedOlympusCallbackOrderSummaryDigest));
         }
 
         [Test]

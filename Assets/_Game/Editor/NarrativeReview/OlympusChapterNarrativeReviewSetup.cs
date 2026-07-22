@@ -30,6 +30,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
             "Assets/_Game/Scenes/Review/UI_OlympusChapterNarrativeReview.unity";
         public const string NarrativeProfilePath =
             "Assets/_Game/DesignData/Narrative/Review/DB_Narrative_OlympusChapterEntryReview.asset";
+        public const string SpeakerPresentationCatalogPath =
+            "Assets/_Game/DesignData/Narrative/Review/DB_NarrativeSpeakerPresentation_OlympusReview.asset";
         public const string TimelinePath =
             "Assets/_Game/DesignData/Timelines/Review/DB_Timeline_OlympusTutorialReview.playable";
 
@@ -42,6 +44,18 @@ namespace DimensionBrawl.Editor.NarrativeReview
             "Assets/_Game/Art/Fonts/Pretendard/TMP_Pretendard_SemiBold_Dynamic.asset";
         private const string BackgroundArtPath =
             "Assets/_Game/UI/NarrativeReview/Art/BG_OlympusGateInterior_Review.png";
+        public const string FieldAgentNeutralPortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_FieldAgent_Neutral_TEMP.png";
+        public const string FieldAgentAlertPortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_FieldAgent_Alert_TEMP.png";
+        public const string FieldAgentResolvePortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_FieldAgent_Resolve_TEMP.png";
+        public const string OperatorAlertPortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_Operator_Alert_TEMP.png";
+        public const string OperatorFocusedPortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_Operator_Focused_TEMP.png";
+        public const string OperatorDecisionPortraitPath =
+            "Assets/_Game/UI/NarrativeReview/Art/Portraits/PT_Operator_Decision_TEMP.png";
         public const string SignalWarningVoicePath =
             "Assets/_Game/Art/Audio/Voice/NarrativeReview/VO_Operator_SignalWarning_ko_TEMP.mp3";
         private const string MaterialRoot = "Assets/_Game/Art/Materials/Review/Narrative";
@@ -108,10 +122,13 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             EnsureAssetFolder(PathParent(ScenePath));
             EnsureAssetFolder(PathParent(NarrativeProfilePath));
+            EnsureAssetFolder(PathParent(FieldAgentNeutralPortraitPath));
             EnsureAssetFolder(PathParent(TimelinePath));
             EnsureAssetFolder(MaterialRoot);
 
             NarrativeSequenceProfile narrativeProfile = EnsureNarrativeProfile();
+            NarrativeSpeakerPresentationCatalog speakerCatalog =
+                EnsureSpeakerPresentationCatalog();
             UIStageCatalog stageCatalog = LoadRequired<UIStageCatalog>(StageCatalogPath);
             TMP_FontAsset mediumFont = LoadRequired<TMP_FontAsset>(MediumFontPath);
             TMP_FontAsset semiBoldFont = LoadRequired<TMP_FontAsset>(SemiBoldFontPath);
@@ -142,6 +159,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 typeof(StageCutscenePort),
                 typeof(AudioSource),
                 typeof(OlympusChapterNarrativeReviewController),
+                typeof(NarrativeVisualNovelPresenter),
                 typeof(ReviewTutorialStartProbe),
                 typeof(ReviewGameplayInputProbe),
                 typeof(OlympusStoryTutorialTransitionReviewGate));
@@ -173,6 +191,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             OlympusChapterNarrativeReviewController controller =
                 flowObject.GetComponent<OlympusChapterNarrativeReviewController>();
+            NarrativeVisualNovelPresenter narrativePresenter =
+                flowObject.GetComponent<NarrativeVisualNovelPresenter>();
             ReviewTutorialStartProbe tutorialStartProbe =
                 flowObject.GetComponent<ReviewTutorialStartProbe>();
             ReviewGameplayInputProbe gameplayInputProbe =
@@ -189,7 +209,9 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 tutorialStartProbe);
             ConfigureController(
                 controller,
+                narrativePresenter,
                 narrativeProfile,
+                speakerCatalog,
                 stageCatalog,
                 director,
                 cutscenePort,
@@ -199,6 +221,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             SetInitialVisibility(ui);
             EditorUtility.SetDirty(controller);
+            EditorUtility.SetDirty(narrativePresenter);
             EditorUtility.SetDirty(transitionGate);
             EditorUtility.SetDirty(tutorialStartProbe);
             EditorUtility.SetDirty(gameplayInputProbe);
@@ -212,6 +235,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
 
             AssetDatabase.SaveAssetIfDirty(narrativeProfile);
+            AssetDatabase.SaveAssetIfDirty(speakerCatalog);
             AssetDatabase.SaveAssetIfDirty(cameraAnimation);
             AssetDatabase.SaveAssetIfDirty(timeline);
             materials.SaveIfDirty();
@@ -267,51 +291,83 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     "올림포스 게이트 신호를 포착했습니다. 생체 반응을 확인합니다.",
                     "system",
                     NarrativePortraitSlot.None,
-                    "signal"),
+                    "signal",
+                    portraitCommands: new[]
+                    {
+                        PortraitCommand(NarrativePortraitCommandType.ClearStage)
+                    }),
                 Line(
                     2,
                     "여기는… 게이트 포드 내부. 통신 상태를 확인해 줘.",
                     "field_agent",
                     NarrativePortraitSlot.Center,
-                    "neutral"),
+                    "neutral",
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("field_agent", NarrativePortraitSlot.Center, "neutral")
+                    }),
                 Line(
                     3,
                     "통신 상태는 양호합니다. 게이트 너머 복도에서 차원 편차가 빠르게 커지고 있어요.",
                     "operator",
                     NarrativePortraitSlot.Right,
                     "alert",
-                    voiceClip: signalWarningVoice),
+                    voiceClip: signalWarningVoice,
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("operator", NarrativePortraitSlot.Right, "alert")
+                    }),
                 Line(
                     4,
                     "외부 격벽 개방 준비. 잔여 동력은 62퍼센트입니다.",
                     "system",
                     NarrativePortraitSlot.None,
-                    "status"),
+                    "status",
+                    portraitCommands: new[]
+                    {
+                        PortraitCommand(NarrativePortraitCommandType.ClearFocus)
+                    }),
                 Line(
                     5,
                     "문이 열리면 우측 엄폐선을 확보하세요. 미확인 반응이 접근 중입니다.",
                     "operator",
                     NarrativePortraitSlot.Right,
-                    "focused"),
+                    "focused",
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("operator", NarrativePortraitSlot.Right, "focused")
+                    }),
                 Line(
                     6,
                     "소환 장비가 불안정해. 그래도 한 번은 전개할 수 있어.",
                     "field_agent",
                     NarrativePortraitSlot.Left,
-                    "alert"),
+                    "alert",
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("field_agent", NarrativePortraitSlot.Left, "alert")
+                    }),
                 Line(
                     7,
                     "진입 판단을 요청합니다. 어느 쪽이든 같은 게이트 개방 절차로 합류합니다.",
                     "operator",
                     NarrativePortraitSlot.Right,
                     "decision",
-                    entryChoices),
+                    entryChoices,
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("operator", NarrativePortraitSlot.Right, "decision")
+                    }),
                 Line(
                     8,
                     "좋아. 게이트를 연다. 작전 시작.",
                     "field_agent",
                     NarrativePortraitSlot.Center,
-                    "resolve")
+                    "resolve",
+                    portraitCommands: new[]
+                    {
+                        PresentPortrait("field_agent", NarrativePortraitSlot.Center, "resolve")
+                    })
             };
 
             profile.Configure(SequenceId, 0.042f, lines);
@@ -326,7 +382,8 @@ namespace DimensionBrawl.Editor.NarrativeReview
             NarrativePortraitSlot portraitSlot,
             string expressionId,
             NarrativeSequenceProfile.ChoiceEntry[] choices = null,
-            AudioClip voiceClip = null)
+            AudioClip voiceClip = null,
+            NarrativeSequenceProfile.PortraitCommandEntry[] portraitCommands = null)
         {
             string lineId = $"review.olympus.prologue.line.{index:00}";
             return new NarrativeSequenceProfile.LineEntry(
@@ -339,7 +396,93 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 null,
                 voiceClip,
                 0f,
-                choices);
+                choices,
+                portraitCommands);
+        }
+
+        private static NarrativeSequenceProfile.PortraitCommandEntry PresentPortrait(
+            string speakerId,
+            NarrativePortraitSlot slot,
+            string expressionId)
+        {
+            return new NarrativeSequenceProfile.PortraitCommandEntry(
+                NarrativePortraitCommandType.Present,
+                speakerId,
+                slot,
+                expressionId);
+        }
+
+        private static NarrativeSequenceProfile.PortraitCommandEntry PortraitCommand(
+            NarrativePortraitCommandType commandType)
+        {
+            return new NarrativeSequenceProfile.PortraitCommandEntry(commandType);
+        }
+
+        private static NarrativeSpeakerPresentationCatalog EnsureSpeakerPresentationCatalog()
+        {
+            Sprite fieldNeutral = EnsurePortraitSprite(FieldAgentNeutralPortraitPath);
+            Sprite fieldAlert = EnsurePortraitSprite(FieldAgentAlertPortraitPath);
+            Sprite fieldResolve = EnsurePortraitSprite(FieldAgentResolvePortraitPath);
+            Sprite operatorAlert = EnsurePortraitSprite(OperatorAlertPortraitPath);
+            Sprite operatorFocused = EnsurePortraitSprite(OperatorFocusedPortraitPath);
+            Sprite operatorDecision = EnsurePortraitSprite(OperatorDecisionPortraitPath);
+
+            NarrativeSpeakerPresentationCatalog catalog =
+                AssetDatabase.LoadAssetAtPath<NarrativeSpeakerPresentationCatalog>(
+                    SpeakerPresentationCatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<NarrativeSpeakerPresentationCatalog>();
+                catalog.name = "DB_NarrativeSpeakerPresentation_OlympusReview";
+                AssetDatabase.CreateAsset(catalog, SpeakerPresentationCatalogPath);
+            }
+
+            catalog.Configure(
+                "review.olympus.speaker_presentation.v1",
+                new[]
+                {
+                    new NarrativeSpeakerPresentationCatalog.SpeakerEntry(
+                        "field_agent",
+                        "현장 요원",
+                        NarrativePortraitSlot.Center,
+                        new[]
+                        {
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "neutral",
+                                fieldNeutral),
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "alert",
+                                fieldAlert),
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "resolve",
+                                fieldResolve)
+                        }),
+                    new NarrativeSpeakerPresentationCatalog.SpeakerEntry(
+                        "operator",
+                        "작전 오퍼레이터",
+                        NarrativePortraitSlot.Right,
+                        new[]
+                        {
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "alert",
+                                operatorAlert),
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "focused",
+                                operatorFocused),
+                            new NarrativeSpeakerPresentationCatalog.ExpressionEntry(
+                                "decision",
+                                operatorDecision)
+                        })
+                });
+            EditorUtility.SetDirty(catalog);
+            if (!catalog.TryValidate(out string validationError))
+            {
+                throw new InvalidOperationException(
+                    "Narrative speaker presentation catalog is invalid:\n"
+                    + validationError);
+            }
+
+            return catalog;
         }
 
         private static TimelineAsset EnsureTimelineAsset()
@@ -473,7 +616,9 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
         private static void ConfigureController(
             OlympusChapterNarrativeReviewController controller,
+            NarrativeVisualNovelPresenter narrativePresenter,
             NarrativeSequenceProfile narrativeProfile,
+            NarrativeSpeakerPresentationCatalog speakerCatalog,
             UIStageCatalog stageCatalog,
             PlayableDirector director,
             StageCutscenePort cutscenePort,
@@ -522,6 +667,18 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 ui.FirstChoiceText,
                 ui.SecondChoiceButton,
                 ui.SecondChoiceText);
+            narrativePresenter.Configure(
+                speakerCatalog,
+                ui.LeftPortraitGroup,
+                ui.CenterPortraitGroup,
+                ui.RightPortraitGroup,
+                ui.LeftPortraitImage,
+                ui.CenterPortraitImage,
+                ui.RightPortraitImage,
+                ui.LeftExpressionText,
+                ui.CenterExpressionText,
+                ui.RightExpressionText);
+            controller.ConfigureNarrativePresenter(narrativePresenter);
             controller.ConfigureCutsceneView(
                 ui.CutsceneLabel,
                 ui.CutsceneProgress,
@@ -1087,33 +1244,39 @@ namespace DimensionBrawl.Editor.NarrativeReview
             PortraitRefs left = CreatePortrait(
                 root,
                 "FieldAgentLeft",
+                semiBoldFont,
                 new Vector2(0f, 0f),
                 new Vector2(0f, 0f),
-                new Vector2(318f, 430f),
-                new Vector2(490f, 690f),
+                new Vector2(318f, 300f),
+                new Vector2(460f, 650f),
                 new Color(0.12f, 0.48f, 0.62f, 0.80f));
             PortraitRefs center = CreatePortrait(
                 root,
                 "FieldAgentCenter",
+                semiBoldFont,
                 new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f),
-                new Vector2(0f, 430f),
-                new Vector2(520f, 720f),
+                new Vector2(0f, 300f),
+                new Vector2(480f, 670f),
                 new Color(0.16f, 0.66f, 0.78f, 0.82f));
             PortraitRefs right = CreatePortrait(
                 root,
                 "OperatorRight",
+                semiBoldFont,
                 new Vector2(1f, 0f),
                 new Vector2(1f, 0f),
-                new Vector2(-318f, 430f),
-                new Vector2(490f, 690f),
+                new Vector2(-318f, 300f),
+                new Vector2(460f, 650f),
                 new Color(0.56f, 0.32f, 0.72f, 0.80f));
             refs.LeftPortraitGroup = left.Group;
             refs.LeftPortraitImage = left.Body;
+            refs.LeftExpressionText = left.Expression;
             refs.CenterPortraitGroup = center.Group;
             refs.CenterPortraitImage = center.Body;
+            refs.CenterExpressionText = center.Expression;
             refs.RightPortraitGroup = right.Group;
             refs.RightPortraitImage = right.Body;
+            refs.RightExpressionText = right.Expression;
 
             Image dialoguePanel = CreateImage(
                 root,
@@ -1826,6 +1989,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
         private static PortraitRefs CreatePortrait(
             RectTransform parent,
             string name,
+            TMP_FontAsset expressionFont,
             Vector2 anchorMin,
             Vector2 anchorMax,
             Vector2 anchoredPosition,
@@ -1853,31 +2017,35 @@ namespace DimensionBrawl.Editor.NarrativeReview
             Image body = CreateImage(
                 frame.rectTransform,
                 "PortraitBody",
-                silhouetteColor,
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 170f),
-                new Vector2(size.x * 0.58f, size.y * 0.52f));
+                Color.white,
+                Vector2.zero,
+                Vector2.one,
+                Vector2.zero,
+                new Vector2(-12f, -12f));
             body.raycastTarget = false;
-            Image shoulders = CreateImage(
+            Image footerWash = CreateImage(
                 frame.rectTransform,
-                "Shoulders",
-                new Color(silhouetteColor.r * 0.82f, silhouetteColor.g * 0.82f, silhouetteColor.b * 0.82f, silhouetteColor.a),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 72f),
-                new Vector2(size.x * 0.78f, size.y * 0.22f));
-            shoulders.raycastTarget = false;
-            Image head = CreateImage(
+                "ExpressionFooterWash",
+                new Color(0.01f, 0.025f, 0.05f, 0.84f),
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(0f, 24f),
+                new Vector2(-12f, 48f));
+            footerWash.raycastTarget = false;
+            TMP_Text expression = CreateText(
                 frame.rectTransform,
-                "Head",
-                new Color(silhouetteColor.r * 1.08f, silhouetteColor.g * 1.08f, silhouetteColor.b * 1.08f, silhouetteColor.a),
-                new Vector2(0.5f, 0f),
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, size.y * 0.57f),
-                new Vector2(size.x * 0.29f, size.x * 0.35f));
-            head.raycastTarget = false;
-            return new PortraitRefs(group, body);
+                "ExpressionState",
+                string.Empty,
+                expressionFont,
+                15f,
+                new Color(silhouetteColor.r, silhouetteColor.g, silhouetteColor.b, 1f),
+                TextAlignmentOptions.Center,
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(0f, 24f),
+                new Vector2(-28f, 28f));
+            expression.raycastTarget = false;
+            return new PortraitRefs(group, body, expression);
         }
 
         private static CanvasGroup CreateFlowGroup(RectTransform parent, string name, bool visible)
@@ -2160,6 +2328,61 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 EnsureMaterial("M_ReviewSignalWarning", litShader, new Color(0.30f, 0.10f, 0.025f), new Color(1.75f, 0.35f, 0.04f), 0.40f));
         }
 
+        private static Sprite EnsurePortraitSprite(string assetPath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath) == null)
+            {
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            }
+
+            TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException(
+                    $"Narrative portrait `{assetPath}` has no TextureImporter.");
+            }
+
+            bool changed = false;
+            changed |= SetIfDifferent(
+                importer.textureType,
+                TextureImporterType.Sprite,
+                value => importer.textureType = value);
+            changed |= SetIfDifferent(
+                importer.spriteImportMode,
+                SpriteImportMode.Single,
+                value => importer.spriteImportMode = value);
+            changed |= SetIfDifferent(importer.sRGBTexture, true, value => importer.sRGBTexture = value);
+            changed |= SetIfDifferent(importer.wrapMode, TextureWrapMode.Clamp, value => importer.wrapMode = value);
+            changed |= SetIfDifferent(importer.mipmapEnabled, false, value => importer.mipmapEnabled = value);
+            changed |= SetIfDifferent(importer.filterMode, FilterMode.Bilinear, value => importer.filterMode = value);
+            changed |= SetIfDifferent(importer.alphaIsTransparency, false, value => importer.alphaIsTransparency = value);
+            if (!Mathf.Approximately(importer.spritePixelsPerUnit, 100f))
+            {
+                importer.spritePixelsPerUnit = 100f;
+                changed = true;
+            }
+
+            if (importer.maxTextureSize != 1024)
+            {
+                importer.maxTextureSize = 1024;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
+
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
+            if (sprite == null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not load narrative portrait `{assetPath}` as a Sprite.");
+            }
+
+            return sprite;
+        }
+
         private static Sprite EnsureReviewBackgroundSprite()
         {
             if (AssetDatabase.LoadAssetAtPath<Texture2D>(BackgroundArtPath) == null)
@@ -2342,6 +2565,13 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     issues.Add($"Narrative profile must contain exactly 8 lines; found {profile.LineCount}.");
                 }
 
+                if (profile.Lines.Any(line =>
+                    line == null || line.PortraitCommands.Length != 1))
+                {
+                    issues.Add(
+                        "Each review narrative line must author exactly one ordered portrait-stage command.");
+                }
+
                 AudioClip expectedVoice =
                     AssetDatabase.LoadAssetAtPath<AudioClip>(SignalWarningVoicePath);
                 NarrativeSequenceProfile.LineEntry signalWarningLine = profile.GetLine(2);
@@ -2385,6 +2615,66 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 {
                     issues.Add("Narrative profile is missing speakers: " + string.Join(", ", requiredSpeakers));
                 }
+            }
+
+            NarrativeSpeakerPresentationCatalog speakerCatalog =
+                AssetDatabase.LoadAssetAtPath<NarrativeSpeakerPresentationCatalog>(
+                    SpeakerPresentationCatalogPath);
+            if (speakerCatalog == null)
+            {
+                issues.Add("Narrative speaker presentation catalog is missing.");
+            }
+            else
+            {
+                if (!speakerCatalog.TryValidate(out string speakerCatalogError))
+                {
+                    issues.Add(
+                        "Narrative speaker presentation catalog validation failed: "
+                        + speakerCatalogError);
+                }
+
+                if (speakerCatalog.SpeakerCount != 2)
+                {
+                    issues.Add(
+                        $"Narrative speaker presentation catalog must contain exactly 2 speakers; found {speakerCatalog.SpeakerCount}.");
+                }
+
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "field_agent",
+                    "neutral",
+                    FieldAgentNeutralPortraitPath,
+                    issues);
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "field_agent",
+                    "alert",
+                    FieldAgentAlertPortraitPath,
+                    issues);
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "field_agent",
+                    "resolve",
+                    FieldAgentResolvePortraitPath,
+                    issues);
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "operator",
+                    "alert",
+                    OperatorAlertPortraitPath,
+                    issues);
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "operator",
+                    "focused",
+                    OperatorFocusedPortraitPath,
+                    issues);
+                ValidatePresentationSprite(
+                    speakerCatalog,
+                    "operator",
+                    "decision",
+                    OperatorDecisionPortraitPath,
+                    issues);
             }
 
             TimelineAsset timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath);
@@ -2509,6 +2799,21 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
             OlympusChapterNarrativeReviewController[] controllers =
                 FindComponentsInScene<OlympusChapterNarrativeReviewController>(scene);
+            NarrativeVisualNovelPresenter[] narrativePresenters =
+                FindComponentsInScene<NarrativeVisualNovelPresenter>(scene);
+            if (narrativePresenters.Length != 1)
+            {
+                issues.Add(
+                    $"Review scene must contain exactly one NarrativeVisualNovelPresenter; found {narrativePresenters.Length}.");
+            }
+            else
+            {
+                ValidateNarrativePresenterReferences(
+                    narrativePresenters[0],
+                    speakerCatalog,
+                    issues);
+            }
+
             if (controllers.Length != 1)
             {
                 issues.Add(
@@ -2521,6 +2826,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     profile,
                     director,
                     ports.Length == 1 ? ports[0] : null,
+                    narrativePresenters.Length == 1 ? narrativePresenters[0] : null,
                     issues);
             }
 
@@ -2552,6 +2858,32 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 || backgroundImporter.wrapMode != TextureWrapMode.Clamp)
             {
                 issues.Add("Review background must import as a single sRGB Sprite using clamp wrap mode.");
+            }
+
+            string[] portraitPaths =
+            {
+                FieldAgentNeutralPortraitPath,
+                FieldAgentAlertPortraitPath,
+                FieldAgentResolvePortraitPath,
+                OperatorAlertPortraitPath,
+                OperatorFocusedPortraitPath,
+                OperatorDecisionPortraitPath
+            };
+            for (int portraitIndex = 0; portraitIndex < portraitPaths.Length; portraitIndex++)
+            {
+                TextureImporter portraitImporter =
+                    AssetImporter.GetAtPath(portraitPaths[portraitIndex]) as TextureImporter;
+                if (portraitImporter == null
+                    || portraitImporter.textureType != TextureImporterType.Sprite
+                    || portraitImporter.spriteImportMode != SpriteImportMode.Single
+                    || !portraitImporter.sRGBTexture
+                    || portraitImporter.wrapMode != TextureWrapMode.Clamp
+                    || portraitImporter.mipmapEnabled
+                    || portraitImporter.maxTextureSize != 1024)
+                {
+                    issues.Add(
+                        $"Review portrait `{portraitPaths[portraitIndex]}` must use the VN-02 mobile Sprite import profile.");
+                }
             }
 
             Sprite backgroundSprite = AssetDatabase.LoadAssetAtPath<Sprite>(BackgroundArtPath);
@@ -2672,6 +3004,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
                     "DimensionBrawl.LevelDesign.StageCutscenePort",
                     "DimensionBrawl.Presentation.IntroGatePodDialogueOverlay",
                     "DimensionBrawl.UI.NarrativeReview.OlympusChapterNarrativeReviewController",
+                    "DimensionBrawl.UI.NarrativeReview.NarrativeVisualNovelPresenter",
                     "DimensionBrawl.UI.NarrativeReview.OlympusStoryTutorialTransitionReviewGate",
                     "DimensionBrawl.UI.NarrativeReview.ReviewGameplayInputProbe",
                     "DimensionBrawl.UI.NarrativeReview.ReviewTutorialStartProbe"
@@ -2703,6 +3036,7 @@ namespace DimensionBrawl.Editor.NarrativeReview
             NarrativeSequenceProfile profile,
             PlayableDirector director,
             StageCutscenePort cutscenePort,
+            NarrativeVisualNovelPresenter narrativePresenter,
             List<string> issues)
         {
             SerializedObject serialized = new SerializedObject(controller);
@@ -2714,6 +3048,11 @@ namespace DimensionBrawl.Editor.NarrativeReview
                 issues);
             ValidateObjectReference(serialized, "cutsceneDirector", director, issues);
             ValidateObjectReference(serialized, "cutscenePort", cutscenePort, issues);
+            ValidateObjectReference(
+                serialized,
+                "narrativePresenter",
+                narrativePresenter,
+                issues);
 
             OlympusStoryTutorialTransitionReviewGate transitionGate =
                 controller.GetComponent<OlympusStoryTutorialTransitionReviewGate>();
@@ -2756,6 +3095,36 @@ namespace DimensionBrawl.Editor.NarrativeReview
             }
         }
 
+        private static void ValidateNarrativePresenterReferences(
+            NarrativeVisualNovelPresenter presenter,
+            NarrativeSpeakerPresentationCatalog speakerCatalog,
+            List<string> issues)
+        {
+            SerializedObject serialized = new SerializedObject(presenter);
+            ValidateObjectReference(serialized, "speakerCatalog", speakerCatalog, issues);
+            string[] requiredReferences =
+            {
+                "leftPortraitGroup",
+                "centerPortraitGroup",
+                "rightPortraitGroup",
+                "leftPortraitImage",
+                "centerPortraitImage",
+                "rightPortraitImage",
+                "leftExpressionText",
+                "centerExpressionText",
+                "rightExpressionText"
+            };
+            for (int i = 0; i < requiredReferences.Length; i++)
+            {
+                SerializedProperty property = serialized.FindProperty(requiredReferences[i]);
+                if (property == null || property.objectReferenceValue == null)
+                {
+                    issues.Add(
+                        $"Narrative visual-novel presenter is missing `{requiredReferences[i]}`.");
+                }
+            }
+        }
+
         private static void ValidateObjectReference(
             SerializedObject serialized,
             string propertyName,
@@ -2766,6 +3135,31 @@ namespace DimensionBrawl.Editor.NarrativeReview
             if (property == null || property.objectReferenceValue != expected)
             {
                 issues.Add($"Review controller `{propertyName}` is missing or stale.");
+            }
+        }
+
+        private static void ValidatePresentationSprite(
+            NarrativeSpeakerPresentationCatalog catalog,
+            string speakerId,
+            string expressionId,
+            string expectedAssetPath,
+            List<string> issues)
+        {
+            Sprite expected = AssetDatabase.LoadAssetAtPath<Sprite>(expectedAssetPath);
+            if (expected == null
+                || catalog == null
+                || !catalog.TryResolve(
+                    speakerId,
+                    expressionId,
+                    out NarrativeSpeakerPresentation presentation)
+                || presentation.PortraitSprite != expected
+                || !string.Equals(
+                    presentation.ExpressionId,
+                    expressionId,
+                    StringComparison.Ordinal))
+            {
+                issues.Add(
+                    $"Narrative presentation `{speakerId}/{expressionId}` is missing or bound to the wrong review portrait.");
             }
         }
 
@@ -2917,14 +3311,16 @@ namespace DimensionBrawl.Editor.NarrativeReview
 
         private readonly struct PortraitRefs
         {
-            public PortraitRefs(CanvasGroup group, Image body)
+            public PortraitRefs(CanvasGroup group, Image body, TMP_Text expression)
             {
                 Group = group;
                 Body = body;
+                Expression = expression;
             }
 
             public CanvasGroup Group { get; }
             public Image Body { get; }
+            public TMP_Text Expression { get; }
         }
 
         private readonly struct ReviewMaterials
@@ -2992,6 +3388,9 @@ namespace DimensionBrawl.Editor.NarrativeReview
             public Image LeftPortraitImage;
             public Image CenterPortraitImage;
             public Image RightPortraitImage;
+            public TMP_Text LeftExpressionText;
+            public TMP_Text CenterExpressionText;
+            public TMP_Text RightExpressionText;
             public Button NarrativeNextButton;
             public Button NarrativeAutoButton;
             public TMP_Text NarrativeAutoButtonText;

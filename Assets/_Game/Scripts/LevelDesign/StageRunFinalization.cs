@@ -20,7 +20,8 @@ namespace DimensionBrawl.LevelDesign
     public enum StageTerminalFinalizationContext
     {
         NonCourseStationTerminal = 1,
-        CourseChallengeTerminal = 2
+        CourseChallengeTerminal = 2,
+        NonCourseStageTerminal = 3
     }
 
     public enum TerminalFinalizationOwnerKind
@@ -734,8 +735,10 @@ namespace DimensionBrawl.LevelDesign
             if (identity == null
                 || authority == null
                 || identity.SchemaVersion != 1
-                || finalizationContext
-                    != StageTerminalFinalizationContext.NonCourseStationTerminal
+                || (finalizationContext
+                        != StageTerminalFinalizationContext.NonCourseStationTerminal
+                    && finalizationContext
+                        != StageTerminalFinalizationContext.NonCourseStageTerminal)
                 || authority.LatchWinner != TerminalFinalizationLatchWinner.TerminalWon
                 || sealedSequence <= authority.SealedSequence
                 || !string.Equals(identity.RunId, authority.RunId, StringComparison.Ordinal)

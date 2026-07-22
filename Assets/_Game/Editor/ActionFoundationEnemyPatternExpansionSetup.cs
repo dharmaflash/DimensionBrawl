@@ -12,6 +12,10 @@ namespace DimensionBrawl.Editor
         public const string RetreatShotPatternPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_BasicSoldier_RetreatShot.asset";
         public const string RetreatBlinkPatternPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_BasicSoldier_RetreatBlink.asset";
         public const string GuardBreakPatternPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_EliteSoldier_GuardBreak.asset";
+        public const string RifleCrossfirePatternPath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BasicSoldier_RifleCrossfire.asset";
+        public const string RifleCrossfirePatternDeckPath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BasicSoldier_RifleCrossfireDeck.asset";
         public const string GeneralPatternDeckPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_BasicSoldier_GeneralPatternDeck.asset";
         public const string ElitePatternDeckPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_EliteSoldier_PatternDeck.asset";
         public const string ElitePhaseTwoPatternDeckPath = ActionFoundationProfileSetup.ProfileRoot + "/DB_EliteSoldier_PhaseTwoPatternDeck.asset";
@@ -43,6 +47,8 @@ namespace DimensionBrawl.Editor
             CombatAiPatternProfile retreatShot = LoadOrCreateEnemyPatternProfile(RetreatShotPatternPath);
             CombatAiPatternProfile retreatBlink = LoadOrCreateEnemyPatternProfile(RetreatBlinkPatternPath);
             CombatAiPatternProfile guardBreak = LoadOrCreateEnemyPatternProfile(GuardBreakPatternPath);
+            CombatAiPatternProfile rifleCrossfire = LoadOrCreateEnemyPatternProfile(RifleCrossfirePatternPath);
+            CombatAiPatternDeck rifleCrossfireDeck = LoadOrCreate<CombatAiPatternDeck>(RifleCrossfirePatternDeckPath);
             CombatAiPatternDeck generalDeck = LoadOrCreate<CombatAiPatternDeck>(GeneralPatternDeckPath);
             CombatAiPatternDeck eliteDeck = LoadOrCreate<CombatAiPatternDeck>(ElitePatternDeckPath);
             CombatAiPatternDeck phaseTwoDeck = LoadOrCreate<CombatAiPatternDeck>(ElitePhaseTwoPatternDeckPath);
@@ -191,6 +197,60 @@ namespace DimensionBrawl.Editor
                 "Death",
                 damageResponsePolicy: DamageResponsePolicy.Stagger,
                 controlLockPolicy: CombatControlLockPolicy.InterruptAction);
+
+            ConfigureEnemyPatternProfile(
+                rifleCrossfire,
+                "SciFiSoldier.Ranged",
+                "RifleCrossfire",
+                2.35f,
+                520f,
+                -24f,
+                0.18f,
+                1.4f,
+                true,
+                6.4f,
+                -0.05f,
+                CombatAiAttackShape.ProjectileLine,
+                0.32f,
+                10f,
+                true,
+                0.62f,
+                0.10f,
+                0f,
+                0.72f,
+                14f,
+                0.02f,
+                0.22f,
+                2f,
+                1.6f,
+                0.35f,
+                CombatAiCameraCueKind.RetreatShot,
+                0.9f,
+                0.72f,
+                0.55f,
+                CreateCombatAiCameraCue(new Vector3(-0.04f, 0.03f, -0.12f), 0.08f, 0.55f, -0.05f, 0.02f, 0.24f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.04f, 0.12f), 0.12f, 0.9f, -0.10f, 0.02f, 0.20f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.05f, -0.5f, 0.07f, -0.02f, 0.22f, 1f),
+                new Vector3(0.18f, 0.02f, 1.0f),
+                new Vector3(0.40f, 0.02f, 4.8f),
+                new Vector3(0.48f, 0.025f, 6.1f),
+                new Vector3(0f, 0f, -0.12f),
+                new Vector3(0f, 0f, 0.04f),
+                new Color(1f, 0.62f, 0.12f, 1f),
+                new Color(1f, 0.18f, 0.05f, 1f),
+                new Color(1f, 0.82f, 0.36f, 1f),
+                string.Empty,
+                "AttackRetreatShot",
+                "Hit",
+                "Death");
+
+            ConfigureCombatAiPatternDeck(
+                rifleCrossfireDeck,
+                "SciFiSoldier.RifleCrossfire",
+                new[]
+                {
+                    CreateCombatAiPatternDeckEntry(rifleCrossfire, 0f, 6.4f, 0.95f, 1f)
+                });
 
             ConfigureCombatAiPatternDeck(
                 generalDeck,

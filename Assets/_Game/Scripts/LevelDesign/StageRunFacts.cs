@@ -535,6 +535,8 @@ namespace DimensionBrawl.LevelDesign
 
         private readonly StageRunIdentity identity;
         private readonly MutableSegment[] segments;
+        private readonly int terminalSegmentIndex;
+        private readonly StageRunTutorialFactRequirement tutorialFactRequirement;
         private readonly List<decimal> playerDamageValues = new();
         private readonly List<StageRunSummonUseFact> summonUses = new();
         private readonly Dictionary<string, MutableProof> proofs = new(StringComparer.Ordinal);
@@ -545,8 +547,8 @@ namespace DimensionBrawl.LevelDesign
         private long factSequence;
         private double combatActiveElapsedMilliseconds;
         private double forwardRiskElapsedMilliseconds;
-        private bool stationCollectorBound;
-        private bool stationGuideReleased;
+        private bool terminalCollectorBound;
+        private bool terminalGuideReleased;
         private bool hasClockSample;
         private double lastRealtimeSeconds;
         private bool previousRouteActive;
@@ -565,6 +567,8 @@ namespace DimensionBrawl.LevelDesign
             }
 
             segments = new MutableSegment[routeSnapshot.SegmentCount];
+            terminalSegmentIndex = routeSnapshot.SegmentCount - 1;
+            tutorialFactRequirement = routeSnapshot.TutorialFactRequirement;
             for (int i = 0; i < segments.Length; i++)
             {
                 segments[i] = new MutableSegment
@@ -576,6 +580,7 @@ namespace DimensionBrawl.LevelDesign
         }
 
         public StageTutorialRouteSummaryFact TutorialRouteSummary => tutorialRouteSummary;
+        public StageRunTutorialFactRequirement TutorialFactRequirement => tutorialFactRequirement;
 
         public void ActivateFirstSegment()
         {
@@ -652,6 +657,13 @@ namespace DimensionBrawl.LevelDesign
         public bool TrySealTutorialRouteCompletion(out string error)
         {
             error = string.Empty;
+            if (tutorialFactRequirement
+                != StageRunTutorialFactRequirement.LegacyCorridorCompletion)
+            {
+                error = "The admitted route has no tutorial fact requirement.";
+                return false;
+            }
+
             if (currentSegmentIndex != 0 || !segments[0].Entered || segments[0].Completed)
             {
                 if (tutorialRouteSummary != null && segments[0].Completed)
@@ -685,7 +697,10 @@ namespace DimensionBrawl.LevelDesign
                 return true;
             }
 
-            if (currentSegmentIndex == 0 && tutorialRouteSummary == null)
+            if (currentSegmentIndex != terminalSegmentIndex
+                && tutorialFactRequirement
+                    == StageRunTutorialFactRequirement.LegacyCorridorCompletion
+                && tutorialRouteSummary == null)
             {
                 error = "Corridor tutorial facts must be sealed before the single-load handoff.";
                 return false;
@@ -696,36 +711,44 @@ namespace DimensionBrawl.LevelDesign
             return true;
         }
 
-        public bool TryBindStationCollector(out string error)
+        public bool TryBindTerminalCollector(out string error)
         {
             error = string.Empty;
-            if (currentSegmentIndex != 1 || !segments[1].Entered)
+            if (currentSegmentIndex != terminalSegmentIndex
+                || !segments[terminalSegmentIndex].Entered)
             {
-                error = "Station fact collector cannot bind outside the entered Station segment.";
+                error = "Terminal fact collector cannot bind outside the entered terminal segment.";
                 return false;
             }
 
-            stationCollectorBound = true;
+            terminalCollectorBound = true;
             return true;
         }
 
-        public bool TryMarkStationGuideReleased(out string error)
+        public bool TryMarkTerminalGuideReleased(out string error)
         {
             error = string.Empty;
-            if (!stationCollectorBound || currentSegmentIndex != 1 || !segments[1].Entered)
+            if (!terminalCollectorBound
+                || currentSegmentIndex != terminalSegmentIndex
+                || !segments[terminalSegmentIndex].Entered)
             {
-                error = "Station guide release has no bound current-run fact collector.";
+                error = "Terminal guide release has no bound current-run fact collector.";
                 return false;
             }
 
-            stationGuideReleased = true;
+            if (tutorialFactRequirement
+                == StageRunTutorialFactRequirement.LegacyCorridorCompletion)
+            {
+                terminalGuideReleased = true;
+            }
+
             return true;
         }
 
         public bool TryRecordPlayerDamage(float amount, out string error)
         {
             error = string.Empty;
-            if (!CanRecordStationFact(out error) || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
+            if (!CanRecordTerminalFact(out error) || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount))
             {
                 if (string.IsNullOrEmpty(error))
                 {
@@ -741,7 +764,7 @@ namespace DimensionBrawl.LevelDesign
 
         public bool TryRecordPlayerDown(out string error)
         {
-            if (!CanRecordStationFact(out error))
+            if (!CanRecordTerminalFact(out error))
             {
                 return false;
             }
@@ -752,7 +775,7 @@ namespace DimensionBrawl.LevelDesign
 
         public bool TryRecordPerfectDodge(out string error)
         {
-            if (!CanRecordStationFact(out error))
+            if (!CanRecordTerminalFact(out error))
             {
                 return false;
             }
@@ -763,7 +786,7 @@ namespace DimensionBrawl.LevelDesign
 
         public bool TryRecordSummonUse(string slotRoleId, int spentTier, out string error)
         {
-            if (!CanRecordStationFact(out error)
+            if (!CanRecordTerminalFact(out error)
                 || string.IsNullOrWhiteSpace(slotRoleId)
                 || spentTier < 1
                 || spentTier > 3)
@@ -791,7 +814,7 @@ namespace DimensionBrawl.LevelDesign
             bool qualified,
             out string error)
         {
-            if (!CanRecordStationFact(out error))
+            if (!CanRecordTerminalFact(out error))
             {
                 return false;
             }
@@ -806,18 +829,37 @@ namespace DimensionBrawl.LevelDesign
         {
             bundle = null;
             error = string.Empty;
-            if (currentSegmentIndex != 1
-                || !segments[1].Entered
-                || !stationCollectorBound
-                || !stationGuideReleased)
+            if (currentSegmentIndex != terminalSegmentIndex
+                || !segments[terminalSegmentIndex].Entered
+                || !terminalCollectorBound)
             {
-                error = "Station facts require an entered segment, bound collector, and explicit guide Released state.";
+                error = "Terminal facts require an entered terminal segment and bound collector.";
                 return false;
             }
 
-            if (tutorialRouteSummary == null || !segments[0].Completed)
+            for (int i = 0; i < terminalSegmentIndex; i++)
             {
-                error = "Corridor tutorial facts and segment closure are missing.";
+                if (!segments[i].Entered || !segments[i].Completed)
+                {
+                    error = "Every pre-terminal segment must be entered and completed before terminal fact sealing.";
+                    return false;
+                }
+            }
+
+            if (tutorialFactRequirement
+                    == StageRunTutorialFactRequirement.LegacyCorridorCompletion
+                && (!terminalGuideReleased
+                    || tutorialRouteSummary == null
+                    || !segments[0].Completed))
+            {
+                error = "Corridor tutorial facts, segment closure, or explicit guide Released state are missing.";
+                return false;
+            }
+
+            if (tutorialFactRequirement == StageRunTutorialFactRequirement.None
+                && tutorialRouteSummary != null)
+            {
+                error = "A route without a tutorial fact requirement cannot fabricate tutorial completion.";
                 return false;
             }
 
@@ -860,7 +902,7 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
-            segments[1].Completed = true;
+            segments[terminalSegmentIndex].Completed = true;
             StageSceneSegmentResult[] segmentResults = new StageSceneSegmentResult[segments.Length];
             long totalActiveElapsedMilliseconds = 0;
             for (int i = 0; i < segments.Length; i++)
@@ -909,7 +951,7 @@ namespace DimensionBrawl.LevelDesign
             var outcome = new StageOutcomeFact(
                 identity,
                 resolution,
-                segments[1].SegmentId,
+                segments[terminalSegmentIndex].SegmentId,
                 totalActiveElapsedMilliseconds,
                 ToCanonicalMilliseconds(combatActiveElapsedMilliseconds),
                 sealSequence);
@@ -926,12 +968,15 @@ namespace DimensionBrawl.LevelDesign
         private long CurrentSegmentElapsedMilliseconds =>
             ToCanonicalMilliseconds(segments[currentSegmentIndex].ActiveElapsedMilliseconds);
 
-        private bool CanRecordStationFact(out string error)
+        private bool CanRecordTerminalFact(out string error)
         {
             error = string.Empty;
-            if (currentSegmentIndex != 1 || !segments[1].Entered || !stationCollectorBound || segments[1].Completed)
+            if (currentSegmentIndex != terminalSegmentIndex
+                || !segments[terminalSegmentIndex].Entered
+                || !terminalCollectorBound
+                || segments[terminalSegmentIndex].Completed)
             {
-                error = "Station fact is outside the active bound Station collection window.";
+                error = "Terminal fact is outside the active bound terminal collection window.";
                 return false;
             }
 

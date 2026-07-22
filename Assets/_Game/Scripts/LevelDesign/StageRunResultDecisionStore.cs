@@ -208,8 +208,16 @@ namespace DimensionBrawl.LevelDesign
             {
                 if (Cache.TryGetValue(runId, out CachedCommit cached))
                 {
-                    receipt = cached.Receipt;
-                    return true;
+                    if (cached.Receipt != null
+                        && string.Equals(cached.Receipt.RunId, runId, StringComparison.Ordinal))
+                    {
+                        receipt = cached.Receipt;
+                        return true;
+                    }
+
+                    failureKind = StageRunResultCommitStoreFailureKind.Conflict;
+                    error = "Cached result commit decision does not match the requested run ID.";
+                    return false;
                 }
 
                 string path = GetDecisionPath(runId);
@@ -219,7 +227,20 @@ namespace DimensionBrawl.LevelDesign
                     return false;
                 }
 
-                return TryReadDecision(path, out _, out receipt, out failureKind, out error);
+                if (!TryReadDecision(path, out _, out receipt, out failureKind, out error))
+                {
+                    return false;
+                }
+
+                if (!string.Equals(receipt.RunId, runId, StringComparison.Ordinal))
+                {
+                    receipt = null;
+                    failureKind = StageRunResultCommitStoreFailureKind.Conflict;
+                    error = "Durable result commit decision does not match the requested run ID.";
+                    return false;
+                }
+
+                return true;
             }
         }
 

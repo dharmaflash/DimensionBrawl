@@ -116,3 +116,15 @@ Tutorial steps and in-combat dialogue must remain separate systems because they 
 - Tutorial highlight/mask steps and in-combat dialogue cues.
 
 Generated visual or audio assets must carry model/service, prompt or script, generation date, license/provenance notes, locale, and `TEMP_DO_NOT_SHIP` status until reviewed.
+
+## VN-02 presentation upgrade - 2026-07-20
+
+The VisualNovel state now uses a reusable speaker presentation catalog and an ordered
+portrait-command layer. Left/center/right actors persist between lines, expressions resolve
+through the catalog, the active actor is focused without clearing the others, and
+typewriter, Auto, choice, Log, and Skip-confirmation state is exposed for inspection. Six
+original generated staging portraits are included as `TEMP_DO_NOT_SHIP` review assets.
+
+The implementation, ArkData structural evidence, strict copy boundary, full image-generation
+prompts and provenance, 54/54 broader PlayMode regression, and refreshed 15/15 visual QA are
+recorded in `VN02_MULTI_CHARACTER_NARRATIVE_PRESENTER.md`.

@@ -6,12 +6,25 @@ using DimensionBrawl.Presentation;
 using IsekaiBrawl.Gameplay;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Tests
 {
     public sealed class MobileRuntimeHotPathPlayModeTests
     {
+        [UnitySetUp]
+        public IEnumerator StartFromNeutralRuntimeState()
+        {
+            yield return ResetRuntimeState();
+        }
+
+        [UnityTearDown]
+        public IEnumerator RestoreNeutralRuntimeState()
+        {
+            yield return ResetRuntimeState();
+        }
+
         [UnityTest]
         public IEnumerator ArenaDecorativeAnimationsShareOneLateUpdateScheduler()
         {
@@ -425,6 +438,35 @@ namespace DimensionBrawl.Tests
             finally
             {
                 Object.Destroy(root);
+            }
+
+            yield return null;
+        }
+
+        private static IEnumerator ResetRuntimeState()
+        {
+            Time.timeScale = 1f;
+            Scene neutralScene = SceneManager.CreateScene(
+                $"MobileHotPathNeutral_{System.Guid.NewGuid():N}");
+            SceneManager.SetActiveScene(neutralScene);
+
+            var scenesToUnload = new List<Scene>();
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene loadedScene = SceneManager.GetSceneAt(sceneIndex);
+                if (loadedScene != neutralScene)
+                {
+                    scenesToUnload.Add(loadedScene);
+                }
+            }
+
+            for (int sceneIndex = 0; sceneIndex < scenesToUnload.Count; sceneIndex++)
+            {
+                AsyncOperation unload = SceneManager.UnloadSceneAsync(scenesToUnload[sceneIndex]);
+                if (unload != null)
+                {
+                    yield return unload;
+                }
             }
 
             yield return null;

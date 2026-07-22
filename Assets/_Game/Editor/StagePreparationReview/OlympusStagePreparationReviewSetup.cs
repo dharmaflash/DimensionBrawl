@@ -1503,10 +1503,11 @@ namespace DimensionBrawl.Editor.StagePreparationReview
             UIStageCatalog stageCatalog,
             List<string> issues)
         {
-            if (stageCatalog == null || stageCatalog.StageCount != 1)
+            if (stageCatalog == null
+                || !stageCatalog.TryValidateEntryIdentities(out _))
             {
                 issues.Add(
-                    "Canonical UIStageCatalog must remain present with exactly one entry.");
+                    "Canonical UIStageCatalog must retain uniquely identified entries.");
                 return;
             }
 

@@ -24,7 +24,8 @@ namespace DimensionBrawl.Editor
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string MeleeSoldierGameplayPrefabPath =
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
-        private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        private const string RifleCrossfireSoldierGameplayPrefabPath =
+            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
         private const string EliteDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
         private const string SummonCallerBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_SummonCallerElite.prefab";
         private const string AuraCaptainBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_AuraCaptainElite.prefab";
@@ -140,7 +141,7 @@ namespace DimensionBrawl.Editor
             GameObject heavyBattleArmorVisual)
         {
             GameObject meleeSoldierPrefab = LoadOptionalGameObject(MeleeSoldierGameplayPrefabPath);
-            GameObject generalDeckSoldierPrefab = LoadOptionalGameObject(GeneralDeckSoldierGameplayPrefabPath);
+            GameObject rifleCrossfireSoldierPrefab = LoadOptionalGameObject(RifleCrossfireSoldierGameplayPrefabPath);
             GameObject eliteDeckSoldierPrefab = LoadOptionalGameObject(EliteDeckSoldierGameplayPrefabPath);
 
             ConfigureArchetype(
@@ -167,15 +168,15 @@ namespace DimensionBrawl.Editor
                 CombatEnemyArchetypeKind.MobileSoldier,
                 true,
                 new[] { roles.LineCaster, roles.FanSuppressor, roles.BacklineShooter },
-                generalDeckSoldierPrefab,
+                rifleCrossfireSoldierPrefab,
                 sciFiSoldier01Visual,
-                generalDeckSoldierPrefab == null,
+                rifleCrossfireSoldierPrefab == null,
                 true,
                 "Promoted game-owned SciFiSoldier_01 Commando visual with assault-rifle animation set.",
-                generalDeckSoldierPrefab != null
-                    ? "Use the authored GeneralDeck prefab candidate for line, fan, and backline role review."
-                    : "Generate the authored GeneralDeck prefab candidate before assigning reusable ranged gameplay prefab refs.",
-                "Covers line, fan, and backline pressure with a distinct rifle soldier while behavior remains in pattern/deck data.");
+                rifleCrossfireSoldierPrefab != null
+                    ? "Use the reviewed RifleCrossfire prefab with one physical ProjectileLine loadout."
+                    : "Generate the reviewed RifleCrossfire prefab before assigning reusable ranged gameplay refs.",
+                "One truthful mobile rifle loadout: visible hostile projectile flight, bounded ownership, and no implicit role-candidate promotion.");
 
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(SciFiEliteSoldierPath),

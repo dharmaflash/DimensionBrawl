@@ -37,6 +37,7 @@ namespace DimensionBrawl.Combat
         private DamageResponsePolicy responsePolicy = DamageResponsePolicy.FlashOnly;
         private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
         private float damage;
+        private float hitStopSeconds;
         private float speed;
         private float remainingLifetime;
         private bool active;
@@ -47,7 +48,11 @@ namespace DimensionBrawl.Combat
         private bool audioSourcesResolved;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
+        public CombatHealth SourceHealth => sourceHealth;
         public DamageTeam SourceTeam => sourceTeam;
+        public float Damage => damage;
+        public float HitStopSeconds => hitStopSeconds;
+        public float RemainingLifetimeSeconds => remainingLifetime;
         public Vector3 TravelDirection => travelDirection;
         public bool AllowsVerticalTravel => allowVerticalTravel;
         public DamageResponsePolicy ResponsePolicy => responsePolicy;
@@ -73,13 +78,15 @@ namespace DimensionBrawl.Combat
             float lifetimeSeconds,
             float radius,
             DamageResponsePolicy newResponsePolicy = DamageResponsePolicy.FlashOnly,
-            CombatControlLockPolicy newControlLockPolicy = CombatControlLockPolicy.None)
+            CombatControlLockPolicy newControlLockPolicy = CombatControlLockPolicy.None,
+            float newHitStopSeconds = 0f)
         {
             EnsurePhysicsComponents();
             sourceHealth = newSourceHealth;
             sourceTeam = newSourceTeam;
             ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
+            hitStopSeconds = Mathf.Max(0f, newHitStopSeconds);
             travelDirection = ResolveDirection(newTravelDirection);
             speed = Mathf.Max(0f, newSpeed);
             remainingLifetime = Mathf.Max(0.01f, lifetimeSeconds);
@@ -146,10 +153,19 @@ namespace DimensionBrawl.Combat
                     distance,
                     Physics.DefaultRaycastLayers,
                     QueryTriggerInteraction.Collide);
+                SortSweepHitsByDistance(hitCount);
                 for (int i = 0; i < hitCount; i++)
                 {
                     RaycastHit hit = sweepHits[i];
-                    if (hit.collider != null && TryApplyImpact(hit.collider, hit.point) && !active)
+                    if (hit.collider == null
+                        || hit.collider.transform == transform
+                        || hit.collider.transform.IsChildOf(transform))
+                    {
+                        continue;
+                    }
+
+                    transform.position = hit.point;
+                    if (TryApplyImpact(hit.collider, hit.point) && !active)
                     {
                         return true;
                     }
@@ -157,6 +173,12 @@ namespace DimensionBrawl.Combat
             }
 
             Vector3 endPosition = startPosition + travelDelta;
+            transform.position = endPosition;
+            if (SummonPressureScreen.TryInterceptAnyOverlapping(this, endPosition, radius))
+            {
+                return true;
+            }
+
             int overlapCount = Physics.OverlapSphereNonAlloc(
                 endPosition,
                 radius,
@@ -173,6 +195,30 @@ namespace DimensionBrawl.Combat
             }
 
             return !active;
+        }
+
+        private void SortSweepHitsByDistance(int hitCount)
+        {
+            for (int i = 0; i < hitCount - 1; i++)
+            {
+                int nearestIndex = i;
+                for (int j = i + 1; j < hitCount; j++)
+                {
+                    if (sweepHits[j].distance < sweepHits[nearestIndex].distance)
+                    {
+                        nearestIndex = j;
+                    }
+                }
+
+                if (nearestIndex == i)
+                {
+                    continue;
+                }
+
+                RaycastHit swap = sweepHits[i];
+                sweepHits[i] = sweepHits[nearestIndex];
+                sweepHits[nearestIndex] = swap;
+            }
         }
 
         private float ResolveCurrentRadius()
@@ -195,10 +241,24 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (SummonPressureScreen.ResolveFromCollider(hitCollider) != null)
+            SummonPressureScreen hitPressureScreen = SummonPressureScreen.ResolveFromCollider(hitCollider);
+            if (hitPressureScreen != null)
             {
+                if (hitPressureScreen.TryIntercept(this))
+                {
+                    return true;
+                }
+
                 SetLastImpact(ProjectileImpactResult.IgnoredPressureScreen, null, null);
                 return false;
+            }
+
+            if (SummonPressureScreen.TryInterceptAnyOverlapping(
+                    this,
+                    impactPoint,
+                    ResolveCurrentRadius()))
+            {
+                return true;
             }
 
             SummonFrontlineProxy targetProxy = SummonFrontlineProxy.ResolveFromCollider(hitCollider);
@@ -241,7 +301,7 @@ namespace DimensionBrawl.Combat
                 damage,
                 impactPoint,
                 travelDirection,
-                0f,
+                hitStopSeconds,
                 responsePolicy,
                 controlLockPolicy);
 

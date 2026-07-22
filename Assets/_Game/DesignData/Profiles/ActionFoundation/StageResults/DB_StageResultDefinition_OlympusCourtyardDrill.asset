@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18eb75c9f7a9a1646bf8fb0b550d67a7, type: 3}
+  m_Name: DB_StageResultDefinition_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime:DimensionBrawl.LevelDesign:StageResultDefinition
+  schemaVersion: 1
+  resultDefinitionId: olympus-courtyard-drill.result-definition
+  revision: 1
+  evaluationContentRevision: 1
+  playableStageId: OLYMPUS-COURTYARD-DRILL-01
+  supportedRunSchemaVersion: 1
+  masterySetDisposition: 3
+  masterySetId:
+  masterySetRevision: 0
+  masterySetSemanticDigest:
+  requiredFactCapabilitiesDisposition: 3
+  requiredFactCapabilityCount: 0
+  requiredFactCapabilitiesDigest:
+  allowedSemanticProofsDisposition: 3
+  allowedSemanticProofCount: 0
+  allowedSemanticProofsDigest:
+  presentationBindingRevision: 1
+  canonicalPresentationCatalog: {fileID: 11400000, guid: fb0099791faf6a241803d4806143646e, type: 2}
+  presentationProfile: {fileID: 11400000, guid: bf0e79d76feae5c4fa0e85e92b581abc, type: 2}
+  localizationTable: {fileID: 11400000, guid: 54b91ddd74869da45be8e873b5606c5f, type: 2}
+  localeResolutionPolicy: 1
+  actionMappings:
+  - outcome: 1
+    actionId: olympus-courtyard-drill.replay
+    labelKey: stage_result.action.replay
+    role: 1
+    displayOrder: 0
+  - outcome: 1
+    actionId: olympus-courtyard-drill.to-lobby
+    labelKey: stage_result.action.lobby
+    role: 2
+    displayOrder: 1
+  - outcome: 2
+    actionId: olympus-courtyard-drill.retry
+    labelKey: stage_result.action.retry
+    role: 1
+    displayOrder: 0
+  - outcome: 2
+    actionId: olympus-courtyard-drill.to-lobby
+    labelKey: stage_result.action.lobby
+    role: 2
+    displayOrder: 1
+  evaluationContentDigest: 70f2ca33fdc9272c80d889539a4271ed3bbce5245f4de12973cf5a38e937e5b3
+  presentationBindingDigest: 7ae2fa35532a8e43a68d47fe7c94614c128335e94fec9245adab6e232f1e64ef
+  presentationSourceDigest: 2b715648f0de1cd0ed550e22aa24d637d3a8fa962a8c66be53123bd9503cdabf

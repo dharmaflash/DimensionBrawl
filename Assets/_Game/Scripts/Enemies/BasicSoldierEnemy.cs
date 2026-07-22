@@ -127,6 +127,7 @@ namespace DimensionBrawl.Enemies
         public string EnemyTypeId => ActorTypeId;
         public string PatternId => patternProfile != null ? patternProfile.PatternId : patternId;
         public CombatTargetSensor TargetSensor => targetSensor;
+        public Vector3 ResolvedAttackDirection => CurrentAttackDirection();
         public string AttackAnimationTrigger => ActiveAttackTrigger;
         public string HitAnimationTrigger => ActiveHitTrigger;
         public string DeathAnimationTrigger => ActiveDeathTrigger;

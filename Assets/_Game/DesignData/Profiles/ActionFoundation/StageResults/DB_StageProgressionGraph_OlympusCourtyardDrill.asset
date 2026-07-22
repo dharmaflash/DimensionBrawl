@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca0c2fea070555446babf9a6d4d1d3a9, type: 3}
+  m_Name: DB_StageProgressionGraph_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime:DimensionBrawl.LevelDesign:StageProgressionGraph
+  schemaVersion: 1
+  progressionGraphId: olympus-courtyard-drill.progression-graph
+  revision: 1
+  cyclePolicy: 1
+  nodes:
+  - {fileID: 11400000, guid: 35cd27f44ee42a042b173e32b9d0ca2f, type: 2}
+  canonicalDigest: b4e6e81334d473939c282abd78603ba54436e71e3d1c3fdeaed4e81b749823a4

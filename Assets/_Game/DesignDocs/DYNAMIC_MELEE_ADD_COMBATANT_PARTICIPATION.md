@@ -4,6 +4,18 @@ Status: `IMPLEMENTED / VERIFIED`
 
 Date: 2026-07-18
 
+Post-A1 status, 2026-07-20: this document remains the authoritative ticket-local A0
+combatant-participation contract. A1 now applies it independently to two ordered Add
+tickets in the canonical Station segment. Collection lifecycle, exact two-row authoring,
+typed receipts, and current verification are documented in
+`A1_ORDERED_ADD_ENCOUNTER_EXECUTOR.md`.
+
+Post-A2 status, 2026-07-20: the canonical left ticket remains this exact Melee A0
+participant, while the right ticket now uses the reviewed `SciFiSoldier.Ranged`
+RifleCrossfire loadout. The shared bidirectional participation and synchronous ticket-stop
+rules remain unchanged. Projectile-specific ownership and current mixed-roster evidence are
+documented in `A2_RIFLE_CROSSFIRE_RANGED_LOADOUT.md`.
+
 Canonical product scope: the existing Station `add-left` only
 
 Verification state: the bounded A0 compile, prefab/route validators, behavior, lifecycle,
@@ -139,9 +151,9 @@ Canonical scene validation must reject the route unless it has:
 - selector self health equal to the terminal player;
 - the exact terminal boss retained in the selector's authored candidate set.
 
-Runtime guards must additionally preserve the active canonical run, scene lease, guide
-release, exact instance cardinality, and one-owned-Add assumptions already held by the
-count-one executor.
+Runtime guards must additionally preserve the active canonical run, one plan-level scene
+lease, guide release, and ticket-local exact instance cardinality. A1 applies these A0
+rules to every independently owned Add ticket.
 
 ## Acceptance and verification ledger
 
@@ -189,9 +201,10 @@ balance values, layouts, media, or implementation details. No external generatio
 output is a runtime dependency or acceptance substitute. Future use must preserve the same
 source-boundary record and independent DimensionBrawl naming and implementation.
 
-## Explicit non-goals
+## A0 explicit non-goals at implementation time
 
-- no second Add, collection executor, Encounter/Wave runtime, or CF-01 admission;
+- A0 itself added no second Add or collection executor; A1 later admitted the exact
+  ordered two-ticket collection without admitting an Encounter/Wave runtime or CF-01;
 - one dedicated game-owned HeavyWindup prefab is added; no new scene component,
   pattern/design-data profile, or stage catalog row;
 - no change to boss clear, player failure, result, reward, progression, save, or service
@@ -224,13 +237,13 @@ authority.
 
 ### VN-02 — reusable multi-character narrative presenter
 
-Review a reusable presenter with a DimensionBrawl-owned speaker presentation catalog,
-persistent left/center/right portrait state, expression selection, and inspectable
-typewriter, auto, choice, log, and skip states. It must correct the current review
-limitation where portrait presentation is cleared or hard-coded per line, but remains an
-isolated review surface until an explicit story/route owner admits it. No external story
-text, character art, voices, layouts, identifiers, or timing values are admitted by this
-queue entry.
+Implemented and verified as a review-only slice. It now has a DimensionBrawl-owned speaker
+presentation catalog, ordered portrait commands, persistent left/center/right actor state,
+expression selection, and inspectable typewriter, Auto, choice, Log, and Skip state. The
+implementation, generated-art provenance, tests, visual QA, and product boundary are in
+`VN02_MULTI_CHARACTER_NARRATIVE_PRESENTER.md`. It remains isolated until an explicit
+story/route owner admits it; no external story text, character designs, voices, layouts,
+identifiers, or timings were copied.
 
 Neither queued slice authorizes generation-tool spending, browser automation, external
 publication, canonical scene edits, or runtime admission by itself.

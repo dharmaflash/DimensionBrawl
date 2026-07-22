@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd83a106a8ee78e45919f10ddb386e62, type: 3}
+  m_Name: DB_Stage_OlympusCourtyardDrillCombat
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionProfile
+  stageId: OLYMPUS-COURTYARD-DRILL-COMBAT-01
+  displayName: Olympus Courtyard Drill
+  chapterId: OLYMPUS-INVASION
+  previousStageId:
+  nextStageId:
+  mapScenePath: Assets/_Game/Scenes/OlympusCourtyardDrillStage.unity
+  mapRootName: OlympusCourtyardDrillStageRoot
+  mapContentRootName: OlympusCourtyardDrillMap
+  mapScale: {x: 1, y: 1, z: 1}
+  layoutId: OLYMPUS_COURTYARD_DRILL_COMPACT_01
+  scenePrefabSource:
+  objective: Defeat the Courtyard terminal boss while handling the reviewed Rifle
+    Crossfire pressure.
+  clearCondition: The authoritative Courtyard encounter resolves the bound boss terminal
+    state through the coordinated terminal policy.
+  excludedScope: No cinematic, tutorial course, reward payout, persistent unlock,
+    broad wave graph, or live-service economy is authored in B1-1.
+  anchors:
+  - anchorId: Player_Start
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 0, y: 0, z: -4.5}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Exact player entry anchor for the one-row Courtyard run.
+  - anchorId: Boss_Terminal
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 0, y: 0, z: 3.6}
+    expectedEuler: {x: 0, y: 180, z: 0}
+    purpose: Exact terminal-boss authoring anchor.
+  - anchorId: Add_RifleCrossfire
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: -5, y: 0, z: 1.5}
+    expectedEuler: {x: 0, y: 135, z: 0}
+    purpose: Exact reviewed Rifle Crossfire Add anchor.
+  spawns:
+  - spawnId: player-start
+    spawnKind: 0
+    positionId: 1101
+    anchorId: Player_Start
+    payloadId: PlayerParty
+    payloadArchetype: {fileID: 0}
+    count: 1
+    delaySeconds: 0
+    note: Scene-owned player entry identity; no balance or roster expansion.
+  - spawnId: terminal-boss
+    spawnKind: 1
+    positionId: 1201
+    anchorId: Boss_Terminal
+    payloadId: CourtyardDrill.MiniBoss
+    payloadArchetype: {fileID: 0}
+    count: 1
+    delaySeconds: 0
+    note: Scene-owned actual boss terminal subject; ordinary Adds never impersonate
+      this role.
+  - spawnId: rifle-crossfire
+    spawnKind: 2
+    positionId: 1301
+    anchorId: Add_RifleCrossfire
+    payloadId: SciFiSoldier.Ranged
+    payloadArchetype: {fileID: 11400000, guid: c420a63d83b9fd04c90d9b8d0acd03b9, type: 2}
+    count: 1
+    delaySeconds: 0.6
+    note: One reviewed RifleCrossfire pressure participant activated by the neutral
+      scene-ready executor.
+  cutsceneHandoffs: []
+  runtimeStates:
+  - stateId: state-courtyard-encounter-terminal
+    stateKind: 2
+    positionId: 9001
+    anchorId:
+    conditionId: courtyard-drill.encounter.terminal
+    note: The coordinated terminal record closes the only logical segment; result
+      UI remains presentation.
+  sourceReferences:
+  - sourceId: local-olympus-courtyard-drill
+    sourcePath: Assets/_Game/Scenes/OlympusCourtyardDrillStage.unity
+    localTakeaway: A compact local arena reuses promoted modular art and reviewed
+      payloads; Ark data supports only the separated stage/map/spawn structure, not
+      copied values.

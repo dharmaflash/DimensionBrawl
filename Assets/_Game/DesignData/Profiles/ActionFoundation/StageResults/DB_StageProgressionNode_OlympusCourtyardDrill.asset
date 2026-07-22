@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07ff262e60ff5bc4aad7a7d395c9bac7, type: 3}
+  m_Name: DB_StageProgressionNode_OlympusCourtyardDrill
+  m_EditorClassIdentifier: DimensionBrawl.Runtime:DimensionBrawl.LevelDesign:StageProgressionNode
+  schemaVersion: 1
+  progressionNodeId: olympus-courtyard-drill.progression-node
+  revision: 1
+  contentRevision: 1
+  battleStageDisposition: 2
+  battleStageId:
+  prerequisites: []
+  recommendedNext: []
+  preBattleStoryDisposition: 2
+  preBattleStoryId:
+  postBattleStoryDisposition: 2
+  postBattleStoryId:
+  afterClearScriptDisposition: 2
+  afterClearScriptId:
+  rewardPlanDisposition: 3
+  rewardPlanId:
+  rewardPlanRevision: 0
+  rewardPlanDigest:
+  bindingRevision: 1
+  playableStageId: OLYMPUS-COURTYARD-DRILL-01
+  routeRevision: 1
+  canonicalRouteDigest: c900c97a840057b48b09f2e555900769c47747903879845aba948d6a6c634dc2
+  progressionGraphId: olympus-courtyard-drill.progression-graph
+  progressionGraphRevision: 1
+  contentDigest: adfa5b47a45f2198774cbc1aebf4ce369ac28383a220e3a51d57c7b44620eba4
+  bindingDigest: f4b8b19dbde0ee76faac7d4cfbcc260048739a44029aec5f3bbaa33ac3f23ed5

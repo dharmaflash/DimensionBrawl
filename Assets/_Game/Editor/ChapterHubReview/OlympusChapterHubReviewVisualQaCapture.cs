@@ -361,10 +361,13 @@ namespace DimensionBrawl.Editor.ChapterHubReview
             controller.ReviewConfirmed -= HandleReviewConfirmed;
             controller.ReviewConfirmed += HandleReviewConfirmed;
 
-            if (stageCatalog.StageCount != 1)
+            if (!stageCatalog.TryValidateEntryIdentities(out _)
+                || !stageCatalog.TryGetStage(
+                    OlympusChapterHubReviewSetup.CanonicalCatalogEntryId,
+                    out _))
             {
                 throw new InvalidOperationException(
-                    $"Canonical UIStageCatalog must retain exactly one stage; found {stageCatalog.StageCount}.");
+                    "Canonical UIStageCatalog must retain the Olympus review entry inside a valid catalog.");
             }
 
             if (StageRunRuntime.HasActiveContext)

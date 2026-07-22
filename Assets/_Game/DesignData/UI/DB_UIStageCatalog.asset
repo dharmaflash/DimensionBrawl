@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DB_UIStageCatalog
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIStageCatalog
   projectionSchemaVersion: 1
-  catalogProjectionGeneration: 2
+  catalogProjectionGeneration: 3
   stages:
   - id: story_v1_training_route
     displayName: "\uAE30\uC5B5\uC758 \uD68C\uB791"
@@ -27,4 +27,14 @@ MonoBehaviour:
     presentationProvenance: 1
     playableStage: {fileID: 11400000, guid: a1d4f8c3b6e24970a5c1d7e9f2036b84, type: 2}
     loadingCardId: stage_to_combat_mood_bridge
-    canonicalProjectionDigest: 571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d
+    canonicalProjectionDigest: 7bf7637516466673a3362b6caf761454632c6b1c7404d83d9c5e5ed2a6d59562
+  - id: story_v1_courtyard_drill_route
+    displayName: Olympus Courtyard Drill
+    summary: Defeat the Courtyard terminal boss under Rifle Crossfire pressure.
+    threatTags:
+    recommendedSummonRole:
+    mockRewardPreview:
+    presentationProvenance: 1
+    playableStage: {fileID: 11400000, guid: e7a54e232daf8414d833c2d4e39285c8, type: 2}
+    loadingCardId: stage_to_combat_mood_bridge
+    canonicalProjectionDigest: 588473db6022e05ccac3c8ebfe8c9cd5a5cf1ea50d1e02b5b6f4bce2e6594e34
