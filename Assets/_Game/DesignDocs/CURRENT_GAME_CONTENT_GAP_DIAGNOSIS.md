@@ -1,5 +1,22 @@
 # Current Game Content Gap Diagnosis
 
+## 2026-07-22 direction correction — active override
+
+`Olympus Courtyard Drill` was rejected as a product stage and returned to an isolated
+direct-review/regression fixture. Its single `Entry | Terminal` arena, boss, and one Add
+do not satisfy the intended PGR/early-HI3-style 3–5 minute linear grammar:
+`entry -> 1–3 combat pockets -> relief -> final encounter -> result`.
+
+Current product truth is again one catalog row at projection generation 2 and five build
+scenes. Courtyard is absent from the product catalog, Stage Select bindings, and every
+Build Settings row. B0-4's generic multi-entry/catalog/build-manifest capability remains;
+only the incorrect B1 product admission was withdrawn.
+
+All older recommendations below that say “compact arena”, “one-scene second stage”, or
+name Courtyard as the next product route are superseded. Do not re-admit that arena or
+start another stage implementation until a short, player-visible 3–5 minute linear-stage
+design fixes traversal, pocket rhythm, relief, final encounter, and presentation beats.
+
 ## 2026-07-21 milestone update
 
 Phase 0, A0, A1, A2, B0-1, B0-2, and B0-3 are now implemented and functionally verified.
@@ -23,10 +40,10 @@ evidence is recorded in `A1_ORDERED_ADD_ENCOUNTER_EXECUTOR.md`,
 the reasoning record but its scalar/missing-A1/A2/B0-1/B0-2/B0-3 observations are superseded.
 
 The A2 loadout is functionally verified but still awaits human mobile-landscape visual
-review. The next bounded product gate is B0-4 multi-entry catalog/build plumbing. After
-B0, build one compact
-second playable stage and introduce only the required-defeat composition that stage
-actually needs. CF-01 remains review-only and is not a runtime shortcut.
+review. B0-4 multi-entry catalog/build plumbing is implemented and retained as generic
+infrastructure, while the attempted Courtyard product admission is withdrawn. The next
+bounded gate is a reviewed 3–5 minute linear-stage design, not another compact arena.
+CF-01 remains review-only and is not a runtime shortcut.
 
 Date: 2026-07-16
 Status: read-only diagnosis and lightweight living backlog; not an implementation contract
@@ -35,11 +52,11 @@ Status: read-only diagnosis and lightweight living backlog; not an implementatio
 
 At the 2026-07-16 diagnosis cutoff, the first problem was a copied-scene break in the
 intended Olympus play space, followed by scalar Add execution and missing target
-participation. Phase 0, A0, A1, and A2 have since closed those problems. B0-1 through B0-3
-have closed the route topology, active-role, truthful one-row facts/result, and neutral
-scene-adapter seams. The current first problem is the remaining multi-entry catalog/build
-seam for a second playable stage. Begin with B0-4 and do not add another
-broad contract layer or live-service system.
+participation. Phase 0, A0, A1, and A2 have since closed those problems. B0-1 through B0-4
+have closed the route topology, active-role, truthful one-row facts/result, neutral
+scene-adapter, and generic multi-entry catalog/build seams. The current first problem is
+the absence of an agreed 3–5 minute linear-stage layout and encounter rhythm. Do not add
+another broad contract layer, live-service system, or product route before that design.
 
 ## Current playable truth
 
@@ -47,8 +64,8 @@ broad contract layer or live-service system.
 |---|---|
 | Selectable content | One catalog entry: `story_v1_training_route` |
 | Playable route | One route: `OLYMPUS-INVASION-01` |
-| Physical combat space | The admitted route now keeps tutorial and lower combat in `OlympusCorridorInvasionStage`; the legacy Station scene remains in the build list but is not the continuous product transition |
-| Build scenes | Six total: four UI scenes and two stage scenes |
+| Physical combat space | The admitted route keeps tutorial and lower combat in `OlympusCorridorInvasionStage`; the legacy Station and Courtyard scenes are review-only and absent from the build list |
+| Build scenes | Five total: four UI scenes and one physical stage scene |
 | Tutorial | Intro presentation plus melee, move, ranged swap, fire, dodge, and target-clear sequence |
 | Station encounter | Entry guide, one boss terminal owner, and two independently owned runtime Adds after guide release: `add-left` HeavyWindup Melee plus `add-right` RifleCrossfire Ranged; bidirectional targeting, exact physical projectile damage, terminal cleanup, unload, and Retry are functionally verified; human visual review remains pending |
 | Result loop | Shared Clear/Fail result shell with Replay/Retry/Lobby and durable run-result handling |
@@ -160,8 +177,8 @@ The labels below are product decisions, not certification phases. `Have` means t
 | Ordered encounter and wave composition | **Have for ordered count-one Adds; Wave owner missing** | Station consumes two source-ordered direct-archetype Add rows with independent tickets, whole-plan rollback/cleanup, and typed receipt | PGR separates stage config from wave/spawn runtime; Aether Gazer stores ordered wave lists; ZZZ separates floors, groups, members, and placement | **Preserve A1**. Add a Wave/required-defeat owner only when a real second-stage design needs it | M when required / objective and terminal boundary / promoting CF-01 wholesale |
 | Dynamic combatant registration and target participation | **Have for admitted runtime Adds** | Both Station Adds receive the exact player through agent/sensor injection, join the player's runtime candidates without replacing the boss, attack, and unregister synchronously on every stop path | Foreign enemy/stage data supports separating spawned instance ownership from enemy configuration, but does not supply a local target-registry design | **Preserve A0** and reuse the exact participation contract per new ticket | S per loadout / stale candidates, late attacks, boss target loss |
 | A second encounter authored without code | **Have for a second count-one Add** | A1 admitted `add-right` through the existing collection executor and bound anchor; A2 later changed only its reviewed payload/loadout contract | The compared games repeatedly reuse enemy payloads and placements under different stage records | **Preserve the zero-new-executor path**; do not confuse a second Add with a second playable stage | S / promoted archetype and anchor / unreviewed loadout assumptions |
-| Neutral playable-stage lifecycle and second catalog entry | **Partial; B0-1 through B0-3 complete** | A distinct one-row route admits terminal-active, seals truthful segment-zero Clear/Fail facts, recovers/presents the exact result through neutral adapters, and resolves Replay/Retry/Lobby; multi-entry catalog, Stage Select, validator, and build plumbing remain | PGR stage rows combine control/map/story/time/reward references; HI3 and Aether reuse stage shells with different restrictions and goals | **B0-4 next** before scene authoring | M across remaining B0 / preserving Olympus bytes and historical receipts / mutating frozen single-entry assumptions |
-| Reusable map or lean arena authoring | **Partial inventory, missing product path** | The two stage scenes are about 13.7 MiB/5,102 GameObjects and 8.9 MiB/4,344 GameObjects; `scenePrefabSource` is empty. The project does have promoted modular Olympus Temple and Spring Isles environment prefabs | PGR stage rows reference stage controls/maps; Aether wave-stage rows reference `map_id`; ZZZ separates stage-room and map families | **Next**, with the second stage. Build a lean arena from promoted modular prefabs; do not duplicate either full canonical scene | M / lighting, collision, NavMesh, camera bounds / scene-copy maintenance or a visually empty proof |
+| Neutral playable-stage lifecycle and second catalog entry | **Generic capability present; product remains one row** | A distinct one-row route can admit terminal-active, seal truthful segment-zero Clear/Fail facts, recover/present the exact result, and bind through generic multi-entry catalog/build plumbing; Courtyard's product row is withdrawn | PGR stage rows combine control/map/story/time/reward references; HI3 and Aether reuse stage shells with different restrictions and goals | **Preserve B0-4**, but add no second product row before a valid linear-stage design exists | M per consumer / mistaking infrastructure proof for acceptable content |
+| Reusable linear-stage authoring | **Missing product stage** | Modular Olympus and Spring Isles environment prefabs exist, but the rejected Courtyard arena proves only isolated one-room assembly | PGR and early HI3 stages use traversal, ordered combat pockets, pacing relief, and a final beat even when maps are heavily reused | **Next design gate:** 3–5 minute linear route with entry, 1–3 combat pockets, relief, final encounter, and result | M-L / level rhythm, collision, camera, NavMesh / another technically valid but genre-wrong arena |
 | Objective and completion policies | **Partial** | Current product proves tutorial closure and boss terminal; the Add is independent and does not block clear | Aether exposes task/star conditions; HI3 exposes score/time/reward conditions; PGR exposes time limits and stage controls | **Next**. Start with `independent`, `required defeat`, `survive`, and `timed`; no general quest language | M / generic encounter lifecycle / combinatorial rules and unclear ownership |
 | First-clear unlock and persistent local progression | **Partial model, missing execution** | One progression node exists, with no prerequisite, recommended-next, reward, or applied unlock | Aether uses unlock-by-stage links; HI3 uses pre-mission/unlocked-link relations | **Next**, with the second stage. First clear unlocks one next entry and survives restart | M / second catalog entry / save migration and accidental relock |
 | Enemy role, stat, or behavior variants | **Have one reviewed variant; broader inventory unadmitted** | The live Station consumes `SciFiSoldier.Melee` and the dedicated `SciFiSoldier.Ranged` RifleCrossfire loadout; other role/candidate assets remain inventory | HI3 separates monster AI/stat data; Aether and ZZZ reuse enemy identities inside different stage compositions | **Preserve A2; do not promote the role layer wholesale**. Close mixed-deck/driver admission before any future Elite promotion | S-M per reviewed loadout / visual readability and candidate-deck compatibility |
@@ -474,7 +491,9 @@ Only after this correction is playable and stable should the roadmap resume enco
 
 ### Encounter/wave ownership — introduce only when required
 
-The second playable stage should be a small “Olympus Courtyard Drill” style arena built from promoted `_Game/Art/Environment/OlympusTemple` modular floor, fence, column, arch, and stair prefabs. It should not copy either multi-thousand-object canonical scene.
+The rejected Courtyard arena must not be used as the second playable-stage template. A
+future candidate may reuse promoted modular environment pieces, but it must first prove
+the 3–5 minute linear route and multi-pocket pacing described in the active override.
 
 Its first durable combat candidate is Rifle Crossfire **after** the reviewed Ranged loadout above exists, with a simple required-defeat goal. That requirement, not foreign feature parity, is the trigger to add explicit encounter/wave ownership. The smallest later sidecars are:
 
@@ -577,11 +596,11 @@ The exact implementation order is:
 | B0-1 route topology and active-role seam | **Complete 2026-07-21:** a distinct one-row entry/final route admits terminal-active; malformed topology fails before a run exists | M | none |
 | B0-2 truthful one-row facts/result | **Complete 2026-07-21:** one combat segment commits Clear/Fail without fake tutorial/guide/handoff facts; exact coordinator/run receipt ownership and the fixed Olympus result digest remain verified | L | B0-1 |
 | B0-3 neutral bootstrap and terminal adapter | **Complete 2026-07-21:** a lean scene joins admission, exact facts/coordinator, commit recovery, acknowledged result UI, Replay/Retry/Lobby, and adapter-loss abort without Olympus component copies | M | B0-1, B0-2 |
-| B0-4 multi-entry catalog/build plumbing | Two unique cards project exact entry scenes; build readiness walks route data instead of appending Station | M | B0-1 |
+| B0-4 multi-entry catalog/build plumbing | **Complete 2026-07-21:** generic fixtures prove multiple exact rows while the accepted product remains one row; build readiness walks route data | M | B0-1 |
 | B0-5 compatibility proof | The corrected continuous Olympus route, full route, endpoints, and new route/result identities remain stable; historical revision-1 receipts are preserved but never reinterpreted | M | B0-1 through B0-4 |
-| B1-1 isolated stage content pack | One lean arena and its ten logical assets are authored without mutating accepted Olympus result sources | M | B0 complete, reviewed ranged loadout |
-| B1-2 two-card presentation | Both cards select/focus/start their own immutable projections; invalid or duplicate IDs produce zero route request | S | B0-4, B1-1 |
-| B1-3 end-to-end second route | Clear/Fail, Replay/Retry/Lobby, unload, and fresh re-entry work from the second scene | M | B1-1, B1-2 |
+| B1-1 isolated Courtyard arena | **Rejected as product direction / quarantined:** retained only for direct regression | M | none for product |
+| B1-2 two-card Courtyard admission | **Withdrawn 2026-07-22:** catalog, card, build scene, and admission writer removed | S | rejected |
+| B1-3 Courtyard product route | **Withdrawn 2026-07-22:** product E2E removed; direct scene regression retained | M | rejected |
 
 B0 is **L** because fact/result neutralization is the dominant risk; B1 is **M** once B0 exists. A later stage of the same one-scene family should be **S–M** and must not add another route-specific controller.
 
@@ -690,28 +709,20 @@ Do not delete shared visual prefabs, `FrontlineWaveStageProfile`, or combat comp
 
 ## Next five bounded tasks
 
-1. **Complete B0-4 multi-entry catalog and build plumbing.** A
-   second route must not copy Olympus-specific controllers or hard-code Station as a
-   continuation.
-2. **Close B0-5 compatibility after B0-4.** Preserve the corrected continuous Olympus
-   route, immutable identities, full route, historical revision-1 receipts, and the
-   neutral one-row result path under the multi-entry implementation.
-3. **Author B1-1's compact second playable stage after B0 is green.** Reuse promoted modular
-   environment pieces; do not copy either large Olympus scene.
-4. **Connect B1-2/B1-3 two-card presentation and end-to-end re-entry.** Both cards must
-   project and start their own immutable route, then Clear/Fail, Replay/Retry/Lobby,
-   unload, and fresh re-entry must remain exact.
-5. **Add only the breadth loop the stage proves.** Introduce a minimal required-defeat
-   owner if needed, then one persistent first-clear unlock;
-   CF-01, rewards, inventory, shops, stamina, and servers remain out.
+1. **Keep Courtyard product-quarantined.** The authored pack may be opened directly, but it
+   must remain absent from Catalog, Stage Select, and Build Settings.
+2. **Write and review one 3–5 minute linear-stage beat sheet.** Fix traversal, 1–3 combat
+   pockets, relief, final encounter, and result before touching a new scene.
+3. **Block out that route with existing modular art.** Measure play time and readability;
+   do not promote it merely because the route/result plumbing works.
+4. **Add only the encounter/wave ownership the accepted layout requires.** CF-01 remains a
+   review board, not a runtime shortcut or a completion claim.
+5. **Promote a second catalog row only after direct play confirms the genre and pacing.**
+   Then connect first-clear progression; rewards, shops, stamina, and servers remain out.
 
-Immediate follow-up: start with B0-4 catalog/build plumbing, not broad scene authoring. After B0-4 makes
-the neutral route/result foundation selectable and build-walked, build one small second
-playable stage and connect minimal offline
-first-clear progression so the first route unlocks the second and survives restart. After
-that: extract tutorial lesson order/copy into data, admit another reviewed enemy variant,
-attach event-bound spawn/terminal presentation cues, then delete or archive proven-unused
-prototype layers.
+Immediate follow-up: review the linear-stage beat sheet and greybox before any second
+product-route implementation. Preserve the corrected continuous Olympus route and generic
+B0 infrastructure while the content design is unresolved.
 
 ## Phased living roadmap
 
@@ -738,7 +749,8 @@ This roadmap is deliberately milestone-shaped rather than `P1` through `P3`. A p
 
 ### Phase B — prove the game can grow sideways
 
-- Create one compact, one-scene playable stage with one catalog row.
+- Create one reviewed 3–5 minute linear playable stage with traversal, 1–3 combat pockets,
+  relief, a final encounter, and one catalog row.
 - Reuse the current result shell and presentation hooks.
 - Generalize only the lifecycle and validator assumptions that this stage actually breaks.
 - Use the reviewed ranged loadout and add the minimum required-defeat objective and encounter/wave ownership the stage needs.

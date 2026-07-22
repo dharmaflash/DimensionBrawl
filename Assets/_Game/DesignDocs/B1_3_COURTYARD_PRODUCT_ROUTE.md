@@ -1,8 +1,12 @@
 # B1-3 Courtyard Product Route
 
-Status: `IMPLEMENTED / EXACT PRODUCT PATH + FULL 483-TEST REGRESSION VERIFIED`
+Status: `WITHDRAWN / PRODUCT ROUTE REMOVED 2026-07-22`
 
 Verification checkpoint: 2026-07-22 KST
+
+Withdrawal note: this is a historical verification record, not the current product
+contract. The Courtyard Stage Select route and its product E2E test were removed after the
+arena was rejected as the wrong stage grammar. Direct scene regression remains isolated.
 
 ## Purpose
 

@@ -23,8 +23,6 @@ namespace DimensionBrawl.Editor
     {
         private const string RouteAssetPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
-        private const string CourtyardRouteAssetPath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusCourtyardDrill.asset";
         private const string CorridorDefinitionPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string StationDefinitionPath =
@@ -94,15 +92,9 @@ namespace DimensionBrawl.Editor
         private const string IntroPortId = "intro-gatepod-port";
         private const string IntroCompletionConditionId = "corridor.tutorial.ready";
         private const string CanonicalCatalogEntryId = "story_v1_training_route";
-        private const string CourtyardCatalogEntryId = "story_v1_courtyard_drill_route";
         private const string CanonicalLoadingCardId = "stage_to_combat_mood_bridge";
         private const string CanonicalProjectionDigest =
-            "7bf7637516466673a3362b6caf761454632c6b1c7404d83d9c5e5ed2a6d59562";
-        private const string CourtyardProjectionDigest =
-            "588473db6022e05ccac3c8ebfe8c9cd5a5cf1ea50d1e02b5b6f4bce2e6594e34";
-        private const string CourtyardStageTitle = "Olympus Courtyard Drill";
-        private const string CourtyardStageObjective =
-            "Defeat the Courtyard terminal boss under Rifle Crossfire pressure.";
+            "571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d";
         private const string CanonicalTemplateDigest =
             "3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55";
         private const string CanonicalReferenceDigest =
@@ -1076,19 +1068,15 @@ namespace DimensionBrawl.Editor
                 catalog.ProjectionSchemaVersion == UIStageCatalog.SupportedProjectionSchemaVersion,
                 "Stage catalog projection schema must be revision 1.");
             Require(
-                catalog.CatalogProjectionGeneration == 3,
-                "Stage catalog projection generation must be 3 for the two-stage product cohort.");
+                catalog.CatalogProjectionGeneration == 2,
+                "Stage catalog projection generation must remain 2 for the single-stage product cohort.");
             Require(
-                catalog.StageCount == 2,
-                "Stage catalog must contain exactly the admitted training route and Courtyard drill route.");
+                catalog.StageCount == 1,
+                "Stage catalog must contain exactly the accepted Olympus training route while Courtyard remains quarantined.");
             RequireEqual(
                 catalog.GetStage(0).Id,
                 CanonicalCatalogEntryId,
                 "Stage catalog row 0 entry ID");
-            RequireEqual(
-                catalog.GetStage(1).Id,
-                CourtyardCatalogEntryId,
-                "Stage catalog row 1 entry ID");
             Require(
                 catalog.TryGetStage(CanonicalCatalogEntryId, out UIStageCatalog.StageEntry entry),
                 "Stage catalog must expose the canonical Olympus product entry exactly once.");
@@ -1120,8 +1108,8 @@ namespace DimensionBrawl.Editor
                 projection.ProjectionSchemaVersion == 1,
                 "Catalog projection schema version must be 1.");
             Require(
-                projection.CatalogProjectionGeneration == 3,
-                "Catalog projection generation must be 3.");
+                projection.CatalogProjectionGeneration == 2,
+                "Catalog projection generation must be 2.");
             RequireEqual(
                 projection.CatalogEntryId,
                 CanonicalCatalogEntryId,
@@ -1207,8 +1195,6 @@ namespace DimensionBrawl.Editor
             Require(
                 !catalog.TryGetStage("story_v1_retry_route", out _),
                 "Retry must remain a terminal action, not a second selectable stage entry.");
-
-            ValidateCourtyardCatalogSelection(catalog);
 
             UIScreenRouteTable routeTable = LoadRequiredAsset<UIScreenRouteTable>(UiRouteTablePath);
             Require(
@@ -1656,88 +1642,6 @@ namespace DimensionBrawl.Editor
             Require(
                 expected.Count == 0,
                 "Stage-select route gate is missing an admitted product control.");
-        }
-
-        private static void ValidateCourtyardCatalogSelection(UIStageCatalog catalog)
-        {
-            PlayableStageDefinition courtyardRoute =
-                LoadRequiredAsset<PlayableStageDefinition>(CourtyardRouteAssetPath);
-            UIStageCatalog.StageEntry entry = catalog.GetStage(1);
-            RequireEqual(entry.Id, CourtyardCatalogEntryId, "Courtyard stage catalog entry ID");
-            RequireEqual(entry.DisplayName, CourtyardStageTitle, "Courtyard stage-title mirror");
-            RequireEqual(entry.Summary, CourtyardStageObjective, "Courtyard stage-objective mirror");
-            Require(
-                string.IsNullOrEmpty(entry.ThreatTags)
-                    && string.IsNullOrEmpty(entry.RecommendedSummonRole)
-                    && string.IsNullOrEmpty(entry.MockRewardPreview),
-                "Courtyard catalog optional presentation fields must remain authored empty.");
-            Require(
-                entry.PresentationProvenance
-                    == UIStagePresentationProvenance.LegacyPresentationOnly,
-                "Courtyard stage catalog copy must retain explicit legacy-only provenance.");
-            Require(
-                ReferenceEquals(entry.PlayableStage, courtyardRoute),
-                "Courtyard stage catalog entry must reference the exact admitted PlayableStage asset.");
-            RequireEqual(
-                AssetDatabase.GetAssetPath(entry.PlayableStage),
-                CourtyardRouteAssetPath,
-                "Courtyard stage catalog PlayableStage asset path");
-            RequireEqual(
-                entry.LoadingCardId,
-                CanonicalLoadingCardId,
-                "Courtyard stage catalog loadingCardId");
-            RequireEqual(
-                entry.CanonicalProjectionDigest,
-                CourtyardProjectionDigest,
-                "Stored Courtyard stage-selection projection digest");
-            Require(
-                catalog.TryGetStage(
-                    CourtyardCatalogEntryId,
-                    out UIStageCatalog.StageEntry namedEntry)
-                    && ReferenceEquals(namedEntry.PlayableStage, courtyardRoute),
-                "Courtyard catalog ID must resolve exactly to the admitted PlayableStage asset.");
-            Require(
-                catalog.TryCreateRouteProjection(
-                    CourtyardCatalogEntryId,
-                    UIRouteId.Combat,
-                    out UIStageRouteProjection projection,
-                    out UIStageRouteProjectionRejectReason rejectReason),
-                $"Courtyard stage catalog projection is invalid: {rejectReason}.");
-            Require(
-                projection.ProjectionSchemaVersion == UIStageCatalog.SupportedProjectionSchemaVersion
-                    && projection.CatalogProjectionGeneration == 3,
-                "Courtyard projection must belong to catalog projection generation 3.");
-            RequireEqual(
-                projection.CatalogEntryId,
-                CourtyardCatalogEntryId,
-                "Courtyard projection entry ID");
-            Require(
-                ReferenceEquals(projection.PlayableStage, courtyardRoute),
-                "Courtyard projection must retain the exact admitted PlayableStage asset.");
-            RequireEqual(
-                projection.CanonicalProjectionDigest,
-                CourtyardProjectionDigest,
-                "Courtyard projection digest");
-            RequireEqual(projection.DisplayName, CourtyardStageTitle, "Courtyard projection title");
-            RequireEqual(projection.Summary, CourtyardStageObjective, "Courtyard projection objective");
-            Require(
-                string.IsNullOrEmpty(projection.ThreatTags)
-                    && string.IsNullOrEmpty(projection.RecommendedSummonRole)
-                    && string.IsNullOrEmpty(projection.RewardPreview),
-                "Courtyard projection optional presentation fields must remain empty.");
-            RequireEqual(
-                projection.LoadingCardId,
-                CanonicalLoadingCardId,
-                "Courtyard projection loadingCardId");
-            Require(
-                projection.UiRouteId == UIRouteId.Combat,
-                "Courtyard projection must dispatch only UIRouteId.Combat.");
-            Require(
-                catalog.IsProjectionCurrent(
-                    projection,
-                    UIRouteId.Combat,
-                    out UIStageRouteProjectionRejectReason currentRejectReason),
-                $"Courtyard projection is stale: {currentRejectReason}.");
         }
 
         private static void ValidateStageSelectCardBindings(

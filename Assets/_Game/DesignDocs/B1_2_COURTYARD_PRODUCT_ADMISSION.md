@@ -1,8 +1,13 @@
 # B1-2 Courtyard Product Admission
 
-Status: `IMPLEMENTED / VISUAL QA + FOCUSED + FULL 477-TEST REGRESSION VERIFIED`
+Status: `WITHDRAWN / PRODUCT ADMISSION REVERSED 2026-07-22`
 
 Admission checkpoint: 2026-07-22 KST
+
+Withdrawal note: this document records a retired historical admission. Courtyard is no
+longer present in the product catalog, Stage Select bindings, or Build Settings. The
+admission writer and admitted-product visual-QA tool were removed to prevent accidental
+republication. The isolated authored pack remains available only for direct review.
 
 ## Purpose
 

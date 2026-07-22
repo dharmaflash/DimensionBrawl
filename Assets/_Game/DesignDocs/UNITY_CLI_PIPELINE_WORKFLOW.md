@@ -62,7 +62,7 @@ Editor가 열려 있는 동안 Pipeline으로 PlayMode 테스트를 실행할 �
 unity command run_tests `
   --project-path "C:\Git\DimensionBrawl" `
   --mode playmode `
-  --filter OlympusCourtyardProductRoutePlayModeTests `
+  --filter OlympusCourtyardDrillStagePlayModeTests `
   --async_tests true `
   --format json
 
@@ -83,7 +83,7 @@ unity test "C:\Git\DimensionBrawl" `
   --non-interactive
 ```
 
-환경 구성 직후 위 명령으로 전체 PlayMode 테스트 `483/483` 통과를 확인했다.
+Courtyard 제품 경로 격리 후 위 명령으로 전체 PlayMode 테스트 `479/479` 통과를 확인했다.
 
 구조화된 출력에서는 최상위 `success`뿐 아니라
 `data.result.success`와 `errors`도 함께 확인한다. 명령 전달 자체는 성공했지만

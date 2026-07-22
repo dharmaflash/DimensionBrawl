@@ -23,20 +23,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
         private const string CorridorScenePath =
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
-        private const string CourtyardScenePath =
-            "Assets/_Game/Scenes/OlympusCourtyardDrillStage.unity";
         private const string StageClearScenePath =
             "Assets/_Game/Scenes/UI/UI_StageClear.unity";
         private const string ProductionTrainingStageId = "story_v1_training_route";
         private const string ProductionCourtyardStageId =
             "story_v1_courtyard_drill_route";
-        private const string ProductionCourtyardPlayableStageId =
-            "OLYMPUS-COURTYARD-DRILL-01";
-        private const string ProductionCourtyardLoadingCardId =
-            "stage_to_combat_mood_bridge";
-        private const string ProductionCourtyardTitle = "Olympus Courtyard Drill";
-        private const string ProductionCourtyardObjective =
-            "Defeat the Courtyard terminal boss under Rifle Crossfire pressure.";
         private const string StageAId = "exact-binding-a";
         private const string StageBId = "exact-binding-b";
         private const string StageALoadingCardId = "exact-binding-a-loading";
@@ -44,7 +35,7 @@ namespace DimensionBrawl.Tests
         private const int CombatRouteId = 40;
 
         [UnityTest]
-        public IEnumerator ProductionCourtyardCardSelectsExactProjectionAndRebindsOnceWithoutDispatching()
+        public IEnumerator ProductionStageSelectKeepsCourtyardCardQuarantined()
         {
             ScriptableObject catalog = LoadRequired<ScriptableObject>(
                 ProductionStageCatalogPath);
@@ -62,60 +53,55 @@ namespace DimensionBrawl.Tests
                 Assert.That(presenter, Is.Not.Null);
                 SetPrivateField(presenter, "focusSelectedStageOnEnable", false);
                 SetPrivateField(presenter, "backWithEscape", false);
-                Assert.That(
-                    ReadPrivateField<string>(presenter, "selectedStageId"),
-                    Is.EqualTo(ProductionTrainingStageId));
-                AssertGlobalProductDetailTruth(instance.transform);
-                AssertProductionChapterInventory(instance.transform);
 
                 Assert.That(ReadProperty(catalog, "ProjectionSchemaVersion"), Is.EqualTo(1));
-                Assert.That(ReadProperty(catalog, "CatalogProjectionGeneration"), Is.EqualTo(3));
-                Assert.That(ReadProperty(catalog, "StageCount"), Is.EqualTo(2));
+                Assert.That(ReadProperty(catalog, "CatalogProjectionGeneration"), Is.EqualTo(2));
+                Assert.That(ReadProperty(catalog, "StageCount"), Is.EqualTo(1));
                 Assert.That(
                     ReadPrivateField<ScriptableObject>(presenter, "stageCatalog"),
                     Is.SameAs(catalog));
-
-                object trainingRow = RequireMethod(catalog.GetType(), "GetStage").Invoke(
-                    catalog,
-                    new object[] { 0 });
-                object courtyardRow = RequireMethod(catalog.GetType(), "GetStage").Invoke(
-                    catalog,
-                    new object[] { 1 });
-                Assert.That(ReadProperty(trainingRow, "Id"),
+                Assert.That(
+                    ReadPrivateField<string>(presenter, "selectedStageId"),
                     Is.EqualTo(ProductionTrainingStageId));
-                Assert.That(ReadProperty(courtyardRow, "Id"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                Assert.That(ReadProperty(courtyardRow, "DisplayName"),
-                    Is.EqualTo(ProductionCourtyardTitle));
-                Assert.That(ReadProperty(courtyardRow, "Summary"),
-                    Is.EqualTo(ProductionCourtyardObjective));
-                Assert.That(ReadProperty(courtyardRow, "ThreatTags"), Is.Empty);
-                Assert.That(ReadProperty(courtyardRow, "RecommendedSummonRole"), Is.Empty);
-                Assert.That(ReadProperty(courtyardRow, "MockRewardPreview"), Is.Empty);
-                Assert.That(ReadProperty(courtyardRow, "LoadingCardId"),
-                    Is.EqualTo(ProductionCourtyardLoadingCardId));
+
+                object[] quarantinedArguments = { ProductionCourtyardStageId, null };
+                Assert.That(
+                    (bool)RequireMethod(catalog.GetType(), "TryGetStage").Invoke(
+                        catalog,
+                        quarantinedArguments),
+                    Is.False);
+                Assert.That(ReadProperty(quarantinedArguments[1], "Id"), Is.Null);
 
                 Array focusEntries = ReadPrivateField<Array>(presenter, "stageFocusEntries");
-                Assert.That(focusEntries.Length, Is.EqualTo(2));
+                Assert.That(focusEntries.Length, Is.EqualTo(1));
                 Button trainingButton = AssertProductionBinding(
                     focusEntries.GetValue(0),
                     ProductionTrainingStageId,
                     "01-1_StageCard");
-                Button courtyardButton = AssertProductionBinding(
-                    focusEntries.GetValue(1),
-                    ProductionCourtyardStageId,
+
+                Transform courtyardShell = FindRequiredDescendant(
+                    instance.transform,
                     "01-2_StageCard");
-                AssertProductionCourtyardVisualTruth(courtyardButton.transform);
+                Button courtyardButton = courtyardShell.GetComponent<Button>();
+                Assert.That(courtyardShell.gameObject.activeSelf, Is.False);
+                Assert.That(courtyardButton, Is.Not.Null);
+                Assert.That(courtyardButton.interactable, Is.False);
+                Assert.That(courtyardButton.targetGraphic, Is.Not.Null);
+                Assert.That(courtyardButton.targetGraphic.raycastTarget, Is.False);
+                CanvasGroup courtyardCanvasGroup = courtyardShell.GetComponent<CanvasGroup>();
+                if (courtyardCanvasGroup != null)
+                {
+                    Assert.That(courtyardCanvasGroup.interactable, Is.False);
+                    Assert.That(courtyardCanvasGroup.blocksRaycasts, Is.False);
+                }
 
                 Button startButton = ReadPrivateField<Button>(presenter, "startButton");
                 Button backButton = ReadPrivateField<Button>(presenter, "backButton");
-                AssertProductionStartButtonVisualTruth(startButton);
                 AssertProductionRouteGateMembership(
                     instance.transform,
                     backButton,
                     startButton,
-                    trainingButton,
-                    courtyardButton);
+                    trainingButton);
                 Assert.That(GetRuntimeListenerCount(trainingButton.onClick), Is.Zero);
                 Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.Zero);
                 Assert.That(GetRuntimeListenerCount(startButton.onClick), Is.Zero);
@@ -124,57 +110,18 @@ namespace DimensionBrawl.Tests
                 yield return null;
 
                 Assert.That(GetRuntimeListenerCount(trainingButton.onClick), Is.EqualTo(1));
-                Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.EqualTo(1));
+                Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.Zero);
                 Assert.That(GetRuntimeListenerCount(startButton.onClick), Is.EqualTo(1));
-                Assert.That(
-                    ReadProperty(ReadProperty(presenter, "SelectedRouteProjection"), "CatalogEntryId"),
-                    Is.EqualTo(ProductionTrainingStageId));
-                Assert.That(
-                    ReadPrivateField<string>(presenter, "selectedStageId"),
-                    Is.EqualTo(ProductionTrainingStageId));
-
-                courtyardButton.onClick.Invoke();
                 object projection = ReadProperty(presenter, "SelectedRouteProjection");
                 Assert.That(projection, Is.Not.Null);
                 Assert.That(ReadProperty(projection, "CatalogEntryId"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                Assert.That(
-                    ReadPrivateField<string>(presenter, "selectedStageId"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                Assert.That(ReadProperty(projection, "PlayableStageId"),
-                    Is.EqualTo(ProductionCourtyardPlayableStageId));
-                Assert.That(ReadProperty(projection, "EntrySceneName"),
-                    Is.EqualTo("OlympusCourtyardDrillStage"));
+                    Is.EqualTo(ProductionTrainingStageId));
                 Assert.That(ReadProperty(projection, "EntryScenePath"),
-                    Is.EqualTo(CourtyardScenePath));
-                Assert.That(ReadProperty(projection, "LoadingCardId"),
-                    Is.EqualTo(ProductionCourtyardLoadingCardId));
-                Assert.That(ReadProperty(projection, "ThreatTags"), Is.Empty);
-                Assert.That(ReadProperty(projection, "RecommendedSummonRole"), Is.Empty);
-                Assert.That(ReadProperty(projection, "RewardPreview"), Is.Empty);
+                    Is.EqualTo(CorridorScenePath));
                 Assert.That(
                     ReadProperty(presenter, "SelectedRouteRejectReason").ToString(),
                     Is.EqualTo("None"));
 
-                StageBriefingReadModel briefing =
-                    (StageBriefingReadModel)ReadProperty(projection, "Briefing");
-                Assert.That(briefing, Is.Not.Null);
-                Assert.That(briefing.Title, Is.EqualTo(ProductionCourtyardTitle));
-                Assert.That(briefing.Objective, Is.EqualTo(ProductionCourtyardObjective));
-                Assert.That(
-                    ReadPrivateField<Text>(presenter, "stageNameText").text,
-                    Is.EqualTo(ProductionCourtyardTitle));
-                Assert.That(
-                    ReadPrivateField<Text>(presenter, "summaryText").text,
-                    Is.EqualTo(ProductionCourtyardObjective));
-                AssertOptionalPresenterTextIsEmpty(presenter, "threatTagsText");
-                AssertOptionalPresenterTextIsEmpty(presenter, "summonHintText");
-                AssertOptionalPresenterTextIsEmpty(presenter, "rewardPreviewText");
-                AssertGlobalProductDetailTruth(instance.transform);
-                AssertProductionChapterInventory(instance.transform);
-                Assert.That(startButton.interactable, Is.True);
-
-                // Start/scene dispatch is deliberately owned by the synthetic seam test above.
                 instance.SetActive(false);
                 Assert.That(GetRuntimeListenerCount(trainingButton.onClick), Is.Zero);
                 Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.Zero);
@@ -183,27 +130,13 @@ namespace DimensionBrawl.Tests
                 instance.SetActive(true);
                 yield return null;
                 Assert.That(GetRuntimeListenerCount(trainingButton.onClick), Is.EqualTo(1));
-                Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.EqualTo(1));
+                Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.Zero);
                 Assert.That(GetRuntimeListenerCount(startButton.onClick), Is.EqualTo(1));
                 Assert.That(
-                    ReadPrivateField<string>(presenter, "selectedStageId"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                Assert.That(
-                    ReadProperty(ReadProperty(presenter, "SelectedRouteProjection"), "CatalogEntryId"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                AssertGlobalProductDetailTruth(instance.transform);
-                AssertProductionChapterInventory(instance.transform);
-
-                trainingButton.onClick.Invoke();
-                courtyardButton.onClick.Invoke();
-                projection = ReadProperty(presenter, "SelectedRouteProjection");
-                Assert.That(ReadProperty(projection, "CatalogEntryId"),
-                    Is.EqualTo(ProductionCourtyardStageId));
-                Assert.That(ReadProperty(projection, "EntryScenePath"),
-                    Is.EqualTo(CourtyardScenePath));
-                Assert.That(GetRuntimeListenerCount(trainingButton.onClick), Is.EqualTo(1));
-                Assert.That(GetRuntimeListenerCount(courtyardButton.onClick), Is.EqualTo(1));
-                Assert.That(GetRuntimeListenerCount(startButton.onClick), Is.EqualTo(1));
+                    ReadProperty(
+                        ReadProperty(presenter, "SelectedRouteProjection"),
+                        "CatalogEntryId"),
+                    Is.EqualTo(ProductionTrainingStageId));
             }
             finally
             {
@@ -524,27 +457,6 @@ namespace DimensionBrawl.Tests
             return button;
         }
 
-        private static void AssertProductionCourtyardVisualTruth(Transform card)
-        {
-            Assert.That(card, Is.Not.Null);
-            Assert.That(FindRequiredDescendant(card, "LockIcon").gameObject.activeSelf, Is.False);
-            Transform stagePercent = FindRequiredDescendant(card, "StagePercentText");
-            Assert.That(stagePercent.gameObject.activeSelf, Is.False);
-            Assert.That(stagePercent.GetComponent<Text>(), Is.Not.Null);
-            Assert.That(stagePercent.GetComponent<Text>().text, Is.Empty);
-            Assert.That(FindRequiredDescendant(card, "Star1").gameObject.activeSelf, Is.False);
-            Assert.That(FindRequiredDescendant(card, "Star2").gameObject.activeSelf, Is.False);
-            Assert.That(FindRequiredDescendant(card, "Star3").gameObject.activeSelf, Is.False);
-            Assert.That(
-                FindRequiredDescendant(card, "StageNumberText").GetComponent<Text>().text,
-                Is.EqualTo("01-2"));
-            Assert.That(
-                FindRequiredDescendant(card, "StageTitleText").GetComponent<Text>().text,
-                Is.EqualTo(ProductionCourtyardTitle));
-            AssertReadableStageCardText(card, "StageNumberText", 16, 21);
-            AssertReadableStageCardText(card, "StageTitleText", 12, 22);
-        }
-
         private static void AssertReadableStageCardText(
             Transform card,
             string objectName,
@@ -644,8 +556,7 @@ namespace DimensionBrawl.Tests
             Transform root,
             Button backButton,
             Button startButton,
-            Button trainingButton,
-            Button courtyardButton)
+            Button trainingButton)
         {
             Component[] gates = root.GetComponentsInChildren(
                 RequireProductType("DimensionBrawl.UI.UIRouteInteractableGate"),
@@ -659,8 +570,7 @@ namespace DimensionBrawl.Tests
                 {
                     backButton,
                     startButton,
-                    trainingButton,
-                    courtyardButton
+                    trainingButton
                 }));
         }
 

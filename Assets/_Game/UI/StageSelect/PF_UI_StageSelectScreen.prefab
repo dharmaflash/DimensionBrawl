@@ -5029,7 +5029,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 0.9
-  m_Text: Olympus Courtyard Drill
+  m_Text:
 --- !u!114 &2268346058008837568
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7180,10 +7180,6 @@ MonoBehaviour:
     selectionButton: {fileID: 7786176800689981616}
     stageTarget: {fileID: 5091772152834808137}
     chapterTarget: {fileID: 3270446934943518692}
-  - stageId: story_v1_courtyard_drill_route
-    selectionButton: {fileID: 5402349769114290417}
-    stageTarget: {fileID: 3429909270802771737}
-    chapterTarget: {fileID: 3270446934943518692}
   requireExactStageCardBindings: 1
   focusSelectedStageOnEnable: 1
   backWithEscape: 1
@@ -7214,7 +7210,6 @@ MonoBehaviour:
   - {fileID: 6487016314510856969}
   - {fileID: 2474842665586540950}
   - {fileID: 7786176800689981616}
-  - {fileID: 5402349769114290417}
   dimGroups:
   - {fileID: 7033411682440871048}
   disableWhileRouting: 1
@@ -7708,7 +7703,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3429909270802771737
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7759,7 +7754,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -7814,7 +7809,7 @@ MonoBehaviour:
     m_PressedTrigger: Pressed
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
-  m_Interactable: 1
+  m_Interactable: 0
   m_TargetGraphic: {fileID: 8564706808293291731}
   m_OnClick:
     m_PersistentCalls:
@@ -7828,8 +7823,8 @@ CanvasGroup:
   m_GameObject: {fileID: 7906094331218113131}
   m_Enabled: 1
   m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
 --- !u!114 &4067503297226574479
 MonoBehaviour:

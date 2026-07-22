@@ -31,7 +31,6 @@ namespace DimensionBrawl.Tests
         private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
         private const string StageSelectScenePath = "Assets/_Game/Scenes/UI/UI_StageSelect.unity";
         private const string CorridorScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
-        private const string CourtyardScenePath = "Assets/_Game/Scenes/OlympusCourtyardDrillStage.unity";
         private const string StationScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string StageClearScenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
         private const string StageClearSceneName = "UI_StageClear";
@@ -57,16 +56,12 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab";
         private const string PlayableStagePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
-        private const string CourtyardPlayableStagePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusCourtyardDrill.asset";
         private const string StageSelectPrefabPath =
             "Assets/_Game/UI/StageSelect/PF_UI_StageSelectScreen.prefab";
         private const string TrainingCanonicalProjectionDigest =
-            "7bf7637516466673a3362b6caf761454632c6b1c7404d83d9c5e5ed2a6d59562";
-        private const string CourtyardCanonicalProjectionDigest =
-            "588473db6022e05ccac3c8ebfe8c9cd5a5cf1ea50d1e02b5b6f4bce2e6594e34";
+            "571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d";
         private const string ProductBuildManifestDigest =
-            "38ed64a5266b6d3e6c46755f5f138d54cddb3a684896eef0776ef4c4c3c966a5";
+            "b0f1a128548f8f77aae5a0670586a2ac39c504d967ef722cf9681f56cd788d6b";
         private const string CanonicalTemplateDigest =
             "3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55";
         private const string CanonicalReferenceDigest =
@@ -82,7 +77,6 @@ namespace DimensionBrawl.Tests
             LobbyScenePath,
             StageSelectScenePath,
             CorridorScenePath,
-            CourtyardScenePath,
             StageClearScenePath
         };
 
@@ -145,9 +139,9 @@ namespace DimensionBrawl.Tests
                 Is.True,
                 $"{rejectReason}: {error}");
             Assert.That(Convert.ToInt32(ReadProperty(manifest, "CatalogEntryCount")),
-                Is.EqualTo(2));
+                Is.EqualTo(1));
             Assert.That(Convert.ToInt32(ReadProperty(manifest, "RouteSegmentCount")),
-                Is.EqualTo(3));
+                Is.EqualTo(2));
             Assert.That(Convert.ToInt32(ReadProperty(manifest, "SceneCount")),
                 Is.EqualTo(ExpectedBuildScenePaths.Length));
             Assert.That(ReadProperty(manifest, "CanonicalDigest"),
@@ -175,8 +169,8 @@ namespace DimensionBrawl.Tests
                 Is.EqualTo(1));
             Assert.That(
                 Convert.ToInt32(ReadProperty(stageCatalog, "CatalogProjectionGeneration")),
-                Is.EqualTo(3));
-            Assert.That(Convert.ToInt32(ReadProperty(stageCatalog, "StageCount")), Is.EqualTo(2));
+                Is.EqualTo(2));
+            Assert.That(Convert.ToInt32(ReadProperty(stageCatalog, "StageCount")), Is.EqualTo(1));
             object stage = RequireMethod(catalogType, "GetStage").Invoke(stageCatalog, new object[] { 0 });
             Assert.That(ReadProperty(stage, "Id"), Is.EqualTo("story_v1_training_route"));
             Assert.That(
@@ -252,67 +246,6 @@ namespace DimensionBrawl.Tests
                 ReadProperty(projection, "EntrySceneName"),
                 Is.EqualTo("OlympusCorridorInvasionStage"));
             Assert.NotNull(AssetDatabase.LoadAssetAtPath<SceneAsset>(entryScenePath));
-
-            object courtyardStage = RequireMethod(catalogType, "GetStage").Invoke(
-                stageCatalog,
-                new object[] { 1 });
-            Assert.That(ReadProperty(courtyardStage, "Id"),
-                Is.EqualTo("story_v1_courtyard_drill_route"));
-            Assert.That(ReadProperty(courtyardStage, "DisplayName"),
-                Is.EqualTo("Olympus Courtyard Drill"));
-            Assert.That(
-                ReadProperty(courtyardStage, "Summary"),
-                Is.EqualTo("Defeat the Courtyard terminal boss under Rifle Crossfire pressure."));
-            Assert.That(ReadProperty(courtyardStage, "ThreatTags"), Is.Empty);
-            Assert.That(ReadProperty(courtyardStage, "RecommendedSummonRole"), Is.Empty);
-            Assert.That(ReadProperty(courtyardStage, "MockRewardPreview"), Is.Empty);
-            Assert.That(
-                ReadProperty(courtyardStage, "PresentationProvenance").ToString(),
-                Is.EqualTo("LegacyPresentationOnly"));
-            Assert.That(ReadProperty(courtyardStage, "LoadingCardId"),
-                Is.EqualTo("stage_to_combat_mood_bridge"));
-            Assert.That(ReadProperty(courtyardStage, "CanonicalProjectionDigest"),
-                Is.EqualTo(CourtyardCanonicalProjectionDigest));
-            PlayableStageDefinition courtyardPlayableStage =
-                (PlayableStageDefinition)ReadProperty(courtyardStage, "PlayableStage");
-            Assert.That(courtyardPlayableStage,
-                Is.SameAs(LoadRequired<PlayableStageDefinition>(CourtyardPlayableStagePath)));
-            Assert.That(courtyardPlayableStage.PlayableStageId,
-                Is.EqualTo("OLYMPUS-COURTYARD-DRILL-01"));
-            Assert.That(courtyardPlayableStage.SceneSegmentCount, Is.EqualTo(1));
-
-            object[] courtyardProjectionArguments =
-                { 1, ResolveUiRouteId(CombatRouteId), null, null };
-            Assert.That(
-                (bool)RequireMethod(
-                    catalogType,
-                    "TryCreateRouteProjection",
-                    4,
-                    typeof(int)).Invoke(stageCatalog, courtyardProjectionArguments),
-                Is.True,
-                courtyardProjectionArguments[3]?.ToString());
-            object courtyardProjection = courtyardProjectionArguments[2];
-            Assert.That(ReadProperty(courtyardProjection, "CatalogEntryId"),
-                Is.EqualTo("story_v1_courtyard_drill_route"));
-            Assert.That(ReadProperty(courtyardProjection, "PlayableStage"),
-                Is.SameAs(courtyardPlayableStage));
-            Assert.That(ReadProperty(courtyardProjection, "CanonicalProjectionDigest"),
-                Is.EqualTo(CourtyardCanonicalProjectionDigest));
-            Assert.That(ReadProperty(courtyardProjection, "EntrySequenceIndex"), Is.EqualTo(0));
-            Assert.That(ReadProperty(courtyardProjection, "EntryScenePath"),
-                Is.EqualTo(CourtyardScenePath));
-            Assert.That(ReadProperty(courtyardProjection, "EntrySceneName"),
-                Is.EqualTo("OlympusCourtyardDrillStage"));
-            Assert.That(ReadProperty(courtyardProjection, "ThreatTags"), Is.Empty);
-            Assert.That(ReadProperty(courtyardProjection, "RecommendedSummonRole"), Is.Empty);
-            Assert.That(ReadProperty(courtyardProjection, "RewardPreview"), Is.Empty);
-            StageBriefingReadModel courtyardBriefing =
-                (StageBriefingReadModel)ReadProperty(courtyardProjection, "Briefing");
-            Assert.That(courtyardBriefing.Title, Is.EqualTo("Olympus Courtyard Drill"));
-            Assert.That(
-                courtyardBriefing.Objective,
-                Is.EqualTo("Defeat the Courtyard terminal boss under Rifle Crossfire pressure."));
-            Assert.NotNull(AssetDatabase.LoadAssetAtPath<SceneAsset>(CourtyardScenePath));
 
             object[] retiredStageArguments = { "story_v1_retry_route", null };
             Assert.That(
@@ -624,7 +557,7 @@ namespace DimensionBrawl.Tests
                     "b0-4-manifest-deterministic",
                     synthetic.Route);
 
-                Assert.That(productionCatalogCount, Is.EqualTo(2));
+                Assert.That(productionCatalogCount, Is.EqualTo(1));
                 Assert.That(
                     Convert.ToInt32(ReadProperty(catalogWithAdditionalRow, "StageCount")),
                     Is.EqualTo(productionCatalogCount + 1));
@@ -733,7 +666,7 @@ namespace DimensionBrawl.Tests
                     }
                 }
 
-                Assert.That(productRouteSegmentCount, Is.EqualTo(3));
+                Assert.That(productRouteSegmentCount, Is.EqualTo(2));
                 Assert.That(Convert.ToInt32(ReadProperty(manifest, "RouteSegmentCount")),
                     Is.EqualTo(productRouteSegmentCount + 1));
                 object syntheticEvidence = GetIndexedValue(
@@ -770,9 +703,6 @@ namespace DimensionBrawl.Tests
 
                 Assert.That(
                     CountManifestPhysicalScene(manifest, CorridorScenePath),
-                    Is.EqualTo(1));
-                Assert.That(
-                    CountManifestPhysicalScene(manifest, CourtyardScenePath),
                     Is.EqualTo(1));
                 Assert.That(
                     CountManifestPhysicalScene(manifest, StageSelectScenePath),

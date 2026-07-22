@@ -11,9 +11,9 @@ using UnityEngine;
 namespace DimensionBrawl.Editor
 {
     /// <summary>
-    /// Authors the isolated B1-1 Courtyard Drill data pack. Product publication is owned
-    /// by the separate B1-2 admission setup, so reauthoring this pack remains valid both
-    /// before and after catalog admission. Existing Olympus assets are creation seeds only;
+    /// Authors the isolated B1-1 Courtyard Drill data pack for direct review/regression only.
+    /// Product publication is intentionally disabled, so reauthoring this pack must not
+    /// mutate the catalog, Stage Select, or Build Settings. Existing Olympus assets are creation seeds only;
     /// every route-owned authority is persisted as a distinct asset and resealed.
     /// </summary>
     public static class OlympusCourtyardDrillStagePackSetup

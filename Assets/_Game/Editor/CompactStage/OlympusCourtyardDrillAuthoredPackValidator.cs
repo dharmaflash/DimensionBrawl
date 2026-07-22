@@ -1577,7 +1577,7 @@ namespace DimensionBrawl.Editor
 
     /// <summary>
     /// B1-1 publication-state gate. A valid authored stage must remain unreachable from the
-    /// product catalog and from every enabled or disabled Build Settings row until B1-2.
+    /// product catalog and from every enabled or disabled Build Settings row while quarantined.
     /// </summary>
     public static class OlympusCourtyardDrillB11QuarantineGate
     {
@@ -1657,7 +1657,7 @@ namespace DimensionBrawl.Editor
                         && !string.Equals(entry.PlayableStage?.PlayableStageId,
                             OlympusCourtyardDrillAuthoredPackValidator.PlayableStageId,
                             StringComparison.Ordinal),
-                    "Courtyard candidate became catalog-reachable before B1-2.");
+                    "Courtyard candidate became catalog-reachable while quarantined.");
                 if (entry.PlayableStage == null)
                 {
                     continue;
@@ -1672,7 +1672,7 @@ namespace DimensionBrawl.Editor
                     Require(!string.Equals(NormalizePath(scenePath),
                             OlympusCourtyardDrillAuthoredPackValidator.ScenePath,
                             StringComparison.OrdinalIgnoreCase),
-                        "Courtyard candidate scene became catalog-reachable before B1-2.");
+                        "Courtyard candidate scene became catalog-reachable while quarantined.");
                 }
             }
 
@@ -1684,7 +1684,7 @@ namespace DimensionBrawl.Editor
                         NormalizePath(buildScenes[i].path),
                         OlympusCourtyardDrillAuthoredPackValidator.ScenePath,
                         StringComparison.OrdinalIgnoreCase),
-                    "Courtyard candidate scene must be absent from every enabled or disabled Build Settings row until B1-2.");
+                    "Courtyard candidate scene must be absent from every enabled or disabled Build Settings row while quarantined.");
             }
 
             Require(string.Equals(accepted.PlayableStageId, AcceptedPlayableStageId,

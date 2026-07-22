@@ -6,13 +6,14 @@ Authored: 2026-07-21 KST
 
 Verification checkpoint: 2026-07-22 KST
 
-Historical note: this B1-1 quarantine record is a historical checkpoint. B1-2
-superseded its pre-admission product state on 2026-07-22.
+Current note: B1-2 briefly superseded this state, but that admission was reversed on
+2026-07-22 after the arena was found not to satisfy the intended 3–5 minute linear-stage
+grammar. The pack is again direct-review/regression-only and is not a product stage.
 
 ## Outcome
 
-B1-1 authors the first real compact second-stage content pack on top of the reusable B0
-runtime seams. It contains one independently identified scene, one one-row playable route,
+B1-1 authors an isolated compact-arena regression pack on top of the reusable B0 runtime
+seams. It contains one independently identified scene, one one-row playable route,
 and nine distinct persistent data assets. It does not publish a second product catalog
 entry or add the scene to Unity Build Settings.
 
@@ -28,8 +29,8 @@ The admitted route is deliberately bounded:
 - the route authors no cinematic, tutorial requirement, reward, availability edge, or
   persistent progression behavior.
 
-This is a content-authoring and fully regressed playable-stage proof. It is not yet a
-second shipped Stage Select card.
+This is a direct-review and regression fixture, not evidence of the intended PGR/early-HI3
+linear chapter-stage grammar and not a shipped Stage Select card.
 
 ## Reused local foundations
 
