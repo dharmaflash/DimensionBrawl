@@ -6,6 +6,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
@@ -14,6 +15,23 @@ namespace DimensionBrawl.Tests
 {
     public sealed class OneRowCombatHudBinderPlayModeTests
     {
+        private const string CombatHudActionCatalogPath =
+            "Assets/_Game/DesignData/UI/DB_CombatHudActions.asset";
+
+        [Test]
+        public void CatalogMarksEveryRoutedAdvancedCombatActionAsLive()
+        {
+            UnityEngine.Object catalog = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(CombatHudActionCatalogPath);
+            Assert.That(catalog, Is.Not.Null, $"Missing combat HUD action catalog at {CombatHudActionCatalogPath}.");
+            SerializedObject serializedCatalog = new(catalog);
+
+            AssertLiveCatalogEntry(serializedCatalog, "Skill1", "Skill 1", "follow-up skill");
+            AssertLiveCatalogEntry(serializedCatalog, "Ultimate", "Mode Swap", "mode swap");
+            AssertLiveCatalogEntry(serializedCatalog, "SummonSlot1", "Summon 1", "pressure-block summon");
+            AssertLiveCatalogEntry(serializedCatalog, "SummonSlot2", "Summon 2", "support summon slot 2");
+            AssertLiveCatalogEntry(serializedCatalog, "SummonSlot3", "Summon 3", "support summon slot 3");
+        }
+
         [UnityTest]
         public IEnumerator ConfigureRoutesActionsHoldPauseAndOverlayInputLock()
         {
@@ -257,6 +275,38 @@ namespace DimensionBrawl.Tests
             Type type = Type.GetType($"DimensionBrawl.UI.{typeName}, Assembly-CSharp", throwOnError: true);
             Assert.That(type, Is.Not.Null);
             return type;
+        }
+
+        private static void AssertLiveCatalogEntry(
+            SerializedObject catalog,
+            string actionName,
+            string expectedDisplayName,
+            string expectedDescription)
+        {
+            Type actionIdType = ResolveHudType("CombatHudActionId");
+            int expectedActionId = Convert.ToInt32(Enum.Parse(actionIdType, actionName));
+            SerializedProperty actions = catalog.FindProperty("actions");
+            Assert.That(actions, Is.Not.Null);
+
+            for (int i = 0; i < actions.arraySize; i++)
+            {
+                SerializedProperty action = actions.GetArrayElementAtIndex(i);
+                if (action.FindPropertyRelative("actionId").intValue != expectedActionId)
+                {
+                    continue;
+                }
+
+                string description = action.FindPropertyRelative("placeholderState").stringValue;
+                Assert.That(action.FindPropertyRelative("enabledInV1").boolValue, Is.True,
+                    $"{actionName} is routed by the combat HUD and must be enabled in V1 metadata.");
+                Assert.That(action.FindPropertyRelative("displayName").stringValue, Is.EqualTo(expectedDisplayName));
+                Assert.That(description, Does.Contain(expectedDescription).IgnoreCase);
+                Assert.That(description.IndexOf("placeholder", StringComparison.OrdinalIgnoreCase), Is.LessThan(0),
+                    $"{actionName} must describe live behavior instead of a placeholder state.");
+                return;
+            }
+
+            Assert.Fail($"Combat HUD action catalog is missing {actionName}.");
         }
 
         private static object Invoke(object target, string methodName, params object[] arguments)

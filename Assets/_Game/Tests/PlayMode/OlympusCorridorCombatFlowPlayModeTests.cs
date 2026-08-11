@@ -117,6 +117,94 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void TutorialOverlaySkill1FocusMatchesActionButtonPresentation()
+        {
+            const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+            const BindingFlags PrivateStatic = BindingFlags.Static | BindingFlags.NonPublic;
+            var presenterObject = new GameObject("Tutorial Overlay Skill1 Focus Test");
+            var skill1Icon = new Texture2D(1, 1);
+            try
+            {
+                OlympusTutorialOverlayPresenter presenter =
+                    presenterObject.AddComponent<OlympusTutorialOverlayPresenter>();
+                System.Type presenterType = typeof(OlympusTutorialOverlayPresenter);
+                FieldInfo skill1IconField = presenterType.GetField("skill1Icon", PrivateInstance);
+                MethodInfo resolveFocusIcon = presenterType.GetMethod("ResolveFocusIcon", PrivateInstance);
+                MethodInfo resolveFocusLabel = presenterType.GetMethod("ResolveFocusLabel", PrivateStatic);
+                MethodInfo resolveFocusShortLabel = presenterType.GetMethod(
+                    "ResolveFocusShortLabel",
+                    PrivateStatic);
+                MethodInfo resolveFocusColor = presenterType.GetMethod("ResolveFocusColor", PrivateInstance);
+                MethodInfo resolveFocusPadding = presenterType.GetMethod(
+                    "ResolveFocusSpotlightPadding",
+                    PrivateInstance);
+
+                Assert.That((int)OlympusTutorialOverlayPresenter.FocusKind.SummonSlots, Is.EqualTo(7));
+                Assert.That((int)OlympusTutorialOverlayPresenter.FocusKind.Skill1, Is.EqualTo(8));
+                Assert.IsNotNull(skill1IconField);
+                Assert.IsNotNull(resolveFocusIcon);
+                Assert.IsNotNull(resolveFocusLabel);
+                Assert.IsNotNull(resolveFocusShortLabel);
+                Assert.IsNotNull(resolveFocusColor);
+                Assert.IsNotNull(resolveFocusPadding);
+
+                skill1IconField.SetValue(presenter, skill1Icon);
+                presenter.Show(
+                    "OPERATOR",
+                    "Confirm the opening with Skill1.",
+                    "SKILL1",
+                    OlympusTutorialOverlayPresenter.FocusKind.Skill1,
+                    new Vector2(0.88f, 0.26f));
+
+                Assert.IsTrue(presenter.CurrentFocusBackdropActive);
+                Assert.AreSame(
+                    skill1Icon,
+                    resolveFocusIcon.Invoke(
+                        presenter,
+                        new object[] { OlympusTutorialOverlayPresenter.FocusKind.Skill1 }));
+                Assert.That(
+                    resolveFocusLabel.Invoke(
+                        null,
+                        new object[] { OlympusTutorialOverlayPresenter.FocusKind.Skill1 }),
+                    Is.EqualTo("SKILL1"));
+                Assert.That(
+                    resolveFocusShortLabel.Invoke(
+                        null,
+                        new object[] { OlympusTutorialOverlayPresenter.FocusKind.Skill1 }),
+                    Is.EqualTo("S1"));
+
+                object[] skill1FocusArgs =
+                {
+                    OlympusTutorialOverlayPresenter.FocusKind.Skill1,
+                    OlympusTutorialOverlayPresenter.GuideState.Focus
+                };
+                object[] rangedFocusArgs =
+                {
+                    OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
+                    OlympusTutorialOverlayPresenter.GuideState.Focus
+                };
+                Assert.That(
+                    (Color)resolveFocusColor.Invoke(presenter, skill1FocusArgs),
+                    Is.EqualTo((Color)resolveFocusColor.Invoke(presenter, rangedFocusArgs)));
+                Assert.That(
+                    (float)resolveFocusPadding.Invoke(
+                        presenter,
+                        new object[] { OlympusTutorialOverlayPresenter.FocusKind.Skill1 }),
+                    Is.EqualTo((float)resolveFocusPadding.Invoke(
+                        presenter,
+                        new object[] { OlympusTutorialOverlayPresenter.FocusKind.RangedAttack })));
+
+                presenter.SetGuideState(OlympusTutorialOverlayPresenter.GuideState.Confirmed);
+                Assert.IsFalse(presenter.CurrentFocusBackdropActive);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(skill1Icon);
+                UnityEngine.Object.DestroyImmediate(presenterObject);
+            }
+        }
+
+        [Test]
         public void TutorialOverlayDialoguePanelSitsAboveScreenCenter()
         {
             var presenterObject = new GameObject("Tutorial Overlay Panel Position Test");

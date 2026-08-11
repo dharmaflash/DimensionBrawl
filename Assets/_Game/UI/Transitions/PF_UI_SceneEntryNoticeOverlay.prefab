@@ -1072,6 +1072,7 @@ GameObject:
   - component: {fileID: 3025593676362428342}
   - component: {fileID: 6996384132992615533}
   - component: {fileID: 3315606629749477696}
+  - component: {fileID: 6123456789012345679}
   - component: {fileID: 6123456789012345678}
   - component: {fileID: 1562656635903906330}
   m_Layer: 0
@@ -1200,6 +1201,55 @@ MonoBehaviour:
   noticeFinished:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6123456789012345679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9180889256859156937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cd3333210e4b5f8f03855edb7aa1af, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.Presentation.OlympusTutorialOverlayPresenter
+  visible: 0
+  speaker: OPERATOR
+  dialogue:
+  inputLabel:
+  focusKind: 0
+  guideState: 0
+  focusAnchor: {x: 0.78, y: 0.7}
+  transitionSeconds: 0.36
+  dialogueCharactersPerSecond: 22
+  dialoguePanelVerticalAnchor: 0.43
+  useCommunicatorPanel: 1
+  communicatorScanlineAlpha: 0.18
+  communicatorGlitchAlpha: 0.2
+  communicatorSweepSpeed: 1.18
+  signalPulseSpeed: 6.2
+  warningBootSeconds: 0.58
+  warningBootMaxAlpha: 0.82
+  warningBootTitle: '- WARNING -'
+  warningBootSubtitle: CELESTIAL SYSTEM LINK
+  useFocusBackdrop: 1
+  focusBackdropMaxAlpha: 0.66
+  focusBackdropPadding: 34
+  communicatorAudioSource: {fileID: 1562656635903906330}
+  communicatorOpenSfx: {fileID: 0}
+  communicatorOpenSfxVolume: 0.82
+  showReplaceablePlaceholders: 1
+  operatorPortrait: {fileID: 0}
+  inoriPortrait: {fileID: 0}
+  dialogueFrameTexture: {fileID: 0}
+  focusMarkerTexture: {fileID: 0}
+  meleeAttackIcon: {fileID: 0}
+  moveStickIcon: {fileID: 0}
+  swapModeIcon: {fileID: 0}
+  rangedAttackIcon: {fileID: 0}
+  dodgeIcon: {fileID: 0}
+  routeIcon: {fileID: 0}
+  skill1Icon: {fileID: 0}
 --- !u!114 &6123456789012345678
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1213,13 +1263,17 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge
   noticeOverlay: {fileID: 3315606629749477696}
-  overlayPresenter: {fileID: 0}
+  overlayPresenter: {fileID: 6123456789012345679}
   combatHudAimDragInput: {fileID: 0}
   combatHudMoveJoystick: {fileID: 0}
   combatHudPointerActions: []
   minimumReadSeconds: 0.18
   confirmedFlashSeconds: 0.14
   advanceInputLabel: 계속
+  runCoreLoopCoachAfterRelease: 1
+  coreCoachMaximumSeconds: 45
+  energyLadder: {fileID: 0}
+  bossEncounter: {fileID: 0}
   voiceAudioSource: {fileID: 1562656635903906330}
   replicaGrantVoiceClip: {fileID: 8300000, guid: bc6a3152c5df4fc3b4a9d49650c1a601, type: 3}
   summonGuideVoiceClip: {fileID: 8300000, guid: df58e67c949b4628a9c8f92d1af92547, type: 3}

@@ -15,7 +15,8 @@ namespace DimensionBrawl.Presentation
             RangedAttack,
             Dodge,
             Route,
-            SummonSlots
+            SummonSlots,
+            Skill1
         }
 
         public enum GuideState
@@ -68,6 +69,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Texture2D rangedAttackIcon;
         [SerializeField] private Texture2D dodgeIcon;
         [SerializeField] private Texture2D routeIcon;
+        [SerializeField] private Texture2D skill1Icon;
 
         private GUIStyle speakerStyle;
         private GUIStyle dialogueStyle;
@@ -976,6 +978,7 @@ namespace DimensionBrawl.Presentation
                 case FocusKind.MeleeAttack:
                 case FocusKind.RangedAttack:
                 case FocusKind.Dodge:
+                case FocusKind.Skill1:
                     return resolvedPadding + 12f;
                 default:
                     return resolvedPadding;
@@ -1177,6 +1180,8 @@ namespace DimensionBrawl.Presentation
                     return routeIcon;
                 case FocusKind.SummonSlots:
                     return routeIcon;
+                case FocusKind.Skill1:
+                    return skill1Icon;
                 default:
                     return null;
             }
@@ -1223,6 +1228,8 @@ namespace DimensionBrawl.Presentation
                     return "ROUTE";
                 case FocusKind.SummonSlots:
                     return "SUMMON";
+                case FocusKind.Skill1:
+                    return "SKILL1";
                 default:
                     return "GUIDE";
             }
@@ -1246,6 +1253,8 @@ namespace DimensionBrawl.Presentation
                     return "GO";
                 case FocusKind.SummonSlots:
                     return "SUM";
+                case FocusKind.Skill1:
+                    return "S1";
                 default:
                     return string.Empty;
             }
@@ -1273,6 +1282,12 @@ namespace DimensionBrawl.Presentation
                     return targetGuideState == GuideState.Ready
                         ? new Color(1f, 0.84f, 0.32f, 0.96f)
                         : new Color(1f, 0.9f, 0.54f, 0.62f);
+                case FocusKind.MeleeAttack:
+                case FocusKind.RangedAttack:
+                case FocusKind.Skill1:
+                    return targetGuideState == GuideState.Ready
+                        ? new Color(0.38f, 0.94f, 1f, 0.96f)
+                        : new Color(0.56f, 0.96f, 1f, 0.62f);
                 default:
                     return targetGuideState == GuideState.Ready
                         ? new Color(0.38f, 0.94f, 1f, 0.96f)
@@ -1295,6 +1310,7 @@ namespace DimensionBrawl.Presentation
                 case FocusKind.RangedAttack:
                 case FocusKind.Dodge:
                 case FocusKind.SummonSlots:
+                case FocusKind.Skill1:
                     return true;
                 default:
                     return false;

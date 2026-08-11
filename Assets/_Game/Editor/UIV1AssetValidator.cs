@@ -443,6 +443,7 @@ namespace DimensionBrawl.Editor
                 string displayName = action.FindPropertyRelative("displayName").stringValue;
                 string canonicalName = action.FindPropertyRelative("canonicalName").stringValue;
                 string placeholderState = action.FindPropertyRelative("placeholderState").stringValue;
+                bool enabledInV1 = action.FindPropertyRelative("enabledInV1").boolValue;
 
                 if (actionId == CombatHudActionId.None)
                 {
@@ -459,6 +460,25 @@ namespace DimensionBrawl.Editor
                 if (!string.Equals(canonicalName, actionId.ToString(), StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"{CombatHudActionCatalogPath}.actions[{i}].canonicalName must match {actionId}.");
+                }
+
+                if (RequiresLiveCombatHudMetadata(actionId))
+                {
+                    if (!enabledInV1)
+                    {
+                        throw new InvalidOperationException($"{CombatHudActionCatalogPath}.actions[{i}] must enable live V1 action {actionId}.");
+                    }
+
+                    if (placeholderState.IndexOf("placeholder", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        throw new InvalidOperationException($"{CombatHudActionCatalogPath}.actions[{i}].placeholderState must describe live {actionId} behavior.");
+                    }
+                }
+
+                if (actionId == CombatHudActionId.Ultimate
+                    && !string.Equals(displayName, "Mode Swap", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"{CombatHudActionCatalogPath}.actions[{i}].displayName must expose the live mode-swap binding.");
                 }
             }
 
@@ -2187,6 +2207,15 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{CombatHudActionCatalogPath} is missing {actionId}.");
             }
+        }
+
+        private static bool RequiresLiveCombatHudMetadata(CombatHudActionId actionId)
+        {
+            return actionId == CombatHudActionId.Skill1
+                || actionId == CombatHudActionId.Ultimate
+                || actionId == CombatHudActionId.SummonSlot1
+                || actionId == CombatHudActionId.SummonSlot2
+                || actionId == CombatHudActionId.SummonSlot3;
         }
 
         private static void RequireActionPrompt(HashSet<string> actionNames, string actionName)

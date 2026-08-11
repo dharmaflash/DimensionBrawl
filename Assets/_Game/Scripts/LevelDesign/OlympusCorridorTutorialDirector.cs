@@ -1423,7 +1423,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (overlayPresenter == null)
             {
-                overlayPresenter = FindFirst<OlympusTutorialOverlayPresenter>();
+                overlayPresenter = GetComponent<OlympusTutorialOverlayPresenter>();
             }
 
             if (overlayPresenter == null && Application.isPlaying)

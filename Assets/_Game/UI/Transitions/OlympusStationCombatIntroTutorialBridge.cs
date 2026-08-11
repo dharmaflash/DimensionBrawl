@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
@@ -14,10 +15,34 @@ namespace DimensionBrawl.LevelDesign
     [DisallowMultipleComponent]
     public sealed class OlympusStationCombatIntroTutorialBridge : MonoBehaviour, ICombatEntryGuideGate
     {
+        public enum CoreLoopCoachPhase
+        {
+            Inactive,
+            AwaitingEncounter,
+            SeekForwardRisk,
+            HoldFrontline,
+            AwaitingSummonBlock,
+            AwaitingSkill1Hit,
+            Completed,
+            Interrupted
+        }
+
         private const string SystemSpeaker = "천계관리시스템";
         private const string ReplicaGrantLine = "영혼 동기화율 70퍼센트, 전생특전 '레플리카'를 지급합니다.";
         private const string SummonGuideLine =
-            "코스트 수치를 만족하면 소환수를 소환할 수 있습니다.";
+            "전진할수록 EN 충전이 빨라집니다. 보스 포화를 소환으로 막고 Skill1로 추격하십시오.";
+        private const string ForwardRiskGuideLine =
+            "전진 위험대에서 EN 충전이 가속됩니다. 안전 틈을 읽고 앞으로 진입하세요.";
+        private const string HoldFrontlineGuideLine =
+            "EN 가속 확인. 근접 위협을 정리해 보스 포화 차단 기회를 여세요.";
+        private const string SummonBlockGuideLine =
+            "포화 차단 기회. 소환 1로 투사체를 막아 반격 창을 여세요.";
+        private const string Skill1FollowupGuideLine =
+            "포화 차단 성공. 열린 반격 창에 Skill1을 명중시키세요.";
+        private const string Skill1RetryGuideLine =
+            "반격 창이 닫혔습니다. 다음 포화를 소환으로 다시 차단하세요.";
+        private const string CoreLoopConfirmedLine =
+            "연계 확인: 전진 충전 → 소환 차단 → Skill1 반격.";
 
         [SerializeField] private SceneEntryNoticeOverlay noticeOverlay;
         [SerializeField] private OlympusTutorialOverlayPresenter overlayPresenter;
@@ -27,6 +52,11 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0f)] private float minimumReadSeconds = 0.18f;
         [SerializeField, Min(0f)] private float confirmedFlashSeconds = 0.14f;
         [SerializeField] private string advanceInputLabel = "계속";
+        [Header("Core Loop Coach")]
+        [SerializeField] private bool runCoreLoopCoachAfterRelease = true;
+        [SerializeField, Min(1f)] private float coreCoachMaximumSeconds = 45f;
+        [SerializeField] private SummonEnergyLadder energyLadder;
+        [SerializeField] private BossBarrageEncounterController bossEncounter;
         [Header("Voice")]
         [SerializeField] private AudioSource voiceAudioSource;
         [SerializeField] private AudioClip replicaGrantVoiceClip;
@@ -45,12 +75,22 @@ namespace DimensionBrawl.LevelDesign
         private bool gameplayInputLocked;
         private bool awaitingAdvance;
         private bool advanceRequested;
+        private bool coreCoachEventsSubscribed;
+        private bool coreCoachObservedRunningEncounter;
+        private bool forwardRiskObserved;
+        private bool summonBlockOpportunityObserved;
+        private bool summonFollowupWindowObserved;
+        private bool summonFollowupHitObserved;
+        private Coroutine coreCoachRoutine;
 
         public CombatEntryGuideState State { get; private set; } = CombatEntryGuideState.NotStarted;
         public bool IsGuidePlaying => State == CombatEntryGuideState.Playing;
         public bool IsAwaitingAdvance => awaitingAdvance;
+        public bool IsCoreLoopCoachRunning => coreCoachRoutine != null;
+        public CoreLoopCoachPhase CurrentCoreLoopCoachPhase { get; private set; } = CoreLoopCoachPhase.Inactive;
 
         public event Action<CombatEntryGuideState> StateChanged;
+        public event Action<CoreLoopCoachPhase> CoreLoopCoachPhaseChanged;
 
         public void RequestAdvance()
         {
@@ -94,6 +134,7 @@ namespace DimensionBrawl.LevelDesign
 
             awaitingAdvance = false;
             advanceRequested = false;
+            StopCoreLoopCoach(CoreLoopCoachPhase.Interrupted);
             overlayPresenter?.Hide();
         }
 
@@ -152,6 +193,338 @@ namespace DimensionBrawl.LevelDesign
             overlayPresenter.Hide();
             SetGameplayInputLocked(false);
             SetGuideState(CombatEntryGuideState.Released);
+            StartCoreLoopCoachAfterRelease();
+        }
+
+        private void StartCoreLoopCoachAfterRelease()
+        {
+            if (!runCoreLoopCoachAfterRelease
+                || !isActiveAndEnabled
+                || State != CombatEntryGuideState.Released
+                || coreCoachRoutine != null)
+            {
+                return;
+            }
+
+            ResolveReferences();
+            ResolveCoreCoachReferences();
+            if (overlayPresenter == null || energyLadder == null || bossEncounter == null)
+            {
+                SetCoreLoopCoachPhase(CoreLoopCoachPhase.Interrupted);
+                return;
+            }
+
+            coreCoachRoutine = StartCoroutine(RunCoreLoopCoachAfterRelease());
+        }
+
+        private IEnumerator RunCoreLoopCoachAfterRelease()
+        {
+            ResetCoreLoopCoachObservations();
+            SubscribeCoreLoopCoachEvents();
+            SetCoreLoopCoachPhase(CoreLoopCoachPhase.AwaitingEncounter);
+            float deadline = Time.unscaledTime + Mathf.Max(1f, coreCoachMaximumSeconds);
+
+            while (Time.unscaledTime < deadline)
+            {
+                if (!coreCoachObservedRunningEncounter)
+                {
+                    if (Time.timeScale <= 0f)
+                    {
+                        yield return null;
+                        continue;
+                    }
+
+                    if (!bossEncounter.IsRunning)
+                    {
+                        if (bossEncounter.Skill1FollowupHitConfirmed)
+                        {
+                            coreCoachObservedRunningEncounter = true;
+                            CaptureCoreLoopSnapshot();
+                        }
+                        else if (bossEncounter.IsCleared || bossEncounter.IsFailed)
+                        {
+                            SetCoreLoopCoachPhase(CoreLoopCoachPhase.Interrupted);
+                            break;
+                        }
+                        else
+                        {
+                            yield return null;
+                            continue;
+                        }
+                    }
+
+                    if (coreCoachObservedRunningEncounter)
+                    {
+                        continue;
+                    }
+
+                    coreCoachObservedRunningEncounter = true;
+                    CaptureCoreLoopSnapshot();
+                }
+
+                if (CurrentCoreLoopCoachPhase == CoreLoopCoachPhase.Completed)
+                {
+                    overlayPresenter.SetGuideState(OlympusTutorialOverlayPresenter.GuideState.Confirmed);
+                    yield return WaitRealtime(confirmedFlashSeconds);
+                    break;
+                }
+
+                if (coreCoachObservedRunningEncounter && !bossEncounter.IsRunning)
+                {
+                    SetCoreLoopCoachPhase(CoreLoopCoachPhase.Interrupted);
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (CurrentCoreLoopCoachPhase != CoreLoopCoachPhase.Completed)
+            {
+                SetCoreLoopCoachPhase(CoreLoopCoachPhase.Interrupted);
+            }
+
+            UnsubscribeCoreLoopCoachEvents();
+            overlayPresenter?.Hide();
+            coreCoachRoutine = null;
+        }
+
+        private void CaptureRiskBand(SummonEnergyRiskBand riskBand)
+        {
+            if (riskBand == SummonEnergyRiskBand.ForwardRisk)
+            {
+                CaptureForwardRisk();
+            }
+        }
+
+        private void CaptureForwardRisk()
+        {
+            if (!coreCoachObservedRunningEncounter || forwardRiskObserved)
+            {
+                return;
+            }
+
+            forwardRiskObserved = true;
+            RefreshCoreLoopCoachPresentation();
+        }
+
+        private void CaptureSummonBlockOpportunity()
+        {
+            summonBlockOpportunityObserved = true;
+            RefreshCoreLoopCoachPresentation();
+        }
+
+        private void CaptureSummonFollowupWindow(int tier)
+        {
+            summonBlockOpportunityObserved = true;
+            summonFollowupWindowObserved = true;
+            RefreshCoreLoopCoachPresentation();
+        }
+
+        private void CaptureSummonFollowupMiss()
+        {
+            if (summonFollowupHitObserved)
+            {
+                return;
+            }
+
+            summonFollowupWindowObserved = false;
+            RefreshCoreLoopCoachPresentation(Skill1RetryGuideLine);
+        }
+
+        private void CaptureSummonFollowupHit(int tier, float damage)
+        {
+            if (damage <= 0f)
+            {
+                return;
+            }
+
+            summonBlockOpportunityObserved = true;
+            summonFollowupWindowObserved = true;
+            summonFollowupHitObserved = true;
+            RefreshCoreLoopCoachPresentation();
+        }
+
+        private void CaptureCoreLoopSnapshot()
+        {
+            forwardRiskObserved |= energyLadder.CurrentRiskBand == SummonEnergyRiskBand.ForwardRisk;
+            summonBlockOpportunityObserved |= bossEncounter.CloseThreatDefeated
+                || bossEncounter.BlockedBossPressureWithSummon
+                || bossEncounter.IsSummonFollowupWindowActive
+                || bossEncounter.Skill1FollowupHitConfirmed;
+            summonFollowupWindowObserved |= bossEncounter.IsSummonFollowupWindowActive;
+            summonFollowupHitObserved |= bossEncounter.Skill1FollowupHitConfirmed;
+            RefreshCoreLoopCoachPresentation();
+        }
+
+        private void RefreshCoreLoopCoachPresentation(string summonMessage = SummonBlockGuideLine)
+        {
+            if (!coreCoachObservedRunningEncounter
+                || CurrentCoreLoopCoachPhase == CoreLoopCoachPhase.Completed)
+            {
+                return;
+            }
+
+            if (!forwardRiskObserved)
+            {
+                SetCoreLoopCoachPhase(CoreLoopCoachPhase.SeekForwardRisk);
+                ShowCoreLoopCoachCue(
+                    ForwardRiskGuideLine,
+                    "전진",
+                    OlympusTutorialOverlayPresenter.FocusKind.MoveStick,
+                    ResolveMoveAnchor());
+                return;
+            }
+
+            if (summonFollowupHitObserved)
+            {
+                PresentCoreLoopCompletion();
+                return;
+            }
+
+            if (summonFollowupWindowObserved)
+            {
+                PresentSkill1FollowupCue();
+                return;
+            }
+
+            if (summonBlockOpportunityObserved)
+            {
+                PresentSummonBlockCue(summonMessage);
+                return;
+            }
+
+            SetCoreLoopCoachPhase(CoreLoopCoachPhase.HoldFrontline);
+            ShowCoreLoopCoachCue(
+                HoldFrontlineGuideLine,
+                "전선 유지",
+                OlympusTutorialOverlayPresenter.FocusKind.RangedAttack,
+                ResolveActionAnchor(CombatHudActionId.BasicAttack, new Vector2(0.91f, 0.76f)));
+        }
+
+        private void PresentCoreLoopCompletion()
+        {
+            SetCoreLoopCoachPhase(CoreLoopCoachPhase.Completed);
+            ShowCoreLoopCoachCue(
+                CoreLoopConfirmedLine,
+                "연계 확인",
+                OlympusTutorialOverlayPresenter.FocusKind.Skill1,
+                ResolveActionAnchor(CombatHudActionId.Skill1, new Vector2(0.82f, 0.80f)));
+        }
+
+        private void PresentSummonBlockCue(string message)
+        {
+            SetCoreLoopCoachPhase(CoreLoopCoachPhase.AwaitingSummonBlock);
+            ShowCoreLoopCoachCue(
+                message,
+                "소환 1",
+                OlympusTutorialOverlayPresenter.FocusKind.SummonSlots,
+                ResolveActionAnchor(CombatHudActionId.SummonSlot1, new Vector2(0.89f, 0.54f)));
+        }
+
+        private void PresentSkill1FollowupCue()
+        {
+            SetCoreLoopCoachPhase(CoreLoopCoachPhase.AwaitingSkill1Hit);
+            ShowCoreLoopCoachCue(
+                Skill1FollowupGuideLine,
+                "SKILL 1",
+                OlympusTutorialOverlayPresenter.FocusKind.Skill1,
+                ResolveActionAnchor(CombatHudActionId.Skill1, new Vector2(0.82f, 0.80f)));
+        }
+
+        private void ShowCoreLoopCoachCue(
+            string message,
+            string actionLabel,
+            OlympusTutorialOverlayPresenter.FocusKind targetFocus,
+            Vector2 targetAnchor)
+        {
+            if (overlayPresenter == null)
+            {
+                return;
+            }
+
+            overlayPresenter.SetGuideProgress(0, 0, "");
+            overlayPresenter.Show(SystemSpeaker, message, actionLabel, targetFocus, targetAnchor);
+            overlayPresenter.SetGuideState(OlympusTutorialOverlayPresenter.GuideState.Ready);
+        }
+
+        private void SetCoreLoopCoachPhase(CoreLoopCoachPhase nextPhase)
+        {
+            if (CurrentCoreLoopCoachPhase == nextPhase)
+            {
+                return;
+            }
+
+            CurrentCoreLoopCoachPhase = nextPhase;
+            CoreLoopCoachPhaseChanged?.Invoke(nextPhase);
+        }
+
+        private void ResetCoreLoopCoachObservations()
+        {
+            coreCoachObservedRunningEncounter = false;
+            forwardRiskObserved = false;
+            summonBlockOpportunityObserved = false;
+            summonFollowupWindowObserved = false;
+            summonFollowupHitObserved = false;
+        }
+
+        private void ResolveCoreCoachReferences()
+        {
+            energyLadder ??= FindFirstObjectByType<SummonEnergyLadder>(FindObjectsInactive.Include);
+            bossEncounter ??= FindFirstObjectByType<BossBarrageEncounterController>(FindObjectsInactive.Include);
+        }
+
+        private void SubscribeCoreLoopCoachEvents()
+        {
+            if (coreCoachEventsSubscribed || energyLadder == null || bossEncounter == null)
+            {
+                return;
+            }
+
+            energyLadder.RiskBandChanged += CaptureRiskBand;
+            bossEncounter.SummonBlockOpportunityOpened += CaptureSummonBlockOpportunity;
+            bossEncounter.SummonFollowupWindowOpened += CaptureSummonFollowupWindow;
+            bossEncounter.SummonFollowupMissed += CaptureSummonFollowupMiss;
+            bossEncounter.SummonFollowupHitConfirmed += CaptureSummonFollowupHit;
+            coreCoachEventsSubscribed = true;
+        }
+
+        private void UnsubscribeCoreLoopCoachEvents()
+        {
+            if (!coreCoachEventsSubscribed)
+            {
+                return;
+            }
+
+            if (energyLadder != null)
+            {
+                energyLadder.RiskBandChanged -= CaptureRiskBand;
+            }
+
+            if (bossEncounter != null)
+            {
+                bossEncounter.SummonBlockOpportunityOpened -= CaptureSummonBlockOpportunity;
+                bossEncounter.SummonFollowupWindowOpened -= CaptureSummonFollowupWindow;
+                bossEncounter.SummonFollowupMissed -= CaptureSummonFollowupMiss;
+                bossEncounter.SummonFollowupHitConfirmed -= CaptureSummonFollowupHit;
+            }
+
+            coreCoachEventsSubscribed = false;
+        }
+
+        private void StopCoreLoopCoach(CoreLoopCoachPhase finalPhase)
+        {
+            if (coreCoachRoutine != null)
+            {
+                StopCoroutine(coreCoachRoutine);
+                coreCoachRoutine = null;
+            }
+
+            UnsubscribeCoreLoopCoachEvents();
+            if (CurrentCoreLoopCoachPhase != CoreLoopCoachPhase.Inactive
+                && CurrentCoreLoopCoachPhase != CoreLoopCoachPhase.Completed)
+            {
+                SetCoreLoopCoachPhase(finalPhase);
+            }
         }
 
         private void SetGuideState(CombatEntryGuideState nextState)
@@ -225,6 +598,46 @@ namespace DimensionBrawl.LevelDesign
             return new Vector2(
                 Mathf.Clamp01(screenBounds.center.x / Screen.width),
                 Mathf.Clamp01(screenBounds.center.y / Screen.height));
+        }
+
+        private Vector2 ResolveMoveAnchor()
+        {
+            ResolveCombatHudInputs();
+            if (combatHudMoveJoystick != null
+                && TryGetScreenRect(combatHudMoveJoystick.transform as RectTransform, out Rect screenRect)
+                && Screen.width > 0
+                && Screen.height > 0)
+            {
+                return new Vector2(
+                    Mathf.Clamp01(screenRect.center.x / Screen.width),
+                    Mathf.Clamp01(screenRect.center.y / Screen.height));
+            }
+
+            return new Vector2(0.13f, 0.76f);
+        }
+
+        private Vector2 ResolveActionAnchor(CombatHudActionId actionId, Vector2 fallbackAnchor)
+        {
+            ResolveCombatHudInputs();
+            for (int i = 0; i < combatHudPointerActions.Length; i++)
+            {
+                CombatHudPointerActionInput pointerAction = combatHudPointerActions[i];
+                if (pointerAction == null
+                    || pointerAction.ActionId != actionId
+                    || !TryGetScreenRect(pointerAction.transform as RectTransform, out Rect screenRect))
+                {
+                    continue;
+                }
+
+                if (Screen.width > 0 && Screen.height > 0)
+                {
+                    return new Vector2(
+                        Mathf.Clamp01(screenRect.center.x / Screen.width),
+                        Mathf.Clamp01(screenRect.center.y / Screen.height));
+                }
+            }
+
+            return fallbackAnchor;
         }
 
         private void SetGameplayInputLocked(bool locked)

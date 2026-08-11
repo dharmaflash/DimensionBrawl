@@ -26,35 +26,35 @@ MonoBehaviour:
     cooldownDisplayMode: 10
     enabledInV1: 1
   - actionId: 120
-    displayName: Skill1
+    displayName: Skill 1
     canonicalName: Skill1
-    placeholderState: Placeholder only
+    placeholderState: Live V1 energy-tier follow-up skill
     cooldownDisplayMode: 10
-    enabledInV1: 0
+    enabledInV1: 1
   - actionId: 130
-    displayName: Ultimate
+    displayName: Mode Swap
     canonicalName: Ultimate
-    placeholderState: Placeholder only
+    placeholderState: Live V1 melee/ranged mode swap
     cooldownDisplayMode: 10
-    enabledInV1: 0
+    enabledInV1: 1
   - actionId: 200
     displayName: Summon 1
     canonicalName: SummonSlot1
-    placeholderState: Visual placeholder only
+    placeholderState: Live V1 primary pressure-block summon
     cooldownDisplayMode: 30
-    enabledInV1: 0
+    enabledInV1: 1
   - actionId: 210
     displayName: Summon 2
     canonicalName: SummonSlot2
-    placeholderState: Visual placeholder only
+    placeholderState: Live V1 support summon slot 2
     cooldownDisplayMode: 30
-    enabledInV1: 0
+    enabledInV1: 1
   - actionId: 220
     displayName: Summon 3
     canonicalName: SummonSlot3
-    placeholderState: Visual placeholder only
+    placeholderState: Live V1 support summon slot 3
     cooldownDisplayMode: 30
-    enabledInV1: 0
+    enabledInV1: 1
   - actionId: 300
     displayName: Pause
     canonicalName: Pause
