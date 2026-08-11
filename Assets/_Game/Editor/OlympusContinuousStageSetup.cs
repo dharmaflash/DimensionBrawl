@@ -4,6 +4,7 @@ using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -663,6 +664,8 @@ namespace DimensionBrawl.Editor
                 movement.GetComponents<PlayerSupportSummonSlotAction>();
             BossBarrageEncounterController bossEncounter =
                 FindSingleSceneComponent<BossBarrageEncounterController>(scene);
+            BossBarragePocketVfxCueBridge pocketVfxBridge =
+                bossEncounter.GetComponent<BossBarragePocketVfxCueBridge>();
             CombatEncounterController encounter =
                 FindSingleSceneComponent<CombatEncounterController>(scene);
             OlympusStageClearOverlay stageClearOverlay =
@@ -673,6 +676,8 @@ namespace DimensionBrawl.Editor
             var serializedBoss = new SerializedObject(bossEncounter);
             CombatHealth bossHealth = serializedBoss.FindProperty("bossHealth")
                 .objectReferenceValue as CombatHealth;
+            BossBarrageVisualCueDriver bossVisualCueDriver =
+                bossHealth != null ? bossHealth.GetComponent<BossBarrageVisualCueDriver>() : null;
             Require(
                 playerAction != null
                 && rangedBasicAttack != null
@@ -686,6 +691,14 @@ namespace DimensionBrawl.Editor
                 "Continuous player package must expose exactly two support summon sources.");
             Require(bossHealth != null,
                 "Continuous boss package has no authored boss health subject.");
+            Require(
+                pocketVfxBridge != null && bossVisualCueDriver != null,
+                "Continuous boss package is missing its follow-up VFX bridge or visual reaction driver.");
+
+            var serializedPocketVfxBridge = new SerializedObject(pocketVfxBridge);
+            serializedPocketVfxBridge.FindProperty("bossVisualCueDriver").objectReferenceValue =
+                bossVisualCueDriver;
+            serializedPocketVfxBridge.ApplyModifiedPropertiesWithoutUndo();
 
             ConfigureDesktopInput(
                 movement,

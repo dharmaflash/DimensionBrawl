@@ -63736,6 +63736,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarragePocketVfxCueBridge
   encounterController: {fileID: 439529094}
   cuePlayer: {fileID: 4010}
+  bossVisualCueDriver: {fileID: 1932639520}
   followupWindowAnchor: {fileID: 85052602}
   followupHitAnchor: {fileID: 1932639514}
   followupMissedAnchor: {fileID: 1228450371}

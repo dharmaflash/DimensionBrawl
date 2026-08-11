@@ -324,6 +324,53 @@ namespace DimensionBrawl.Editor
                     $"{expectation.ScenePath}: boss visual cue driver must target the canonical Commando Animator.");
             }
 
+            BossBarragePocketVfxCueBridge[] pocketVfxBridges =
+                Object.FindObjectsByType<BossBarragePocketVfxCueBridge>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            BossBarragePocketVfxCueBridge pocketVfxBridge = null;
+            int scenePocketVfxBridgeCount = 0;
+            Scene activeScene = SceneManager.GetActiveScene();
+            for (int i = 0; i < pocketVfxBridges.Length; i++)
+            {
+                BossBarragePocketVfxCueBridge candidate = pocketVfxBridges[i];
+                if (candidate == null || candidate.gameObject.scene.handle != activeScene.handle)
+                {
+                    continue;
+                }
+
+                pocketVfxBridge = candidate;
+                scenePocketVfxBridgeCount++;
+            }
+
+            report.AppendLine($"- Boss follow-up VFX bridge count: {scenePocketVfxBridgeCount}");
+            if (scenePocketVfxBridgeCount != 1)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: expected exactly one boss follow-up VFX bridge, found {scenePocketVfxBridgeCount}.");
+            }
+            else if (cueDriver == null || pocketVfxBridge.BossVisualCueDriver != cueDriver)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: boss follow-up VFX bridge must target the canonical boss visual cue driver.");
+            }
+
+            CombatHealth encounterBossHealth = null;
+            if (pocketVfxBridge != null && pocketVfxBridge.EncounterController != null)
+            {
+                encounterBossHealth = new SerializedObject(pocketVfxBridge.EncounterController)
+                    .FindProperty("bossHealth")
+                    .objectReferenceValue as CombatHealth;
+            }
+
+            report.AppendLine(
+                $"- Boss follow-up reaction owner: {(encounterBossHealth != null ? encounterBossHealth.name : "missing")}");
+            if (encounterBossHealth == null || encounterBossHealth.transform != bossRoot)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: follow-up encounter health and visual reaction must share the canonical boss root.");
+            }
+
             try
             {
                 ActionFoundationSciFiSoldier01VisualSetup.ValidateCanonicalCommandoArsenal(visual.gameObject);

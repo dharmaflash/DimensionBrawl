@@ -10,6 +10,7 @@ namespace DimensionBrawl.Presentation
         [FormerlySerializedAs("pocketReviewOwner")]
         [SerializeField] private BossBarrageEncounterController encounterController;
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private BossBarrageVisualCueDriver bossVisualCueDriver;
         [SerializeField] private Transform followupWindowAnchor;
         [SerializeField] private Transform followupHitAnchor;
         [SerializeField] private Transform followupMissedAnchor;
@@ -91,6 +92,7 @@ namespace DimensionBrawl.Presentation
         public float PocketFailIntensity => pocketFailIntensity;
         public CombatVfxCueId PocketFailAccentCueId => pocketFailAccentCueId;
         public float PocketFailAccentIntensity => pocketFailAccentIntensity;
+        public BossBarrageVisualCueDriver BossVisualCueDriver => bossVisualCueDriver;
 
         private void Awake()
         {
@@ -155,8 +157,14 @@ namespace DimensionBrawl.Presentation
 
         private void HandleSummonFollowupHitConfirmed(int tier, float damage)
         {
+            if (!(damage > 0f))
+            {
+                return;
+            }
+
             lastFollowupHitTier = tier;
             lastFollowupHitDamage = damage;
+            bossVisualCueDriver?.RequestFollowupHitReaction(tier, damage);
             if (Play(CombatVfxCueId.SummonFollowupHit, followupHitAnchor, tier, hitIntensity))
             {
                 followupHitCueRequestCount++;

@@ -16,6 +16,12 @@ namespace DimensionBrawl.Tests
     {
         private const string ShieldBreakerEliteAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/RoleVariants/ShieldBreakerElite/DB_ShieldBreakerElite_Role.controller";
+        private const string CanonicalBossAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        private const string HitOnlyBossAnimatorControllerPath =
+            "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller";
+        private const string MissingHitAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
 
         [Test]
         public void LaneSpaceClampsPlayerZoneButKeepsForwardBattlefieldAvailable()
@@ -1071,6 +1077,170 @@ namespace DimensionBrawl.Tests
 
             Object.DestroyImmediate(bridgeObject);
             Object.DestroyImmediate(cameraObject);
+        }
+
+        [Test]
+        public void BossFollowupHitReactionUsesTieredCanonicalAnimatorTriggers()
+        {
+            GameObject bossObject = new GameObject("BossFollowupReaction");
+            Animator animator = bossObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CanonicalBossAnimatorControllerPath);
+            Assert.IsNotNull(animator.runtimeAnimatorController);
+            BossBarrageVisualCueDriver cueDriver = bossObject.AddComponent<BossBarrageVisualCueDriver>();
+            cueDriver.ConfigurePresentation(null, animator, bossObject.transform, new Renderer[0]);
+
+            cueDriver.RequestFollowupHitReaction(1, 24f);
+
+            Assert.AreEqual(1, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(1, cueDriver.LastFollowupHitReactionTier);
+            Assert.AreEqual(24f, cueDriver.LastFollowupHitReactionDamage, 0.001f);
+            Assert.AreEqual("Hit", cueDriver.LastFollowupHitReactionRequestedTrigger);
+            Assert.AreEqual("Hit", cueDriver.LastFollowupHitReactionResolvedTrigger);
+
+            cueDriver.RequestFollowupHitReaction(2, 48f);
+
+            Assert.AreEqual(2, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(2, cueDriver.LastFollowupHitReactionTier);
+            Assert.AreEqual("Hit", cueDriver.LastFollowupHitReactionRequestedTrigger);
+            Assert.AreEqual("Hit", cueDriver.LastFollowupHitReactionResolvedTrigger);
+
+            cueDriver.RequestFollowupHitReaction(3, 72f);
+
+            Assert.AreEqual(3, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(3, cueDriver.LastFollowupHitReactionTier);
+            Assert.AreEqual("HitHeavy", cueDriver.LastFollowupHitReactionRequestedTrigger);
+            Assert.AreEqual("HitHeavy", cueDriver.LastFollowupHitReactionResolvedTrigger);
+
+            Object.DestroyImmediate(bossObject);
+        }
+
+        [Test]
+        public void BossFollowupHitReactionRejectsUnconfirmedDamageAndFallsBackToHit()
+        {
+            GameObject bossObject = new GameObject("BossFollowupFallback");
+            Animator animator = bossObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(HitOnlyBossAnimatorControllerPath);
+            Assert.IsNotNull(animator.runtimeAnimatorController);
+            BossBarrageVisualCueDriver cueDriver = bossObject.AddComponent<BossBarrageVisualCueDriver>();
+            cueDriver.ConfigurePresentation(null, animator, bossObject.transform, new Renderer[0]);
+
+            cueDriver.RequestFollowupHitReaction(3, 0f);
+            cueDriver.RequestFollowupHitReaction(3, -1f);
+            cueDriver.RequestFollowupHitReaction(3, float.NaN);
+
+            Assert.AreEqual(0, cueDriver.FollowupHitReactionRequestCount);
+
+            cueDriver.RequestFollowupHitReaction(3, 48f);
+
+            Assert.AreEqual(1, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual("HitHeavy", cueDriver.LastFollowupHitReactionRequestedTrigger);
+            Assert.AreEqual("Hit", cueDriver.LastFollowupHitReactionResolvedTrigger);
+
+            GameObject missingTriggerObject = new GameObject("BossFollowupMissingTrigger");
+            Animator missingTriggerAnimator = missingTriggerObject.AddComponent<Animator>();
+            missingTriggerAnimator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(MissingHitAnimatorControllerPath);
+            Assert.IsNotNull(missingTriggerAnimator.runtimeAnimatorController);
+            BossBarrageVisualCueDriver missingTriggerDriver =
+                missingTriggerObject.AddComponent<BossBarrageVisualCueDriver>();
+            missingTriggerDriver.ConfigurePresentation(
+                null,
+                missingTriggerAnimator,
+                missingTriggerObject.transform,
+                new Renderer[0]);
+
+            Assert.DoesNotThrow(() => missingTriggerDriver.RequestFollowupHitReaction(3, 48f));
+            Assert.AreEqual(1, missingTriggerDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual("HitHeavy", missingTriggerDriver.LastFollowupHitReactionRequestedTrigger);
+            Assert.AreEqual(string.Empty, missingTriggerDriver.LastFollowupHitReactionResolvedTrigger);
+
+            GameObject missingAnimatorObject = new GameObject("BossFollowupMissingAnimator");
+            BossBarrageVisualCueDriver missingAnimatorDriver =
+                missingAnimatorObject.AddComponent<BossBarrageVisualCueDriver>();
+            Assert.DoesNotThrow(() => missingAnimatorDriver.RequestFollowupHitReaction(3, 48f));
+            Assert.AreEqual(1, missingAnimatorDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(string.Empty, missingAnimatorDriver.LastFollowupHitReactionResolvedTrigger);
+
+            Object.DestroyImmediate(missingAnimatorObject);
+            Object.DestroyImmediate(missingTriggerObject);
+            Object.DestroyImmediate(bossObject);
+        }
+
+        [Test]
+        public void BossFollowupVfxBridgeRoutesConfirmedHitToOneBossReaction()
+        {
+            GameObject bossObject = new GameObject("BossFollowupBridgeReaction");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+            Animator animator = bossObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CanonicalBossAnimatorControllerPath);
+            BossBarrageVisualCueDriver cueDriver = bossObject.AddComponent<BossBarrageVisualCueDriver>();
+            cueDriver.ConfigurePresentation(null, animator, bossObject.transform, new Renderer[0]);
+
+            GameObject bridgeObject = new GameObject("BossFollowupVfxBridge");
+            bridgeObject.SetActive(false);
+            GameObject cuePrefab = new GameObject("BossFollowupHitCue");
+            CombatVfxCueProfile cueProfile = CreateFollowupHitVfxCueProfile(cuePrefab);
+            CombatVfxCuePlayer cuePlayer = bridgeObject.AddComponent<CombatVfxCuePlayer>();
+            ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+            BossBarrageEncounterController encounterController =
+                bridgeObject.AddComponent<BossBarrageEncounterController>();
+            BossBarragePocketVfxCueBridge bridge =
+                bridgeObject.AddComponent<BossBarragePocketVfxCueBridge>();
+            SerializedObject serializedBridge = new SerializedObject(bridge);
+            serializedBridge.FindProperty("encounterController").objectReferenceValue = encounterController;
+            serializedBridge.FindProperty("bossVisualCueDriver").objectReferenceValue = cueDriver;
+            serializedBridge.FindProperty("cuePlayer").objectReferenceValue = cuePlayer;
+            serializedBridge.FindProperty("followupHitAnchor").objectReferenceValue = bossObject.transform;
+            serializedBridge.ApplyModifiedPropertiesWithoutUndo();
+            bridgeObject.SetActive(true);
+
+            InvokePocketVfxBridgeFollowupHitHandlerForTest(bridge, 3, 0f);
+            InvokePocketVfxBridgeFollowupHitHandlerForTest(bridge, 3, -1f);
+            InvokePocketVfxBridgeFollowupHitHandlerForTest(bridge, 3, float.NaN);
+            Assert.AreEqual(0, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(0, bridge.FollowupHitCueRequestCount);
+
+            RaiseEncounterFollowupHitConfirmedForTest(encounterController, 3, 64f);
+
+            Assert.AreEqual(1, cueDriver.FollowupHitReactionRequestCount);
+            Assert.AreEqual(3, cueDriver.LastFollowupHitReactionTier);
+            Assert.AreEqual("HitHeavy", cueDriver.LastFollowupHitReactionResolvedTrigger);
+            Assert.AreEqual(3, bridge.LastFollowupHitTier);
+            Assert.AreEqual(64f, bridge.LastFollowupHitDamage, 0.001f);
+            Assert.AreEqual(
+                1,
+                bridge.FollowupHitCueRequestCount,
+                "The existing semantic follow-up world cue should remain exactly once per confirmed hit.");
+            Assert.AreEqual(1, CountDirectChildrenNamed(bossObject.transform, cuePrefab.name));
+            Assert.AreEqual(0, cuePlayer.ActiveProfileAudioSourceCount);
+
+            serializedBridge.Update();
+            serializedBridge.FindProperty("cuePlayer").objectReferenceValue = null;
+            serializedBridge.ApplyModifiedPropertiesWithoutUndo();
+            RaiseEncounterFollowupHitConfirmedForTest(encounterController, 2, 32f);
+            Assert.AreEqual(
+                2,
+                cueDriver.FollowupHitReactionRequestCount,
+                "The event subscription should keep the boss reaction even when optional VFX playback is unavailable.");
+            Assert.AreEqual(1, bridge.FollowupHitCueRequestCount);
+            Assert.AreEqual(1, CountDirectChildrenNamed(bossObject.transform, cuePrefab.name));
+
+            Assert.IsTrue(bossHealth.TryApplyDamage(
+                new DamageInfo(null, DamageTeam.Player, 1f, bossObject.transform.position, Vector3.forward, 0f)));
+            Assert.Greater(cueDriver.LastDamageCueIntensity, 0f);
+            Assert.AreEqual(
+                2,
+                cueDriver.FollowupHitReactionRequestCount,
+                "Generic damage feedback must not duplicate the semantic follow-up reaction.");
+
+            Object.DestroyImmediate(cueProfile);
+            Object.DestroyImmediate(cuePrefab);
+            Object.DestroyImmediate(bridgeObject);
+            Object.DestroyImmediate(bossObject);
         }
 
         [Test]
@@ -6680,6 +6850,35 @@ namespace DimensionBrawl.Tests
             method.Invoke(bridge, null);
         }
 
+        private static void InvokePocketVfxBridgeFollowupHitHandlerForTest(
+            BossBarragePocketVfxCueBridge bridge,
+            int tier,
+            float damage)
+        {
+            MethodInfo method = typeof(BossBarragePocketVfxCueBridge).GetMethod(
+                "HandleSummonFollowupHitConfirmed",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+
+            method.Invoke(bridge, new object[] { tier, damage });
+        }
+
+        private static void RaiseEncounterFollowupHitConfirmedForTest(
+            BossBarrageEncounterController encounterController,
+            int tier,
+            float damage)
+        {
+            FieldInfo eventField = typeof(BossBarrageEncounterController).GetField(
+                "SummonFollowupHitConfirmed",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(eventField);
+            System.Action<int, float> callback =
+                eventField.GetValue(encounterController) as System.Action<int, float>;
+            Assert.IsNotNull(callback, "The enabled VFX bridge should subscribe to the encounter follow-up event.");
+
+            callback.Invoke(tier, damage);
+        }
+
         private static void SetPrivateInstanceField<T>(object target, string fieldName, T value)
         {
             System.Reflection.FieldInfo field = target.GetType().GetField(
@@ -6712,6 +6911,31 @@ namespace DimensionBrawl.Tests
             ConfigureCue(cues.GetArrayElementAtIndex(2), CombatVfxCueId.SummonFollowupMissed, prefab);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
+        }
+
+        private static CombatVfxCueProfile CreateFollowupHitVfxCueProfile(GameObject prefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 1;
+            ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.SummonFollowupHit, prefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static int CountDirectChildrenNamed(Transform parent, string childName)
+        {
+            int count = 0;
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                if (parent.GetChild(i).name == childName)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private static CombatVfxCueProfile CreatePlayerDamageVfxCueProfile(

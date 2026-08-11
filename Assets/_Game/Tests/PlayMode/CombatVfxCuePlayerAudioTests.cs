@@ -311,6 +311,12 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupHit);
+            Assert.IsTrue(
+                profile.TryGetCue(CombatVfxCueId.SummonFollowupHit, out CombatVfxCue followupHitCue));
+            Assert.AreEqual(
+                0,
+                followupHitCue.AudioClipCount,
+                "SummonFollowupHit should not add a second profile-level one-shot over the boss damage SFX.");
         }
 
         [UnityTest]

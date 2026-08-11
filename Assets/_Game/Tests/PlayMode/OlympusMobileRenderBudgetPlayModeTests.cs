@@ -416,6 +416,22 @@ namespace DimensionBrawl.Tests
             return components;
         }
 
+        private static bool HasAnimatorTrigger(Animator animator, string triggerName)
+        {
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameter.name, triggerName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static int CountMissingScripts(Scene scene)
         {
             int missingScriptCount = 0;
@@ -720,6 +736,14 @@ namespace DimensionBrawl.Tests
                 Assert.That(
                     AssetDatabase.GetAssetPath(animator.runtimeAnimatorController),
                     Is.EqualTo(CanonicalBossAnimatorControllerPath));
+                Assert.That(
+                    HasAnimatorTrigger(animator, "Hit"),
+                    Is.True,
+                    "The canonical boss controller must expose its normal semantic hit trigger.");
+                Assert.That(
+                    HasAnimatorTrigger(animator, "HitHeavy"),
+                    Is.True,
+                    "The canonical boss controller must expose its tier-3 heavy semantic hit trigger.");
 
                 BossBarrageVisualCueDriver cueDriver = bossRoot.GetComponent<BossBarrageVisualCueDriver>();
                 Assert.That(cueDriver, Is.Not.Null);
@@ -727,6 +751,31 @@ namespace DimensionBrawl.Tests
                     cueDriver.Animator,
                     Is.SameAs(animator),
                     "Boss attack cues should drive the canonical Commando Animator directly.");
+                Assert.That(
+                    cueDriver.transform,
+                    Is.SameAs(bossRoot),
+                    "Boss hit reactions must stay on the canonical gameplay boss root.");
+
+                List<BossBarragePocketVfxCueBridge> pocketVfxBridges =
+                    FindSceneComponents<BossBarragePocketVfxCueBridge>(scene);
+                Assert.That(
+                    pocketVfxBridges.Count,
+                    Is.EqualTo(1),
+                    $"{scenePath} should have exactly one semantic boss follow-up VFX bridge.");
+                BossBarragePocketVfxCueBridge pocketVfxBridge = pocketVfxBridges[0];
+                Assert.That(
+                    pocketVfxBridge.BossVisualCueDriver,
+                    Is.SameAs(cueDriver),
+                    "Confirmed Skill1 follow-up hits should drive the canonical boss reaction owner.");
+                Assert.That(pocketVfxBridge.EncounterController, Is.Not.Null);
+                CombatHealth encounterBossHealth = new SerializedObject(pocketVfxBridge.EncounterController)
+                    .FindProperty("bossHealth")
+                    .objectReferenceValue as CombatHealth;
+                Assert.That(encounterBossHealth, Is.Not.Null);
+                Assert.That(
+                    encounterBossHealth.transform,
+                    Is.SameAs(bossRoot),
+                    "Encounter damage confirmation and its full-body reaction must resolve on the same boss root.");
 
                 AssertCanonicalCommandoArsenal(visual);
                 Assert.That(

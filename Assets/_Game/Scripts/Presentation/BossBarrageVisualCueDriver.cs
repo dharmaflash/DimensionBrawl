@@ -8,6 +8,9 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class BossBarrageVisualCueDriver : MonoBehaviour
     {
+        private const string FollowupHitTrigger = "Hit";
+        private const string FollowupHeavyHitTrigger = "HitHeavy";
+
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
@@ -192,6 +195,11 @@ namespace DimensionBrawl.Presentation
         private int damageWorldVfxCueRequestCount;
         private CombatVfxCueId lastPressureActionWorldVfxCueId;
         private float lastDamageCueIntensity;
+        private int followupHitReactionRequestCount;
+        private int lastFollowupHitReactionTier;
+        private float lastFollowupHitReactionDamage;
+        private string lastFollowupHitReactionRequestedTrigger = string.Empty;
+        private string lastFollowupHitReactionResolvedTrigger = string.Empty;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
@@ -224,6 +232,11 @@ namespace DimensionBrawl.Presentation
         public int DamageWorldVfxCueRequestCount => damageWorldVfxCueRequestCount;
         public CombatVfxCueId LastPressureActionWorldVfxCueId => lastPressureActionWorldVfxCueId;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
+        public int FollowupHitReactionRequestCount => followupHitReactionRequestCount;
+        public int LastFollowupHitReactionTier => lastFollowupHitReactionTier;
+        public float LastFollowupHitReactionDamage => lastFollowupHitReactionDamage;
+        public string LastFollowupHitReactionRequestedTrigger => lastFollowupHitReactionRequestedTrigger;
+        public string LastFollowupHitReactionResolvedTrigger => lastFollowupHitReactionResolvedTrigger;
 
         public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
         {
@@ -281,6 +294,42 @@ namespace DimensionBrawl.Presentation
             cuePlayer = newCuePlayer;
             vfxAnchor = newVfxAnchor;
             vfxDirectionTarget = newVfxDirectionTarget;
+        }
+
+        public void RequestFollowupHitReaction(int tier, float damage)
+        {
+            if (!(damage > 0f))
+            {
+                return;
+            }
+
+            lastFollowupHitReactionTier = Mathf.Clamp(tier, 1, 3);
+            lastFollowupHitReactionDamage = damage;
+            lastFollowupHitReactionRequestedTrigger = lastFollowupHitReactionTier >= 3
+                ? FollowupHeavyHitTrigger
+                : FollowupHitTrigger;
+            lastFollowupHitReactionResolvedTrigger = string.Empty;
+            followupHitReactionRequestCount++;
+
+            if (animator == null)
+            {
+                return;
+            }
+
+            string resolvedTrigger = lastFollowupHitReactionRequestedTrigger;
+            if (!HasAnimatorTrigger(resolvedTrigger))
+            {
+                if (!string.Equals(resolvedTrigger, FollowupHeavyHitTrigger, StringComparison.Ordinal)
+                    || !HasAnimatorTrigger(FollowupHitTrigger))
+                {
+                    return;
+                }
+
+                resolvedTrigger = FollowupHitTrigger;
+            }
+
+            animator.SetTrigger(resolvedTrigger);
+            lastFollowupHitReactionResolvedTrigger = resolvedTrigger;
         }
 
         public void ResetToDefaultPatternCues()
