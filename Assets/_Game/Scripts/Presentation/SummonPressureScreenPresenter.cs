@@ -32,7 +32,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform vfxAnchor;
         [SerializeField] private Transform vfxDirectionTarget;
         [SerializeField] private CombatVfxCueId activationCueId = CombatVfxCueId.EliteShieldSignal;
-        [SerializeField] private CombatVfxCueId interceptCueId = CombatVfxCueId.SummonBlockOpportunity;
         [SerializeField, Min(0f)] private float activationCueIntensity = 0.48f;
         [SerializeField, Min(0f)] private float interceptCueIntensity = 0.58f;
         [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.08f;
@@ -49,6 +48,12 @@ namespace DimensionBrawl.Presentation
         private int activationVfxCueRequestCount;
         private int interceptVfxCueRequestCount;
         private int lastObservedTier = 1;
+        private Transform lastProjectileInterceptAnchor;
+        private Vector3 lastProjectileInterceptWorldPosition;
+        private Vector3 lastProjectileInterceptLocalOffset;
+        private Vector3 lastProjectileInterceptIncomingDirection;
+        private bool hasLastProjectileInterceptContact;
+        private bool lastProjectileInterceptUsedFallbackContact;
         private bool showing;
         private bool subscribed;
 
@@ -61,6 +66,13 @@ namespace DimensionBrawl.Presentation
         public int LastObservedTier => lastObservedTier;
         public float VisualRadiusScale => visualRadiusScale;
         public bool RenderVisuals => renderVisuals;
+        public CombatVfxCueId InterceptCueId => CombatVfxCueId.SummonProjectileIntercept;
+        public bool HasLastProjectileInterceptContact => hasLastProjectileInterceptContact;
+        public Transform LastProjectileInterceptAnchor => lastProjectileInterceptAnchor;
+        public Vector3 LastProjectileInterceptWorldPosition => lastProjectileInterceptWorldPosition;
+        public Vector3 LastProjectileInterceptLocalOffset => lastProjectileInterceptLocalOffset;
+        public Vector3 LastProjectileInterceptIncomingDirection => lastProjectileInterceptIncomingDirection;
+        public bool LastProjectileInterceptUsedFallbackContact => lastProjectileInterceptUsedFallbackContact;
 
         private void Awake()
         {
@@ -208,7 +220,7 @@ namespace DimensionBrawl.Presentation
             interceptPunchLocalDirection = ResolveInterceptPunchLocalDirection(projectileTransform);
             interceptFlashCount++;
             SetShowing(true);
-            if (PlayVfxCue(interceptCueId, screen.ActiveTier, interceptCueIntensity, projectileTransform))
+            if (PlayProjectileInterceptVfxCue(screen, projectileTransform))
             {
                 interceptVfxCueRequestCount++;
             }
@@ -344,6 +356,91 @@ namespace DimensionBrawl.Presentation
             Transform anchor = vfxAnchor != null ? vfxAnchor : (pressureScreen != null ? pressureScreen.transform : transform);
             float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
             return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor, directionSource), intensity);
+        }
+
+        private bool PlayProjectileInterceptVfxCue(
+            SummonPressureScreen screen,
+            Transform projectileTransform)
+        {
+            hasLastProjectileInterceptContact = false;
+            lastProjectileInterceptAnchor = null;
+            lastProjectileInterceptWorldPosition = Vector3.zero;
+            lastProjectileInterceptLocalOffset = Vector3.zero;
+            lastProjectileInterceptIncomingDirection = Vector3.zero;
+            lastProjectileInterceptUsedFallbackContact = false;
+
+            if (screen == null)
+            {
+                return false;
+            }
+
+            Transform anchor = vfxAnchor != null ? vfxAnchor : screen.transform;
+            Vector3 contactWorldPosition;
+            Vector3 incomingDirection;
+            if (projectileTransform != null)
+            {
+                contactWorldPosition = projectileTransform.position;
+                incomingDirection = Vector3.ProjectOnPlane(
+                    screen.transform.position - contactWorldPosition,
+                    Vector3.up);
+                if (incomingDirection.sqrMagnitude > 0.0001f)
+                {
+                    incomingDirection.Normalize();
+                }
+                else
+                {
+                    incomingDirection = -ResolveFallbackContactOutwardDirection(screen);
+                }
+            }
+            else
+            {
+                Vector3 outwardDirection = ResolveFallbackContactOutwardDirection(screen);
+                contactWorldPosition = screen.transform.position
+                    + outwardDirection * Mathf.Max(0f, screen.ActiveRadius);
+                incomingDirection = -outwardDirection;
+                lastProjectileInterceptUsedFallbackContact = true;
+            }
+
+            Vector3 contactLocalOffset = anchor.InverseTransformPoint(contactWorldPosition);
+            hasLastProjectileInterceptContact = true;
+            lastProjectileInterceptAnchor = anchor;
+            lastProjectileInterceptWorldPosition = contactWorldPosition;
+            lastProjectileInterceptLocalOffset = contactLocalOffset;
+            lastProjectileInterceptIncomingDirection = incomingDirection;
+
+            CombatVfxCuePlayer resolvedCuePlayer = ResolveCuePlayer();
+            if (resolvedCuePlayer == null)
+            {
+                return false;
+            }
+
+            float intensity = interceptCueIntensity
+                + Mathf.Max(0, screen.ActiveTier - 1) * tierCueIntensityStep;
+            Vector3 playbackDirection = anchor.InverseTransformDirection(incomingDirection);
+            return resolvedCuePlayer.PlayCue(
+                CombatVfxCueId.SummonProjectileIntercept,
+                anchor,
+                playbackDirection,
+                intensity,
+                intensity,
+                contactLocalOffset);
+        }
+
+        private Vector3 ResolveFallbackContactOutwardDirection(SummonPressureScreen screen)
+        {
+            Vector3 outwardDirection = vfxDirectionTarget != null
+                ? Vector3.ProjectOnPlane(
+                    vfxDirectionTarget.position - screen.transform.position,
+                    Vector3.up)
+                : Vector3.zero;
+            if (outwardDirection.sqrMagnitude <= 0.0001f)
+            {
+                outwardDirection = Vector3.ProjectOnPlane(screen.transform.forward, Vector3.up);
+            }
+
+            return outwardDirection.sqrMagnitude > 0.0001f
+                ? outwardDirection.normalized
+                : Vector3.forward;
         }
 
         private CombatVfxCuePlayer ResolveCuePlayer()

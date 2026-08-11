@@ -321,6 +321,16 @@ namespace DimensionBrawl.Editor
             Debug.Log("Refreshed reviewed combat cue audio banks on promoted cue prefabs.");
         }
 
+        public static void RefreshSummonProjectileInterceptAudioBatch()
+        {
+            PromoteReviewedAudioClips(
+                SummonBlockOpportunitySourceClipPaths,
+                SummonBlockOpportunityClipPaths);
+            ConfigureSummonProjectileInterceptAudioBank();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Refreshed the reviewed summon projectile-intercept audio bank.");
+        }
+
         [MenuItem("DimensionBrawl/Refresh Reviewed Hit Feedback VFX")]
         public static void RefreshReviewedHitFeedbackVfxMenu()
         {
@@ -348,12 +358,61 @@ namespace DimensionBrawl.Editor
         [MenuItem("DimensionBrawl/Validate Action Foundation Combat VFX Cues")]
         public static void ValidateCombatVfxCuesMenu()
         {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfileForValidation();
+            ValidateCombatVfxAssetProfile(profile);
+
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || scene.path != ScenePath)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            PlayerActionController player = RequireObject<PlayerActionController>(roots, "player action controller");
+            ValidateCuePlayer(player.gameObject, profile, "player");
+            if (player.GetComponent<PlayerCombatVfxCueDriver>() == null)
+            {
+                throw new InvalidOperationException("Player root is missing PlayerCombatVfxCueDriver.");
+            }
+
+            BasicSoldierEnemy[] soldiers = CollectSoldiers(roots);
+            if (soldiers.Length == 0)
+            {
+                throw new InvalidOperationException("The canonical combat review has no BasicSoldierEnemy samples to validate.");
+            }
+
+            for (int i = 0; i < soldiers.Length; i++)
+            {
+                ValidateEnemyCombatVfx(soldiers[i], profile);
+            }
+
+            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyLinePressureActive, 3f);
+            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyRetreatShotActive, 2.8f);
+
+            Debug.Log("Action foundation combat VFX cue validation passed.");
+        }
+
+        [MenuItem("DimensionBrawl/Validate Action Foundation Combat VFX Assets")]
+        public static void ValidateCombatVfxAssetsBatch()
+        {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfileForValidation();
+            ValidateCombatVfxAssetProfile(profile);
+            Debug.Log("Action foundation combat VFX asset validation passed.");
+        }
+
+        private static CombatVfxCueProfile LoadCombatVfxCueProfileForValidation()
+        {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             if (profile == null)
             {
                 throw new InvalidOperationException($"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
             }
 
+            return profile;
+        }
+
+        private static void ValidateCombatVfxAssetProfile(CombatVfxCueProfile profile)
+        {
             foreach (CombatVfxCueId cueId in Enum.GetValues(typeof(CombatVfxCueId)))
             {
                 if (!profile.TryGetCue(cueId, out CombatVfxCue cue))
@@ -386,36 +445,6 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateReviewedCombatFeedbackPlayback(profile);
-
-            Scene scene = SceneManager.GetActiveScene();
-            if (!scene.IsValid() || scene.path != ScenePath)
-            {
-                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            }
-
-            GameObject[] roots = scene.GetRootGameObjects();
-            PlayerActionController player = RequireObject<PlayerActionController>(roots, "player action controller");
-            ValidateCuePlayer(player.gameObject, profile, "player");
-            if (player.GetComponent<PlayerCombatVfxCueDriver>() == null)
-            {
-                throw new InvalidOperationException("Player root is missing PlayerCombatVfxCueDriver.");
-            }
-
-            BasicSoldierEnemy[] soldiers = CollectSoldiers(roots);
-            if (soldiers.Length == 0)
-            {
-                throw new InvalidOperationException("The canonical combat review has no BasicSoldierEnemy samples to validate.");
-            }
-
-            for (int i = 0; i < soldiers.Length; i++)
-            {
-                ValidateEnemyCombatVfx(soldiers[i], profile);
-            }
-
-            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyLinePressureActive, 3f);
-            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyRetreatShotActive, 2.8f);
-
-            Debug.Log("Action foundation combat VFX cue validation passed.");
         }
 
         public static CombatVfxCueProfile EnsureCombatVfxAssets()
@@ -533,7 +562,8 @@ namespace DimensionBrawl.Editor
                 EliteSummon = SaveBurstPrefab("DB_VFX_EliteSummonSignal", violet, ParticleSystemShapeType.Sphere, 0.58f, 24f, 360f, 0.24f, 0.48f, 0.14f, 0.26f, 64, new Color(0.74f, 0.38f, 1f, 0.64f), new Color(0.12f, 0.04f, 0.7f, 0f)),
                 SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", cyan, ParticleSystemShapeType.Cone, 0.20f, 24f, 62f, 0.10f, 0.24f, 0.06f, 0.14f, 24, new Color(0.42f, 0.95f, 1f, 0.50f), new Color(0.04f, 0.28f, 0.88f, 0f), 0.34f),
                 SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", gold, ParticleSystemShapeType.Cone, 0.22f, 22f, 70f, 0.12f, 0.26f, 0.07f, 0.15f, 28, new Color(1f, 0.82f, 0.28f, 0.52f), new Color(0.86f, 0.24f, 0.02f, 0f), 0.30f),
-                ElitePhaseSwap = SaveBurstPrefab("DB_VFX_ElitePhaseSwapSignal", white, ParticleSystemShapeType.Circle, 0.82f, 44f, 360f, 0.18f, 0.48f, 0.26f, 0.82f, 84, new Color(0.9f, 0.98f, 1f, 0.96f), new Color(0.26f, 0.46f, 1f, 0f))
+                ElitePhaseSwap = SaveBurstPrefab("DB_VFX_ElitePhaseSwapSignal", white, ParticleSystemShapeType.Circle, 0.82f, 44f, 360f, 0.18f, 0.48f, 0.26f, 0.82f, 84, new Color(0.9f, 0.98f, 1f, 0.96f), new Color(0.26f, 0.46f, 1f, 0f)),
+                SummonProjectileIntercept = SaveBurstPrefab("DB_VFX_SummonProjectileIntercept", cyan, ParticleSystemShapeType.Circle, 0.54f, 58f, 360f, 0.08f, 0.26f, 0.16f, 0.48f, 58, new Color(0.78f, 1f, 1f, 0.92f), new Color(0.05f, 0.38f, 1f, 0f))
             };
 
             EnsureReviewedCombatCueAudioBanks();
@@ -743,6 +773,7 @@ namespace DimensionBrawl.Editor
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonBlockOpportunity);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupWindow);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonFollowupHit);
+            ValidateReviewedPlaybackCue(profile, CombatVfxCueId.SummonProjectileIntercept);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgePulsewave);
             ValidateReviewedPlaybackCue(profile, CombatVfxCueId.PlayerPerfectDodgeHoloCube);
@@ -761,6 +792,7 @@ namespace DimensionBrawl.Editor
             ValidateCueProfileAudioBank(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.EliteSummonSignal, EliteSummonSignalAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonBlockOpportunity, SummonBlockOpportunityAudioName);
+            ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonProjectileIntercept, SummonBlockOpportunityAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.SummonFollowupWindow, SummonFollowupWindowAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeTimeField, PlayerPerfectDodgeTimeWarpAudioName);
             ValidateCueEmbeddedAudioBank(profile, CombatVfxCueId.PlayerPerfectDodgeWindow, PlayerPerfectDodgeSuccessAudioName);
@@ -1051,7 +1083,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.SummonFollowupMissed, prefabs.EnemyDeath, new Vector3(0f, 0.08f, -0.2f), Vector3.zero, new Vector3(0.46f, 0.36f, 0.46f), 0.38f, false, false),
                 new CueDefinition(CombatVfxCueId.SummonBlockOpportunity, prefabs.SummonBlockOpportunity, new Vector3(0f, 0.24f, 0.42f), Vector3.zero, new Vector3(0.19f, 0.14f, 0.19f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PocketCleared, prefabs.EliteSummon, new Vector3(0f, 0.42f, 0f), Vector3.zero, new Vector3(0.036f, 0.027f, 0.036f), 0.18f, true, false),
-                new CueDefinition(CombatVfxCueId.PocketFailed, prefabs.EnemyHit, new Vector3(0f, 0.18f, -0.08f), Vector3.zero, new Vector3(0.10f, 0.085f, 0.10f), 0.20f, false, true)
+                new CueDefinition(CombatVfxCueId.PocketFailed, prefabs.EnemyHit, new Vector3(0f, 0.18f, -0.08f), Vector3.zero, new Vector3(0.10f, 0.085f, 0.10f), 0.20f, false, true),
+                new CueDefinition(CombatVfxCueId.SummonProjectileIntercept, prefabs.SummonProjectileIntercept, Vector3.zero, new Vector3(90f, 0f, 0f), new Vector3(0.82f, 0.82f, 0.82f), 0.30f, true, true)
             };
 
             SerializedObject serializedObject = new SerializedObject(profile);
@@ -3332,6 +3365,8 @@ namespace DimensionBrawl.Editor
                 0.2f,
                 132);
 
+            ConfigureSummonProjectileInterceptAudioBank();
+
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_SummonFollowupWindow.prefab",
                 SummonFollowupWindowAudioName);
@@ -3391,6 +3426,23 @@ namespace DimensionBrawl.Editor
                 1.02f,
                 0.35f,
                 126);
+        }
+
+        private static void ConfigureSummonProjectileInterceptAudioBank()
+        {
+            const string prefabPath = PrefabRoot + "/DB_VFX_SummonProjectileIntercept.prefab";
+            StripReviewedCueAudio(prefabPath, SummonBlockOpportunityAudioName);
+            AttachReviewedCueAudio(
+                prefabPath,
+                SummonBlockOpportunityAudioName,
+                SummonBlockOpportunityClipPaths,
+                0.52f,
+                0.98f,
+                1.06f,
+                0.9f,
+                1.05f,
+                0.2f,
+                132);
         }
 
         private static void StripReviewedCueAudio(string prefabPath, string childName)
@@ -4748,6 +4800,7 @@ namespace DimensionBrawl.Editor
             public GameObject SummonFollowupWindow;
             public GameObject SummonBlockOpportunity;
             public GameObject ElitePhaseSwap;
+            public GameObject SummonProjectileIntercept;
         }
     }
 }

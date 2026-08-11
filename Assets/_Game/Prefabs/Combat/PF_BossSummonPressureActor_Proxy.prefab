@@ -3733,7 +3733,6 @@ MonoBehaviour:
   vfxAnchor: {fileID: 0}
   vfxDirectionTarget: {fileID: 0}
   activationCueId: 24
-  interceptCueId: 32
   activationCueIntensity: 0.48
   interceptCueIntensity: 0.58
   tierCueIntensityStep: 0.08

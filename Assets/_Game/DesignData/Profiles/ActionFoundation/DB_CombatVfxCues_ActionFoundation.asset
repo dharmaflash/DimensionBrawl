@@ -946,3 +946,22 @@ MonoBehaviour:
     audioMinDistance: 0
     audioMaxDistance: 0
     audioPriority: 0
+  - cueId: 47
+    prefab: {fileID: 2106184707540859708, guid: 3f56b57827b3d2e469b01f0009134b02, type: 3}
+    localPositionOffset: {x: 0, y: 0, z: 0}
+    localEulerOffset: {x: 90, y: 0, z: 0}
+    localScale: {x: 0.82, y: 0.82, z: 0.82}
+    lifetimeSeconds: 0.3
+    prewarmCount: 0
+    parentToAnchor: 1
+    alignForwardToDirection: 1
+    audioClips: []
+    audioBaseVolume: 0
+    audioMinimumPitch: 0
+    audioMaximumPitch: 0
+    audioMinimumVolumeMultiplier: 0
+    audioMaximumVolumeMultiplier: 0
+    audioSpatialBlend: 0
+    audioMinDistance: 0
+    audioMaxDistance: 0
+    audioPriority: 0

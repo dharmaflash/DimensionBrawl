@@ -20,6 +20,12 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_04.wav",
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav",
         };
+        private static readonly string[] SummonBlockClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_01.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_02.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_03.wav",
+        };
         private const string BossBarrageProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string BossBarrageMissileFlyLoopClipPath =
@@ -317,6 +323,53 @@ namespace DimensionBrawl.Tests
                 0,
                 followupHitCue.AudioClipCount,
                 "SummonFollowupHit should not add a second profile-level one-shot over the boss damage SFX.");
+        }
+
+        [Test]
+        public void SummonProjectileInterceptCueCarriesOneReviewedBlockSfxBank()
+        {
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
+
+            Assert.IsTrue(
+                profile.TryGetCue(CombatVfxCueId.SummonProjectileIntercept, out CombatVfxCue interceptCue));
+            Assert.AreEqual(
+                0,
+                interceptCue.AudioClipCount,
+                "Projectile intercept should not add a second profile-level one-shot over its embedded reviewed bank.");
+            CombatVfxCueAudioRandomizer[] randomizers =
+                interceptCue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            Assert.AreEqual(
+                1,
+                randomizers.Length,
+                "Projectile intercept should preserve exactly one reviewed summon-block audio owner.");
+            Assert.AreEqual(SummonBlockClipPaths.Length, randomizers[0].ClipCount);
+            for (int i = 0; i < SummonBlockClipPaths.Length; i++)
+            {
+                string clipPath = AssetDatabase.GetAssetPath(randomizers[0].GetClip(i)).Replace('\\', '/');
+                Assert.AreEqual(SummonBlockClipPaths[i], clipPath);
+            }
+
+            Assert.IsNotNull(randomizers[0].Source);
+            Assert.IsFalse(randomizers[0].Source.playOnAwake);
+            Assert.IsFalse(randomizers[0].Source.loop);
+            Assert.IsTrue(interceptCue.ParentToAnchor);
+            Assert.IsTrue(interceptCue.AlignForwardToDirection);
+            Assert.Less(
+                Vector3.Distance(interceptCue.LocalEulerOffset, new Vector3(90f, 0f, 0f)),
+                0.001f,
+                "The circular contact plane should face the incoming projectile instead of lying on the ground.");
+            Assert.That(interceptCue.LifetimeSeconds, Is.InRange(0.26f, 0.32f));
+            Assert.IsNotNull(
+                interceptCue.Prefab.GetComponent<CombatVfxCueVisual>(),
+                "The promoted contact prefab should use the stable pooled cue lifecycle.");
+            Assert.AreEqual(
+                3,
+                interceptCue.Prefab.GetComponentsInChildren<Renderer>(includeInactive: true).Length,
+                "The contact marker should keep one expanding disc and two orthogonal read lines.");
+            Assert.IsNull(
+                interceptCue.Prefab.GetComponentInChildren<Collider>(includeInactive: true),
+                "Presentation-only contact geometry must not participate in gameplay collision.");
         }
 
         [UnityTest]

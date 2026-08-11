@@ -52,7 +52,8 @@ namespace DimensionBrawl.Presentation
         PlayerSummonPreSpawnPortal,
         PlayerSummonLandingCrater,
         PlayerSummonDragonBreathAudio,
-        PlayerPerfectDodgeShieldBlockImpact
+        PlayerPerfectDodgeShieldBlockImpact,
+        SummonProjectileIntercept
     }
 
     public enum CombatVfxCuePlaybackMode
@@ -85,6 +86,7 @@ namespace DimensionBrawl.Presentation
                         || cueId == CombatVfxCueId.EnemyDeath
                         || cueId == CombatVfxCueId.EliteSummonSignal
                         || cueId == CombatVfxCueId.SummonBlockOpportunity
+                        || cueId == CombatVfxCueId.SummonProjectileIntercept
                         || cueId == CombatVfxCueId.SummonFollowupWindow
                         || cueId == CombatVfxCueId.SummonFollowupHit
                         || cueId == CombatVfxCueId.PlayerPerfectDodgeTimeField

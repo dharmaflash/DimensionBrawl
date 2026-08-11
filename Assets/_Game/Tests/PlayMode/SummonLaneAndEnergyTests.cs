@@ -613,6 +613,7 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerDamaged));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerCritical));
                 Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
+                Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.SummonProjectileIntercept));
             }
             finally
             {
@@ -6587,6 +6588,370 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonPressureScreenProjectileInterceptPlaysDedicatedContactCueOnce()
+        {
+            GameObject screenObject = null;
+            GameObject projectileObject = null;
+            GameObject activationCuePrefab = null;
+            GameObject interceptCuePrefab = null;
+            GameObject opportunityCuePrefab = null;
+            CombatVfxCueProfile cueProfile = null;
+            AudioClip interceptAudioClip = null;
+            try
+            {
+                screenObject = new GameObject("SummonProjectileInterceptScreen");
+                screenObject.transform.position = new Vector3(2f, 0f, -1f);
+                screenObject.transform.rotation = Quaternion.Euler(0f, 57f, 0f);
+                screenObject.AddComponent<SphereCollider>();
+                screenObject.AddComponent<Rigidbody>();
+                SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+                CombatVfxCuePlayer cuePlayer = screenObject.AddComponent<CombatVfxCuePlayer>();
+                SummonPressureScreenPresenter presenter =
+                    screenObject.AddComponent<SummonPressureScreenPresenter>();
+                presenter.ConfigurePresentation(
+                    screen,
+                    screenObject.transform,
+                    System.Array.Empty<Renderer>());
+
+                activationCuePrefab = new GameObject("PressureScreenActivationCue");
+                interceptCuePrefab = new GameObject("SummonProjectileInterceptCue");
+                opportunityCuePrefab = new GameObject("SummonBlockOpportunityCue");
+                interceptAudioClip = AudioClip.Create(
+                    "SummonProjectileInterceptAudioProbe",
+                    32,
+                    1,
+                    8000,
+                    false);
+                AudioSource interceptAudioSource = interceptCuePrefab.AddComponent<AudioSource>();
+                interceptAudioSource.playOnAwake = false;
+                CombatVfxCueAudioRandomizer interceptAudioRandomizer =
+                    interceptCuePrefab.AddComponent<CombatVfxCueAudioRandomizer>();
+                interceptAudioRandomizer.Configure(
+                    interceptAudioSource,
+                    new[] { interceptAudioClip },
+                    1f,
+                    1f,
+                    1f,
+                    1f,
+                    1f);
+                cueProfile = CreatePressureScreenInterceptCueProfile(
+                    activationCuePrefab,
+                    interceptCuePrefab,
+                    opportunityCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+                presenter.ConfigureVfxCuePlayer(cuePlayer, screenObject.transform, null);
+
+                const int tier = 3;
+                screen.Activate(DamageTeam.AllySummon, 2, 1.25f, 1f, tier);
+
+                projectileObject = new GameObject("HostileProjectileAtScreenContact");
+                Vector3 expectedLocalContactOffset = new Vector3(0.45f, 0f, 0.70f);
+                projectileObject.transform.position =
+                    screenObject.transform.TransformPoint(expectedLocalContactOffset);
+                projectileObject.AddComponent<SphereCollider>();
+                projectileObject.AddComponent<Rigidbody>();
+                BossBarrageProjectile projectile =
+                    projectileObject.AddComponent<BossBarrageProjectile>();
+                projectile.Configure(
+                    null,
+                    DamageTeam.Enemy,
+                    10f,
+                    Vector3.back,
+                    0f,
+                    1f,
+                    0.3f);
+                Vector3 expectedIncomingDirection = Vector3.ProjectOnPlane(
+                    screenObject.transform.position - projectileObject.transform.position,
+                    Vector3.up).normalized;
+
+                Assert.IsTrue(
+                    screen.TryIntercept(projectile),
+                    "The test must use the real hostile boss-projectile intercept path.");
+
+                Transform interceptCue = FindDirectChildNamed(
+                    screenObject.transform,
+                    interceptCuePrefab.name);
+                Assert.IsNotNull(
+                    interceptCue,
+                    "A real pressure-screen intercept should request the dedicated projectile-contact cue.");
+                Assert.AreEqual(
+                    CombatVfxCueId.SummonProjectileIntercept,
+                    presenter.InterceptCueId);
+                Assert.AreEqual(1, presenter.InterceptVfxCueRequestCount);
+                Assert.AreEqual(1, presenter.InterceptFlashCount);
+                Assert.AreEqual(tier, presenter.LastObservedTier);
+                Assert.IsTrue(presenter.HasLastProjectileInterceptContact);
+                Assert.IsFalse(
+                    presenter.LastProjectileInterceptUsedFallbackContact,
+                    "A concrete projectile should preserve its exact contact instead of using the skill-beam fallback.");
+                Assert.AreSame(
+                    screenObject.transform,
+                    presenter.LastProjectileInterceptAnchor);
+                Assert.Less(
+                    Vector3.Distance(
+                        presenter.LastProjectileInterceptWorldPosition,
+                        projectileObject.transform.position),
+                    0.001f);
+                Assert.Less(
+                    Vector3.Distance(
+                        presenter.LastProjectileInterceptLocalOffset,
+                        expectedLocalContactOffset),
+                    0.001f);
+                Assert.Greater(
+                    Vector3.Dot(
+                        presenter.LastProjectileInterceptIncomingDirection,
+                        expectedIncomingDirection),
+                    0.999f);
+                Assert.AreEqual(
+                    1,
+                    CountDirectChildrenNamed(screenObject.transform, interceptCuePrefab.name),
+                    "One physical intercept should create exactly one dedicated contact cue.");
+                Assert.AreEqual(
+                    0,
+                    CountDirectChildrenNamed(screenObject.transform, opportunityCuePrefab.name),
+                    "Projectile contact must not reuse the encounter-level summon-block opportunity cue.");
+                Assert.Less(
+                    Vector3.Distance(interceptCue.localPosition, expectedLocalContactOffset),
+                    0.001f,
+                    "The cue should spawn at the intercepted projectile's contact offset in screen-local space.");
+                Assert.Greater(
+                    Vector3.Dot(interceptCue.forward, expectedIncomingDirection),
+                    0.999f,
+                    "The dedicated cue should face from the projectile contact back toward the pressure screen.");
+
+                float expectedIntensity = GetPrivateInstanceField<float>(
+                    presenter,
+                    "interceptCueIntensity")
+                    + (tier - 1) * GetPrivateInstanceField<float>(
+                        presenter,
+                        "tierCueIntensityStep");
+                Assert.Less(
+                    Vector3.Distance(
+                        interceptCue.localScale,
+                        Vector3.one * expectedIntensity),
+                    0.001f,
+                    "The contact cue should preserve the intercepted summon tier in its authored intensity.");
+
+                AudioSource spawnedInterceptAudioSource = interceptCue.GetComponent<AudioSource>();
+                Assert.IsNotNull(
+                    spawnedInterceptAudioSource,
+                    "The audio probe should survive cue instantiation so the semantic audio override is observable.");
+                Assert.AreEqual(
+                    expectedIntensity,
+                    spawnedInterceptAudioSource.volume,
+                    0.0001f,
+                    "The dedicated contact cue should preserve exactly one audible reviewed summon-block SFX owner.");
+            }
+            finally
+            {
+                if (projectileObject != null)
+                {
+                    Object.DestroyImmediate(projectileObject);
+                }
+
+                if (screenObject != null)
+                {
+                    Object.DestroyImmediate(screenObject);
+                }
+
+                if (activationCuePrefab != null)
+                {
+                    Object.DestroyImmediate(activationCuePrefab);
+                }
+
+                if (interceptCuePrefab != null)
+                {
+                    Object.DestroyImmediate(interceptCuePrefab);
+                }
+
+                if (opportunityCuePrefab != null)
+                {
+                    Object.DestroyImmediate(opportunityCuePrefab);
+                }
+
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                if (interceptAudioClip != null)
+                {
+                    Object.DestroyImmediate(interceptAudioClip);
+                }
+            }
+        }
+
+        [Test]
+        public void SummonPressureScreenSkillBeamInterceptUsesFallbackContactCueOnce()
+        {
+            GameObject screenObject = null;
+            GameObject directionTargetObject = null;
+            GameObject activationCuePrefab = null;
+            GameObject interceptCuePrefab = null;
+            GameObject opportunityCuePrefab = null;
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                screenObject = new GameObject("SummonProjectileInterceptSkillBeamScreen");
+                screenObject.transform.position = Vector3.forward * 4f;
+                screenObject.AddComponent<SphereCollider>();
+                screenObject.AddComponent<Rigidbody>();
+                SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+                CombatVfxCuePlayer cuePlayer = screenObject.AddComponent<CombatVfxCuePlayer>();
+                SummonPressureScreenPresenter presenter =
+                    screenObject.AddComponent<SummonPressureScreenPresenter>();
+                presenter.ConfigurePresentation(
+                    screen,
+                    screenObject.transform,
+                    System.Array.Empty<Renderer>());
+
+                directionTargetObject = new GameObject("SummonProjectileInterceptDirectionTarget");
+                directionTargetObject.transform.position =
+                    screenObject.transform.position + new Vector3(3f, 2f, 4f);
+                activationCuePrefab = new GameObject("PressureScreenSkillBeamActivationCue");
+                interceptCuePrefab = new GameObject("SummonProjectileSkillBeamInterceptCue");
+                opportunityCuePrefab = new GameObject("SummonBlockSkillBeamOpportunityCue");
+                cueProfile = CreatePressureScreenInterceptCueProfile(
+                    activationCuePrefab,
+                    interceptCuePrefab,
+                    opportunityCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+                presenter.ConfigureVfxCuePlayer(
+                    cuePlayer,
+                    screenObject.transform,
+                    directionTargetObject.transform);
+
+                const int tier = 2;
+                const float activeRadius = 1.25f;
+                screen.Activate(DamageTeam.Enemy, 2, activeRadius, 1f, tier);
+
+                Vector3 expectedOutwardDirection = Vector3.ProjectOnPlane(
+                    directionTargetObject.transform.position - screenObject.transform.position,
+                    Vector3.up).normalized;
+                Vector3 expectedWorldContact = screenObject.transform.position
+                    + expectedOutwardDirection * activeRadius;
+                Vector3 expectedLocalContact =
+                    screenObject.transform.InverseTransformPoint(expectedWorldContact);
+                Vector3 expectedIncomingDirection = -expectedOutwardDirection;
+
+                bool intercepted = false;
+                int interceptedBeamIndex = -1;
+                float interceptedBeamDistance = float.PositiveInfinity;
+
+                Assert.DoesNotThrow(
+                    () => intercepted = SummonPressureScreen.TryInterceptAnySkillBeam(
+                        DamageTeam.Player,
+                        Vector3.zero,
+                        Vector3.forward,
+                        Vector3.right,
+                        10f,
+                        0.25f,
+                        out interceptedBeamIndex,
+                        out interceptedBeamDistance),
+                    "A skill-beam intercept has no projectile transform and must remain presentation-safe.");
+                Assert.IsTrue(
+                    intercepted,
+                    "The test beam must traverse the active pressure screen and raise SkillBeamIntercepted.");
+
+                Transform interceptCue = FindDirectChildNamed(
+                    screenObject.transform,
+                    interceptCuePrefab.name);
+                Assert.IsNotNull(
+                    interceptCue,
+                    "A transform-less skill beam should still receive one surface-contact fallback cue.");
+                Assert.AreEqual(
+                    CombatVfxCueId.SummonProjectileIntercept,
+                    presenter.InterceptCueId);
+                Assert.AreEqual(1, presenter.InterceptVfxCueRequestCount);
+                Assert.AreEqual(1, presenter.InterceptFlashCount);
+                Assert.AreEqual(tier, presenter.LastObservedTier);
+                Assert.IsTrue(presenter.HasLastProjectileInterceptContact);
+                Assert.IsTrue(
+                    presenter.LastProjectileInterceptUsedFallbackContact,
+                    "Skill beams must be distinguishable from exact projectile-transform contacts in capture metrics.");
+                Assert.AreSame(
+                    screenObject.transform,
+                    presenter.LastProjectileInterceptAnchor);
+                Assert.Less(
+                    Vector3.Distance(
+                        presenter.LastProjectileInterceptWorldPosition,
+                        expectedWorldContact),
+                    0.001f);
+                Assert.Less(
+                    Vector3.Distance(
+                        presenter.LastProjectileInterceptLocalOffset,
+                        expectedLocalContact),
+                    0.001f);
+                Assert.Greater(
+                    Vector3.Dot(
+                        presenter.LastProjectileInterceptIncomingDirection,
+                        expectedIncomingDirection),
+                    0.999f);
+                Assert.AreEqual(
+                    1,
+                    CountDirectChildrenNamed(screenObject.transform, interceptCuePrefab.name),
+                    "One skill-beam intercept should request exactly one dedicated fallback contact cue.");
+                Assert.AreEqual(
+                    0,
+                    CountDirectChildrenNamed(screenObject.transform, opportunityCuePrefab.name),
+                    "The skill-beam fallback must not increment or reuse the encounter opportunity cue.");
+                Assert.Less(
+                    Vector3.Distance(interceptCue.localPosition, expectedLocalContact),
+                    0.001f,
+                    "The fallback cue should sit on the target-facing pressure-screen surface.");
+                Assert.Greater(
+                    Vector3.Dot(interceptCue.forward, expectedIncomingDirection),
+                    0.999f,
+                    "The fallback cue should face inward from the resolved screen-surface contact.");
+
+                float expectedIntensity = GetPrivateInstanceField<float>(
+                    presenter,
+                    "interceptCueIntensity")
+                    + (tier - 1) * GetPrivateInstanceField<float>(
+                        presenter,
+                        "tierCueIntensityStep");
+                Assert.Less(
+                    Vector3.Distance(
+                        interceptCue.localScale,
+                        Vector3.one * expectedIntensity),
+                    0.001f,
+                    "Fallback contact presentation should preserve the active summon tier.");
+            }
+            finally
+            {
+                if (directionTargetObject != null)
+                {
+                    Object.DestroyImmediate(directionTargetObject);
+                }
+
+                if (screenObject != null)
+                {
+                    Object.DestroyImmediate(screenObject);
+                }
+
+                if (activationCuePrefab != null)
+                {
+                    Object.DestroyImmediate(activationCuePrefab);
+                }
+
+                if (interceptCuePrefab != null)
+                {
+                    Object.DestroyImmediate(interceptCuePrefab);
+                }
+
+                if (opportunityCuePrefab != null)
+                {
+                    Object.DestroyImmediate(opportunityCuePrefab);
+                }
+
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+            }
+        }
+
+        [Test]
         public void BossBarrageEmitterFiresPooledProjectilesFromBossSide()
         {
             GameObject laneObject = new GameObject("Lane");
@@ -6888,6 +7253,15 @@ namespace DimensionBrawl.Tests
             field.SetValue(target, value);
         }
 
+        private static T GetPrivateInstanceField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"{target.GetType().Name}.{fieldName} should exist.");
+            return (T)field.GetValue(target);
+        }
+
         private static CombatVfxCueProfile CreatePressureScreenCueProfile(GameObject prefab)
         {
             CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
@@ -6895,7 +7269,35 @@ namespace DimensionBrawl.Tests
             SerializedProperty cues = serializedObject.FindProperty("cues");
             cues.arraySize = 2;
             ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EliteShieldSignal, prefab);
-            ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonBlockOpportunity, prefab);
+            ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonProjectileIntercept, prefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static CombatVfxCueProfile CreatePressureScreenInterceptCueProfile(
+            GameObject activationPrefab,
+            GameObject interceptPrefab,
+            GameObject opportunityPrefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 3;
+            ConfigureCue(
+                cues.GetArrayElementAtIndex(0),
+                CombatVfxCueId.EliteShieldSignal,
+                activationPrefab);
+            ConfigureCue(
+                cues.GetArrayElementAtIndex(1),
+                CombatVfxCueId.SummonProjectileIntercept,
+                interceptPrefab);
+            cues.GetArrayElementAtIndex(1)
+                .FindPropertyRelative("alignForwardToDirection")
+                .boolValue = true;
+            ConfigureCue(
+                cues.GetArrayElementAtIndex(2),
+                CombatVfxCueId.SummonBlockOpportunity,
+                opportunityPrefab);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
         }
@@ -6936,6 +7338,20 @@ namespace DimensionBrawl.Tests
             }
 
             return count;
+        }
+
+        private static Transform FindDirectChildNamed(Transform parent, string childName)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         private static CombatVfxCueProfile CreatePlayerDamageVfxCueProfile(
