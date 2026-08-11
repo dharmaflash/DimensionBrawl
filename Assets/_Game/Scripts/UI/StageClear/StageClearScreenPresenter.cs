@@ -1,5 +1,6 @@
 using System.Collections;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -57,11 +58,14 @@ namespace DimensionBrawl.UI.StageClear
         [SerializeField] private Vector2 entranceOffset = new Vector2(96f, -8f);
 
         private Coroutine entranceRoutine;
+        private bool terminalHandoffPending;
         private RectTransform targetRect;
         private bool hasEntranceBaseTransform;
         private Vector2 entranceBasePosition;
         private Vector3 entranceBaseScale;
         private bool clearBgmPlayed;
+        private bool entranceStarted;
+        private bool entranceCompleted;
         private StageRunResultSummary resultSummary;
         private StageResultPresentationSnapshot presentationSnapshot;
         private StageResultPresentationAuditEnvelope presentationAudit;
@@ -78,6 +82,13 @@ namespace DimensionBrawl.UI.StageClear
         public string PrimaryActionId => primaryAction?.ActionId ?? string.Empty;
         public string LobbyActionId => lobbyAction?.ActionId ?? string.Empty;
         public string LastActionError { get; private set; } = string.Empty;
+        public bool EntranceStartStateApplied { get; private set; }
+        public bool EntranceStarted => entranceStarted;
+        public bool IsEntrancePlaying => entranceRoutine != null;
+        public bool EntranceCompleted => entranceCompleted;
+        public int EntrancePlayCount { get; private set; }
+        public int ClearBgmPlayCount { get; private set; }
+        public bool IsTerminalHandoffPending => terminalHandoffPending;
 
         public void ConfigureResult(StageRunResultSummary summary)
         {
@@ -183,13 +194,16 @@ namespace DimensionBrawl.UI.StageClear
         {
             ResolveButtons();
             ResolveMotionTargets();
+            ApplyEntranceStartState();
         }
 
         private void OnEnable()
         {
+            ResetEntranceCycle();
             ResolveButtons();
             ResolveMotionTargets();
             ResolveResultLabels();
+            ApplyEntranceStartState();
 
             if (retryButton != null)
             {
@@ -221,6 +235,10 @@ namespace DimensionBrawl.UI.StageClear
                 entranceRoutine = null;
             }
 
+            entranceStarted = false;
+            entranceCompleted = false;
+            EntranceStartStateApplied = false;
+
             if (retryButton != null)
             {
                 retryButton.onClick.RemoveListener(HandleRetryClicked);
@@ -234,16 +252,15 @@ namespace DimensionBrawl.UI.StageClear
 
         public void PlayEntrance()
         {
-            if (!isActiveAndEnabled || !IsConfigured)
+            if (!isActiveAndEnabled || !IsConfigured || entranceStarted)
             {
                 return;
             }
 
-            if (entranceRoutine != null)
-            {
-                StopCoroutine(entranceRoutine);
-            }
-
+            ApplyEntranceStartState();
+            entranceStarted = true;
+            entranceCompleted = false;
+            EntrancePlayCount++;
             PlayClearBgmOnce();
             entranceRoutine = StartCoroutine(EntranceRoutine());
         }
@@ -296,27 +313,11 @@ namespace DimensionBrawl.UI.StageClear
         private IEnumerator EntranceRoutine()
         {
             ResolveMotionTargets();
-
-            Vector3 endScale = targetRect != null && hasEntranceBaseTransform ? entranceBaseScale : Vector3.one;
-            Vector2 endPosition = targetRect != null && hasEntranceBaseTransform ? entranceBasePosition : Vector2.zero;
-            Vector2 startPosition = endPosition + entranceOffset;
-            Vector3 startScale = new Vector3(
-                endScale.x * entranceStartScale,
-                endScale.y * entranceStartScale,
-                endScale.z);
-
-            if (canvasGroup != null)
-            {
-                canvasGroup.alpha = 0f;
-                canvasGroup.interactable = false;
-                canvasGroup.blocksRaycasts = false;
-            }
-
-            if (targetRect != null)
-            {
-                targetRect.anchoredPosition = startPosition;
-                targetRect.localScale = startScale;
-            }
+            ResolveEntranceTransforms(
+                out Vector2 startPosition,
+                out Vector2 endPosition,
+                out Vector3 startScale,
+                out Vector3 endScale);
 
             if (entranceDelaySeconds > 0f)
             {
@@ -356,7 +357,64 @@ namespace DimensionBrawl.UI.StageClear
                 targetRect.localScale = endScale;
             }
 
+            entranceCompleted = true;
             entranceRoutine = null;
+        }
+
+        private void ResetEntranceCycle()
+        {
+            if (entranceRoutine != null)
+            {
+                StopCoroutine(entranceRoutine);
+                entranceRoutine = null;
+            }
+
+            entranceStarted = false;
+            entranceCompleted = false;
+            EntranceStartStateApplied = false;
+        }
+
+        private void ApplyEntranceStartState()
+        {
+            ResolveMotionTargets();
+            ResolveEntranceTransforms(
+                out Vector2 startPosition,
+                out _,
+                out Vector3 startScale,
+                out _);
+
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+            }
+
+            SetActionsInteractive(false);
+            if (targetRect != null)
+            {
+                targetRect.anchoredPosition = startPosition;
+                targetRect.localScale = startScale;
+            }
+
+            EntranceStartStateApplied = true;
+        }
+
+        private void ResolveEntranceTransforms(
+            out Vector2 startPosition,
+            out Vector2 endPosition,
+            out Vector3 startScale,
+            out Vector3 endScale)
+        {
+            endScale = targetRect != null && hasEntranceBaseTransform
+                ? entranceBaseScale
+                : Vector3.one;
+            endPosition = targetRect != null && hasEntranceBaseTransform
+                ? entranceBasePosition
+                : Vector2.zero;
+            startPosition = endPosition + entranceOffset;
+            startScale = new Vector3(
+                endScale.x * entranceStartScale,
+                endScale.y * entranceStartScale,
+                endScale.z);
         }
 
         private Button FindButton(params string[] names)
@@ -402,6 +460,7 @@ namespace DimensionBrawl.UI.StageClear
             source.priority = 24;
             source.volume = Mathf.Clamp01(clearBgmVolume);
             source.PlayOneShot(clearBgmClip, Mathf.Clamp01(clearBgmVolume));
+            ClearBgmPlayCount++;
         }
 
         private AudioSource ResolveClearBgmSource()
@@ -444,17 +503,156 @@ namespace DimensionBrawl.UI.StageClear
                 return;
             }
 
+            if (terminalHandoffPending)
+            {
+                return;
+            }
+
             IStageRunUiRouteResolver resolver = ResolveUiRouteResolver();
+            if (!UITransitionHandoffService.HasProvider)
+            {
+                DispatchTerminalActionImmediate(action, resolver);
+                return;
+            }
+
+            if (!TryBuildTerminalHandoffDestination(
+                    action,
+                    resolver,
+                    out UITransitionHandoffDestination destination,
+                    out string routeError))
+            {
+                LastActionError = routeError;
+                SetActionsInteractive(false);
+                return;
+            }
+
+            terminalHandoffPending = true;
+            SetActionsInteractive(false);
+            if (!UITransitionHandoffService.TryBeginTerminalHandoff(
+                    destination,
+                    () => DispatchTerminalActionForHandoff(action, resolver),
+                    HandleTerminalHandoffFailed,
+                    out string beginError))
+            {
+                terminalHandoffPending = false;
+                LastActionError = beginError;
+                SetActionsInteractive(IsConfigured && EntranceCompleted);
+                return;
+            }
+        }
+
+        private UITransitionDispatchResult DispatchTerminalActionForHandoff(
+            StageRunActionSnapshot action,
+            IStageRunUiRouteResolver resolver)
+        {
             if (!StageRunRuntime.TryDispatchTerminalAction(
-                resultSummary,
-                action.ActionId,
-                resolver,
-                out _,
-                out string error))
+                    resultSummary,
+                    action.ActionId,
+                    resolver,
+                    out _,
+                    out string error))
+            {
+                LastActionError = error;
+                return UITransitionDispatchResult.Failure(error);
+            }
+
+            return UITransitionDispatchResult.Success();
+        }
+
+        private void HandleTerminalHandoffFailed(string error)
+        {
+            terminalHandoffPending = false;
+            LastActionError = string.IsNullOrWhiteSpace(error)
+                ? "The result transition handoff failed."
+                : error;
+            SetActionsInteractive(IsConfigured && EntranceCompleted);
+        }
+
+        private void DispatchTerminalActionImmediate(
+            StageRunActionSnapshot action,
+            IStageRunUiRouteResolver resolver)
+        {
+            if (!StageRunRuntime.TryDispatchTerminalAction(
+                    resultSummary,
+                    action.ActionId,
+                    resolver,
+                    out _,
+                    out string error))
             {
                 LastActionError = error;
                 SetActionsInteractive(false);
             }
+        }
+
+        private bool TryBuildTerminalHandoffDestination(
+            StageRunActionSnapshot action,
+            IStageRunUiRouteResolver resolver,
+            out UITransitionHandoffDestination destination,
+            out string error)
+        {
+            destination = default;
+            error = string.Empty;
+
+            string sceneName;
+            string scenePath;
+            UITransitionDestinationKind destinationKind;
+            if (action.ActionKind == StageRouteActionKind.Replay
+                || action.ActionKind == StageRouteActionKind.Retry)
+            {
+                StageRunContext context = StageRunRuntime.ActiveContext;
+                if (context == null
+                    || !string.Equals(
+                        action.TargetPlayableStageId,
+                        context.Identity.PlayableStageId,
+                        System.StringComparison.Ordinal))
+                {
+                    error = "The replay destination no longer matches the active stage run.";
+                    return false;
+                }
+
+                StageRunSegmentSnapshot entry = context.RouteSnapshot.GetSegment(0);
+                sceneName = entry.SceneName;
+                scenePath = entry.ScenePath;
+                destinationKind = UITransitionDestinationKind.Combat;
+            }
+            else if (action.ActionKind == StageRouteActionKind.UIRoute
+                && resolver != null
+                && resolver.TryResolve(
+                    action.TargetUiRouteId,
+                    out StageRunUiRouteTarget target,
+                    out error)
+                && target != null
+                && target.RouteId == action.TargetUiRouteId)
+            {
+                sceneName = target.SceneName;
+                scenePath = target.ScenePath;
+                destinationKind = target.RouteId == StageUiRouteId.Lobby
+                    ? UITransitionDestinationKind.Lobby
+                    : UITransitionDestinationKind.None;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "The result transition destination could not be resolved.";
+                }
+
+                return false;
+            }
+
+            if (destinationKind == UITransitionDestinationKind.None
+                || string.IsNullOrWhiteSpace(sceneName)
+                || string.IsNullOrWhiteSpace(scenePath))
+            {
+                error = "The result transition destination is incomplete.";
+                return false;
+            }
+
+            destination = new UITransitionHandoffDestination(
+                destinationKind,
+                sceneName,
+                scenePath);
+            return destination.IsValid;
         }
 
         private IStageRunUiRouteResolver ResolveUiRouteResolver()

@@ -158,6 +158,11 @@ namespace DimensionBrawl.UI
 
         private void Update()
         {
+            if (UISceneTransitionHandoffOwner.IsSceneInputLocked(gameObject.scene))
+            {
+                return;
+            }
+
             if (backWithEscape && WasBackPressedThisFrame())
             {
                 HandleBackClicked();

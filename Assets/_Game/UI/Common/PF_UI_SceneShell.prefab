@@ -254,6 +254,7 @@ GameObject:
   - component: {fileID: 490898337840052711}
   - component: {fileID: 3573069054161716765}
   - component: {fileID: 128857033363691872}
+  - component: {fileID: 612345760100000099}
   m_Layer: 0
   m_Name: PF_UI_SceneShell
   m_TagString: Untagged
@@ -282,6 +283,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &612345760100000099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2125348368331879324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f272d4ed6d304005ac7ff486408e6f9a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UISceneTransitionArrivalReceiver
 --- !u!223 &2106781943983208300
 Canvas:
   m_ObjectHideFlags: 0

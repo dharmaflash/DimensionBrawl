@@ -84,6 +84,9 @@ namespace DimensionBrawl.Tests
         public void ReleaseUiSceneServiceOwnership()
         {
             StageRunRuntime.ResetForTests();
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionArrivalReceiver");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionHandoffOwner");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UITransitionHandoffService");
             Time.timeScale = 1f;
             EventSystem[] eventSystems = UnityEngine.Object.FindObjectsByType<EventSystem>(
                 FindObjectsInactive.Include,
@@ -111,6 +114,16 @@ namespace DimensionBrawl.Tests
                 "Canonical UI Route Test Camera",
                 typeof(Camera),
                 typeof(AudioListener));
+        }
+
+        private static void TryResetUiTransitionRuntime(string typeName)
+        {
+            Type type = Type.GetType(typeName + ", DimensionBrawl.Runtime")
+                ?? Type.GetType(typeName + ", Assembly-CSharp");
+            MethodInfo reset = type?.GetMethod(
+                "ResetForTests",
+                BindingFlags.Public | BindingFlags.Static);
+            reset?.Invoke(null, null);
         }
 
         [Test]
@@ -1587,6 +1600,128 @@ namespace DimensionBrawl.Tests
                 StageClearScenePath,
                 "DimensionBrawl.UI.StageClear.StageClearScreenPresenter",
                 false);
+
+            Scene clearScene = SceneManager.GetActiveScene();
+            StageClearScreenPresenter presenter =
+                RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            CanvasGroup canvasGroup = ReadPrivateField<CanvasGroup>(presenter, "canvasGroup");
+            RectTransform motionRoot = ReadPrivateField<RectTransform>(presenter, "motionRoot");
+            Vector2 basePosition = ReadPrivateField<Vector2>(presenter, "entranceBasePosition");
+            Vector3 baseScale = ReadPrivateField<Vector3>(presenter, "entranceBaseScale");
+            Vector2 offset = ReadPrivateField<Vector2>(presenter, "entranceOffset");
+            float startScale = ReadPrivateField<float>(presenter, "entranceStartScale");
+
+            Assert.That(presenter.IsConfigured, Is.False);
+            Assert.That(presenter.EntranceStartStateApplied, Is.True);
+            Assert.That(presenter.EntranceStarted, Is.False);
+            Assert.That(presenter.IsEntrancePlaying, Is.False);
+            Assert.That(presenter.EntranceCompleted, Is.False);
+            Assert.That(presenter.EntrancePlayCount, Is.Zero);
+            Assert.That(canvasGroup.alpha, Is.Zero.Within(0.0001f));
+            Assert.That(canvasGroup.interactable, Is.False);
+            Assert.That(canvasGroup.blocksRaycasts, Is.False);
+            Assert.That(
+                Vector2.Distance(motionRoot.anchoredPosition, basePosition + offset),
+                Is.LessThan(0.001f));
+            Assert.That(
+                Vector3.Distance(
+                    motionRoot.localScale,
+                    new Vector3(
+                        baseScale.x * startScale,
+                        baseScale.y * startScale,
+                        baseScale.z)),
+                Is.LessThan(0.001f));
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator StageClearEntranceIgnoresDuplicateExternalAndOnEnableRequests()
+        {
+            bool observedConfiguredEntrance = false;
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(
+                StageRouteOutcome.Clear,
+                null,
+                presenter =>
+                {
+                    observedConfiguredEntrance = true;
+                    Assert.That(presenter.IsConfigured, Is.True, presenter.LastActionError);
+                    Assert.That(presenter.EntranceStartStateApplied, Is.True);
+                    Assert.That(presenter.EntranceStarted, Is.True);
+                    Assert.That(presenter.IsEntrancePlaying, Is.True);
+                    Assert.That(presenter.EntranceCompleted, Is.False);
+                    Assert.That(presenter.EntrancePlayCount, Is.EqualTo(1));
+
+                    CanvasGroup canvasGroup = ReadPrivateField<CanvasGroup>(presenter, "canvasGroup");
+                    RectTransform motionRoot = ReadPrivateField<RectTransform>(presenter, "motionRoot");
+                    float alphaBeforeDuplicate = canvasGroup.alpha;
+                    Vector2 positionBeforeDuplicate = motionRoot.anchoredPosition;
+                    Vector3 scaleBeforeDuplicate = motionRoot.localScale;
+
+                    presenter.PlayEntrance();
+                    presenter.PlayEntrance();
+
+                    Assert.That(presenter.EntrancePlayCount, Is.EqualTo(1));
+                    Assert.That(canvasGroup.alpha, Is.EqualTo(alphaBeforeDuplicate).Within(0.0001f));
+                    Assert.That(
+                        Vector2.Distance(motionRoot.anchoredPosition, positionBeforeDuplicate),
+                        Is.LessThan(0.001f));
+                    Assert.That(
+                        Vector3.Distance(motionRoot.localScale, scaleBeforeDuplicate),
+                        Is.LessThan(0.001f));
+                });
+
+            Assert.That(observedConfiguredEntrance, Is.True);
+            Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
+            StageClearScreenPresenter settledPresenter =
+                RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+            Assert.That(settledPresenter.EntrancePlayCount, Is.EqualTo(1));
+            Assert.That(settledPresenter.ClearBgmPlayCount, Is.EqualTo(1));
+            Assert.That(settledPresenter.EntranceCompleted, Is.True);
+            Assert.That(settledPresenter.IsEntrancePlaying, Is.False);
+
+            settledPresenter.enabled = false;
+            settledPresenter.enabled = true;
+            Assert.That(settledPresenter.EntranceStarted, Is.True);
+            Assert.That(settledPresenter.IsEntrancePlaying, Is.True);
+            Assert.That(settledPresenter.EntranceCompleted, Is.False);
+            Assert.That(settledPresenter.EntrancePlayCount, Is.EqualTo(2));
+            Assert.That(settledPresenter.ClearBgmPlayCount, Is.EqualTo(1));
+
+            CanvasGroup restartedCanvasGroup =
+                ReadPrivateField<CanvasGroup>(settledPresenter, "canvasGroup");
+            RectTransform restartedMotionRoot =
+                ReadPrivateField<RectTransform>(settledPresenter, "motionRoot");
+            float restartedAlpha = restartedCanvasGroup.alpha;
+            Vector2 restartedPosition = restartedMotionRoot.anchoredPosition;
+            Vector3 restartedScale = restartedMotionRoot.localScale;
+
+            settledPresenter.PlayEntrance();
+            settledPresenter.PlayEntrance();
+            Assert.That(settledPresenter.EntrancePlayCount, Is.EqualTo(2));
+            Assert.That(restartedCanvasGroup.alpha, Is.EqualTo(restartedAlpha).Within(0.0001f));
+            Assert.That(
+                Vector2.Distance(restartedMotionRoot.anchoredPosition, restartedPosition),
+                Is.LessThan(0.001f));
+            Assert.That(
+                Vector3.Distance(restartedMotionRoot.localScale, restartedScale),
+                Is.LessThan(0.001f));
+
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (settledPresenter.IsEntrancePlaying)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    deadline,
+                    "Re-enabled StageClear entrance did not settle in unscaled time.");
+                yield return null;
+            }
+
+            Assert.That(settledPresenter.EntranceCompleted, Is.True);
+            Assert.That(settledPresenter.EntrancePlayCount, Is.EqualTo(2));
+            Assert.That(settledPresenter.ClearBgmPlayCount, Is.EqualTo(1));
+            Assert.That(restartedCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(restartedCanvasGroup.interactable, Is.True);
+            Assert.That(restartedCanvasGroup.blocksRaycasts, Is.True);
         }
 
         [UnityTest]
@@ -2936,7 +3071,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        [Timeout(30000)]
+        [Timeout(45000)]
         public IEnumerator ProcessLossDoesNotReconstructPresentationAuthorityOrDamageDurableDecision()
         {
             yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Clear);
@@ -3021,7 +3156,8 @@ namespace DimensionBrawl.Tests
 
         private static IEnumerator LoadCanonicalStationTerminalAndWaitForResultSurface(
             StageRouteOutcome outcome,
-            Action<StageRunContext> afterAdmission = null)
+            Action<StageRunContext> afterAdmission = null,
+            Action<StageClearScreenPresenter> afterResultConfigured = null)
         {
             Time.timeScale = 1f;
             StageRunRuntime.ResetForTests();
@@ -3117,8 +3253,9 @@ namespace DimensionBrawl.Tests
             Assert.That(encounter.IsWon, Is.EqualTo(outcome == StageRouteOutcome.Clear));
             Assert.That(encounter.IsFailed, Is.EqualTo(outcome == StageRouteOutcome.Fail));
 
-            float deadline = Time.realtimeSinceStartup + 8f;
+            float deadline = Time.realtimeSinceStartup + 12f;
             StageClearScreenPresenter presenter = null;
+            bool resultObserverInvoked = false;
             while (presenter == null || !IsPresenterInteractive(presenter))
             {
                 Assert.Less(
@@ -3131,10 +3268,22 @@ namespace DimensionBrawl.Tests
                     && CountSceneComponents<StageClearScreenPresenter>(clearScene) == 1)
                 {
                     presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
+                    if (!resultObserverInvoked
+                        && afterResultConfigured != null
+                        && presenter.IsConfigured)
+                    {
+                        afterResultConfigured(presenter);
+                        resultObserverInvoked = true;
+                    }
                 }
 
                 yield return null;
             }
+
+            Assert.That(
+                afterResultConfigured == null || resultObserverInvoked,
+                Is.True,
+                "Configured StageClear entrance observer was not invoked before settle.");
 
             Scene loadedClearScene = SceneManager.GetSceneByName(StageClearSceneName);
             Assert.That(loadedClearScene.isLoaded, Is.True);

@@ -23,34 +23,55 @@ namespace DimensionBrawl.UI
 
         [SerializeField] private UITransitionPresenter transitionPresenter;
 
-        public UITransitionPresenter TransitionPresenter => transitionPresenter;
+        public UITransitionPresenter TransitionPresenter => ResolveTransitionPresenter();
 
         public IEnumerator Load(
             UIScreenRouteTable.Route route,
             RouteLoadStateHandler stateHandler,
             RouteLoadFailureHandler failureHandler)
         {
-            if (transitionPresenter != null)
+            UISceneTransitionHandoffOwner handoffOwner = UISceneTransitionHandoffOwner.CurrentOwner;
+            UISceneTransitionTicket ticket = default;
+            bool hasHandoffTicket = handoffOwner != null;
+            if (hasHandoffTicket
+                && !handoffOwner.TryBeginRoute(route, gameObject.scene, out ticket, out string beginFailure))
             {
-                stateHandler?.Invoke(route, UISceneFlowPhase.TransitionOut, 0f, "Transition", true);
-                yield return transitionPresenter.PlayOut(route);
+                ReportRouteFailure(route, beginFailure, stateHandler, failureHandler);
+                yield break;
             }
 
-            yield return LoadRouteRoutine(route, stateHandler, failureHandler);
+            UITransitionPresenter presenter = ResolveTransitionPresenter();
+            if (presenter != null)
+            {
+                stateHandler?.Invoke(route, UISceneFlowPhase.TransitionOut, 0f, "Transition", true);
+                yield return presenter.PlayOut(route);
+            }
+
+            yield return LoadRouteRoutine(
+                route,
+                stateHandler,
+                failureHandler,
+                handoffOwner,
+                ticket,
+                hasHandoffTicket);
         }
 
         public void SetProgress(float normalizedProgress, string label)
         {
-            if (transitionPresenter != null)
+            UITransitionPresenter presenter = ResolveTransitionPresenter();
+            if (presenter != null)
             {
-                transitionPresenter.SetProgress(normalizedProgress, label);
+                presenter.SetProgress(normalizedProgress, label);
             }
         }
 
         private IEnumerator LoadRouteRoutine(
             UIScreenRouteTable.Route route,
             RouteLoadStateHandler stateHandler,
-            RouteLoadFailureHandler failureHandler)
+            RouteLoadFailureHandler failureHandler,
+            UISceneTransitionHandoffOwner handoffOwner,
+            UISceneTransitionTicket ticket,
+            bool hasHandoffTicket)
         {
 #if UNITY_EDITOR
             if (!route.UseAsyncLoading && !string.IsNullOrWhiteSpace(route.ScenePath))
@@ -58,10 +79,30 @@ namespace DimensionBrawl.UI
                 yield return SimulateMinimumLoading(route, stateHandler);
                 stateHandler?.Invoke(route, UISceneFlowPhase.Activating, 1f, "Activating", true);
 
+                if (!TryMarkActivationRequested(handoffOwner, ticket, hasHandoffTicket, out string activationFailure))
+                {
+                    yield return FailRouteLoad(
+                        route,
+                        activationFailure,
+                        stateHandler,
+                        failureHandler,
+                        handoffOwner,
+                        ticket,
+                        hasHandoffTicket);
+                    yield break;
+                }
+
                 string failure = LoadEditorScene(route);
                 if (!string.IsNullOrWhiteSpace(failure))
                 {
-                    yield return FailRouteLoad(route, failure, stateHandler, failureHandler);
+                    yield return FailRouteLoad(
+                        route,
+                        failure,
+                        stateHandler,
+                        failureHandler,
+                        handoffOwner,
+                        ticket,
+                        hasHandoffTicket);
                 }
 
                 yield break;
@@ -70,24 +111,53 @@ namespace DimensionBrawl.UI
 
             if (route.UseAsyncLoading)
             {
-                yield return LoadRouteAsync(route, stateHandler, failureHandler);
+                yield return LoadRouteAsync(
+                    route,
+                    stateHandler,
+                    failureHandler,
+                    handoffOwner,
+                    ticket,
+                    hasHandoffTicket);
                 yield break;
             }
 
             yield return SimulateMinimumLoading(route, stateHandler);
             stateHandler?.Invoke(route, UISceneFlowPhase.Activating, 1f, "Activating", true);
 
+            if (!TryMarkActivationRequested(handoffOwner, ticket, hasHandoffTicket, out string syncActivationFailure))
+            {
+                yield return FailRouteLoad(
+                    route,
+                    syncActivationFailure,
+                    stateHandler,
+                    failureHandler,
+                    handoffOwner,
+                    ticket,
+                    hasHandoffTicket);
+                yield break;
+            }
+
             string syncFailure = LoadScene(route);
             if (!string.IsNullOrWhiteSpace(syncFailure))
             {
-                yield return FailRouteLoad(route, syncFailure, stateHandler, failureHandler);
+                yield return FailRouteLoad(
+                    route,
+                    syncFailure,
+                    stateHandler,
+                    failureHandler,
+                    handoffOwner,
+                    ticket,
+                    hasHandoffTicket);
             }
         }
 
         private IEnumerator LoadRouteAsync(
             UIScreenRouteTable.Route route,
             RouteLoadStateHandler stateHandler,
-            RouteLoadFailureHandler failureHandler)
+            RouteLoadFailureHandler failureHandler,
+            UISceneTransitionHandoffOwner handoffOwner,
+            UISceneTransitionTicket ticket,
+            bool hasHandoffTicket)
         {
             AsyncOperation operation = CreateAsyncOperation(route, out string failure);
             if (operation == null)
@@ -95,7 +165,14 @@ namespace DimensionBrawl.UI
                 string reason = string.IsNullOrWhiteSpace(failure)
                     ? "Async scene operation was not created."
                     : failure;
-                yield return FailRouteLoad(route, reason, stateHandler, failureHandler);
+                yield return FailRouteLoad(
+                    route,
+                    reason,
+                    stateHandler,
+                    failureHandler,
+                    handoffOwner,
+                    ticket,
+                    hasHandoffTicket);
                 yield break;
             }
 
@@ -113,6 +190,19 @@ namespace DimensionBrawl.UI
             }
 
             stateHandler?.Invoke(route, UISceneFlowPhase.Activating, 1f, "Activating", true);
+            if (!TryMarkActivationRequested(handoffOwner, ticket, hasHandoffTicket, out string activationFailure))
+            {
+                yield return FailRouteLoad(
+                    route,
+                    activationFailure,
+                    stateHandler,
+                    failureHandler,
+                    handoffOwner,
+                    ticket,
+                    hasHandoffTicket);
+                yield break;
+            }
+
             operation.allowSceneActivation = true;
 
             while (!operation.isDone)
@@ -145,17 +235,79 @@ namespace DimensionBrawl.UI
             UIScreenRouteTable.Route route,
             string reason,
             RouteLoadStateHandler stateHandler,
+            RouteLoadFailureHandler failureHandler,
+            UISceneTransitionHandoffOwner handoffOwner,
+            UISceneTransitionTicket ticket,
+            bool hasHandoffTicket)
+        {
+            string detail = ReportRouteFailure(route, reason, stateHandler, failureHandler);
+
+            if (hasHandoffTicket)
+            {
+                if (handoffOwner != null)
+                {
+                    yield return handoffOwner.FailAndRestore(ticket, detail);
+                }
+
+                yield break;
+            }
+
+            UITransitionPresenter presenter = ResolveTransitionPresenter();
+            if (presenter != null)
+            {
+                yield return presenter.PlayIn();
+            }
+        }
+
+        private UITransitionPresenter ResolveTransitionPresenter()
+        {
+            UISceneTransitionHandoffOwner owner = UISceneTransitionHandoffOwner.CurrentOwner;
+            if (owner != null && owner.Presenter != null)
+            {
+                return owner.Presenter;
+            }
+
+            return transitionPresenter;
+        }
+
+        private static bool TryMarkActivationRequested(
+            UISceneTransitionHandoffOwner handoffOwner,
+            UISceneTransitionTicket ticket,
+            bool hasHandoffTicket,
+            out string failure)
+        {
+            failure = string.Empty;
+            if (!hasHandoffTicket)
+            {
+                return true;
+            }
+
+            if (handoffOwner == null)
+            {
+                failure = "The persistent transition handoff owner was destroyed before scene activation.";
+                return false;
+            }
+
+            if (!handoffOwner.TryMarkActivationRequested(ticket))
+            {
+                failure = $"Transition handoff generation {ticket.Generation} became stale before scene activation.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private string ReportRouteFailure(
+            UIScreenRouteTable.Route route,
+            string reason,
+            RouteLoadStateHandler stateHandler,
             RouteLoadFailureHandler failureHandler)
         {
             string detail = string.IsNullOrWhiteSpace(reason) ? "Unknown route load failure." : reason;
             Debug.LogWarning($"UI route failed to load {route.SceneName}: {detail}", this);
             failureHandler?.Invoke(detail);
             stateHandler?.Invoke(route, UISceneFlowPhase.Failed, 0f, "Route failed", false);
-
-            if (transitionPresenter != null)
-            {
-                yield return transitionPresenter.PlayIn();
-            }
+            return detail;
         }
 
 #if UNITY_EDITOR

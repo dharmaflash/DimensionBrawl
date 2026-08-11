@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,6 +21,8 @@ namespace DimensionBrawl.UI
         private bool routerRouteLocked;
         private bool externalRouteLocked;
         private bool globalRouteLocked;
+        private readonly HashSet<UISceneTransitionTicket> transitionRouteLocks =
+            new HashSet<UISceneTransitionTicket>();
 
         public bool GlobalRouteLocked => globalRouteLocked;
 
@@ -51,6 +54,41 @@ namespace DimensionBrawl.UI
         {
             externalRouteLocked = locked;
             ApplyLockState();
+        }
+
+        public bool AcquireTransitionRouteLock(UISceneTransitionTicket ticket)
+        {
+            if (!ticket.IsValid || !transitionRouteLocks.Add(ticket))
+            {
+                return false;
+            }
+
+            ApplyLockState();
+            return true;
+        }
+
+        public bool ReleaseTransitionRouteLock(UISceneTransitionTicket ticket)
+        {
+            if (!ticket.IsValid || !transitionRouteLocks.Remove(ticket))
+            {
+                return false;
+            }
+
+            ApplyLockState();
+            return true;
+        }
+
+        public int ReleaseTransitionRouteLocksOwnedBy(int ownerInstanceId, uint generation)
+        {
+            int released = transitionRouteLocks.RemoveWhere(ticket =>
+                ticket.OwnerInstanceId == ownerInstanceId
+                && ticket.Generation == generation);
+            if (released > 0)
+            {
+                ApplyLockState();
+            }
+
+            return released;
         }
 
         public void Bind(UISceneFlowRouter sceneRouter)
@@ -97,7 +135,9 @@ namespace DimensionBrawl.UI
         private void ApplyLockState()
         {
             EnsureAuthoredBaselines();
-            bool nextGlobalRouteLocked = routerRouteLocked || externalRouteLocked;
+            bool nextGlobalRouteLocked = routerRouteLocked
+                || externalRouteLocked
+                || transitionRouteLocks.Count > 0;
             if (nextGlobalRouteLocked && !globalRouteLocked)
             {
                 CaptureCapabilityBaselines();

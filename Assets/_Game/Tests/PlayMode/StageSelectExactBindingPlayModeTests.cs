@@ -34,6 +34,22 @@ namespace DimensionBrawl.Tests
         private const string StageBLoadingCardId = "exact-binding-b-loading";
         private const int CombatRouteId = 40;
 
+        [SetUp]
+        public void PrepareTransitionRuntime()
+        {
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionArrivalReceiver");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionHandoffOwner");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UITransitionHandoffService");
+        }
+
+        [TearDown]
+        public void ReleaseTransitionRuntime()
+        {
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionArrivalReceiver");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UISceneTransitionHandoffOwner");
+            TryResetUiTransitionRuntime("DimensionBrawl.UI.UITransitionHandoffService");
+        }
+
         [UnityTest]
         public IEnumerator ProductionStageSelectKeepsCourtyardCardQuarantined()
         {
@@ -1007,6 +1023,16 @@ namespace DimensionBrawl.Tests
                 ?? Type.GetType(fullName + ", Assembly-CSharp");
             Assert.That(type, Is.Not.Null, $"Missing product type {fullName}.");
             return type;
+        }
+
+        private static void TryResetUiTransitionRuntime(string fullName)
+        {
+            Type type = Type.GetType(fullName + ", DimensionBrawl.Runtime")
+                ?? Type.GetType(fullName + ", Assembly-CSharp");
+            MethodInfo reset = type?.GetMethod(
+                "ResetForTests",
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            reset?.Invoke(null, null);
         }
 
         private static object ResolveUiRouteId(int rawValue)

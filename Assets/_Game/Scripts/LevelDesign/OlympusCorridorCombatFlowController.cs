@@ -503,6 +503,7 @@ namespace DimensionBrawl.LevelDesign
         private bool CanSkipIntroCutscene()
         {
             return Application.isPlaying
+                && !UITransitionHandoffService.IsSceneInputLocked(gameObject.scene)
                 && phase == FlowPhase.WaitingForIntroHandoff
                 && introDirector != null;
         }

@@ -23,6 +23,8 @@ namespace DimensionBrawl.UI
 
         private bool showsLoadingDetails;
 
+        public bool IsFullyCovered => fadeGroup != null && fadeGroup.alpha >= 0.999f;
+
         private void Reset()
         {
             fadeGroup = GetComponent<CanvasGroup>();
@@ -54,6 +56,11 @@ namespace DimensionBrawl.UI
             SetProgress(0f, string.Empty);
             SetLoadingDetailsVisible(false);
             SetAlpha(0f);
+        }
+
+        public void ShowCoveredImmediate()
+        {
+            SetAlpha(1f);
         }
 
         public void SetProgress(float normalizedProgress, string label)
