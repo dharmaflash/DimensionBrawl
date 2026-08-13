@@ -153,7 +153,8 @@ namespace DimensionBrawl.UI
                 }
             }
 
-            float alpha = globalRouteLocked ? routingAlpha : idleAlpha;
+            bool visuallyDimmed = routerRouteLocked || externalRouteLocked;
+            float alpha = visuallyDimmed ? routingAlpha : idleAlpha;
             for (int i = 0; i < dimGroups.Length; i++)
             {
                 if (dimGroups[i] != null)

@@ -56,6 +56,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
         private const string CanonicalNoCrossVfxPrefabPath =
             "Assets/_Game/Prefabs/VFX/Environment/PF_OlympusStation_NoCrossRedCubeZone.prefab";
+        private const string CorridorLampMaterialPath =
+            "Assets/_Game/Art/Environment/OlympusCorridor/Materials/PgrPreserve/DB_OlympusCorridor_PGR_M_Emissive_Master_Lamp_v1.mat";
+        private const string LegacyCrackOverlayRootName = "VisibleCrackScorchOverlays";
+        private const string OfficialCrackDecalRootName = "OfficialDecal_CrackScorchProjectors";
+        private const string InvasionImpactWhiteCoreName = "IntroGatePodReview_InvasionImpactWhiteCore";
         private const string StationLaneRootName =
             "BossBarrageLaneReview_SummonLaneSpace";
         private const string StationNoCrossRootName =
@@ -1128,6 +1133,111 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [Test]
+        public void OlympusStationNoCrossVfxDoesNotRenderTheLegacyCubeBurst()
+        {
+            GameObject canonicalPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(CanonicalNoCrossVfxPrefabPath);
+            Assert.That(canonicalPrefab, Is.Not.Null);
+
+            ParticleSystem rootParticles = canonicalPrefab.GetComponent<ParticleSystem>();
+            ParticleSystemRenderer rootRenderer = canonicalPrefab.GetComponent<ParticleSystemRenderer>();
+            Assert.That(rootParticles, Is.Not.Null);
+            Assert.That(rootRenderer, Is.Not.Null);
+            Assert.That(
+                rootParticles.main.playOnAwake,
+                Is.False,
+                "The legacy 109-cube burst must not auto-start on the product boundary line.");
+            Assert.That(
+                rootRenderer.enabled,
+                Is.False,
+                "The legacy cube mesh renderer caused the blocky VFX artifact and mobile overdraw spike.");
+
+            ParticleSystemRenderer[] childRenderers =
+                canonicalPrefab.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            int enabledChildRendererCount = 0;
+            for (int i = 0; i < childRenderers.Length; i++)
+            {
+                if (childRenderers[i] != rootRenderer && childRenderers[i].enabled)
+                {
+                    enabledChildRendererCount++;
+                }
+            }
+
+            Assert.That(
+                enabledChildRendererCount,
+                Is.GreaterThanOrEqualTo(5),
+                "Lightning, quad, shockwave, spark, and ground-glow readability layers must remain enabled.");
+        }
+
+        [Test]
+        public void CorridorLampMaterialUsesItsAuthoredOpacityMapWithoutOpaqueBlackQuads()
+        {
+            Material lampMaterial = AssetDatabase.LoadAssetAtPath<Material>(CorridorLampMaterialPath);
+            Assert.That(lampMaterial, Is.Not.Null);
+            Assert.That(lampMaterial.renderQueue, Is.EqualTo(3000));
+            Assert.That(lampMaterial.GetTag("RenderType", searchFallbacks: false), Is.EqualTo("Transparent"));
+            Assert.That(lampMaterial.HasProperty("_Use_Map"), Is.True);
+            Assert.That(lampMaterial.GetFloat("_Use_Map"), Is.EqualTo(1f).Within(0.001f));
+            Assert.That(lampMaterial.HasProperty("_ZWrite"), Is.True);
+            Assert.That(lampMaterial.GetFloat("_ZWrite"), Is.Zero.Within(0.001f));
+        }
+
+        [UnityTest]
+        [Timeout(60000)]
+        public IEnumerator CanonicalScenesUseOneCrackSurfaceAndTheImpactFlashHasNoStrayRectangle()
+        {
+            for (int sceneIndex = 0; sceneIndex < ScenePaths.Length; sceneIndex++)
+            {
+                EditorSceneManager.LoadSceneInPlayMode(
+                    ScenePaths[sceneIndex],
+                    new LoadSceneParameters(LoadSceneMode.Single));
+                yield return null;
+                yield return null;
+
+                Scene scene = SceneManager.GetActiveScene();
+                Transform legacyOverlay = FindSceneTransform(scene, LegacyCrackOverlayRootName);
+                Transform officialDecals = FindSceneTransform(scene, OfficialCrackDecalRootName);
+                Assert.That(legacyOverlay, Is.Not.Null, $"{scene.path} is missing the legacy crack root.");
+                Assert.That(officialDecals, Is.Not.Null, $"{scene.path} is missing the official decal root.");
+                Assert.That(
+                    legacyOverlay.gameObject.activeSelf,
+                    Is.False,
+                    $"{scene.path} must not z-fight a mesh crack overlay against the official URP decals.");
+                Assert.That(officialDecals.gameObject.activeSelf, Is.True);
+
+                if (!string.Equals(scene.path, ScenePaths[1], StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                RectTransform impactFlash = FindSceneTransform(scene, InvasionImpactWhiteCoreName) as RectTransform;
+                Assert.That(impactFlash, Is.Not.Null);
+                Assert.That(impactFlash.anchorMin, Is.EqualTo(Vector2.zero));
+                Assert.That(impactFlash.anchorMax, Is.EqualTo(Vector2.one));
+                Assert.That(impactFlash.sizeDelta, Is.EqualTo(Vector2.zero));
+                Assert.That(Quaternion.Angle(impactFlash.localRotation, Quaternion.identity), Is.LessThan(0.01f));
+                CanvasGroup flashGroup = impactFlash.parent != null
+                    ? impactFlash.parent.GetComponent<CanvasGroup>()
+                    : null;
+                Assert.That(flashGroup, Is.Not.Null);
+                Assert.That(
+                    flashGroup.alpha,
+                    Is.Zero.Within(0.001f),
+                    "The full-screen impact core must remain hidden outside its authored cue window.");
+                List<IntroGatePodInvasionBridgeCue> invasionCues =
+                    FindSceneComponents<IntroGatePodInvasionBridgeCue>(scene);
+                Assert.That(invasionCues, Has.Count.EqualTo(1));
+                CanvasGroup boundFlashGroup = new SerializedObject(invasionCues[0])
+                    .FindProperty("impactFlashGroup")
+                    .objectReferenceValue as CanvasGroup;
+                Assert.That(
+                    boundFlashGroup,
+                    Is.SameAs(flashGroup),
+                    "The flash must be owned by the invasion cue so it fades back to zero.");
+            }
+        }
+
         [UnityTest]
         [Timeout(60000)]
         public IEnumerator OlympusStationNoCrossVisualMatchesRuntimePlayerBoundary()
@@ -1351,11 +1461,9 @@ namespace DimensionBrawl.Tests
                 if (path.StartsWith(CombatGirlAnimationRoot, StringComparison.Ordinal)
                     && path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
                 {
-                    Assert.That(
-                        path,
-                        Is.EqualTo(CombatGirlAnimationRoot + "/SS_StopStep.fbx"),
-                        $"Only the Unity-unloadable StopStep source clip may remain as FBX, found {path}.");
-                    continue;
+                    Assert.Fail(
+                        $"CombatGirl runtime controller must not retain FBX motion dependencies, found {path}. " +
+                        "The unloadable StopStep source must use the grounded native fallback motion.");
                 }
 
                 if (!path.EndsWith(".anim", StringComparison.OrdinalIgnoreCase))

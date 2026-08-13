@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime:DimensionBrawl.LevelDesign:StageProgressionGraph
   schemaVersion: 1
   progressionGraphId: olympus-invasion.progression-graph
-  revision: 2
+  revision: 1
   cyclePolicy: 1
   nodes:
   - {fileID: 11400000, guid: c371d49d8e39c1a4991c8202cdbd2b87, type: 2}
-  canonicalDigest: 7132faaa2607da7ad62380d2d3301ed2bda50cf81ad26e0dd6cdd08e46154221
+  canonicalDigest: be1069c47e1b581ae1502f442ac67daee33eddca0919ff9bf70053831e981195

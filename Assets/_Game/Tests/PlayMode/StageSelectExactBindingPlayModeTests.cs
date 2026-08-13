@@ -71,7 +71,7 @@ namespace DimensionBrawl.Tests
                 SetPrivateField(presenter, "backWithEscape", false);
 
                 Assert.That(ReadProperty(catalog, "ProjectionSchemaVersion"), Is.EqualTo(1));
-                Assert.That(ReadProperty(catalog, "CatalogProjectionGeneration"), Is.EqualTo(2));
+                Assert.That(ReadProperty(catalog, "CatalogProjectionGeneration"), Is.EqualTo(1));
                 Assert.That(ReadProperty(catalog, "StageCount"), Is.EqualTo(1));
                 Assert.That(
                     ReadPrivateField<ScriptableObject>(presenter, "stageCatalog"),

@@ -1,4 +1,5 @@
 using System.Collections;
+using DimensionBrawl.UI;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -573,12 +574,16 @@ namespace DimensionBrawl.Presentation
 
         private Rect ResolveDialoguePanelRect(float scale)
         {
-            float width = Mathf.Min(Screen.width - 56f * scale, 940f * scale);
+            Rect safeArea = ResolveGuiSafeArea();
+            float width = Mathf.Min(
+                Mathf.Max(1f, safeArea.width - 56f * scale),
+                940f * scale);
             float height = 214f * scale;
-            float centerY = Screen.height * Mathf.Clamp(dialoguePanelVerticalAnchor, 0.25f, 0.6f);
+            float centerY = safeArea.yMin
+                + safeArea.height * Mathf.Clamp(dialoguePanelVerticalAnchor, 0.25f, 0.6f);
             return new Rect(
-                38f * scale,
-                Mathf.Max(24f * scale, centerY - height * 0.5f),
+                safeArea.xMin + 38f * scale,
+                Mathf.Max(safeArea.yMin + 24f * scale, centerY - height * 0.5f),
                 width,
                 height);
         }
@@ -615,11 +620,12 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            float width = Mathf.Lerp(120f * scale, Screen.width * 0.74f, open);
+            Rect safeArea = ResolveGuiSafeArea();
+            float width = Mathf.Lerp(120f * scale, safeArea.width * 0.74f, open);
             float height = 116f * scale;
             Rect bandRect = new Rect(
-                Screen.width * 0.5f - width * 0.5f,
-                Screen.height * 0.24f - height * 0.5f,
+                safeArea.center.x - width * 0.5f,
+                safeArea.yMin + safeArea.height * 0.24f - height * 0.5f,
                 width,
                 height);
             Color lineColor = new Color(0.9f, 0.98f, 1f, alpha);
@@ -932,7 +938,10 @@ namespace DimensionBrawl.Presentation
 
         private Vector2 ResolveFocusCenterGuiPoint(Vector2 anchor)
         {
-            return new Vector2(anchor.x * Screen.width, (1f - anchor.y) * Screen.height);
+            return ScreenSafeAreaUtility.ResolveGuiPointFromNormalizedAnchor(
+                anchor,
+                Screen.safeArea,
+                new Vector2(Screen.width, Screen.height));
         }
 
         private Rect ResolveFocusMarkerRect(float scale)
@@ -987,11 +996,21 @@ namespace DimensionBrawl.Presentation
 
         private static Rect ClampRectToScreen(Rect rect)
         {
-            float xMin = Mathf.Clamp(rect.xMin, 0f, Screen.width);
-            float yMin = Mathf.Clamp(rect.yMin, 0f, Screen.height);
-            float xMax = Mathf.Clamp(rect.xMax, 0f, Screen.width);
-            float yMax = Mathf.Clamp(rect.yMax, 0f, Screen.height);
+            Rect safeArea = ScreenSafeAreaUtility.ResolveGuiSafeArea(
+                Screen.safeArea,
+                new Vector2(Screen.width, Screen.height));
+            float xMin = Mathf.Clamp(rect.xMin, safeArea.xMin, safeArea.xMax);
+            float yMin = Mathf.Clamp(rect.yMin, safeArea.yMin, safeArea.yMax);
+            float xMax = Mathf.Clamp(rect.xMax, xMin, safeArea.xMax);
+            float yMax = Mathf.Clamp(rect.yMax, yMin, safeArea.yMax);
             return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+        }
+
+        private static Rect ResolveGuiSafeArea()
+        {
+            return ScreenSafeAreaUtility.ResolveGuiSafeArea(
+                Screen.safeArea,
+                new Vector2(Screen.width, Screen.height));
         }
 
         private void DrawBackdropAroundRect(Rect clearRect, Color color)
@@ -1347,8 +1366,9 @@ namespace DimensionBrawl.Presentation
 
         private float ResolveScale()
         {
-            float widthScale = Screen.width / ReferenceWidth;
-            float heightScale = Screen.height / ReferenceHeight;
+            Rect safeArea = ResolveGuiSafeArea();
+            float widthScale = safeArea.width / ReferenceWidth;
+            float heightScale = safeArea.height / ReferenceHeight;
             return Mathf.Clamp(Mathf.Min(widthScale, heightScale), 0.72f, 1.25f);
         }
 

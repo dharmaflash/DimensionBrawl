@@ -1270,7 +1270,7 @@ MonoBehaviour:
   minimumReadSeconds: 0.18
   confirmedFlashSeconds: 0.14
   advanceInputLabel: 계속
-  runCoreLoopCoachAfterRelease: 1
+  runCoreLoopCoachAfterRelease: 0
   coreCoachMaximumSeconds: 45
   energyLadder: {fileID: 0}
   bossEncounter: {fileID: 0}

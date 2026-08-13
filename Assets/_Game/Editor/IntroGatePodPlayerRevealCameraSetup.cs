@@ -45,6 +45,7 @@ namespace DimensionBrawl.Editor
         private const string CombatStartReadyEnterStateName = "CIN_BossIntroReady";
         private const string CombatReadyStateName = "CIN_CombatReady";
         private const string CinemachineTrackName = "Cinemachine Shots";
+        private const string BombingCinemachineTrackName = "Bombing Prelude Cinemachine Shots";
         private const string CombatReadyActorCueId = "combat_ready_handoff";
         private const string CombatReadyTimelineClipName = "combat_ready_handoff";
         private const string LastCommandoShotId = "src_c09_commando_bridge_push_past";
@@ -63,10 +64,49 @@ namespace DimensionBrawl.Editor
         private const double RevealDurationSeconds = 7.5000005d;
         private const double TimelineTailSeconds = 0.65d;
         private const double CombatStartReadyEnterDurationSeconds = 1.25d;
+        private const double BombingPreludeEndSeconds = 8.50d;
+        private const double CameraTransitionToleranceSeconds = 0.002d;
         private const double FirstPersonPlacementValidationSeconds = 18.5d;
         private const float HandoffCameraHeight = 1.8f;
         private const float RevealFieldOfView = 60.001953f;
         private const float ViewportMargin = 0.035f;
+
+        private static readonly string[] MainShotIds =
+        {
+            "src_c01_capsule_left_dolly",
+            "src_c03_first_person_eye_open",
+            "src_c04_first_person_scan_left",
+            "src_c05_first_person_scan_right",
+            "src_c06_first_person_look_down_hands",
+            "src_c07_commando_bridge_legs_run",
+            "src_c08_heaven_background_explosion",
+            "src_c09_commando_bridge_push_past",
+            RevealShotId
+        };
+
+        private static readonly double[] MainIncomingBlendSeconds =
+        {
+            0d,
+            0d,
+            1d,
+            1d,
+            1d,
+            0d,
+            1d,
+            0.65d,
+            0.42d
+        };
+
+        private static readonly CameraTransitionSpec[] BombingShotContract =
+        {
+            new CameraTransitionSpec("cm_01_formation_join", 0d, 3.72d, 0d),
+            new CameraTransitionSpec("cm_02_bomb_release", 3.72d, 1.12d, 0.16d),
+            new CameraTransitionSpec("cm_03_falling_payload", 4.84d, 0.72d, 0.10d),
+            new CameraTransitionSpec("cm_04_target_reframe", 5.56d, 0.36d, 0.30d),
+            new CameraTransitionSpec("cm_05_impact_chain", 5.92d, 1.18d, 0.10d),
+            new CameraTransitionSpec("cm_06_aftershock", 7.10d, 0.96d, 0.10d),
+            new CameraTransitionSpec("cm_07_smoke_handoff", 8.06d, 0.44d, 0.10d)
+        };
 
         [MenuItem("Tools/DimensionBrawl/Intro GatePod/Setup Player Reveal Camera")]
         public static void SetupPlayerRevealCameraMenu()
@@ -100,7 +140,9 @@ namespace DimensionBrawl.Editor
             Animator inoriBodyAnimator = inori.GetComponentInChildren<Animator>(includeInactive: true)
                 ?? throw new InvalidOperationException($"`{InoriObjectName}` is missing a body Animator.");
 
-            double revealStartSeconds = FindClipEnd(timeline, LastCommandoShotId);
+            // c09 deliberately extends past its nominal end to cover the c10 blend.  The next
+            // setup run must keep using the profile beat, not that outgoing overlap tail.
+            double revealStartSeconds = FindCameraCueEnd(profile, LastCommandoShotId);
             double revealEndSeconds = revealStartSeconds + RevealDurationSeconds;
             double authoredEndSeconds = revealEndSeconds + TimelineTailSeconds;
 
@@ -151,6 +193,7 @@ namespace DimensionBrawl.Editor
             UpdateShotPlayer(scene, brain, revealCamera, revealStartSeconds);
             ExtendLetterboxTimelineClip(timeline, authoredEndSeconds);
             UpdateProfile(profile, revealStartSeconds, revealEndSeconds, authoredEndSeconds);
+            ApplyCinemachineTransitionContract(timeline, profile);
 
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
             timeline.fixedDuration = authoredEndSeconds;
@@ -203,6 +246,378 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException(
                     "Intro GatePod player reveal camera setup failed:\n" + string.Join("\n", issues));
             }
+        }
+
+        internal static void ApplyCinemachineTransitionContract(
+            TimelineAsset timeline,
+            CinematicSequenceProfile profile)
+        {
+            if (timeline == null)
+            {
+                throw new ArgumentNullException(nameof(timeline));
+            }
+
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            List<string> buildIssues = new List<string>();
+            CameraTransitionSpec[] mainContract = BuildMainShotContract(profile, buildIssues);
+            if (buildIssues.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Could not build the intro Cinemachine transition contract:\n"
+                    + string.Join("\n", buildIssues));
+            }
+
+            ApplyTrackTransitionContract(
+                timeline,
+                CinemachineTrackName,
+                mainContract,
+                TimelineTailSeconds);
+            ApplyTrackTransitionContract(
+                timeline,
+                BombingCinemachineTrackName,
+                BombingShotContract,
+                0d);
+            EditorUtility.SetDirty(timeline);
+        }
+
+        public static IReadOnlyList<string> CollectCinemachineTransitionContractIssues(
+            TimelineAsset timeline,
+            CinematicSequenceProfile profile)
+        {
+            List<string> issues = new List<string>();
+            if (timeline == null)
+            {
+                issues.Add("The combined intro Timeline is missing.");
+                return issues;
+            }
+
+            if (profile == null)
+            {
+                issues.Add("The combined intro cinematic profile is missing.");
+                return issues;
+            }
+
+            CameraTransitionSpec[] mainContract = BuildMainShotContract(profile, issues);
+            if (mainContract.Length == MainShotIds.Length)
+            {
+                ValidateTrackTransitionContract(
+                    timeline,
+                    CinemachineTrackName,
+                    mainContract,
+                    TimelineTailSeconds,
+                    issues);
+            }
+
+            ValidateTrackTransitionContract(
+                timeline,
+                BombingCinemachineTrackName,
+                BombingShotContract,
+                0d,
+                issues);
+            return issues;
+        }
+
+        private static CameraTransitionSpec[] BuildMainShotContract(
+            CinematicSequenceProfile profile,
+            List<string> issues)
+        {
+            List<CameraTransitionSpec> contract = new List<CameraTransitionSpec>(MainShotIds.Length);
+            CinematicSequenceProfile.CameraCue[] cues = profile.CameraCues;
+            for (int shotIndex = 0; shotIndex < MainShotIds.Length; shotIndex++)
+            {
+                string shotId = MainShotIds[shotIndex];
+                int matchCount = 0;
+                CinematicSequenceProfile.CameraCue cue = default;
+                for (int cueIndex = 0; cueIndex < cues.Length; cueIndex++)
+                {
+                    if (!string.Equals(cues[cueIndex].CueId, shotId, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    cue = cues[cueIndex];
+                    matchCount++;
+                }
+
+                if (matchCount != 1)
+                {
+                    issues.Add(
+                        $"Main intro profile must author `{shotId}` exactly once; found {matchCount}.");
+                    continue;
+                }
+
+                contract.Add(new CameraTransitionSpec(
+                    shotId,
+                    cue.StartSeconds,
+                    cue.DurationSeconds,
+                    MainIncomingBlendSeconds[shotIndex]));
+            }
+
+            if (contract.Count == MainShotIds.Length)
+            {
+                if (Math.Abs(contract[0].NominalStartSeconds - BombingPreludeEndSeconds)
+                    > CameraTransitionToleranceSeconds)
+                {
+                    issues.Add(
+                        $"Main intro must begin at the {BombingPreludeEndSeconds:0.###}s bombing handoff; "
+                        + $"found {contract[0].NominalStartSeconds:0.###}s.");
+                }
+
+                for (int i = 1; i < contract.Count; i++)
+                {
+                    double previousNominalEnd = contract[i - 1].NominalStartSeconds
+                        + contract[i - 1].NominalDurationSeconds;
+                    if (Math.Abs(contract[i].NominalStartSeconds - previousNominalEnd)
+                        <= CameraTransitionToleranceSeconds)
+                    {
+                        continue;
+                    }
+
+                    issues.Add(
+                        $"Profile shot `{contract[i].ShotId}` begins at "
+                        + $"{contract[i].NominalStartSeconds:0.###}s instead of the previous nominal "
+                        + $"beat end {previousNominalEnd:0.###}s.");
+                }
+            }
+
+            return contract.ToArray();
+        }
+
+        private static void ApplyTrackTransitionContract(
+            TimelineAsset timeline,
+            string trackName,
+            IReadOnlyList<CameraTransitionSpec> contract,
+            double finalTailSeconds)
+        {
+            CinemachineTrack track = FindTimelineTrack<CinemachineTrack>(timeline, trackName)
+                ?? throw new InvalidOperationException($"Timeline is missing `{trackName}`.");
+            if (CountTimelineTracks<CinemachineTrack>(timeline, trackName) != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Timeline must contain exactly one `{trackName}` track.");
+            }
+
+            if (CountClips(track) != contract.Count)
+            {
+                throw new InvalidOperationException(
+                    $"`{trackName}` must contain exactly {contract.Count} camera clips.");
+            }
+
+            TimelineClip[] clips = new TimelineClip[contract.Count];
+            for (int i = 0; i < contract.Count; i++)
+            {
+                clips[i] = FindUniqueClip(track, contract[i].ShotId);
+                clips[i].start = contract[i].NominalStartSeconds;
+                clips[i].duration = ResolveAuthoredClipDuration(contract, i, finalTailSeconds);
+                SetTimelineClipExtrapolation(clips[i], TimelineClip.ClipExtrapolation.None);
+            }
+
+            for (int i = 0; i < contract.Count; i++)
+            {
+                double incomingBlend = contract[i].IncomingBlendSeconds;
+                double outgoingBlend = i + 1 < contract.Count
+                    ? contract[i + 1].IncomingBlendSeconds
+                    : 0d;
+                TimelineClip clip = clips[i];
+
+                // Blends are backed by real clip overlap. Easing an isolated clip fades the
+                // Cinemachine track itself from zero and briefly exposes the base c01 camera.
+                clip.easeInDuration = 0d;
+                clip.easeOutDuration = 0d;
+                clip.blendInDuration = incomingBlend;
+                clip.blendOutDuration = outgoingBlend;
+
+                if (clip.asset is UnityEngine.Object clipAsset)
+                {
+                    EditorUtility.SetDirty(clipAsset);
+                }
+            }
+
+            EditorUtility.SetDirty(track);
+        }
+
+        private static void ValidateTrackTransitionContract(
+            TimelineAsset timeline,
+            string trackName,
+            IReadOnlyList<CameraTransitionSpec> contract,
+            double finalTailSeconds,
+            List<string> issues)
+        {
+            int trackCount = CountTimelineTracks<CinemachineTrack>(timeline, trackName);
+            if (trackCount != 1)
+            {
+                issues.Add($"Timeline must contain exactly one `{trackName}` track; found {trackCount}.");
+                return;
+            }
+
+            CinemachineTrack track = FindTimelineTrack<CinemachineTrack>(timeline, trackName);
+            int clipCount = CountClips(track);
+            if (clipCount != contract.Count)
+            {
+                issues.Add(
+                    $"`{trackName}` must contain exactly {contract.Count} camera clips; found {clipCount}.");
+            }
+
+            TimelineClip previous = null;
+            for (int i = 0; i < contract.Count; i++)
+            {
+                CameraTransitionSpec spec = contract[i];
+                TimelineClip clip = FindClip(track, spec.ShotId, out int matchCount);
+                if (matchCount != 1)
+                {
+                    issues.Add(
+                        $"`{trackName}` must contain `{spec.ShotId}` exactly once; found {matchCount}.");
+                    previous = null;
+                    continue;
+                }
+
+                double expectedDuration = ResolveAuthoredClipDuration(contract, i, finalTailSeconds);
+                double expectedOutgoingBlend = i + 1 < contract.Count
+                    ? contract[i + 1].IncomingBlendSeconds
+                    : 0d;
+                AppendTimingIssue(
+                    issues,
+                    clip.start,
+                    spec.NominalStartSeconds,
+                    $"`{trackName}/{spec.ShotId}` start");
+                AppendTimingIssue(
+                    issues,
+                    clip.duration,
+                    expectedDuration,
+                    $"`{trackName}/{spec.ShotId}` duration");
+                AppendTimingIssue(
+                    issues,
+                    clip.blendInDuration,
+                    spec.IncomingBlendSeconds,
+                    $"`{trackName}/{spec.ShotId}` incoming overlap");
+                AppendTimingIssue(
+                    issues,
+                    clip.blendOutDuration,
+                    expectedOutgoingBlend,
+                    $"`{trackName}/{spec.ShotId}` outgoing overlap");
+                AppendTimingIssue(
+                    issues,
+                    clip.easeInDuration,
+                    0d,
+                    $"`{trackName}/{spec.ShotId}` isolated ease-in");
+                AppendTimingIssue(
+                    issues,
+                    clip.easeOutDuration,
+                    0d,
+                    $"`{trackName}/{spec.ShotId}` isolated ease-out");
+
+                if (previous != null)
+                {
+                    double actualOverlap = previous.end - clip.start;
+                    AppendTimingIssue(
+                        issues,
+                        actualOverlap,
+                        spec.IncomingBlendSeconds,
+                        $"`{trackName}` transition into `{spec.ShotId}` actual overlap");
+                }
+
+                previous = clip;
+            }
+
+            if (previous != null)
+            {
+                double expectedTrackEnd = contract[contract.Count - 1].NominalStartSeconds
+                    + contract[contract.Count - 1].NominalDurationSeconds
+                    + finalTailSeconds;
+                AppendTimingIssue(
+                    issues,
+                    previous.end,
+                    expectedTrackEnd,
+                    $"`{trackName}` final camera coverage");
+            }
+        }
+
+        private static double ResolveAuthoredClipDuration(
+            IReadOnlyList<CameraTransitionSpec> contract,
+            int index,
+            double finalTailSeconds)
+        {
+            double outgoingBlend = index + 1 < contract.Count
+                ? contract[index + 1].IncomingBlendSeconds
+                : finalTailSeconds;
+            return contract[index].NominalDurationSeconds + outgoingBlend;
+        }
+
+        private static int CountTimelineTracks<T>(TimelineAsset timeline, string trackName)
+            where T : TrackAsset
+        {
+            int count = 0;
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track is T && string.Equals(track.name, trackName, StringComparison.Ordinal))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountClips(TrackAsset track)
+        {
+            int count = 0;
+            foreach (TimelineClip ignored in track.GetClips())
+            {
+                count++;
+            }
+
+            return count;
+        }
+
+        private static TimelineClip FindUniqueClip(TrackAsset track, string displayName)
+        {
+            TimelineClip clip = FindClip(track, displayName, out int matchCount);
+            if (matchCount != 1)
+            {
+                throw new InvalidOperationException(
+                    $"`{track.name}` must contain `{displayName}` exactly once; found {matchCount}.");
+            }
+
+            return clip;
+        }
+
+        private static TimelineClip FindClip(
+            TrackAsset track,
+            string displayName,
+            out int matchCount)
+        {
+            TimelineClip match = null;
+            matchCount = 0;
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                if (!string.Equals(clip.displayName, displayName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                match = clip;
+                matchCount++;
+            }
+
+            return match;
+        }
+
+        private static void AppendTimingIssue(
+            List<string> issues,
+            double actual,
+            double expected,
+            string label)
+        {
+            if (Math.Abs(actual - expected) <= CameraTransitionToleranceSeconds)
+            {
+                return;
+            }
+
+            issues.Add($"{label} is {actual:0.###}s; expected {expected:0.###}s.");
         }
 
         private static Transform EnsureRevealRoot(Scene scene)
@@ -885,25 +1300,31 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static double FindClipEnd(TimelineAsset timeline, string displayName)
+        private static double FindCameraCueEnd(
+            CinematicSequenceProfile profile,
+            string cueId)
         {
-            foreach (TrackAsset track in timeline.GetOutputTracks())
+            CinematicSequenceProfile.CameraCue[] cues = profile.CameraCues;
+            int matchCount = 0;
+            double endSeconds = 0d;
+            for (int i = 0; i < cues.Length; i++)
             {
-                if (track == null)
+                if (!string.Equals(cues[i].CueId, cueId, StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                foreach (TimelineClip clip in track.GetClips())
-                {
-                    if (string.Equals(clip.displayName, displayName, StringComparison.Ordinal))
-                    {
-                        return clip.start + clip.duration;
-                    }
-                }
+                endSeconds = cues[i].EndSeconds;
+                matchCount++;
             }
 
-            throw new InvalidOperationException($"Could not find Timeline clip `{displayName}`.");
+            if (matchCount != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Cinematic profile must contain `{cueId}` exactly once; found {matchCount}.");
+            }
+
+            return endSeconds;
         }
 
         private static void DeleteClipsByDisplayName(TrackAsset track, string displayName)
@@ -1274,6 +1695,26 @@ namespace DimensionBrawl.Editor
             public readonly Vector3 Foot;
             public readonly Vector3 Chest;
             public readonly Vector3 Head;
+        }
+
+        private readonly struct CameraTransitionSpec
+        {
+            public CameraTransitionSpec(
+                string shotId,
+                double nominalStartSeconds,
+                double nominalDurationSeconds,
+                double incomingBlendSeconds)
+            {
+                ShotId = shotId;
+                NominalStartSeconds = nominalStartSeconds;
+                NominalDurationSeconds = nominalDurationSeconds;
+                IncomingBlendSeconds = incomingBlendSeconds;
+            }
+
+            public readonly string ShotId;
+            public readonly double NominalStartSeconds;
+            public readonly double NominalDurationSeconds;
+            public readonly double IncomingBlendSeconds;
         }
 
         private readonly struct TransformSnapshot

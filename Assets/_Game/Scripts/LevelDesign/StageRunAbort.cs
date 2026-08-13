@@ -21,7 +21,8 @@ namespace DimensionBrawl.LevelDesign
         StationFactCollectorLost = 7,
         StationResultPresenterLost = 8,
         TerminalFactAdapterLost = 9,
-        TerminalResultPresenterLost = 10
+        TerminalResultPresenterLost = 10,
+        SceneHandoffFailed = 11
     }
 
     public enum StageRunTerminalCoordinatorInvalidationDisposition

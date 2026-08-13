@@ -1,5 +1,6 @@
 using System;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
@@ -1132,9 +1133,10 @@ namespace DimensionBrawl.LevelDesign
                 return Vector2.zero;
             }
 
-            return new Vector2(
-                Mathf.Clamp01(guiPoint.x / Screen.width),
-                Mathf.Clamp01(1f - guiPoint.y / Screen.height));
+            return ScreenSafeAreaUtility.ResolveNormalizedAnchorFromGuiPoint(
+                guiPoint,
+                Screen.safeArea,
+                new Vector2(Screen.width, Screen.height));
         }
 
         private static CinematicSequenceProfile.TutorialCueKind ResolveFallbackCueKind(
@@ -1784,6 +1786,22 @@ namespace DimensionBrawl.LevelDesign
                 Behaviour behaviour = tutorialEnemyGameplayBehaviours[i];
                 if (behaviour == null)
                 {
+                    continue;
+                }
+
+                if (behaviour is BasicSoldierEnemy soldier)
+                {
+                    if (enabled)
+                    {
+                        soldier.enabled = true;
+                        soldier.SetGameplaySuspended(false);
+                    }
+                    else
+                    {
+                        soldier.SetGameplaySuspended(keepHealthDamageable);
+                        soldier.enabled = false;
+                    }
+
                     continue;
                 }
 

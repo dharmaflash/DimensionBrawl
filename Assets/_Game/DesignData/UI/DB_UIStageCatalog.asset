@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DB_UIStageCatalog
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIStageCatalog
   projectionSchemaVersion: 1
-  catalogProjectionGeneration: 2
+  catalogProjectionGeneration: 1
   stages:
   - id: story_v1_training_route
     displayName: "\uAE30\uC5B5\uC758 \uD68C\uB791"
@@ -27,4 +27,4 @@ MonoBehaviour:
     presentationProvenance: 1
     playableStage: {fileID: 11400000, guid: a1d4f8c3b6e24970a5c1d7e9f2036b84, type: 2}
     loadingCardId: stage_to_combat_mood_bridge
-    canonicalProjectionDigest: 571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d
+    canonicalProjectionDigest: 3a2d630f34c6518b8783bcffaf4ac0c21be1a97cbff8e80372b26bec3537549c

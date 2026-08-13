@@ -14,21 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.PlayableStageDefinition
   schemaVersion: 1
   playableStageId: OLYMPUS-INVASION-01
-  routeRevision: 2
-  canonicalRouteDigest: 878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0
+  routeRevision: 1
+  canonicalRouteDigest: 2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9
   sceneSegments:
   - segmentId: corridor_intro_tutorial
     sequenceIndex: 0
     stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
     entryConditionId: run.entry.admitted
     entryConditionKind: 1
-    exitConditionId: corridor.station-entry.reached
-    exitConditionKind: 4
-    handoffPolicy: 4
+    exitConditionId: corridor.tutorial.completed
+    exitConditionKind: 2
+    handoffPolicy: 1
     successorKind: 1
     destinationSceneKind: 1
     transitionTokenKind: 1
-    loaderGenerationKind: 0
+    loaderGenerationKind: 1
     navigationAuthorityKind: 1
     returnOwnerKind: 0
     returnOwnerReceiptPolicy: 0
@@ -53,8 +53,8 @@ MonoBehaviour:
   - segmentId: station_entry_combat
     sequenceIndex: 1
     stageDefinition: {fileID: 11400000, guid: e7f3c6a9d2b140f5a8c4e1b7d9053f62, type: 2}
-    entryConditionId: corridor.station-entry.reached
-    entryConditionKind: 4
+    entryConditionId: corridor.tutorial.completed
+    entryConditionKind: 2
     exitConditionId: station.encounter.terminal
     exitConditionKind: 3
     handoffPolicy: 3
@@ -125,12 +125,12 @@ MonoBehaviour:
   referenceBlock:
     enabled: 1
     schemaVersion: 1
-    revision: 2
-    canonicalReferenceDigest: eada6124fe3bed295bddaf3caeb0b53ff1510a2f790c2b76b8454410834a21ea
+    revision: 1
+    canonicalReferenceDigest: b93e1e23845983c3abdb2e13f551e66025942e40ddfde1a2b123054a65db0791
     stageTemplate: {fileID: 11400000, guid: c57d2f6a9b1348e7a40c15d9e62f3b81, type: 2}
     briefingSchemaVersion: 1
-    briefingRevision: 2
-    canonicalBriefingDigest: e334d6bb63dc42d921e6d85bcca42cc628064d0d1b8fee1cc303d4ca223fab70
+    briefingRevision: 1
+    canonicalBriefingDigest: 71b17e4c39364da14aa1deb0906b87eb88ed44e1242723a3b5b76064f2a89f60
     storyEntryDisposition: 1
     storyExitDisposition: 5
     resultDefinitionDisposition: 2
@@ -145,7 +145,7 @@ MonoBehaviour:
   resultProgressionJoin:
     present: 1
     schemaVersion: 1
-    revision: 2
+    revision: 1
     semanticCoupling: 1
     resultDefinitionDisposition: 1
     resultDefinition: {fileID: 11400000, guid: 7f09b4148d9c7c349ab156c39faae017, type: 2}
@@ -156,4 +156,4 @@ MonoBehaviour:
     progressionGraph: {fileID: 11400000, guid: 2182ee6b0f5565648b4a09d17800ee8d, type: 2}
     rewardPlanDisposition: 3
     rewardPlanDigest: 
-    canonicalDigest: d389c587a17c29cb8e1df60222442ff4339f32fa5435b3586e8f49aa43461d71
+    canonicalDigest: a2ae9df451bd6f2ff48b83098db3bfbdaf2120e23dfaf3612a31f18a022c41fa

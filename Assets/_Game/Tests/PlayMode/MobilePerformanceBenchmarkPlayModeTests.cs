@@ -203,13 +203,13 @@ namespace DimensionBrawl.Tests
             };
             int[] maximumFrameLoopCounts =
             {
-                // The canonical continuous-stage permanently authorizes one Update each for
-                // OlympusStationRunFactCollector and StageCountOneEncounterExecutor.
+                // The dedicated boss-only Station authorizes the run fact collector but owns
+                // no generic count-one Add executor.
                 // PlayerSkill1Action idle polling has been removed and is deliberately not
                 // included in this reviewed runtime callback budget.
                 19,
-                // The corridor keeps the generic StageCountOneEncounterExecutor active while
-                // the phase controller itself advances from finite observation routines.
+                // The Corridor owns no Station count-one executor; its intro camera callbacks
+                // remain bounded until the finite handoff routines release them.
                 21
             };
             int[] expectedFootstepPresenterCounts = { 2, 0 };
@@ -272,8 +272,9 @@ namespace DimensionBrawl.Tests
                     Debug.Log(
                         "[MobilePerformance] RuntimeFrameLoopTypes scene=OlympusCorridorPostHandoff "
                         + FormatFrameLoops(postHandoffResult));
-                    // The post-handoff inventory retains the same reviewed count-one executor
-                    // until the terminal encounter resolves; the flow controller has no Update.
+                    // The post-handoff Corridor owns no count-one executor; mandatory runtime
+                    // infrastructure and gameplay loops fit the reviewed budget while the flow
+                    // controller itself has no Update.
                     Assert.That(
                         postHandoffResult.ActiveFrameLoopBehaviourCount,
                         Is.LessThanOrEqualTo(15),

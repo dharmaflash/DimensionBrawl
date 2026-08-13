@@ -25,8 +25,8 @@ MonoBehaviour:
   scenePrefabSource: 
   objective: Intro presentation and the ordered melee, movement, ranged, dodge, and
     target-clear tutorial run in this physical Corridor segment.
-  clearCondition: The tutorial facts seal, the stair route opens, and the player
-    reaches the lower Station-entry boundary in the same scene.
+  clearCondition: Completing the final tutorial step seals the run handoff and immediately
+    loads the dedicated Station combat scene.
   excludedScope: Station guide, boss terminal authority, result UI, enemy balance,
     reward payout, and persistent progress remain separately owned.
   anchors:

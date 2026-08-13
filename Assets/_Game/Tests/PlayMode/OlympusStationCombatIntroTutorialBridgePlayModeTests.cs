@@ -4,6 +4,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -12,6 +13,31 @@ namespace DimensionBrawl.Tests
     public sealed class OlympusStationCombatIntroTutorialBridgePlayModeTests
     {
         private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+
+        [Test]
+        public void CanonicalStationGuideRetainsPreOptimizationCopyAndStopsAfterEntryPrompts()
+        {
+            Type bridgeType = RequireType(
+                "DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge");
+            FieldInfo summonGuideLine = bridgeType.GetField(
+                "SummonGuideLine",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(summonGuideLine, Is.Not.Null);
+            Assert.That(
+                summonGuideLine.GetRawConstantValue(),
+                Is.EqualTo("코스트 수치를 만족하면 소환수를 소환할 수 있습니다."));
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Game/UI/Transitions/PF_UI_SceneEntryNoticeOverlay.prefab");
+            Assert.That(prefab, Is.Not.Null);
+            Component bridge = prefab.GetComponent(bridgeType);
+            Assert.That(bridge, Is.Not.Null);
+            var serializedBridge = new SerializedObject(bridge);
+            Assert.That(
+                serializedBridge.FindProperty("runCoreLoopCoachAfterRelease").boolValue,
+                Is.False,
+                "The restored Station presentation ends after its two voiced entry prompts.");
+        }
 
         [Test]
         public void CoreCoachAdvancesOnlyFromAcceptedCombatOutcomes()

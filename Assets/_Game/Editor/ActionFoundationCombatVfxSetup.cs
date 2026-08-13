@@ -91,6 +91,8 @@ namespace DimensionBrawl.Editor
         private const string HovlSciFiEffectsShaderRoot = HovlSciFiEffectsRoot + "/Shaders";
         private const string HovlSciFiEffectsMeshRoot = HovlSciFiEffectsRoot + "/Meshes";
         private const string PerfectDodgeHovlHexShieldChildName = "PerfectDodgeVfx_HovlHexShield";
+        private const string PerfectDodgeHovlHexShieldMaterialName = "HexShield3shield";
+        private const float PerfectDodgeHovlHexShieldOpacity = 0.42f;
         private static readonly string[] PlayerRangedGunshotClipPaths =
         {
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
@@ -1043,7 +1045,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, 0.52f, 0f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, 0.58f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.9f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.74f, 0.05f), Vector3.zero, new Vector3(0.58f, 0.58f, 0.58f), 1.2f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0.24f), Vector3.zero, Vector3.one, 1.15f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0f), Vector3.zero, Vector3.one, 1.15f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact, prefabs.PlayerPerfectDodgeShieldBlockImpact, Vector3.zero, Vector3.zero, new Vector3(0.55f, 0.55f, 0.55f), 1.0f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),
@@ -1285,7 +1287,7 @@ namespace DimensionBrawl.Editor
                     root.transform,
                     PerfectDodgeHovlHexShieldChildName,
                     ImportedHovlHexShieldPrefabPath,
-                    new Vector3(0f, 0.48f, 0.52f),
+                    new Vector3(0f, 0.48f, 0f),
                     Vector3.zero,
                     Vector3.one * 0.92f,
                     loopParticles: true,
@@ -1646,10 +1648,43 @@ namespace DimensionBrawl.Editor
             }
 
             RemapSerializedHovlSciFiTextures(material);
+            ApplyPerfectDodgeShieldReadabilityPolish(sourceMaterial, material);
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
             return material;
+        }
+
+        private static void ApplyPerfectDodgeShieldReadabilityPolish(
+            Material sourceMaterial,
+            Material promotedMaterial)
+        {
+            if (sourceMaterial == null
+                || promotedMaterial == null
+                || !string.Equals(
+                    sourceMaterial.name,
+                    PerfectDodgeHovlHexShieldMaterialName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string[] opacityProperties = { "_Opacity", "_Textureopacity" };
+            for (int i = 0; i < opacityProperties.Length; i++)
+            {
+                string propertyName = opacityProperties[i];
+                if (promotedMaterial.HasProperty(propertyName))
+                {
+                    promotedMaterial.SetFloat(propertyName, PerfectDodgeHovlHexShieldOpacity);
+                }
+            }
+
+            if (promotedMaterial.HasProperty("_Color"))
+            {
+                Color color = promotedMaterial.GetColor("_Color");
+                color.a = PerfectDodgeHovlHexShieldOpacity;
+                promotedMaterial.SetColor("_Color", color);
+            }
         }
 
         private static Shader EnsurePromotedHovlSciFiShader(Shader sourceShader)

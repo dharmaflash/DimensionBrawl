@@ -249,6 +249,15 @@ namespace DimensionBrawl.Tests
                 Assert.That(ApplyDamage(bossHealth, DamageTeam.Player, 50f), Is.True);
                 Assert.That(ReadPublicProperty<float>(presenter, "BossHealthFillAmount"), Is.EqualTo(0.75f).Within(0.001f));
 
+                playerHealth.SetInvulnerableUntil(Time.time + 1f);
+                Assert.That(ApplyDamage(playerHealth, DamageTeam.Enemy, 25f), Is.False);
+                Transform blockedDamageOverlay = hudRoot.transform.Find("PlayerDamageOverlay");
+                Assert.That(
+                    blockedDamageOverlay == null || !blockedDamageOverlay.gameObject.activeSelf,
+                    Is.True,
+                    "Invulnerability blocks must not present the red accepted-damage screen cue.");
+                SetField(playerHealth, "invulnerableUntilTime", Time.time - 1f);
+
                 Assert.That(ApplyDamage(playerHealth, DamageTeam.Enemy, 25f), Is.True);
                 Assert.That(healthReadout.text, Is.EqualTo("75/100"));
                 Transform damageOverlay = hudRoot.transform.Find("PlayerDamageOverlay");
@@ -263,6 +272,49 @@ namespace DimensionBrawl.Tests
                 UnityEngine.Object.DestroyImmediate(hudRoot);
                 UnityEngine.Object.DestroyImmediate(encounterObject);
                 UnityEngine.Object.DestroyImmediate(bossObject);
+                UnityEngine.Object.DestroyImmediate(playerObject);
+            }
+
+            yield return null;
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        [UnityTest]
+        public IEnumerator BossBarrageHudOnlyShowsRedOverlayForAcceptedDamage()
+        {
+            GameObject playerObject = new("BossBarrageHudInvulnerablePlayer");
+            CombatHealth playerHealth = CreateHealth(playerObject, DamageTeam.Player, 100f);
+            Type presenterType = ResolveHudType("CombatHudPresenter");
+            Type binderType = ResolveHudType("BossBarrageLaneReviewCombatHudBinder");
+            GameObject hudRoot = new("BossBarrageHudInvulnerability", typeof(RectTransform));
+            hudRoot.SetActive(false);
+            Component presenter = hudRoot.AddComponent(presenterType);
+            Component binder = hudRoot.AddComponent(binderType);
+            SetField(binder, "hudPresenter", presenter);
+            SetField(binder, "playerHealth", playerHealth);
+
+            try
+            {
+                hudRoot.SetActive(true);
+                Invoke(binder, "RefreshHudNow");
+
+                playerHealth.SetInvulnerableUntil(Time.time + 1f);
+                Assert.That(ApplyDamage(playerHealth, DamageTeam.Enemy, 25f), Is.False);
+                Transform blockedDamageOverlay = hudRoot.transform.Find("PlayerDamageOverlay");
+                Assert.That(
+                    blockedDamageOverlay == null || !blockedDamageOverlay.gameObject.activeSelf,
+                    Is.True,
+                    "The canonical Boss Barrage HUD must not turn an invulnerability block into a red damage flash.");
+
+                SetField(playerHealth, "invulnerableUntilTime", Time.time - 1f);
+                Assert.That(ApplyDamage(playerHealth, DamageTeam.Enemy, 25f), Is.True);
+                Transform acceptedDamageOverlay = hudRoot.transform.Find("PlayerDamageOverlay");
+                Assert.That(acceptedDamageOverlay, Is.Not.Null);
+                Assert.That(acceptedDamageOverlay.gameObject.activeSelf, Is.True);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(hudRoot);
                 UnityEngine.Object.DestroyImmediate(playerObject);
             }
 

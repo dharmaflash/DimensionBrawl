@@ -1400,6 +1400,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerRangedBasicAttackAction
   fireAction: {fileID: 0}
+  manageFireActionLifecycle: 1
   fireContinuouslyWhileHeld: 1
   holdFireActivatesAim: 1
   useDeviceFallbackWhenActionMissing: 1
@@ -1747,6 +1748,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1Action
   skillAction: {fileID: 0}
+  useKeyboardWhenActionMissing: 1
+  keyboardTestKey: 32
   energyLadder: {fileID: 4019}
   sourceHealth: {fileID: 4003}
   targetSelector: {fileID: 4008}
@@ -93811,28 +93814,6 @@ MonoBehaviour:
   stageClearOverlay: {fileID: 615080646}
   resultSurfaceBehaviour: {fileID: 185071497}
   factCollector: {fileID: 615080647}
---- !u!114 &615080647
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 615080643}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4aeed8190ca24a71a79308d224f18c64, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationRunFactCollector
-  encounter: {fileID: 6002}
-  playerHealth: {fileID: 4003}
-  playerActionController: {fileID: 4005}
-  summonEnergyLadder: {fileID: 4019}
-  summonSlot1Action: {fileID: 4017}
-  supportSummonActions:
-  - {fileID: 4016}
-  - {fileID: 4015}
-  bossEncounter: {fileID: 439529094}
-  resultSurfaceBehaviour: {fileID: 185071497}
 --- !u!4 &615080645
 Transform:
   m_ObjectHideFlags: 0
@@ -93864,6 +93845,28 @@ MonoBehaviour:
   combatHudExitSeconds: 0.42
   postBossDefeatHoldSeconds: 1.1
   hudExitSlidePixels: 128
+--- !u!114 &615080647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 615080643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4aeed8190ca24a71a79308d224f18c64, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationRunFactCollector
+  encounter: {fileID: 6002}
+  playerHealth: {fileID: 4003}
+  playerActionController: {fileID: 4005}
+  summonEnergyLadder: {fileID: 4019}
+  summonSlot1Action: {fileID: 4017}
+  supportSummonActions:
+  - {fileID: 4016}
+  - {fileID: 4015}
+  bossEncounter: {fileID: 439529094}
+  resultSurfaceBehaviour: {fileID: 185071497}
 --- !u!1 &615510746
 GameObject:
   m_ObjectHideFlags: 0
@@ -132071,7 +132074,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9180889256859156937, guid: 38ef6959f8713b047b647fe0ccd1d982, type: 3}
       propertyPath: m_Name
-      value: SceneEntryNoticeOverlay
+      value: OlympusStation_EntryGuide
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -180889,7 +180892,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1232183589}
-  - component: {fileID: 2100456790}
   m_Layer: 0
   m_Name: Add_LeftLaneAnchor
   m_TagString: Untagged
@@ -180912,25 +180914,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1826890581}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2100456790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1232183588}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
-  anchorId: Add_LeftLaneAnchor
-  groupId: CombatSpawnAnchors
-  usageKind: 1
-  positionId: 2101
-  spawnKind: 2
-  runtimeStateKind: 0
-  purpose: Stable count-one Station Add authoring anchor; runtime execution remains P1-C-owned.
 --- !u!1 &1232246020
 GameObject:
   m_ObjectHideFlags: 0
@@ -185716,10 +185699,6 @@ PrefabInstance:
     - target: {fileID: 5657396244988120885, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 50.22
-      objectReference: {fileID: 0}
-    - target: {fileID: 5704358636811254415, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5756717049702816846, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Sprite
@@ -227500,7 +227479,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1543296724
 Transform:
   m_ObjectHideFlags: 0
@@ -243852,7 +243831,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1675588418}
   - component: {fileID: 2100456789}
-  - component: {fileID: 2100456791}
   m_Layer: 0
   m_Name: OlympusCorridorStageMap
   m_TagString: Untagged
@@ -243860,42 +243838,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2100456789
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1675588417}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3421799b414862e41bf7db1dca383675, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionSceneBinding
-  stageDefinition: {fileID: 11400000, guid: e7f3c6a9d2b140f5a8c4e1b7d9053f62, type: 2}
-  mapRoot: {fileID: 1675588418}
-  anchorPoints:
-  - {fileID: 2100456790}
-  cutscenePorts: []
---- !u!114 &2100456791
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1675588417}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac42f5986b8f4efb9f25f811da8d2031, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageCountOneEncounterExecutor
-  sceneBinding: {fileID: 2100456789}
-  spawnId: add-left
-  payloadMappings:
-  - {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
-  activationKind: 1
-  requireActiveStageRun: 1
-  cancelOnTerminalEncounter: 1
 --- !u!4 &1675588418
 Transform:
   m_ObjectHideFlags: 0
@@ -304543,6 +304485,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.26959845, y: 0.41798544, z: 0.11978981}
   m_Center: {x: 0.000000074505806, y: 0, z: 0}
+--- !u!114 &2100456789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1675588417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3421799b414862e41bf7db1dca383675, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionSceneBinding
+  stageDefinition: {fileID: 11400000, guid: e7f3c6a9d2b140f5a8c4e1b7d9053f62, type: 2}
+  mapRoot: {fileID: 1675588418}
+  anchorPoints: []
+  cutscenePorts: []
 --- !u!1 &2100694018
 GameObject:
   m_ObjectHideFlags: 0

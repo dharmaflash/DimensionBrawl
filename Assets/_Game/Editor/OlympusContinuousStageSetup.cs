@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -26,10 +25,6 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string StationDefinitionPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset";
-        private const string StationLeftAddArchetypePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
-        private const string StationRightAddArchetypePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Ranged.asset";
         private const string ProgressionNodePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageProgressionNode_OlympusInvasion.asset";
         private const string ProgressionGraphPath =
@@ -67,11 +62,11 @@ namespace DimensionBrawl.Editor
         private const float StairCrestDistanceFromEntry = 24.25f;
         private static readonly Vector3 SourceStationPlayerStartPosition = new Vector3(0f, 0f, -8.5f);
 
-        [MenuItem("DimensionBrawl/Setup/Build Olympus Continuous Tutorial To Station Route")]
+        [MenuItem("DimensionBrawl/Setup/Build Olympus Tutorial To Station Scene Route")]
         public static void BuildFromMenu()
         {
             Build();
-            Debug.Log("[OlympusContinuousStageSetup] Continuous stage setup complete.");
+            Debug.Log("[OlympusContinuousStageSetup] Tutorial-to-Station scene route setup complete.");
         }
 
         public static void RunBatchSetup()
@@ -243,7 +238,7 @@ namespace DimensionBrawl.Editor
             SaveAsset(progressionNode);
             SaveAsset(progressionGraph);
             SaveAsset(stageCatalog);
-            ConfigureCorridorScene(route, stationDefinition);
+            ConfigureSeparatedRouteScenes(route, stationDefinition);
 
             Debug.Log(
                 "[OlympusContinuousStageSetup] "
@@ -265,41 +260,41 @@ namespace DimensionBrawl.Editor
             UIStageCatalog stageCatalog)
         {
             var station = new SerializedObject(stationDefinition);
-            station.FindProperty("mapScenePath").stringValue = CorridorScenePath;
+            station.FindProperty("mapScenePath").stringValue = StationScenePath;
             station.FindProperty("mapRootName").stringValue = SharedMapName;
             station.FindProperty("mapContentRootName").stringValue = SharedMapName;
-            station.FindProperty("mapScale").vector3Value = Vector3.one * 1.5f;
-            ConfigureStationOrderedAddDefinition(station);
+            station.FindProperty("mapScale").vector3Value = new Vector3(1.8f, 1.8f, 2.3f);
+            ConfigureStationBossOnlyDefinition(station);
             SerializedProperty stationSources = station.FindProperty("sourceReferences");
             Require(stationSources != null && stationSources.arraySize == 1,
                 "Station definition must have one provenance row.");
             stationSources.GetArrayElementAtIndex(0)
-                .FindPropertyRelative("sourcePath").stringValue = CorridorScenePath;
+                .FindPropertyRelative("sourcePath").stringValue = StationScenePath;
             stationSources.GetArrayElementAtIndex(0)
                 .FindPropertyRelative("localTakeaway").stringValue =
-                "This logical Station segment reuses the continuous Corridor host scene after the stair-entry boundary.";
+                "This terminal combat segment is authored and loaded from the dedicated Olympus Station scene.";
             station.ApplyModifiedPropertiesWithoutUndo();
 
             var corridor = new SerializedObject(corridorDefinition);
             corridor.FindProperty("clearCondition").stringValue =
-                "The tutorial facts seal, the stair route opens, and the player reaches the lower Station-entry boundary in the same scene.";
+                "Completing the final tutorial step seals the run handoff and immediately loads the dedicated Station combat scene.";
             corridor.FindProperty("excludedScope").stringValue =
                 "Station guide, boss terminal authority, result UI, enemy balance, reward payout, and persistent progress remain separately owned.";
             corridor.ApplyModifiedPropertiesWithoutUndo();
 
             var serializedRoute = new SerializedObject(route);
-            serializedRoute.FindProperty("routeRevision").intValue = 2;
+            serializedRoute.FindProperty("routeRevision").intValue = 1;
             SerializedProperty segments = serializedRoute.FindProperty("sceneSegments");
             Require(segments != null && segments.arraySize == 2,
                 "Olympus route must retain exactly two ordered logical segments.");
             SerializedProperty corridorSegment = segments.GetArrayElementAtIndex(0);
             corridorSegment.FindPropertyRelative("exitConditionId").stringValue =
-                "corridor.station-entry.reached";
+                "corridor.tutorial.completed";
             corridorSegment.FindPropertyRelative("exitConditionKind").intValue =
                 (int)StageSegmentConditionKind
-                    .CorridorTutorialFactsSealedAndStationEntryReachedForInSceneAdvance;
+                    .CorridorTutorialFactsAndClosureSealedForSingleLoad;
             corridorSegment.FindPropertyRelative("handoffPolicy").intValue =
-                (int)StageSceneHandoffPolicy.InSceneAdvance;
+                (int)StageSceneHandoffPolicy.SingleLoad;
             corridorSegment.FindPropertyRelative("successorKind").intValue =
                 (int)StageSegmentSuccessorKind.NextOrderedSegment;
             corridorSegment.FindPropertyRelative("destinationSceneKind").intValue =
@@ -307,7 +302,7 @@ namespace DimensionBrawl.Editor
             corridorSegment.FindPropertyRelative("transitionTokenKind").intValue =
                 (int)StageSegmentTransitionTokenKind.SealedCurrentRunSegmentHandoff;
             corridorSegment.FindPropertyRelative("loaderGenerationKind").intValue =
-                (int)StageSegmentLoaderGenerationKind.None;
+                (int)StageSegmentLoaderGenerationKind.ActiveRunRouteLoaderGeneration;
             corridorSegment.FindPropertyRelative("navigationAuthorityKind").intValue =
                 (int)StageSegmentNavigationAuthorityKind.P1AStageRunRouteOwner;
             corridorSegment.FindPropertyRelative("returnOwnerKind").intValue =
@@ -317,16 +312,16 @@ namespace DimensionBrawl.Editor
 
             SerializedProperty stationSegment = segments.GetArrayElementAtIndex(1);
             stationSegment.FindPropertyRelative("entryConditionId").stringValue =
-                "corridor.station-entry.reached";
+                "corridor.tutorial.completed";
             stationSegment.FindPropertyRelative("entryConditionKind").intValue =
                 (int)StageSegmentConditionKind
-                    .CorridorTutorialFactsSealedAndStationEntryReachedForInSceneAdvance;
+                    .CorridorTutorialFactsAndClosureSealedForSingleLoad;
 
             SerializedProperty reference = serializedRoute.FindProperty("referenceBlock");
-            reference.FindPropertyRelative("revision").intValue = 2;
-            reference.FindPropertyRelative("briefingRevision").intValue = 2;
+            reference.FindPropertyRelative("revision").intValue = 1;
+            reference.FindPropertyRelative("briefingRevision").intValue = 1;
             SerializedProperty join = serializedRoute.FindProperty("resultProgressionJoin");
-            join.FindPropertyRelative("revision").intValue = 2;
+            join.FindPropertyRelative("revision").intValue = 1;
             serializedRoute.ApplyModifiedPropertiesWithoutUndo();
 
             SetString(serializedRoute, "canonicalRouteDigest", route.ComputeCanonicalRouteDigest());
@@ -347,15 +342,15 @@ namespace DimensionBrawl.Editor
                 briefingDigest);
 
             var serializedGraph = new SerializedObject(progressionGraph);
-            serializedGraph.FindProperty("revision").intValue = 2;
+            serializedGraph.FindProperty("revision").intValue = 1;
             serializedGraph.ApplyModifiedPropertiesWithoutUndo();
 
             var serializedNode = new SerializedObject(progressionNode);
-            serializedNode.FindProperty("bindingRevision").intValue = 2;
+            serializedNode.FindProperty("bindingRevision").intValue = 1;
             serializedNode.FindProperty("routeRevision").intValue = route.RouteRevision;
             serializedNode.FindProperty("canonicalRouteDigest").stringValue =
                 route.CanonicalRouteDigest;
-            serializedNode.FindProperty("progressionGraphRevision").intValue = 2;
+            serializedNode.FindProperty("progressionGraphRevision").intValue = 1;
             serializedNode.ApplyModifiedPropertiesWithoutUndo();
             Require(
                 progressionNode.TryComputeCanonicalDigests(
@@ -410,6 +405,9 @@ namespace DimensionBrawl.Editor
                     && projectionGeneration.intValue
                         >= UIStageCatalog.InitialCatalogProjectionGeneration,
                 "Stage catalog projection generation must remain valid.");
+            projectionGeneration.intValue = UIStageCatalog.InitialCatalogProjectionGeneration;
+            serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+            serializedCatalog.Update();
             SerializedProperty catalogStages = serializedCatalog.FindProperty("stages");
             Require(
                 catalogStages != null
@@ -443,75 +441,128 @@ namespace DimensionBrawl.Editor
                 $"Stage catalog projection validation failed: {projectionBuildReject}.");
         }
 
-        private static void ConfigureStationOrderedAddDefinition(SerializedObject station)
+        private static void ConfigureStationBossOnlyDefinition(SerializedObject station)
         {
-            CombatEnemyArchetypeProfile meleeArchetype =
-                LoadRequired<CombatEnemyArchetypeProfile>(StationLeftAddArchetypePath);
-            CombatEnemyArchetypeProfile rangedArchetype =
-                LoadRequired<CombatEnemyArchetypeProfile>(StationRightAddArchetypePath);
             SerializedProperty anchors = station.FindProperty("anchors");
             Require(anchors != null, "Station definition is missing its anchor array.");
-            anchors.arraySize = 2;
-            ConfigureStationAddAnchor(
-                anchors.GetArrayElementAtIndex(0),
-                "Add_LeftLaneAnchor",
-                new Vector3(8.9f, 0f, -1.25f),
-                "Stable authoring anchor for the first count-one Station Add fixture.");
-            ConfigureStationAddAnchor(
-                anchors.GetArrayElementAtIndex(1),
-                "Add_RightLaneAnchor",
-                new Vector3(8.9f, 0f, 1.25f),
-                "Stable mirrored authoring anchor for the second ordered Station Add ticket.");
+            anchors.arraySize = 0;
 
             SerializedProperty spawns = station.FindProperty("spawns");
             Require(spawns != null, "Station definition is missing its spawn array.");
-            spawns.arraySize = 2;
-            ConfigureStationAddSpawn(
-                spawns.GetArrayElementAtIndex(0),
-                "add-left",
-                2101,
-                "Add_LeftLaneAnchor",
-                meleeArchetype,
-                "First source-ordered count-one Add ticket; independently participates and completes without owning the boss result.");
-            ConfigureStationAddSpawn(
-                spawns.GetArrayElementAtIndex(1),
-                "add-right",
-                2102,
-                "Add_RightLaneAnchor",
-                rangedArchetype,
-                "Second equal-delay ticket; source order is the deterministic activation tiebreaker and the reviewed RifleCrossfire loadout owns physical mid-range pressure.");
+            spawns.arraySize = 0;
         }
 
-        private static void ConfigureStationAddAnchor(
-            SerializedProperty anchor,
-            string anchorId,
-            Vector3 expectedPosition,
-            string purpose)
+        private static void ConfigureSeparatedRouteScenes(
+            PlayableStageDefinition route,
+            StageDefinitionProfile stationDefinition)
         {
-            anchor.FindPropertyRelative("anchorId").stringValue = anchorId;
-            anchor.FindPropertyRelative("groupId").stringValue = "CombatSpawnAnchors";
-            anchor.FindPropertyRelative("expectedPosition").vector3Value = expectedPosition;
-            anchor.FindPropertyRelative("expectedEuler").vector3Value = Vector3.zero;
-            anchor.FindPropertyRelative("purpose").stringValue = purpose;
-        }
+            Scene corridorScene = EditorSceneManager.OpenScene(
+                CorridorScenePath,
+                OpenSceneMode.Single);
+            StageCountOneEncounterExecutor[] retiredCorridorExecutors =
+                FindSceneComponents<StageCountOneEncounterExecutor>(corridorScene);
+            for (int i = 0; i < retiredCorridorExecutors.Length; i++)
+            {
+                UnityEngine.Object.DestroyImmediate(retiredCorridorExecutors[i]);
+            }
 
-        private static void ConfigureStationAddSpawn(
-            SerializedProperty spawn,
-            string spawnId,
-            int positionId,
-            string anchorId,
-            CombatEnemyArchetypeProfile archetype,
-            string note)
-        {
-            spawn.FindPropertyRelative("spawnId").stringValue = spawnId;
-            spawn.FindPropertyRelative("spawnKind").intValue = (int)StageSpawnKind.Add;
-            spawn.FindPropertyRelative("positionId").intValue = positionId;
-            spawn.FindPropertyRelative("anchorId").stringValue = anchorId;
-            spawn.FindPropertyRelative("payloadId").stringValue = archetype.ArchetypeId;
-            spawn.FindPropertyRelative("payloadArchetype").objectReferenceValue = archetype;
-            spawn.FindPropertyRelative("count").intValue = 1;
-            spawn.FindPropertyRelative("delaySeconds").floatValue = 0f;
-            spawn.FindPropertyRelative("note").stringValue = note;
+            OlympusCorridorCombatFlowController flow =
+                FindSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
+            var serializedFlow = new SerializedObject(flow);
+            serializedFlow.FindProperty("playableStageDefinition").objectReferenceValue = route;
+            serializedFlow.ApplyModifiedPropertiesWithoutUndo();
+            EditorSceneManager.MarkSceneDirty(corridorScene);
+            Require(
+                EditorSceneManager.SaveScene(corridorScene),
+                "Failed to save the Corridor source scene.");
+
+            Scene stationScene = EditorSceneManager.OpenScene(
+                StationScenePath,
+                OpenSceneMode.Single);
+            GameObject stationMap = FindRequiredSceneObject(stationScene, SharedMapName);
+            Transform addLeftTransform = stationMap.transform.Find(AddLeftAnchorPath);
+            Transform addRightTransform = stationMap.transform.Find(AddRightAnchorPath);
+            Require(addLeftTransform != null,
+                $"Missing Station left Add anchor: {AddLeftAnchorPath}");
+            Require(addRightTransform != null,
+                $"Missing Station right Add anchor: {AddRightAnchorPath}");
+
+            StageCountOneEncounterExecutor[] executors =
+                FindSceneComponents<StageCountOneEncounterExecutor>(stationScene);
+            for (int i = 0; i < executors.Length; i++)
+            {
+                UnityEngine.Object.DestroyImmediate(executors[i]);
+            }
+
+            StageDefinitionSceneBinding[] stationBindings =
+                FindSceneComponents<StageDefinitionSceneBinding>(stationScene);
+            StageDefinitionSceneBinding stationBinding =
+                stationMap.GetComponent<StageDefinitionSceneBinding>();
+            for (int i = 0; i < stationBindings.Length; i++)
+            {
+                if (!ReferenceEquals(stationBindings[i], stationBinding))
+                {
+                    UnityEngine.Object.DestroyImmediate(stationBindings[i]);
+                }
+            }
+
+            stationBinding ??= stationMap.AddComponent<StageDefinitionSceneBinding>();
+            stationBinding.Configure(
+                stationDefinition,
+                stationMap.transform,
+                Array.Empty<StageAnchorPoint>(),
+                Array.Empty<StageCutscenePort>());
+
+            StageAnchorPoint[] stationAnchors =
+                FindSceneComponents<StageAnchorPoint>(stationScene);
+            for (int i = 0; i < stationAnchors.Length; i++)
+            {
+                UnityEngine.Object.DestroyImmediate(stationAnchors[i]);
+            }
+
+            GameObject entryGuide = FindSceneObject(stationScene, "SceneEntryNoticeOverlay")
+                ?? FindSceneObject(stationScene, EntryGuideName);
+            if (entryGuide == null)
+            {
+                GameObject guidePrefab = LoadRequired<GameObject>(GuidePrefabPath);
+                entryGuide = (GameObject)PrefabUtility.InstantiatePrefab(guidePrefab, stationScene);
+            }
+
+            OlympusStationCombatIntroTutorialBridge[] guideBridges =
+                FindSceneComponents<OlympusStationCombatIntroTutorialBridge>(stationScene);
+            for (int i = 0; i < guideBridges.Length; i++)
+            {
+                GameObject guideRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(
+                    guideBridges[i].gameObject) ?? guideBridges[i].gameObject;
+                if (guideRoot != entryGuide)
+                {
+                    UnityEngine.Object.DestroyImmediate(guideRoot);
+                }
+            }
+
+            entryGuide.name = EntryGuideName;
+            Require(
+                entryGuide.GetComponent<OlympusStationCombatIntroTutorialBridge>() != null,
+                "Station entry guide prefab is missing its runtime bridge.");
+            entryGuide.SetActive(true);
+
+            Require(
+                FindSingleSceneComponent<OlympusStationCombatIntroTutorialBridge>(stationScene) != null,
+                "Station scene must retain exactly one canonical entry guide.");
+            Require(
+                FindSingleSceneComponent<BossBarrageEncounterController>(stationScene) != null,
+                "Station scene must retain exactly one authored boss encounter.");
+            Require(
+                FindSingleSceneComponent<OlympusStationCombatResultPresenter>(stationScene) != null,
+                "Station scene is missing its canonical result presenter.");
+            Require(
+                FindSingleSceneComponent<OlympusStationRunFactCollector>(stationScene) != null,
+                "Station scene is missing its run fact collector.");
+
+            EditorSceneManager.MarkSceneDirty(stationScene);
+            Require(
+                EditorSceneManager.SaveScene(stationScene),
+                "Failed to save the dedicated Station combat scene.");
         }
 
         private static void ConfigureCorridorScene(
@@ -735,17 +786,6 @@ namespace DimensionBrawl.Editor
             serializedPresenter.FindProperty("resultSurfaceBehaviour").objectReferenceValue = resultSurface;
             serializedPresenter.FindProperty("factCollector").objectReferenceValue = factCollector;
             serializedPresenter.ApplyModifiedPropertiesWithoutUndo();
-
-            StageCountOneEncounterExecutor executor =
-                sharedMap.GetComponent<StageCountOneEncounterExecutor>()
-                ?? sharedMap.AddComponent<StageCountOneEncounterExecutor>();
-            var serializedExecutor = new SerializedObject(executor);
-            serializedExecutor.FindProperty("sceneBinding").objectReferenceValue = stationBinding;
-            serializedExecutor.FindProperty("activationKind").intValue =
-                (int)StageEncounterActivationKind.CombatEntryGuideReleased;
-            serializedExecutor.FindProperty("requireActiveStageRun").boolValue = true;
-            serializedExecutor.FindProperty("cancelOnTerminalEncounter").boolValue = true;
-            serializedExecutor.ApplyModifiedPropertiesWithoutUndo();
 
             var serializedFlow = new SerializedObject(flow);
             serializedFlow.FindProperty("playableStageDefinition").objectReferenceValue = route;

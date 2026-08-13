@@ -11,6 +11,8 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class CombatSessionOverlayPresenter : MonoBehaviour, ICombatSessionOverlay
     {
+        private const float StableGameplayTimeScaleThreshold = 0.5f;
+
         [Header("Routing")]
         [SerializeField] private UIScreenRouteTable routeTable;
         [SerializeField] private UISceneRouteLoader routeLoader;
@@ -53,9 +55,11 @@ namespace DimensionBrawl.UI
         private CombatSessionOverlayMode modeBeforeRouting;
         private InputAction pauseAction;
         private Coroutine routingRoutine;
+        private Coroutine pauseTimeGuardRoutine;
         private LayoutGroup[] managedLayoutGroups = Array.Empty<LayoutGroup>();
         private bool[] authoredLayoutGroupStates = Array.Empty<bool>();
         private bool hasPausedTime;
+        private bool preservesExistingHardPause;
         private float previousTimeScale = 1f;
         private bool publishedInputBlock;
 
@@ -113,6 +117,31 @@ namespace DimensionBrawl.UI
             mode = CombatSessionOverlayMode.Hidden;
             SetCanvasVisible(false);
             PublishCombatInputBlock(false);
+        }
+
+        private IEnumerator GuardPausedTimeScaleUntilReleased()
+        {
+            while (hasPausedTime)
+            {
+                yield return null;
+                if (!hasPausedTime)
+                {
+                    break;
+                }
+
+                // Hit stop and time-warp presentation can finish while this unscaled menu is open.
+                // Preserve their latest non-zero restore value, then reclaim the pause so that those
+                // transient writers cannot either resume combat behind the menu or leave it at their
+                // temporary near-zero scale when Android Back closes the surface.
+                if (!preservesExistingHardPause && IsStableGameplayTimeScale(Time.timeScale))
+                {
+                    previousTimeScale = Time.timeScale;
+                }
+
+                Time.timeScale = 0f;
+            }
+
+            pauseTimeGuardRoutine = null;
         }
 
         public void ShowPause()
@@ -397,9 +426,19 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            previousTimeScale = Time.timeScale;
+            float requestedPauseScale = Time.timeScale;
+            preservesExistingHardPause = requestedPauseScale <= 0.0001f;
+            previousTimeScale = requestedPauseScale <= 0.0001f
+                ? 0f
+                : IsStableGameplayTimeScale(requestedPauseScale)
+                    ? requestedPauseScale
+                    : 1f;
             Time.timeScale = 0f;
             hasPausedTime = true;
+            if (pauseTimeGuardRoutine == null && Application.isPlaying && isActiveAndEnabled)
+            {
+                pauseTimeGuardRoutine = StartCoroutine(GuardPausedTimeScaleUntilReleased());
+            }
         }
 
         private void RestoreTimeScale()
@@ -409,8 +448,23 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            Time.timeScale = previousTimeScale;
             hasPausedTime = false;
+            if (pauseTimeGuardRoutine != null)
+            {
+                StopCoroutine(pauseTimeGuardRoutine);
+                pauseTimeGuardRoutine = null;
+            }
+
+            Time.timeScale = previousTimeScale;
+            preservesExistingHardPause = false;
+        }
+
+        private static bool IsStableGameplayTimeScale(float timeScale)
+        {
+            // Positive scales below this boundary are authored hit-stop/time-warp transients,
+            // not a resumable gameplay speed. Exact zero is handled separately as a nested
+            // hard-pause lease that this overlay must not release.
+            return timeScale >= StableGameplayTimeScaleThreshold;
         }
 
         private void PublishCombatInputBlock(bool blocked)

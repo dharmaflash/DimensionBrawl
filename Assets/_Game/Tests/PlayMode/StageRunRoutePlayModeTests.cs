@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
-using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.UI;
@@ -22,8 +20,8 @@ namespace DimensionBrawl.Tests
         private const string CorridorScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         private const string StationScenePath = "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
         private const string LobbyScenePath = "Assets/_Game/Scenes/UI/UI_Lobby.unity";
-        private const string RouteDigest = "878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0";
-        private const string StationEntryConditionId = "corridor.station-entry.reached";
+        private const string RouteDigest = "2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9";
+        private const string StationEntryConditionId = "corridor.tutorial.completed";
         private const string StationStageId = "OLYMPUS-STATION-COMBAT-01";
         private const string OneRowPlayableStageId = "B0-ONE-ROW-TEST-01";
         private const string OneRowSegmentId = "b0_one_row_entry_final";
@@ -31,7 +29,7 @@ namespace DimensionBrawl.Tests
         private const string OneRowReplayActionId = "b0-one-row.replay";
         private const string OneRowRetryActionId = "b0-one-row.retry";
         private const string OneRowLobbyActionId = "b0-one-row.to-lobby";
-        private const string HistoricalRouteDigest = "2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9";
+        private const string HistoricalRouteDigest = RouteDigest;
         private const string OlympusTutorialPlanDigest = "b1b00dd84e27fe8d06c6736d85b16ff6bfe141b7ccb70b01ea851144dd8182f2";
 
         [UnityTearDown]
@@ -144,7 +142,10 @@ namespace DimensionBrawl.Tests
                 foreignJoin.hideFlags = HideFlags.HideAndDontSave;
                 try
                 {
-                    SetPrivateField(foreignJoin.ResultProgressionJoin, "revision", 1);
+                    SetPrivateField(
+                        foreignJoin.ResultProgressionJoin,
+                        "revision",
+                        route.ResultProgressionJoin.Revision + 1);
                     SetPrivateField(
                         foreignJoin.ResultProgressionJoin,
                         "canonicalDigest",
@@ -2341,7 +2342,7 @@ namespace DimensionBrawl.Tests
             Assert.That(context, Is.Not.Null);
             Assert.That(context.Identity.RunId, Is.EqualTo(flow.CanonicalStageRunId));
             Assert.That(context.Identity.PlayableStageId, Is.EqualTo("OLYMPUS-INVASION-01"));
-            Assert.That(context.Identity.RouteRevision, Is.EqualTo(2));
+            Assert.That(context.Identity.RouteRevision, Is.EqualTo(1));
             Assert.That(context.Identity.RouteSnapshotDigest, Is.EqualTo(RouteDigest));
             Assert.That(context.Identity.EntrySegmentId, Is.EqualTo("corridor_intro_tutorial"));
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.CorridorActive));
@@ -2354,17 +2355,17 @@ namespace DimensionBrawl.Tests
             StageRunSegmentSnapshot corridorSegment = context.RouteSnapshot.GetSegment(0);
             StageRunSegmentSnapshot stationSegment = context.RouteSnapshot.GetSegment(1);
             Assert.That(corridorSegment.ScenePath, Is.EqualTo(CorridorScenePath));
-            Assert.That(stationSegment.ScenePath, Is.EqualTo(CorridorScenePath));
+            Assert.That(stationSegment.ScenePath, Is.EqualTo(StationScenePath));
             Assert.That(corridorSegment.ExitConditionId, Is.EqualTo(StationEntryConditionId));
             Assert.That(
                 corridorSegment.ExitConditionKind,
                 Is.EqualTo(
                     StageSegmentConditionKind
-                        .CorridorTutorialFactsSealedAndStationEntryReachedForInSceneAdvance));
-            Assert.That(corridorSegment.HandoffPolicy, Is.EqualTo(StageSceneHandoffPolicy.InSceneAdvance));
+                        .CorridorTutorialFactsAndClosureSealedForSingleLoad));
+            Assert.That(corridorSegment.HandoffPolicy, Is.EqualTo(StageSceneHandoffPolicy.SingleLoad));
             Assert.That(
                 corridorSegment.LoaderGenerationKind,
-                Is.EqualTo(StageSegmentLoaderGenerationKind.None));
+                Is.EqualTo(StageSegmentLoaderGenerationKind.ActiveRunRouteLoaderGeneration));
             Assert.That(stationSegment.EntryConditionId, Is.EqualTo(StationEntryConditionId));
             Assert.That(stationSegment.EntryConditionKind, Is.EqualTo(corridorSegment.ExitConditionKind));
 
@@ -2405,7 +2406,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator SealedCorridorInSceneAdvanceIsIdempotentAndConsumedByExactStationEntry()
+        public IEnumerator SealedCorridorSingleLoadIsIdempotentAndConsumedByExactStationScene()
         {
             StageRunRuntime.ResetForTests();
             yield return LoadSingleScene(CorridorScenePath);
@@ -2414,53 +2415,56 @@ namespace DimensionBrawl.Tests
             Assert.That(context, Is.Not.Null);
             Scene corridor = SceneManager.GetActiveScene();
             int corridorHandle = corridor.handle;
+            string corridorRunId = context.Identity.RunId;
             Assert.That(
                 context.TrySealTutorialRouteCompletion(out string tutorialFactError),
                 Is.True,
                 tutorialFactError);
             Assert.That(
-                context.TryAdvanceCurrentSegmentInScene(
+                context.TrySealCurrentSegmentForSingleLoad(
                     StationEntryConditionId,
-                    corridor,
-                    out StageSegmentEntryReceipt firstReceipt,
+                    out StageRunSingleLoadDispatch firstDispatch,
                     out string firstError),
                 Is.True,
                 firstError);
-            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
-            Assert.That(firstReceipt.RunId, Is.EqualTo(context.Identity.RunId));
-            Assert.That(firstReceipt.RouteSnapshotDigest, Is.EqualTo(RouteDigest));
-            Assert.That(firstReceipt.SourceSegmentId, Is.EqualTo("corridor_intro_tutorial"));
-            Assert.That(firstReceipt.DestinationSegmentId, Is.EqualTo("station_entry_combat"));
-            Assert.That(firstReceipt.DestinationStageDefinitionId, Is.EqualTo(StationStageId));
-            Assert.That(firstReceipt.RequestedScenePath, Is.EqualTo(CorridorScenePath));
-            Assert.That(firstReceipt.ActualScenePath, Is.EqualTo(CorridorScenePath));
-            Assert.That(firstReceipt.RequestedSceneName, Is.EqualTo(corridor.name));
-            Assert.That(firstReceipt.ActualSceneName, Is.EqualTo(corridor.name));
-            Assert.That(firstReceipt.FromHandoffPending, Is.False);
-            Assert.That(firstReceipt.ToDestinationActive, Is.True);
-            Assert.That(firstReceipt.TransitionTokenDigest, Has.Length.EqualTo(64));
-            Assert.That(firstReceipt.CanonicalDigest, Has.Length.EqualTo(64));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.HandoffPending));
+            Assert.That(firstDispatch, Is.Not.Null);
+            Assert.That(firstDispatch.Token, Is.SameAs(context.PendingHandoffToken));
+            Assert.That(firstDispatch.Token.RunId, Is.EqualTo(corridorRunId));
+            Assert.That(firstDispatch.Token.RouteDigest, Is.EqualTo(RouteDigest));
+            Assert.That(firstDispatch.Token.SourceSegmentId, Is.EqualTo("corridor_intro_tutorial"));
+            Assert.That(firstDispatch.Token.DestinationSegmentId, Is.EqualTo("station_entry_combat"));
+            Assert.That(firstDispatch.Token.DestinationStageDefinitionId, Is.EqualTo(StationStageId));
+            Assert.That(firstDispatch.DestinationScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(firstDispatch.DestinationSceneName, Is.EqualTo("OlympusStationCombatStage"));
+            Assert.That(firstDispatch.LoaderGeneration, Is.GreaterThan(0));
+            Assert.That(firstDispatch.Token.CanonicalDigest, Has.Length.EqualTo(64));
+            Assert.That(firstDispatch.CanonicalDigest, Has.Length.EqualTo(64));
 
             Assert.That(
-                context.TryAdvanceCurrentSegmentInScene(
+                context.TrySealCurrentSegmentForSingleLoad(
                     StationEntryConditionId,
-                    corridor,
-                    out StageSegmentEntryReceipt duplicateReceipt,
+                    out StageRunSingleLoadDispatch duplicateDispatch,
                     out string duplicateError),
                 Is.True,
                 duplicateError);
-            Assert.That(duplicateReceipt, Is.SameAs(firstReceipt));
+            Assert.That(duplicateDispatch, Is.SameAs(firstDispatch));
+
+            yield return LoadSingleScene(StationScenePath);
 
             Scene station = SceneManager.GetActiveScene();
             Assert.IsTrue(
-                station.handle == corridorHandle,
-                $"In-scene Station activation must retain Corridor scene handle {corridorHandle}; "
+                station.handle != corridorHandle,
+                $"SingleLoad Station activation must replace Corridor scene handle {corridorHandle}; "
                 + $"actual={station.handle}.");
             StageDefinitionSceneBinding stationBinding = RequireStationSceneBinding(station);
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            Assert.That(executor.SceneBinding, Is.SameAs(stationBinding));
+            Assert.That(stationBinding.AnchorPointCount, Is.Zero);
+            Assert.That(stationBinding.StageDefinition.AnchorCount, Is.Zero);
+            Assert.That(stationBinding.StageDefinition.SpawnCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(station), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(station), Is.Zero);
             Assert.That(StageRunRuntime.ActiveContext, Is.SameAs(context));
+            Assert.That(context.Identity.RunId, Is.EqualTo(corridorRunId));
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
             Assert.That(context.CurrentSegment.SegmentId, Is.EqualTo("station_entry_combat"));
             Assert.That(context.PendingHandoffToken, Is.Null);
@@ -2468,10 +2472,15 @@ namespace DimensionBrawl.Tests
             Assert.That(context.HandoffTerminalReceipt, Is.Not.Null);
             Assert.That(
                 context.SegmentEntryReceipt.TransitionTokenId,
-                Is.EqualTo(firstReceipt.TransitionTokenId));
+                Is.EqualTo(firstDispatch.Token.TokenId));
             Assert.That(
                 context.SegmentEntryReceipt.TransitionTokenDigest,
-                Is.EqualTo(firstReceipt.TransitionTokenDigest));
+                Is.EqualTo(firstDispatch.Token.CanonicalDigest));
+            Assert.That(context.SegmentEntryReceipt.FromHandoffPending, Is.True);
+            Assert.That(context.SegmentEntryReceipt.RequestedScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(context.SegmentEntryReceipt.ActualScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(context.SegmentEntryReceipt.RequestedSceneName, Is.EqualTo(station.name));
+            Assert.That(context.SegmentEntryReceipt.ActualSceneName, Is.EqualTo(station.name));
             Assert.That(
                 context.HandoffTerminalReceipt.Disposition,
                 Is.EqualTo(StageSegmentHandoffClosedDisposition.DestinationBound));
@@ -2481,8 +2490,11 @@ namespace DimensionBrawl.Tests
             Assert.That(
                 context.HandoffTerminalReceipt.SegmentEntryReceiptDigest,
                 Is.EqualTo(context.SegmentEntryReceipt.CanonicalDigest));
-            Assert.That(context.HandoffTerminalReceipt.LoaderGeneration, Is.Zero);
-            Assert.That(context.HandoffTerminalReceipt.LoaderGenerationInvalidated, Is.False);
+            Assert.That(
+                context.HandoffTerminalReceipt.LoaderGeneration,
+                Is.EqualTo(firstDispatch.LoaderGeneration));
+            Assert.That(context.HandoffTerminalReceipt.LoaderGeneration, Is.GreaterThan(0));
+            Assert.That(context.HandoffTerminalReceipt.LoaderGenerationInvalidated, Is.True);
             Assert.That(context.HandoffTerminalReceipt.PendingLoadCallbackCount, Is.Zero);
             Assert.That(context.HandoffTerminalReceipt.PendingBindCallbackCount, Is.Zero);
             Assert.That(context.HandoffTerminalReceipt.PendingUnloadCallbackCount, Is.Zero);
@@ -2988,7 +3000,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator ForeignHostCannotAdvanceCanonicalRouteInSceneOrIssueLoaderGeneration()
+        public IEnumerator CanonicalSingleLoadBoundaryRejectsInSceneAdvanceWithoutIssuingHandoff()
         {
             StageRunRuntime.ResetForTests();
             yield return LoadSingleScene(CorridorScenePath);
@@ -2998,35 +3010,22 @@ namespace DimensionBrawl.Tests
                 context.TrySealTutorialRouteCompletion(out string tutorialError),
                 Is.True,
                 tutorialError);
-
-            EditorSceneManager.LoadSceneInPlayMode(
-                LobbyScenePath,
-                new LoadSceneParameters(LoadSceneMode.Additive));
-            yield return null;
-            yield return null;
-            Scene foreignHost = SceneManager.GetSceneByPath(LobbyScenePath);
-            Assert.That(foreignHost.IsValid() && foreignHost.isLoaded, Is.True);
+            Scene corridor = SceneManager.GetActiveScene();
 
             Assert.That(
                 context.TryAdvanceCurrentSegmentInScene(
                     StationEntryConditionId,
-                    foreignHost,
+                    corridor,
                     out StageSegmentEntryReceipt receipt,
                     out string advanceError),
                 Is.False);
             Assert.That(receipt, Is.Null);
-            Assert.That(advanceError, Does.Contain("does not match"));
+            Assert.That(advanceError, Does.Contain("not a valid in-scene advance boundary"));
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Faulted));
             Assert.That(context.PendingHandoffToken, Is.Null);
             Assert.That(context.SegmentEntryReceipt, Is.Null);
             Assert.That(context.HandoffTerminalReceipt, Is.Null);
             Assert.That(context.AbortRecord, Is.Null);
-
-            AsyncOperation unload = SceneManager.UnloadSceneAsync(foreignHost);
-            if (unload != null)
-            {
-                yield return unload;
-            }
         }
 
         [UnityTest]
@@ -3593,66 +3592,13 @@ namespace DimensionBrawl.Tests
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(station);
             EncounterTerminalResolutionCoordinator coordinator = encounter.TerminalCoordinator;
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
+            StageDefinitionSceneBinding binding = RequireStationSceneBinding(station);
 
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.TicketCount, Is.EqualTo(2));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.EqualTo(2));
-            Assert.That(executor.ActiveParticipationCount, Is.EqualTo(2));
-            Assert.That(executor.HasCombatantParticipation, Is.True);
-            Assert.That(executor.HasSceneLease, Is.True);
+            Assert.That(binding.AnchorPointCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(station), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(station), Is.Zero);
 
-            StageAddEncounterTicketSnapshot rangedTicket = executor.GetTicketSnapshot(1);
-            BasicSoldierProjectileAttackDriver rangedDriver = rangedTicket.ProjectileDriver;
-            Assert.That(rangedDriver, Is.Not.Null);
-            MoveCombatSubjectToAnchor(
-                encounter.PlayerHealth,
-                RequireSingleSceneTransform(station, "PlayerForwardBoundaryAnchor"));
-            float projectileDeadline = Time.realtimeSinceStartup + 18f;
-            while (rangedDriver.ActiveProjectileCount == 0)
-            {
-                Assert.Less(
-                    Time.realtimeSinceStartup,
-                    projectileDeadline,
-                    "Timed out waiting for an in-flight RifleCrossfire projectile before scene unload.");
-                yield return null;
-            }
-
-            int executorDisableCallbackCount = 0;
-            StageCountOneEncounterState executorStateAtDisable = default;
-            int executorCancellationCountAtDisable = -1;
-            int executorCompletionCountAtDisable = -1;
-            bool executorOwnershipClearedAtDisable = false;
-            bool executorParticipationClearedAtDisable = false;
-            bool executorSceneLeaseReleasedAtDisable = false;
-            int activeProjectilesAtDisable = -1;
-            StageCountOneExecutorShutdownProbe shutdownProbe =
-                executor.gameObject.AddComponent<StageCountOneExecutorShutdownProbe>();
-            shutdownProbe.Disabled = () =>
-            {
-                executorDisableCallbackCount++;
-                executorStateAtDisable = executor.State;
-                executorCancellationCountAtDisable = executor.CancellationCount;
-                executorCompletionCountAtDisable = executor.CompletionCount;
-                executorOwnershipClearedAtDisable = executor.OwnedObjectCount == 0
-                    && executor.OwnedRoot == null
-                    && executor.OwnedHealth == null
-                    && executor.OwnedAgent == null
-                    && executor.OwnedSensor == null;
-                executorParticipationClearedAtDisable = !executor.HasCombatantParticipation;
-                executorSceneLeaseReleasedAtDisable = !executor.HasSceneLease;
-                activeProjectilesAtDisable = rangedDriver.ActiveProjectileCount;
-            };
             SceneManager.CreateScene("StageRunRouteUnloadHost");
-
             AsyncOperation unload = SceneManager.UnloadSceneAsync(station);
             Assert.That(unload, Is.Not.Null);
             while (!unload.isDone)
@@ -3661,28 +3607,6 @@ namespace DimensionBrawl.Tests
             }
 
             yield return null;
-            Assert.That(executorDisableCallbackCount, Is.EqualTo(1));
-            Assert.That(
-                executorStateAtDisable,
-                Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executorCancellationCountAtDisable, Is.EqualTo(1));
-            Assert.That(executorCompletionCountAtDisable, Is.Zero);
-            Assert.That(
-                executorOwnershipClearedAtDisable,
-                Is.True,
-                "Scene unload must clear the runtime Add ownership before the executor disable boundary returns.");
-            Assert.That(
-                executorParticipationClearedAtDisable,
-                Is.True,
-                "Scene unload must clear the Add participation lease before the executor disable boundary returns.");
-            Assert.That(
-                executorSceneLeaseReleasedAtDisable,
-                Is.True,
-                "Scene unload must release the count-one scene lease before the executor disable boundary returns.");
-            Assert.That(
-                activeProjectilesAtDisable,
-                Is.Zero,
-                "Scene unload must synchronously deactivate the in-flight RifleCrossfire projectile.");
             Assert.That(coordinator.State, Is.EqualTo(EncounterTerminalCoordinatorState.Cancelled));
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.Disposed));
             Assert.That(context.CommittedSummary, Is.Null);
@@ -3700,957 +3624,58 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator LegacyStandaloneStationCannotActivateCountOneAddWithoutCanonicalRun()
+        public IEnumerator LegacyStandaloneStationRetainsBossOnlyAuthoringWithoutCanonicalRun()
         {
             StageRunRuntime.ResetForTests();
             yield return LoadSingleScene(StationScenePath);
             yield return null;
 
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(SceneManager.GetActiveScene());
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Faulted));
-            Assert.That(
-                executor.LastError,
-                Does.Contain("does not own the executor scene path"));
-            Assert.That(executor.ActivationCount, Is.Zero);
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.HasSceneLease, Is.False);
+            Scene station = SceneManager.GetActiveScene();
+            StageDefinitionSceneBinding binding = RequireStationSceneBinding(station);
+            Assert.That(binding.AnchorPointCount, Is.Zero);
+            Assert.That(binding.StageDefinition.AnchorCount, Is.Zero);
+            Assert.That(binding.StageDefinition.SpawnCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(station), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(station), Is.Zero);
+            Assert.That(CountSceneComponents<CombatEncounterController>(station), Is.EqualTo(1));
         }
 
         [UnityTest]
-        public IEnumerator CanonicalStationStagesBothOrderedAddsInactiveUntilGuideRelease()
+        public IEnumerator CanonicalStationGuideReleaseStartsBossOnlyEncounterWithoutDynamicAdds()
         {
             StageRunRuntime.ResetForTests();
             yield return EnterCanonicalStation(releaseEntryGuide: false);
 
             Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float stagingDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.WaitingForActivation
-                || executor.TicketCount != 2)
-            {
-                Assert.That(executor.State, Is.Not.EqualTo(StageCountOneEncounterState.Faulted), executor.LastError);
-                Assert.Less(Time.realtimeSinceStartup, stagingDeadline, executor.LastError);
-                yield return null;
-            }
-
-            Assert.That(executor.PendingTicketCount, Is.EqualTo(2));
-            Assert.That(executor.ActiveTicketCount, Is.Zero);
-            Assert.That(executor.ActivatedTicketCount, Is.Zero);
-            Assert.That(executor.OwnedObjectCount, Is.EqualTo(2));
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.PlayerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(executor.HasSceneLease, Is.True);
-            Assert.That(executor.LastReceipt, Is.Null);
-            for (int i = 0; i < executor.TicketCount; i++)
-            {
-                StageAddEncounterTicketSnapshot staged = executor.GetTicketSnapshot(i);
-                Assert.That(staged.SourceOrdinal, Is.EqualTo(i));
-                Assert.That(staged.State, Is.EqualTo(StageAddEncounterTicketState.Pending));
-                Assert.That(staged.ActivationSequence, Is.Zero);
-                Assert.That(staged.TerminalSequence, Is.Zero);
-                Assert.That(staged.Root, Is.Not.Null);
-                Assert.That(staged.Root.activeSelf, Is.False);
-                Assert.That(staged.ParticipationRegistered, Is.False);
-            }
-
-            yield return ReleaseStationEntryGuide(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.ActiveTicketCount != 2)
-            {
-                Assert.That(executor.State, Is.Not.EqualTo(StageCountOneEncounterState.Faulted), executor.LastError);
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            RequireOrderedActiveAddTickets(executor);
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationLaterTicketActivationFailureRollsBackWholeStagedPlan()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation(releaseEntryGuide: false);
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float stagingDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.WaitingForActivation
-                || executor.TicketCount != 2)
-            {
-                Assert.That(executor.State, Is.Not.EqualTo(StageCountOneEncounterState.Faulted), executor.LastError);
-                Assert.Less(Time.realtimeSinceStartup, stagingDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot left = executor.GetTicketSnapshot(0);
-            StageAddEncounterTicketSnapshot right = executor.GetTicketSnapshot(1);
-            Assert.That(left.Root.activeSelf, Is.False);
-            Assert.That(right.Root.activeSelf, Is.False);
-            right.Sensor.enabled = false;
-
-            yield return ReleaseStationEntryGuide(station);
-            float faultDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Faulted)
-            {
-                Assert.Less(Time.realtimeSinceStartup, faultDeadline, executor.LastError);
-                yield return null;
-            }
-
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(1));
-            Assert.That(executor.GetTicketSnapshot(0).State, Is.EqualTo(StageAddEncounterTicketState.Cancelled));
-            Assert.That(executor.GetTicketSnapshot(1).State, Is.EqualTo(StageAddEncounterTicketState.Faulted));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.PlayerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            AssertCapturedAddRootsInactive(new[] { left, right });
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(executor.LastReceipt.FinalState, Is.EqualTo(StageCountOneEncounterState.Faulted));
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string rollbackReceiptError),
-                Is.True,
-                rollbackReceiptError);
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationPendingRangedDriverLossFaultsActivationAndRollsBackPlan()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation(releaseEntryGuide: false);
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float stagingDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.WaitingForActivation
-                || executor.TicketCount != 2)
-            {
-                Assert.That(executor.State, Is.Not.EqualTo(StageCountOneEncounterState.Faulted), executor.LastError);
-                Assert.Less(Time.realtimeSinceStartup, stagingDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot left = executor.GetTicketSnapshot(0);
-            StageAddEncounterTicketSnapshot right = executor.GetTicketSnapshot(1);
-            Assert.That(right.ProjectileDriver, Is.Not.Null);
-            right.ProjectileDriver.enabled = false;
-
-            yield return ReleaseStationEntryGuide(station);
-            float faultDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Faulted)
-            {
-                Assert.Less(Time.realtimeSinceStartup, faultDeadline, executor.LastError);
-                yield return null;
-            }
-
-            Assert.That(executor.LastError, Does.Contain("projectile participation lease"));
-            Assert.That(executor.GetTicketSnapshot(0).State, Is.EqualTo(StageAddEncounterTicketState.Cancelled));
-            Assert.That(executor.GetTicketSnapshot(1).State, Is.EqualTo(StageAddEncounterTicketState.Faulted));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            AssertCapturedAddRootsInactive(new[] { left, right });
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string receiptError),
-                Is.True,
-                receiptError);
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationActiveRangedDriverLossFaultsAndCleansInFlightProjectile()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(SceneManager.GetActiveScene());
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active
-                || executor.ActiveTicketCount != 2)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] tickets = RequireOrderedActiveAddTickets(executor);
-            BasicSoldierProjectileAttackDriver rangedDriver = tickets[1].ProjectileDriver;
-            Assert.That(rangedDriver, Is.Not.Null);
-            CombatEncounterController encounter =
-                RequireSingleSceneComponent<CombatEncounterController>(SceneManager.GetActiveScene());
-            Vector3 firingLaneDirection = Vector3.ProjectOnPlane(
-                encounter.PlayerHealth.transform.position - tickets[1].Health.transform.position,
-                Vector3.up).normalized;
-            if (firingLaneDirection.sqrMagnitude < 0.99f)
-            {
-                firingLaneDirection = Vector3.forward;
-            }
-
-            MoveCombatSubjectToPosition(
-                encounter.PlayerHealth,
-                tickets[1].Health.transform.position + firingLaneDirection * 4.5f);
-            yield return null;
-
-            float projectileDeadline = Time.realtimeSinceStartup + 8f;
-            while (rangedDriver.ActiveProjectileCount == 0)
-            {
-                Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active), executor.LastError);
-                Assert.Less(
-                    Time.realtimeSinceStartup,
-                    projectileDeadline,
-                    "The RifleCrossfire ticket did not produce an in-flight projectile before lease loss. "
-                    + $"fired={rangedDriver.FiredCount}, lastImpact={rangedDriver.LastFiredProjectile?.LastImpactResult}, "
-                    + $"distance={Vector3.ProjectOnPlane(tickets[1].Health.transform.position - encounter.PlayerHealth.transform.position, Vector3.up).magnitude:F2}.");
-                yield return null;
-            }
-
-            rangedDriver.enabled = false;
-            Assert.That(
-                rangedDriver.ActiveProjectileCount,
-                Is.Zero,
-                "Driver disable must synchronously park every in-flight projectile.");
-            float faultDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Faulted)
-            {
-                Assert.Less(Time.realtimeSinceStartup, faultDeadline, executor.LastError);
-                yield return null;
-            }
-
-            Assert.That(executor.LastError, Does.Contain("projectile participation lease"));
-            Assert.That(executor.GetTicketSnapshot(0).State, Is.EqualTo(StageAddEncounterTicketState.Cancelled));
-            Assert.That(executor.GetTicketSnapshot(1).State, Is.EqualTo(StageAddEncounterTicketState.Faulted));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            AssertCapturedAddRootsInactive(tickets);
-            Assert.That(rangedDriver.ActiveProjectileCount, Is.Zero);
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string receiptError),
-                Is.True,
-                receiptError);
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationGuideReleaseActivatesAndCompletesOrderedTwoAddPlan()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float deadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, deadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] addTickets =
-                RequireOrderedActiveAddTickets(executor);
-            CombatHealth addHealth = addTickets[0].Health;
-            ICombatAiAgent addAgent = addTickets[0].Agent;
-            CombatTargetSensor addSensor = addTickets[0].Sensor;
-            CombatHealth secondAddHealth = addTickets[1].Health;
-            ICombatAiAgent secondAddAgent = addTickets[1].Agent;
-            CombatTargetSensor secondAddSensor = addTickets[1].Sensor;
-            BasicSoldierProjectileAttackDriver rangedDriver = addTickets[1].ProjectileDriver;
-            Transform rangedProjectileRoot = addTickets[1].ProjectileRoot;
-            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
-            GameObject ownedRoot = addTickets[0].Root;
-            GameObject secondOwnedRoot = addTickets[1].Root;
+            StageDefinitionSceneBinding binding = RequireStationSceneBinding(station);
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(station);
-            CombatHealth playerHealth = encounter.PlayerHealth;
-            CombatHealth bossHealth = encounter.EnemyHealth;
-            Assert.That(addHealth, Is.Not.Null);
-            Assert.That(addHealth.Team, Is.EqualTo(DamageTeam.Enemy));
-            Assert.That(addHealth.IsAlive, Is.True);
-            Assert.That(addAgent, Is.Not.Null);
-            Assert.That(addAgent.SelfHealth, Is.SameAs(addHealth));
-            Assert.That(addAgent.PatternProfile, Is.Not.Null);
-            Assert.That(addAgent.PatternProfile.PatternId, Is.EqualTo("HeavyWindup"));
-            Assert.That(addAgent.PatternProfile.AttackShape, Is.EqualTo(CombatAiAttackShape.MeleeArc));
-            Assert.That(addSensor, Is.Not.Null);
-            Assert.That(
-                addSensor.SearchRadius,
-                Is.GreaterThanOrEqualTo(addAgent.PatternProfile.AttackRange));
-            Assert.That(addAgent.TargetSensor, Is.SameAs(addSensor));
-            Assert.That(addSensor.SelfHealth, Is.SameAs(addHealth));
-            Assert.That(secondAddHealth, Is.Not.Null);
-            Assert.That(secondAddAgent, Is.Not.Null);
-            Assert.That(secondAddAgent.PatternProfile.PatternId, Is.EqualTo("RifleCrossfire"));
-            Assert.That(
-                secondAddAgent.PatternProfile.AttackShape,
-                Is.EqualTo(CombatAiAttackShape.ProjectileLine));
-            Assert.That(rangedDriver, Is.Not.Null);
-            Assert.That(rangedProjectileRoot, Is.Not.Null);
-            Assert.That(rangedDriver.SourceHealth, Is.SameAs(secondAddHealth));
-            Assert.That(rangedDriver.TargetSensor, Is.SameAs(secondAddSensor));
-            Assert.That(rangedDriver.RuntimeProjectileRoot, Is.SameAs(rangedProjectileRoot));
-            Assert.That(rangedDriver.HasIndependentRuntimeProjectileRoot, Is.True);
-            Assert.That(rangedProjectileRoot.parent.gameObject, Is.SameAs(secondOwnedRoot));
-            Assert.That(playerHealth, Is.Not.Null);
-            Assert.That(bossHealth, Is.Not.Null);
-            Assert.That(bossHealth, Is.Not.SameAs(addHealth));
-            Assert.That(playerTargetSelector, Is.Not.Null);
-            Assert.That(playerTargetSelector.SelfHealth, Is.SameAs(playerHealth));
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.True);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.EqualTo(2));
-            Assert.That(executor.HasCombatantParticipation, Is.True);
-            Assert.That(addSensor.TargetCandidateCount, Is.EqualTo(1));
-            Assert.That(addSensor.ContainsTargetCandidate(playerHealth), Is.True);
-            if (addSensor.TryGetCurrentTarget(out _, out CombatHealth initialSensedHealth))
-            {
-                Assert.That(initialSensedHealth, Is.SameAs(playerHealth));
-            }
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.OwnedObjectCount, Is.EqualTo(2));
-            Assert.That(executor.HasSceneLease, Is.True);
-            Assert.That(executor.TryActivate(out string duplicateError), Is.True, duplicateError);
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
+            PlayerCombatTargetSelector targetSelector =
+                RequireSingleSceneComponent<PlayerCombatTargetSelector>(station);
 
-            Vector3 lockViewDirection = Vector3.ProjectOnPlane(
-                addHealth.transform.position - playerHealth.transform.position,
-                Vector3.up).normalized;
-            Assert.That(lockViewDirection.sqrMagnitude, Is.GreaterThan(0.99f));
-            Assert.That(
-                playerTargetSelector.TryGetBestLockTarget(
-                    playerHealth.transform.position,
-                    lockViewDirection,
-                    50f,
-                    15f,
-                    addHealth,
-                    10f,
-                    out CombatHealth lockTarget,
-                    out _,
-                    out _),
-                Is.True,
-                "The player's directed lock query did not admit the runtime Add candidate.");
-            Assert.That(lockTarget, Is.SameAs(addHealth));
+            Assert.That(binding.AnchorPointCount, Is.Zero);
+            Assert.That(binding.StageDefinition.AnchorCount, Is.Zero);
+            Assert.That(binding.StageDefinition.SpawnCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(station), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(station), Is.Zero);
+            Assert.That(encounter.EnemyHealth, Is.Not.Null);
+            Assert.That(targetSelector.ContainsAuthoredTargetCandidate(encounter.EnemyHealth), Is.True);
+            Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.Zero);
 
-            Vector3 initialAddPosition = addHealth.transform.position;
-            float initialPlanarDistance = Vector3.ProjectOnPlane(
-                addHealth.transform.position - playerHealth.transform.position,
-                Vector3.up).magnitude;
-            float closestPlanarDistance = initialPlanarDistance;
-            float approachProofDeadline = Time.realtimeSinceStartup + 3f;
-            while (initialPlanarDistance - closestPlanarDistance < 0.25f)
+            yield return ReleaseStationEntryGuide(station);
+            float runningDeadline = Time.realtimeSinceStartup + 2f;
+            while (!encounter.IsRunning)
             {
-                closestPlanarDistance = Mathf.Min(
-                    closestPlanarDistance,
-                    Vector3.ProjectOnPlane(
-                        addHealth.transform.position - playerHealth.transform.position,
-                        Vector3.up).magnitude);
-                Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
                 Assert.Less(
                     Time.realtimeSinceStartup,
-                    approachProofDeadline,
-                    "The runtime Add did not begin authored approach motion toward the lower entry position.");
+                    runningDeadline,
+                    $"Boss-only Station encounter did not start: {encounter.Diagnostic.Reason}: "
+                    + encounter.Diagnostic.Message);
                 yield return null;
             }
 
-            Transform playerForwardBoundary = RequireSingleSceneTransform(
-                station,
-                "PlayerForwardBoundaryAnchor");
-            MoveCombatSubjectToAnchor(playerHealth, playerForwardBoundary);
-            yield return null;
-
-            float playerHealthBeforeAddAttack = playerHealth.CurrentHealth;
-            bool observedWindup = addAgent.CurrentPatternState == CombatAiPatternState.Windup;
-            int exactAddDamageCount = 0;
-            DamageInfo exactAddDamage = default;
-            playerHealth.Damaged += HandlePlayerDamaged;
-            addAgent.PatternStateChanged += HandleAddPatternStateChanged;
-            try
-            {
-                float attackDeadline = Time.realtimeSinceStartup + 18f;
-                while (exactAddDamageCount == 0)
-                {
-                    closestPlanarDistance = Mathf.Min(
-                        closestPlanarDistance,
-                        Vector3.ProjectOnPlane(
-                            addHealth.transform.position - playerHealth.transform.position,
-                            Vector3.up).magnitude);
-                    observedWindup |= addAgent.CurrentPatternState == CombatAiPatternState.Windup;
-                    Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
-                    Assert.That(addHealth.IsAlive, Is.True);
-                    Assert.Less(
-                        Time.realtimeSinceStartup,
-                        attackDeadline,
-                        "Timed out waiting for the runtime Add to approach, wind up, and damage the player. "
-                        + $"initialDistance={initialPlanarDistance:F2}, closestDistance={closestPlanarDistance:F2}, "
-                        + $"currentDistance={Vector3.ProjectOnPlane(addHealth.transform.position - playerHealth.transform.position, Vector3.up).magnitude:F2}, "
-                        + $"initialAdd={initialAddPosition:F2}, currentAdd={addHealth.transform.position:F2}, player={playerHealth.transform.position:F2}, "
-                        + $"state={addAgent.CurrentPatternState}, sensorTarget={addSensor.CurrentTargetHealth?.name ?? "none"}, "
-                        + $"timeScale={Time.timeScale:F2}.");
-                    yield return null;
-                }
-            }
-            finally
-            {
-                playerHealth.Damaged -= HandlePlayerDamaged;
-                addAgent.PatternStateChanged -= HandleAddPatternStateChanged;
-            }
-
-            Assert.That(
-                closestPlanarDistance,
-                Is.LessThan(initialPlanarDistance - 0.1f),
-                "The runtime Add never closed measurable planar distance toward the terminal player.");
-            Assert.That(observedWindup, Is.True, "The runtime Add never published a Windup state.");
-            Assert.That(exactAddDamageCount, Is.EqualTo(1));
-            Assert.That(exactAddDamage.Source, Is.SameAs(addHealth));
-            Assert.That(exactAddDamage.SourceTeam, Is.EqualTo(DamageTeam.Enemy));
-            Assert.That(exactAddDamage.Amount, Is.GreaterThan(0f));
-            Assert.That(playerHealth.CurrentHealth, Is.LessThan(playerHealthBeforeAddAttack));
-            Assert.That(
-                addSensor.TryGetCurrentTarget(
-                    out Transform sensedPlayerTransform,
-                    out CombatHealth sensedPlayerHealth),
-                Is.True,
-                "The runtime Add reached attack range without its sensor acquiring the exact player.");
-            Assert.That(sensedPlayerHealth, Is.SameAs(playerHealth));
-            Assert.That(sensedPlayerTransform, Is.SameAs(playerHealth.transform));
-
-            Assert.That(ApplyLethalDamage(addHealth, DamageTeam.Player), Is.True);
-            StageAddEncounterTicketSnapshot completedFirst = executor.GetTicketSnapshot(0);
-            StageAddEncounterTicketSnapshot survivingSecond = executor.GetTicketSnapshot(1);
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
-            Assert.That(executor.CompletionCount, Is.Zero);
-            Assert.That(executor.LastReceipt, Is.Null);
-            Assert.That(executor.CompletedTicketCount, Is.EqualTo(1));
-            Assert.That(executor.ActiveTicketCount, Is.EqualTo(1));
-            Assert.That(executor.OwnedObjectCount, Is.EqualTo(1));
-            Assert.That(executor.ActiveParticipationCount, Is.EqualTo(1));
-            Assert.That(completedFirst.State, Is.EqualTo(StageAddEncounterTicketState.Completed));
-            Assert.That(completedFirst.TerminalSequence, Is.GreaterThan(0));
-            Assert.That(survivingSecond.State, Is.EqualTo(StageAddEncounterTicketState.Active));
-            Assert.That(survivingSecond.Health, Is.SameAs(secondAddHealth));
-            Assert.That(secondAddHealth.IsAlive, Is.True);
-            Assert.That(secondOwnedRoot.activeSelf, Is.True);
-            Assert.That(ownedRoot.activeSelf, Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.True);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.EqualTo(1));
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(bossHealth.IsAlive, Is.True);
-
-            Vector3 rangedLaneDirection = Vector3.ProjectOnPlane(
-                playerHealth.transform.position - secondAddHealth.transform.position,
-                Vector3.up).normalized;
-            if (rangedLaneDirection.sqrMagnitude < 0.99f)
-            {
-                rangedLaneDirection = Vector3.forward;
-            }
-
-            MoveCombatSubjectToPosition(
-                playerHealth,
-                secondAddHealth.transform.position + rangedLaneDirection * 4.5f);
-            yield return null;
-
-            int exactRangedDamageCount = 0;
-            DamageInfo exactRangedDamage = default;
-            playerHealth.Damaged += HandleRangedPlayerDamaged;
-            try
-            {
-                float rangedHitDeadline = Time.realtimeSinceStartup + 10f;
-                while (exactRangedDamageCount == 0)
-                {
-                    Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
-                    Assert.Less(
-                        Time.realtimeSinceStartup,
-                        rangedHitDeadline,
-                        "The admitted RifleCrossfire Add did not hit the terminal player with a physical projectile. "
-                        + $"fired={rangedDriver.FiredCount}, active={rangedDriver.ActiveProjectileCount}, "
-                        + $"distance={Vector3.ProjectOnPlane(secondAddHealth.transform.position - playerHealth.transform.position, Vector3.up).magnitude:F2}, "
-                        + $"lastImpact={rangedDriver.LastFiredProjectile?.LastImpactResult}, "
-                        + $"lastTarget={rangedDriver.LastFiredProjectile?.LastImpactTargetHealth?.name ?? "none"}, "
-                        + $"projectile={rangedDriver.LastFiredProjectile?.transform.position.ToString("F2") ?? "none"}, "
-                        + $"player={playerHealth.transform.position:F2}, source={secondAddHealth.transform.position:F2}.");
-                    yield return null;
-                }
-            }
-            finally
-            {
-                playerHealth.Damaged -= HandleRangedPlayerDamaged;
-            }
-
-            Assert.That(rangedDriver.FiredCount, Is.GreaterThan(0));
-            Assert.That(rangedDriver.OwnedProjectileCount, Is.InRange(1, rangedDriver.MaxOwnedProjectileCount));
-            Assert.That(rangedDriver.ActiveProjectileCount, Is.LessThanOrEqualTo(rangedDriver.OwnedProjectileCount));
-            Assert.That(exactRangedDamageCount, Is.EqualTo(1));
-            Assert.That(exactRangedDamage.Source, Is.SameAs(secondAddHealth));
-            Assert.That(exactRangedDamage.SourceTeam, Is.EqualTo(DamageTeam.Enemy));
-            Assert.That(
-                exactRangedDamage.Amount,
-                Is.EqualTo(secondAddAgent.PatternProfile.Damage).Within(0.001f));
-            Assert.That(
-                exactRangedDamage.HitStopSeconds,
-                Is.EqualTo(secondAddAgent.PatternProfile.HitStopSeconds).Within(0.001f));
-            Assert.That(
-                exactRangedDamage.ResponsePolicy,
-                Is.EqualTo(secondAddAgent.PatternProfile.DamageResponsePolicy));
-            Assert.That(
-                exactRangedDamage.ControlLockPolicy,
-                Is.EqualTo(secondAddAgent.PatternProfile.ControlLockPolicy));
-
-            Assert.That(ApplyLethalDamage(secondAddHealth, DamageTeam.Player), Is.True);
-
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Completed));
-            Assert.That(executor.CompletionCount, Is.EqualTo(1));
-            Assert.That(executor.CancellationCount, Is.Zero);
-            Assert.That(executor.FaultCount, Is.Zero);
-            Assert.That(executor.CompletedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.OwnedRoot, Is.Null);
-            Assert.That(executor.OwnedHealth, Is.Null);
-            Assert.That(executor.OwnedAgent, Is.Null);
-            Assert.That(executor.OwnedSensor, Is.Null);
-            Assert.That(executor.HasCombatantParticipation, Is.False);
-            Assert.That(executor.HasSceneLease, Is.True);
-            Assert.That(ownedRoot == null || !ownedRoot.activeSelf, Is.True);
-            Assert.That(secondOwnedRoot == null || !secondOwnedRoot.activeSelf, Is.True);
-            Assert.That(rangedDriver.ActiveProjectileCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.False);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(secondAddSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(secondAddSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(executor.LastReceipt.FinalState, Is.EqualTo(StageCountOneEncounterState.Completed));
-            Assert.That(executor.LastReceipt.TicketCount, Is.EqualTo(2));
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string receiptError),
-                Is.True,
-                receiptError);
-            Assert.That(
-                executor.LastReceipt.GetTicket(0).ActivationSequence,
-                Is.LessThan(executor.LastReceipt.GetTicket(1).ActivationSequence));
-            Assert.That(
-                executor.LastReceipt.GetTicket(0).FinalState,
-                Is.EqualTo(StageAddEncounterTicketState.Completed));
-            Assert.That(
-                executor.LastReceipt.GetTicket(1).FinalState,
-                Is.EqualTo(StageAddEncounterTicketState.Completed));
-            Assert.That(
-                executor.LastReceipt.GetTicket(0).TerminalSequence,
-                Is.LessThan(executor.LastReceipt.GetTicket(1).TerminalSequence));
-            Assert.That(
-                executor.LastReceipt.CloseSequence,
-                Is.GreaterThan(executor.LastReceipt.GetTicket(1).TerminalSequence));
-
-            StageAddEncounterPlanReceipt completedReceipt = executor.LastReceipt;
-            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
-            Assert.That(executor.LastReceipt, Is.SameAs(completedReceipt));
-
-            void HandlePlayerDamaged(DamageInfo damageInfo)
-            {
-                if (!ReferenceEquals(damageInfo.Source, addHealth))
-                {
-                    return;
-                }
-
-                exactAddDamage = damageInfo;
-                exactAddDamageCount++;
-            }
-
-            void HandleAddPatternStateChanged(
-                CombatAiPatternState state,
-                CombatAiPatternProfile _)
-            {
-                observedWindup |= state == CombatAiPatternState.Windup;
-            }
-
-            void HandleRangedPlayerDamaged(DamageInfo damageInfo)
-            {
-                if (!ReferenceEquals(damageInfo.Source, secondAddHealth))
-                {
-                    return;
-                }
-
-                exactRangedDamage = damageInfo;
-                exactRangedDamageCount++;
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationTerminalOutcomeCancelsBothLivingOrderedAdds()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] addTickets =
-                RequireOrderedActiveAddTickets(executor);
-            CombatHealth addHealth = addTickets[0].Health;
-            ICombatAiAgent addAgent = addTickets[0].Agent;
-            CombatTargetSensor addSensor = addTickets[0].Sensor;
-            CombatHealth secondAddHealth = addTickets[1].Health;
-            CombatTargetSensor secondAddSensor = addTickets[1].Sensor;
-            BasicSoldierProjectileAttackDriver rangedDriver = addTickets[1].ProjectileDriver;
-            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
-            GameObject ownedRoot = addTickets[0].Root;
-            GameObject secondOwnedRoot = addTickets[1].Root;
-            CombatEncounterController encounter =
-                RequireSingleSceneComponent<CombatEncounterController>(station);
-            CombatHealth playerHealth = encounter.PlayerHealth;
-            CombatHealth bossHealth = encounter.EnemyHealth;
-            Assert.That(addHealth, Is.Not.Null);
-            Assert.That(addAgent, Is.Not.Null);
-            Assert.That(addSensor, Is.Not.Null);
-            Assert.That(rangedDriver, Is.Not.Null);
-            Assert.That(playerTargetSelector, Is.Not.Null);
-            Assert.That(ownedRoot, Is.Not.Null);
-            Assert.That(bossHealth, Is.Not.SameAs(addHealth));
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-
-            Transform playerForwardBoundary = RequireSingleSceneTransform(
-                station,
-                "PlayerForwardBoundaryAnchor");
-            MoveCombatSubjectToAnchor(playerHealth, playerForwardBoundary);
-            yield return null;
-
-            int exactAddDamageCount = 0;
-            playerHealth.Damaged += HandlePlayerDamaged;
-            float projectileDeadline = Time.realtimeSinceStartup + 18f;
-            while (rangedDriver.ActiveProjectileCount == 0)
-            {
-                Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Active));
-                Assert.That(addHealth.IsAlive, Is.True);
-                Assert.Less(
-                    Time.realtimeSinceStartup,
-                    projectileDeadline,
-                    "Timed out waiting to cancel the RifleCrossfire Add during physical projectile flight. "
-                    + $"distance={Vector3.ProjectOnPlane(addHealth.transform.position - playerHealth.transform.position, Vector3.up).magnitude:F2}, "
-                    + $"meleeState={addAgent.CurrentPatternState}, rangedFired={rangedDriver.FiredCount}, "
-                    + $"sensorTarget={addSensor.CurrentTargetHealth?.name ?? "none"}, "
-                    + $"timeScale={Time.timeScale:F2}.");
-                yield return null;
-            }
-
-            int damageCountAtTerminal = exactAddDamageCount;
-            Assert.That(ApplyLethalDamage(bossHealth, DamageTeam.Player), Is.True);
-
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.CompletionCount, Is.Zero);
-            Assert.That(executor.CancellationCount, Is.EqualTo(1));
-            Assert.That(executor.CancelledTicketCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            Assert.That(executor.HasCombatantParticipation, Is.False);
-            Assert.That(ownedRoot.activeSelf, Is.False);
-            Assert.That(secondOwnedRoot.activeSelf, Is.False);
-            Assert.That(rangedDriver.ActiveProjectileCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.False);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(secondAddSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(secondAddSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(executor.LastReceipt.FinalState, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string cancellationReceiptError),
-                Is.True,
-                cancellationReceiptError);
-
-            yield return new WaitForSecondsRealtime(1.25f);
-            playerHealth.Damaged -= HandlePlayerDamaged;
-            Assert.That(
-                exactAddDamageCount,
-                Is.EqualTo(damageCountAtTerminal),
-                "The cancelled Add applied delayed damage after the boss terminal boundary.");
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executor.CancellationCount, Is.EqualTo(1));
-
-            void HandlePlayerDamaged(DamageInfo damageInfo)
-            {
-                if (ReferenceEquals(damageInfo.Source, addHealth)
-                    || ReferenceEquals(damageInfo.Source, secondAddHealth))
-                {
-                    exactAddDamageCount++;
-                }
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationExecutorDisableSynchronouslyCleansOrderedAddsWithoutRespawn()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] addTickets =
-                RequireOrderedActiveAddTickets(executor);
-            CombatHealth addHealth = addTickets[0].Health;
-            CombatTargetSensor addSensor = addTickets[0].Sensor;
-            CombatHealth secondAddHealth = addTickets[1].Health;
-            CombatTargetSensor secondAddSensor = addTickets[1].Sensor;
-            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
-            GameObject ownedRoot = addTickets[0].Root;
-            GameObject secondOwnedRoot = addTickets[1].Root;
-            CombatHealth bossHealth =
-                RequireSingleSceneComponent<CombatEncounterController>(station).EnemyHealth;
-            Assert.That(addHealth, Is.Not.Null);
-            Assert.That(addSensor, Is.Not.Null);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(executor.HasSceneLease, Is.True);
-
-            executor.enabled = false;
-
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.CompletionCount, Is.Zero);
-            Assert.That(executor.CancellationCount, Is.EqualTo(1));
-            Assert.That(executor.CancelledTicketCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            Assert.That(executor.HasCombatantParticipation, Is.False);
-            Assert.That(executor.HasSceneLease, Is.False);
-            Assert.That(ownedRoot.activeSelf, Is.False);
-            Assert.That(secondOwnedRoot.activeSelf, Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.False);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(secondAddSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(secondAddSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string disableReceiptError),
-                Is.True,
-                disableReceiptError);
-            StageAddEncounterPlanReceipt disabledReceipt = executor.LastReceipt;
-
-            executor.enabled = true;
-            yield return null;
-            yield return null;
-
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.CancellationCount, Is.EqualTo(1));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.HasCombatantParticipation, Is.False);
-            Assert.That(executor.HasSceneLease, Is.False);
-            Assert.That(executor.LastReceipt, Is.SameAs(disabledReceipt));
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationExplicitRunLossSynchronouslyCancelsOrderedAdds()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] activeTickets =
-                RequireOrderedActiveAddTickets(executor);
-            StageRunRuntime.ResetForTests();
-            Assert.That(executor.TryActivate(out string runLossError), Is.False);
-            Assert.That(runLossError, Does.Contain("No canonical stage run"));
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(executor.CancellationCount, Is.EqualTo(1));
-            Assert.That(executor.CancelledTicketCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.ActiveParticipationCount, Is.Zero);
-            Assert.That(executor.PlayerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(executor.IsQuiescent, Is.True);
-            AssertCapturedAddRootsInactive(activeTickets);
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string runLossReceiptError),
-                Is.True,
-                runLossReceiptError);
-        }
-
-        [UnityTest]
-        public IEnumerator CanonicalStationLaterTicketSensorLeaseLossFaultsAndCleansWholePlan()
-        {
-            StageRunRuntime.ResetForTests();
-            yield return EnterCanonicalStation();
-
-            Scene station = SceneManager.GetActiveScene();
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(station);
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (executor.State != StageCountOneEncounterState.Active)
-            {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, executor.LastError);
-                yield return null;
-            }
-
-            StageAddEncounterTicketSnapshot[] addTickets =
-                RequireOrderedActiveAddTickets(executor);
-            CombatHealth addHealth = addTickets[0].Health;
-            CombatTargetSensor addSensor = addTickets[0].Sensor;
-            CombatHealth secondAddHealth = addTickets[1].Health;
-            CombatTargetSensor secondAddSensor = addTickets[1].Sensor;
-            PlayerCombatTargetSelector playerTargetSelector = executor.PlayerTargetSelector;
-            GameObject ownedRoot = addTickets[0].Root;
-            GameObject secondOwnedRoot = addTickets[1].Root;
-            CombatHealth bossHealth =
-                RequireSingleSceneComponent<CombatEncounterController>(station).EnemyHealth;
-            Assert.That(addHealth, Is.Not.Null);
-            Assert.That(addSensor, Is.Not.Null);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.True);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.True);
-
-            secondAddSensor.enabled = false;
-            yield return null;
-
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Faulted));
-            Assert.That(executor.LastError, Does.Contain("bidirectional combatant participation lease"));
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.CompletionCount, Is.Zero);
-            Assert.That(executor.CancellationCount, Is.Zero);
-            Assert.That(executor.FaultCount, Is.EqualTo(1));
-            Assert.That(executor.CancelledTicketCount, Is.EqualTo(1));
-            Assert.That(executor.FaultedTicketCount, Is.EqualTo(1));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-            Assert.That(executor.OwnedRoot, Is.Null);
-            Assert.That(executor.OwnedHealth, Is.Null);
-            Assert.That(executor.OwnedAgent, Is.Null);
-            Assert.That(executor.OwnedSensor, Is.Null);
-            Assert.That(executor.HasCombatantParticipation, Is.False);
-            Assert.That(executor.IsQuiescent, Is.True);
-            Assert.That(executor.HasSceneLease, Is.True);
-            Assert.That(
-                ownedRoot == null || !ownedRoot.activeSelf,
-                Is.True,
-                "Fault cleanup must destroy or deactivate the owned Add root.");
-            Assert.That(
-                secondOwnedRoot == null || !secondOwnedRoot.activeSelf,
-                Is.True,
-                "Fault cleanup must destroy or deactivate the later Add root.");
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(addHealth), Is.False);
-            Assert.That(playerTargetSelector.ContainsRuntimeTargetCandidate(secondAddHealth), Is.False);
-            Assert.That(playerTargetSelector.RuntimeTargetCandidateCount, Is.Zero);
-            Assert.That(playerTargetSelector.ContainsAuthoredTargetCandidate(bossHealth), Is.True);
-            Assert.That(addSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(addSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(secondAddSensor.TargetCandidateCount, Is.Zero);
-            Assert.That(secondAddSensor.CurrentTargetHealth, Is.Null);
-            Assert.That(
-                executor.GetTicketSnapshot(0).State,
-                Is.EqualTo(StageAddEncounterTicketState.Cancelled));
-            Assert.That(
-                executor.GetTicketSnapshot(1).State,
-                Is.EqualTo(StageAddEncounterTicketState.Faulted));
-            Assert.That(executor.LastReceipt, Is.Not.Null);
-            Assert.That(executor.LastReceipt.FinalState, Is.EqualTo(StageCountOneEncounterState.Faulted));
-            Assert.That(
-                executor.LastReceipt.TryValidateIntegrity(out string faultReceiptError),
-                Is.True,
-                faultReceiptError);
-
-            yield return null;
-            yield return null;
-            Assert.That(executor.State, Is.EqualTo(StageCountOneEncounterState.Faulted));
-            Assert.That(executor.ActivationCount, Is.EqualTo(1));
-            Assert.That(executor.OwnedObjectCount, Is.Zero);
-        }
-
-        private static StageAddEncounterTicketSnapshot[] RequireOrderedActiveAddTickets(
-            StageCountOneEncounterExecutor executor)
-        {
-            Assert.That(executor, Is.Not.Null);
-            Assert.That(executor.TicketCount, Is.EqualTo(2));
-            Assert.That(executor.PendingTicketCount, Is.Zero);
-            Assert.That(executor.ActiveTicketCount, Is.EqualTo(2));
-            Assert.That(executor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(executor.ActiveParticipationCount, Is.EqualTo(2));
-            Assert.That(executor.OwnedObjectCount, Is.EqualTo(2));
-            var snapshots = new StageAddEncounterTicketSnapshot[2];
-            for (int i = 0; i < snapshots.Length; i++)
-            {
-                snapshots[i] = executor.GetTicketSnapshot(i);
-                Assert.That(snapshots[i].SourceOrdinal, Is.EqualTo(i));
-                Assert.That(snapshots[i].State, Is.EqualTo(StageAddEncounterTicketState.Active));
-                Assert.That(snapshots[i].DelaySeconds, Is.Zero);
-                Assert.That(snapshots[i].Root, Is.Not.Null);
-                Assert.That(snapshots[i].Root.activeInHierarchy, Is.True);
-                Assert.That(snapshots[i].Health, Is.Not.Null);
-                Assert.That(snapshots[i].Agent, Is.Not.Null);
-                Assert.That(snapshots[i].Sensor, Is.Not.Null);
-                Assert.That(snapshots[i].ParticipationRegistered, Is.True);
-            }
-
-            Assert.That(snapshots[0].SpawnId, Is.EqualTo("add-left"));
-            Assert.That(snapshots[0].AnchorId, Is.EqualTo("Add_LeftLaneAnchor"));
-            Assert.That(snapshots[0].PositionId, Is.EqualTo(2101));
-            Assert.That(snapshots[1].SpawnId, Is.EqualTo("add-right"));
-            Assert.That(snapshots[1].AnchorId, Is.EqualTo("Add_RightLaneAnchor"));
-            Assert.That(snapshots[1].PositionId, Is.EqualTo(2102));
-            Assert.That(
-                snapshots[1].ActivationSequence,
-                Is.EqualTo(snapshots[0].ActivationSequence + 1),
-                "Equal-delay Add tickets must activate in serialized source order.");
-            Assert.That(snapshots[0].Health, Is.Not.SameAs(snapshots[1].Health));
-            Assert.That(snapshots[0].Root, Is.Not.SameAs(snapshots[1].Root));
-            return snapshots;
-        }
-
-        private static void AssertCapturedAddRootsInactive(
-            StageAddEncounterTicketSnapshot[] snapshots)
-        {
-            Assert.That(snapshots, Is.Not.Null);
-            for (int i = 0; i < snapshots.Length; i++)
-            {
-                Assert.That(
-                    snapshots[i].Root == null || !snapshots[i].Root.activeSelf,
-                    Is.True,
-                    $"Ordered Add ticket {i} retained an active hierarchy after cleanup.");
-            }
+            Assert.That(targetSelector.ContainsAuthoredTargetCandidate(encounter.EnemyHealth), Is.True);
+            Assert.That(targetSelector.RuntimeTargetCandidateCount, Is.Zero);
         }
 
         private static IEnumerator EnterCanonicalStation(bool releaseEntryGuide = true)
@@ -4658,11 +3683,11 @@ namespace DimensionBrawl.Tests
             yield return LoadSingleScene(CorridorScenePath);
             StageRunContext context = StageRunRuntime.ActiveContext;
             Assert.That(context, Is.Not.Null);
-            Scene station = SceneManager.GetActiveScene();
-            int corridorHandle = station.handle;
-            StageDefinitionSceneBinding stationBinding = RequireStationSceneBinding(station);
+            Scene corridor = SceneManager.GetActiveScene();
+            int corridorHandle = corridor.handle;
+            string corridorRunId = context.Identity.RunId;
             OlympusCorridorCombatFlowController flow =
-                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(station);
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridor);
             flow.SkipIntroCutscene();
             yield return null;
             yield return null;
@@ -4671,18 +3696,40 @@ namespace DimensionBrawl.Tests
                 context.TrySealTutorialRouteCompletion(out string tutorialFactError),
                 Is.True,
                 tutorialFactError);
-            InvokePrivate(flow, "BeginWaitingForStairEntry");
-            InvokePrivate(flow, "BeginCorridorCombat");
+            Assert.That(
+                context.TrySealCurrentSegmentForSingleLoad(
+                    StationEntryConditionId,
+                    out StageRunSingleLoadDispatch dispatch,
+                    out string handoffError),
+                Is.True,
+                handoffError);
+            Assert.That(dispatch, Is.Not.Null);
+            Assert.That(dispatch.DestinationScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(dispatch.LoaderGeneration, Is.GreaterThan(0));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.HandoffPending));
+            Assert.That(context.PendingHandoffToken, Is.SameAs(dispatch.Token));
+
+            yield return LoadSingleScene(StationScenePath);
+
+            Scene station = SceneManager.GetActiveScene();
+            StageDefinitionSceneBinding stationBinding = RequireStationSceneBinding(station);
 
             StageSegmentEntryReceipt entryReceipt = context.SegmentEntryReceipt;
             Assert.That(entryReceipt, Is.Not.Null);
-            Assert.That(entryReceipt.FromHandoffPending, Is.False);
-            Assert.That(entryReceipt.RequestedScenePath, Is.EqualTo(CorridorScenePath));
-            Assert.That(entryReceipt.ActualScenePath, Is.EqualTo(CorridorScenePath));
+            Assert.That(entryReceipt.RunId, Is.EqualTo(corridorRunId));
+            Assert.That(entryReceipt.FromHandoffPending, Is.True);
+            Assert.That(entryReceipt.RequestedScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(entryReceipt.ActualScenePath, Is.EqualTo(StationScenePath));
             Assert.IsTrue(
-                SceneManager.GetActiveScene().handle == corridorHandle,
-                $"In-scene Station activation must retain Corridor scene handle {corridorHandle}; "
+                station.handle != corridorHandle,
+                $"SingleLoad Station activation must replace Corridor scene handle {corridorHandle}; "
                 + $"actual={SceneManager.GetActiveScene().handle}.");
+            Assert.That(context.HandoffTerminalReceipt, Is.Not.Null);
+            Assert.That(
+                context.HandoffTerminalReceipt.LoaderGeneration,
+                Is.EqualTo(dispatch.LoaderGeneration));
+            Assert.That(context.HandoffTerminalReceipt.LoaderGeneration, Is.GreaterThan(0));
+            Assert.That(context.HandoffTerminalReceipt.LoaderGenerationInvalidated, Is.True);
 
             AssertCanonicalStationRuntimeWiring(station, stationBinding);
             yield return null;
@@ -4744,7 +3791,7 @@ namespace DimensionBrawl.Tests
                 $"Scene {scene.path} must contain one exact {StationStageId} binding.");
             Assert.That(found, Is.Not.Null);
             Assert.That(found.gameObject.scene.handle, Is.EqualTo(scene.handle));
-            Assert.That(found.StageDefinition.MapScenePath, Is.EqualTo(CorridorScenePath));
+            Assert.That(found.StageDefinition.MapScenePath, Is.EqualTo(StationScenePath));
             return found;
         }
 
@@ -4752,8 +3799,6 @@ namespace DimensionBrawl.Tests
             Scene scene,
             StageDefinitionSceneBinding stationBinding)
         {
-            StageCountOneEncounterExecutor executor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(scene);
             CombatEncounterController encounter =
                 RequireSingleSceneComponent<CombatEncounterController>(scene);
             OlympusStationCombatResultPresenter presenter =
@@ -4763,7 +3808,11 @@ namespace DimensionBrawl.Tests
             ICombatEntryGuideGate guide = RequireSingleSceneInterface<ICombatEntryGuideGate>(scene);
             Component guideComponent = guide as Component;
 
-            Assert.That(executor.SceneBinding, Is.SameAs(stationBinding));
+            Assert.That(stationBinding.AnchorPointCount, Is.Zero);
+            Assert.That(stationBinding.StageDefinition.AnchorCount, Is.Zero);
+            Assert.That(stationBinding.StageDefinition.SpawnCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(scene), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(scene), Is.Zero);
             Assert.That(encounter.gameObject.scene.handle, Is.EqualTo(scene.handle));
             Assert.That(presenter.gameObject.scene.handle, Is.EqualTo(scene.handle));
             Assert.That(collector.gameObject.scene.handle, Is.EqualTo(scene.handle));
@@ -4953,6 +4002,19 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(path, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
             yield return null;
+        }
+
+        private static int CountSceneComponents<T>(Scene scene)
+            where T : Component
+        {
+            int count = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                count += roots[rootIndex].GetComponentsInChildren<T>(true).Length;
+            }
+
+            return count;
         }
 
         private static T RequireSingleSceneComponent<T>(Scene scene)
@@ -5418,7 +4480,6 @@ namespace DimensionBrawl.Tests
             DisableSceneBehaviours<OlympusCorridorCombatFlowController>(scene);
             DisableSceneBehaviours<OlympusStationRunFactCollector>(scene);
             DisableSceneBehaviours<OlympusStationCombatResultPresenter>(scene);
-            DisableSceneBehaviours<StageCountOneEncounterExecutor>(scene);
             DisableSceneBehaviours<CombatEncounterController>(scene);
         }
 
@@ -5893,14 +4954,4 @@ namespace DimensionBrawl.Tests
         }
     }
 
-    [DefaultExecutionOrder(10000)]
-    public sealed class StageCountOneExecutorShutdownProbe : MonoBehaviour
-    {
-        public Action Disabled { get; set; }
-
-        private void OnDisable()
-        {
-            Disabled?.Invoke();
-        }
-    }
 }

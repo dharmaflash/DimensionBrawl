@@ -119,11 +119,13 @@ namespace DimensionBrawl.Tests
 
             GameObject inputRoot = new GameObject("UI Transition Handoff Test Input");
             inputRoot.SetActive(false);
+            CanvasGroup dimGroup = inputRoot.AddComponent<CanvasGroup>();
             Button button = new GameObject("Capability", typeof(RectTransform), typeof(Button))
                 .GetComponent<Button>();
             button.transform.SetParent(inputRoot.transform, false);
             Component gate = inputRoot.AddComponent(gateType);
             SetPrivateField(gate, "selectables", new Selectable[] { button });
+            SetPrivateField(gate, "dimGroups", new[] { dimGroup });
             inputRoot.SetActive(true);
 
             GameObject eventSystemObject = new GameObject(
@@ -181,6 +183,8 @@ namespace DimensionBrawl.Tests
 
             Assert.That(ReadProperty<bool>(gate, "GlobalRouteLocked"), Is.True);
             Assert.That(button.interactable, Is.False);
+            Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f),
+                "A transition-ticket arrival lock must not dim the destination scene.");
             Assert.That(eventSystem.enabled, Is.False);
             Assert.That(ReadProperty<bool>(ReadProperty<object>(owner, "Presenter"), "IsFullyCovered"),
                 Is.True);
@@ -196,6 +200,7 @@ namespace DimensionBrawl.Tests
             Assert.That(ReadProperty<bool>(owner, "HasActiveTicket"), Is.False);
             Assert.That(ReadProperty<bool>(gate, "GlobalRouteLocked"), Is.False);
             Assert.That(button.interactable, Is.True);
+            Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
             Assert.That(eventSystem.enabled, Is.True);
             Assert.That(ReadProperty<bool>(ReadProperty<object>(owner, "Presenter"), "IsFullyCovered"),
                 Is.False);
@@ -270,6 +275,88 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.That(ReadProperty<int>(receiver, "ReadySignalAttemptCount"), Is.EqualTo(1));
+            Assert.That(ReadProperty<bool>(presenter, "IsFullyCovered"), Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator ArrivalReceiverReobservesSceneLoadedAfterActivationRaceExactlyOnce()
+        {
+            Type ownerType = RequireProductType(OwnerTypeName);
+            Type receiverType = RequireProductType(ReceiverTypeName);
+            Type routeType = RequireProductType(RouteTypeName);
+            Type routeIdType = RequireProductType(RouteIdTypeName);
+
+            GameObject readinessRoot = new GameObject("UI Transition Handoff Test Activation Race");
+            readinessRoot.SetActive(false);
+            UISceneTransitionReadinessProbe probe =
+                readinessRoot.AddComponent<UISceneTransitionReadinessProbe>();
+            Component receiver = readinessRoot.AddComponent(receiverType);
+            readinessRoot.SetActive(true);
+            yield return null;
+
+            Assert.That(ReadProperty<uint>(receiver, "ObservedGeneration"), Is.EqualTo(0u),
+                "The receiver must remain idle when activation has not issued a ticket yet.");
+
+            GameObject overlay = UnityEngine.Object.Instantiate(RequirePrefab(TransitionOverlayPrefabPath));
+            Component owner = overlay.GetComponentsInChildren(ownerType, true).Single();
+            Component presenter = ReadProperty<Component>(owner, "Presenter");
+            SetPrivateField(presenter, "defaultFadeSeconds", 0.01f);
+            yield return null;
+
+            Scene scene = SceneManager.GetActiveScene();
+            object route = CreateRoute(routeType, routeIdType, "Lobby", scene.name, string.Empty);
+            MethodInfo beginRoute = RequireMethod(
+                ownerType,
+                "TryBeginRoute",
+                method => method.GetParameters().Length == 3);
+            object[] beginArguments = { route, null, null };
+            Assert.That(beginRoute.Invoke(owner, beginArguments), Is.EqualTo(true));
+            object ticket = beginArguments[1];
+            Assert.That(
+                RequireMethod(ownerType, "TryMarkActivationRequested")
+                    .Invoke(owner, new[] { ticket }),
+                Is.EqualTo(true));
+            Assert.That(
+                RequireMethod(ownerType, "TryMarkDestinationArrived")
+                    .Invoke(owner, new object[] { ticket, scene }),
+                Is.EqualTo(true));
+
+            MethodInfo handleSceneLoaded = RequireMethod(
+                receiverType,
+                "HandleSceneLoaded",
+                method => method.GetParameters().Length == 2);
+            handleSceneLoaded.Invoke(receiver, new object[] { scene, LoadSceneMode.Single });
+            handleSceneLoaded.Invoke(receiver, new object[] { scene, LoadSceneMode.Single });
+
+            yield return null;
+            Assert.That(
+                ReadProperty<uint>(receiver, "ObservedGeneration"),
+                Is.EqualTo(ReadProperty<uint>(ticket, "Generation")),
+                "The sceneLoaded callback must re-observe the ticket missed during activation.");
+            Assert.That(ReadProperty<bool>(receiver, "HasCrossedRenderLayoutBoundary"), Is.True);
+            Assert.That(ReadProperty<bool>(receiver, "ReadySignalAttempted"), Is.False);
+            Assert.That(ReadProperty<int>(receiver, "LastObservedReadinessSourceCount"), Is.EqualTo(1));
+
+            probe.IsReady = true;
+            float deadline = Time.realtimeSinceStartup + 2f;
+            while (!ReadProperty<bool>(receiver, "ReadySignalAccepted"))
+            {
+                Assert.Less(Time.realtimeSinceStartup, deadline,
+                    "The re-observed activation did not accept destination readiness.");
+                yield return null;
+            }
+
+            while (ReadProperty<bool>(owner, "HasActiveTicket"))
+            {
+                Assert.Less(Time.realtimeSinceStartup, deadline,
+                    "The re-observed destination reveal did not complete.");
+                yield return null;
+            }
+
+            handleSceneLoaded.Invoke(receiver, new object[] { scene, LoadSceneMode.Single });
+            yield return null;
+            Assert.That(ReadProperty<int>(receiver, "ReadySignalAttemptCount"), Is.EqualTo(1),
+                "Duplicate sceneLoaded notifications must not emit duplicate ready signals.");
             Assert.That(ReadProperty<bool>(presenter, "IsFullyCovered"), Is.False);
         }
 

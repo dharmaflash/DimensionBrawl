@@ -30,11 +30,11 @@ MonoBehaviour:
   rewardPlanId: 
   rewardPlanRevision: 0
   rewardPlanDigest: 
-  bindingRevision: 2
+  bindingRevision: 1
   playableStageId: OLYMPUS-INVASION-01
-  routeRevision: 2
-  canonicalRouteDigest: 878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0
+  routeRevision: 1
+  canonicalRouteDigest: 2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9
   progressionGraphId: olympus-invasion.progression-graph
-  progressionGraphRevision: 2
+  progressionGraphRevision: 1
   contentDigest: 87e684b5a7b0eac8fceaae168693d84132504bbca9a52bee0deb4187b28f9ac4
-  bindingDigest: cf1f0d21d34d1553b3aaadd6e8dbb8ace24b235245f8301b35959ee662a3dc37
+  bindingDigest: 421f2864b8268184c3934d37a446e70627b388fb3f4fad4d4202c72b4f9078fc

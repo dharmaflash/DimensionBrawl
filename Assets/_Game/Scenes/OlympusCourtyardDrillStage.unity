@@ -1734,9 +1734,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8163093375362245534, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1456148928}
-    - targetCorrespondingSourceObject: {fileID: 30444043197168018, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1456148927}
     - targetCorrespondingSourceObject: {fileID: 2252768527828751009, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 946620632}
@@ -1858,21 +1855,6 @@ MonoBehaviour:
   deadZone: 0.08
   inputRadiusRatio: 0.62
   knobTravelRatio: 0.72
---- !u!114 &1456148927
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1456148923}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
-  inputBridge: {fileID: 1456148916}
-  actionId: 300
-  sendHoldState: 0
 --- !u!114 &1456148928
 MonoBehaviour:
   m_ObjectHideFlags: 0

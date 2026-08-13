@@ -39,6 +39,12 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 typeof(PerfectDodgeTimeWarp).GetMethod("Update", flags),
                 "Perfect-dodge time warp should refresh receivers only while the warp is active.");
+            System.Type combatSessionOverlayPresenter = System.Type.GetType(
+                "DimensionBrawl.UI.CombatSessionOverlayPresenter, Assembly-CSharp");
+            Assert.IsNotNull(combatSessionOverlayPresenter);
+            Assert.IsNull(
+                combatSessionOverlayPresenter.GetMethod("LateUpdate", flags),
+                "Pause ownership should be guarded only while the session overlay owns a finite pause lease.");
             Assert.IsNull(
                 typeof(ActionCinematicCueDirector).GetMethod("Update", flags),
                 "Cinematic framing should derive remaining time from its clock instead of polling while idle.");

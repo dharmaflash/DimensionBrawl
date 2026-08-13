@@ -11,6 +11,10 @@ namespace DimensionBrawl.Tests
     {
         private const string PerfectDodgeWindowPrefabPath =
             "Assets/_Game/Art/VFX/CombatCues/Prefabs/DB_VFX_PlayerPerfectDodgeWindow.prefab";
+        private const string PerfectDodgeShieldMaterialPath =
+            "Assets/_Game/Art/VFX/HovlSciFiEffects/Materials/DB_HovlSciFi_HexShield3shield.mat";
+        private const string CombatVfxProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
 
         [UnityTest]
         public IEnumerator DisabledRendererColorOverridePreservesAuthoredMaterialColor()
@@ -61,6 +65,33 @@ namespace DimensionBrawl.Tests
                 "The canonical perfect-dodge shield should keep its authored blue material palette.");
         }
 
+        [Test]
+        public void CanonicalPerfectDodgeWindowIsCenteredAndKeepsPlayerReadable()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PerfectDodgeWindowPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+            Transform shieldRoot = prefab.transform.Find("PerfectDodgeVfx_HovlHexShield");
+            Assert.That(shieldRoot, Is.Not.Null);
+            Assert.That(
+                shieldRoot.localPosition.z,
+                Is.Zero.Within(0.001f),
+                "The shield child must not add a second forward offset in front of the player.");
+
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxProfilePath);
+            Assert.That(profile, Is.Not.Null);
+            Assert.That(profile.TryGetCue(CombatVfxCueId.PlayerPerfectDodgeWindow, out CombatVfxCue cue), Is.True);
+            Assert.That(
+                cue.LocalPositionOffset.z,
+                Is.Zero.Within(0.001f),
+                "The perfect-dodge cue must remain centered on its player anchor.");
+
+            Material shieldMaterial = AssetDatabase.LoadAssetAtPath<Material>(PerfectDodgeShieldMaterialPath);
+            Assert.That(shieldMaterial, Is.Not.Null);
+            AssertShieldOpacity(shieldMaterial, "_Opacity");
+            AssertShieldOpacity(shieldMaterial, "_Textureopacity");
+            Assert.That(shieldMaterial.GetColor("_Color").a, Is.LessThanOrEqualTo(0.45f));
+        }
+
         private static void ConfigureVisual(
             CombatVfxCueVisual visual,
             Renderer renderer,
@@ -106,6 +137,15 @@ namespace DimensionBrawl.Tests
             Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.001f));
             Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.001f));
             Assert.That(actual.a, Is.EqualTo(expected.a).Within(0.001f));
+        }
+
+        private static void AssertShieldOpacity(Material material, string propertyName)
+        {
+            Assert.That(material.HasProperty(propertyName), Is.True, $"Shield material is missing {propertyName}.");
+            Assert.That(
+                material.GetFloat(propertyName),
+                Is.LessThanOrEqualTo(0.45f),
+                $"{propertyName} makes the shield cover the player silhouette.");
         }
     }
 }

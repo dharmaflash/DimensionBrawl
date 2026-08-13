@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
-using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
@@ -38,36 +36,22 @@ namespace DimensionBrawl.Tests
         private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
         private const string StationDefinitionPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusStationCombat.asset";
-        private const string StationMeleeAddArchetypePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Melee.asset";
-        private const string StationRangedAddArchetypePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes/DB_Archetype_SciFiSoldier_Ranged.asset";
-        private const string StationMeleeAddPrefabPath =
-            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_HeavyWindup.prefab";
-        private const string StationRangedAddPrefabPath =
-            "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
-        private const string StationMeleeAddPatternPath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
-        private const string StationRangedAddPatternPath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfire.asset";
-        private const string StationRangedAddDeckPath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfireDeck.asset";
-        private const string StationRangedProjectilePrefabPath =
-            "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab";
         private const string PlayableStagePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_PlayableStage_OlympusInvasion.asset";
         private const string StageSelectPrefabPath =
             "Assets/_Game/UI/StageSelect/PF_UI_StageSelectScreen.prefab";
         private const string TrainingCanonicalProjectionDigest =
-            "571b79d2fb47619383be714f88870752c4f8e1ce4d2864d6dc846307aecb6f1d";
+            "3a2d630f34c6518b8783bcffaf4ac0c21be1a97cbff8e80372b26bec3537549c";
+        private const string CanonicalRouteDigest =
+            "2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9";
         private const string ProductBuildManifestDigest =
-            "b0f1a128548f8f77aae5a0670586a2ac39c504d967ef722cf9681f56cd788d6b";
+            "bb7e0b3feb830c813e7a4e74e0bb2897ef66f18a28fd1dd03695e643084ea19f";
         private const string CanonicalTemplateDigest =
             "3eec8a5f94c4dfd47ae9255a49ff3b5961d5130cf386f2c6ba96b0525c502e55";
         private const string CanonicalReferenceDigest =
-            "eada6124fe3bed295bddaf3caeb0b53ff1510a2f790c2b76b8454410834a21ea";
+            "b93e1e23845983c3abdb2e13f551e66025942e40ddfde1a2b123054a65db0791";
         private const string CanonicalBriefingDigest =
-            "e334d6bb63dc42d921e6d85bcca42cc628064d0d1b8fee1cc303d4ca223fab70";
+            "71b17e4c39364da14aa1deb0906b87eb88ed44e1242723a3b5b76064f2a89f60";
         private const string ResultPresentationCatalogPath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageResults/DB_StageResultPresentationCatalog.asset";
 
@@ -77,6 +61,7 @@ namespace DimensionBrawl.Tests
             LobbyScenePath,
             StageSelectScenePath,
             CorridorScenePath,
+            StationScenePath,
             StageClearScenePath
         };
 
@@ -182,7 +167,7 @@ namespace DimensionBrawl.Tests
                 Is.EqualTo(1));
             Assert.That(
                 Convert.ToInt32(ReadProperty(stageCatalog, "CatalogProjectionGeneration")),
-                Is.EqualTo(2));
+                Is.EqualTo(1));
             Assert.That(Convert.ToInt32(ReadProperty(stageCatalog, "StageCount")), Is.EqualTo(1));
             object stage = RequireMethod(catalogType, "GetStage").Invoke(stageCatalog, new object[] { 0 });
             Assert.That(ReadProperty(stage, "Id"), Is.EqualTo("story_v1_training_route"));
@@ -197,6 +182,15 @@ namespace DimensionBrawl.Tests
                 (PlayableStageDefinition)ReadProperty(stage, "PlayableStage");
             Assert.That(playableStage, Is.Not.Null);
             Assert.That(playableStage.PlayableStageId, Is.EqualTo("OLYMPUS-INVASION-01"));
+            Assert.That(playableStage.RouteRevision, Is.EqualTo(1));
+            Assert.That(playableStage.CanonicalRouteDigest, Is.EqualTo(CanonicalRouteDigest));
+            Assert.That(playableStage.ComputeCanonicalRouteDigest(), Is.EqualTo(CanonicalRouteDigest));
+            Assert.That(
+                playableStage.GetSceneSegment(0).HandoffPolicy,
+                Is.EqualTo(StageSceneHandoffPolicy.SingleLoad));
+            Assert.That(
+                playableStage.GetSceneSegment(1).StageDefinition.MapScenePath,
+                Is.EqualTo(StationScenePath));
             object[] projectionArguments = { 0, ResolveUiRouteId(CombatRouteId), null, null };
             Assert.That(
                 (bool)RequireMethod(
@@ -642,7 +636,7 @@ namespace DimensionBrawl.Tests
                 Assert.That(productionRoute.GetSceneSegment(0).StageDefinition.MapScenePath,
                     Is.EqualTo(CorridorScenePath));
                 Assert.That(productionRoute.GetSceneSegment(1).StageDefinition.MapScenePath,
-                    Is.EqualTo(CorridorScenePath));
+                    Is.EqualTo(StationScenePath));
                 Assert.That(Convert.ToInt32(ReadProperty(manifest, "CatalogEntryCount")),
                     Is.EqualTo(productionCatalogCount + 1));
                 int productRouteSegmentCount = 0;
@@ -716,6 +710,9 @@ namespace DimensionBrawl.Tests
 
                 Assert.That(
                     CountManifestPhysicalScene(manifest, CorridorScenePath),
+                    Is.EqualTo(1));
+                Assert.That(
+                    CountManifestPhysicalScene(manifest, StationScenePath),
                     Is.EqualTo(1));
                 Assert.That(
                     CountManifestPhysicalScene(manifest, StageSelectScenePath),
@@ -1783,38 +1780,17 @@ namespace DimensionBrawl.Tests
         {
             yield return LoadCanonicalStationTerminalAndWaitForResultSurface(StageRouteOutcome.Fail);
 
-            Scene retiredCorridorScene = SceneManager.GetSceneByPath(CorridorScenePath);
-            Assert.That(retiredCorridorScene.IsValid(), Is.True);
-            Assert.That(retiredCorridorScene.isLoaded, Is.True);
-            int retiredSceneHandle = retiredCorridorScene.handle;
+            Scene retiredStationScene = SceneManager.GetSceneByPath(StationScenePath);
+            Assert.That(retiredStationScene.IsValid(), Is.True);
+            Assert.That(retiredStationScene.isLoaded, Is.True);
+            int retiredSceneHandle = retiredStationScene.handle;
             StageRunContext retiredContext = StageRunRuntime.ActiveContext;
             Assert.That(retiredContext, Is.Not.Null);
             string retiredRunId = retiredContext.Identity.RunId;
-            StageCountOneEncounterExecutor retiredExecutor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(retiredCorridorScene);
             Assert.That(
-                retiredExecutor.State,
-                Is.EqualTo(StageCountOneEncounterState.Cancelled));
-            Assert.That(retiredExecutor.ActivationCount, Is.EqualTo(1));
-            Assert.That(retiredExecutor.TicketCount, Is.EqualTo(2));
-            Assert.That(retiredExecutor.ActivatedTicketCount, Is.EqualTo(2));
-            Assert.That(retiredExecutor.CompletionCount, Is.Zero);
-            Assert.That(retiredExecutor.CancellationCount, Is.EqualTo(1));
-            Assert.That(retiredExecutor.OwnedObjectCount, Is.Zero);
-            Assert.That(retiredExecutor.OwnedRoot, Is.Null);
-            Assert.That(retiredExecutor.OwnedHealth, Is.Null);
-            Assert.That(retiredExecutor.OwnedAgent, Is.Null);
-            Assert.That(retiredExecutor.OwnedSensor, Is.Null);
-            Assert.That(retiredExecutor.HasCombatantParticipation, Is.False);
-            Assert.That(retiredExecutor.PlayerTargetSelector, Is.Not.Null);
-            Assert.That(
-                retiredExecutor.PlayerTargetSelector.RuntimeTargetCandidateCount,
+                CountSceneComponents<StageCountOneEncounterExecutor>(retiredStationScene),
                 Is.Zero);
-            Assert.That(retiredExecutor.LastReceipt, Is.Not.Null);
-            Assert.That(
-                retiredExecutor.LastReceipt.TryValidateIntegrity(out string retiredReceiptError),
-                Is.True,
-                retiredReceiptError);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(retiredStationScene), Is.Zero);
 
             Scene clearScene = SceneManager.GetSceneByName(StageClearSceneName);
             StageClearScreenPresenter presenter = RequireSingleSceneComponent<StageClearScreenPresenter>(clearScene);
@@ -1827,9 +1803,7 @@ namespace DimensionBrawl.Tests
 
             Scene corridorScene = SceneManager.GetActiveScene();
             Assert.That(SceneManager.GetSceneByName(StageClearSceneName).isLoaded, Is.False);
-            Assert.That(retiredCorridorScene.isLoaded, Is.False);
-            Assert.That(retiredExecutor == null, Is.True);
-            Assert.That(corridorScene.handle, Is.Not.EqualTo(retiredSceneHandle));
+            Assert.That(retiredStationScene.isLoaded, Is.False);
             StageRunContext freshContext = StageRunRuntime.ActiveContext;
             Assert.That(freshContext, Is.Not.Null);
             Assert.That(freshContext, Is.Not.SameAs(retiredContext));
@@ -1837,23 +1811,6 @@ namespace DimensionBrawl.Tests
             Assert.That(
                 freshContext.LifecycleState,
                 Is.EqualTo(StageRunLifecycleState.CorridorActive));
-            StageCountOneEncounterExecutor freshExecutor =
-                RequireSingleSceneComponent<StageCountOneEncounterExecutor>(corridorScene);
-            Assert.That(ReferenceEquals(freshExecutor, retiredExecutor), Is.False);
-            Assert.That(
-                freshExecutor.State,
-                Is.EqualTo(StageCountOneEncounterState.WaitingForRun));
-            Assert.That(
-                freshExecutor.LastError,
-                Does.Contain("does not own this exact Station segment"));
-            Assert.That(freshExecutor.ActivationCount, Is.Zero);
-            Assert.That(freshExecutor.TicketCount, Is.EqualTo(2));
-            Assert.That(freshExecutor.ActivatedTicketCount, Is.Zero);
-            Assert.That(freshExecutor.CompletionCount, Is.Zero);
-            Assert.That(freshExecutor.CancellationCount, Is.Zero);
-            Assert.That(freshExecutor.OwnedObjectCount, Is.Zero);
-            Assert.That(freshExecutor.HasCombatantParticipation, Is.False);
-            Assert.That(freshExecutor.HasSceneLease, Is.False);
             OlympusCorridorCombatFlowController flow =
                 RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridorScene);
             Assert.That(flow.HasCanonicalStageRun, Is.True);
@@ -1868,29 +1825,36 @@ namespace DimensionBrawl.Tests
                 Is.True,
                 tutorialFactError);
             RequireMethod(
-                typeof(OlympusCorridorCombatFlowController),
-                "BeginWaitingForStairEntry").Invoke(flow, null);
-            RequireMethod(
-                typeof(OlympusCorridorCombatFlowController),
-                "BeginCorridorCombat").Invoke(flow, null);
+                typeof(OlympusCorridorTutorialDirector),
+                "CompleteTutorial").Invoke(
+                    RequireSingleSceneComponent<OlympusCorridorTutorialDirector>(corridorScene),
+                    null);
+            yield return WaitForActiveScenePath(StationScenePath, 10f);
             yield return null;
-            yield return null;
-            yield return ReleaseStationEntryGuide(corridorScene);
 
-            float activationDeadline = Time.realtimeSinceStartup + 2f;
-            while (freshExecutor.State != StageCountOneEncounterState.Active)
+            Scene stationScene = SceneManager.GetActiveScene();
+            Assert.That(stationScene.handle, Is.Not.EqualTo(retiredSceneHandle));
+            Assert.That(freshContext.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
+            StageDefinitionProfile stationDefinition =
+                LoadRequired<StageDefinitionProfile>(StationDefinitionPath);
+            StageDefinitionSceneBinding stationBinding =
+                RequireSceneBinding(stationScene, stationDefinition);
+            Assert.That(stationBinding.AnchorPointCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageAnchorPoint>(stationScene), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(stationScene), Is.Zero);
+            yield return ReleaseStationEntryGuide(stationScene);
+            CombatEncounterController freshEncounter =
+                RequireSingleSceneComponent<CombatEncounterController>(stationScene);
+            float runningDeadline = Time.realtimeSinceStartup + 2f;
+            while (!freshEncounter.IsRunning)
             {
-                Assert.Less(Time.realtimeSinceStartup, activationDeadline, freshExecutor.LastError);
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    runningDeadline,
+                    $"Boss-only Station encounter did not start: {freshEncounter.Diagnostic.Reason}: "
+                    + freshEncounter.Diagnostic.Message);
                 yield return null;
             }
-
-            StageAddEncounterTicketSnapshot freshRangedTicket = freshExecutor.GetTicketSnapshot(1);
-            Assert.That(freshRangedTicket.PayloadId, Is.EqualTo("SciFiSoldier.Ranged"));
-            Assert.That(freshRangedTicket.ProjectileDriver, Is.Not.Null);
-            Assert.That(freshRangedTicket.ProjectileDriver.FiredCount, Is.Zero);
-            Assert.That(freshRangedTicket.ProjectileDriver.OwnedProjectileCount, Is.Zero);
-            Assert.That(freshRangedTicket.ProjectileDriver.ActiveProjectileCount, Is.Zero);
-            Assert.That(freshRangedTicket.ProjectileDriver.HasIndependentRuntimeProjectileRoot, Is.True);
         }
 
         [UnityTest]
@@ -2350,91 +2314,12 @@ namespace DimensionBrawl.Tests
 
         [UnityTest]
         [Timeout(30000)]
-        public IEnumerator StationDefinitionAuthorsExactOrderedTwoAddFixture()
+        public IEnumerator StationDefinitionAuthorsBossOnlyDedicatedSceneFixture()
         {
             StageDefinitionProfile station = LoadRequired<StageDefinitionProfile>(StationDefinitionPath);
-            CombatEnemyArchetypeProfile meleeArchetype =
-                LoadRequired<CombatEnemyArchetypeProfile>(StationMeleeAddArchetypePath);
-            CombatEnemyArchetypeProfile rangedArchetype =
-                LoadRequired<CombatEnemyArchetypeProfile>(StationRangedAddArchetypePath);
-            Assert.That(station.AnchorCount, Is.EqualTo(2));
-            Assert.That(station.SpawnCount, Is.EqualTo(2));
-            string[] expectedSpawnIds = { "add-left", "add-right" };
-            string[] expectedAnchorIds = { "Add_LeftLaneAnchor", "Add_RightLaneAnchor" };
-            string[] expectedPayloadIds = { "SciFiSoldier.Melee", "SciFiSoldier.Ranged" };
-            CombatEnemyArchetypeProfile[] expectedArchetypes = { meleeArchetype, rangedArchetype };
-            int[] expectedPositionIds = { 2101, 2102 };
-            Vector3[] expectedPositions =
-            {
-                new(8.9f, 0f, -1.25f),
-                new(8.9f, 0f, 1.25f)
-            };
-            for (int sourceOrdinal = 0; sourceOrdinal < 2; sourceOrdinal++)
-            {
-                StageDefinitionProfile.AnchorRef authoredAnchor = station.GetAnchor(sourceOrdinal);
-                StageDefinitionProfile.SpawnRef authoredSpawn = station.GetSpawn(sourceOrdinal);
-                Assert.That(authoredAnchor.AnchorId, Is.EqualTo(expectedAnchorIds[sourceOrdinal]));
-                Assert.That(authoredAnchor.GroupId, Is.EqualTo("CombatSpawnAnchors"));
-                Assert.That(authoredAnchor.ExpectedPosition, Is.EqualTo(expectedPositions[sourceOrdinal]));
-                Assert.That(authoredAnchor.ExpectedEuler, Is.EqualTo(Vector3.zero));
-                Assert.That(authoredSpawn.SpawnId, Is.EqualTo(expectedSpawnIds[sourceOrdinal]));
-                Assert.That(authoredSpawn.SpawnKind, Is.EqualTo(StageSpawnKind.Add));
-                Assert.That(authoredSpawn.PositionId, Is.EqualTo(expectedPositionIds[sourceOrdinal]));
-                Assert.That(authoredSpawn.AnchorId, Is.EqualTo(authoredAnchor.AnchorId));
-                Assert.That(authoredSpawn.PayloadId, Is.EqualTo(expectedPayloadIds[sourceOrdinal]));
-                Assert.That(authoredSpawn.PayloadArchetype, Is.SameAs(expectedArchetypes[sourceOrdinal]));
-                Assert.That(authoredSpawn.AuthoredCount, Is.EqualTo(1));
-                Assert.That(authoredSpawn.AuthoredDelaySeconds, Is.Zero);
-            }
-
-            GameObject gameplayPrefab = LoadRequired<GameObject>(StationMeleeAddPrefabPath);
-            CombatAiPatternProfile meleePattern =
-                LoadRequired<CombatAiPatternProfile>(StationMeleeAddPatternPath);
-            Assert.That(meleeArchetype.ArchetypeId, Is.EqualTo("SciFiSoldier.Melee"));
-            Assert.That(meleeArchetype.GameplayPrefab, Is.SameAs(gameplayPrefab));
-            Assert.That(meleeArchetype.RequiresDedicatedPrefabPromotion, Is.False);
-            BasicSoldierEnemy meleeSoldier = gameplayPrefab.GetComponent<BasicSoldierEnemy>();
-            CombatTargetSensor meleeSensor = gameplayPrefab.GetComponent<CombatTargetSensor>();
-            Assert.That(meleeSoldier, Is.Not.Null);
-            Assert.That(meleeSensor, Is.Not.Null);
-            Assert.That(meleeSoldier.PatternProfile, Is.SameAs(meleePattern));
-            Assert.That(meleeSoldier.PatternDeck, Is.Null);
-            Assert.That(meleePattern.AttackShape, Is.EqualTo(CombatAiAttackShape.MeleeArc));
-            Assert.That(meleePattern.AttackRange, Is.LessThanOrEqualTo(meleeSensor.SearchRadius));
-            Assert.That(
-                gameplayPrefab.GetComponentsInChildren<BasicSoldierProjectileAttackDriver>(true),
-                Is.Empty);
-
-            GameObject rangedPrefab = LoadRequired<GameObject>(StationRangedAddPrefabPath);
-            CombatAiPatternProfile rangedPattern =
-                LoadRequired<CombatAiPatternProfile>(StationRangedAddPatternPath);
-            CombatAiPatternDeck rangedDeck =
-                LoadRequired<CombatAiPatternDeck>(StationRangedAddDeckPath);
-            LaneActionProjectile rangedProjectile =
-                LoadRequired<GameObject>(StationRangedProjectilePrefabPath)
-                    .GetComponent<LaneActionProjectile>();
-            Assert.That(rangedArchetype.ArchetypeId, Is.EqualTo("SciFiSoldier.Ranged"));
-            Assert.That(rangedArchetype.GameplayPrefab, Is.SameAs(rangedPrefab));
-            Assert.That(rangedArchetype.RequiresDedicatedPrefabPromotion, Is.False);
-            BasicSoldierEnemy rangedSoldier = rangedPrefab.GetComponent<BasicSoldierEnemy>();
-            CombatTargetSensor rangedSensor = rangedPrefab.GetComponent<CombatTargetSensor>();
-            BasicSoldierProjectileAttackDriver rangedDriver =
-                rangedPrefab.GetComponent<BasicSoldierProjectileAttackDriver>();
-            Assert.That(rangedSoldier, Is.Not.Null);
-            Assert.That(rangedSensor, Is.Not.Null);
-            Assert.That(rangedDriver, Is.Not.Null);
-            Assert.That(rangedSoldier.PatternProfile, Is.SameAs(rangedPattern));
-            Assert.That(rangedSoldier.PatternDeck, Is.SameAs(rangedDeck));
-            Assert.That(rangedPattern.ActorTypeId, Is.EqualTo("SciFiSoldier.Ranged"));
-            Assert.That(rangedPattern.PatternId, Is.EqualTo("RifleCrossfire"));
-            Assert.That(rangedPattern.AttackShape, Is.EqualTo(CombatAiAttackShape.ProjectileLine));
-            Assert.That(rangedDeck.EntryCount, Is.EqualTo(1));
-            Assert.That(rangedDeck.GetEntry(0).Profile, Is.SameAs(rangedPattern));
-            Assert.That(rangedDriver.ProjectilePrefab, Is.SameAs(rangedProjectile));
-            Assert.That(rangedDriver.MaxOwnedProjectileCount, Is.EqualTo(3));
-            Assert.That(
-                rangedDriver.IsConfiguredFor(rangedSoldier, rangedSoldier.SelfHealth, rangedSensor),
-                Is.True);
+            Assert.That(station.MapScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(station.AnchorCount, Is.Zero);
+            Assert.That(station.SpawnCount, Is.Zero);
 
             PlayableStageDefinition route = LoadRequired<PlayableStageDefinition>(PlayableStagePath);
             Assert.That(route.GetSceneSegment(1).SegmentId, Is.EqualTo("station_entry_combat"));
@@ -2455,10 +2340,6 @@ namespace DimensionBrawl.Tests
             Type validatorType = Type.GetType(
                 "DimensionBrawl.Editor.PlayableStageDefinitionValidator, Assembly-CSharp-Editor");
             Assert.That(validatorType, Is.Not.Null);
-            MethodInfo validateStationAdd = validatorType.GetMethod(
-                "ValidateStationAddSceneAuthoring",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            Assert.That(validateStationAdd, Is.Not.Null);
             MethodInfo validateSceneBinding = validatorType.GetMethod(
                 "ValidateSceneBinding",
                 BindingFlags.Static | BindingFlags.NonPublic);
@@ -2486,95 +2367,44 @@ namespace DimensionBrawl.Tests
             Assert.DoesNotThrow(
                 () => validateSceneBinding.Invoke(null, new object[] { corridorScene, corridor }));
 
-            Scene stationScene = corridorScene;
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            Assert.That(context, Is.Not.Null);
+            Assert.That(
+                context.TrySealTutorialRouteCompletion(out string tutorialFactError),
+                Is.True,
+                tutorialFactError);
+            Assert.That(
+                context.TrySealCurrentSegmentForSingleLoad(
+                    context.CurrentSegment.ExitConditionId,
+                    out StageRunSingleLoadDispatch dispatch,
+                    out string handoffError),
+                Is.True,
+                handoffError);
+            Assert.That(dispatch.DestinationScenePath, Is.EqualTo(StationScenePath));
+
+            int corridorSceneHandle = corridorScene.handle;
+            EditorSceneManager.LoadSceneInPlayMode(
+                dispatch.DestinationScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return WaitForActiveScenePath(StationScenePath, 10f);
+            yield return null;
+
+            Scene stationScene = SceneManager.GetActiveScene();
+            Assert.That(stationScene.handle, Is.Not.EqualTo(corridorSceneHandle));
+            Assert.That(corridorScene.isLoaded, Is.False);
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
             StageDefinitionSceneBinding binding =
                 RequireSceneBinding(stationScene, station);
             Assert.That(binding.StageDefinition, Is.SameAs(station));
-            Assert.That(station.MapScenePath, Is.EqualTo(CorridorScenePath));
-            Assert.That(binding.MapRoot, Is.SameAs(corridorBinding.MapRoot));
+            Assert.That(station.MapScenePath, Is.EqualTo(StationScenePath));
             Assert.That(binding.MapRoot, Is.Not.Null);
-            Assert.That(binding.AnchorPointCount, Is.EqualTo(2));
-            for (int sourceOrdinal = 0; sourceOrdinal < 2; sourceOrdinal++)
-            {
-                StageDefinitionProfile.AnchorRef authoredAnchor = station.GetAnchor(sourceOrdinal);
-                Assert.That(
-                    binding.TryGetAnchorPoint(authoredAnchor.AnchorId, out StageAnchorPoint boundAnchor),
-                    Is.True);
-                Assert.That(boundAnchor, Is.Not.Null);
-                Assert.That(boundAnchor.transform.IsChildOf(binding.MapRoot), Is.True);
-                Vector3 boundRootLocalPosition =
-                    binding.transform.InverseTransformPoint(boundAnchor.transform.position);
-                Quaternion boundRootLocalRotation = Quaternion.Inverse(binding.transform.rotation)
-                    * boundAnchor.transform.rotation;
-                Assert.That(
-                    Vector3.Distance(boundRootLocalPosition, authoredAnchor.ExpectedPosition),
-                    Is.LessThan(0.0001f));
-                Assert.That(
-                    Quaternion.Angle(
-                        boundRootLocalRotation,
-                        Quaternion.Euler(authoredAnchor.ExpectedEuler)),
-                    Is.LessThan(0.001f));
-            }
-
-            StageDefinitionProfile.AnchorRef anchor = station.GetAnchor(0);
-            Assert.That(binding.TryGetAnchorPoint(anchor.AnchorId, out StageAnchorPoint liveAnchor), Is.True);
-
-            Vector3 rootLocalPosition = binding.transform.InverseTransformPoint(liveAnchor.transform.position);
-            Quaternion rootLocalRotation = Quaternion.Inverse(binding.transform.rotation)
-                * liveAnchor.transform.rotation;
-            Assert.That(Vector3.Distance(rootLocalPosition, anchor.ExpectedPosition), Is.LessThan(0.0001f));
-            Assert.That(
-                Quaternion.Angle(rootLocalRotation, Quaternion.Euler(anchor.ExpectedEuler)),
-                Is.LessThan(0.001f));
+            Assert.That(binding.AnchorPointCount, Is.Zero);
+            Assert.That(CountSceneComponents<StageDefinitionSceneBinding>(stationScene), Is.EqualTo(1));
+            Assert.That(CountSceneComponents<StageAnchorPoint>(stationScene), Is.Zero);
+            Assert.That(CountSceneComponents<StageCountOneEncounterExecutor>(stationScene), Is.Zero);
+            Assert.That(CountSceneComponents<CombatEncounterController>(stationScene), Is.EqualTo(1));
             Assert.DoesNotThrow(
                 () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
-            Assert.DoesNotThrow(
-                () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
-
-            Transform intermediate = liveAnchor.transform.parent;
-            Assert.That(intermediate, Is.Not.Null);
-            Assert.That(intermediate, Is.Not.SameAs(binding.MapRoot));
-            Assert.That(intermediate.IsChildOf(binding.MapRoot), Is.True);
-            Vector3 originalIntermediatePosition = intermediate.localPosition;
-            Quaternion originalIntermediateRotation = intermediate.localRotation;
-            Vector3 originalAnchorPosition = liveAnchor.transform.localPosition;
-            Quaternion originalAnchorRotation = liveAnchor.transform.localRotation;
-            try
-            {
-                intermediate.localPosition = originalIntermediatePosition + new Vector3(0.5f, 0f, 0f);
-                TargetInvocationException genericPositionError = Assert.Throws<TargetInvocationException>(
-                    () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
-                Assert.That(
-                    genericPositionError.InnerException?.Message,
-                    Does.Contain("binding-root-local position"));
-                TargetInvocationException positionError = Assert.Throws<TargetInvocationException>(
-                    () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
-                Assert.That(positionError.InnerException?.Message, Does.Contain("binding-root-local position"));
-
-                intermediate.localPosition = originalIntermediatePosition;
-                intermediate.localRotation = Quaternion.Euler(0f, 15f, 0f) * originalIntermediateRotation;
-                liveAnchor.transform.position = binding.transform.TransformPoint(anchor.ExpectedPosition);
-                TargetInvocationException genericRotationError = Assert.Throws<TargetInvocationException>(
-                    () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
-                Assert.That(
-                    genericRotationError.InnerException?.Message,
-                    Does.Contain("binding-root-local rotation"));
-                TargetInvocationException rotationError = Assert.Throws<TargetInvocationException>(
-                    () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
-                Assert.That(rotationError.InnerException?.Message, Does.Contain("binding-root-local rotation"));
-            }
-            finally
-            {
-                intermediate.localPosition = originalIntermediatePosition;
-                intermediate.localRotation = originalIntermediateRotation;
-                liveAnchor.transform.localPosition = originalAnchorPosition;
-                liveAnchor.transform.localRotation = originalAnchorRotation;
-            }
-
-            Assert.DoesNotThrow(
-                () => validateSceneBinding.Invoke(null, new object[] { stationScene, station }));
-            Assert.DoesNotThrow(
-                () => validateStationAdd.Invoke(null, new object[] { stationScene, binding }));
         }
 
         [Test]
@@ -3184,25 +3014,23 @@ namespace DimensionBrawl.Tests
                 Is.True,
                 tutorialFactError);
             RequireMethod(
-                typeof(OlympusCorridorCombatFlowController),
-                "BeginWaitingForStairEntry").Invoke(flow, null);
-            RequireMethod(
-                typeof(OlympusCorridorCombatFlowController),
-                "BeginCorridorCombat").Invoke(flow, null);
-            StageSegmentEntryReceipt entryReceipt = runContext.SegmentEntryReceipt;
-            Assert.That(entryReceipt, Is.Not.Null);
-            Assert.That(entryReceipt.FromHandoffPending, Is.False);
-            Assert.That(entryReceipt.ActualScenePath, Is.EqualTo(CorridorScenePath));
-            yield return null;
+                typeof(OlympusCorridorTutorialDirector),
+                "CompleteTutorial").Invoke(
+                    RequireSingleSceneComponent<OlympusCorridorTutorialDirector>(corridorScene),
+                    null);
+            yield return WaitForActiveScenePath(StationScenePath, 10f);
             yield return null;
 
+            StageSegmentEntryReceipt entryReceipt = runContext.SegmentEntryReceipt;
+            Assert.That(entryReceipt, Is.Not.Null);
+            Assert.That(entryReceipt.FromHandoffPending, Is.True);
+            Assert.That(entryReceipt.ActualScenePath, Is.EqualTo(StationScenePath));
+
             Scene stationScene = SceneManager.GetActiveScene();
-            Assert.AreEqual(CorridorScenePath, stationScene.path.Replace('\\', '/'));
-            Assert.IsTrue(
-                stationScene.handle == corridorScene.handle,
-                $"In-scene Station activation must retain Corridor scene handle {corridorScene.handle}; "
-                + $"actual={stationScene.handle}.");
-            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.False);
+            Assert.AreEqual(StationScenePath, stationScene.path.Replace('\\', '/'));
+            Assert.That(stationScene.handle, Is.Not.EqualTo(corridorScene.handle));
+            Assert.That(corridorScene.isLoaded, Is.False);
+            Assert.That(SceneManager.GetSceneByName("OlympusStationCombatStage").isLoaded, Is.True);
             Assert.That(CountSceneComponents<OlympusStationCombatResultPresenter>(stationScene), Is.EqualTo(1));
             Assert.That(CountSceneComponents<OlympusStageClearOverlay>(stationScene), Is.EqualTo(1));
             Assert.That(CountSceneComponents<CombatEncounterController>(stationScene), Is.EqualTo(1));
@@ -3229,7 +3057,7 @@ namespace DimensionBrawl.Tests
                 Assert.Less(
                     Time.realtimeSinceStartup,
                     invulnerabilityDeadline,
-                    "Tutorial invulnerability did not expire during the physical stair-entry interval.");
+                    "Tutorial invulnerability did not expire after the Station entry guide released.");
                 yield return null;
             }
             Assert.That(encounter.UsesCoordinatedTerminalResolution, Is.True);

@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
@@ -31,6 +32,52 @@ namespace DimensionBrawl.Tests
         private const string IntroSwordGateRootName = "OlympusCorridor_IntroSwordGate";
         private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
         private const double DefaultIntroHandoffSeconds = 36.5d;
+
+        [Test]
+        public void IntroCinemachineShotsStartAtNominalBeatsWithRealOverlapOnly()
+        {
+            CinematicSequenceProfile profile =
+                AssetDatabase.LoadAssetAtPath<CinematicSequenceProfile>(IntroProfilePath);
+            PlayableAsset timeline =
+                AssetDatabase.LoadAssetAtPath<PlayableAsset>(IntroPlayablePath);
+
+            Assert.That(profile, Is.Not.Null);
+            Assert.That(timeline, Is.Not.Null);
+
+            AssertCinemachineTrackContract(
+                timeline,
+                "Cinemachine Shots",
+                new[]
+                {
+                    "src_c01_capsule_left_dolly",
+                    "src_c03_first_person_eye_open",
+                    "src_c04_first_person_scan_left",
+                    "src_c05_first_person_scan_right",
+                    "src_c06_first_person_look_down_hands",
+                    "src_c07_commando_bridge_legs_run",
+                    "src_c08_heaven_background_explosion",
+                    "src_c09_commando_bridge_push_past",
+                    "src_c10_player_reveal_rina_quest_start"
+                },
+                new[] { 8.5d, 14.6d, 16.633335d, 18.183334d, 19.633335d, 21.383335d, 23.733334d, 24.833336d, 28.424355d },
+                new[] { 0d, 0d, 1d, 1d, 1d, 0d, 1d, 0.65d, 0.42d });
+
+            AssertCinemachineTrackContract(
+                timeline,
+                "Bombing Prelude Cinemachine Shots",
+                new[]
+                {
+                    "cm_01_formation_join",
+                    "cm_02_bomb_release",
+                    "cm_03_falling_payload",
+                    "cm_04_target_reframe",
+                    "cm_05_impact_chain",
+                    "cm_06_aftershock",
+                    "cm_07_smoke_handoff"
+                },
+                new[] { 0d, 3.72d, 4.84d, 5.56d, 5.92d, 7.10d, 8.06d },
+                new[] { 0d, 0.16d, 0.10d, 0.30d, 0.10d, 0.10d, 0.10d });
+        }
 
         [UnitySetUp]
         public IEnumerator LoadOlympusCorridorScene()
@@ -66,7 +113,7 @@ namespace DimensionBrawl.Tests
             Assert.That(sceneBinding, Is.Not.Null);
             Assert.That(
                 route.CanonicalRouteDigest,
-                Is.EqualTo("878dac821103cdca2d2ad29a3fab8bce27109e9a5c1d551b14eccb736fd252d0"));
+                Is.EqualTo("2b912058cefb5b9ad14ed9d11336e2344dd12efa9789fc2df676a7ac74e821b9"));
 
             StagePresentationHandoffRef presentation = route.GetSceneSegment(0).EntryPresentation;
             Assert.That(presentation, Is.Not.Null);
@@ -350,6 +397,144 @@ namespace DimensionBrawl.Tests
 
             report.AppendLine($"- Missing required scene object/component: `{objectName}`");
             return true;
+        }
+
+        private static void AssertCinemachineTrackContract(
+            PlayableAsset timeline,
+            string trackName,
+            string[] shotIds,
+            double[] nominalStarts,
+            double[] incomingBlends)
+        {
+            string yaml = File.ReadAllText(AssetDatabase.GetAssetPath(timeline));
+            Dictionary<string, SerializedCameraClip> clips = ParseSerializedCameraTrack(
+                yaml,
+                trackName,
+                out int serializedClipCount);
+            Assert.That(serializedClipCount, Is.EqualTo(shotIds.Length));
+            Assert.That(shotIds.Length, Is.EqualTo(nominalStarts.Length));
+            Assert.That(shotIds.Length, Is.EqualTo(incomingBlends.Length));
+
+            SerializedCameraClip? previous = null;
+            for (int i = 0; i < shotIds.Length; i++)
+            {
+                Assert.That(
+                    clips.TryGetValue(shotIds[i], out SerializedCameraClip shot),
+                    Is.True,
+                    $"Expected exactly one `{shotIds[i]}` clip.");
+                Assert.That(
+                    shot.Start,
+                    Is.EqualTo(nominalStarts[i]).Within(0.002d),
+                    $"`{shotIds[i]}` must not influence the camera before its nominal beat.");
+                Assert.That(
+                    shot.EaseIn,
+                    Is.EqualTo(0d).Within(0.002d),
+                    $"`{shotIds[i]}` must not ease from the base camera.");
+                Assert.That(
+                    shot.BlendIn,
+                    Is.EqualTo(incomingBlends[i]).Within(0.002d),
+                    $"`{shotIds[i]}` incoming blend must equal its authored overlap.");
+
+                if (previous.HasValue)
+                {
+                    Assert.That(
+                        previous.Value.End - shot.Start,
+                        Is.EqualTo(incomingBlends[i]).Within(0.002d),
+                        $"Transition into `{shotIds[i]}` must be backed by real outgoing coverage.");
+                }
+
+                previous = shot;
+            }
+        }
+
+        private static Dictionary<string, SerializedCameraClip> ParseSerializedCameraTrack(
+            string yaml,
+            string trackName,
+            out int serializedClipCount)
+        {
+            string marker = "  m_Name: " + trackName + "\r\n";
+            int trackStart = yaml.IndexOf(marker, StringComparison.Ordinal);
+            if (trackStart < 0)
+            {
+                marker = "  m_Name: " + trackName + "\n";
+                trackStart = yaml.IndexOf(marker, StringComparison.Ordinal);
+            }
+
+            Assert.That(trackStart, Is.GreaterThanOrEqualTo(0), $"Missing `{trackName}` track.");
+            int clipsStart = yaml.IndexOf("  m_Clips:", trackStart, StringComparison.Ordinal);
+            int markersStart = yaml.IndexOf("  m_Markers:", clipsStart, StringComparison.Ordinal);
+            Assert.That(clipsStart, Is.GreaterThan(trackStart));
+            Assert.That(markersStart, Is.GreaterThan(clipsStart));
+
+            string clipsYaml = yaml.Substring(clipsStart, markersStart - clipsStart);
+            string[] blocks = clipsYaml.Split(new[] { "  - m_Version: 1" }, StringSplitOptions.RemoveEmptyEntries);
+            var result = new Dictionary<string, SerializedCameraClip>(StringComparer.Ordinal);
+            serializedClipCount = 0;
+            for (int i = 0; i < blocks.Length; i++)
+            {
+                string block = blocks[i];
+                string displayName = ReadYamlScalar(block, "    m_DisplayName: ");
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    continue;
+                }
+
+                serializedClipCount++;
+                Assert.That(result.ContainsKey(displayName), Is.False, $"Duplicate clip `{displayName}`.");
+                result.Add(
+                    displayName,
+                    new SerializedCameraClip(
+                        ReadYamlDouble(block, "    m_Start: "),
+                        ReadYamlDouble(block, "    m_Duration: "),
+                        ReadYamlDouble(block, "    m_EaseInDuration: "),
+                        ReadYamlDouble(block, "    m_BlendInDuration: ")));
+            }
+
+            return result;
+        }
+
+        private static string ReadYamlScalar(string block, string key)
+        {
+            int start = block.IndexOf(key, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                return string.Empty;
+            }
+
+            start += key.Length;
+            int end = block.IndexOf('\n', start);
+            return block.Substring(start, end >= 0 ? end - start : block.Length - start).Trim();
+        }
+
+        private static double ReadYamlDouble(string block, string key)
+        {
+            string value = ReadYamlScalar(block, key);
+            Assert.That(
+                double.TryParse(
+                    value,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out double parsed),
+                Is.True,
+                $"Could not parse `{key.Trim()}` from Timeline YAML.");
+            return parsed;
+        }
+
+        private readonly struct SerializedCameraClip
+        {
+            public SerializedCameraClip(double start, double duration, double easeIn, double blendIn)
+            {
+                Start = start;
+                Duration = duration;
+                EaseIn = easeIn;
+                BlendIn = blendIn;
+            }
+
+            public readonly double Start;
+            public readonly double Duration;
+            public readonly double EaseIn;
+            public readonly double BlendIn;
+            public double End => Start + Duration;
         }
 
         private static void AppendIssueIf(StringBuilder issues, bool condition, string issue)

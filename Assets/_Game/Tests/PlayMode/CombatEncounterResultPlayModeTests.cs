@@ -10,7 +10,7 @@ namespace DimensionBrawl.Tests
     public sealed class CombatEncounterResultPlayModeTests
     {
         private const string AcceptedOlympusCallbackOrderSummaryDigest =
-            "46d2754e32f77deba5d55cecae99da0c45673c0d163754f7556c58721635f8a2";
+            "c9ca7ed9e3394b589d35e87b7301dfb350bdea5bc27c5799f537c8976747568b";
 
         [Test]
         public void EnemyDeathPublishesWinExactlyOnce()

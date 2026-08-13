@@ -479,14 +479,12 @@ namespace DimensionBrawl.UI
                 if (subscribedPlayerHealth != null)
                 {
                     subscribedPlayerHealth.Damaged -= HandlePlayerDamaged;
-                    subscribedPlayerHealth.DamageBlockedByInvulnerability -= HandlePlayerDamageBlocked;
                 }
 
                 subscribedPlayerHealth = playerHealth;
                 if (subscribedPlayerHealth != null)
                 {
                     subscribedPlayerHealth.Damaged += HandlePlayerDamaged;
-                    subscribedPlayerHealth.DamageBlockedByInvulnerability += HandlePlayerDamageBlocked;
                 }
             }
 
@@ -512,7 +510,6 @@ namespace DimensionBrawl.UI
             if (subscribedPlayerHealth != null)
             {
                 subscribedPlayerHealth.Damaged -= HandlePlayerDamaged;
-                subscribedPlayerHealth.DamageBlockedByInvulnerability -= HandlePlayerDamageBlocked;
             }
 
             if (subscribedBossHealth != null)
@@ -527,14 +524,6 @@ namespace DimensionBrawl.UI
         private void HandlePlayerDamaged(DamageInfo damageInfo)
         {
             UpdateHealthReadouts();
-            if (playerHealth == null || !CombatTeamUtility.AreAllied(damageInfo.SourceTeam, playerHealth.Team))
-            {
-                hudPresenter?.ShowPlayerDamageOverlay();
-            }
-        }
-
-        private void HandlePlayerDamageBlocked(DamageInfo damageInfo)
-        {
             if (playerHealth == null || !CombatTeamUtility.AreAllied(damageInfo.SourceTeam, playerHealth.Team))
             {
                 hudPresenter?.ShowPlayerDamageOverlay();

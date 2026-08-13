@@ -16,6 +16,8 @@ namespace DimensionBrawl.UI
         private Coroutine readinessRoutine;
         private UISceneTransitionTicket observedTicket;
         private int observedSceneHandle;
+        private bool observationTerminal;
+        private bool sceneLoadedSubscribed;
 
         public uint ObservedGeneration => observedTicket.Generation;
         public bool HasCrossedRenderLayoutBoundary { get; private set; }
@@ -34,11 +36,14 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
+            SubscribeSceneLoaded();
             TryBeginObservation();
         }
 
         private void OnDisable()
         {
+            UnsubscribeSceneLoaded();
+
             if (readinessRoutine != null)
             {
                 StopCoroutine(readinessRoutine);
@@ -47,6 +52,11 @@ namespace DimensionBrawl.UI
         }
 
         private void TryBeginObservation()
+        {
+            TryBeginObservation(gameObject.scene);
+        }
+
+        private void TryBeginObservation(Scene scene)
         {
             if (readinessRoutine != null)
             {
@@ -59,9 +69,16 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            Scene scene = gameObject.scene;
             UISceneTransitionTicket ticket = owner.ActiveTicket;
-            if (!IsExpectedDestination(ticket, scene))
+            if (gameObject.scene.handle != scene.handle
+                || !IsExpectedDestination(ticket, scene))
+            {
+                return;
+            }
+
+            if (observationTerminal
+                && observedTicket == ticket
+                && observedSceneHandle == scene.handle)
             {
                 return;
             }
@@ -73,6 +90,7 @@ namespace DimensionBrawl.UI
             ReadySignalAccepted = false;
             ReadySignalAttemptCount = 0;
             LastObservedReadinessSourceCount = 0;
+            observationTerminal = false;
             readinessRoutine = StartCoroutine(WaitForSceneReadiness(owner, ticket, scene));
         }
 
@@ -105,6 +123,7 @@ namespace DimensionBrawl.UI
 
                 if (!TryClaimReadySignal(ticket, scene))
                 {
+                    observationTerminal = true;
                     readinessRoutine = null;
                     yield break;
                 }
@@ -112,11 +131,44 @@ namespace DimensionBrawl.UI
                 ReadySignalAttempted = true;
                 ReadySignalAttemptCount++;
                 ReadySignalAccepted = UISceneTransitionHandoffOwner.TryMarkCurrentDestinationReady(scene);
+                observationTerminal = true;
                 readinessRoutine = null;
                 yield break;
             }
 
             readinessRoutine = null;
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode _)
+        {
+            if (!isActiveAndEnabled || gameObject.scene.handle != scene.handle)
+            {
+                return;
+            }
+
+            TryBeginObservation(scene);
+        }
+
+        private void SubscribeSceneLoaded()
+        {
+            if (sceneLoadedSubscribed)
+            {
+                return;
+            }
+
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            sceneLoadedSubscribed = true;
+        }
+
+        private void UnsubscribeSceneLoaded()
+        {
+            if (!sceneLoadedSubscribed)
+            {
+                return;
+            }
+
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            sceneLoadedSubscribed = false;
         }
 
         private bool AreAllSceneReadinessSourcesReady(Scene scene)

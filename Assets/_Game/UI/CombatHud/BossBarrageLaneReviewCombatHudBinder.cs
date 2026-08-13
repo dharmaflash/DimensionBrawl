@@ -379,17 +379,31 @@ namespace DimensionBrawl.UI
         {
             bool canSpend = energyLadder != null && energyLadder.CanSpend;
             int tier = canSpend ? energyLadder.AvailableTier : energyLadder != null ? energyLadder.ChargingTier : 0;
-            hudPresenter.SetSkillCooldown(CombatHudActionId.BasicAttack, 0f, ResolveBasicAttackLabel());
+            bool basicAttackAvailable = IsBasicAttackInputAvailable();
+            bool dodgeAvailable = IsActionControllerInputAvailable();
+            bool skillAvailable = IsSkill1InputAvailable();
+            bool swapAvailable = IsCombatModeInputAvailable();
+            hudPresenter.SetSkillCooldown(
+                CombatHudActionId.BasicAttack,
+                0f,
+                basicAttackAvailable ? ResolveBasicAttackLabel() : "LOCKED");
             hudPresenter.SetSkillCooldown(
                 CombatHudActionId.Dodge,
                 ResolveDodgeCooldownFill01(),
-                ResolveDodgeLabel(),
+                dodgeAvailable ? ResolveDodgeLabel() : "LOCKED",
                 actionController != null ? actionController.DodgeCooldownRemaining : -1f);
             hudPresenter.SetSkillCooldown(
                 CombatHudActionId.Skill1,
                 canSpend ? 0f : 1f,
-                ResolveSkillLabel(tier));
-            hudPresenter.SetSkillCooldown(CombatHudActionId.Ultimate, 0f, "SWAP");
+                skillAvailable ? ResolveSkillLabel(tier) : "LOCKED");
+            hudPresenter.SetSkillCooldown(
+                CombatHudActionId.Ultimate,
+                0f,
+                swapAvailable ? "SWAP" : "LOCKED");
+            hudPresenter.SetActionInputAvailable(CombatHudActionId.BasicAttack, basicAttackAvailable);
+            hudPresenter.SetActionInputAvailable(CombatHudActionId.Dodge, dodgeAvailable);
+            hudPresenter.SetActionInputAvailable(CombatHudActionId.Skill1, skillAvailable);
+            hudPresenter.SetActionInputAvailable(CombatHudActionId.Ultimate, swapAvailable);
         }
 
         private void UpdateSummonReadouts()
@@ -648,7 +662,6 @@ namespace DimensionBrawl.UI
             }
 
             playerHealth.Damaged += HandlePlayerDamaged;
-            playerHealth.DamageBlockedByInvulnerability += HandlePlayerDamageBlocked;
             subscribedPlayerDamageHealth = playerHealth;
         }
 
@@ -660,18 +673,12 @@ namespace DimensionBrawl.UI
             }
 
             subscribedPlayerDamageHealth.Damaged -= HandlePlayerDamaged;
-            subscribedPlayerDamageHealth.DamageBlockedByInvulnerability -= HandlePlayerDamageBlocked;
             subscribedPlayerDamageHealth = null;
         }
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)
         {
             UpdateHealthReadouts();
-            ShowPlayerDamageOverlayForHostileHit(damageInfo);
-        }
-
-        private void HandlePlayerDamageBlocked(DamageInfo damageInfo)
-        {
             ShowPlayerDamageOverlayForHostileHit(damageInfo);
         }
 
@@ -928,7 +935,7 @@ namespace DimensionBrawl.UI
 
         private bool IsPrimarySummonReady()
         {
-            return summonSlot1Action != null
+            return IsPrimarySummonInputAvailable()
                 && energyLadder != null
                 && !summonSlot1Action.IsSlotOnCooldown
                 && energyLadder.CanSpendMana(summonSlot1Action.RequiredSummonMana);
@@ -936,7 +943,7 @@ namespace DimensionBrawl.UI
 
         private string ResolvePrimarySummonState()
         {
-            if (summonSlot1Action == null || energyLadder == null)
+            if (!IsPrimarySummonInputAvailable() || energyLadder == null)
             {
                 return GetSummonStateText(
                     ref primarySummonTextCache,
@@ -978,7 +985,7 @@ namespace DimensionBrawl.UI
 
         private bool IsSupportSummonReady(PlayerSupportSummonSlotAction action)
         {
-            return action != null
+            return IsSupportSummonInputAvailable(action)
                 && energyLadder != null
                 && !action.IsSlotOnCooldown
                 && energyLadder.AvailableTier >= action.MinimumSummonTier
@@ -989,7 +996,7 @@ namespace DimensionBrawl.UI
             PlayerSupportSummonSlotAction action,
             ref SummonStateTextCache textCache)
         {
-            if (action == null || energyLadder == null)
+            if (!IsSupportSummonInputAvailable(action) || energyLadder == null)
             {
                 return GetSummonStateText(
                     ref textCache,
@@ -1029,7 +1036,7 @@ namespace DimensionBrawl.UI
 
         private float ResolvePrimarySummonAvailabilityFill01()
         {
-            if (summonSlot1Action == null || energyLadder == null)
+            if (!IsPrimarySummonInputAvailable() || energyLadder == null)
             {
                 return 0f;
             }
@@ -1046,7 +1053,7 @@ namespace DimensionBrawl.UI
 
         private float ResolveSupportSummonAvailabilityFill01(PlayerSupportSummonSlotAction action)
         {
-            if (action == null || energyLadder == null)
+            if (!IsSupportSummonInputAvailable(action) || energyLadder == null)
             {
                 return 0f;
             }
@@ -1057,6 +1064,53 @@ namespace DimensionBrawl.UI
             }
 
             return ResolveManaProgress01(ResolveSupportGateMana(action));
+        }
+
+        private bool IsBasicAttackInputAvailable()
+        {
+            if (combatModeController == null || combatModeController.IsRangedMode)
+            {
+                return rangedBasicAttackAction != null
+                    && rangedBasicAttackAction.isActiveAndEnabled
+                    && !rangedBasicAttackAction.IsCinematicInputLocked;
+            }
+
+            return IsActionControllerInputAvailable();
+        }
+
+        private bool IsActionControllerInputAvailable()
+        {
+            return actionController != null
+                && actionController.isActiveAndEnabled
+                && !actionController.IsCinematicInputLocked;
+        }
+
+        private bool IsCombatModeInputAvailable()
+        {
+            return combatModeController != null
+                && combatModeController.isActiveAndEnabled
+                && !combatModeController.IsCinematicInputLocked;
+        }
+
+        private bool IsSkill1InputAvailable()
+        {
+            return skill1Action != null
+                && skill1Action.isActiveAndEnabled
+                && !skill1Action.IsCinematicInputLocked;
+        }
+
+        private bool IsPrimarySummonInputAvailable()
+        {
+            return summonSlot1Action != null
+                && summonSlot1Action.isActiveAndEnabled
+                && !summonSlot1Action.IsCinematicInputLocked;
+        }
+
+        private static bool IsSupportSummonInputAvailable(PlayerSupportSummonSlotAction action)
+        {
+            return action != null
+                && action.isActiveAndEnabled
+                && !action.IsCinematicInputLocked;
         }
 
         private float ResolveSupportGateMana(PlayerSupportSummonSlotAction action)

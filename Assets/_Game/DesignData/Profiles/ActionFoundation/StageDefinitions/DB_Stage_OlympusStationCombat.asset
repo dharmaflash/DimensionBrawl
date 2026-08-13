@@ -17,10 +17,10 @@ MonoBehaviour:
   chapterId: OLYMPUS-INVASION
   previousStageId: OLYMPUS-CORRIDOR-INTRO-COMBAT-01
   nextStageId: 
-  mapScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
+  mapScenePath: Assets/_Game/Scenes/OlympusStationCombatStage.unity
   mapRootName: OlympusCorridorStageMap
   mapContentRootName: OlympusCorridorStageMap
-  mapScale: {x: 1.5, y: 1.5, z: 1.5}
+  mapScale: {x: 1.8, y: 1.8, z: 2.3}
   layoutId: OLYMPUS_STATION_COMBAT_01
   scenePrefabSource: 
   objective: Station entry guidance and the canonical player-versus-boss encounter
@@ -29,40 +29,8 @@ MonoBehaviour:
     state through the coordinated terminal policy.
   excludedScope: Corridor tutorial content, result UI layout, combat balance, reward
     payout, and persistent progress are owned elsewhere.
-  anchors:
-  - anchorId: Add_LeftLaneAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 8.9, y: 0, z: -1.25}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Stable authoring anchor for the first count-one Station Add fixture.
-  - anchorId: Add_RightLaneAnchor
-    groupId: CombatSpawnAnchors
-    expectedPosition: {x: 8.9, y: 0, z: 1.25}
-    expectedEuler: {x: 0, y: 0, z: 0}
-    purpose: Stable mirrored authoring anchor for the second ordered Station Add
-      ticket.
-  spawns:
-  - spawnId: add-left
-    spawnKind: 2
-    positionId: 2101
-    anchorId: Add_LeftLaneAnchor
-    payloadId: SciFiSoldier.Melee
-    payloadArchetype: {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
-    count: 1
-    delaySeconds: 0
-    note: First source-ordered count-one Add ticket; independently participates and
-      completes without owning the boss result.
-  - spawnId: add-right
-    spawnKind: 2
-    positionId: 2102
-    anchorId: Add_RightLaneAnchor
-    payloadId: SciFiSoldier.Ranged
-    payloadArchetype: {fileID: 11400000, guid: c420a63d83b9fd04c90d9b8d0acd03b9, type: 2}
-    count: 1
-    delaySeconds: 0
-    note: Second equal-delay ticket; source order is the deterministic activation
-      tiebreaker and the reviewed RifleCrossfire loadout owns physical mid-range
-      pressure.
+  anchors: []
+  spawns: []
   cutsceneHandoffs: []
   runtimeStates:
   - stateId: state-station-encounter-terminal
@@ -74,6 +42,6 @@ MonoBehaviour:
       result UI remains presentation.
   sourceReferences:
   - sourceId: local-olympus-station
-    sourcePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
-    localTakeaway: This logical Station segment reuses the continuous Corridor host
-      scene after the stair-entry boundary.
+    sourcePath: Assets/_Game/Scenes/OlympusStationCombatStage.unity
+    localTakeaway: This terminal combat segment is authored and loaded from the dedicated
+      Olympus Station scene.

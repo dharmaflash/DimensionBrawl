@@ -30,7 +30,7 @@ namespace DimensionBrawl.LevelDesign
         private const string SystemSpeaker = "천계관리시스템";
         private const string ReplicaGrantLine = "영혼 동기화율 70퍼센트, 전생특전 '레플리카'를 지급합니다.";
         private const string SummonGuideLine =
-            "전진할수록 EN 충전이 빨라집니다. 보스 포화를 소환으로 막고 Skill1로 추격하십시오.";
+            "코스트 수치를 만족하면 소환수를 소환할 수 있습니다.";
         private const string ForwardRiskGuideLine =
             "전진 위험대에서 EN 충전이 가속됩니다. 안전 틈을 읽고 앞으로 진입하세요.";
         private const string HoldFrontlineGuideLine =

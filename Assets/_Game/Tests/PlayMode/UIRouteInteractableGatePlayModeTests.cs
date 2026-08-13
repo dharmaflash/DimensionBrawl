@@ -40,6 +40,11 @@ namespace DimensionBrawl.Tests
                 Type gateType = RequireProductType("DimensionBrawl.UI.UIRouteInteractableGate");
                 Component gate = instance.GetComponentInChildren(gateType, true);
                 Assert.That(gate, Is.Not.Null);
+                CanvasGroup[] dimGroups = ReadPrivateField<CanvasGroup[]>(gate, "dimGroups");
+                Assert.That(dimGroups, Has.Length.EqualTo(1));
+                CanvasGroup dimGroup = dimGroups[0];
+                Assert.That(dimGroup, Is.Not.Null);
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
 
                 Button[] placeholders = new Button[PlaceholderNames.Length];
                 for (int i = 0; i < PlaceholderNames.Length; i++)
@@ -59,10 +64,13 @@ namespace DimensionBrawl.Tests
 
                 ApplyRouterState(gate, "Preparing", true);
                 Assert.That(enabledCapability.interactable, Is.False);
+                Assert.That(dimGroup.alpha, Is.EqualTo(0.68f).Within(0.001f),
+                    "A local route lock must retain the authored lobby dim beat.");
                 AssertPlaceholdersDisabled(placeholders, "route lock");
 
                 ApplyRouterState(gate, "Completed", false);
                 Assert.That(enabledCapability.interactable, Is.True);
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
                 AssertPlaceholdersDisabled(placeholders, "successful route release");
 
                 enabledCapability.interactable = false;
@@ -75,9 +83,38 @@ namespace DimensionBrawl.Tests
                 AssertPlaceholdersDisabled(placeholders, "failed route release");
 
                 enabledCapability.interactable = true;
+                object transitionTicket = CreateTransitionTicket(instance.GetInstanceID());
+                Assert.That(
+                    RequireMethod(gateType, "AcquireTransitionRouteLock")
+                        .Invoke(gate, new[] { transitionTicket }),
+                    Is.EqualTo(true));
+                Assert.That(ReadProperty(gate, "GlobalRouteLocked"), Is.True);
+                Assert.That(enabledCapability.interactable, Is.False);
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f),
+                    "A destination ticket must lock input without dimming the revealed scene.");
+
+                ApplyRouterState(gate, "Preparing", true);
+                Assert.That(dimGroup.alpha, Is.EqualTo(0.68f).Within(0.001f),
+                    "A local route lock must still dim while a transition ticket is held.");
+                ApplyRouterState(gate, "Completed", false);
+                Assert.That(enabledCapability.interactable, Is.False,
+                    "A local completion must not release the transition ticket lock.");
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
+
+                Assert.That(
+                    RequireMethod(gateType, "ReleaseTransitionRouteLock")
+                        .Invoke(gate, new[] { transitionTicket }),
+                    Is.EqualTo(true));
+                Assert.That(ReadProperty(gate, "GlobalRouteLocked"), Is.False);
+                Assert.That(enabledCapability.interactable, Is.True);
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
+                AssertPlaceholdersDisabled(placeholders, "transition ticket release");
+
                 RequireMethod(gateType, "SetGlobalRouteLocked").Invoke(gate, new object[] { true });
                 Assert.That(ReadProperty(gate, "GlobalRouteLocked"), Is.True);
                 Assert.That(enabledCapability.interactable, Is.False);
+                Assert.That(dimGroup.alpha, Is.EqualTo(0.68f).Within(0.001f),
+                    "An explicit external route lock must retain its visual dim.");
                 AssertPlaceholdersDisabled(placeholders, "arrival lock");
 
                 ApplyRouterState(gate, "Completed", false);
@@ -89,6 +126,7 @@ namespace DimensionBrawl.Tests
                 RequireMethod(gateType, "SetGlobalRouteLocked").Invoke(gate, new object[] { false });
                 Assert.That(ReadProperty(gate, "GlobalRouteLocked"), Is.False);
                 Assert.That(enabledCapability.interactable, Is.True);
+                Assert.That(dimGroup.alpha, Is.EqualTo(1f).Within(0.001f));
                 AssertPlaceholdersDisabled(placeholders, "arrival lock release");
             }
             finally
@@ -154,6 +192,35 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail($"Missing Lobby placeholder: {objectName}");
             return null;
+        }
+
+        private static object CreateTransitionTicket(int ownerInstanceId)
+        {
+            Type ticketType = RequireProductType("DimensionBrawl.UI.UISceneTransitionTicket");
+            Type routeIdType = RequireProductType("DimensionBrawl.UI.UIRouteId");
+            ConstructorInfo constructor = ticketType.GetConstructor(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                new[]
+                {
+                    typeof(int),
+                    typeof(uint),
+                    routeIdType,
+                    typeof(int),
+                    typeof(string),
+                    typeof(string)
+                },
+                null);
+            Assert.That(constructor, Is.Not.Null, "Missing UISceneTransitionTicket constructor.");
+            return constructor.Invoke(new object[]
+            {
+                ownerInstanceId,
+                1u,
+                Enum.Parse(routeIdType, "Lobby"),
+                0,
+                "UI_Lobby",
+                string.Empty
+            });
         }
 
         private static void AssertPlaceholdersDisabled(Button[] placeholders, string phase)

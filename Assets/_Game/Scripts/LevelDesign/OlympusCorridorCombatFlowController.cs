@@ -1,5 +1,6 @@
 using System.Collections;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
@@ -108,6 +109,7 @@ namespace DimensionBrawl.LevelDesign
         private Coroutine activePhaseRoutine;
         private StageRunContext stageRunContext;
         private bool stageRunAdmissionErrorLogged;
+        private bool stationSceneLoadDispatched;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
         public bool TutorialRunning => phase == FlowPhase.Tutorial
@@ -395,7 +397,7 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        CompleteTutorialAndOpenStairs();
+                        CompleteTutorialAndLoadStation();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -658,7 +660,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                CompleteTutorialAndOpenStairs();
+                CompleteTutorialAndLoadStation();
             }
 
             ResumePhaseRoutines();
@@ -959,11 +961,11 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                CompleteTutorialAndOpenStairs();
+                CompleteTutorialAndLoadStation();
             }
         }
 
-        private void CompleteTutorialAndOpenStairs()
+        private void CompleteTutorialAndLoadStation()
         {
             if (tutorialRouteCompletionHandled)
             {
@@ -994,9 +996,99 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
+            if (!stageRunContext.TrySealCurrentSegmentForSingleLoad(
+                    stageRunContext.CurrentSegment.ExitConditionId,
+                    out StageRunSingleLoadDispatch dispatch,
+                    out string handoffError))
+            {
+                Debug.LogError(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] Station scene handoff seal rejected: {handoffError}",
+                    this);
+                return;
+            }
+
             tutorialRouteCompletionHandled = true;
             UnregisterTutorialCompletedHandler();
-            BeginWaitingForStairEntry();
+            SetPlayerCombatInputLocked(true);
+            ClearPlayerInputForPhaseTransition();
+
+            var destination = new UITransitionHandoffDestination(
+                UITransitionDestinationKind.Combat,
+                dispatch.DestinationSceneName,
+                dispatch.DestinationScenePath);
+            if (UITransitionHandoffService.TryBeginTerminalHandoff(
+                    destination,
+                    () => DispatchStationSceneLoad(dispatch),
+                    error => HandleStationSceneLoadFailure(dispatch, error),
+                    out string transitionError))
+            {
+                return;
+            }
+
+            Debug.LogWarning(
+                $"[{nameof(OlympusCorridorCombatFlowController)}] UI transition handoff unavailable; loading Station directly. {transitionError}",
+                this);
+            UITransitionDispatchResult directResult = DispatchStationSceneLoad(dispatch);
+            if (!directResult.Succeeded)
+            {
+                HandleStationSceneLoadFailure(dispatch, directResult.Error);
+            }
+        }
+
+        private UITransitionDispatchResult DispatchStationSceneLoad(
+            StageRunSingleLoadDispatch dispatch)
+        {
+            if (dispatch == null || string.IsNullOrWhiteSpace(dispatch.DestinationSceneName))
+            {
+                return UITransitionDispatchResult.Failure(
+                    "The sealed Station scene handoff has no destination scene.");
+            }
+
+            try
+            {
+                stationSceneLoadDispatched = true;
+                Time.timeScale = 1f;
+                SceneManager.LoadScene(dispatch.DestinationSceneName, LoadSceneMode.Single);
+                return UITransitionDispatchResult.Success();
+            }
+            catch (System.Exception exception)
+            {
+                return UITransitionDispatchResult.Failure(exception.Message);
+            }
+        }
+
+        private void HandleStationSceneLoadFailure(
+            StageRunSingleLoadDispatch dispatch,
+            string error)
+        {
+            if (!stationSceneLoadDispatched)
+            {
+                Debug.LogWarning(
+                    $"[{nameof(OlympusCorridorCombatFlowController)}] UI transition failed before Station activation; retrying the sealed scene load directly. {error}",
+                    this);
+                UITransitionDispatchResult retryResult = DispatchStationSceneLoad(dispatch);
+                if (retryResult.Succeeded)
+                {
+                    return;
+                }
+
+                error = retryResult.Error;
+            }
+
+            Time.timeScale = 1f;
+            SetPlayerCombatInputLocked(false);
+            if (!StageRunRuntime.TryAbortActiveRun(
+                    null,
+                    StageRunAbortReason.SceneHandoffFailed,
+                    out _,
+                    out string abortError))
+            {
+                error = $"{error} Abort closure also failed: {abortError}";
+            }
+
+            Debug.LogError(
+                $"[{nameof(OlympusCorridorCombatFlowController)}] Station scene load failed: {error}",
+                this);
         }
 
         private bool EnsureCanonicalStageRunAdmission()
@@ -1755,6 +1847,22 @@ namespace DimensionBrawl.LevelDesign
                 Behaviour behaviour = behaviours[i];
                 if (behaviour == null)
                 {
+                    continue;
+                }
+
+                if (behaviour is BasicSoldierEnemy soldier)
+                {
+                    if (enabled)
+                    {
+                        soldier.enabled = true;
+                        soldier.SetGameplaySuspended(false);
+                    }
+                    else
+                    {
+                        soldier.SetGameplaySuspended(true);
+                        soldier.enabled = false;
+                    }
+
                     continue;
                 }
 

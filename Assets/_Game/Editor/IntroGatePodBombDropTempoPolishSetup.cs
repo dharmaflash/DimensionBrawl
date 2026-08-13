@@ -62,6 +62,7 @@ namespace DimensionBrawl.Editor
             }
 
             RewriteBombDropClip();
+            IntroGatePodPlayerRevealCameraSetup.ApplyCinemachineTransitionContract(timeline, profile);
 
             director.time = 0d;
             director.Evaluate();

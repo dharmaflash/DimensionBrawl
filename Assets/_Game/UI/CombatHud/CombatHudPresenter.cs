@@ -32,6 +32,10 @@ namespace DimensionBrawl.UI
         private const float DimensionHudDesignWidth = 2560f;
         private const float DimensionHudDesignHeight = 1440f;
 
+        private Rect lastAppliedSafeArea = new Rect(-1f, -1f, -1f, -1f);
+        private Vector2Int lastAppliedScreenSize = new Vector2Int(-1, -1);
+        private ScreenSafeAreaInsets safeAreaInsets;
+
         private enum ResponsiveHudAnchor
         {
             LeftTop,
@@ -52,6 +56,8 @@ namespace DimensionBrawl.UI
             [SerializeField] private CanvasGroup canvasGroup;
             [NonSerialized] private float readyGlowVisibility;
             [NonSerialized] private int lastCooldownTenths = int.MinValue;
+            [NonSerialized] private float lastNormalizedRemaining;
+            [NonSerialized] private bool inputAvailable = true;
 
             public CombatHudActionId ActionId => actionId;
 
@@ -63,6 +69,7 @@ namespace DimensionBrawl.UI
                 }
 
                 float clamped = Mathf.Clamp01(normalizedRemaining);
+                lastNormalizedRemaining = clamped;
                 if (cooldownFill != null)
                 {
                     cooldownFill.fillAmount = clamped;
@@ -84,10 +91,21 @@ namespace DimensionBrawl.UI
                     }
                 }
 
-                if (canvasGroup != null)
+                ApplyInputAvailability();
+            }
+
+            public void SetInputAvailable(bool available)
+            {
+                if (inputAvailable == available)
                 {
-                    canvasGroup.alpha = clamped > 0f ? 0.65f : 1f;
+                    ApplyInputAvailability();
+                    return;
                 }
+
+                inputAvailable = available;
+                ApplyReadyProgress(lastNormalizedRemaining);
+                ApplyReadyGlow(lastNormalizedRemaining);
+                ApplyInputAvailability();
             }
 
             private void ApplyReadyProgress(float normalizedRemaining)
@@ -97,7 +115,9 @@ namespace DimensionBrawl.UI
                     return;
                 }
 
-                float readyProgress = Mathf.Clamp01(1f - normalizedRemaining);
+                float readyProgress = inputAvailable
+                    ? Mathf.Clamp01(1f - normalizedRemaining)
+                    : 0f;
                 readyProgressFill.raycastTarget = false;
                 readyProgressFill.type = Image.Type.Filled;
                 readyProgressFill.fillMethod = Image.FillMethod.Radial360;
@@ -105,7 +125,7 @@ namespace DimensionBrawl.UI
                 readyProgressFill.fillClockwise = true;
                 readyProgressFill.fillAmount = readyProgress;
 
-                bool ready = normalizedRemaining <= 0.001f;
+                bool ready = inputAvailable && normalizedRemaining <= 0.001f;
                 float easedProgress = Mathf.SmoothStep(0f, 1f, readyProgress);
                 float readyPulse = ready ? SmoothPulse(2.4f) : 0f;
                 bool highPriorityReady = ready
@@ -127,7 +147,7 @@ namespace DimensionBrawl.UI
                     return;
                 }
 
-                bool ready = normalizedRemaining <= 0.001f;
+                bool ready = inputAvailable && normalizedRemaining <= 0.001f;
                 readyGlowImage.raycastTarget = false;
                 readyGlowImage.type = Image.Type.Simple;
                 float targetVisibility = ready ? 1f : 0f;
@@ -168,6 +188,20 @@ namespace DimensionBrawl.UI
             {
                 float deltaTime = Time.unscaledDeltaTime;
                 return deltaTime > 0f ? deltaTime : 1f / 60f;
+            }
+
+            private void ApplyInputAvailability()
+            {
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                canvasGroup.alpha = inputAvailable
+                    ? lastNormalizedRemaining > 0f ? 0.65f : 1f
+                    : 0.45f;
+                canvasGroup.interactable = inputAvailable;
+                canvasGroup.blocksRaycasts = inputAvailable;
             }
 
         }
@@ -625,6 +659,7 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
+            RefreshSafeAreaLayoutIfNeeded(true);
             StartFeedbackRoutineIfNeeded();
         }
 
@@ -642,6 +677,11 @@ namespace DimensionBrawl.UI
 
             ApplyResponsiveSideLayout();
             ApplyBossHeaderSpacing();
+        }
+
+        private void LateUpdate()
+        {
+            RefreshSafeAreaLayoutIfNeeded(false);
         }
 
         private IEnumerator RefreshFeedbackUntilSettled()
@@ -938,6 +978,12 @@ namespace DimensionBrawl.UI
             slot?.SetCooldown(normalizedRemaining, label, secondsRemaining);
         }
 
+        public void SetActionInputAvailable(CombatHudActionId actionId, bool available)
+        {
+            ActionSlotBinding slot = FindActionSlot(actionId);
+            slot?.SetInputAvailable(available);
+        }
+
         public void SetSummonSlotState(CombatHudActionId actionId, string label, string state, bool enabled)
         {
             SummonSlotBinding slot = FindSummonSlot(actionId);
@@ -1135,6 +1181,17 @@ namespace DimensionBrawl.UI
 
         private void ApplyResponsiveSideLayout()
         {
+            lastAppliedSafeArea = Screen.safeArea;
+            lastAppliedScreenSize = new Vector2Int(Screen.width, Screen.height);
+            RectTransform root = transform as RectTransform;
+            Vector2 canvasSize = root != null && root.rect.width > 1f && root.rect.height > 1f
+                ? root.rect.size
+                : new Vector2(DimensionHudDesignWidth, DimensionHudDesignHeight);
+            safeAreaInsets = ScreenSafeAreaUtility.ResolveCanvasInsets(
+                lastAppliedSafeArea,
+                new Vector2(Screen.width, Screen.height),
+                canvasSize);
+
             ApplyResponsiveDesignRect("TopLeftPanel", new Rect(45f, 36f, 571f, 165f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Timer", new Rect(178f, 55f, 409f, 48f), ResponsiveHudAnchor.LeftTop);
             ApplyResponsiveDesignRect("Objective", new Rect(180f, 117f, 409f, 64f), ResponsiveHudAnchor.LeftTop);
@@ -1152,6 +1209,17 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
             ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
             RefreshVirtualJoystickRestPosition();
+        }
+
+        private void RefreshSafeAreaLayoutIfNeeded(bool force)
+        {
+            Vector2Int screenSize = new Vector2Int(Screen.width, Screen.height);
+            if (!force && Screen.safeArea == lastAppliedSafeArea && screenSize == lastAppliedScreenSize)
+            {
+                return;
+            }
+
+            ApplyResponsiveSideLayout();
         }
 
         private void ApplyBossHeaderSpacing()
@@ -1178,7 +1246,10 @@ namespace DimensionBrawl.UI
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
             rectTransform.anchoredPosition = new Vector2(
                 designRect.xMin + designRect.width * 0.5f - DimensionHudDesignWidth * 0.5f,
-                DimensionHudDesignHeight * 0.5f - designRect.yMin - designRect.height * 0.5f);
+                DimensionHudDesignHeight * 0.5f
+                    - designRect.yMin
+                    - designRect.height * 0.5f
+                    - safeAreaInsets.Top);
             rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
             rectTransform.localScale = Vector3.one;
         }
@@ -1220,7 +1291,7 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect(rectTransform, designRect, anchor);
         }
 
-        private static void ApplyResponsiveDesignRect(
+        private void ApplyResponsiveDesignRect(
             RectTransform rectTransform,
             Rect designRect,
             ResponsiveHudAnchor anchor)
@@ -1233,25 +1304,33 @@ namespace DimensionBrawl.UI
                     rectTransform.anchorMin = new Vector2(0f, 1f);
                     rectTransform.anchorMax = new Vector2(0f, 1f);
                     rectTransform.pivot = new Vector2(0f, 1f);
-                    rectTransform.anchoredPosition = new Vector2(designRect.xMin, -designRect.yMin);
+                    rectTransform.anchoredPosition = new Vector2(
+                        designRect.xMin + safeAreaInsets.Left,
+                        -(designRect.yMin + safeAreaInsets.Top));
                     break;
                 case ResponsiveHudAnchor.LeftBottom:
                     rectTransform.anchorMin = new Vector2(0f, 0f);
                     rectTransform.anchorMax = new Vector2(0f, 0f);
                     rectTransform.pivot = new Vector2(0f, 0f);
-                    rectTransform.anchoredPosition = new Vector2(designRect.xMin, bottomInset);
+                    rectTransform.anchoredPosition = new Vector2(
+                        designRect.xMin + safeAreaInsets.Left,
+                        bottomInset + safeAreaInsets.Bottom);
                     break;
                 case ResponsiveHudAnchor.RightTop:
                     rectTransform.anchorMin = new Vector2(1f, 1f);
                     rectTransform.anchorMax = new Vector2(1f, 1f);
                     rectTransform.pivot = new Vector2(1f, 1f);
-                    rectTransform.anchoredPosition = new Vector2(-rightInset, -designRect.yMin);
+                    rectTransform.anchoredPosition = new Vector2(
+                        -(rightInset + safeAreaInsets.Right),
+                        -(designRect.yMin + safeAreaInsets.Top));
                     break;
                 case ResponsiveHudAnchor.RightBottom:
                     rectTransform.anchorMin = new Vector2(1f, 0f);
                     rectTransform.anchorMax = new Vector2(1f, 0f);
                     rectTransform.pivot = new Vector2(1f, 0f);
-                    rectTransform.anchoredPosition = new Vector2(-rightInset, bottomInset);
+                    rectTransform.anchoredPosition = new Vector2(
+                        -(rightInset + safeAreaInsets.Right),
+                        bottomInset + safeAreaInsets.Bottom);
                     break;
             }
 

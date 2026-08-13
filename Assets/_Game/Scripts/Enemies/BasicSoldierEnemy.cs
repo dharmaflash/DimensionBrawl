@@ -112,6 +112,8 @@ namespace DimensionBrawl.Enemies
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
         private bool hasLockedAttackDirection;
+        private bool gameplaySuspended;
+        private bool healthEventsSubscribed;
         private Vector3 lockedAttackDirection = Vector3.forward;
         private float[] patternDeckLastUseTimes = Array.Empty<float>();
         private int activePatternDeckIndex = -1;
@@ -131,8 +133,36 @@ namespace DimensionBrawl.Enemies
         public string AttackAnimationTrigger => ActiveAttackTrigger;
         public string HitAnimationTrigger => ActiveHitTrigger;
         public string DeathAnimationTrigger => ActiveDeathTrigger;
+        public bool IsGameplaySuspended => gameplaySuspended;
 
         public event Action<CombatAiPatternState, CombatAiPatternProfile> PatternStateChanged;
+
+        public void SetGameplaySuspended(bool suspended)
+        {
+            gameplaySuspended = suspended;
+            if (!suspended)
+            {
+                if (!isActiveAndEnabled)
+                {
+                    UnsubscribeHealthEvents();
+                }
+
+                if (selfHealth != null && !selfHealth.IsAlive && state != SoldierState.Dead)
+                {
+                    HandleDied();
+                }
+
+                return;
+            }
+
+            SubscribeHealthEvents();
+            dealtDamageThisSwing = false;
+            hasLockedAttackDirection = false;
+            ResetApproachVelocity();
+            knockbackVelocity = Vector3.zero;
+            HideTelegraph();
+            UpdateAnimation(0f);
+        }
 
         private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
         private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
@@ -238,27 +268,67 @@ namespace DimensionBrawl.Enemies
 
         private void OnEnable()
         {
-            if (selfHealth != null)
-            {
-                selfHealth.Damaged += HandleDamaged;
-                selfHealth.Died += HandleDied;
-            }
+            SubscribeHealthEvents();
 
             SetTelegraphVisible(false);
+            if (selfHealth != null && !selfHealth.IsAlive)
+            {
+                HandleDied();
+                return;
+            }
+
             SetBodyColor(normalColor);
         }
 
         private void OnDisable()
         {
+            if (!gameplaySuspended)
+            {
+                UnsubscribeHealthEvents();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeHealthEvents();
+        }
+
+        private void SubscribeHealthEvents()
+        {
+            if (healthEventsSubscribed || selfHealth == null)
+            {
+                return;
+            }
+
+            selfHealth.Damaged += HandleDamaged;
+            selfHealth.Died += HandleDied;
+            healthEventsSubscribed = true;
+        }
+
+        private void UnsubscribeHealthEvents()
+        {
+            if (!healthEventsSubscribed)
+            {
+                return;
+            }
+
             if (selfHealth != null)
             {
                 selfHealth.Damaged -= HandleDamaged;
                 selfHealth.Died -= HandleDied;
             }
+
+            healthEventsSubscribed = false;
         }
 
         private void Update()
         {
+            if (gameplaySuspended)
+            {
+                UpdateAnimation(0f);
+                return;
+            }
+
             ResolveCurrentTarget();
 
             if (state == SoldierState.Dead || target == null || targetHealth == null || !targetHealth.IsAlive)

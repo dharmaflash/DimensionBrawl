@@ -975,10 +975,8 @@ namespace DimensionBrawl.Tests
             CombatHealth[] tutorialTargets =
                 ReadPrivateField<CombatHealth[]>(tutorialDirector, "tutorialTargets");
             Assert.That(tutorialTargets.Length, Is.GreaterThan(0));
-            Scene corridorSceneBeforeTutorialCompletion = SceneManager.GetActiveScene();
-            int playerInstanceIdBeforeTutorialCompletion = player.gameObject.GetInstanceID();
+            int corridorSceneHandleBeforeTutorialCompletion = SceneManager.GetActiveScene().handle;
             string runIdBeforeTutorialCompletion = flowController.CanonicalStageRunId;
-            Vector3 playerPositionBeforeTutorialCompletion = player.transform.position;
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 CombatHealth target = tutorialTargets[i];
@@ -1014,17 +1012,12 @@ namespace DimensionBrawl.Tests
             report.AppendLine("- Move gate: `0.75m` confirmed position movement inside the tutorial area.");
             report.AppendLine("- Fire gate: `0.7s` real aim preview hold after Ready + fire event + player-side target damage/death.");
             report.AppendLine("- Clear gate: all tutorial targets defeated.");
-            yield return WalkDownAuthoredStairsThroughJoystick(
-                flowController,
-                player,
-                combatCamera,
-                corridorSceneBeforeTutorialCompletion,
-                playerInstanceIdBeforeTutorialCompletion,
+            yield return WaitForStationSingleLoad(
                 runIdBeforeTutorialCompletion,
-                playerPositionBeforeTutorialCompletion,
+                corridorSceneHandleBeforeTutorialCompletion,
                 report,
-                18f);
-            report.AppendLine($"- Tutorial completion and stair traversal scene: `{SceneManager.GetActiveScene().path}`.");
+                12f);
+            report.AppendLine($"- Tutorial completion destination scene: `{SceneManager.GetActiveScene().path}`.");
             Directory.CreateDirectory(Path.GetDirectoryName(TutorialTimingReportPath));
             File.WriteAllText(TutorialTimingReportPath, report.ToString());
         }
@@ -1106,10 +1099,8 @@ namespace DimensionBrawl.Tests
             CombatHealth[] tutorialTargets =
                 ReadPrivateField<CombatHealth[]>(tutorial, "tutorialTargets");
             Assert.That(tutorialTargets, Is.Not.Empty);
-            Scene corridorSceneBeforeTutorialCompletion = SceneManager.GetActiveScene();
-            int playerInstanceIdBeforeTutorialCompletion = player.gameObject.GetInstanceID();
+            int corridorSceneHandleBeforeTutorialCompletion = SceneManager.GetActiveScene().handle;
             string runIdBeforeTutorialCompletion = flow.CanonicalStageRunId;
-            Vector3 playerPositionBeforeTutorialCompletion = player.transform.position;
             for (int i = 0; i < tutorialTargets.Length; i++)
             {
                 CombatHealth target = tutorialTargets[i];
@@ -1117,17 +1108,12 @@ namespace DimensionBrawl.Tests
                 Assert.That(ApplyLethalDamage(target, DamageTeam.Player), Is.True);
             }
 
-            yield return WalkDownAuthoredStairsThroughJoystick(
-                flow,
-                player,
-                combatCamera,
-                corridorSceneBeforeTutorialCompletion,
-                playerInstanceIdBeforeTutorialCompletion,
+            yield return WaitForStationSingleLoad(
                 runIdBeforeTutorialCompletion,
-                playerPositionBeforeTutorialCompletion,
+                corridorSceneHandleBeforeTutorialCompletion,
                 report,
-                18f);
-            report.AppendLine("- Player walked down the authored stairs into lower combat without a scene load.");
+                12f);
+            report.AppendLine("- Final tutorial completion loaded the dedicated Station combat scene.");
 
             Behaviour stationGuide = RequireActiveSceneBehaviour(
                 "DimensionBrawl.LevelDesign.OlympusStationCombatIntroTutorialBridge");
@@ -1559,6 +1545,70 @@ namespace DimensionBrawl.Tests
 
             float dragDistance = Mathf.Max(48f, joystickRect.rect.width * 0.3f);
             return new MoveJoystickGesture(joystick, pointerData, center, dragDistance);
+        }
+
+        private static IEnumerator WaitForStationSingleLoad(
+            string expectedRunId,
+            int corridorSceneHandle,
+            StringBuilder report,
+            float timeoutSeconds)
+        {
+            Assert.That(expectedRunId, Is.Not.Empty, "The canonical run must exist before tutorial completion.");
+            Assert.That(corridorSceneHandle, Is.Not.Zero);
+
+            float startedAt = Time.realtimeSinceStartup;
+            while (!string.Equals(
+                SceneManager.GetActiveScene().path.Replace('\\', '/'),
+                StationScenePath,
+                System.StringComparison.Ordinal))
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup - startedAt,
+                    timeoutSeconds,
+                    $"Timed out waiting for final tutorial completion to load {StationScenePath}. "
+                    + $"active={SceneManager.GetActiveScene().path}, "
+                    + $"lifecycle={StageRunRuntime.ActiveContext?.LifecycleState}.");
+                Assert.That(StageRunRuntime.HasActiveContext, Is.True);
+                Assert.That(StageRunRuntime.ActiveContext.Identity.RunId, Is.EqualTo(expectedRunId));
+                Assert.That(
+                    StageRunRuntime.ActiveContext.LifecycleState,
+                    Is.EqualTo(StageRunLifecycleState.CorridorActive)
+                        .Or.EqualTo(StageRunLifecycleState.HandoffPending));
+                yield return null;
+            }
+
+            yield return null;
+            Scene station = SceneManager.GetActiveScene();
+            Assert.That(station.path.Replace('\\', '/'), Is.EqualTo(StationScenePath));
+            Assert.That(
+                station.handle,
+                Is.Not.EqualTo(corridorSceneHandle),
+                "The dedicated Station scene must replace the Corridor scene through SingleLoad.");
+            Assert.That(StageRunRuntime.HasActiveContext, Is.True);
+
+            StageRunContext context = StageRunRuntime.ActiveContext;
+            Assert.That(context.Identity.RunId, Is.EqualTo(expectedRunId));
+            Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
+            Assert.That(context.CurrentSegment.SegmentId, Is.EqualTo("station_entry_combat"));
+            Assert.That(
+                context.CurrentSceneHandle == station.handle,
+                Is.True,
+                $"StageRun must bind the Station scene handle. context={context.CurrentSceneHandle}, active={station.handle}.");
+            Assert.That(context.PendingHandoffToken, Is.Null);
+            Assert.That(context.SegmentEntryReceipt, Is.Not.Null);
+            Assert.That(context.SegmentEntryReceipt.RunId, Is.EqualTo(expectedRunId));
+            Assert.That(context.SegmentEntryReceipt.FromHandoffPending, Is.True);
+            Assert.That(context.SegmentEntryReceipt.RequestedScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(context.SegmentEntryReceipt.ActualScenePath, Is.EqualTo(StationScenePath));
+            Assert.That(context.HandoffTerminalReceipt, Is.Not.Null);
+            Assert.That(context.HandoffTerminalReceipt.LoaderGeneration, Is.GreaterThan(0));
+            Assert.That(context.HandoffTerminalReceipt.LoaderGenerationInvalidated, Is.True);
+            Assert.That(
+                context.HandoffTerminalReceipt.Disposition,
+                Is.EqualTo(StageSegmentHandoffClosedDisposition.DestinationBound));
+            report?.AppendLine(
+                $"- SingleLoad handoff retained run `{expectedRunId}` with loader generation "
+                + $"`{context.HandoffTerminalReceipt.LoaderGeneration}`.");
         }
 
         private static IEnumerator WalkDownAuthoredStairsThroughJoystick(

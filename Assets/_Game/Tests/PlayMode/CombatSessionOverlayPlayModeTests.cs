@@ -67,6 +67,112 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator AndroidBackSettingsCloseRejectsTransientTimeWarpAsResumeBaseline()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CombatHudPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            float originalTimeScale = Time.timeScale;
+
+            try
+            {
+                ICombatSessionOverlay surface = FindSingleSurface(instance);
+                bool? lastInputBlock = null;
+                surface.CombatInputBlockChanged += blocked => lastInputBlock = blocked;
+                // PerfectDodgeTimeWarp's global hit stop can already own this scale before
+                // Android Back opens settings, then decline to restore while the menu owns zero.
+                Time.timeScale = 0.08f;
+
+                surface.ShowSettings();
+                Assert.That(surface.Mode, Is.EqualTo(CombatSessionOverlayMode.Settings));
+                Assert.That(Time.timeScale, Is.Zero);
+                Assert.That(lastInputBlock, Is.True);
+
+                yield return null;
+                Assert.That(Time.timeScale, Is.Zero);
+
+                surface.Resume();
+                Assert.That(surface.Mode, Is.EqualTo(CombatSessionOverlayMode.Hidden));
+                Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+                Assert.That(lastInputBlock, Is.False);
+            }
+            finally
+            {
+                Time.timeScale = originalTimeScale;
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator PauseTracksStableRestoreWrittenWhileMenuOwnsTimeScale()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CombatHudPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            float originalTimeScale = Time.timeScale;
+
+            try
+            {
+                ICombatSessionOverlay surface = FindSingleSurface(instance);
+                Time.timeScale = 0.18f;
+                surface.ShowPause();
+                Assert.That(Time.timeScale, Is.Zero);
+
+                // CombatHitFeedback restores its pre-hit-stop scale even while this unscaled
+                // menu is visible. The finite pause guard captures the stable value before reclaiming zero.
+                Time.timeScale = 1f;
+                yield return null;
+                Assert.That(Time.timeScale, Is.Zero);
+
+                surface.Resume();
+                Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            }
+            finally
+            {
+                Time.timeScale = originalTimeScale;
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator AndroidBackDoesNotReleaseAnExistingHardPauseOwner()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CombatHudPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+            GameObject instance = UnityEngine.Object.Instantiate(prefab);
+            float originalTimeScale = Time.timeScale;
+
+            try
+            {
+                ICombatSessionOverlay surface = FindSingleSurface(instance);
+                Time.timeScale = 0f;
+
+                surface.ShowSettings();
+                Assert.That(surface.Mode, Is.EqualTo(CombatSessionOverlayMode.Settings));
+
+                // A late presentation writer may try to restore its own pre-hit-stop scale while
+                // the entry/stage-clear surface still owns the original hard pause. The menu must
+                // reclaim zero without adopting that transient restore as its resume baseline.
+                Time.timeScale = 1f;
+                yield return null;
+                Assert.That(Time.timeScale, Is.Zero);
+
+                surface.Resume();
+
+                Assert.That(surface.Mode, Is.EqualTo(CombatSessionOverlayMode.Hidden));
+                Assert.That(
+                    Time.timeScale,
+                    Is.Zero,
+                    "Android Back must not release a SceneEntry/StageClear hard-pause lease owned by another surface.");
+            }
+            finally
+            {
+                Time.timeScale = originalTimeScale;
+                UnityEngine.Object.DestroyImmediate(instance);
+            }
+        }
+
         [Test]
         public void StationResultPresenterRoutesPlayerFailureToProductSurfaceOnce()
         {
