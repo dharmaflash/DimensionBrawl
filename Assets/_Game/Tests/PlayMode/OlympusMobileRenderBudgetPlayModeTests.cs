@@ -1134,7 +1134,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void OlympusStationNoCrossVfxDoesNotRenderTheLegacyCubeBurst()
+        public void OlympusStationNoCrossVfxUsesABudgetedVisibleCubeCore()
         {
             GameObject canonicalPrefab =
                 AssetDatabase.LoadAssetAtPath<GameObject>(CanonicalNoCrossVfxPrefabPath);
@@ -1146,12 +1146,27 @@ namespace DimensionBrawl.Tests
             Assert.That(rootRenderer, Is.Not.Null);
             Assert.That(
                 rootParticles.main.playOnAwake,
-                Is.False,
-                "The legacy 109-cube burst must not auto-start on the product boundary line.");
+                Is.True,
+                "The no-cross boundary core must auto-start so the center wall remains readable.");
             Assert.That(
                 rootRenderer.enabled,
-                Is.False,
-                "The legacy cube mesh renderer caused the blocky VFX artifact and mobile overdraw spike.");
+                Is.True,
+                "The budgeted cube core is the visible center wall, not an optional decoration.");
+            Assert.That(
+                rootParticles.main.maxParticles,
+                Is.LessThanOrEqualTo(32),
+                "The restored wall must not regress to the legacy 109-cube mobile overdraw spike.");
+            Assert.That(
+                rootParticles.emission.burstCount,
+                Is.EqualTo(6),
+                "The lightweight core should preserve the authored six-step wall build.");
+            Assert.That(
+                rootParticles.main.startLifetime.mode,
+                Is.EqualTo(ParticleSystemCurveMode.Constant));
+            Assert.That(
+                rootParticles.main.startLifetime.constant,
+                Is.EqualTo(1.9f).Within(0.001f),
+                "The core lifetime must bridge the two-second loop without a blank wall interval.");
 
             ParticleSystemRenderer[] childRenderers =
                 canonicalPrefab.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
@@ -1260,6 +1275,27 @@ namespace DimensionBrawl.Tests
             Assert.That(noCrossRoot, Is.Not.Null);
             Transform noCrossVisual = FindDescendant(noCrossRoot, StationNoCrossVisualName);
             Assert.That(noCrossVisual, Is.Not.Null);
+            ParticleSystem visibleCore = noCrossVisual.GetComponent<ParticleSystem>();
+            ParticleSystemRenderer visibleCoreRenderer =
+                noCrossVisual.GetComponent<ParticleSystemRenderer>();
+            Assert.That(visibleCore, Is.Not.Null);
+            Assert.That(visibleCoreRenderer, Is.Not.Null);
+            Assert.That(visibleCoreRenderer.enabled, Is.True);
+            Assert.That(visibleCore.isPlaying, Is.True);
+            Assert.That(
+                visibleCore.particleCount,
+                Is.GreaterThan(0),
+                "The center wall must contain visible particles after the scene starts.");
+            yield return new WaitForSeconds(1.95f);
+            Assert.That(
+                visibleCore.particleCount,
+                Is.GreaterThan(0),
+                "The center wall core must not disappear between authored particle loops.");
+            yield return new WaitForSeconds(0.35f);
+            Assert.That(
+                visibleCore.particleCount,
+                Is.GreaterThan(0),
+                "The next wall loop must replenish the budgeted core without a visible blank interval.");
             Assert.That(
                 FindSceneTransform(scene, ObsoleteStationBoundaryMarkerName),
                 Is.Null,
