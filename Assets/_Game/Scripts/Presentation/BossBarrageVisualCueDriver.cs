@@ -273,7 +273,7 @@ namespace DimensionBrawl.Presentation
             animator = newAnimator;
             pulseRoot = newPulseRoot;
             pulseRenderers = newPulseRenderers != null ? (Renderer[])newPulseRenderers.Clone() : Array.Empty<Renderer>();
-            damageFlashRenderers = Array.Empty<Renderer>();
+            damageFlashRenderers = ResolveDamageFlashRenderers();
             CaptureBaseScale();
             ApplyColor(baseColor);
             Subscribe();
@@ -294,6 +294,18 @@ namespace DimensionBrawl.Presentation
             cuePlayer = newCuePlayer;
             vfxAnchor = newVfxAnchor;
             vfxDirectionTarget = newVfxDirectionTarget;
+        }
+
+        public void ConfigureAnimationCues(
+            PatternAnimationCue[] newPatternCues,
+            PressureActionCue[] newPressureActionCues)
+        {
+            patternCues = newPatternCues != null
+                ? (PatternAnimationCue[])newPatternCues.Clone()
+                : Array.Empty<PatternAnimationCue>();
+            pressureActionCues = newPressureActionCues != null
+                ? (PressureActionCue[])newPressureActionCues.Clone()
+                : Array.Empty<PressureActionCue>();
         }
 
         public void RequestFollowupHitReaction(int tier, float damage)

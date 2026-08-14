@@ -56,6 +56,10 @@ namespace DimensionBrawl.Combat
         public Vector3 LastPresentationScale => lastPresentationScale;
         public Color LastPresentationColor => lastPresentationColor;
         public Material LastPresentationMaterial => lastPresentationMaterial;
+        public Vector3 LastConfiguredSpawnPosition { get; private set; }
+        public Vector3 LastAuthoredSpawnPosition { get; private set; }
+        public Vector3 LastConfiguredTargetPosition { get; private set; }
+        public bool LastSpawnUsedAuthoredOrigin { get; private set; }
 
         private void Awake()
         {
@@ -76,6 +80,16 @@ namespace DimensionBrawl.Combat
             ApplyTrailPresentation(lastPresentationColor);
         }
 
+        public void RecordAuthoredSpawnOrigin(
+            Vector3 position,
+            bool usedAuthoredOrigin,
+            Vector3 targetPosition)
+        {
+            LastAuthoredSpawnPosition = position;
+            LastSpawnUsedAuthoredOrigin = usedAuthoredOrigin;
+            LastConfiguredTargetPosition = targetPosition;
+        }
+
         public void Configure(
             CombatHealth newSourceHealth,
             DamageTeam newSourceTeam,
@@ -89,12 +103,15 @@ namespace DimensionBrawl.Combat
             SpatialOneShotAudioPool newImpactAudioPool = null)
         {
             EnsurePhysicsComponents();
+            LastConfiguredSpawnPosition = transform.position;
             sourceHealth = newSourceHealth;
             sourceTeam = newSourceTeam;
             impactAudioPool = newImpactAudioPool;
             ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
-            travelDirection = ResolveDirection(newTravelDirection);
+            travelDirection = ResolveDirection(
+                newTravelDirection,
+                preserveVerticalAim: LastSpawnUsedAuthoredOrigin);
             if (travelDirection.sqrMagnitude > 0.0001f)
             {
                 transform.rotation = Quaternion.LookRotation(travelDirection, Vector3.up);
@@ -781,8 +798,13 @@ namespace DimensionBrawl.Combat
             return filtered;
         }
 
-        private static Vector3 ResolveDirection(Vector3 direction)
+        private static Vector3 ResolveDirection(Vector3 direction, bool preserveVerticalAim)
         {
+            if (preserveVerticalAim && direction.sqrMagnitude > 0.0001f)
+            {
+                return direction.normalized;
+            }
+
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (planarDirection.sqrMagnitude > 0.0001f)
             {

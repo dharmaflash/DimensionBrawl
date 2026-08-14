@@ -316,6 +316,31 @@ namespace DimensionBrawl.Combat
                 + Mathf.Max(0, totalPressureActorSuppressCount - actorsBefore);
         }
 
+        /// <summary>
+        /// Removes authored pressure actors for a cinematic ownership handoff
+        /// without crediting the player with a pressure-screen suppression.
+        /// </summary>
+        public int DismissActivePressureSummons()
+        {
+            int dismissed = 0;
+            summonActorPool.ForEach(actor =>
+            {
+                if (actor == null || !actor.IsActive)
+                {
+                    return;
+                }
+
+                if (actor.PressureScreen != null && actor.PressureScreen.IsActive)
+                {
+                    actor.PressureScreen.Deactivate();
+                }
+
+                actor.Deactivate(SummonFrontlineProxyExitReason.Suppressed);
+                dismissed++;
+            });
+            return dismissed;
+        }
+
         public int SuppressActivePressureScreens(int responseSlot)
         {
             int resolvedResponseSlot = Mathf.Clamp(responseSlot, 1, 3);

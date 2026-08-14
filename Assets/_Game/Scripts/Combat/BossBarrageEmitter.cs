@@ -12,6 +12,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform trackedPlayer;
         [SerializeField] private CombatHealth sourceHealth;
+        [SerializeField] private Transform[] projectileSpawnOrigins = Array.Empty<Transform>();
 
         [Header("Pattern")]
         [SerializeField] private BossBarragePatternProfile patternProfile;
@@ -27,6 +28,9 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Transform projectileRoot;
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(16);
+        private readonly Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>> standbyPools =
+            new Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>>();
+        private BossBarrageProjectile pooledProjectilePrefab;
         private SpatialOneShotAudioPool impactAudioPool;
         private Collider[] sourceBodyColliders = Array.Empty<Collider>();
         private CombatHealth sourceBodyColliderOwner;
@@ -41,6 +45,7 @@ namespace DimensionBrawl.Combat
         private BossBarragePatternProfile queuedPriorityPattern;
         private int queuedPriorityWavesRemaining;
         private bool lastFiredWaveWasPriority;
+        private int spawnOriginWaveCursor;
 
         public event Action<BossBarrageEmitter, BossBarragePatternProfile> WindupStarted;
         public event Action<BossBarrageEmitter, BossBarragePatternProfile, int> WaveFired;
@@ -52,9 +57,14 @@ namespace DimensionBrawl.Combat
         public bool CurrentPatternIsPriority => queuedPriorityPattern != null;
         public bool LastFiredWaveWasPriority => lastFiredWaveWasPriority;
         public int QueuedPriorityWavesRemaining => queuedPriorityWavesRemaining;
+        public int PooledProjectileCount => pool.Count;
+        public BossBarrageProjectile PooledProjectilePrefab => pooledProjectilePrefab;
         public float PendingForwardRisk01 => pendingForwardRisk01;
         public BossBarragePatternProfile CurrentPattern => ActivePattern;
         public int CurrentPatternSequenceIndex => patternSequenceIndex;
+        public int ConfiguredSpawnOriginCount => projectileSpawnOrigins != null
+            ? projectileSpawnOrigins.Length
+            : 0;
         public int ActiveProjectileCount
         {
             get
@@ -95,6 +105,14 @@ namespace DimensionBrawl.Combat
             sourceHealth = newSourceHealth;
         }
 
+        public void ConfigureSpawnOrigins(Transform[] newSpawnOrigins)
+        {
+            projectileSpawnOrigins = newSpawnOrigins != null
+                ? Array.FindAll(newSpawnOrigins, origin => origin != null)
+                : Array.Empty<Transform>();
+            spawnOriginWaveCursor = 0;
+        }
+
         public void ConfigurePattern(
             BossBarragePatternProfile newPatternProfile,
             BossBarrageProjectile newProjectilePrefab,
@@ -109,6 +127,48 @@ namespace DimensionBrawl.Combat
             PrewarmPool();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
+        }
+
+        public void PrewarmProjectilePrefab(
+            BossBarrageProjectile targetProjectilePrefab,
+            int targetCount)
+        {
+            int resolvedCount = Mathf.Max(0, targetCount);
+            if (targetProjectilePrefab == null || resolvedCount <= 0)
+            {
+                return;
+            }
+
+            if (pooledProjectilePrefab == targetProjectilePrefab)
+            {
+                EnsurePoolSize(pool, targetProjectilePrefab, resolvedCount, "Pooled");
+                return;
+            }
+
+            if (!standbyPools.TryGetValue(targetProjectilePrefab, out List<BossBarrageProjectile> standby))
+            {
+                standby = new List<BossBarrageProjectile>(resolvedCount);
+                standbyPools.Add(targetProjectilePrefab, standby);
+            }
+
+            EnsurePoolSize(standby, targetProjectilePrefab, resolvedCount, "Standby");
+        }
+
+        public int GetProjectilePoolCountForPrefab(BossBarrageProjectile targetProjectilePrefab)
+        {
+            if (targetProjectilePrefab == null)
+            {
+                return 0;
+            }
+
+            if (pooledProjectilePrefab == targetProjectilePrefab)
+            {
+                return pool.Count;
+            }
+
+            return standbyPools.TryGetValue(targetProjectilePrefab, out List<BossBarrageProjectile> standby)
+                ? standby.Count
+                : 0;
         }
 
         public void ConfigurePatternSequence(BossBarragePatternProfile[] newPatternSequence, int newWavesPerPattern)
@@ -154,10 +214,31 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            queuedPriorityPattern = priorityPattern;
-            queuedPriorityWavesRemaining = Mathf.Max(1, waveCount);
-            cooldownTimer = Mathf.Min(cooldownTimer, priorityPattern.InitialDelaySeconds);
-            return true;
+            return QueuePriorityPatternInternal(priorityPattern, waveCount);
+        }
+
+        /// <summary>
+        /// Reserves the next authored pattern while encounter pacing deliberately
+        /// pauses firing. Unlike QueuePriorityPattern, this explicit handoff API
+        /// does not require firing to be enabled; the queued pattern remains
+        /// dormant until the next firing window opens.
+        /// </summary>
+        public bool QueuePriorityPatternForNextFiringWindow(
+            BossBarragePatternProfile priorityPattern,
+            int waveCount = 1)
+        {
+            if (priorityPattern == null || windupActive)
+            {
+                return false;
+            }
+
+            if (queuedPriorityPattern != null)
+            {
+                return queuedPriorityPattern == priorityPattern
+                    && queuedPriorityWavesRemaining >= Mathf.Max(1, waveCount);
+            }
+
+            return QueuePriorityPatternInternal(priorityPattern, waveCount);
         }
 
         public bool CancelQueuedPriorityPattern(BossBarragePatternProfile priorityPattern)
@@ -282,6 +363,7 @@ namespace DimensionBrawl.Combat
             lastFiredWaveWasPriority = queuedPriorityPattern != null;
             int spawnedCount = 0;
             int projectileCount = activePattern.ProjectilesPerWave;
+            int waveOriginCursor = spawnOriginWaveCursor;
             for (int i = 0; i < projectileCount; i++)
             {
                 float offset = activePattern.GetLateralOffset(i, projectileCount, pendingForwardRisk01);
@@ -289,10 +371,18 @@ namespace DimensionBrawl.Combat
                 if (TryFireProjectile(
                     activePattern,
                     pendingTargetLanePoint.x + offset,
-                    pendingTargetLanePoint.y + depthOffset))
+                    pendingTargetLanePoint.y + depthOffset,
+                    waveOriginCursor + i))
                 {
                     spawnedCount++;
                 }
+            }
+
+            if (ConfiguredSpawnOriginCount > 0)
+            {
+                // The setup orders six Akaza muzzles as A,F,B,E,C,D. Advancing by
+                // one mirrored pair yields three deterministic, readable waves.
+                spawnOriginWaveCursor = (spawnOriginWaveCursor + 2) % ConfiguredSpawnOriginCount;
             }
 
             cooldownTimer = activePattern.WaveIntervalSeconds;
@@ -315,7 +405,11 @@ namespace DimensionBrawl.Combat
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
         }
 
-        private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX, float targetLaneZ)
+        private bool TryFireProjectile(
+            BossBarragePatternProfile activePattern,
+            float targetLateralX,
+            float targetLaneZ,
+            int spawnOriginIndex)
         {
             BossBarrageProjectile projectile = GetInactiveProjectile();
             if (projectile == null)
@@ -327,14 +421,28 @@ namespace DimensionBrawl.Combat
                 targetLateralX,
                 Mathf.Clamp(targetLaneZ, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ),
                 activePattern.TargetHeight);
-            Vector3 spawnPoint = laneSpace.GetLaneWorldPoint(
-                Mathf.Lerp(pendingTargetLanePoint.x, targetLateralX, 0.35f),
-                laneSpace.BossProxyZ,
-                activePattern.SpawnHeight);
+            Vector3 spawnPoint;
+            Transform authoredOrigin = ResolveConfiguredSpawnOrigin(spawnOriginIndex);
+            if (authoredOrigin != null)
+            {
+                spawnPoint = authoredOrigin.position;
+            }
+            else
+            {
+                spawnPoint = laneSpace.GetLaneWorldPoint(
+                    Mathf.Lerp(pendingTargetLanePoint.x, targetLateralX, 0.35f),
+                    laneSpace.BossProxyZ,
+                    activePattern.SpawnHeight);
+            }
+            projectile.RecordAuthoredSpawnOrigin(
+                spawnPoint,
+                authoredOrigin != null,
+                targetPoint);
             spawnPoint = ResolveSourceClearedSpawnPoint(
                 spawnPoint,
                 targetPoint,
-                activePattern.ProjectileRadius);
+                activePattern.ProjectileRadius,
+                applySourceRootClearance: authoredOrigin == null);
             Vector3 direction = targetPoint - spawnPoint;
             projectile.transform.SetPositionAndRotation(
                 spawnPoint,
@@ -360,7 +468,23 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
-        private Vector3 ResolveSourceClearedSpawnPoint(Vector3 spawnPoint, Vector3 targetPoint, float projectileRadius)
+        private Transform ResolveConfiguredSpawnOrigin(int index)
+        {
+            int count = ConfiguredSpawnOriginCount;
+            if (count <= 0)
+            {
+                return null;
+            }
+
+            int safeIndex = ((index % count) + count) % count;
+            return projectileSpawnOrigins[safeIndex];
+        }
+
+        private Vector3 ResolveSourceClearedSpawnPoint(
+            Vector3 spawnPoint,
+            Vector3 targetPoint,
+            float projectileRadius,
+            bool applySourceRootClearance)
         {
             Collider[] sourceColliders = ResolveSourceBodyColliders();
             if (sourceColliders.Length == 0)
@@ -374,11 +498,21 @@ namespace DimensionBrawl.Combat
                 return spawnPoint;
             }
 
-            Vector3 forward = direction.normalized;
+            Vector3 forward = applySourceRootClearance
+                ? direction.normalized
+                : Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+            if (forward.sqrMagnitude <= 0.0001f)
+            {
+                return spawnPoint;
+            }
             float radius = Mathf.Max(0.05f, projectileRadius);
             Vector3 resolvedSpawnPoint = spawnPoint;
             float sourceRadius = ResolveSourceColliderMaxExtent(sourceColliders);
-            if (sourceHealth != null && sourceRadius > 0f)
+            // The legacy lane-space origin is synthesized around sourceHealth and
+            // needs a root-radius clearance. An authored muzzle is already the
+            // authoritative body-exit point; applying the root-relative distance
+            // again can move absolute-coordinate rigs many metres off the weapon.
+            if (applySourceRootClearance && sourceHealth != null && sourceRadius > 0f)
             {
                 float minimumForwardDistance = sourceRadius + radius + 0.05f;
                 float currentForwardDistance = Vector3.Dot(
@@ -571,21 +705,74 @@ namespace DimensionBrawl.Combat
             queuedPriorityWavesRemaining = 0;
         }
 
+        private bool QueuePriorityPatternInternal(
+            BossBarragePatternProfile priorityPattern,
+            int waveCount)
+        {
+            queuedPriorityPattern = priorityPattern;
+            queuedPriorityWavesRemaining = Mathf.Max(1, waveCount);
+            cooldownTimer = Mathf.Min(cooldownTimer, priorityPattern.InitialDelaySeconds);
+            return true;
+        }
+
         private void PrewarmPool()
         {
             BossBarrageProjectile activeProjectilePrefab = ActiveProjectilePrefab;
-            if (activeProjectilePrefab == null || prewarmCount <= pool.Count)
+            if (activeProjectilePrefab == null)
             {
                 return;
             }
 
-            Transform root = projectileRoot != null ? projectileRoot : transform;
-            while (pool.Count < prewarmCount)
+            SwitchActiveProjectilePool(activeProjectilePrefab);
+            EnsurePoolSize(pool, activeProjectilePrefab, prewarmCount, "Pooled");
+        }
+
+        private void SwitchActiveProjectilePool(BossBarrageProjectile activeProjectilePrefab)
+        {
+            if (pooledProjectilePrefab == activeProjectilePrefab)
             {
-                BossBarrageProjectile projectile = Instantiate(activeProjectilePrefab, root);
-                projectile.name = $"{activeProjectilePrefab.name}_Pooled_{pool.Count:00}";
+                return;
+            }
+
+            if (pooledProjectilePrefab != null && pool.Count > 0)
+            {
+                if (!standbyPools.TryGetValue(
+                    pooledProjectilePrefab,
+                    out List<BossBarrageProjectile> previousPool))
+                {
+                    previousPool = new List<BossBarrageProjectile>(pool.Count);
+                    standbyPools.Add(pooledProjectilePrefab, previousPool);
+                }
+
+                previousPool.AddRange(pool);
+            }
+
+            pool.Clear();
+            if (standbyPools.TryGetValue(
+                activeProjectilePrefab,
+                out List<BossBarrageProjectile> nextPool))
+            {
+                pool.AddRange(nextPool);
+                standbyPools.Remove(activeProjectilePrefab);
+            }
+
+            pooledProjectilePrefab = activeProjectilePrefab;
+        }
+
+        private void EnsurePoolSize(
+            List<BossBarrageProjectile> targetPool,
+            BossBarrageProjectile targetProjectilePrefab,
+            int targetCount,
+            string nameSuffix)
+        {
+            Transform root = projectileRoot != null ? projectileRoot : transform;
+            while (targetPool.Count < targetCount)
+            {
+                BossBarrageProjectile projectile = Instantiate(targetProjectilePrefab, root);
+                projectile.name =
+                    $"{targetProjectilePrefab.name}_{nameSuffix}_{targetPool.Count:00}";
                 projectile.Deactivate();
-                pool.Add(projectile);
+                targetPool.Add(projectile);
             }
         }
 

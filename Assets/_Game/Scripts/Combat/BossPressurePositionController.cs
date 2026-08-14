@@ -138,6 +138,11 @@ namespace DimensionBrawl.Combat
             movementEnabled = enabled;
         }
 
+        public void ConfigureMovementAnimator(Animator newMovementAnimator)
+        {
+            movementAnimator = newMovementAnimator;
+        }
+
         public void Tick(float deltaTime)
         {
             if (!movementEnabled || deltaTime <= 0f)

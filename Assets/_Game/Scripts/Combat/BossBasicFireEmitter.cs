@@ -33,6 +33,9 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Vector2 volleySfxPitchRange = new Vector2(0.96f, 1.04f);
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(12);
+        private readonly Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>> standbyPools =
+            new Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>>();
+        private BossBarrageProjectile pooledProjectilePrefab;
         private SpatialOneShotAudioPool impactAudioPool;
         private float cooldownTimer;
         private float lastForwardRisk01;
@@ -53,6 +56,9 @@ namespace DimensionBrawl.Combat
         public int VolleySfxClipCount => volleySfxClips != null ? volleySfxClips.Length : 0;
         public Vector2 LastTargetLanePoint => lastTargetLanePoint;
         public float CooldownRemaining => cooldownTimer;
+        public Transform FireOrigin => fireOrigin;
+        public int PooledProjectileCount => pool.Count;
+        public BossBarrageProjectile PooledProjectilePrefab => pooledProjectilePrefab;
         public int ActiveProjectileCount
         {
             get
@@ -87,6 +93,11 @@ namespace DimensionBrawl.Combat
             sourceHealth = newSourceHealth;
         }
 
+        public void ConfigureFireOrigin(Transform newFireOrigin)
+        {
+            fireOrigin = newFireOrigin;
+        }
+
         public void ConfigureProfile(
             BossBasicFireProfile newFireProfile,
             BossBarrageProjectile newProjectilePrefab,
@@ -99,6 +110,48 @@ namespace DimensionBrawl.Combat
             EnsureImpactAudioPool();
             PrewarmPool();
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
+        }
+
+        public void PrewarmProjectilePrefab(
+            BossBarrageProjectile targetProjectilePrefab,
+            int targetCount)
+        {
+            int resolvedCount = Mathf.Max(0, targetCount);
+            if (targetProjectilePrefab == null || resolvedCount <= 0)
+            {
+                return;
+            }
+
+            if (pooledProjectilePrefab == targetProjectilePrefab)
+            {
+                EnsurePoolSize(pool, targetProjectilePrefab, resolvedCount, "BasicPooled");
+                return;
+            }
+
+            if (!standbyPools.TryGetValue(targetProjectilePrefab, out List<BossBarrageProjectile> standby))
+            {
+                standby = new List<BossBarrageProjectile>(resolvedCount);
+                standbyPools.Add(targetProjectilePrefab, standby);
+            }
+
+            EnsurePoolSize(standby, targetProjectilePrefab, resolvedCount, "BasicStandby");
+        }
+
+        public int GetProjectilePoolCountForPrefab(BossBarrageProjectile targetProjectilePrefab)
+        {
+            if (targetProjectilePrefab == null)
+            {
+                return 0;
+            }
+
+            if (pooledProjectilePrefab == targetProjectilePrefab)
+            {
+                return pool.Count;
+            }
+
+            return standbyPools.TryGetValue(targetProjectilePrefab, out List<BossBarrageProjectile> standby)
+                ? standby.Count
+                : 0;
         }
 
         public void ConfigureVolleyAudio(
@@ -360,18 +413,61 @@ namespace DimensionBrawl.Combat
         private void PrewarmPool()
         {
             BossBarrageProjectile activeProjectilePrefab = ActiveProjectilePrefab;
-            if (activeProjectilePrefab == null || prewarmCount <= pool.Count)
+            if (activeProjectilePrefab == null)
             {
                 return;
             }
 
-            Transform root = projectileRoot != null ? projectileRoot : transform;
-            while (pool.Count < prewarmCount)
+            SwitchActiveProjectilePool(activeProjectilePrefab);
+            EnsurePoolSize(pool, activeProjectilePrefab, prewarmCount, "BasicPooled");
+        }
+
+        private void SwitchActiveProjectilePool(BossBarrageProjectile activeProjectilePrefab)
+        {
+            if (pooledProjectilePrefab == activeProjectilePrefab)
             {
-                BossBarrageProjectile projectile = Instantiate(activeProjectilePrefab, root);
-                projectile.name = $"{activeProjectilePrefab.name}_BasicPooled_{pool.Count:00}";
+                return;
+            }
+
+            if (pooledProjectilePrefab != null && pool.Count > 0)
+            {
+                if (!standbyPools.TryGetValue(
+                    pooledProjectilePrefab,
+                    out List<BossBarrageProjectile> previousPool))
+                {
+                    previousPool = new List<BossBarrageProjectile>(pool.Count);
+                    standbyPools.Add(pooledProjectilePrefab, previousPool);
+                }
+
+                previousPool.AddRange(pool);
+            }
+
+            pool.Clear();
+            if (standbyPools.TryGetValue(
+                activeProjectilePrefab,
+                out List<BossBarrageProjectile> nextPool))
+            {
+                pool.AddRange(nextPool);
+                standbyPools.Remove(activeProjectilePrefab);
+            }
+
+            pooledProjectilePrefab = activeProjectilePrefab;
+        }
+
+        private void EnsurePoolSize(
+            List<BossBarrageProjectile> targetPool,
+            BossBarrageProjectile targetProjectilePrefab,
+            int targetCount,
+            string nameSuffix)
+        {
+            Transform root = projectileRoot != null ? projectileRoot : transform;
+            while (targetPool.Count < targetCount)
+            {
+                BossBarrageProjectile projectile = Instantiate(targetProjectilePrefab, root);
+                projectile.name =
+                    $"{targetProjectilePrefab.name}_{nameSuffix}_{targetPool.Count:00}";
                 projectile.Deactivate();
-                pool.Add(projectile);
+                targetPool.Add(projectile);
             }
         }
 

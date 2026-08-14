@@ -215,9 +215,12 @@ namespace DimensionBrawl.Combat
 
         private readonly BossBarragePocketPressurePacing pressurePacing = new BossBarragePocketPressurePacing();
         private PocketState state;
+        private bool externalCombatSuspended;
         private bool usedSkill1;
         private bool usedSummonSlot1;
         private bool closeThreatDefeated;
+        private bool phaseTwoSummonBlockHandoffArmed;
+        private bool phaseTwoPocketObjectiveCompleted;
         private bool blockedBossPressureWithSummon;
         private bool grantedSummonFollowupEnergy;
         private bool usedSkill1DuringSummonFollowup;
@@ -301,7 +304,9 @@ namespace DimensionBrawl.Combat
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
+        public bool PhaseTwoPocketObjectiveCompleted => phaseTwoPocketObjectiveCompleted;
         public bool IsFailed => state == PocketState.Failed;
+        public bool IsExternalCombatSuspended => externalCombatSuspended;
         public RouteFailureReason FailureReason => failureReason;
         public bool FailedFromRouteStabilityCollapse => failureReason == RouteFailureReason.RouteStabilityCollapsed;
         public bool UsedSkill1 => usedSkill1;
@@ -473,6 +478,11 @@ namespace DimensionBrawl.Combat
                         "Player HP reached zero before the answer completed");
                 }
 
+                if (phaseTwoPocketObjectiveCompleted)
+                {
+                    return "Counter complete - defeat the boss";
+                }
+
                 if (counterWaveObserved && !counterWaveStabilized)
                 {
                     if (bossBlockedSkill1Followup)
@@ -608,15 +618,116 @@ namespace DimensionBrawl.Combat
             SubscribeSupportSummonActions();
         }
 
+        public void SetExternalCombatSuspended(bool suspended)
+        {
+            externalCombatSuspended = suspended;
+            if (suspended)
+            {
+                SetBarrageEnabled(false);
+                SetEnergyGainEnabled(false);
+                SetBossPressureCostGainEnabled(false);
+                SetBossPressureActionsEnabled(false);
+                return;
+            }
+
+            if (state != PocketState.Running)
+            {
+                return;
+            }
+
+            SetEnergyGainEnabled(true);
+            SetBossPressureCostGainEnabled(true);
+            SetBossPressureActionsEnabled(true);
+            ApplyRunningBarragePacing();
+        }
+
+        public bool BeginAtSummonBlock()
+        {
+            if (state != PocketState.Running || closeThreatDefeated)
+            {
+                return false;
+            }
+
+            ResetSummonBlockCycleForHandoff();
+            OpenSummonBlockOpportunity();
+            PublishRouteDecisionChangeIfNeeded();
+            PublishStageBeatChangeIfNeeded();
+            return true;
+        }
+
+        /// <summary>
+        /// Starts a fresh Phase 2 summon-block cycle even when the Phase 1 pocket
+        /// already recorded its close-threat answer or route result. The canonical
+        /// boss health remains unchanged; only the repeatable pressure grammar is
+        /// re-armed. Repeated calls are idempotent for fail-open handoffs.
+        /// </summary>
+        public bool BeginPhaseTwoAtSummonBlock()
+        {
+            if (phaseTwoSummonBlockHandoffArmed)
+            {
+                return true;
+            }
+
+            if (bossHealth != null && !bossHealth.IsAlive)
+            {
+                return false;
+            }
+
+            state = PocketState.Running;
+            failureReason = RouteFailureReason.None;
+            closeThreatDefeated = false;
+            lastResultRecord = default;
+            resultRecordCommitCount = 0;
+            ResetSummonBlockCycleForHandoff();
+            InvokePhaseTwoHandoffStepSafely(
+                OpenSummonBlockOpportunity,
+                "open the summon-block opportunity");
+            SetMarkers();
+            InvokePhaseTwoHandoffStepSafely(
+                PublishRouteDecisionChangeIfNeeded,
+                "publish the route-decision handoff");
+            InvokePhaseTwoHandoffStepSafely(
+                PublishStageBeatChangeIfNeeded,
+                "publish the stage-beat handoff");
+            phaseTwoSummonBlockHandoffArmed = true;
+            phaseTwoPocketObjectiveCompleted = false;
+            return true;
+        }
+
+        private void InvokePhaseTwoHandoffStepSafely(Action action, string label)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            try
+            {
+                action();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    $"{name} could not {label}; the Phase 2 combat handoff will continue: {exception}",
+                    this);
+            }
+        }
+
         public void ResetPocket()
         {
             state = PocketState.Running;
+            externalCombatSuspended = false;
             usedSkill1 = false;
             usedSummonSlot1 = false;
             closeThreatDefeated = false;
+            phaseTwoSummonBlockHandoffArmed = false;
+            phaseTwoPocketObjectiveCompleted = false;
             blockedBossPressureWithSummon = false;
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
             skill1FollowupHitConfirmed = false;
             skill1FollowupDamage = 0f;
             skill1FollowupClearTimer = 0f;
@@ -709,9 +820,6 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            elapsedSeconds += Mathf.Max(0f, deltaTime);
-            TickVanguardAssistSuppress(deltaTime);
-            CaptureActionUse();
             if (playerHealth != null && !playerHealth.IsAlive)
             {
                 FailPocket(RouteFailureReason.PlayerDown);
@@ -719,6 +827,15 @@ namespace DimensionBrawl.Combat
                 PublishStageBeatChangeIfNeeded();
                 return;
             }
+
+            if (externalCombatSuspended)
+            {
+                return;
+            }
+
+            elapsedSeconds += Mathf.Max(0f, deltaTime);
+            TickVanguardAssistSuppress(deltaTime);
+            CaptureActionUse();
 
             TrySuppressBossScreenForHighTierFollowup();
             CaptureCloseThreatDefeat();
@@ -732,7 +849,15 @@ namespace DimensionBrawl.Combat
 
             if (CanClearPocket())
             {
-                ClearPocket();
+                if (phaseTwoSummonBlockHandoffArmed
+                    && (bossHealth == null || bossHealth.IsAlive))
+                {
+                    CompletePhaseTwoPocketObjectiveAndContinueCombat();
+                }
+                else
+                {
+                    ClearPocket();
+                }
             }
 
             PublishRouteDecisionChangeIfNeeded();
@@ -796,6 +921,11 @@ namespace DimensionBrawl.Combat
 
         private bool CanClearPocket()
         {
+            if (phaseTwoPocketObjectiveCompleted)
+            {
+                return false;
+            }
+
             if (!closeThreatDefeated
                 || !usedSummonSlot1
                 || !blockedBossPressureWithSummon)
@@ -809,6 +939,22 @@ namespace DimensionBrawl.Combat
             }
 
             return skill1FollowupHitConfirmed && skill1FollowupClearTimer <= 0f;
+        }
+
+        private void CompletePhaseTwoPocketObjectiveAndContinueCombat()
+        {
+            if (phaseTwoPocketObjectiveCompleted)
+            {
+                return;
+            }
+
+            phaseTwoPocketObjectiveCompleted = true;
+            ClearPressurePacing();
+            SetBarrageEnabled(true);
+            SetEnergyGainEnabled(true);
+            SetBossPressureCostGainEnabled(true);
+            SetBossPressureActionsEnabled(true);
+            SetMarkers();
         }
 
         private void OnPlayerDamaged(DamageInfo damageInfo)
@@ -877,6 +1023,11 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            OpenSummonBlockOpportunity();
+        }
+
+        private void OpenSummonBlockOpportunity()
+        {
             closeThreatDefeated = true;
             pressureBlocksAtCloseThreatDefeat = summonSlot1Action != null
                 ? summonSlot1Action.TotalPressureScreenInterceptCount
@@ -884,6 +1035,52 @@ namespace DimensionBrawl.Combat
             StartPressureRelief();
             AddRouteStability(ResolveCloseProbeDefeatRouteBonus01());
             SummonBlockOpportunityOpened?.Invoke();
+        }
+
+        private void ResetSummonBlockCycleForHandoff()
+        {
+            usedSummonSlot1 = false;
+            blockedBossPressureWithSummon = false;
+            grantedSummonFollowupEnergy = false;
+            usedSkill1DuringSummonFollowup = false;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
+            skill1FollowupHitConfirmed = false;
+            skill1FollowupDamage = 0f;
+            skill1FollowupClearTimer = 0f;
+            pressureBlocksConsumedBySummonBreak = 0;
+            bossPressureBlocksAtSummonBreakStart = GetBossPressureScreenBlockCount();
+            bossPressureBlocksConsumedDuringFollowup = 0;
+            observedSkillUseCount = GetSkillUseCount();
+            observedSummonUseCount = GetSummonUseCount();
+            skillUsesAtSummonBreakStart = observedSkillUseCount;
+            pressurePacing.Reset();
+            followupMissedNotified = false;
+            bossBlockedSkill1Followup = false;
+            bossScreenSuppressedByFollowup = false;
+            bossPressureScreensSuppressedByFollowup = 0;
+            highestBossScreenSuppressSummonTier = 0;
+            vanguardAssistSuppressTier = 0;
+            vanguardAssistSuppressTimer = 0f;
+            counterWaveObserved = false;
+            counterWaveStabilized = false;
+            counterWaveFinalWindowOpened = false;
+            grantedCounterWaveAnswerEnergyPulse = false;
+            counterWaveSource = CounterWaveSource.None;
+            lastCounterWaveEntryPenalty = 0f;
+            lastCounterWaveStabilityBonus = 0f;
+            lastCounterWaveFinalWindowDuration = 0f;
+            lastCounterWaveFinalWindowRouteScale = 1f;
+            lastCounterWaveAnswerEnergyPulse = 0f;
+            counterWaveAllyHoldTimer = 0f;
+            summonUsesAtCounterWaveStart = observedSummonUseCount;
+            counterWaveAllyHoldInterrupted = false;
+            bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
+            lastSummonPressureBreakTier = 0;
+            lastSummonPressureBreakDuration = 0f;
+            lastSummonFollowupWindowDuration = 0f;
+            lastGrantedSummonFollowupEnergyPulse = 0f;
         }
 
         private int CountPressureBlocksAfterCloseThreatDefeated()
@@ -1361,7 +1558,7 @@ namespace DimensionBrawl.Combat
 
         private void ApplyRunningBarragePacing()
         {
-            if (state != PocketState.Running)
+            if (state != PocketState.Running || externalCombatSuspended)
             {
                 return;
             }
@@ -2961,6 +3158,7 @@ namespace DimensionBrawl.Combat
 
         private void SetBarrageEnabled(bool enabled)
         {
+            enabled = enabled && !externalCombatSuspended;
             if (bossBarrageEmitter != null)
             {
                 bossBarrageEmitter.SetFiringEnabled(enabled);
@@ -2974,6 +3172,7 @@ namespace DimensionBrawl.Combat
 
         private void SetEnergyGainEnabled(bool enabled)
         {
+            enabled = enabled && !externalCombatSuspended;
             if (energyLadder != null)
             {
                 energyLadder.SetGainEnabled(enabled);
@@ -2982,6 +3181,7 @@ namespace DimensionBrawl.Combat
 
         private void SetBossPressureCostGainEnabled(bool enabled)
         {
+            enabled = enabled && !externalCombatSuspended;
             if (bossPressureCostLadder != null)
             {
                 bossPressureCostLadder.SetGainEnabled(enabled);
@@ -2990,6 +3190,7 @@ namespace DimensionBrawl.Combat
 
         private void SetBossPressureActionsEnabled(bool enabled)
         {
+            enabled = enabled && !externalCombatSuspended;
             if (bossPressureActionDirector != null)
             {
                 bossPressureActionDirector.SetActionsEnabled(enabled);
