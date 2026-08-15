@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -107,6 +108,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("PrepareContinuationShot(shot)"));
             Assert.That(source, Does.Contain("director?.LastSealedRuntimeProof"));
             Assert.That(source, Does.Contain("director.SnapshotRuntimeProof()"));
+            Assert.That(source, Does.Contain("catch (Exception continuationFailure)"));
+            Assert.That(source, Does.Contain(
+                "AppendValidatedSealedRuntimeProof("));
+            Assert.That(
+                CountOccurrences(source, "CaptureSealedRuntimeProof(previous);"),
+                Is.EqualTo(2),
+                "Both successful and failed continuation paths must preserve "
+                + "the prior sealed proof.");
             Assert.That(source, Does.Not.Contain("AttachToFreshActiveScene(shot)"));
             Assert.That(
                 CountOccurrences(source, "AttachToFreshActiveScene("),
@@ -141,7 +150,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Not.Contain(
                 "recorder.directorDestroyCallCountBeforeNextShot = 0;"));
             Assert.That(source, Does.Not.Contain("CleanupActiveShot"));
-            Assert.That(source, Does.Contain("ValidateRuntimeProof(proof)"));
+            Assert.That(
+                source,
+                Does.Contain(
+                    "AuditionPvCityHeroPocketCapture.ValidateRuntimeProof"));
             Assert.That(source, Does.Contain("ReopenProductSceneAfterPlayMode"));
             Assert.That(source, Does.Contain(".city-")
                 .And.Contain("-remap-"));
@@ -718,6 +730,92 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.Throws<InvalidOperationException>(() =>
                 AuditionPvCityHeroPocketGoldenRunner
                     .ValidateFinalDirectorLifecycle(recorder));
+        }
+
+        [Test]
+        public void FailureSealedProofAppender_PreservesExactG01G02OrderOnly()
+        {
+            var proofs = new List<AuditionPvCityHeroPocketRuntimeProof>();
+            var g01 = new AuditionPvCityHeroPocketRuntimeProof
+            {
+                shotId = AuditionPvCityHeroPocketCapture.G01ShotId
+            };
+            var g02 = new AuditionPvCityHeroPocketRuntimeProof
+            {
+                shotId = AuditionPvCityHeroPocketCapture.G02ShotId
+            };
+            Assert.DoesNotThrow(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        proofs,
+                        g01,
+                        AuditionPvCityShot.G01,
+                        _ => { }));
+            Assert.DoesNotThrow(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        proofs,
+                        g02,
+                        AuditionPvCityShot.G02,
+                        _ => { }));
+            Assert.That(
+                proofs.Select(value => value.shotId),
+                Is.EqualTo(new[]
+                {
+                    AuditionPvCityHeroPocketCapture.G01ShotId,
+                    AuditionPvCityHeroPocketCapture.G02ShotId
+                }));
+
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        proofs,
+                        g02,
+                        AuditionPvCityShot.G02,
+                        _ => { }));
+            Assert.That(proofs.Count, Is.EqualTo(2));
+
+            var invalidId = new List<AuditionPvCityHeroPocketRuntimeProof>
+            {
+                g01
+            };
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        invalidId,
+                        new AuditionPvCityHeroPocketRuntimeProof
+                        {
+                            shotId = AuditionPvCityHeroPocketCapture.G03ShotId
+                        },
+                        AuditionPvCityShot.G02,
+                        _ => { }));
+            Assert.That(invalidId.Count, Is.EqualTo(1));
+
+            var invalidProof = new List<AuditionPvCityHeroPocketRuntimeProof>
+            {
+                g01
+            };
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        invalidProof,
+                        g02,
+                        AuditionPvCityShot.G02,
+                        _ => throw new InvalidOperationException("invalid proof")));
+            Assert.That(invalidProof.Count, Is.EqualTo(1));
+
+            var wrongHistory = new List<AuditionPvCityHeroPocketRuntimeProof>
+            {
+                g02
+            };
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner
+                    .AppendValidatedSealedRuntimeProof(
+                        wrongHistory,
+                        g02,
+                        AuditionPvCityShot.G02,
+                        _ => { }));
+            Assert.That(wrongHistory.Count, Is.EqualTo(1));
         }
 
         [Test]

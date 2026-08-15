@@ -1218,6 +1218,7 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                     && !transition.IsInputLocked
                     && !transition.IsAiLocked
                     && transition.PresentationFrame == 0
+                    && transition.IgnoredLaneActionProjectileTriggerEnterCount == 0
                     && transition.RejectedTriggerEnterCount == 0
                     && transition.TriggerAcceptedCount == 0
                     && transition.TransitionStartedCount == 0

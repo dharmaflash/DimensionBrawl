@@ -1363,6 +1363,58 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        internal static void AppendValidatedSealedRuntimeProof(
+            IList<AuditionPvCityHeroPocketRuntimeProof> destination,
+            AuditionPvCityHeroPocketRuntimeProof candidate,
+            AuditionPvCityShot expectedShot,
+            Action<AuditionPvCityHeroPocketRuntimeProof> validator)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+            if (candidate == null)
+            {
+                throw new ArgumentNullException(nameof(candidate));
+            }
+            if (validator == null)
+            {
+                throw new ArgumentNullException(nameof(validator));
+            }
+
+            int expectedIndex = Array.IndexOf(ShotOrder, expectedShot);
+            string expectedId = ShotId(expectedShot);
+            if (expectedIndex < 0
+                || destination.Count != expectedIndex
+                || !string.Equals(
+                    candidate.shotId,
+                    expectedId,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "City sealed runtime proof order or shot ID drifted for "
+                    + expectedId + ".");
+            }
+
+            for (int index = 0; index < destination.Count; index++)
+            {
+                AuditionPvCityHeroPocketRuntimeProof prior = destination[index];
+                string requiredPriorId = ShotId(ShotOrder[index]);
+                if (prior == null
+                    || !string.Equals(
+                        prior.shotId,
+                        requiredPriorId,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "City sealed runtime proof history is duplicated or out of order.");
+                }
+            }
+
+            validator(candidate);
+            destination.Add(candidate);
+        }
+
         internal static void ValidateG02G03Continuity(
             ShotRecorderProof g02Recorder,
             AuditionPvCityHeroPocketRuntimeProof g02,
@@ -2572,9 +2624,43 @@ namespace DimensionBrawl.Editor.AuditionPV
                         AuditionPvCityHeroPocketGoldenRunner.ShotOrder[index - 1];
                     MarkNoDirectorCleanupBeforeContinuation(previous);
                     IEnumerator continuation = director.PrepareContinuationShot(shot);
-                    while (continuation.MoveNext())
+                    while (true)
                     {
-                        yield return continuation.Current;
+                        bool moved;
+                        object yielded;
+                        try
+                        {
+                            moved = continuation.MoveNext();
+                            yielded = moved ? continuation.Current : null;
+                        }
+                        catch (Exception continuationFailure)
+                        {
+                            try
+                            {
+                                CaptureSealedRuntimeProof(previous);
+                            }
+                            catch (Exception proofFailure)
+                            {
+                                throw new AggregateException(
+                                    "City continuation failed and its prior sealed "
+                                    + "runtime proof could not be preserved.",
+                                    continuationFailure,
+                                    proofFailure);
+                            }
+
+                            throw new InvalidOperationException(
+                                "City continuation failed after preserving the exact "
+                                + AuditionPvCityHeroPocketGoldenRunner.ShotId(previous)
+                                + " sealed runtime proof.",
+                                continuationFailure);
+                        }
+
+                        if (!moved)
+                        {
+                            break;
+                        }
+
+                        yield return yielded;
                     }
 
                     CaptureSealedRuntimeProof(previous);
@@ -2786,8 +2872,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "City continuation sealed the wrong shot proof.");
             }
 
-            AuditionPvCityHeroPocketCapture.ValidateRuntimeProof(proof);
-            runtimeProofs.Add(proof);
+            AuditionPvCityHeroPocketGoldenRunner.AppendValidatedSealedRuntimeProof(
+                runtimeProofs,
+                proof,
+                sealedShot,
+                AuditionPvCityHeroPocketCapture.ValidateRuntimeProof);
             AuditionPvCityHeroPocketGoldenRunner.ShotRecorderProof recorder =
                 recorderProofs.Single(value => string.Equals(
                     value.shotId,

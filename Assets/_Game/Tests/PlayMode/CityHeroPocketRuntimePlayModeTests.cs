@@ -388,6 +388,9 @@ namespace DimensionBrawl.Tests
             Assert.That(transition.PlayerController, Is.SameAs(playerController));
             Assert.That(transition.ExitTrigger.isTrigger, Is.True);
             Assert.That(transition.IsArmed, Is.False);
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
 
             yield return CrossExitTrigger(transition);
@@ -460,6 +463,9 @@ namespace DimensionBrawl.Tests
             Assert.That(transition.HudHiddenCount, Is.EqualTo(1));
             Assert.That(transition.FullCoverCount, Is.EqualTo(1));
             Assert.That(transition.ExitReadyCount, Is.EqualTo(1));
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero,
                 "A non-player collider contaminated the reviewed exit run.");
             Assert.That(transition.TriggerAcceptedCount, Is.EqualTo(1));
@@ -489,6 +495,9 @@ namespace DimensionBrawl.Tests
             Assert.That(transition.IsInputLocked, Is.False);
             Assert.That(transition.IsAiLocked, Is.False);
             Assert.That(transition.PresentationFrame, Is.Zero);
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
             Assert.That(transition.TriggerAcceptedCount, Is.Zero);
             Assert.That(transition.TransitionStartedCount, Is.Zero);
@@ -603,14 +612,139 @@ namespace DimensionBrawl.Tests
 
         [UnityTest]
         [Timeout(10000)]
+        public IEnumerator ActiveLaneActionProjectileEntryIsAuditedAndIgnored()
+        {
+            CityHeroPocketExitTransitionController transition =
+                RequireSingle<CityHeroPocketExitTransitionController>();
+            CombatEncounterController encounter = RequireSingle<CombatEncounterController>();
+            yield return PlacePlayerBeforeExit(transition);
+
+            bool lethalDamageApplied = false;
+            CombatRootAdmissionResult admission = encounter.AdmitCombatRoot(
+                "city.exit-transition.projectile-traffic-proof",
+                context => lethalDamageApplied = context.TryApplyDamage(
+                    encounter.EnemyHealth,
+                    new DamageInfo(
+                        encounter.PlayerHealth,
+                        DamageTeam.Player,
+                        encounter.EnemyHealth.MaxHealth * 2f,
+                        encounter.EnemyHealth.transform.position,
+                        Vector3.forward,
+                        0f,
+                        DamageResponsePolicy.DamageOnly,
+                        CombatControlLockPolicy.None)));
+            Assert.That(admission.Disposition,
+                Is.EqualTo(CombatRootAdmissionDisposition.Executed));
+            Assert.That(lethalDamageApplied, Is.True);
+            Assert.That(transition.IsArmed, Is.True);
+
+            int ignoredEventCount = 0;
+            Collider ignoredCollider = null;
+            LaneActionProjectile ignoredProjectile = null;
+            int rejectedEventCount = 0;
+            void HandleProjectileIgnored(
+                Collider collider,
+                LaneActionProjectile projectile)
+            {
+                ignoredEventCount++;
+                ignoredCollider = collider;
+                ignoredProjectile = projectile;
+            }
+            void HandleRejected(Collider _)
+            {
+                rejectedEventCount++;
+            }
+            transition.LaneActionProjectileTriggerEnterIgnored +=
+                HandleProjectileIgnored;
+            transition.TriggerEnterRejected += HandleRejected;
+
+            GameObject projectileObject = new(
+                "CityExitActiveLaneProjectileProof",
+                typeof(SphereCollider),
+                typeof(Rigidbody),
+                typeof(LaneActionProjectile));
+            SphereCollider projectileCollider =
+                projectileObject.GetComponent<SphereCollider>();
+            projectileCollider.radius = 0.15f;
+            LaneActionProjectile projectile =
+                projectileObject.GetComponent<LaneActionProjectile>();
+            projectile.Configure(
+                encounter.PlayerHealth,
+                DamageTeam.Player,
+                12f,
+                Vector3.forward,
+                0f,
+                2f,
+                projectileCollider.radius);
+
+            Vector3 triggerCenter = transition.ExitTrigger.bounds.center;
+            projectileObject.transform.position = triggerCenter
+                - Vector3.forward * (transition.ExitTrigger.bounds.extents.z + 1f);
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+
+            projectileObject.transform.position = triggerCenter;
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return null;
+
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.EqualTo(1));
+            Assert.That(ignoredEventCount, Is.EqualTo(1));
+            Assert.That(ignoredCollider, Is.SameAs(projectileCollider));
+            Assert.That(ignoredProjectile, Is.SameAs(projectile));
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(rejectedEventCount, Is.Zero);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(transition.IsArmed, Is.True);
+            Assert.That(transition.IsTransitionRunning, Is.False);
+            Assert.That(transition.IsInputLocked, Is.False);
+            Assert.That(transition.IsAiLocked, Is.False);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(transition.CoverCanvasGroup.alpha, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.False);
+
+            transition.ResetForRestart();
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(ignoredEventCount, Is.EqualTo(1),
+                "Reset must not synthesize an ignored projectile event.");
+            Assert.That(rejectedEventCount, Is.Zero,
+                "Reset must not synthesize a rejected trigger event.");
+
+            transition.LaneActionProjectileTriggerEnterIgnored -=
+                HandleProjectileIgnored;
+            transition.TriggerEnterRejected -= HandleRejected;
+            UnityEngine.Object.Destroy(projectileObject);
+            yield return null;
+        }
+
+        [UnityTest]
+        [Timeout(10000)]
         public IEnumerator RealWrongColliderEntryIsCountedButCannotChangeProductState()
         {
             CityHeroPocketExitTransitionController transition =
                 RequireSingle<CityHeroPocketExitTransitionController>();
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
             Assert.That(transition.TriggerAcceptedCount, Is.Zero);
             Assert.That(transition.TransitionStartedCount, Is.Zero);
             Assert.That(transition.IsArmed, Is.False);
+
+            int rejectedEventCount = 0;
+            Collider rejectedCollider = null;
+            void HandleTriggerEnterRejected(Collider collider)
+            {
+                rejectedEventCount++;
+                rejectedCollider = collider;
+            }
+            transition.TriggerEnterRejected += HandleTriggerEnterRejected;
 
             GameObject wrongColliderObject = new(
                 "CityExitWrongColliderProof",
@@ -631,6 +765,11 @@ namespace DimensionBrawl.Tests
 
             Assert.That(transition.RejectedTriggerEnterCount, Is.EqualTo(1),
                 "A real non-player collider entry was not observed by the exit trigger.");
+            Assert.That(rejectedEventCount, Is.EqualTo(1));
+            Assert.That(rejectedCollider, Is.SameAs(wrongCollider));
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.TriggerAcceptedCount, Is.Zero);
             Assert.That(transition.TransitionStartedCount, Is.Zero);
             Assert.That(transition.IsArmed, Is.False);
@@ -642,10 +781,16 @@ namespace DimensionBrawl.Tests
             Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.False);
 
             transition.ResetForRestart();
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
             Assert.That(transition.TriggerAcceptedCount, Is.Zero);
             Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(rejectedEventCount, Is.EqualTo(1),
+                "Reset must not synthesize a rejected trigger event.");
 
+            transition.TriggerEnterRejected -= HandleTriggerEnterRejected;
             UnityEngine.Object.Destroy(wrongColliderObject);
             yield return null;
         }
@@ -661,6 +806,9 @@ namespace DimensionBrawl.Tests
             Assert.That(transition.IsInputLocked, Is.False);
             Assert.That(transition.IsAiLocked, Is.False);
             Assert.That(transition.PresentationFrame, Is.Zero);
+            Assert.That(
+                transition.IgnoredLaneActionProjectileTriggerEnterCount,
+                Is.Zero);
             Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
             Assert.That(transition.TriggerAcceptedCount, Is.Zero);
             Assert.That(transition.TransitionStartedCount, Is.Zero);

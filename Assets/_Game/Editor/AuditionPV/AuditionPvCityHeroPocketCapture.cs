@@ -78,6 +78,51 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
     }
 
+    [Serializable]
+    public sealed class AuditionPvCityTriggerEnterLedgerEntry
+    {
+        public int logicalFrame = -1;
+        public int unityFrame = -1;
+        public string colliderName = string.Empty;
+        public string colliderType = string.Empty;
+        public int colliderInstanceId;
+        public int layer;
+        public string layerName = string.Empty;
+        public string hierarchy = string.Empty;
+        public string rootName = string.Empty;
+        public int rootInstanceId;
+        public Vector3 position;
+        public Vector3 rootPosition;
+        public string projectileName = string.Empty;
+        public int projectileInstanceId;
+        public string projectileHierarchy = string.Empty;
+        public bool projectileWasActive;
+
+        public string ToDiagnosticString()
+        {
+            return $"logicalFrame={logicalFrame}; unityFrame={unityFrame}; "
+                + $"name={colliderName}; type={colliderType}; "
+                + $"colliderId={colliderInstanceId}; layer={layer}; "
+                + $"layerName={layerName}; hierarchy={hierarchy}; "
+                + $"root={rootName}; rootId={rootInstanceId}; "
+                + $"position={FormatVector(position)}; "
+                + $"rootPosition={FormatVector(rootPosition)}; "
+                + $"projectile={projectileName}; projectileId={projectileInstanceId}; "
+                + $"projectileHierarchy={projectileHierarchy}; "
+                + $"projectileActive={projectileWasActive}";
+        }
+
+        public override string ToString()
+        {
+            return ToDiagnosticString();
+        }
+
+        private static string FormatVector(Vector3 value)
+        {
+            return $"({value.x:R},{value.y:R},{value.z:R})";
+        }
+    }
+
     /// <summary>
     /// Product-state, frame-index-authoritative contracts for the three City Hero
     /// Pocket golden sources. Recorder lifecycle remains runner-owned.
@@ -141,6 +186,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int G02AttackHoldUpFrame = 324;
         internal const int G02ThirdMoveDownFrame = 330;
         internal const int G02ThirdMoveUpFrame = 378;
+        internal static readonly int[] G02IgnoredProjectileTriggerFrames =
+        {
+            327, 329, 338
+        };
         internal const int G03JoystickPointerId = 401;
         internal const int G03TriggerAcceptFirstPreRollFrame = 36;
         internal const int G03TriggerAcceptLastPreRollFrame = 84;
@@ -432,6 +481,75 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && fieldOfViewError <= CameraRailFovReadbackTolerance;
         }
 
+        internal static bool HasExactG02IgnoredProjectileTriggerLedger(
+            IReadOnlyList<AuditionPvCityTriggerEnterLedgerEntry> entries)
+        {
+            if (entries == null
+                || entries.Count != G02IgnoredProjectileTriggerFrames.Length)
+            {
+                return false;
+            }
+
+            var colliderIds = new HashSet<int>();
+            var projectileIds = new HashSet<int>();
+            for (int index = 0; index < entries.Count; index++)
+            {
+                AuditionPvCityTriggerEnterLedgerEntry entry = entries[index];
+                if (entry == null
+                    || entry.logicalFrame != G02IgnoredProjectileTriggerFrames[index]
+                    || entry.unityFrame < 0
+                    || !string.Equals(
+                        entry.colliderName,
+                        "PF_PlayerRangedBasicProjectile_AimBolt(Clone)",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        entry.colliderType,
+                        typeof(SphereCollider).FullName,
+                        StringComparison.Ordinal)
+                    || entry.colliderInstanceId == 0
+                    || !colliderIds.Add(entry.colliderInstanceId)
+                    || entry.layer != 0
+                    || !string.Equals(entry.layerName, "Default", StringComparison.Ordinal)
+                    || !string.Equals(
+                        entry.hierarchy,
+                        "CityHeroPocketRuntime/CityHeroPocket_PlayerProjectiles/"
+                            + "PF_PlayerRangedBasicProjectile_AimBolt(Clone)",
+                        StringComparison.Ordinal)
+                    || !string.Equals(
+                        entry.rootName,
+                        "CityHeroPocketRuntime",
+                        StringComparison.Ordinal)
+                    || entry.rootInstanceId == 0
+                    || !string.Equals(
+                        entry.projectileName,
+                        "PF_PlayerRangedBasicProjectile_AimBolt(Clone)",
+                        StringComparison.Ordinal)
+                    || entry.projectileInstanceId == 0
+                    || !projectileIds.Add(entry.projectileInstanceId)
+                    || !string.Equals(
+                        entry.projectileHierarchy,
+                        entry.hierarchy,
+                        StringComparison.Ordinal)
+                    || !entry.projectileWasActive
+                    || !IsFinite(entry.position)
+                    || !IsFinite(entry.rootPosition))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
         internal static string[] ExplicitProductDependencyPaths()
         {
             return new[]
@@ -448,6 +566,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfireDeck.asset",
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab",
                 "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab",
+                "Assets/_Game/Scripts/Combat/LaneActionProjectile.cs",
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab",
                 "Assets/_Game/UI/CombatHud/OneRowCombatHudBinder.cs",
                 "Assets/_Game/UI/CombatHud/CombatHudInputBridge.cs",
@@ -785,6 +904,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                         || !proof.g02ProjectileRootsIndependentAndSceneOwned
                         || proof.g02PlayerProjectileVisibleFrameCount <= 0
                         || proof.g02EnemyProjectileVisibleFrameCount <= 0
+                        || proof.g02IgnoredLaneActionProjectileTriggerEnterCount != 3
+                        || !HasExactG02IgnoredProjectileTriggerLedger(
+                            proof.g02IgnoredLaneActionProjectileTriggerEnterLedger)
+                        || proof.g02RejectedTriggerEnterCount != 0
+                        || proof.g02RejectedTriggerEnterLedger == null
+                        || proof.g02RejectedTriggerEnterLedger.Length != 0
                         || proof.g02PlayerFramingSampleCount != 4
                         || proof.g02PlayerFramingPassCount != 4
                         || proof.g02EnemyFramingSampleCount != 3
@@ -832,6 +957,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                             > G03TriggerAcceptLastPreRollFrame
                         || proof.g03PreRollPathLength <= 0f
                         || proof.g03PreRollNetDisplacement <= 0f
+                        || proof.transitionIgnoredLaneActionProjectileBaseline != 3
+                        || proof.transitionIgnoredLaneActionProjectileEnd != 3
+                        || proof.transitionIgnoredLaneActionProjectileDelta != 0
                         || proof.transitionRejectedTriggerEnterBaseline != 0
                         || proof.transitionRejectedTriggerEnterEnd != 0
                         || proof.transitionRejectedTriggerEnterDelta != 0
@@ -977,6 +1105,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         public bool naturalEnemyDeathObserved;
         public bool naturalWonObserved;
         public int transitionTriggerAcceptedCount;
+        public int transitionIgnoredLaneActionProjectileBaseline;
+        public int transitionIgnoredLaneActionProjectileEnd;
+        public int transitionIgnoredLaneActionProjectileDelta;
         public int transitionRejectedTriggerEnterBaseline;
         public int transitionRejectedTriggerEnterEnd;
         public int transitionRejectedTriggerEnterDelta;
@@ -1058,6 +1189,13 @@ namespace DimensionBrawl.Editor.AuditionPV
         public bool g02ProjectileRootsIndependentAndSceneOwned;
         public int g02PlayerProjectileVisibleFrameCount;
         public int g02EnemyProjectileVisibleFrameCount;
+        public int g02IgnoredLaneActionProjectileTriggerEnterCount;
+        public AuditionPvCityTriggerEnterLedgerEntry[]
+            g02IgnoredLaneActionProjectileTriggerEnterLedger =
+                Array.Empty<AuditionPvCityTriggerEnterLedgerEntry>();
+        public int g02RejectedTriggerEnterCount;
+        public AuditionPvCityTriggerEnterLedgerEntry[] g02RejectedTriggerEnterLedger =
+            Array.Empty<AuditionPvCityTriggerEnterLedgerEntry>();
         public int g02PlayerFramingSampleCount;
         public int g02PlayerFramingPassCount;
         public int g02EnemyFramingSampleCount;
@@ -1090,6 +1228,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         private const float G02MinimumDodgeRailRightDot = 0.55f;
 
         private readonly List<AuditionPvCityInputCommand> executedG02Commands = new(20);
+        private readonly List<AuditionPvCityTriggerEnterLedgerEntry>
+            g02IgnoredLaneActionProjectileTriggerEnterLedger = new(4);
+        private readonly List<AuditionPvCityTriggerEnterLedgerEntry>
+            g02RejectedTriggerEnterLedger = new(1);
         private AuditionPvCityShot shot;
         private AuditionPvCityHeroPocketCameraRail rail;
         private CombatEncounterController encounter;
@@ -1682,22 +1824,183 @@ namespace DimensionBrawl.Editor.AuditionPV
                 return;
             }
 
+            ValidateG03ContinuationPreconditions();
+        }
+
+        internal void ValidateG03ContinuationPreconditions()
+        {
             bool outside = !exitTransition.ExitTrigger.bounds.Intersects(
                 characterController.bounds);
             bool south = IsPlayerSouthOfExitTrigger();
+            int encounterInstanceId = encounter.GetInstanceID();
+            int playerInstanceId = playerHealth.GetInstanceID();
+            int enemyInstanceId = enemyHealth.GetInstanceID();
             if (!encounter.IsWon || enemyHealth.IsAlive || !playerHealth.IsAlive
                 || !exitTransition.IsArmed || exitTransition.IsTransitionRunning
                 || exitTransition.IsExitReady || exitTransition.TriggerAcceptedCount != 0
+                || exitTransition.IgnoredLaneActionProjectileTriggerEnterCount != 3
                 || exitTransition.RejectedTriggerEnterCount != 0
                 || exitTransition.TransitionStartedCount != 0
+                || !AuditionPvCityHeroPocketCapture
+                    .HasExactG02IgnoredProjectileTriggerLedger(
+                        g02IgnoredLaneActionProjectileTriggerEnterLedger)
+                || g02RejectedTriggerEnterLedger.Count != 0
                 || !outside || !south
-                || g02EncounterInstanceId != encounter.GetInstanceID()
-                || g02PlayerInstanceId != playerHealth.GetInstanceID()
-                || g02EnemyInstanceId != enemyHealth.GetInstanceID())
+                || g02EncounterInstanceId != encounterInstanceId
+                || g02PlayerInstanceId != playerInstanceId
+                || g02EnemyInstanceId != enemyInstanceId)
             {
                 throw new InvalidOperationException(
-                    "G03 requires the exact G02 Won/armed identity and south/outside player handoff.");
+                    "G03 requires the exact G02 Won/armed identity and south/outside "
+                    + "player handoff. Observed: "
+                    + BuildG03ContinuationPreconditionDiagnostics(
+                        outside,
+                        south,
+                        encounterInstanceId,
+                        playerInstanceId,
+                        enemyInstanceId));
             }
+        }
+
+        internal string GetG03ContinuationPreconditionDiagnostics()
+        {
+            bool outside = !exitTransition.ExitTrigger.bounds.Intersects(
+                characterController.bounds);
+            bool south = IsPlayerSouthOfExitTrigger();
+            return BuildG03ContinuationPreconditionDiagnostics(
+                outside,
+                south,
+                encounter.GetInstanceID(),
+                playerHealth.GetInstanceID(),
+                enemyHealth.GetInstanceID());
+        }
+
+        private string BuildG03ContinuationPreconditionDiagnostics(
+            bool outside,
+            bool south,
+            int encounterInstanceId,
+            int playerInstanceId,
+            int enemyInstanceId)
+        {
+            Bounds playerBounds = characterController.bounds;
+            Bounds triggerBounds = exitTransition.ExitTrigger.bounds;
+            return $"shot={shot}; directorPrepared={IsPrepared}; "
+                + $"directorRunning={IsRunning}; directorComplete={IsComplete}; "
+                + $"encounterRunning={encounter.IsRunning}; encounterWon={encounter.IsWon}; "
+                + $"encounterFailed={encounter.IsFailed}; encounterFaulted={encounter.IsFaulted}; "
+                + $"playerAlive={playerHealth.IsAlive}; playerHealth={playerHealth.CurrentHealth:R}; "
+                + $"enemyAlive={enemyHealth.IsAlive}; enemyHealth={enemyHealth.CurrentHealth:R}; "
+                + $"transitionArmed={exitTransition.IsArmed}; "
+                + $"transitionRunning={exitTransition.IsTransitionRunning}; "
+                + $"hudHidden={exitTransition.IsHudHidden}; fullCover={exitTransition.IsFullCover}; "
+                + $"exitReady={exitTransition.IsExitReady}; inputLocked={exitTransition.IsInputLocked}; "
+                + $"aiLocked={exitTransition.IsAiLocked}; "
+                + $"presentationFrame={exitTransition.PresentationFrame}; "
+                + $"triggerAcceptedCount={exitTransition.TriggerAcceptedCount}; "
+                + $"ignoredLaneActionProjectileCount="
+                + $"{exitTransition.IgnoredLaneActionProjectileTriggerEnterCount}; "
+                + $"rejectedTriggerEnterCount={exitTransition.RejectedTriggerEnterCount}; "
+                + $"transitionStartedCount={exitTransition.TransitionStartedCount}; "
+                + $"hudHiddenCount={exitTransition.HudHiddenCount}; "
+                + $"fullCoverCount={exitTransition.FullCoverCount}; "
+                + $"exitReadyCount={exitTransition.ExitReadyCount}; "
+                + $"hudFadeProgress01={exitTransition.HudFadeProgress01:R}; "
+                + $"portalGrowProgress01={exitTransition.PortalGrowProgress01:R}; "
+                + $"coverProgress01={exitTransition.CoverProgress01:R}; "
+                + $"transitionProgress01={exitTransition.TransitionProgress01:R}; "
+                + $"outside={outside}; south={south}; "
+                + $"sequenceIds=({sequenceEncounterInstanceId},{sequencePlayerInstanceId},{sequenceEnemyInstanceId}); "
+                + $"g02Ids=({g02EncounterInstanceId},{g02PlayerInstanceId},{g02EnemyInstanceId}); "
+                + $"actualIds=({encounterInstanceId},{playerInstanceId},{enemyInstanceId}); "
+                + $"g02IgnoredProjectileLedgerCount="
+                + $"{g02IgnoredLaneActionProjectileTriggerEnterLedger.Count}; "
+                + $"g02IgnoredProjectileLedger=[{string.Join(" || ", g02IgnoredLaneActionProjectileTriggerEnterLedger)}]; "
+                + $"g02RejectedLedgerCount={g02RejectedTriggerEnterLedger.Count}; "
+                + $"g02RejectedLedger=[{string.Join(" || ", g02RejectedTriggerEnterLedger)}]; "
+                + $"playerPosition={FormatVector3(characterController.transform.position)}; "
+                + $"enemyPosition={FormatVector3(enemyHealth.transform.position)}; "
+                + $"playerBounds={FormatBounds(playerBounds)}; "
+                + $"exitTriggerPosition={FormatVector3(exitTransition.ExitTrigger.transform.position)}; "
+                + $"exitTriggerBounds={FormatBounds(triggerBounds)}; "
+                + $"southGap={triggerBounds.min.z - playerBounds.max.z:R}.";
+        }
+
+        private static string FormatBounds(Bounds value)
+        {
+            return $"center{FormatVector3(value.center)},extents{FormatVector3(value.extents)},"
+                + $"min{FormatVector3(value.min)},max{FormatVector3(value.max)}";
+        }
+
+        private static string FormatVector3(Vector3 value)
+        {
+            return $"({value.x:R},{value.y:R},{value.z:R})";
+        }
+
+        internal static string FormatRejectedTriggerCollider(
+            Collider collider,
+            int logicalFrame)
+        {
+            LaneActionProjectile projectile = collider != null
+                ? collider.GetComponentInParent<LaneActionProjectile>()
+                : null;
+            return CreateTriggerEnterLedgerEntry(
+                    collider,
+                    projectile,
+                    logicalFrame)
+                .ToDiagnosticString();
+        }
+
+        internal static AuditionPvCityTriggerEnterLedgerEntry
+            CreateTriggerEnterLedgerEntry(
+                Collider collider,
+                LaneActionProjectile projectile,
+                int logicalFrame)
+        {
+            if (collider == null)
+            {
+                return new AuditionPvCityTriggerEnterLedgerEntry
+                {
+                    logicalFrame = logicalFrame,
+                    unityFrame = Time.frameCount,
+                    colliderName = "<null>"
+                };
+            }
+            Transform colliderTransform = collider.transform;
+            Transform root = colliderTransform.root;
+            return new AuditionPvCityTriggerEnterLedgerEntry
+            {
+                logicalFrame = logicalFrame,
+                unityFrame = Time.frameCount,
+                colliderName = collider.name,
+                colliderType = collider.GetType().FullName,
+                colliderInstanceId = collider.GetInstanceID(),
+                layer = collider.gameObject.layer,
+                layerName = LayerMask.LayerToName(collider.gameObject.layer),
+                hierarchy = FormatHierarchy(colliderTransform),
+                rootName = root.name,
+                rootInstanceId = root.GetInstanceID(),
+                position = colliderTransform.position,
+                rootPosition = root.position,
+                projectileName = projectile != null ? projectile.name : string.Empty,
+                projectileInstanceId = projectile != null
+                    ? projectile.GetInstanceID()
+                    : 0,
+                projectileHierarchy = projectile != null
+                    ? FormatHierarchy(projectile.transform)
+                    : string.Empty,
+                projectileWasActive = projectile != null && projectile.IsActive
+            };
+        }
+
+        private static string FormatHierarchy(Transform value)
+        {
+            var names = new List<string>();
+            for (Transform current = value; current != null; current = current.parent)
+            {
+                names.Add(current.name);
+            }
+            names.Reverse();
+            return string.Join("/", names);
         }
 
         private void CaptureShotStartEvidence()
@@ -1880,6 +2183,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                         && !exitTransition.IsInputLocked
                         && !exitTransition.IsAiLocked
                         && exitTransition.TriggerAcceptedCount == 0
+                        && exitTransition
+                            .IgnoredLaneActionProjectileTriggerEnterCount == 0
                         && exitTransition.RejectedTriggerEnterCount == 0
                         && exitTransition.TransitionStartedCount == 0;
                 proof.stateRestored = firstFailure == null
@@ -2141,6 +2446,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(newShot)
             };
             executedG02Commands.Clear();
+            if (newShot != AuditionPvCityShot.G03)
+            {
+                g02IgnoredLaneActionProjectileTriggerEnterLedger.Clear();
+                g02RejectedTriggerEnterLedger.Clear();
+            }
             IsPrepared = false;
             IsRunning = false;
             IsComplete = false;
@@ -2156,6 +2466,8 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private IEnumerator PrepareG03TransitionPreRoll()
         {
+            proof.transitionIgnoredLaneActionProjectileBaseline =
+                exitTransition.IgnoredLaneActionProjectileTriggerEnterCount;
             proof.transitionRejectedTriggerEnterBaseline =
                 exitTransition.RejectedTriggerEnterCount;
             g03PreRollStartPosition = characterController.transform.position;
@@ -2227,6 +2539,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.transitionRejectedTriggerEnterDelta =
                 exitTransition.RejectedTriggerEnterCount
                 - proof.transitionRejectedTriggerEnterBaseline;
+            proof.transitionIgnoredLaneActionProjectileDelta =
+                exitTransition.IgnoredLaneActionProjectileTriggerEnterCount
+                - proof.transitionIgnoredLaneActionProjectileBaseline;
             if (proof.g03TriggerAcceptedPreRollFrame
                     < AuditionPvCityHeroPocketCapture.G03TriggerAcceptFirstPreRollFrame
                 || proof.g03TriggerAcceptedPreRollFrame
@@ -2239,6 +2554,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !exitTransition.IsInputLocked
                 || !exitTransition.IsAiLocked
                 || !proof.g03JoystickInputMaintainedUntilTrigger
+                || proof.transitionIgnoredLaneActionProjectileBaseline != 3
+                || exitTransition.IgnoredLaneActionProjectileTriggerEnterCount != 3
+                || proof.transitionIgnoredLaneActionProjectileDelta != 0
                 || proof.transitionRejectedTriggerEnterBaseline != 0
                 || exitTransition.RejectedTriggerEnterCount != 0
                 || proof.transitionRejectedTriggerEnterDelta != 0)
@@ -2513,6 +2831,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                     - actionCameraMicroShakeAtShotStart;
                 proof.g02PlayerAliveAtEnd = playerHealth.IsAlive;
                 proof.g02EnemyHealthAtEnd = enemyHealth.CurrentHealth;
+                proof.g02IgnoredLaneActionProjectileTriggerEnterCount =
+                    exitTransition.IgnoredLaneActionProjectileTriggerEnterCount;
+                proof.g02IgnoredLaneActionProjectileTriggerEnterLedger =
+                    g02IgnoredLaneActionProjectileTriggerEnterLedger.ToArray();
+                proof.g02RejectedTriggerEnterCount =
+                    exitTransition.RejectedTriggerEnterCount;
+                proof.g02RejectedTriggerEnterLedger =
+                    g02RejectedTriggerEnterLedger.ToArray();
                 proof.g02EndedOutsideExitTrigger =
                     !exitTransition.ExitTrigger.bounds.Intersects(characterController.bounds);
                 proof.g02EndedSouthOfExitTrigger = IsPlayerSouthOfExitTrigger();
@@ -2521,6 +2847,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 g02EnemyInstanceId = enemyHealth.GetInstanceID();
                 if (!proof.g02PointerScheduleExact || !encounter.IsWon
                     || proof.enemyDiedCount != 1 || proof.encounterWonCount != 1
+                    || proof.g02IgnoredLaneActionProjectileTriggerEnterCount != 3
+                    || !AuditionPvCityHeroPocketCapture
+                        .HasExactG02IgnoredProjectileTriggerLedger(
+                            proof.g02IgnoredLaneActionProjectileTriggerEnterLedger)
+                    || proof.g02RejectedTriggerEnterCount != 0
+                    || proof.g02RejectedTriggerEnterLedger.Length != 0
                     || !proof.g02EndedOutsideExitTrigger
                     || !proof.g02EndedSouthOfExitTrigger)
                 {
@@ -2539,6 +2871,11 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.g03NewDeathEventCount = proof.enemyDiedCount;
             proof.g03NewWonEventCount = proof.encounterWonCount;
             proof.transitionTriggerAcceptedCount = exitTransition.TriggerAcceptedCount;
+            proof.transitionIgnoredLaneActionProjectileEnd =
+                exitTransition.IgnoredLaneActionProjectileTriggerEnterCount;
+            proof.transitionIgnoredLaneActionProjectileDelta =
+                proof.transitionIgnoredLaneActionProjectileEnd
+                - proof.transitionIgnoredLaneActionProjectileBaseline;
             proof.transitionRejectedTriggerEnterEnd =
                 exitTransition.RejectedTriggerEnterCount;
             proof.transitionRejectedTriggerEnterDelta =
@@ -2554,6 +2891,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.transitionHudHiddenCount != 1
                 || proof.transitionFullCoverCount != 1
                 || proof.transitionExitReadyCount != 1
+                || proof.transitionIgnoredLaneActionProjectileBaseline != 3
+                || proof.transitionIgnoredLaneActionProjectileEnd != 3
+                || proof.transitionIgnoredLaneActionProjectileDelta != 0
                 || proof.transitionRejectedTriggerEnterBaseline != 0
                 || proof.transitionRejectedTriggerEnterEnd != 0
                 || proof.transitionRejectedTriggerEnterDelta != 0
@@ -2578,6 +2918,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             enemyHealth.Died += HandleEnemyDied;
             encounter.Won += HandleEncounterWon;
             exitTransition.TriggerAccepted += HandleTransitionTriggerAccepted;
+            exitTransition.LaneActionProjectileTriggerEnterIgnored +=
+                HandleLaneActionProjectileTriggerIgnored;
+            exitTransition.TriggerEnterRejected += HandleTransitionTriggerRejected;
         }
 
         private void UnsubscribeProductEvidence()
@@ -2608,6 +2951,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (exitTransition != null)
             {
                 exitTransition.TriggerAccepted -= HandleTransitionTriggerAccepted;
+                exitTransition.LaneActionProjectileTriggerEnterIgnored -=
+                    HandleLaneActionProjectileTriggerIgnored;
+                exitTransition.TriggerEnterRejected -= HandleTransitionTriggerRejected;
             }
         }
 
@@ -2689,6 +3035,44 @@ namespace DimensionBrawl.Editor.AuditionPV
                     g03AcceptedPosition,
                     g03PreRollLastPosition);
             }
+        }
+
+        private void HandleTransitionTriggerRejected(Collider collider)
+        {
+            if (shot != AuditionPvCityShot.G02)
+            {
+                return;
+            }
+            g02RejectedTriggerEnterLedger.Add(
+                CreateTriggerEnterLedgerEntry(
+                    collider,
+                    collider != null
+                        ? collider.GetComponentInParent<LaneActionProjectile>()
+                        : null,
+                    currentFrame));
+            proof.g02RejectedTriggerEnterCount =
+                g02RejectedTriggerEnterLedger.Count;
+            proof.g02RejectedTriggerEnterLedger =
+                g02RejectedTriggerEnterLedger.ToArray();
+        }
+
+        private void HandleLaneActionProjectileTriggerIgnored(
+            Collider collider,
+            LaneActionProjectile projectile)
+        {
+            if (shot != AuditionPvCityShot.G02)
+            {
+                return;
+            }
+            g02IgnoredLaneActionProjectileTriggerEnterLedger.Add(
+                CreateTriggerEnterLedgerEntry(
+                    collider,
+                    projectile,
+                    currentFrame));
+            proof.g02IgnoredLaneActionProjectileTriggerEnterCount =
+                g02IgnoredLaneActionProjectileTriggerEnterLedger.Count;
+            proof.g02IgnoredLaneActionProjectileTriggerEnterLedger =
+                g02IgnoredLaneActionProjectileTriggerEnterLedger.ToArray();
         }
 
         private void SetHudModeForCapture()

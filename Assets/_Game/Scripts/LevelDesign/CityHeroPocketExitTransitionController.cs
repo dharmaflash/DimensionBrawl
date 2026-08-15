@@ -63,6 +63,7 @@ namespace DimensionBrawl.LevelDesign
         private bool isInputLocked;
         private bool isAiLocked;
         private int presentationFrame;
+        private int ignoredLaneActionProjectileTriggerEnterCount;
         private int rejectedTriggerEnterCount;
         private int triggerAcceptedCount;
         private int transitionStartedCount;
@@ -107,6 +108,8 @@ namespace DimensionBrawl.LevelDesign
         public bool IsInputLocked => isInputLocked;
         public bool IsAiLocked => isAiLocked;
         public int PresentationFrame => presentationFrame;
+        public int IgnoredLaneActionProjectileTriggerEnterCount =>
+            ignoredLaneActionProjectileTriggerEnterCount;
         public int RejectedTriggerEnterCount => rejectedTriggerEnterCount;
         public int TriggerAcceptedCount => triggerAcceptedCount;
         public int TransitionStartedCount => transitionStartedCount;
@@ -124,6 +127,9 @@ namespace DimensionBrawl.LevelDesign
             presentationFrame / (float)ExitReadyFrame);
 
         public event Action TriggerAccepted;
+        public event Action<Collider, LaneActionProjectile>
+            LaneActionProjectileTriggerEnterIgnored;
+        public event Action<Collider> TriggerEnterRejected;
         public event Action TransitionStarted;
         public event Action HudHidden;
         public event Action FullCover;
@@ -192,6 +198,7 @@ namespace DimensionBrawl.LevelDesign
             isFullCover = false;
             isExitReady = false;
             presentationFrame = 0;
+            ignoredLaneActionProjectileTriggerEnterCount = 0;
             rejectedTriggerEnterCount = 0;
             triggerAcceptedCount = 0;
             transitionStartedCount = 0;
@@ -270,10 +277,23 @@ namespace DimensionBrawl.LevelDesign
 
         private void OnTriggerEnter(Collider other)
         {
+            LaneActionProjectile laneProjectile = other != null
+                ? other.GetComponentInParent<LaneActionProjectile>()
+                : null;
+            if (laneProjectile != null && laneProjectile.IsActive)
+            {
+                ignoredLaneActionProjectileTriggerEnterCount++;
+                LaneActionProjectileTriggerEnterIgnored?.Invoke(
+                    other,
+                    laneProjectile);
+                return;
+            }
+
             if (playerController != null
                 && !ReferenceEquals(other, playerController))
             {
                 rejectedTriggerEnterCount++;
+                TriggerEnterRejected?.Invoke(other);
                 return;
             }
 

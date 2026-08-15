@@ -1,10 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DimensionBrawl.Combat;
+using DimensionBrawl.LevelDesign;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Editor.AuditionPV.Tests
 {
@@ -246,6 +252,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfireDeck.asset",
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab",
                 "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab",
+                "Assets/_Game/Scripts/Combat/LaneActionProjectile.cs",
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab",
                 "Assets/_Game/UI/CombatHud/OneRowCombatHudBinder.cs",
                 "Assets/_Game/UI/CombatHud/CombatHudInputBridge.cs",
@@ -402,6 +409,25 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRejected(AuditionPvCityShot.G02, value => value.g02ProjectileRootsIndependentAndSceneOwned = false);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02PlayerProjectileVisibleFrameCount = 0);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02EnemyProjectileVisibleFrameCount = 0);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02IgnoredLaneActionProjectileTriggerEnterCount = 2);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02IgnoredLaneActionProjectileTriggerEnterLedger[0].logicalFrame = 326);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02IgnoredLaneActionProjectileTriggerEnterLedger[1]
+                    .projectileInstanceId = value
+                    .g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
+                    .projectileInstanceId);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
+                    .projectileWasActive = false);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RejectedTriggerEnterCount = 1);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02RejectedTriggerEnterLedger = new[]
+                {
+                    PassingIgnoredProjectileLedger()[0]
+                });
             AssertRejected(AuditionPvCityShot.G02, value => value.g02PlayerFramingPassCount = 3);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02EnemyFramingPassCount = 2);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02RifleFeedbackRequestDelta = 0);
@@ -425,6 +451,12 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRejected(AuditionPvCityShot.G03, value => value.g03TriggerAcceptedPreRollFrame = 35);
             AssertRejected(AuditionPvCityShot.G03, value => value.g03TriggerAcceptedPreRollFrame = 85);
             AssertRejected(AuditionPvCityShot.G03, value => value.g03NewDamageEventCount = 1);
+            AssertRejected(AuditionPvCityShot.G03,
+                value => value.transitionIgnoredLaneActionProjectileBaseline = 2);
+            AssertRejected(AuditionPvCityShot.G03,
+                value => value.transitionIgnoredLaneActionProjectileEnd = 4);
+            AssertRejected(AuditionPvCityShot.G03,
+                value => value.transitionIgnoredLaneActionProjectileDelta = 1);
             AssertRejected(AuditionPvCityShot.G03, value => value.transitionRejectedTriggerEnterBaseline = 1);
             AssertRejected(AuditionPvCityShot.G03, value => value.transitionRejectedTriggerEnterEnd = 1);
             AssertRejected(AuditionPvCityShot.G03, value => value.captureTransitionStartCallCount = 1);
@@ -448,16 +480,375 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             mutable.shotId = "g03";
             mutable.enemyDiedCount = 0;
             mutable.g02PlayerPathLength = 0f;
+            mutable.g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
+                .colliderName = "mutated";
 
             Assert.That(sealedCopy, Is.Not.SameAs(mutable));
             Assert.That(sealedCopy.shotId, Is.EqualTo("g02"));
             Assert.That(sealedCopy.enemyDiedCount, Is.EqualTo(1));
             Assert.That(sealedCopy.g02PlayerPathLength, Is.EqualTo(6f));
+            Assert.That(
+                sealedCopy.g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
+                    .colliderName,
+                Is.EqualTo("PF_PlayerRangedBasicProjectile_AimBolt(Clone)"));
 
             AuditionPvCityHeroPocketRuntimeProof exposed =
                 AuditionPvCityHeroPocketCapture.DeepCopyRuntimeProof(sealedCopy);
             exposed.g02PlayerPathLength = -1f;
             Assert.That(sealedCopy.g02PlayerPathLength, Is.EqualTo(6f));
+        }
+
+        [UnityTest]
+        [Timeout(60000)]
+        public IEnumerator SameDirectorNoRecorder_G01G02MeetExactG03Preconditions()
+        {
+            SceneSetup[] priorSceneSetup = EditorSceneManager.GetSceneManagerSetup();
+            bool priorSceneSetupIsRestorable = IsRestorableSceneSetup(
+                priorSceneSetup);
+            Scene[] loadedScenes = Enumerable.Range(0, SceneManager.sceneCount)
+                .Select(SceneManager.GetSceneAt)
+                .ToArray();
+            bool hasInteractiveSceneRisk = priorSceneSetup.Length == 0
+                || loadedScenes.Any(scene => !scene.IsValid()
+                    || string.IsNullOrWhiteSpace(scene.path)
+                    || scene.isDirty);
+            if (!Application.isBatchMode && hasInteractiveSceneRisk)
+            {
+                throw new InvalidOperationException(
+                    "The slow City no-Recorder diagnostic refuses to replace an "
+                    + "unsaved or dirty interactive SceneSetup.");
+            }
+
+            Exception capturedFailure = null;
+            try
+            {
+                EditorSceneManager.OpenScene(
+                    AuditionPvCityHeroPocketCapture.CityScenePath,
+                    OpenSceneMode.Single);
+            }
+            catch (Exception exception)
+            {
+                capturedFailure = exception;
+            }
+            if (capturedFailure != null)
+            {
+                try
+                {
+                    RestoreSceneSetupOrLeaveCleanEmpty(
+                        priorSceneSetup,
+                        priorSceneSetupIsRestorable);
+                }
+                finally
+                {
+                    Assert.Fail(
+                        "The City product scene could not be opened safely: "
+                        + capturedFailure);
+                }
+                yield break;
+            }
+
+            yield return new EnterPlayMode();
+            yield return null;
+
+            string diagnostics = "G03 precondition diagnostics were not reached.";
+            AuditionPvCityHeroPocketDirector director = null;
+            try
+            {
+                director = AuditionPvCityHeroPocketCapture.AttachToFreshActiveScene(
+                    AuditionPvCityShot.G01);
+            }
+            catch (Exception exception)
+            {
+                capturedFailure = exception;
+            }
+
+            IEnumerator preparation = null;
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    preparation = director.PrepareFreshProductState();
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            while (capturedFailure == null && preparation != null)
+            {
+                bool moved = TryMoveNext(
+                    preparation,
+                    out object yielded,
+                    out Exception iterationFailure);
+                capturedFailure ??= iterationFailure;
+                if (capturedFailure != null || !moved)
+                {
+                    break;
+                }
+                yield return yielded;
+            }
+
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    director.BeginShot();
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            double deadline = Time.realtimeSinceStartupAsDouble + 12d;
+            while (capturedFailure == null && director != null
+                && !director.IsComplete && director.Failure == null
+                && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+            }
+            if (capturedFailure == null && director != null)
+            {
+                capturedFailure = director.Failure;
+                if (capturedFailure == null && !director.IsComplete)
+                {
+                    capturedFailure = new TimeoutException(
+                        $"G01 no-Recorder diagnostic timed out at f{director.CurrentFrame}.");
+                }
+            }
+
+            var ignoredProjectileLedger =
+                new List<AuditionPvCityTriggerEnterLedgerEntry>();
+            var rejectedLedger =
+                new List<AuditionPvCityTriggerEnterLedgerEntry>();
+            CityHeroPocketExitTransitionController transition = null;
+            Action<Collider, LaneActionProjectile> handleIgnored =
+                (collider, projectile) => ignoredProjectileLedger.Add(
+                    AuditionPvCityHeroPocketDirector.CreateTriggerEnterLedgerEntry(
+                        collider,
+                        projectile,
+                        director != null ? director.CurrentFrame : -1));
+            Action<Collider> handleRejected = collider => rejectedLedger.Add(
+                AuditionPvCityHeroPocketDirector.CreateTriggerEnterLedgerEntry(
+                    collider,
+                    collider != null
+                        ? collider.GetComponentInParent<LaneActionProjectile>()
+                        : null,
+                    director != null ? director.CurrentFrame : -1));
+            bool ignoredHandlerSubscribed = false;
+            bool rejectedHandlerSubscribed = false;
+            try
+            {
+                transition = UnityEngine.Object.FindFirstObjectByType<
+                    CityHeroPocketExitTransitionController>(
+                    FindObjectsInactive.Include);
+                if (capturedFailure == null && transition == null)
+                {
+                    capturedFailure = new InvalidOperationException(
+                        "No City exit transition was available for the G02 rejection ledger.");
+                }
+                if (transition != null)
+                {
+                    transition.LaneActionProjectileTriggerEnterIgnored += handleIgnored;
+                    ignoredHandlerSubscribed = true;
+                    transition.TriggerEnterRejected += handleRejected;
+                    rejectedHandlerSubscribed = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                MergeFailure(ref capturedFailure, exception);
+            }
+            try
+            {
+            IEnumerator continuation = null;
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    continuation = director.PrepareContinuationShot(
+                        AuditionPvCityShot.G02);
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            while (capturedFailure == null && continuation != null)
+            {
+                bool moved = TryMoveNext(
+                    continuation,
+                    out object yielded,
+                    out Exception iterationFailure);
+                capturedFailure ??= iterationFailure;
+                if (capturedFailure != null || !moved)
+                {
+                    break;
+                }
+                yield return yielded;
+            }
+
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    director.BeginShot();
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            deadline = Time.realtimeSinceStartupAsDouble + 18d;
+            while (capturedFailure == null && director != null
+                && !director.IsComplete && director.Failure == null
+                && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+            }
+            if (capturedFailure == null && director != null)
+            {
+                capturedFailure = director.Failure;
+                if (capturedFailure == null && !director.IsComplete)
+                {
+                    capturedFailure = new TimeoutException(
+                        $"G02 no-Recorder diagnostic timed out at f{director.CurrentFrame}.");
+                }
+            }
+
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    AuditionPvCityHeroPocketRuntimeProof g02Proof =
+                        director.SnapshotRuntimeProof();
+                    diagnostics = director.GetG03ContinuationPreconditionDiagnostics();
+                    if (g02Proof.presentedFrameCount != 420
+                        || g02Proof.lastLogicalFrame != 419
+                        || !g02Proof.directorCompleted
+                        || !g02Proof.naturalWonObserved
+                        || !g02Proof.naturalEnemyDeathObserved
+                        || g02Proof.g02IgnoredLaneActionProjectileTriggerEnterCount != 3
+                        || !AuditionPvCityHeroPocketCapture
+                            .HasExactG02IgnoredProjectileTriggerLedger(
+                                g02Proof
+                                    .g02IgnoredLaneActionProjectileTriggerEnterLedger)
+                        || !AuditionPvCityHeroPocketCapture
+                            .HasExactG02IgnoredProjectileTriggerLedger(
+                                ignoredProjectileLedger)
+                        || g02Proof.g02RejectedTriggerEnterCount != 0
+                        || g02Proof.g02RejectedTriggerEnterLedger.Length != 0
+                        || rejectedLedger.Count != 0
+                        || !g02Proof.g02EndedOutsideExitTrigger
+                        || !g02Proof.g02EndedSouthOfExitTrigger)
+                    {
+                        capturedFailure = new InvalidOperationException(
+                            "G02 did not reach its exact no-Recorder completion proof. "
+                            + diagnostics);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    MergeFailure(ref capturedFailure, exception);
+                }
+            }
+            if (capturedFailure == null)
+            {
+                try
+                {
+                    director.ValidateG03ContinuationPreconditions();
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            }
+            finally
+            {
+                if (transition != null && ignoredHandlerSubscribed)
+                {
+                    try
+                    {
+                        transition.LaneActionProjectileTriggerEnterIgnored -= handleIgnored;
+                    }
+                    catch (Exception exception)
+                    {
+                        MergeFailure(ref capturedFailure, exception);
+                    }
+                }
+                if (transition != null && rejectedHandlerSubscribed)
+                {
+                    try
+                    {
+                        transition.TriggerEnterRejected -= handleRejected;
+                    }
+                    catch (Exception exception)
+                    {
+                        MergeFailure(ref capturedFailure, exception);
+                    }
+                }
+                if (director != null)
+                {
+                    try
+                    {
+                        diagnostics = director.GetG03ContinuationPreconditionDiagnostics();
+                    }
+                    catch (Exception exception)
+                    {
+                        MergeFailure(ref capturedFailure, exception);
+                        diagnostics += " G03 diagnostics unavailable: " + exception;
+                    }
+                }
+                try
+                {
+                    diagnostics += $" testIgnoredProjectileLedgerCount="
+                        + $"{ignoredProjectileLedger.Count}; "
+                        + $"testIgnoredProjectileLedger=[{string.Join(" || ", ignoredProjectileLedger)}]; "
+                        + $"testRejectedLedgerCount={rejectedLedger.Count}; "
+                        + $"testRejectedLedger=[{string.Join(" || ", rejectedLedger)}].";
+                }
+                catch (Exception exception)
+                {
+                    MergeFailure(ref capturedFailure, exception);
+                }
+            }
+
+            if (director != null)
+            {
+                try
+                {
+                    director.RestoreShotState();
+                }
+                catch (Exception restoreException)
+                {
+                    MergeFailure(ref capturedFailure, restoreException);
+                }
+                try
+                {
+                    UnityEngine.Object.Destroy(director.gameObject);
+                }
+                catch (Exception destroyException)
+                {
+                    MergeFailure(ref capturedFailure, destroyException);
+                }
+                yield return null;
+            }
+
+            yield return new ExitPlayMode();
+            try
+            {
+                Assert.That(
+                    capturedFailure,
+                    Is.Null,
+                    "Same-director G01/G02 -> G03 precondition diagnostic failed. "
+                    + diagnostics);
+            }
+            finally
+            {
+                RestoreSceneSetupOrLeaveCleanEmpty(
+                    priorSceneSetup,
+                    priorSceneSetupIsRestorable);
+            }
         }
 
         private static AuditionPvCityHeroPocketRuntimeProof PassingProof(
@@ -545,6 +936,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 proof.g02ProjectileRootsIndependentAndSceneOwned = true;
                 proof.g02PlayerProjectileVisibleFrameCount = 1;
                 proof.g02EnemyProjectileVisibleFrameCount = 1;
+                proof.g02IgnoredLaneActionProjectileTriggerEnterCount = 3;
+                proof.g02IgnoredLaneActionProjectileTriggerEnterLedger =
+                    PassingIgnoredProjectileLedger();
                 proof.g02PlayerFramingSampleCount = 4;
                 proof.g02PlayerFramingPassCount = 4;
                 proof.g02EnemyFramingSampleCount = 3;
@@ -575,6 +969,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             proof.g03PreRollPathLength = 3f;
             proof.g03PreRollNetDisplacement = 2.5f;
             proof.transitionTriggerAcceptedCount = 1;
+            proof.transitionIgnoredLaneActionProjectileBaseline = 3;
+            proof.transitionIgnoredLaneActionProjectileEnd = 3;
             proof.transitionStartedCount = 1;
             proof.transitionHudHiddenCount = 1;
             proof.transitionFullCoverCount = 1;
@@ -592,6 +988,38 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             proof.transitionInputAndAiLocked = true;
             proof.transitionPresentationFrameAtEnd = 294;
             return proof;
+        }
+
+        private static AuditionPvCityTriggerEnterLedgerEntry[]
+            PassingIgnoredProjectileLedger()
+        {
+            const string cloneName =
+                "PF_PlayerRangedBasicProjectile_AimBolt(Clone)";
+            const string hierarchy =
+                "CityHeroPocketRuntime/CityHeroPocket_PlayerProjectiles/"
+                + cloneName;
+            return AuditionPvCityHeroPocketCapture.G02IgnoredProjectileTriggerFrames
+                .Select((frame, index) =>
+                    new AuditionPvCityTriggerEnterLedgerEntry
+                    {
+                        logicalFrame = frame,
+                        unityFrame = 1000 + frame,
+                        colliderName = cloneName,
+                        colliderType = typeof(SphereCollider).FullName,
+                        colliderInstanceId = 1100 + index,
+                        layer = 0,
+                        layerName = "Default",
+                        hierarchy = hierarchy,
+                        rootName = "CityHeroPocketRuntime",
+                        rootInstanceId = 1200,
+                        position = new Vector3(index, 0.5f, 7.4f),
+                        rootPosition = Vector3.zero,
+                        projectileName = cloneName,
+                        projectileInstanceId = 1300 + index,
+                        projectileHierarchy = hierarchy,
+                        projectileWasActive = true
+                    })
+                .ToArray();
         }
 
         private static void AssertRejected(
@@ -619,6 +1047,77 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.LessThanOrEqualTo(0.00001f));
             Assert.That(pose.fieldOfView,
                 Is.EqualTo(fieldOfView).Within(0.00001f));
+        }
+
+        private static bool TryMoveNext(
+            IEnumerator routine,
+            out object yielded,
+            out Exception failure)
+        {
+            yielded = null;
+            failure = null;
+            try
+            {
+                bool moved = routine.MoveNext();
+                if (moved)
+                {
+                    yielded = routine.Current;
+                }
+                return moved;
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                return false;
+            }
+        }
+
+        private static void MergeFailure(
+            ref Exception capturedFailure,
+            Exception additionalFailure)
+        {
+            if (additionalFailure == null)
+            {
+                return;
+            }
+            capturedFailure = capturedFailure == null
+                ? additionalFailure
+                : new AggregateException(capturedFailure, additionalFailure);
+        }
+
+        private static bool IsRestorableSceneSetup(SceneSetup[] setup)
+        {
+            return setup != null
+                && setup.Length > 0
+                && setup.Any(value => value.isLoaded)
+                && setup.All(value => !string.IsNullOrWhiteSpace(value.path)
+                    && AssetDatabase.LoadAssetAtPath<SceneAsset>(value.path) != null);
+        }
+
+        private static void RestoreSceneSetupOrLeaveCleanEmpty(
+            SceneSetup[] priorSceneSetup,
+            bool priorSceneSetupIsRestorable)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "SceneSetup restoration is only legal after returning to EditMode.");
+            }
+            if (priorSceneSetupIsRestorable)
+            {
+                EditorSceneManager.RestoreSceneManagerSetup(priorSceneSetup);
+                return;
+            }
+
+            Scene cleanScene = EditorSceneManager.NewScene(
+                NewSceneSetup.EmptyScene,
+                NewSceneMode.Single);
+            if (!cleanScene.IsValid() || cleanScene.isDirty
+                || !string.IsNullOrEmpty(cleanScene.path))
+            {
+                throw new InvalidOperationException(
+                    "The batch diagnostic could not leave a clean, unsaved empty scene.");
+            }
         }
 
         private static string ReadProjectFile(string assetPath)

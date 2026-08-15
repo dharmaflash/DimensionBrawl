@@ -127,6 +127,12 @@ namespace DimensionBrawl.Editor.CityHeroPocket.Tests
                 Is.EqualTo(0.08f));
             Assert.That(
                 typeof(CityHeroPocketExitTransitionController).GetProperty(
+                    nameof(CityHeroPocketExitTransitionController
+                        .IgnoredLaneActionProjectileTriggerEnterCount)),
+                Is.Not.Null,
+                "G02/G03 requires a public expected-projectile traffic counter.");
+            Assert.That(
+                typeof(CityHeroPocketExitTransitionController).GetProperty(
                     nameof(CityHeroPocketExitTransitionController.RejectedTriggerEnterCount)),
                 Is.Not.Null,
                 "G03 requires a public wrong-collider trigger proof counter.");
