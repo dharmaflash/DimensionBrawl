@@ -252,8 +252,8 @@ MonoBehaviour:
   maxLeadFromPlayerSpeed: 0
   defaultCueSeconds: 0.24
   maxCueOffset: 0.55
-  maxCueFieldOfViewDelta: 4
-  maxCueCameraDistanceDelta: 0.45
+  maxCueFieldOfViewDelta: 12
+  maxCueCameraDistanceDelta: 0.95
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
   enableMicroShake: 1
@@ -575,6 +575,18 @@ MonoBehaviour:
   bossPressureActionDirector: {fileID: 1932639516}
   cameraController: {fileID: 1004}
   cueSpace: {fileID: 4001}
+  patternWindupCueReleaseSeconds: 0.18
+  patternWindupCueOverrides:
+  - patternId: AkazaCrushNet
+    cue:
+      enabled: 1
+      localOffset: {x: 0, y: 0, z: 0}
+      planarDirectionOffset: 0
+      fieldOfViewDelta: -11.8
+      cameraDistanceDelta: -0.9
+      focusHeightDelta: 0
+      durationSeconds: 3.2
+      finisherScale: 1
   windupCue:
     enabled: 1
     localOffset: {x: 0, y: 0.04, z: -0.1}
@@ -1307,17 +1319,17 @@ MonoBehaviour:
   damagedCueId: 37
   criticalCueId: 38
   damagedCueIntensity: 1
-  perfectDodgeCueIntensity: 1.55
+  perfectDodgeCueIntensity: 0.8
   perfectDodgeTimeFieldCueId: 39
   perfectDodgePulsewaveCueId: 40
   perfectDodgeHoloCubeCueId: 41
   perfectDodgeWindowCueId: 42
   perfectDodgeProjectileBlockCueId: 46
-  perfectDodgeTimeFieldIntensity: 1
-  perfectDodgePulsewaveIntensity: 1.12
-  perfectDodgeHoloCubeIntensity: 0.92
+  perfectDodgeTimeFieldIntensity: 0.7
+  perfectDodgePulsewaveIntensity: 0.75
+  perfectDodgeHoloCubeIntensity: 0.6
   perfectDodgeWindowIntensity: 1
-  perfectDodgeProjectileBlockIntensity: 1.18
+  perfectDodgeProjectileBlockIntensity: 0.85
   perfectDodgeShieldBlockRadius: 0.86
   perfectDodgeAudioIntensity: 1
   pressureDamageCueScale: 0.62
@@ -265895,11 +265907,11 @@ MonoBehaviour:
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
-  playPerfectDodgeScreenDomain: 0
-  maxPerfectDodgeDomainAlpha: 0
-  maxPerfectDodgeInvertAlpha: 0
-  maxPerfectDodgeEdgeAlpha: 0
-  perfectDodgeDomainSeconds: 3
+  playPerfectDodgeScreenDomain: 1
+  maxPerfectDodgeDomainAlpha: 0.14
+  maxPerfectDodgeInvertAlpha: 0.015
+  maxPerfectDodgeEdgeAlpha: 0.18
+  perfectDodgeDomainSeconds: 0.42
   perfectDodgePulseSeconds: 0.22
   perfectDodgeDomainMaterial: {fileID: 2100000, guid: 781b4663cac37384987ed06654555eb4, type: 2}
   perfectDodgeGlitchOverlayMaterial: {fileID: 2100000, guid: b32dcd3cfade93d488085177bf32365b, type: 2}
@@ -265910,7 +265922,7 @@ MonoBehaviour:
   perfectDodgeGridStrength: 0.68
   perfectDodgeFractureStrength: 0.74
   perfectDodgeChromaticStrength: 0.86
-  perfectDodgeGlitchOverlayAlpha: 0
+  perfectDodgeGlitchOverlayAlpha: 0.03
   perfectDodgeGlitchNoiseStrength: 1.25
   perfectDodgeGlitchJitterStrength: 0.42
   useDamageScreenFeedback: 0

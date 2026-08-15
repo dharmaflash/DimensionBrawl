@@ -1154,12 +1154,38 @@ namespace DimensionBrawl.Tests
                 "The budgeted cube core is the visible center wall, not an optional decoration.");
             Assert.That(
                 rootParticles.main.maxParticles,
-                Is.LessThanOrEqualTo(32),
-                "The restored wall must not regress to the legacy 109-cube mobile overdraw spike.");
+                Is.EqualTo(20),
+                "The softened wall must keep the reviewed 20-particle mobile ceiling.");
+            ParticleSystem.MinMaxCurve startSizeY = rootParticles.main.startSizeY;
+            Assert.That(
+                startSizeY.mode,
+                Is.EqualTo(ParticleSystemCurveMode.TwoCurves));
+            Assert.That(startSizeY.curveMultiplier, Is.EqualTo(3.8f).Within(0.001f));
+            Assert.That(
+                startSizeY.curveMax.Evaluate(0f) * startSizeY.curveMultiplier,
+                Is.EqualTo(3.8f).Within(0.001f));
+            Assert.That(
+                startSizeY.curveMin.Evaluate(0f) * startSizeY.curveMultiplier,
+                Is.LessThanOrEqualTo(1.6f),
+                "The animated lower size curve must remain materially smaller than the reviewed wall ceiling.");
+            Assert.That(
+                rootParticles.main.startColor.color.a,
+                Is.EqualTo(0.68f).Within(0.001f),
+                "The center wall must remain readable without returning to opaque red overdraw.");
             Assert.That(
                 rootParticles.emission.burstCount,
                 Is.EqualTo(6),
                 "The lightweight core should preserve the authored six-step wall build.");
+            var bursts = new ParticleSystem.Burst[6];
+            Assert.That(rootParticles.emission.GetBursts(bursts), Is.EqualTo(6));
+            for (int burstIndex = 0; burstIndex < bursts.Length; burstIndex++)
+            {
+                float expectedCount = burstIndex == 0 ? 4f : 3f;
+                Assert.That(
+                    bursts[burstIndex].count.constant,
+                    Is.EqualTo(expectedCount).Within(0.001f),
+                    $"No-cross burst {burstIndex} count drifted.");
+            }
             Assert.That(
                 rootParticles.main.startLifetime.mode,
                 Is.EqualTo(ParticleSystemCurveMode.Constant));

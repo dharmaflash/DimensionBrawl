@@ -147,6 +147,10 @@ namespace DimensionBrawl.LevelDesign
         public BossBarrageEncounterController EncounterController =>
             bossBarrageEncounterController;
         public BossBarrageEmitter BarrageEmitter => bossBarrageEmitter;
+        public BossPressureActionDirector PressureActionDirector =>
+            bossPressureActionDirector;
+        public BossPressurePositionController PressurePositionController =>
+            bossPressurePositionController;
         public CanvasGroup CombatHudCanvasGroup => combatHudCanvasGroup;
         public CombatHealth PlayerHealth => playerHealth;
         public PlayerMovementController PlayerMovement => playerMovement;

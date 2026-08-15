@@ -116,6 +116,7 @@ namespace DimensionBrawl.Editor
 
             controller.Configure(gameplayBase, bindings.ToArray());
             lookDriver?.ConfigureLookStateController(controller);
+            ActionFoundationCombatVfxSetup.ConfigureProductPerfectDodgePresentation(scene);
 
             EditorUtility.SetDirty(gameplayBase);
             EditorUtility.SetDirty(characterFocus);
@@ -137,7 +138,7 @@ namespace DimensionBrawl.Editor
         private static void ApplyAll(bool restoreOriginalScene)
         {
             EnsureNoDirtyScenes();
-            string originalScenePath = SceneManager.GetActiveScene().path;
+            SceneSetup[] originalSceneSetup = EditorSceneManager.GetSceneManagerSetup();
             try
             {
                 ApplyScene(CorridorScenePath);
@@ -147,11 +148,11 @@ namespace DimensionBrawl.Editor
             }
             finally
             {
-                if (restoreOriginalScene && !string.IsNullOrWhiteSpace(originalScenePath))
+                if (restoreOriginalScene && originalSceneSetup.Length > 0)
                 {
-                    EditorSceneManager.OpenScene(originalScenePath, OpenSceneMode.Single);
+                    EditorSceneManager.RestoreSceneManagerSetup(originalSceneSetup);
                 }
-                else if (!restoreOriginalScene)
+                else
                 {
                     EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 }

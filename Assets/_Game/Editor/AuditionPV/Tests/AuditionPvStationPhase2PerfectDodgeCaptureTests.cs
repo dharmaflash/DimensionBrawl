@@ -34,20 +34,27 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(AuditionPvCaptureContract.Fps, Is.EqualTo(60));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenDomainAlpha,
-                Is.EqualTo(0.42f));
+                    .ProductScreenDomainAlpha,
+                Is.EqualTo(0.14f));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenInvertAlpha,
+                    .ProductScreenInvertAlpha,
+                Is.EqualTo(0.015f));
+            Assert.That(
+                AuditionPvStationPhase2PerfectDodgeCapture
+                    .ProductScreenEdgeAlpha,
                 Is.EqualTo(0.18f));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenEdgeAlpha,
-                Is.EqualTo(0.48f));
+                    .ProductScreenGlitchAlpha,
+                Is.EqualTo(0.03f));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenGlitchAlpha,
-                Is.EqualTo(0.16f));
+                    .ProductScreenDomainSeconds,
+                Is.EqualTo(0.42f));
+            Assert.That(
+                shot.notes,
+                Does.Contain("used without a capture-time visual override"));
         }
 
         [Test]
@@ -67,7 +74,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(188));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture.PhaseTwoSettleFrames,
-                Is.EqualTo(60));
+                Is.EqualTo(90));
             Assert.That(
                 AuditionPvStationPhase2PerfectDodgeCapture.FrameTimeSeconds(188),
                 Is.EqualTo(3.1333333f).Within(0.000001f));
@@ -204,6 +211,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
 
             Assert.That(source, Does.Contain("flow.EncounterController"));
             Assert.That(source, Does.Contain("flow.BarrageEmitter"));
+            Assert.That(source, Does.Contain("flow.PressureActionDirector"));
+            Assert.That(source, Does.Contain("flow.PressurePositionController"));
             Assert.That(source, Does.Contain("flow.CombatHudCanvasGroup"));
             Assert.That(source, Does.Contain("flow.PlayerActionController"));
             Assert.That(source, Does.Contain("flow.PlayerRangedBasicAttackAction"));
@@ -223,12 +232,21 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain(
                 "BossCombatCadenceScheduler.AcquireExternalSuspension(this)"));
             Assert.That(source, Does.Contain(
+                "pressurePositionController.TryAcquireMovementIntentOverride("));
+            Assert.That(source, Does.Contain(
+                "BossPressureMovementIntent.CommitForward"));
+            Assert.That(source, Does.Contain(
+                "BossPressureActionKind.PunishOverextend"));
+            Assert.That(source, Does.Contain(
                 "EditorSceneManager.OpenScene(StationScenePath"));
             Assert.That(source, Does.Not.Contain("PerfectDodgeTriggered?.Invoke"));
             Assert.That(source, Does.Not.Contain("System.Reflection"));
             Assert.That(source, Does.Not.Contain("GetComponentsInChildren<CanvasGroup"));
             Assert.That(source, Does.Not.Contain("Time.timeScale = 0"));
             Assert.That(source, Does.Not.Contain("EditorSceneManager.Save"));
+            Assert.That(source, Does.Not.Contain(
+                "ConfigurePerfectDodgeDomainPresentation("));
+            Assert.That(source, Does.Not.Contain("CaptureOnlyScreen"));
         }
 
         [Test]
@@ -475,8 +493,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             float savedEnergyRate = 0f;
             bool sceneScreenDefaultsWereExact = false;
             bool reachedWindup = false;
-            bool captureScreenProfileWasActive = false;
+            bool productScreenProfileWasActive = false;
             bool stateRestored = false;
+            bool bossCompositionRestored = false;
             bool emitterClearedCaptureWindup = false;
             bool authoredPriorityRestored = false;
             string authoredPriorityRestoreDiagnostics = "not observed";
@@ -546,12 +565,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 savedEnergyMana = flow.EncounterController.EnergyLadder.CurrentMana;
                 savedEnergyRate =
                     flow.EncounterController.EnergyLadder.CurrentEnergyPerSecond;
-                sceneScreenDefaultsWereExact =
-                    !screen.PlayPerfectDodgeScreenDomain
-                    && screen.MaxPerfectDodgeDomainAlpha == 0f
-                    && screen.MaxPerfectDodgeInvertAlpha == 0f
-                    && screen.MaxPerfectDodgeEdgeAlpha == 0f
-                    && screen.PerfectDodgeGlitchOverlayAlpha == 0f;
+                sceneScreenDefaultsWereExact = HasExactProductScreenProfile(screen);
 
                 director = AuditionPvStationPhase2PerfectDodgeCapture
                     .AttachToFreshActiveScene();
@@ -578,8 +592,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
 
                 if (capturedFailure == null)
                 {
-                    captureScreenProfileWasActive =
-                        director.CaptureOnlyScreenProfileActive;
+                    productScreenProfileWasActive =
+                        director.ProductScreenProfileActive;
                     director.FramePresented += frame =>
                         reachedWindup |= frame
                             >= AuditionPvStationPhase2PerfectDodgeCapture
@@ -602,6 +616,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     reachedWindup &= flow.BarrageEmitter.IsWindupActive;
                     director.enabled = false;
                     stateRestored = director.StateRestored;
+                    bossCompositionRestored = director.BossCompositionRestored;
                     emitterClearedCaptureWindup =
                         !flow.BarrageEmitter.IsWindupActive;
                     authoredPriorityRestored =
@@ -620,12 +635,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         && flow.CombatHudCanvasGroup.blocksRaycasts
                             == savedHudBlocksRaycasts;
                     screenRestored = director.ScreenProfileRestored
-                        && !screen.PlayPerfectDodgeScreenDomain
-                        && !PerfectDodgeScreenDomainRuntime.HasActiveCue
-                        && screen.MaxPerfectDodgeDomainAlpha == 0f
-                        && screen.MaxPerfectDodgeInvertAlpha == 0f
-                        && screen.MaxPerfectDodgeEdgeAlpha == 0f
-                        && screen.PerfectDodgeGlitchOverlayAlpha == 0f;
+                        && HasExactProductScreenProfile(screen)
+                        && !PerfectDodgeScreenDomainRuntime.HasActiveCue;
                     encounterRestored =
                         flow.EncounterController.IsExternalCombatSuspended
                             == savedEncounterSuspended;
@@ -686,9 +697,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(crushNet, Is.Not.Null, "CrushNet profile binding.");
             Assert.That(authoredOpening, Is.Not.Null, "Authored opening binding.");
             Assert.That(sceneScreenDefaultsWereExact, Is.True, "Scene screen defaults.");
-            Assert.That(captureScreenProfileWasActive, Is.True, "Capture screen lease.");
+            Assert.That(productScreenProfileWasActive, Is.True, "Product screen profile.");
             Assert.That(reachedWindup, Is.True, "f1 capture windup.");
             Assert.That(stateRestored, Is.True, "Director restore seal.");
+            Assert.That(bossCompositionRestored, Is.True, "Boss composition restore.");
             Assert.That(emitterClearedCaptureWindup, Is.True, "Capture windup cleanup.");
             Assert.That(
                 authoredPriorityRestored,
@@ -838,6 +850,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             bool exactHudRenderable = false;
             bool exactHudResources = false;
             bool stateRestored = false;
+            bool bossCompositionRestored = false;
             bool screenProfileRestored = false;
             bool cadenceRestored = false;
             bool clockRestored = false;
@@ -845,7 +858,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             bool inputRestored = false;
             bool randomRestored = false;
             bool sceneScreenDefaultsWereExact = false;
-            bool captureScreenProfileWasActive = false;
+            bool productScreenProfileWasActive = false;
             bool preparationSafetyExpired = false;
             bool exactEnergyBinding = false;
             int blockedDamageCount = 0;
@@ -859,6 +872,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             bool observedExactFrameSequence = true;
             float preparedCameraFieldOfView = 0f;
             Vector3 preparedCameraPosition = Vector3.zero;
+            float bossRiskAtFirstFrame = 0f;
+            float bossRiskAtFireFrame = 0f;
+            float bossRiskAtImpactFrame = 0f;
             int savedCaptureFramerate = Time.captureFramerate;
             int savedTargetFrameRate = Application.targetFrameRate;
             bool savedMoveInputLocked = false;
@@ -872,12 +888,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     .Single(candidate =>
                         candidate.gameObject.scene
                             == SceneManager.GetActiveScene());
-            sceneScreenDefaultsWereExact =
-                !screen.PlayPerfectDodgeScreenDomain
-                && screen.MaxPerfectDodgeDomainAlpha == 0f
-                && screen.MaxPerfectDodgeInvertAlpha == 0f
-                && screen.MaxPerfectDodgeEdgeAlpha == 0f
-                && screen.PerfectDodgeGlitchOverlayAlpha == 0f;
+            sceneScreenDefaultsWereExact = HasExactProductScreenProfile(screen);
 
             OlympusStationAkazaPhase2FlowController initialFlow =
                 UnityEngine.Object.FindFirstObjectByType<
@@ -962,8 +973,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 preparedCameraPosition = director.PreparedCameraPosition;
                 exactHudRenderable = director.IsExactHudRenderable;
                 exactHudResources = director.IsHudResourceStateExact;
-                captureScreenProfileWasActive =
-                    director.CaptureOnlyScreenProfileActive;
+                productScreenProfileWasActive =
+                    director.ProductScreenProfileActive;
                 preparationSafetyExpired =
                     director.PreparationSafetyExpiredBeforeDodge;
                 exactEnergyBinding = director.UsesExactEnergyLadderBinding;
@@ -973,6 +984,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 hudMagazineSize = director.HudMagazineSize;
                 hudEnergyMana = director.HudEnergyMana;
                 hudEnergyMaxMana = director.HudEnergyMaxMana;
+                bossRiskAtFirstFrame = director.BossRiskAtFirstFrame;
+                bossRiskAtFireFrame = director.BossRiskAtFireFrame;
+                bossRiskAtImpactFrame = director.BossRiskAtImpactFrame;
             }
 
             if (director != null)
@@ -991,13 +1005,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 }
 
                 stateRestored = director.StateRestored;
+                bossCompositionRestored = director.BossCompositionRestored;
                 screenProfileRestored = director.ScreenProfileRestored
-                    && !screen.PlayPerfectDodgeScreenDomain
-                    && !PerfectDodgeScreenDomainRuntime.HasActiveCue
-                    && screen.MaxPerfectDodgeDomainAlpha == 0f
-                    && screen.MaxPerfectDodgeInvertAlpha == 0f
-                    && screen.MaxPerfectDodgeEdgeAlpha == 0f
-                    && screen.PerfectDodgeGlitchOverlayAlpha == 0f;
+                    && HasExactProductScreenProfile(screen)
+                    && !PerfectDodgeScreenDomainRuntime.HasActiveCue;
                 cadenceRestored =
                     BossCombatCadenceScheduler.ExternalSuspensionCount == 0
                     && !BossCombatCadenceScheduler.IsExternallySuspended;
@@ -1038,8 +1049,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(exactHudRenderable, Is.True);
             Assert.That(exactHudResources, Is.True);
             Assert.That(stateRestored, Is.True);
+            Assert.That(bossCompositionRestored, Is.True);
             Assert.That(sceneScreenDefaultsWereExact, Is.True);
-            Assert.That(captureScreenProfileWasActive, Is.True);
+            Assert.That(productScreenProfileWasActive, Is.True);
             Assert.That(screenProfileRestored, Is.True);
             Assert.That(cadenceRestored, Is.True);
             Assert.That(clockRestored, Is.True);
@@ -1056,10 +1068,40 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(observedFrameCount, Is.EqualTo(197));
             Assert.That(preparedCameraFieldOfView, Is.GreaterThan(0f));
             Assert.That(float.IsNaN(preparedCameraPosition.x), Is.False);
+            Assert.That(bossRiskAtFirstFrame, Is.GreaterThanOrEqualTo(0.58f));
+            Assert.That(bossRiskAtFireFrame, Is.GreaterThanOrEqualTo(0.86f));
+            Assert.That(bossRiskAtImpactFrame, Is.GreaterThanOrEqualTo(0.88f));
             Assert.That(
                 SceneManager.GetActiveScene().path,
                 Is.EqualTo(
                     AuditionPvStationPhase2PerfectDodgeCapture.StationScenePath));
+        }
+
+        private static bool HasExactProductScreenProfile(
+            ActionScreenCuePresenter screen)
+        {
+            return screen != null
+                && screen.PlayPerfectDodgeScreenDomain
+                && Mathf.Abs(
+                    screen.MaxPerfectDodgeDomainAlpha
+                        - AuditionPvStationPhase2PerfectDodgeCapture
+                            .ProductScreenDomainAlpha) <= 0.0001f
+                && Mathf.Abs(
+                    screen.MaxPerfectDodgeInvertAlpha
+                        - AuditionPvStationPhase2PerfectDodgeCapture
+                            .ProductScreenInvertAlpha) <= 0.0001f
+                && Mathf.Abs(
+                    screen.MaxPerfectDodgeEdgeAlpha
+                        - AuditionPvStationPhase2PerfectDodgeCapture
+                            .ProductScreenEdgeAlpha) <= 0.0001f
+                && Mathf.Abs(
+                    screen.PerfectDodgeGlitchOverlayAlpha
+                        - AuditionPvStationPhase2PerfectDodgeCapture
+                            .ProductScreenGlitchAlpha) <= 0.0001f
+                && Mathf.Abs(
+                    screen.PerfectDodgeDomainSeconds
+                        - AuditionPvStationPhase2PerfectDodgeCapture
+                            .ProductScreenDomainSeconds) <= 0.0001f;
         }
 
         private static T CaptureException<T>(

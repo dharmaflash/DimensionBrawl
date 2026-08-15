@@ -45,10 +45,10 @@ namespace DimensionBrawl.Presentation
 
         [Header("Perfect Dodge Domain")]
         [SerializeField] private bool playPerfectDodgeScreenDomain = true;
-        [SerializeField, Range(0f, 0.65f)] private float maxPerfectDodgeDomainAlpha = 0.42f;
-        [SerializeField, Range(0f, 0.45f)] private float maxPerfectDodgeInvertAlpha = 0.18f;
-        [SerializeField, Range(0f, 0.75f)] private float maxPerfectDodgeEdgeAlpha = 0.48f;
-        [SerializeField, Min(0.01f)] private float perfectDodgeDomainSeconds = 3f;
+        [SerializeField, Range(0f, 0.65f)] private float maxPerfectDodgeDomainAlpha = 0.14f;
+        [SerializeField, Range(0f, 0.45f)] private float maxPerfectDodgeInvertAlpha = 0.015f;
+        [SerializeField, Range(0f, 0.75f)] private float maxPerfectDodgeEdgeAlpha = 0.18f;
+        [SerializeField, Min(0.01f)] private float perfectDodgeDomainSeconds = 0.42f;
         [SerializeField, Min(0.01f)] private float perfectDodgePulseSeconds = 0.22f;
         [SerializeField] private Material perfectDodgeDomainMaterial;
         [SerializeField] private Material perfectDodgeGlitchOverlayMaterial;
@@ -59,7 +59,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 1f)] private float perfectDodgeGridStrength = 0.68f;
         [SerializeField, Range(0f, 1f)] private float perfectDodgeFractureStrength = 0.74f;
         [SerializeField, Range(0f, 1f)] private float perfectDodgeChromaticStrength = 0.86f;
-        [SerializeField, Range(0f, 1f)] private float perfectDodgeGlitchOverlayAlpha = 0.16f;
+        [SerializeField, Range(0f, 1f)] private float perfectDodgeGlitchOverlayAlpha = 0.03f;
         [SerializeField, Range(0f, 2f)] private float perfectDodgeGlitchNoiseStrength = 1.25f;
         [SerializeField, Range(0f, 1f)] private float perfectDodgeGlitchJitterStrength = 0.42f;
 

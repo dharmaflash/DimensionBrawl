@@ -3770,6 +3770,88 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressurePositionControllerMovementIntentLeaseOverridesDisabledActionsAndRestores()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject bossObject = new GameObject("BossProxy");
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            BossPressureActionDirector director =
+                bossObject.AddComponent<BossPressureActionDirector>();
+            BossPressurePositionController positionController =
+                bossObject.AddComponent<BossPressurePositionController>();
+            positionController.ConfigureReferences(
+                lane,
+                bossCost,
+                director,
+                bossObject.transform);
+            SetPrivateInstanceField(
+                positionController,
+                "forwardPressureOscillationEnabled",
+                false);
+            bossObject.transform.position =
+                lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.6f);
+            Vector3 initialScale = bossObject.transform.localScale;
+            director.SetActionsEnabled(false);
+
+            Assert.IsFalse(positionController.TryAcquireMovementIntentOverride(
+                null,
+                BossPressureMovementIntent.CommitForward,
+                BossPressureActionKind.PunishOverextend,
+                out BossPressurePositionController.MovementIntentLease invalidLease));
+            Assert.IsNull(invalidLease);
+
+            GameObject backlineOwner = new GameObject("BacklineOwner");
+            Assert.IsTrue(positionController.TryAcquireMovementIntentOverride(
+                backlineOwner,
+                BossPressureMovementIntent.HoldBacklineFire,
+                BossPressureActionKind.SkillPattern,
+                out BossPressurePositionController.MovementIntentLease backlineLease));
+            Assert.AreEqual(1, positionController.MovementIntentOverrideCount);
+
+            GameObject commitOwner = new GameObject("CommitOwner");
+            Assert.IsTrue(positionController.TryAcquireMovementIntentOverride(
+                commitOwner,
+                BossPressureMovementIntent.CommitForward,
+                BossPressureActionKind.PunishOverextend,
+                out BossPressurePositionController.MovementIntentLease commitLease));
+            Assert.AreEqual(2, positionController.MovementIntentOverrideCount);
+
+            positionController.Tick(2f);
+            Assert.AreEqual(0.9f, positionController.CurrentTargetRisk01, 0.001f);
+            Assert.GreaterOrEqual(positionController.CurrentRisk01, 0.89f);
+            Assert.AreEqual(initialScale, bossObject.transform.localScale);
+
+            Object.DestroyImmediate(commitOwner);
+            Assert.IsTrue(commitLease.IsReleased);
+            Assert.AreEqual(
+                1,
+                positionController.MovementIntentOverrideCount,
+                "A destroyed top owner must be pruned without releasing the surviving lease.");
+            positionController.Tick(2f);
+            Assert.AreEqual(0.22f, positionController.CurrentTargetRisk01, 0.001f);
+
+            commitLease.Dispose();
+            positionController.enabled = false;
+            Assert.IsTrue(
+                backlineLease.IsReleased,
+                "Disabling the controller must invalidate every surviving movement lease.");
+            Assert.AreEqual(0, positionController.MovementIntentOverrideCount);
+            positionController.enabled = true;
+            backlineLease.Dispose();
+            backlineLease.Dispose();
+            Assert.AreEqual(0, positionController.MovementIntentOverrideCount);
+            positionController.Tick(2f);
+            Assert.AreEqual(0.18f, positionController.CurrentTargetRisk01, 0.001f);
+            Assert.AreEqual(initialScale, bossObject.transform.localScale);
+
+            Object.DestroyImmediate(backlineOwner);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressurePositionControllerStrafesAfterObservedBasicFire()
         {
             GameObject laneObject = new GameObject("Lane");

@@ -50,6 +50,18 @@ namespace DimensionBrawl.Editor.AuditionPV
             "Assets/_Game/Scripts/Presentation/ActionScreenCuePresenter.cs";
         internal const string PerfectDodgeTimeWarpPath =
             "Assets/_Game/Scripts/Presentation/PerfectDodgeTimeWarp.cs";
+        internal const string PressurePositionControllerPath =
+            "Assets/_Game/Scripts/Combat/BossPressurePositionController.cs";
+        internal const string PressureActionDeckPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_AkazaPhase2.asset";
+        internal const string CombatVfxProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
+        internal const string PlayerCombatVfxDriverPath =
+            "Assets/_Game/Scripts/Presentation/PlayerCombatVfxCueDriver.cs";
+        internal const string GameplayPostProcessPath =
+            "Assets/_Game/Art/Environment/OlympusCorridor/Profiles/DB_OlympusCorridor_PostProcess.asset";
+        internal const string NoCrossWallPrefabPath =
+            "Assets/_Game/Prefabs/VFX/Environment/PF_OlympusStation_NoCrossRedCubeZone.prefab";
 
         internal const string ShotId = "g05";
         internal const string BaselinesFolderName = "baselines";
@@ -64,17 +76,18 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int FirePendingWaveFrame = 71;
         internal const int QueueDodgeFrame = 186;
         internal const int ImpactFrame = 188;
-        internal const int PhaseTwoSettleFrames = 60;
+        internal const int PhaseTwoSettleFrames = 90;
         internal const int Bl03SourceFrame = 0;
         // The product presenter intentionally opens its screen-domain coroutine on
         // the frame after the real impact event. f188 remains the collision proof;
         // f189 is the first honest rendered screen-domain hero baseline.
         internal const int Bl06SourceFrame = ImpactFrame + 1;
         internal const int DeterministicRandomSeed = 0x4705;
-        internal const float CaptureOnlyScreenDomainAlpha = 0.42f;
-        internal const float CaptureOnlyScreenInvertAlpha = 0.18f;
-        internal const float CaptureOnlyScreenEdgeAlpha = 0.48f;
-        internal const float CaptureOnlyScreenGlitchAlpha = 0.16f;
+        internal const float ProductScreenDomainAlpha = 0.14f;
+        internal const float ProductScreenInvertAlpha = 0.015f;
+        internal const float ProductScreenEdgeAlpha = 0.18f;
+        internal const float ProductScreenGlitchAlpha = 0.03f;
+        internal const float ProductScreenDomainSeconds = 0.42f;
 
         internal static AuditionPvShotManifestEntry CreateShotManifestEntry()
         {
@@ -88,11 +101,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 hudMode = "hud-on",
                 notes =
                     "Fresh Station product state. Actual threshold transition to Akaza Phase 2; "
-                    + "60 fixed-60 Phase 2 camera/UI/animation settle frames; "
+                    + "90 fixed-60Hz Phase 2 camera/UI/animation settle frames; "
                     + "CrushNet BeginWindup f1, FirePendingWave f71, QueueDodge f186, "
                     + "real active projectile impact f188; screen-domain hero f189; "
-                    + "Station scene-default screen domain is leased to the G05 runtime profile "
-                    + "(.42/.18/.48/.16) and restored; 2560x1440 PNG at 60fps."
+                    + "the authored Station screen-domain profile (.14/.015/.18/.03, 0.42s) "
+                    + "is used without a capture-time visual override; 2560x1440 PNG at 60fps."
             };
         }
 
@@ -149,7 +162,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 PlayerActionPath,
                 ActionCameraPath,
                 ActionScreenPath,
-                PerfectDodgeTimeWarpPath
+                PerfectDodgeTimeWarpPath,
+                PressurePositionControllerPath,
+                PressureActionDeckPath,
+                CombatVfxProfilePath,
+                PlayerCombatVfxDriverPath,
+                GameplayPostProcessPath,
+                NoCrossWallPrefabPath
             };
         }
 
@@ -345,6 +364,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private BossBarrageEncounterController encounter;
         private CombatEncounterController canonicalEncounter;
         private BossBarrageEmitter emitter;
+        private BossPressureActionDirector pressureActionDirector;
+        private BossPressurePositionController pressurePositionController;
         private BossBarragePatternProfile crushNet;
         private BossBarragePatternProfile phaseTwoOpening;
         private CanvasGroup combatHud;
@@ -360,6 +381,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private SceneEntryNoticeOverlay entryNotice;
         private OlympusCorridorTutorialDirector tutorial;
         private IDisposable cadenceSuspensionLease;
+        private BossPressurePositionController.MovementIntentLease
+            bossMovementIntentLease;
         private PresentationClock.ManualLease presentationClockLease;
         private BossBarrageProjectile impactProjectile;
 
@@ -379,12 +402,11 @@ namespace DimensionBrawl.Editor.AuditionPV
         private int savedTargetFrameRate;
         private float savedEnergyMana;
         private bool savedEnergyGainEnabled;
-        private bool savedScreenDomainValid;
-        private bool savedScreenDomainEnabled;
-        private float savedScreenDomainAlpha;
-        private float savedScreenDomainInvertAlpha;
-        private float savedScreenDomainEdgeAlpha;
-        private float savedScreenDomainGlitchAlpha;
+        private bool savedBossCompositionValid;
+        private bool savedBossMovementEnabled;
+        private Vector3 savedBossPosition;
+        private Quaternion savedBossRotation = Quaternion.identity;
+        private Vector3 savedBossLocalScale = Vector3.one;
         private int initialCameraMicroShakeCount;
         private float initialPlayerHealth;
         private int currentFrame = -1;
@@ -404,6 +426,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         private Vector3 preparedCameraPosition;
         private Quaternion preparedCameraRotation = Quaternion.identity;
         private float preparedCameraFieldOfView;
+        private float bossRiskAtFirstFrame;
+        private float bossRiskAtFireFrame;
+        private float bossRiskAtImpactFrame;
 
         public event Action<int> FramePresented;
 
@@ -428,39 +453,52 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int DamageModifyingObservationCount => modifyingDamageObservationCount;
         public bool PreparationSafetyExpiredBeforeDodge =>
             preparationSafetyExpiredBeforeDodge;
-        public bool CaptureOnlyScreenProfileActive => actionScreen != null
+        public bool ProductScreenProfileActive => actionScreen != null
             && actionScreen.PlayPerfectDodgeScreenDomain
             && Mathf.Abs(
                 actionScreen.MaxPerfectDodgeDomainAlpha
                     - AuditionPvStationPhase2PerfectDodgeCapture
-                        .CaptureOnlyScreenDomainAlpha) <= HealthTolerance
+                        .ProductScreenDomainAlpha) <= HealthTolerance
             && Mathf.Abs(
                 actionScreen.MaxPerfectDodgeInvertAlpha
                     - AuditionPvStationPhase2PerfectDodgeCapture
-                        .CaptureOnlyScreenInvertAlpha) <= HealthTolerance
+                        .ProductScreenInvertAlpha) <= HealthTolerance
             && Mathf.Abs(
                 actionScreen.MaxPerfectDodgeEdgeAlpha
                     - AuditionPvStationPhase2PerfectDodgeCapture
-                        .CaptureOnlyScreenEdgeAlpha) <= HealthTolerance
+                        .ProductScreenEdgeAlpha) <= HealthTolerance
             && Mathf.Abs(
                 actionScreen.PerfectDodgeGlitchOverlayAlpha
                     - AuditionPvStationPhase2PerfectDodgeCapture
-                        .CaptureOnlyScreenGlitchAlpha) <= HealthTolerance;
+                        .ProductScreenGlitchAlpha) <= HealthTolerance
+            && Mathf.Abs(
+                actionScreen.PerfectDodgeDomainSeconds
+                    - AuditionPvStationPhase2PerfectDodgeCapture
+                        .ProductScreenDomainSeconds) <= HealthTolerance;
         public bool ScreenProfileRestored => stateRestored
-            && savedScreenDomainValid
-            && actionScreen != null
-            && actionScreen.PlayPerfectDodgeScreenDomain == savedScreenDomainEnabled
-            && Mathf.Abs(actionScreen.MaxPerfectDodgeDomainAlpha
-                - savedScreenDomainAlpha) <= HealthTolerance
-            && Mathf.Abs(actionScreen.MaxPerfectDodgeInvertAlpha
-                - savedScreenDomainInvertAlpha) <= HealthTolerance
-            && Mathf.Abs(actionScreen.MaxPerfectDodgeEdgeAlpha
-                - savedScreenDomainEdgeAlpha) <= HealthTolerance
-            && Mathf.Abs(actionScreen.PerfectDodgeGlitchOverlayAlpha
-                - savedScreenDomainGlitchAlpha) <= HealthTolerance;
+            && ProductScreenProfileActive
+            && !PerfectDodgeScreenDomainRuntime.HasActiveCue;
+        public bool BossCompositionRestored => stateRestored
+            && savedBossCompositionValid
+            && pressurePositionController != null
+            && pressurePositionController.MovementIntentOverrideCount == 0
+            && pressurePositionController.MovementEnabled == savedBossMovementEnabled
+            && pressurePositionController.MovedTransform != null
+            && Vector3.Distance(
+                pressurePositionController.MovedTransform.position,
+                savedBossPosition) <= 0.001f
+            && Quaternion.Angle(
+                pressurePositionController.MovedTransform.rotation,
+                savedBossRotation) <= 0.01f
+            && Vector3.Distance(
+                pressurePositionController.MovedTransform.localScale,
+                savedBossLocalScale) <= 0.001f;
         public Vector3 PreparedCameraPosition => preparedCameraPosition;
         public Quaternion PreparedCameraRotation => preparedCameraRotation;
         public float PreparedCameraFieldOfView => preparedCameraFieldOfView;
+        public float BossRiskAtFirstFrame => bossRiskAtFirstFrame;
+        public float BossRiskAtFireFrame => bossRiskAtFireFrame;
+        public float BossRiskAtImpactFrame => bossRiskAtImpactFrame;
         public bool UsedActualCrushNetPattern =>
             crushNet != null && emitter != null && firedProjectileCount == crushNet.ProjectilesPerWave;
         public bool IsExactHudRenderable => combatHud != null
@@ -540,7 +578,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
 
                 ValidateCompletedPhaseTwoHandoff();
+                CaptureBossCompositionState();
                 AcquireDeterministicEncounterControl();
+                AcquireBossCompositionLease();
                 presentationClockLease = PresentationClock.AcquireManual(
                     this,
                     AuditionPvCaptureContract.Fps);
@@ -552,7 +592,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     presentationClockLease.SetFrame(settleFrame);
                     // UnityTest/editor coroutine iterations can advance more
                     // than once inside a player loop. Waiting on Time.frameCount
-                    // makes these exactly 18 real camera/UI/animation frames and
+                    // makes these exact real camera/UI/animation frames and
                     // remains valid in headless focused-test runs.
                     yield return WaitForNextPlayerFrame();
                 }
@@ -661,21 +701,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                     presentationClockLease?.Dispose();
                     presentationClockLease = null;
                 });
+                CaptureRestoreFailure(ref firstFailure, () =>
+                {
+                    bossMovementIntentLease?.Dispose();
+                    bossMovementIntentLease = null;
+                });
                 CaptureRestoreFailure(
                     ref firstFailure,
                     PerfectDodgeScreenDomainRuntime.Clear);
-                CaptureRestoreFailure(ref firstFailure, () =>
-                {
-                    if (savedScreenDomainValid && actionScreen != null)
-                    {
-                        actionScreen.ConfigurePerfectDodgeDomainPresentation(
-                            savedScreenDomainEnabled,
-                            savedScreenDomainAlpha,
-                            savedScreenDomainInvertAlpha,
-                            savedScreenDomainEdgeAlpha,
-                            savedScreenDomainGlitchAlpha);
-                    }
-                });
                 CaptureRestoreFailure(ref firstFailure, () =>
                 {
                     if (playerAction != null)
@@ -764,6 +797,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                         tutorial.enabled = savedTutorialEnabled;
                     }
                 });
+                CaptureRestoreFailure(ref firstFailure, RestoreBossCompositionState);
             }
             finally
             {
@@ -951,6 +985,8 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             encounter = flow.EncounterController;
             emitter = flow.BarrageEmitter;
+            pressureActionDirector = flow.PressureActionDirector;
+            pressurePositionController = flow.PressurePositionController;
             combatHud = flow.CombatHudCanvasGroup;
             combatHudCanvas = combatHud != null
                 ? combatHud.GetComponentInParent<Canvas>(includeInactive: true)
@@ -984,6 +1020,10 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             if (encounter == null
                 || emitter == null
+                || pressureActionDirector == null
+                || pressurePositionController == null
+                || pressurePositionController.LaneSpace == null
+                || pressurePositionController.MovedTransform == null
                 || combatHud == null
                 || combatHudCanvas == null
                 || playerHealth == null
@@ -1046,18 +1086,102 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "The fresh Station summon-energy ladder must begin with gain enabled.");
             }
 
-            savedScreenDomainValid = actionScreen != null;
-            if (savedScreenDomainValid)
+            if (!ProductScreenProfileActive)
             {
-                savedScreenDomainEnabled = actionScreen.PlayPerfectDodgeScreenDomain;
-                savedScreenDomainAlpha = actionScreen.MaxPerfectDodgeDomainAlpha;
-                savedScreenDomainInvertAlpha = actionScreen.MaxPerfectDodgeInvertAlpha;
-                savedScreenDomainEdgeAlpha = actionScreen.MaxPerfectDodgeEdgeAlpha;
-                savedScreenDomainGlitchAlpha =
-                    actionScreen.PerfectDodgeGlitchOverlayAlpha;
+                throw new InvalidOperationException(
+                    "G05 requires the authored Station perfect-dodge screen profile without capture-time overrides.");
             }
 
             restorableStateCaptured = true;
+        }
+
+        private void CaptureBossCompositionState()
+        {
+            Transform movedBoss = pressurePositionController.MovedTransform;
+            savedBossMovementEnabled = pressurePositionController.MovementEnabled;
+            savedBossPosition = movedBoss.position;
+            savedBossRotation = movedBoss.rotation;
+            savedBossLocalScale = movedBoss.localScale;
+            savedBossCompositionValid = true;
+        }
+
+        private void AcquireBossCompositionLease()
+        {
+            ResolveAuthoredCrushNetMovement(
+                out BossPressureMovementIntent movementIntent,
+                out BossPressureActionKind actionKind);
+            if (!savedBossCompositionValid
+                || !savedBossMovementEnabled
+                || !pressurePositionController.TryAcquireMovementIntentOverride(
+                    this,
+                    movementIntent,
+                    actionKind,
+                    out bossMovementIntentLease))
+            {
+                throw new InvalidOperationException(
+                    "G05 could not acquire the authored CrushNet CommitForward movement lease.");
+            }
+
+            if (pressurePositionController.MovementIntentOverrideCount != 1)
+            {
+                throw new InvalidOperationException(
+                    "G05 must own exactly one boss movement-intent lease.");
+            }
+        }
+
+        private void ResolveAuthoredCrushNetMovement(
+            out BossPressureMovementIntent movementIntent,
+            out BossPressureActionKind actionKind)
+        {
+            int matchingSlotCount = 0;
+            movementIntent = default;
+            actionKind = default;
+            for (int slotIndex = 0;
+                slotIndex < pressureActionDirector.ActionSlotCount;
+                slotIndex++)
+            {
+                if (!pressureActionDirector.TryGetActionSlot(
+                        slotIndex,
+                        out BossPressureActionDirector.BossPressureActionSlot slot)
+                    || slot.Pattern != crushNet)
+                {
+                    continue;
+                }
+
+                matchingSlotCount++;
+                movementIntent = slot.MovementIntent;
+                actionKind = slot.ActionKind;
+            }
+
+            if (matchingSlotCount != 1
+                || movementIntent != BossPressureMovementIntent.CommitForward
+                || actionKind != BossPressureActionKind.PunishOverextend)
+            {
+                throw new InvalidOperationException(
+                    "G05 requires exactly one authored CrushNet slot with "
+                    + "PunishOverextend/CommitForward movement, but resolved "
+                    + $"matches={matchingSlotCount}, action={actionKind}, movement={movementIntent}.");
+            }
+        }
+
+        private void RestoreBossCompositionState()
+        {
+            if (!savedBossCompositionValid || pressurePositionController == null)
+            {
+                return;
+            }
+
+            Transform movedBoss = pressurePositionController.MovedTransform;
+            if (movedBoss == null)
+            {
+                throw new InvalidOperationException(
+                    "G05 lost the canonical moved boss transform during cleanup.");
+            }
+
+            pressurePositionController.SetMovementEnabled(false);
+            movedBoss.SetPositionAndRotation(savedBossPosition, savedBossRotation);
+            movedBoss.localScale = savedBossLocalScale;
+            pressurePositionController.SetMovementEnabled(savedBossMovementEnabled);
         }
 
         private void StabilizeEnergyRestoreBaseline()
@@ -1282,16 +1406,11 @@ namespace DimensionBrawl.Editor.AuditionPV
             energyLadder.ResetLadder();
             energyLadder.GrantCurrentTierEnergy(energyLadder.MaxMana);
             energyLadder.SetGainEnabled(false);
-            actionScreen.ConfigurePerfectDodgeDomainPresentation(
-                true,
-                AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenDomainAlpha,
-                AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenInvertAlpha,
-                AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenEdgeAlpha,
-                AuditionPvStationPhase2PerfectDodgeCapture
-                    .CaptureOnlyScreenGlitchAlpha);
+            if (!ProductScreenProfileActive)
+            {
+                throw new InvalidOperationException(
+                    "G05 may not replace the authored Station perfect-dodge screen profile.");
+            }
             combatHud.alpha = 1f;
             combatHud.interactable = true;
             combatHud.blocksRaycasts = true;
@@ -1485,6 +1604,21 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ObserveCueState()
         {
+            if (currentFrame == AuditionPvStationPhase2PerfectDodgeCapture.FirstFrame)
+            {
+                bossRiskAtFirstFrame = pressurePositionController.CurrentRisk01;
+            }
+            else if (currentFrame
+                == AuditionPvStationPhase2PerfectDodgeCapture.FirePendingWaveFrame)
+            {
+                bossRiskAtFireFrame = pressurePositionController.CurrentRisk01;
+            }
+            else if (currentFrame
+                == AuditionPvStationPhase2PerfectDodgeCapture.ImpactFrame)
+            {
+                bossRiskAtImpactFrame = pressurePositionController.CurrentRisk01;
+            }
+
             sawCameraCue |= actionCamera.MicroShakeRequestCount
                 > initialCameraMicroShakeCount;
             sawScreenCue |= PerfectDodgeScreenDomainRuntime.HasActiveCue;
@@ -1511,7 +1645,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !sawCameraCue
                 || !sawScreenCue
                 || !screenCueActiveAtBaselineFrame
-                || !CaptureOnlyScreenProfileActive
+                || !ProductScreenProfileActive
+                || bossRiskAtFirstFrame < 0.58f
+                || bossRiskAtFireFrame < 0.86f
+                || bossRiskAtImpactFrame < 0.88f
+                || pressurePositionController.MovedTransform.localScale
+                    != savedBossLocalScale
                 || combatHud.alpha != 1f
                 || !combatHud.interactable
                 || !combatHud.blocksRaycasts
@@ -1530,6 +1669,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + $"cameraCue={sawCameraCue}, screenCue={sawScreenCue}, "
                     + $"screenAtBL06={screenCueActiveAtBaselineFrame}, "
                     + $"screenEnabled={actionScreen.PlayPerfectDodgeScreenDomain}, "
+                    + $"bossRisk={bossRiskAtFirstFrame:F3}/{bossRiskAtFireFrame:F3}/{bossRiskAtImpactFrame:F3}, "
                     + $"hud={IsExactHudRenderable}, resources={IsHudResourceStateExact}, "
                     + $"phase={flow.CurrentPhase}, completions={flow.TransitionCompletionCount}.");
             }

@@ -1,3 +1,4 @@
+using System;
 using DimensionBrawl.Combat;
 using UnityEngine;
 
@@ -6,11 +7,36 @@ namespace DimensionBrawl.Presentation
     [DisallowMultipleComponent]
     public sealed class BossBarrageCameraCueDriver : MonoBehaviour
     {
+        [Serializable]
+        public struct PatternWindupCueOverride
+        {
+            [SerializeField] private string patternId;
+            [SerializeField] private ActionCameraCueProfile.CameraCue cue;
+
+            public PatternWindupCueOverride(
+                string patternId,
+                ActionCameraCueProfile.CameraCue cue)
+            {
+                this.patternId = patternId;
+                this.cue = cue;
+            }
+
+            public string PatternId => patternId;
+            public ActionCameraCueProfile.CameraCue Cue => cue;
+        }
+
         [Header("References")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform cueSpace;
+
+        [Header("Pattern Windup Overrides")]
+        [Tooltip("Full-strength hold before a short release. Pattern overrides use this sustained product-camera envelope; generic cues keep their original decay.")]
+        [SerializeField, Min(0.01f)] private float patternWindupCueReleaseSeconds = 0.18f;
+        [Tooltip("Optional exact patternId matches. A matching windup composition remains authoritative over that pattern's ordinary fire cue while the camera request is still active.")]
+        [SerializeField] private PatternWindupCueOverride[] patternWindupCueOverrides =
+            Array.Empty<PatternWindupCueOverride>();
 
         [Header("Cues")]
         [Tooltip("Short boss windup read. Keeps the fixed rear lane readable without a cinematic lock.")]
@@ -83,8 +109,12 @@ namespace DimensionBrawl.Presentation
         private int windupCueRequestCount;
         private int fireCueRequestCount;
         private int pressureActionCueRequestCount;
+        private int patternWindupOverrideRequestCount;
+        private int preservedPatternFireCueCount;
         private BossPressureActionKind lastPressureActionKind;
         private int lastPressureActionTier;
+        private string activePatternWindupOverrideId;
+        private int activePatternWindupCameraCueVersion = -1;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
@@ -93,6 +123,9 @@ namespace DimensionBrawl.Presentation
         public int WindupCueRequestCount => windupCueRequestCount;
         public int FireCueRequestCount => fireCueRequestCount;
         public int PressureActionCueRequestCount => pressureActionCueRequestCount;
+        public int PatternWindupOverrideRequestCount => patternWindupOverrideRequestCount;
+        public int PreservedPatternFireCueCount => preservedPatternFireCueCount;
+        public string ActivePatternWindupOverrideId => activePatternWindupOverrideId;
         public BossPressureActionKind LastPressureActionKind => lastPressureActionKind;
         public int LastPressureActionTier => lastPressureActionTier;
 
@@ -108,6 +141,17 @@ namespace DimensionBrawl.Presentation
             cameraController = newCameraController;
             cueSpace = newCueSpace;
             Subscribe();
+        }
+
+        public void ConfigurePatternWindupCueOverrides(
+            float releaseSeconds,
+            params PatternWindupCueOverride[] overrides)
+        {
+            patternWindupCueReleaseSeconds = Mathf.Max(0.01f, releaseSeconds);
+            patternWindupCueOverrides = overrides != null
+                ? (PatternWindupCueOverride[])overrides.Clone()
+                : Array.Empty<PatternWindupCueOverride>();
+            ClearActivePatternWindupOverride();
         }
 
         private void Awake()
@@ -126,18 +170,42 @@ namespace DimensionBrawl.Presentation
         private void OnDisable()
         {
             Unsubscribe();
+            ClearActivePatternWindupOverride();
         }
 
         private void HandleWindupStarted(BossBarrageEmitter emitter, BossBarragePatternProfile pattern)
         {
-            if (RequestCue(windupCue, ResolveBossDirection(emitter), ResolvePatternScale(pattern, windupCue)))
+            ClearActivePatternWindupOverride();
+            bool usesPatternOverride = TryResolvePatternWindupCue(pattern, out ActionCameraCueProfile.CameraCue cue);
+            if (!usesPatternOverride)
+            {
+                cue = windupCue;
+            }
+
+            if (RequestCue(
+                cue,
+                ResolveBossDirection(emitter),
+                ResolvePatternScale(pattern, cue),
+                usesPatternOverride))
             {
                 windupCueRequestCount++;
+                if (usesPatternOverride)
+                {
+                    patternWindupOverrideRequestCount++;
+                    activePatternWindupOverrideId = pattern.PatternId;
+                    activePatternWindupCameraCueVersion = cameraController.CueRequestVersion;
+                }
             }
         }
 
         private void HandleWaveFired(BossBarrageEmitter emitter, BossBarragePatternProfile pattern, int spawnedCount)
         {
+            if (ShouldPreservePatternWindupOverride(pattern))
+            {
+                preservedPatternFireCueCount++;
+                return;
+            }
+
             if (RequestCue(fireCue, ResolveBossDirection(emitter), ResolveFireScale(pattern, spawnedCount, fireCue)))
             {
                 fireCueRequestCount++;
@@ -159,7 +227,11 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private bool RequestCue(ActionCameraCueProfile.CameraCue cue, Vector3 planarDirection, float scale)
+        private bool RequestCue(
+            ActionCameraCueProfile.CameraCue cue,
+            Vector3 planarDirection,
+            float scale,
+            bool sustainAtFullWeight = false)
         {
             if (!cue.enabled || cameraController == null)
             {
@@ -175,13 +247,82 @@ namespace DimensionBrawl.Presentation
             }
 
             float clampedScale = Mathf.Max(0f, scale);
-            cameraController.RequestCue(
-                offset * clampedScale,
-                cue.durationSeconds,
-                cue.fieldOfViewDelta * clampedScale,
-                cue.cameraDistanceDelta * clampedScale,
-                cue.focusHeightDelta * clampedScale);
+            if (sustainAtFullWeight)
+            {
+                cameraController.RequestSustainedCue(
+                    offset * clampedScale,
+                    cue.durationSeconds,
+                    patternWindupCueReleaseSeconds,
+                    cue.fieldOfViewDelta * clampedScale,
+                    cue.cameraDistanceDelta * clampedScale,
+                    cue.focusHeightDelta * clampedScale);
+            }
+            else
+            {
+                cameraController.RequestCue(
+                    offset * clampedScale,
+                    cue.durationSeconds,
+                    cue.fieldOfViewDelta * clampedScale,
+                    cue.cameraDistanceDelta * clampedScale,
+                    cue.focusHeightDelta * clampedScale);
+            }
+
             return true;
+        }
+
+        private bool TryResolvePatternWindupCue(
+            BossBarragePatternProfile pattern,
+            out ActionCameraCueProfile.CameraCue cue)
+        {
+            cue = default;
+            string patternId = pattern != null ? pattern.PatternId : null;
+            if (string.IsNullOrWhiteSpace(patternId) || patternWindupCueOverrides == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < patternWindupCueOverrides.Length; index++)
+            {
+                PatternWindupCueOverride candidate = patternWindupCueOverrides[index];
+                if (!string.Equals(candidate.PatternId, patternId, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                cue = candidate.Cue;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool ShouldPreservePatternWindupOverride(BossBarragePatternProfile pattern)
+        {
+            if (pattern == null
+                || string.IsNullOrEmpty(activePatternWindupOverrideId)
+                || !string.Equals(
+                    activePatternWindupOverrideId,
+                    pattern.PatternId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            bool remainsActive = cameraController != null
+                && cameraController.HasActiveCue
+                && cameraController.CueRequestVersion == activePatternWindupCameraCueVersion;
+            if (!remainsActive)
+            {
+                ClearActivePatternWindupOverride();
+            }
+
+            return remainsActive;
+        }
+
+        private void ClearActivePatternWindupOverride()
+        {
+            activePatternWindupOverrideId = null;
+            activePatternWindupCameraCueVersion = -1;
         }
 
         private Vector3 ResolveBossDirection(BossBarrageEmitter emitter)

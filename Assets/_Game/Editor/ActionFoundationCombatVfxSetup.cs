@@ -18,6 +18,17 @@ namespace DimensionBrawl.Editor
         public const string CombatVfxCueProfilePath = ActionFoundationProfileSetup.ProfileRoot + "/DB_CombatVfxCues_ActionFoundation.asset";
 
         private const string ScenePath = ActionFoundationCombatAssetPaths.OlympusStationScenePath;
+        private const float ProductPerfectDodgeCueIntensity = 0.8f;
+        private const float ProductPerfectDodgeTimeFieldIntensity = 0.7f;
+        private const float ProductPerfectDodgePulsewaveIntensity = 0.75f;
+        private const float ProductPerfectDodgeHoloCubeIntensity = 0.6f;
+        private const float ProductPerfectDodgeWindowIntensity = 1f;
+        private const float ProductPerfectDodgeProjectileBlockIntensity = 0.85f;
+        private const float ProductPerfectDodgeDomainAlpha = 0.14f;
+        private const float ProductPerfectDodgeInvertAlpha = 0.015f;
+        private const float ProductPerfectDodgeEdgeAlpha = 0.18f;
+        private const float ProductPerfectDodgeDomainSeconds = 0.42f;
+        private const float ProductPerfectDodgeGlitchOverlayAlpha = 0.03f;
         private const string CombatVfxRoot = "Assets/_Game/Art/VFX/CombatCues";
         private const string MaterialRoot = CombatVfxRoot + "/Materials";
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
@@ -582,11 +593,62 @@ namespace DimensionBrawl.Editor
             Transform poolRoot = EnsureRoot(scene, PoolRootName).transform;
             PlayerActionController player = RequireObject<PlayerActionController>(roots, "player action controller");
             ConfigurePlayerCombatVfx(player, profile, poolRoot);
+            ConfigureProductPerfectDodgePresentation(scene);
 
             BasicSoldierEnemy[] soldiers = CollectSoldiers(roots);
             for (int i = 0; i < soldiers.Length; i++)
             {
                 ConfigureEnemyCombatVfx(soldiers[i], profile, poolRoot);
+            }
+        }
+
+        internal static void ConfigureProductPerfectDodgePresentation(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                throw new InvalidOperationException("A loaded product scene is required.");
+            }
+
+            ActionScreenCuePresenter presenter = RequireObject<ActionScreenCuePresenter>(
+                scene.GetRootGameObjects(),
+                "action screen cue presenter");
+            PlayerCombatVfxCueDriver cueDriver = RequireObject<PlayerCombatVfxCueDriver>(
+                scene.GetRootGameObjects(),
+                "player combat VFX cue driver");
+            SetFloat(cueDriver, "perfectDodgeCueIntensity", ProductPerfectDodgeCueIntensity);
+            SetFloat(cueDriver, "perfectDodgeTimeFieldIntensity", ProductPerfectDodgeTimeFieldIntensity);
+            SetFloat(cueDriver, "perfectDodgePulsewaveIntensity", ProductPerfectDodgePulsewaveIntensity);
+            SetFloat(cueDriver, "perfectDodgeHoloCubeIntensity", ProductPerfectDodgeHoloCubeIntensity);
+            SetFloat(cueDriver, "perfectDodgeWindowIntensity", ProductPerfectDodgeWindowIntensity);
+            SetFloat(
+                cueDriver,
+                "perfectDodgeProjectileBlockIntensity",
+                ProductPerfectDodgeProjectileBlockIntensity);
+            SetBool(presenter, "playPerfectDodgeScreenDomain", true);
+            SetFloat(presenter, "maxPerfectDodgeDomainAlpha", ProductPerfectDodgeDomainAlpha);
+            SetFloat(presenter, "maxPerfectDodgeInvertAlpha", ProductPerfectDodgeInvertAlpha);
+            SetFloat(presenter, "maxPerfectDodgeEdgeAlpha", ProductPerfectDodgeEdgeAlpha);
+            SetFloat(presenter, "perfectDodgeDomainSeconds", ProductPerfectDodgeDomainSeconds);
+            SetFloat(
+                presenter,
+                "perfectDodgeGlitchOverlayAlpha",
+                ProductPerfectDodgeGlitchOverlayAlpha);
+
+            if (Mathf.Abs(cueDriver.PerfectDodgeCueIntensity - ProductPerfectDodgeCueIntensity) > 0.0001f
+                || Mathf.Abs(cueDriver.PerfectDodgeTimeFieldIntensity - ProductPerfectDodgeTimeFieldIntensity) > 0.0001f
+                || Mathf.Abs(cueDriver.PerfectDodgePulsewaveIntensity - ProductPerfectDodgePulsewaveIntensity) > 0.0001f
+                || Mathf.Abs(cueDriver.PerfectDodgeHoloCubeIntensity - ProductPerfectDodgeHoloCubeIntensity) > 0.0001f
+                || Mathf.Abs(cueDriver.PerfectDodgeWindowIntensity - ProductPerfectDodgeWindowIntensity) > 0.0001f
+                || Mathf.Abs(cueDriver.PerfectDodgeProjectileBlockIntensity - ProductPerfectDodgeProjectileBlockIntensity) > 0.0001f
+                || !presenter.PlayPerfectDodgeScreenDomain
+                || Mathf.Abs(presenter.MaxPerfectDodgeDomainAlpha - ProductPerfectDodgeDomainAlpha) > 0.0001f
+                || Mathf.Abs(presenter.MaxPerfectDodgeInvertAlpha - ProductPerfectDodgeInvertAlpha) > 0.0001f
+                || Mathf.Abs(presenter.MaxPerfectDodgeEdgeAlpha - ProductPerfectDodgeEdgeAlpha) > 0.0001f
+                || Mathf.Abs(presenter.PerfectDodgeDomainSeconds - ProductPerfectDodgeDomainSeconds) > 0.0001f
+                || Mathf.Abs(presenter.PerfectDodgeGlitchOverlayAlpha - ProductPerfectDodgeGlitchOverlayAlpha) > 0.0001f)
+            {
+                throw new InvalidOperationException(
+                    $"Perfect-dodge screen-domain authoring failed in {scene.path}.");
             }
         }
 
@@ -644,12 +706,12 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "perfectDodgeHoloCubeCueId", (int)CombatVfxCueId.PlayerPerfectDodgeHoloCube);
             SetEnum(driver, "perfectDodgeWindowCueId", (int)CombatVfxCueId.PlayerPerfectDodgeWindow);
             SetEnum(driver, "perfectDodgeProjectileBlockCueId", (int)CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact);
-            SetFloat(driver, "perfectDodgeCueIntensity", 1.55f);
-            SetFloat(driver, "perfectDodgeTimeFieldIntensity", 1f);
-            SetFloat(driver, "perfectDodgePulsewaveIntensity", 1.12f);
-            SetFloat(driver, "perfectDodgeHoloCubeIntensity", 0.92f);
-            SetFloat(driver, "perfectDodgeWindowIntensity", 1f);
-            SetFloat(driver, "perfectDodgeProjectileBlockIntensity", 1.18f);
+            SetFloat(driver, "perfectDodgeCueIntensity", ProductPerfectDodgeCueIntensity);
+            SetFloat(driver, "perfectDodgeTimeFieldIntensity", ProductPerfectDodgeTimeFieldIntensity);
+            SetFloat(driver, "perfectDodgePulsewaveIntensity", ProductPerfectDodgePulsewaveIntensity);
+            SetFloat(driver, "perfectDodgeHoloCubeIntensity", ProductPerfectDodgeHoloCubeIntensity);
+            SetFloat(driver, "perfectDodgeWindowIntensity", ProductPerfectDodgeWindowIntensity);
+            SetFloat(driver, "perfectDodgeProjectileBlockIntensity", ProductPerfectDodgeProjectileBlockIntensity);
             SetFloat(driver, "perfectDodgeShieldBlockRadius", 0.86f);
             SetFloat(driver, "perfectDodgeAudioIntensity", 1f);
             SetBool(driver, "playPerfectDodgeProjectileBlockVfx", true);
@@ -1045,7 +1107,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeTimeField, prefabs.PlayerPerfectDodgeTimeField, new Vector3(0f, 0.52f, 0f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 3.0f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgePulsewave, prefabs.PlayerPerfectDodgePulsewave, new Vector3(0f, 0.58f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.9f, false, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeHoloCube, prefabs.PlayerPerfectDodgeHoloCube, new Vector3(0f, 0.74f, 0.05f), Vector3.zero, new Vector3(0.58f, 0.58f, 0.58f), 1.2f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0f), Vector3.zero, Vector3.one, 1.15f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeWindow, prefabs.PlayerPerfectDodgeWindow, new Vector3(0f, 0.34f, 0f), Vector3.zero, new Vector3(0.42f, 0.42f, 0.42f), 1.15f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerPerfectDodgeShieldBlockImpact, prefabs.PlayerPerfectDodgeShieldBlockImpact, Vector3.zero, Vector3.zero, new Vector3(0.55f, 0.55f, 0.55f), 1.0f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonPreSpawnPortal, prefabs.PlayerSummonPreSpawnPortal, Vector3.zero, Vector3.zero, new Vector3(0.92f, 0.92f, 0.92f), 0.62f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerSummonLandingCrater, prefabs.PlayerSummonLandingCrater, new Vector3(0f, 0.035f, 0f), Vector3.zero, new Vector3(1.08f, 0.72f, 1.08f), 0.84f, false, false),

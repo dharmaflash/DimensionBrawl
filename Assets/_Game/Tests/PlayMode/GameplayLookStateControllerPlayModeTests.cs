@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -18,6 +19,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         private const string StationScenePath =
             "Assets/_Game/Scenes/OlympusStationCombatStage.unity";
+        private const string CombatVfxCueProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
 
         [UnityTearDown]
         public IEnumerator RestoreNeutralScene()
@@ -436,6 +439,23 @@ namespace DimensionBrawl.Tests
             Assert.That(characterFocus.weight, Is.Zero.Within(0.0001f));
         }
 
+        [Test]
+        public void AuthoredPerfectDodgeWindowUsesReviewedProductScale()
+        {
+            CombatVfxCueProfile profile =
+                AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(
+                    CombatVfxCueProfilePath);
+            Assert.That(profile, Is.Not.Null);
+            Assert.That(
+                profile.TryGetCue(
+                    CombatVfxCueId.PlayerPerfectDodgeWindow,
+                    out CombatVfxCue windowCue),
+                Is.True);
+            Assert.That(
+                windowCue.LocalScale,
+                Is.EqualTo(Vector3.one * 0.42f));
+        }
+
         private static Fixture CreateFixture(bool immediate)
         {
             GameObject root = new GameObject("GameplayLookStateTestRoot");
@@ -498,6 +518,32 @@ namespace DimensionBrawl.Tests
                 gameplayBase.sharedProfile.TryGet(out DepthOfField baseDepthOfField),
                 Is.True);
             Assert.That(baseDepthOfField.active, Is.False);
+            AssertNeutralSoftGameplayBase(gameplayBase.sharedProfile);
+
+            ActionScreenCuePresenter[] screens = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<ActionScreenCuePresenter>(true))
+                .ToArray();
+            Assert.That(screens, Has.Length.EqualTo(1));
+            ActionScreenCuePresenter screen = screens[0];
+            Assert.That(screen.PlayPerfectDodgeScreenDomain, Is.True);
+            Assert.That(screen.MaxPerfectDodgeDomainAlpha, Is.EqualTo(0.14f).Within(0.0001f));
+            Assert.That(screen.MaxPerfectDodgeInvertAlpha, Is.EqualTo(0.015f).Within(0.0001f));
+            Assert.That(screen.MaxPerfectDodgeEdgeAlpha, Is.EqualTo(0.18f).Within(0.0001f));
+            Assert.That(screen.PerfectDodgeDomainSeconds, Is.EqualTo(0.42f).Within(0.0001f));
+            Assert.That(screen.PerfectDodgeGlitchOverlayAlpha, Is.EqualTo(0.03f).Within(0.0001f));
+
+            PlayerCombatVfxCueDriver[] cueDrivers = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<PlayerCombatVfxCueDriver>(true))
+                .ToArray();
+            Assert.That(cueDrivers, Has.Length.EqualTo(1));
+            Assert.That(
+                cueDrivers[0].PerfectDodgeCueIntensity,
+                Is.EqualTo(0.8f).Within(0.0001f));
+            Assert.That(cueDrivers[0].PerfectDodgeTimeFieldIntensity, Is.EqualTo(0.7f).Within(0.0001f));
+            Assert.That(cueDrivers[0].PerfectDodgePulsewaveIntensity, Is.EqualTo(0.75f).Within(0.0001f));
+            Assert.That(cueDrivers[0].PerfectDodgeHoloCubeIntensity, Is.EqualTo(0.6f).Within(0.0001f));
+            Assert.That(cueDrivers[0].PerfectDodgeWindowIntensity, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(cueDrivers[0].PerfectDodgeProjectileBlockIntensity, Is.EqualTo(0.85f).Within(0.0001f));
 
             if (!expectPhaseTwo)
             {
@@ -519,6 +565,38 @@ namespace DimensionBrawl.Tests
             Assert.That(drivers, Has.Length.EqualTo(1));
             Assert.That(drivers[0].LookStateController, Is.SameAs(controller));
             Assert.That(drivers[0].transform.root.gameObject.activeSelf, Is.False);
+        }
+
+        private static void AssertNeutralSoftGameplayBase(VolumeProfile profile)
+        {
+            Assert.That(profile.TryGet(out Tonemapping tonemapping), Is.True);
+            Assert.That(tonemapping.active, Is.True);
+            Assert.That(tonemapping.mode.value, Is.EqualTo(TonemappingMode.Neutral));
+
+            Assert.That(profile.TryGet(out ColorAdjustments color), Is.True);
+            Assert.That(color.active, Is.True);
+            Assert.That(color.postExposure.value, Is.EqualTo(0.52f).Within(0.0001f));
+            Assert.That(color.contrast.value, Is.EqualTo(3f).Within(0.0001f));
+            Assert.That(color.colorFilter.value, Is.EqualTo(Color.white));
+            Assert.That(color.saturation.value, Is.EqualTo(3f).Within(0.0001f));
+
+            Assert.That(profile.TryGet(out WhiteBalance whiteBalance), Is.True);
+            Assert.That(whiteBalance.active, Is.True);
+            Assert.That(whiteBalance.temperature.value, Is.Zero.Within(0.0001f));
+            Assert.That(whiteBalance.tint.value, Is.EqualTo(1f).Within(0.0001f));
+
+            Assert.That(profile.TryGet(out Bloom bloom), Is.True);
+            Assert.That(bloom.active, Is.True);
+            Assert.That(bloom.threshold.value, Is.EqualTo(0.72f).Within(0.0001f));
+            Assert.That(bloom.intensity.value, Is.EqualTo(0.52f).Within(0.0001f));
+            Assert.That(bloom.scatter.value, Is.EqualTo(0.72f).Within(0.0001f));
+            Assert.That(bloom.clamp.value, Is.EqualTo(3.2f).Within(0.0001f));
+            Assert.That(bloom.maxIterations.value, Is.EqualTo(6));
+            Assert.That(bloom.highQualityFiltering.value, Is.False);
+
+            Assert.That(profile.TryGet(out Vignette vignette), Is.True);
+            Assert.That(vignette.active, Is.True);
+            Assert.That(vignette.intensity.value, Is.EqualTo(0.018f).Within(0.0001f));
         }
 
         private static Volume RequireNamedVolume(Scene scene, string objectName)

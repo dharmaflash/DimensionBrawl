@@ -68,11 +68,13 @@ state and reopens the Station scene in `finally`.
   `189` is the first rendered perfect-dodge screen-domain hero frame.
 - HUD: the exact serialized Station Flow combat HUD root stays on. Ammo and summon energy must be
   full and bound to the same product-state objects used by gameplay.
-- Capture-only screen profile: enabled with domain `.42`, invert `.18`, edge `.48`, and glitch
-  `.16`; the authored Station profile and runtime cue state are restored afterward.
+- Product screen profile: the authored Station values stay unchanged at enabled, domain `.14`,
+  invert `.015`, edge `.18`, glitch `.03`, and duration `0.42s`; only transient runtime cue state
+  is cleared afterward.
 - Gameplay proof: fresh Station load, real threshold transition and skip into Phase 2, CrushNet
-  windup frame `1`, fire frame `71`, queued dodge frame `186`, one real active-projectile impact at
-  frame `188`, exactly one perfect dodge, and unchanged player HP.
+  authored `PunishOverextend/CommitForward` movement during a 90-frame fixed-60Hz settle, windup
+  frame `1`, fire frame `71`, queued dodge frame `186`, one real active-projectile impact at frame
+  `188`, exactly one perfect dodge, unchanged player HP, and exact boss-pose restoration.
 - Output proof: exact 2560x1440 PNG dimensions and contiguous counts, warm-up evidence, black and
   missing-shader-magenta sanity, rendered HUD evidence, frame `188` to `189` screen-effect pixel
   delta, byte-exact baselines, deterministic `PresentationClock`, Recorder auto-stop/flush after

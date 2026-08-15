@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using UnityEngine;
@@ -7,6 +9,57 @@ namespace DimensionBrawl.Combat
     [DisallowMultipleComponent]
     public sealed class BossPressurePositionController : MonoBehaviour
     {
+        private readonly struct MovementIntentOverrideRequest
+        {
+            public MovementIntentOverrideRequest(
+                int id,
+                UnityEngine.Object owner,
+                BossPressureMovementIntent intent,
+                BossPressureActionKind actionKind)
+            {
+                Id = id;
+                Owner = owner;
+                Intent = intent;
+                ActionKind = actionKind;
+            }
+
+            public int Id { get; }
+            public UnityEngine.Object Owner { get; }
+            public BossPressureMovementIntent Intent { get; }
+            public BossPressureActionKind ActionKind { get; }
+        }
+
+        public sealed class MovementIntentLease : IDisposable
+        {
+            private BossPressurePositionController controller;
+            private readonly int requestId;
+
+            internal MovementIntentLease(
+                BossPressurePositionController controller,
+                int requestId)
+            {
+                this.controller = controller;
+                this.requestId = requestId;
+            }
+
+            public bool IsReleased
+            {
+                get
+                {
+                    BossPressurePositionController owner = controller;
+                    return owner == null
+                        || !owner.ContainsMovementIntentOverride(requestId);
+                }
+            }
+
+            public void Dispose()
+            {
+                BossPressurePositionController owner = controller;
+                controller = null;
+                owner?.ReleaseMovementIntentOverride(requestId);
+            }
+        }
+
         [Header("References")]
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private BossPressureCostLadder costLadder;
@@ -73,14 +126,25 @@ namespace DimensionBrawl.Combat
         private float basicFireMovementLockTimer;
         private int observedBasicFireVolleys = -1;
         private bool triedAutoResolvePlayer;
+        private readonly List<MovementIntentOverrideRequest> movementIntentOverrides =
+            new List<MovementIntentOverrideRequest>();
+        private int nextMovementIntentOverrideId = 1;
 
         public float CurrentTargetRisk01 => currentTargetRisk01;
         public float CurrentRisk01 => EvaluateCurrentRisk01();
         public bool MovementEnabled => movementEnabled;
         public Transform TrackedPlayer => trackedPlayer;
         public bool PlayerResponseEnabled => playerResponseEnabled;
-
-        private Transform MovedTransform => movedTransform != null ? movedTransform : transform;
+        public SummonLaneSpace LaneSpace => laneSpace;
+        public Transform MovedTransform => movedTransform != null ? movedTransform : transform;
+        public int MovementIntentOverrideCount
+        {
+            get
+            {
+                PruneDestroyedMovementIntentOwners();
+                return movementIntentOverrides.Count;
+            }
+        }
 
         private void OnValidate()
         {
@@ -138,6 +202,33 @@ namespace DimensionBrawl.Combat
             movementEnabled = enabled;
         }
 
+        public bool TryAcquireMovementIntentOverride(
+            UnityEngine.Object owner,
+            BossPressureMovementIntent intent,
+            BossPressureActionKind actionKind,
+            out MovementIntentLease lease)
+        {
+            lease = null;
+            if (owner == null
+                || !Enum.IsDefined(typeof(BossPressureMovementIntent), intent)
+                || !Enum.IsDefined(typeof(BossPressureActionKind), actionKind))
+            {
+                return false;
+            }
+
+            PruneDestroyedMovementIntentOwners();
+            int requestId = nextMovementIntentOverrideId++;
+            if (nextMovementIntentOverrideId <= 0)
+            {
+                nextMovementIntentOverrideId = 1;
+            }
+
+            movementIntentOverrides.Add(
+                new MovementIntentOverrideRequest(requestId, owner, intent, actionKind));
+            lease = new MovementIntentLease(this, requestId);
+            return true;
+        }
+
         public void ConfigureMovementAnimator(Animator newMovementAnimator)
         {
             movementAnimator = newMovementAnimator;
@@ -162,8 +253,12 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            bool hasMovementIntentOverride = TryGetMovementIntentOverride(
+                out BossPressureMovementIntent movementIntent,
+                out BossPressureActionKind movementActionKind);
+
             TickBasicFireMovementLock(deltaTime);
-            if (basicFireMovementLockTimer > 0f)
+            if (!hasMovementIntentOverride && basicFireMovementLockTimer > 0f)
             {
                 currentTargetRisk01 = EvaluateCurrentRisk01(targetTransform.position);
                 ApplyMovementAnimation(targetTransform, targetTransform.position, targetTransform.position, 0f, deltaTime);
@@ -171,8 +266,19 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            BossPressureMovementIntent movementIntent = ResolveCurrentMovementIntent();
-            currentTargetRisk01 = ResolveTargetRisk01(movementIntent, deltaTime);
+            if (!hasMovementIntentOverride)
+            {
+                movementIntent = ResolveCurrentMovementIntent();
+                movementActionKind = actionDirector != null
+                    ? actionDirector.LastActionKind
+                    : default;
+            }
+
+            currentTargetRisk01 = ResolveTargetRisk01(
+                movementIntent,
+                movementActionKind,
+                hasMovementIntentOverride,
+                deltaTime);
             float currentRisk01 = EvaluateCurrentRisk01(targetTransform.position);
             float riskSpeed = currentTargetRisk01 >= currentRisk01
                 ? advanceRiskPerSecond
@@ -192,15 +298,25 @@ namespace DimensionBrawl.Combat
             Tick(Time.deltaTime * CombatTimeDilationReceiver.ResolveTimeScale(this));
         }
 
-        private float ResolveTargetRisk01(BossPressureMovementIntent movementIntent, float deltaTime)
+        private float ResolveTargetRisk01(
+            BossPressureMovementIntent movementIntent,
+            BossPressureActionKind movementActionKind,
+            bool hasMovementIntentOverride,
+            float deltaTime)
         {
-            if (returnToRestWhenActionsDisabled && actionDirector != null && !actionDirector.ActionsEnabled)
+            if (!hasMovementIntentOverride
+                && returnToRestWhenActionsDisabled
+                && actionDirector != null
+                && !actionDirector.ActionsEnabled)
             {
                 return restRisk01;
             }
 
             float targetRisk01;
-            if (TryResolveActionIntentRisk(movementIntent, out float intentRisk01))
+            if (TryResolveActionIntentRisk(
+                movementIntent,
+                movementActionKind,
+                out float intentRisk01))
             {
                 targetRisk01 = intentRisk01;
             }
@@ -218,7 +334,10 @@ namespace DimensionBrawl.Combat
             return ApplyForwardPressureMotion(targetRisk01, movementIntent, deltaTime);
         }
 
-        private bool TryResolveActionIntentRisk(BossPressureMovementIntent movementIntent, out float risk01)
+        private bool TryResolveActionIntentRisk(
+            BossPressureMovementIntent movementIntent,
+            BossPressureActionKind movementActionKind,
+            out float risk01)
         {
             risk01 = 0f;
             switch (movementIntent)
@@ -230,7 +349,7 @@ namespace DimensionBrawl.Combat
                     risk01 = strafeFireRisk01;
                     return true;
                 case BossPressureMovementIntent.CommitForward:
-                    risk01 = actionDirector.LastActionKind == BossPressureActionKind.PunishOverextend
+                    risk01 = movementActionKind == BossPressureActionKind.PunishOverextend
                         ? punishCommitRisk01
                         : specialCommitRisk01;
                     return true;
@@ -287,6 +406,69 @@ namespace DimensionBrawl.Combat
             }
 
             return ResolveMovementIntent(actionDirector.LastMovementIntent);
+        }
+
+        private bool TryGetMovementIntentOverride(
+            out BossPressureMovementIntent intent,
+            out BossPressureActionKind actionKind)
+        {
+            PruneDestroyedMovementIntentOwners();
+            if (movementIntentOverrides.Count == 0)
+            {
+                intent = default;
+                actionKind = default;
+                return false;
+            }
+
+            MovementIntentOverrideRequest request =
+                movementIntentOverrides[movementIntentOverrides.Count - 1];
+            intent = request.Intent;
+            actionKind = request.ActionKind;
+            return true;
+        }
+
+        private void ReleaseMovementIntentOverride(int requestId)
+        {
+            for (int index = movementIntentOverrides.Count - 1; index >= 0; index--)
+            {
+                if (movementIntentOverrides[index].Id != requestId)
+                {
+                    continue;
+                }
+
+                movementIntentOverrides.RemoveAt(index);
+                return;
+            }
+        }
+
+        private bool ContainsMovementIntentOverride(int requestId)
+        {
+            PruneDestroyedMovementIntentOwners();
+            for (int index = movementIntentOverrides.Count - 1; index >= 0; index--)
+            {
+                if (movementIntentOverrides[index].Id == requestId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PruneDestroyedMovementIntentOwners()
+        {
+            for (int index = movementIntentOverrides.Count - 1; index >= 0; index--)
+            {
+                if (movementIntentOverrides[index].Owner == null)
+                {
+                    movementIntentOverrides.RemoveAt(index);
+                }
+            }
+        }
+
+        private void OnDisable()
+        {
+            movementIntentOverrides.Clear();
         }
 
         private BossPressureMovementIntent ResolveMovementIntent(BossPressureMovementIntent configuredIntent)

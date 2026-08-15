@@ -117,6 +117,9 @@ namespace DimensionBrawl.Presentation
         private float cueFocusHeightDelta;
         private float cueTimer;
         private float cueDuration;
+        private float cueReleaseSeconds;
+        private float cueSustainSeconds;
+        private int cueRequestVersion;
         private float baseFieldOfView;
         private bool orbitInitialized;
         private bool enabledOrbitAction;
@@ -155,6 +158,13 @@ namespace DimensionBrawl.Presentation
         private bool hasBaseFieldOfView;
 
         public bool HasActiveCue => cueTimer > 0f;
+        public Vector3 ActiveCueOffset => cueOffset;
+        public float ActiveCueFieldOfViewDelta => cueFieldOfViewDelta;
+        public float ActiveCueCameraDistanceDelta => cueCameraDistanceDelta;
+        public float ActiveCueFocusHeightDelta => cueFocusHeightDelta;
+        public float ActiveCueDuration => cueDuration;
+        public float ActiveCueSustainSeconds => cueSustainSeconds;
+        public int CueRequestVersion => cueRequestVersion;
         public bool HasActiveMicroShake => microShakeTimer > 0f;
         public bool IsAimModifierActive => aimTargetWeight > 0.5f;
         public float AimWeight => aimWeight;
@@ -371,6 +381,9 @@ namespace DimensionBrawl.Presentation
             cueFocusHeightDelta = 0f;
             cueTimer = 0f;
             cueDuration = 0f;
+            cueReleaseSeconds = 0f;
+            cueSustainSeconds = 0f;
+            cueRequestVersion++;
             microShakeTimer = 0f;
             microShakeDuration = 0f;
             microShakePositionAmplitude = 0f;
@@ -412,12 +425,59 @@ namespace DimensionBrawl.Presentation
             float cameraDistanceDelta,
             float focusHeightDelta)
         {
+            SetCue(
+                additiveOffset,
+                durationSeconds,
+                durationSeconds,
+                0f,
+                fieldOfViewDelta,
+                cameraDistanceDelta,
+                focusHeightDelta);
+        }
+
+        /// <summary>
+        /// Holds a composition cue at full weight for <paramref name="sustainSeconds"/>,
+        /// then returns through a bounded release. Existing action cues keep their
+        /// original full-duration decay through <see cref="RequestCue(Vector3,float,float,float,float)"/>.
+        /// </summary>
+        public void RequestSustainedCue(
+            Vector3 additiveOffset,
+            float sustainSeconds,
+            float releaseSeconds,
+            float fieldOfViewDelta,
+            float cameraDistanceDelta,
+            float focusHeightDelta)
+        {
+            float clampedSustainSeconds = Mathf.Max(0f, sustainSeconds);
+            float clampedReleaseSeconds = Mathf.Max(0.01f, releaseSeconds);
+            SetCue(
+                additiveOffset,
+                clampedSustainSeconds + clampedReleaseSeconds,
+                clampedReleaseSeconds,
+                clampedSustainSeconds,
+                fieldOfViewDelta,
+                cameraDistanceDelta,
+                focusHeightDelta);
+        }
+
+        private void SetCue(
+            Vector3 additiveOffset,
+            float durationSeconds,
+            float releaseSeconds,
+            float sustainSeconds,
+            float fieldOfViewDelta,
+            float cameraDistanceDelta,
+            float focusHeightDelta)
+        {
             cueOffset = Vector3.ClampMagnitude(additiveOffset, maxCueOffset);
             cueFieldOfViewDelta = Mathf.Clamp(fieldOfViewDelta, -maxCueFieldOfViewDelta, maxCueFieldOfViewDelta);
             cueCameraDistanceDelta = Mathf.Clamp(cameraDistanceDelta, -maxCueCameraDistanceDelta, maxCueCameraDistanceDelta);
             cueFocusHeightDelta = Mathf.Clamp(focusHeightDelta, -maxCueFocusHeightDelta, maxCueFocusHeightDelta);
             cueDuration = Mathf.Max(0.01f, durationSeconds);
+            cueReleaseSeconds = Mathf.Clamp(releaseSeconds, 0.01f, cueDuration);
+            cueSustainSeconds = Mathf.Clamp(sustainSeconds, 0f, cueDuration - cueReleaseSeconds);
             cueTimer = cueDuration;
+            cueRequestVersion++;
         }
 
         public void RequestMicroShake(
@@ -1053,7 +1113,14 @@ namespace DimensionBrawl.Presentation
             }
 
             cueTimer = Mathf.Max(0f, cueTimer - deltaTime);
-            float normalizedTime = cueDuration > 0f ? cueTimer / cueDuration : 0f;
+            if (cueSustainSeconds > 0f && cueTimer > cueReleaseSeconds)
+            {
+                return 1f;
+            }
+
+            float normalizedTime = cueReleaseSeconds > 0f
+                ? cueTimer / cueReleaseSeconds
+                : 0f;
             return Mathf.SmoothStep(0f, 1f, normalizedTime);
         }
 

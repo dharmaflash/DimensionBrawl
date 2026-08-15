@@ -226,6 +226,14 @@ namespace DimensionBrawl.Tests
                 "bossBarrageEncounterController",
                 flow.EncounterController);
             AssertSerializedGetter(flow, "bossBarrageEmitter", flow.BarrageEmitter);
+            AssertSerializedGetter(
+                flow,
+                "bossPressureActionDirector",
+                flow.PressureActionDirector);
+            AssertSerializedGetter(
+                flow,
+                "bossPressurePositionController",
+                flow.PressurePositionController);
             AssertSerializedGetter(flow, "combatHudCanvasGroup", flow.CombatHudCanvasGroup);
             AssertSerializedGetter(flow, "playerHealth", flow.PlayerHealth);
             AssertSerializedGetter(flow, "playerMovement", flow.PlayerMovement);
@@ -243,6 +251,14 @@ namespace DimensionBrawl.Tests
                 FindSceneComponents<BossBarrageEmitter>(scene),
                 Is.EqualTo(new[] { flow.BarrageEmitter }),
                 "The capture route must use the Station's sole barrage emitter.");
+            Assert.That(
+                FindSceneComponents<BossPressureActionDirector>(scene),
+                Is.EqualTo(new[] { flow.PressureActionDirector }),
+                "The capture route must use the Station's sole pressure-action owner.");
+            Assert.That(
+                FindSceneComponents<BossPressurePositionController>(scene),
+                Is.EqualTo(new[] { flow.PressurePositionController }),
+                "The capture route must use the Station's sole boss-position owner.");
 
             SerializedProperty encounterPlayerHealth = new SerializedObject(flow.EncounterController)
                 .FindProperty("playerHealth");
@@ -291,6 +307,8 @@ namespace DimensionBrawl.Tests
                      {
                          nameof(OlympusStationAkazaPhase2FlowController.EncounterController),
                          nameof(OlympusStationAkazaPhase2FlowController.BarrageEmitter),
+                         nameof(OlympusStationAkazaPhase2FlowController.PressureActionDirector),
+                         nameof(OlympusStationAkazaPhase2FlowController.PressurePositionController),
                          nameof(OlympusStationAkazaPhase2FlowController.CombatHudCanvasGroup),
                          nameof(OlympusStationAkazaPhase2FlowController.PlayerHealth),
                          nameof(OlympusStationAkazaPhase2FlowController.PlayerMovement),

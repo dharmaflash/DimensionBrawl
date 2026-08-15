@@ -905,8 +905,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 captureId = state.captureId,
                 mapping =
                     "Recorder raw0 is preserved warm-up evidence; raw1..raw197 map to logical f0..f196.",
-                captureOnlyScreenProfile =
-                    "enabled=true, domain=.42, invert=.18, edge=.48, glitch=.16; restored after capture.",
+                productScreenProfile =
+                    "authored product profile used unchanged: enabled=true, domain=.14, "
+                    + "invert=.015, edge=.18, glitch=.03, duration=.42s.",
                 runtime = proof
             });
 
@@ -961,7 +962,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.damageBlockedObservationCount != 1
                 || proof.damageModifyingObservationCount != 0
                 || !proof.playerHealthUnchanged
-                || !proof.captureOnlyScreenProfileActive
+                || !proof.productScreenProfileActive
+                || proof.bossRiskAtFirstFrame < 0.58f
+                || proof.bossRiskAtFireFrame < 0.86f
+                || proof.bossRiskAtImpactFrame < 0.88f
                 || !proof.screenCueRequested
                 || !proof.screenCueActiveAtBaselineFrame
                 || !proof.cameraCueRequested
@@ -977,11 +981,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !proof.recorderPaddingActiveAtLogicalFrameZero
                 || !proof.stateRestored
                 || !proof.screenProfileRestored
+                || !proof.bossCompositionRestored
                 || !proof.presentationClockReleased
                 || proof.cadenceSuspensionCountAfterRestore != 0)
             {
                 throw new InvalidOperationException(
-                    "G05 runtime proof does not satisfy the exact gameplay, Recorder, HUD, screen, or restoration contract.");
+                    "G05 runtime proof does not satisfy the exact gameplay, Recorder, HUD, "
+                    + "boss composition, screen, or restoration contract.");
             }
         }
 
@@ -1219,7 +1225,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "product-state",
                     "real-station-phase2-crushnet-perfect-dodge",
                     duration,
-                    $"threshold->skip->Phase2; Begin f1/fire f71/dodge f186/impact f188; perfect={proof.perfectDodgeCount}; blocked={proof.damageBlockedObservationCount}; HP unchanged={proof.playerHealthUnchanged}.",
+                    $"threshold->skip->Phase2; Begin f1/fire f71/dodge f186/impact f188; "
+                    + $"boss risk={proof.bossRiskAtFirstFrame:F3}/{proof.bossRiskAtFireFrame:F3}/{proof.bossRiskAtImpactFrame:F3}; "
+                    + $"perfect={proof.perfectDodgeCount}; blocked={proof.damageBlockedObservationCount}; "
+                    + $"HP unchanged={proof.playerHealthUnchanged}.",
                     proofPath),
                 Passed(
                     "render",
@@ -1231,7 +1240,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "render",
                     "perfect-dodge-screen-domain-f189",
                     duration,
-                    $"Capture-only profile enabled=.42/.18/.48/.16 and restored; f188->f189 mean RGB delta={proof.screenDelta.meanAbsoluteRgb:F3}, changed={proof.screenDelta.changedSampleRatio:P2}.",
+                    $"Authored product profile enabled=.14/.015/.18/.03, duration=.42s was unchanged; "
+                    + $"f188->f189 mean RGB delta={proof.screenDelta.meanAbsoluteRgb:F3}, "
+                    + $"changed={proof.screenDelta.changedSampleRatio:P2}.",
                     Path.Combine(state.baselineDirectory, AuditionPvStationPhase2PerfectDodgeCapture.Bl06FileName).Replace('\\', '/')),
                 Passed(
                     "provenance",
@@ -1243,7 +1254,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "lifecycle",
                     "state-restored-and-product-scene-reopened",
                     duration,
-                    "Recorder stopped, PresentationClock/cadence/screen profile restored, Play Mode exited, and the unsaved product scene was reopened clean.",
+                    "Recorder stopped, PresentationClock/cadence/screen profile/boss composition restored, "
+                    + "Play Mode exited, and the unsaved product scene was reopened clean.",
                     proofPath)
             };
         }
@@ -1286,10 +1298,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !string.Equals(shot.hudMode, "hud-on", StringComparison.Ordinal)
                 || bl03.sourceFrame != 0
                 || bl06.sourceFrame != 189
-                || !shot.notes.Contains(".42/.18/.48/.16", StringComparison.Ordinal))
+                || !shot.notes.Contains(".14/.015/.18/.03", StringComparison.Ordinal)
+                || !shot.notes.Contains(
+                    "without a capture-time visual override",
+                    StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "G05 manifest did not round-trip its exact logical-frame, HUD, baseline, and capture-only screen contract.");
+                    "G05 manifest did not round-trip its exact logical-frame, HUD, baseline, and product screen contract.");
             }
         }
 
@@ -1648,7 +1663,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool cameraCueRequested;
             public bool screenCueRequested;
             public bool screenCueActiveAtBaselineFrame;
-            public bool captureOnlyScreenProfileActive;
+            public bool productScreenProfileActive;
+            public float bossRiskAtFirstFrame = -1f;
+            public float bossRiskAtFireFrame = -1f;
+            public float bossRiskAtImpactFrame = -1f;
             public bool exactHudRenderable;
             public bool exactHudResources;
             public bool exactEnergyBinding;
@@ -1662,6 +1680,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool recorderAutoStoppedAfterLastFrame;
             public bool stateRestored;
             public bool screenProfileRestored;
+            public bool bossCompositionRestored;
             public bool presentationClockReleased;
             public int cadenceSuspensionCountAfterRestore = -1;
             public string warmupEvidencePath = string.Empty;
@@ -1701,7 +1720,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string schema = string.Empty;
             public string captureId = string.Empty;
             public string mapping = string.Empty;
-            public string captureOnlyScreenProfile = string.Empty;
+            public string productScreenProfile = string.Empty;
             public RuntimeProof runtime;
         }
 
@@ -1968,8 +1987,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     proof.screenCueRequested = director.ScreenCueRequested;
                     proof.screenCueActiveAtBaselineFrame =
                         director.ScreenCueActiveAtBaselineFrame;
-                    proof.captureOnlyScreenProfileActive =
-                        director.CaptureOnlyScreenProfileActive;
+                    proof.productScreenProfileActive =
+                        director.ProductScreenProfileActive;
+                    proof.bossRiskAtFirstFrame = director.BossRiskAtFirstFrame;
+                    proof.bossRiskAtFireFrame = director.BossRiskAtFireFrame;
+                    proof.bossRiskAtImpactFrame = director.BossRiskAtImpactFrame;
                     proof.exactHudRenderable = director.IsExactHudRenderable;
                     proof.exactHudResources = director.IsHudResourceStateExact;
                     proof.exactEnergyBinding = director.UsesExactEnergyLadderBinding;
@@ -1991,6 +2013,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     director.RestoreShotState();
                     proof.stateRestored = director.StateRestored;
                     proof.screenProfileRestored = director.ScreenProfileRestored;
+                    proof.bossCompositionRestored = director.BossCompositionRestored;
                     director.FramePresented -= HandleFramePresented;
                 }
             });

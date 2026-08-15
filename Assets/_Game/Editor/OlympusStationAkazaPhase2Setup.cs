@@ -74,6 +74,14 @@ namespace DimensionBrawl.Editor
         private const string SummonPressurePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossSummonPressure_AkazaPhase2.asset";
 
+        internal const string CrushNetCameraPatternId = "AkazaCrushNet";
+        internal const float CrushNetCameraSustainSeconds = 3.2f;
+        internal const float CrushNetCameraReleaseSeconds = 0.18f;
+        internal const float CrushNetCameraFieldOfViewDelta = -11.8f;
+        internal const float CrushNetCameraDistanceDelta = -0.9f;
+        internal const float StationMaxCueFieldOfViewDelta = 12f;
+        internal const float StationMaxCueCameraDistanceDelta = 0.95f;
+
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string PhaseOneVisualName =
             "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier_01_Commando";
@@ -1128,6 +1136,8 @@ namespace DimensionBrawl.Editor
             Camera gameplayCamera = cameraController.GetComponent<Camera>()
                 ?? RequireSceneObject(scene, "Main Camera").GetComponent<Camera>();
             PlayerMovementController playerMovement = RequireSingle<PlayerMovementController>(scene);
+            BossBarrageCameraCueDriver bossCameraCueDriver =
+                RequireSingle<BossBarrageCameraCueDriver>(scene);
             CombatHealth playerHealth = playerMovement.GetComponent<CombatHealth>()
                 ?? playerMovement.GetComponentInParent<CombatHealth>();
             if (playerHealth == null)
@@ -1135,6 +1145,14 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException(
                     "Akaza Phase 2 transition could not resolve the canonical player health owner.");
             }
+
+            ConfigureBossBarrageCameraComposition(
+                bossCameraCueDriver,
+                barrage,
+                actions,
+                cameraController,
+                playerMovement.transform,
+                crush);
 
             PlayerSupportSummonSlotAction[] supportSummons = FindSceneComponents<PlayerSupportSummonSlotAction>(scene);
 
@@ -1204,6 +1222,72 @@ namespace DimensionBrawl.Editor
             SetObject(serialized, "playerRangedBasicAttackAction", RequireSingle<PlayerRangedBasicAttackAction>(scene));
             SetObject(serialized, "playerCombatModeController", RequireSingle<PlayerCombatModeController>(scene));
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        internal static void ConfigureBossBarrageCameraComposition(
+            BossBarrageCameraCueDriver cueDriver,
+            BossBarrageEmitter barrageEmitter,
+            BossPressureActionDirector pressureActionDirector,
+            ActionCameraController cameraController,
+            Transform cueSpace,
+            BossBarragePatternProfile crushNetPattern)
+        {
+            if (cueDriver == null
+                || barrageEmitter == null
+                || pressureActionDirector == null
+                || cameraController == null
+                || cueSpace == null
+                || crushNetPattern == null)
+            {
+                throw new InvalidOperationException(
+                    "Station CrushNet camera composition requires its canonical driver, boss sources, camera, cue space, and pattern.");
+            }
+
+            if (!string.Equals(
+                    crushNetPattern.PatternId,
+                    CrushNetCameraPatternId,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Expected {CrushNetCameraPatternId}, but resolved {crushNetPattern.PatternId}.");
+            }
+
+            var crushNetCue = new ActionCameraCueProfile.CameraCue
+            {
+                enabled = true,
+                localOffset = Vector3.zero,
+                planarDirectionOffset = 0f,
+                fieldOfViewDelta = CrushNetCameraFieldOfViewDelta,
+                cameraDistanceDelta = CrushNetCameraDistanceDelta,
+                focusHeightDelta = 0f,
+                durationSeconds = CrushNetCameraSustainSeconds,
+                finisherScale = 1f
+            };
+
+            cueDriver.Configure(
+                barrageEmitter,
+                cameraController,
+                cueSpace,
+                pressureActionDirector);
+            cueDriver.ConfigurePatternWindupCueOverrides(
+                CrushNetCameraReleaseSeconds,
+                new BossBarrageCameraCueDriver.PatternWindupCueOverride(
+                    CrushNetCameraPatternId,
+                    crushNetCue));
+
+            SerializedObject cameraSerialized = new SerializedObject(cameraController);
+            SetFloat(
+                cameraSerialized,
+                "maxCueFieldOfViewDelta",
+                StationMaxCueFieldOfViewDelta);
+            SetFloat(
+                cameraSerialized,
+                "maxCueCameraDistanceDelta",
+                StationMaxCueCameraDistanceDelta);
+            cameraSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            EditorUtility.SetDirty(cueDriver);
+            EditorUtility.SetDirty(cameraController);
         }
 
         private static void ConfigurePhaseTwoCueArrays(SerializedObject serialized)

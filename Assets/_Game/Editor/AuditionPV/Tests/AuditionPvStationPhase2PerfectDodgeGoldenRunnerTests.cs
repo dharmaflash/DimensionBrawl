@@ -164,7 +164,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("ValidateStableGitSnapshot"));
             Assert.That(source, Does.Contain("ValidateStableDependencies"));
             Assert.That(source, Does.Contain("AuditionPvCaptureManifestWriter.WriteNew"));
-            Assert.That(source, Does.Contain(".42/.18/.48/.16"));
+            Assert.That(source, Does.Contain("productScreenProfile"));
+            Assert.That(source, Does.Contain(".14/.015/.18/.03"));
+            Assert.That(source, Does.Not.Contain("captureOnlyScreen"));
+            Assert.That(source, Does.Not.Contain(".42/.18/.48/.16"));
             Assert.That(source, Does.Not.Contain("System.Reflection"));
             Assert.That(source, Does.Not.Contain("BindingFlags"));
             Assert.That(source, Does.Not.Contain("GetComponentsInChildren<Canvas"));
@@ -418,6 +421,20 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.Throws<InvalidOperationException>(() =>
                 AuditionPvStationPhase2PerfectDodgeGoldenRunner
                     .ValidateRuntimeProof(leaked));
+
+            AuditionPvStationPhase2PerfectDodgeGoldenRunner.RuntimeProof distantBoss =
+                PassingRuntimeProof();
+            distantBoss.bossRiskAtImpactFrame = 0.87f;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2PerfectDodgeGoldenRunner
+                    .ValidateRuntimeProof(distantBoss));
+
+            AuditionPvStationPhase2PerfectDodgeGoldenRunner.RuntimeProof bossPoseLeak =
+                PassingRuntimeProof();
+            bossPoseLeak.bossCompositionRestored = false;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2PerfectDodgeGoldenRunner
+                    .ValidateRuntimeProof(bossPoseLeak));
         }
 
         [Test]
@@ -477,7 +494,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(bl06.sourceFrame, Is.EqualTo(189));
             Assert.That(shot.notes, Does.Contain("impact f188"));
             Assert.That(shot.notes, Does.Contain("screen-domain hero f189"));
-            Assert.That(shot.notes, Does.Contain(".42/.18/.48/.16"));
+            Assert.That(shot.notes, Does.Contain(".14/.015/.18/.03"));
+            Assert.That(shot.notes, Does.Contain("0.42s"));
+            Assert.That(
+                shot.notes,
+                Does.Contain("without a capture-time visual override"));
         }
 
         private static string ReadProjectFile(string projectRelativePath)
@@ -557,7 +578,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 cameraCueRequested = true,
                 screenCueRequested = true,
                 screenCueActiveAtBaselineFrame = true,
-                captureOnlyScreenProfileActive = true,
+                productScreenProfileActive = true,
+                bossRiskAtFirstFrame = 0.58f,
+                bossRiskAtFireFrame = 0.86f,
+                bossRiskAtImpactFrame = 0.88f,
                 exactHudRenderable = true,
                 exactHudResources = true,
                 exactEnergyBinding = true,
@@ -570,6 +594,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 recorderAutoStoppedAfterLastFrame = true,
                 stateRestored = true,
                 screenProfileRestored = true,
+                bossCompositionRestored = true,
                 presentationClockReleased = true,
                 cadenceSuspensionCountAfterRestore = 0
             };
