@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_C34EyeOpen_CurrentAkaza
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: c34_eye_open_current_akaza_review
+  displayName: C34 Eye Opening Push-In - Current Akaza Review
+  category: 6
+  reviewerIntent: 'Verified editor-only proof: exact C34 camera and actor clips,
+    current Akaza model/material binding. Source 90.050 closed, 90.550 slit, 91.300
+    fully open.'
+  authoredDurationSeconds: 2.3666668
+  priority: 100
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  requiresStageDefinition: 0
+  stageDefinition: {fileID: 0}
+  stageHandoffId: 
+  stageAnchorId: 
+  stageRuntimeStateId: 
+  stageContextNote: Editor-only review; deliberately excluded from product stage
+    routing.
+  sourceCameraAnimation:
+    enabled: 1
+    cueId: legacy_c34_camera_exact
+    clip: {fileID: 7400000, guid: ab10bda231796904d83c3a2ee944377c, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.3666668
+  sourceActorAnimation:
+    enabled: 1
+    cueId: legacy_c34_akaza_exact
+    clip: {fileID: 1827226128182048838, guid: a81377b1847e1bb49bc35f459f103cf7, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.3666668
+  sourceCameraAnimations:
+  - enabled: 1
+    cueId: legacy_c34_camera_exact
+    clip: {fileID: 7400000, guid: ab10bda231796904d83c3a2ee944377c, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.3666668
+  sourceActorAnimations:
+  - enabled: 1
+    cueId: legacy_c34_akaza_exact
+    clip: {fileID: 1827226128182048838, guid: a81377b1847e1bb49bc35f459f103cf7, type: 3}
+    startSeconds: 0
+    clipInSeconds: 0
+    durationSeconds: 2.3666668
+  sourceActorGrades: []
+  screenFadeCues: []
+  cameraCues: []
+  actorCues: []
+  vfxCues: []
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 0
+    returnMode: 0
+    startSeconds: 0
+    targetId: 
+    inputReleaseDelaySeconds: 0
+    restoreHud: 0
+    restoreTimeScale: 0
+    restoreCamera: 0
