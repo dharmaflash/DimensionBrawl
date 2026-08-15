@@ -1036,6 +1036,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                         .AuthoredSummonTier
                 || proof.summonPressureScreenRemainingIntercepts != 1
                 || proof.retainedProjectileCountBeforeIntercept != 6
+                || !proof.retainedProjectileIdentitySetExact
                 || !proof.retainedProjectileImpactApplied
                 || !proof.retainedProjectileInactive
                 || proof.activeCounterProjectileCountAfterIntercept != 1
@@ -1823,6 +1824,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public int summonPressureScreenRemainingIntercepts;
             public bool uniqueSummonPressureScreenObserved;
             public int retainedProjectileCountBeforeIntercept;
+            public bool retainedProjectileIdentitySetExact;
             public bool retainedProjectileImpactApplied;
             public bool retainedProjectileInactive;
             public int activeCounterProjectileCountAfterIntercept;
@@ -2192,6 +2194,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                         director.UniqueSummonPressureScreenObserved;
                     proof.retainedProjectileCountBeforeIntercept =
                         director.RetainedProjectileCountBeforeIntercept;
+                    proof.retainedProjectileIdentitySetExact =
+                        director.RetainedProjectileIdentitySetExact;
                     proof.retainedProjectileImpactApplied =
                         director.RetainedProjectileImpactApplied;
                     proof.retainedProjectileInactive =

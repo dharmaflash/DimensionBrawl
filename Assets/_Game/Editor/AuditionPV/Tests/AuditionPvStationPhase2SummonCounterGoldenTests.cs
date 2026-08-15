@@ -161,6 +161,12 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(counterPath,
                 Does.Contain("interceptedCrushNetProjectile.TryApplyImpact("));
             Assert.That(counterPath,
+                Does.Contain("IsExactCaptureOwnedRetainedProjectileSet(activeProjectiles)"));
+            Assert.That(counterPath,
+                Does.Not.Contain("emitter.CurrentPattern != crushNet"));
+            Assert.That(source,
+                Does.Contain("projectileLeases[leaseIndex].Projectile == candidate"));
+            Assert.That(counterPath,
                 Does.Contain("counterProjectile.DamageApplied +="));
             Assert.That(source, Does.Contain("bossHealth.Damaged += HandleBossDamaged;"));
             Assert.That(source,
@@ -212,6 +218,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof proof =
                 CreatePassingRuntimeProof();
             proof.counterProjectileDamageAppliedCount = 0;
+
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ValidateRuntimeProof(proof));
+        }
+
+        [Test]
+        public void RuntimeProof_RejectsRetainedProjectileIdentitySubstitution()
+        {
+            AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof proof =
+                CreatePassingRuntimeProof();
+            proof.retainedProjectileIdentitySetExact = false;
 
             Assert.Throws<InvalidOperationException>(() =>
                 AuditionPvStationPhase2SummonCounterGoldenRunner
@@ -303,6 +321,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 summonPressureScreenRemainingIntercepts = 1,
                 uniqueSummonPressureScreenObserved = true,
                 retainedProjectileCountBeforeIntercept = 6,
+                retainedProjectileIdentitySetExact = true,
                 retainedProjectileImpactApplied = true,
                 retainedProjectileInactive = true,
                 activeCounterProjectileCountAfterIntercept = 1,

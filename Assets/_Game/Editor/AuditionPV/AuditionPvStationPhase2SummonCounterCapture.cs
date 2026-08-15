@@ -519,6 +519,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private int counterProjectileDamageAppliedFrame = -1;
         private float bossCounterDamageAmount;
         private float bossCounterHealthDelta;
+        private bool retainedProjectileIdentitySetExact;
         private bool retainedProjectileImpactApplied;
         private bool fixedDeltaTimeExact;
         private bool actionEventsSubscribed;
@@ -662,6 +663,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int ScreenFirstObservedFrame => screenFirstObservedFrame;
         public int RetainedProjectileCountBeforeIntercept =>
             retainedProjectileCountBeforeIntercept;
+        public bool RetainedProjectileIdentitySetExact =>
+            retainedProjectileIdentitySetExact;
         public bool RetainedProjectileImpactApplied =>
             retainedProjectileImpactApplied;
         public bool RetainedProjectileInactive =>
@@ -2086,16 +2089,25 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             retainedProjectileCountBeforeIntercept =
                 emitter.CopyActiveProjectiles(activeProjectiles);
+            // FirePendingWave clears the one-wave CrushNet priority after it
+            // spawns the wave, so CurrentPattern truthfully reports the next
+            // scheduler pattern (normally HoverLance) while these exact
+            // capture-owned CrushNet projectile instances remain live. Prove
+            // projectile provenance by identity against the seven f71 leases,
+            // not by mutable next-pattern scheduler state.
+            retainedProjectileIdentitySetExact =
+                IsExactCaptureOwnedRetainedProjectileSet(activeProjectiles);
             if (retainedProjectileCountBeforeIntercept
                     != firedProjectileCount - 1
                 || retainedProjectileCountBeforeIntercept != 6
-                || emitter.CurrentPattern != crushNet)
+                || !retainedProjectileIdentitySetExact)
             {
                 throw new InvalidOperationException(
                     "G06 f250 did not retain the six non-impact real CrushNet projectiles: "
                     + $"retained={retainedProjectileCountBeforeIntercept}, "
                     + $"fired={firedProjectileCount}, "
-                    + $"pattern={(emitter.CurrentPattern != null ? emitter.CurrentPattern.name : "none")}.");
+                    + $"identityExact={retainedProjectileIdentitySetExact}, "
+                    + $"nextPattern={(emitter.CurrentPattern != null ? emitter.CurrentPattern.name : "none")}.");
             }
 
             interceptedCrushNetProjectile = activeProjectiles
@@ -2177,6 +2189,81 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + $"actionProjectiles={activeActionProjectilesBefore}->{activeCounterProjectileCountAfterIntercept}, "
                     + $"matchingCounters={matchingCounters.Length}.");
             }
+        }
+
+        private bool IsExactCaptureOwnedRetainedProjectileSet(
+            IReadOnlyList<BossBarrageProjectile> candidates)
+        {
+            if (candidates == null
+                || impactProjectile == null
+                || candidates.Count != projectileLeases.Count - 1)
+            {
+                return false;
+            }
+
+            for (int candidateIndex = 0;
+                candidateIndex < candidates.Count;
+                candidateIndex++)
+            {
+                BossBarrageProjectile candidate = candidates[candidateIndex];
+                if (candidate == null
+                    || candidate == impactProjectile
+                    || !candidate.IsActive)
+                {
+                    return false;
+                }
+
+                int matchingLeaseCount = 0;
+                for (int leaseIndex = 0;
+                    leaseIndex < projectileLeases.Count;
+                    leaseIndex++)
+                {
+                    if (projectileLeases[leaseIndex].Projectile == candidate)
+                    {
+                        matchingLeaseCount++;
+                    }
+                }
+
+                if (matchingLeaseCount != 1)
+                {
+                    return false;
+                }
+            }
+
+            for (int leaseIndex = 0;
+                leaseIndex < projectileLeases.Count;
+                leaseIndex++)
+            {
+                BossBarrageProjectile leased =
+                    projectileLeases[leaseIndex].Projectile;
+                if (leased == impactProjectile)
+                {
+                    continue;
+                }
+
+                if (leased == null || !leased.IsActive)
+                {
+                    return false;
+                }
+
+                int matchingCandidateCount = 0;
+                for (int candidateIndex = 0;
+                    candidateIndex < candidates.Count;
+                    candidateIndex++)
+                {
+                    if (candidates[candidateIndex] == leased)
+                    {
+                        matchingCandidateCount++;
+                    }
+                }
+
+                if (matchingCandidateCount != 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void DeactivateCaptureSummonArtifacts()
@@ -2272,6 +2359,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || playerSummon.TotalPressureScreenInterceptCount
                         - initialSummonInterceptCount != 1
                 || retainedProjectileCountBeforeIntercept != 6
+                || !retainedProjectileIdentitySetExact
                 || !retainedProjectileImpactApplied
                 || interceptedCrushNetProjectile == null
                 || interceptedCrushNetProjectile.IsActive
@@ -2514,6 +2602,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 startPosition = projectile.transform.position;
                 targetPosition = projectile.LastConfiguredTargetPosition;
             }
+
+            public BossBarrageProjectile Projectile => projectile;
 
             public void SuspendAutomaticSimulation()
             {
