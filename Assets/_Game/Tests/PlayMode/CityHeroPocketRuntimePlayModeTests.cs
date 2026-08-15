@@ -1,0 +1,655 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using DimensionBrawl.AI;
+using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
+using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
+using NUnit.Framework;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+using UnityEngine.UI;
+
+namespace DimensionBrawl.Tests
+{
+    public sealed class CityHeroPocketRuntimePlayModeTests
+    {
+        private const string ScenePath =
+            "Assets/_Game/Scenes/CityHeroPocketStage.unity";
+        private const string RifleCrossfirePatternPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RifleCrossfire.asset";
+
+        [UnitySetUp]
+        public IEnumerator LoadCityPocketIfAuthored()
+        {
+            Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath),
+                Is.Not.Null,
+                "Committed CityHeroPocket scene output is missing; run setup before PlayMode gates.");
+
+            Time.timeScale = 1f;
+            EditorSceneManager.LoadSceneInPlayMode(
+                ScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+        }
+
+        [UnityTearDown]
+        public IEnumerator RestoreTimeScale()
+        {
+            Type overlayType = Type.GetType(
+                "DimensionBrawl.UI.CombatSessionOverlayPresenter, Assembly-CSharp",
+                throwOnError: false);
+            Component overlay = FindFirstOptional(overlayType);
+            if (overlay != null)
+            {
+                MethodInfo resume = overlay.GetType().GetMethod(
+                    "Resume",
+                    BindingFlags.Instance | BindingFlags.Public);
+                resume?.Invoke(overlay, null);
+            }
+            Time.timeScale = 1f;
+            yield return null;
+            Time.timeScale = 1f;
+        }
+
+        [UnityTest]
+        [Timeout(15000)]
+        public IEnumerator FirstFramesBindEnemyProjectilesAndKeepGameplayFramed()
+        {
+            Camera camera = RequireSingle<Camera>();
+            Vector3 reviewedG02Start = new(-0.35f, 2.35f, -10.2f);
+            Assert.That(Vector3.Distance(camera.transform.position, reviewedG02Start),
+                Is.LessThan(0.2f),
+                "ActionCamera moved away from the reviewed G02 anchor on its first LateUpdate.");
+            Vector3 reviewedLookAt = new(-0.2f, 1.15f, 1.7f);
+            Assert.That(Vector3.Angle(
+                    camera.transform.forward,
+                    reviewedLookAt - camera.transform.position),
+                Is.LessThan(2f),
+                "ActionCamera first-frame look focus drifted from the reviewed G02 framing.");
+
+            CityHeroPocketEnemyProjectileRootBinder binder =
+                RequireSingle<CityHeroPocketEnemyProjectileRootBinder>();
+            BasicSoldierProjectileAttackDriver driver =
+                RequireSingle<BasicSoldierProjectileAttackDriver>();
+            Assert.That(binder.IsConfigured, Is.True);
+            Assert.That(driver.RuntimeProjectileRoot, Is.SameAs(binder.ProjectileRoot));
+            Assert.That(driver.HasIndependentRuntimeProjectileRoot, Is.True);
+
+            BasicSoldierEnemy soldier = RequireSingle<BasicSoldierEnemy>();
+            soldier.enabled = false;
+            CombatAiPatternProfile pattern =
+                AssetDatabase.LoadAssetAtPath<CombatAiPatternProfile>(RifleCrossfirePatternPath);
+            Assert.That(pattern, Is.Not.Null);
+            InvokePatternState(driver, CombatAiPatternState.Tracking, pattern);
+            InvokePatternState(driver, CombatAiPatternState.AttackActive, pattern);
+            Assert.That(driver.LastFiredProjectile, Is.Not.Null);
+            Assert.That(driver.LastFiredProjectile.transform.parent,
+                Is.SameAs(binder.ProjectileRoot),
+                "A fresh-load enemy shot escaped the scene-owned projectile root.");
+
+            for (int i = 0; i < 12; i++)
+            {
+                yield return null;
+            }
+
+            CombatEncounterController encounter = RequireSingle<CombatEncounterController>();
+            Assert.That(camera.transform.position.y, Is.InRange(2.0f, 2.75f),
+                "ActionCamera pivot+shoulder mapping lifted the runtime view above the G02 envelope.");
+            RequireSafeViewportPoint(
+                camera,
+                encounter.PlayerHealth.transform.position + Vector3.up * 1.1f,
+                "player chest");
+            RequireSafeViewportPoint(
+                camera,
+                encounter.EnemyHealth.transform.position + Vector3.up * 1.1f,
+                "primary enemy chest");
+
+            Component overlay = RequireSingle(ResolveHudType("CombatSessionOverlayPresenter"));
+            InvokePublic(overlay, "ShowPause");
+            yield return null;
+            Transform retry = FindDescendant(overlay.transform, "RetryButton");
+            Assert.That(retry == null || !retry.gameObject.activeSelf, Is.True,
+                "City direct-load proof exposed the shared Corridor retry action.");
+            if (retry != null && retry.TryGetComponent(out Button retryButton))
+            {
+                string sceneBeforeClick = SceneManager.GetActiveScene().path;
+                retryButton.onClick.Invoke();
+                yield return null;
+                Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(sceneBeforeClick),
+                    "Hidden City Retry still dispatched the shared Corridor route.");
+            }
+            InvokePublic(overlay, "Resume");
+            yield return null;
+            Assert.That(GetPublicProperty<object>(overlay, "Mode").ToString(),
+                Is.EqualTo("Hidden"));
+            Assert.That(Time.timeScale, Is.GreaterThan(0f));
+        }
+
+        [UnityTest]
+        [Timeout(15000)]
+        public IEnumerator RangedOnlyInoriMovesDodgesAndFiresThroughNativeBridge()
+        {
+            RifleGirlNativeGameplayAnimatorBridge bridge =
+                RequireSingle<RifleGirlNativeGameplayAnimatorBridge>();
+            PlayerMovementController movement = RequireSingle<PlayerMovementController>();
+            PlayerActionController action = RequireSingle<PlayerActionController>();
+            PlayerCombatModeController mode = RequireSingle<PlayerCombatModeController>();
+            PlayerRangedAimController aim = RequireSingle<PlayerRangedAimController>();
+            PlayerRangedBasicAttackAction ranged =
+                RequireSingle<PlayerRangedBasicAttackAction>();
+            Assert.That(bridge.isActiveAndEnabled, Is.True);
+            Assert.That(mode.IsRangedMode, Is.True);
+            Assert.That(new SerializedObject(movement).FindProperty("animator").objectReferenceValue,
+                Is.Null);
+            Assert.That(new SerializedObject(action).FindProperty("animator").objectReferenceValue,
+                Is.Null);
+
+            Keyboard keyboard = Keyboard.current;
+            bool ownsKeyboard = keyboard == null;
+            if (ownsKeyboard)
+            {
+                keyboard = InputSystem.AddDevice<Keyboard>();
+            }
+            try
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Tab));
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                Assert.That(mode.IsRangedMode, Is.True,
+                    "The compact ranged-only player still accepted the Station Tab swap fallback.");
+            }
+            finally
+            {
+                if (ownsKeyboard && keyboard != null && keyboard.added)
+                {
+                    InputSystem.RemoveDevice(keyboard);
+                }
+            }
+
+            Vector3 start = movement.transform.position;
+            movement.SetMoveInput(Vector2.up);
+            for (int i = 0; i < 8; i++)
+            {
+                yield return null;
+            }
+            movement.SetMoveInput(Vector2.zero);
+            Assert.That(Vector3.ProjectOnPlane(movement.transform.position - start, Vector3.up).magnitude,
+                Is.GreaterThan(0.05f), "Fresh-load Inori did not move.");
+
+            movement.SetMoveInput(Vector2.right);
+            action.QueueDodge();
+            yield return null;
+            Assert.That(action.IsDodging, Is.True,
+                "Fresh-load Inori did not enter the reviewed dodge state.");
+            movement.SetMoveInput(Vector2.zero);
+            while (action.IsDodging)
+            {
+                yield return null;
+            }
+
+            aim.SetAimMode(true);
+            yield return null;
+            Assert.That(ranged.TryFire(), Is.True, ranged.LastUseBlockedReason);
+            Assert.That(ranged.ProjectileRoot, Is.Not.Null);
+            Assert.That(ranged.ProjectileRoot.name,
+                Is.EqualTo("CityHeroPocket_PlayerProjectiles"));
+        }
+
+        [UnityTest]
+        [Timeout(20000)]
+        public IEnumerator InputModuleDispatchesHudFireDodgeJoystickAndAimDrag()
+        {
+            Canvas.ForceUpdateCanvases();
+            InputSettings.EditorInputBehaviorInPlayMode previousEditorInputBehavior =
+                InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSettings.BackgroundBehavior previousBackgroundBehavior =
+                InputSystem.settings.backgroundBehavior;
+            InputSystem.settings.editorInputBehaviorInPlayMode =
+                InputSettings.EditorInputBehaviorInPlayMode
+                    .AllDeviceInputAlwaysGoesToGameView;
+            InputSystem.settings.backgroundBehavior =
+                InputSettings.BackgroundBehavior.IgnoreFocus;
+            Mouse mouse = null;
+            try
+            {
+                mouse = InputSystem.AddDevice<Mouse>("CityHeroPocketTestMouse");
+                Assert.That(mouse.enabled, Is.True,
+                    "The batch-mode test Mouse was disabled by focus/background policy.");
+                PlayerRangedBasicAttackAction ranged =
+                    RequireSingle<PlayerRangedBasicAttackAction>();
+                PlayerActionController action = RequireSingle<PlayerActionController>();
+                PlayerMovementController movement = RequireSingle<PlayerMovementController>();
+                Component joystick = RequireSingle(ResolveHudType("CombatHudVirtualJoystick"));
+                Component aimDrag = RequireSingle(ResolveHudType("CombatHudAimDragInput"));
+                Component hudBinder = RequireSingle(
+                    ResolveHudType("OneRowCombatHudBinder"));
+                Camera camera = RequireSingle<Camera>();
+                InputSystemUIInputModule inputModule =
+                    RequireSingle<InputSystemUIInputModule>();
+                Assert.That(inputModule.isActiveAndEnabled, Is.True,
+                    "City InputSystemUIInputModule is not active and enabled.");
+                Assert.That(EventSystem.current, Is.Not.Null);
+                Assert.That(EventSystem.current.currentInputModule,
+                    Is.SameAs(inputModule),
+                    "City EventSystem is not processing through InputSystemUIInputModule.");
+                Assert.That(inputModule.point, Is.Not.Null);
+                Assert.That(inputModule.point.action, Is.Not.Null);
+                Assert.That(inputModule.point.action.enabled, Is.True,
+                    "City UI point action is disabled.");
+                Assert.That(inputModule.leftClick, Is.Not.Null);
+                Assert.That(inputModule.leftClick.action, Is.Not.Null);
+                Assert.That(inputModule.leftClick.action.enabled, Is.True,
+                    "City UI left-click action is disabled.");
+                string moduleControlBindings =
+                    $"pointControls='{DescribeActionControls(inputModule.point.action)}'; " +
+                    $"leftClickControls='{DescribeActionControls(inputModule.leftClick.action)}'; " +
+                    $"testMouse='{mouse.path}',enabled={mouse.enabled}";
+
+                int firedCount = 0;
+                int fireInputStartedCount = 0;
+                int leftClickPerformedCount = 0;
+                void ObserveFired(LaneActionProjectile _) => firedCount++;
+                void ObserveFireInputStarted() => fireInputStartedCount++;
+                void ObserveLeftClick(InputAction.CallbackContext _) =>
+                    leftClickPerformedCount++;
+                ranged.RangedProjectileFired += ObserveFired;
+                ranged.RangedFireInputStarted += ObserveFireInputStarted;
+                inputModule.leftClick.action.performed += ObserveLeftClick;
+                RectTransform attackButton = RequireRectTransform("BasicAttackButton");
+                Button attackVisualButton = attackButton.GetComponent<Button>();
+                Assert.That(attackVisualButton, Is.Not.Null);
+                Component attackPointer = attackButton.GetComponent(
+                    ResolveHudType("CombatHudPointerActionInput"));
+                Assert.That(attackPointer, Is.Not.Null,
+                    "BasicAttackButton lost its pointer action component.");
+                Assert.That(GetPublicProperty<object>(attackPointer, "ActionId").ToString(),
+                    Is.EqualTo("BasicAttack"));
+                Assert.That(GetPublicProperty<bool>(attackPointer, "SendsHoldState"), Is.True);
+                Assert.That(GetPublicProperty<bool>(attackPointer, "IsInputBlocked"), Is.False);
+                Assert.That(attackVisualButton.IsInteractable(), Is.True);
+                Assert.That(GetPublicProperty<bool>(hudBinder, "IsCombatMenuInputLocked"), Is.False);
+                Vector2 attackPoint = ScreenPoint(attackButton);
+                string attackRaycast = RequireTopRaycastWithin(attackButton, attackPoint);
+                var attackInputStates = new List<string>();
+                yield return Click(mouse, attackPoint, inputModule, attackInputStates);
+                ranged.RangedProjectileFired -= ObserveFired;
+                ranged.RangedFireInputStarted -= ObserveFireInputStarted;
+                inputModule.leftClick.action.performed -= ObserveLeftClick;
+                string fireDiagnostic =
+                    $"{attackRaycast}; pointerHeld=" +
+                    $"{GetPublicProperty<bool>(attackPointer, "IsPointerHeld")}; " +
+                    $"pointerBlocked={GetPublicProperty<bool>(attackPointer, "IsInputBlocked")}; " +
+                    $"buttonInteractable={attackVisualButton.IsInteractable()}; " +
+                    $"binderLocked={GetPublicProperty<bool>(hudBinder, "IsCombatMenuInputLocked")}; " +
+                    $"fireInputStarted={fireInputStartedCount}; " +
+                    $"leftClickPerformed={leftClickPerformedCount}; " +
+                    $"lastBlockedReason='{ranged.LastUseBlockedReason}'; " +
+                    $"{moduleControlBindings}; " +
+                    $"queuedStates='{string.Join(" | ", attackInputStates)}'";
+                Assert.That(fireInputStartedCount, Is.GreaterThan(0),
+                    "HUD pointer reached no ranged fire-input request. " + fireDiagnostic);
+                Assert.That(firedCount, Is.GreaterThan(0),
+                    "InputSystemUIInputModule did not dispatch a real ranged projectile fire. " +
+                    fireDiagnostic);
+                Assert.That(ranged.ActiveProjectileCount, Is.GreaterThan(0),
+                    "HUD fire did not activate a projectile from the prewarmed pool.");
+
+                RectTransform dodgeButton = RequireRectTransform("DodgeButton");
+                yield return Click(mouse, ScreenPoint(dodgeButton));
+                Assert.That(action.IsDodging, Is.True,
+                    "InputSystemUIInputModule did not dispatch Dodge pointer input.");
+                while (action.IsDodging)
+                {
+                    yield return null;
+                }
+
+                Vector3 moveStart = movement.transform.position;
+                RectTransform joystickRect = (RectTransform)joystick.transform;
+                Vector2 joystickCenter = ScreenPoint(joystickRect);
+                yield return Drag(
+                    mouse,
+                    joystickCenter,
+                    joystickCenter + Vector2.up * Mathf.Max(80f, joystickRect.rect.height * 0.35f),
+                    keepPressedForFrames: 5);
+                Assert.That(Vector3.ProjectOnPlane(
+                        movement.transform.position - moveStart,
+                        Vector3.up).magnitude,
+                    Is.GreaterThan(0.02f),
+                    "InputSystemUIInputModule did not dispatch joystick drag movement.");
+
+                Vector3 cameraForwardBefore = camera.transform.forward;
+                Vector2 aimStart = new(Screen.width * 0.5f, Screen.height * 0.58f);
+                yield return Drag(
+                    mouse,
+                    aimStart,
+                    aimStart + Vector2.right * Mathf.Max(180f, Screen.width * 0.12f),
+                    keepPressedForFrames: 4);
+                yield return null;
+                Assert.That(Vector3.Angle(cameraForwardBefore, camera.transform.forward),
+                    Is.GreaterThan(0.25f),
+                    "InputSystemUIInputModule did not dispatch AimDragArea look input.");
+                Assert.That(GetPublicProperty<bool>(aimDrag, "IsPointerHeld"), Is.False,
+                    "AimDragArea did not release its pointer lease.");
+
+                Component overlay = RequireSingle(
+                    ResolveHudType("CombatSessionOverlayPresenter"));
+                RectTransform pauseButton = RequireRectTransform("PauseButton");
+                yield return Click(mouse, ScreenPoint(pauseButton));
+                Assert.That(GetPublicProperty<object>(overlay, "Mode").ToString(),
+                    Is.EqualTo("Pause"),
+                    "InputSystemUIInputModule did not dispatch Pause through the HUD bridge.");
+                Assert.That(Time.timeScale, Is.EqualTo(0f).Within(0.0001f));
+                Assert.That(GetPublicProperty<bool>(hudBinder, "IsCombatMenuInputLocked"), Is.True,
+                    "Pause did not lock non-menu combat input.");
+                InvokePublic(overlay, "Resume");
+                yield return null;
+                Assert.That(GetPublicProperty<object>(overlay, "Mode").ToString(),
+                    Is.EqualTo("Hidden"));
+                Assert.That(Time.timeScale, Is.GreaterThan(0f));
+                Assert.That(GetPublicProperty<bool>(hudBinder, "IsCombatMenuInputLocked"), Is.False,
+                    "Resume did not release the combat-input lock.");
+            }
+            finally
+            {
+                if (mouse != null && mouse.added)
+                {
+                    InputSystem.RemoveDevice(mouse);
+                }
+                InputSystem.settings.editorInputBehaviorInPlayMode =
+                    previousEditorInputBehavior;
+                InputSystem.settings.backgroundBehavior =
+                    previousBackgroundBehavior;
+            }
+        }
+
+        private static IEnumerator Click(
+            Mouse mouse,
+            Vector2 screenPosition,
+            InputSystemUIInputModule inputModule = null,
+            List<string> diagnostics = null)
+        {
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPosition });
+            yield return null;
+            diagnostics?.Add(DescribeInputState("move", mouse, inputModule));
+            InputSystem.QueueStateEvent(
+                mouse,
+                new MouseState { position = screenPosition }.WithButton(MouseButton.Left));
+            yield return null;
+            diagnostics?.Add(DescribeInputState("press", mouse, inputModule));
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPosition });
+            yield return null;
+            diagnostics?.Add(DescribeInputState("release", mouse, inputModule));
+        }
+
+        private static IEnumerator Drag(
+            Mouse mouse,
+            Vector2 start,
+            Vector2 end,
+            int keepPressedForFrames)
+        {
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = start });
+            yield return null;
+            InputSystem.QueueStateEvent(
+                mouse,
+                new MouseState { position = start }.WithButton(MouseButton.Left));
+            yield return null;
+            InputSystem.QueueStateEvent(
+                mouse,
+                new MouseState { position = end, delta = end - start }
+                    .WithButton(MouseButton.Left));
+            for (int i = 0; i < keepPressedForFrames; i++)
+            {
+                yield return null;
+            }
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = end });
+            yield return null;
+        }
+
+        private static string DescribeInputState(
+            string phase,
+            Mouse mouse,
+            InputSystemUIInputModule inputModule)
+        {
+            string pointAction = inputModule?.point?.action == null
+                ? "<null>"
+                : $"enabled={inputModule.point.action.enabled}," +
+                    $"value={inputModule.point.action.ReadValue<Vector2>()}";
+            string clickAction = inputModule?.leftClick?.action == null
+                ? "<null>"
+                : $"enabled={inputModule.leftClick.action.enabled}," +
+                    $"pressed={inputModule.leftClick.action.IsPressed()}";
+            return $"{phase}:mousePos={mouse.position.ReadValue()}," +
+                $"mousePressed={mouse.leftButton.isPressed}," +
+                $"point[{pointAction}],click[{clickAction}]";
+        }
+
+        private static string DescribeActionControls(InputAction action)
+        {
+            if (action == null)
+            {
+                return "<null>";
+            }
+
+            var controls = new List<string>();
+            for (int i = 0; i < action.controls.Count; i++)
+            {
+                controls.Add(action.controls[i].path);
+            }
+            return controls.Count == 0 ? "<none>" : string.Join(",", controls);
+        }
+
+        private static RectTransform RequireRectTransform(string objectName)
+        {
+            Transform[] transforms = UnityEngine.Object.FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (transforms[i].name == objectName && transforms[i] is RectTransform rect)
+                {
+                    return rect;
+                }
+            }
+            Assert.Fail($"City HUD is missing RectTransform '{objectName}'.");
+            return null;
+        }
+
+        private static Vector2 ScreenPoint(RectTransform rect)
+        {
+            var corners = new Vector3[4];
+            rect.GetWorldCorners(corners);
+            return (Vector2)((corners[0] + corners[2]) * 0.5f);
+        }
+
+        private static string RequireTopRaycastWithin(
+            RectTransform expectedTarget,
+            Vector2 screenPosition)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            Assert.That(eventSystem, Is.Not.Null,
+                "City HUD requires one active EventSystem for pointer dispatch.");
+            var eventData = new PointerEventData(eventSystem)
+            {
+                position = screenPosition,
+                button = PointerEventData.InputButton.Left,
+            };
+            var hits = new List<RaycastResult>();
+            eventSystem.RaycastAll(eventData, hits);
+            string hitNames = hits.Count == 0
+                ? "<none>"
+                : string.Join(" | ", hits.ConvertAll(hit =>
+                    BuildHierarchyPath(hit.gameObject.transform)));
+            Assert.That(hits, Is.Not.Empty,
+                $"HUD raycast at {screenPosition} returned no target.");
+            Transform topHit = hits[0].gameObject.transform;
+            Assert.That(topHit == expectedTarget || topHit.IsChildOf(expectedTarget), Is.True,
+                $"HUD raycast at {screenPosition} hit '{hitNames}' instead of " +
+                $"'{expectedTarget.name}' or one of its children.");
+            GameObject pointerHandler =
+                ExecuteEvents.GetEventHandler<IPointerDownHandler>(hits[0].gameObject);
+            Assert.That(pointerHandler, Is.Not.Null,
+                $"Top HUD raycast '{BuildHierarchyPath(topHit)}' has no pointer-down handler.");
+            Assert.That(pointerHandler.transform == expectedTarget
+                    || pointerHandler.transform.IsChildOf(expectedTarget),
+                Is.True,
+                $"Top HUD raycast routes pointer-down to " +
+                $"'{BuildHierarchyPath(pointerHandler.transform)}', not '{expectedTarget.name}'.");
+            return $"raycastTop='{BuildHierarchyPath(topHit)}'; " +
+                $"pointerHandler='{BuildHierarchyPath(pointerHandler.transform)}'; " +
+                $"allHits='{hitNames}'";
+        }
+
+        private static string BuildHierarchyPath(Transform transform)
+        {
+            if (transform == null)
+            {
+                return "<null>";
+            }
+
+            string path = transform.name;
+            while (transform.parent != null)
+            {
+                transform = transform.parent;
+                path = transform.name + "/" + path;
+            }
+            return path;
+        }
+
+        private static void RequireSafeViewportPoint(
+            Camera camera,
+            Vector3 worldPosition,
+            string label)
+        {
+            Vector3 viewport = camera.WorldToViewportPoint(worldPosition);
+            Assert.That(viewport.z, Is.GreaterThan(camera.nearClipPlane), $"{label} is behind camera.");
+            Assert.That(viewport.x, Is.InRange(0.05f, 0.95f), $"{label} escaped horizontal safe frame.");
+            Assert.That(viewport.y, Is.InRange(0.05f, 0.95f), $"{label} escaped vertical safe frame.");
+        }
+
+        private static void InvokePatternState(
+            BasicSoldierProjectileAttackDriver driver,
+            CombatAiPatternState state,
+            CombatAiPatternProfile pattern)
+        {
+            MethodInfo method = typeof(BasicSoldierProjectileAttackDriver).GetMethod(
+                "HandlePatternStateChanged",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null);
+            method.Invoke(driver, new object[] { state, pattern });
+        }
+
+        private static T RequireSingle<T>() where T : Component
+        {
+            T[] found = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            Assert.That(found, Has.Length.EqualTo(1),
+                $"City scene requires exactly one {typeof(T).Name}.");
+            return found[0];
+        }
+
+        private static Type ResolveHudType(string typeName)
+        {
+            Type type = Type.GetType(
+                $"DimensionBrawl.UI.{typeName}, Assembly-CSharp",
+                throwOnError: true);
+            Assert.That(type, Is.Not.Null);
+            return type;
+        }
+
+        private static Component RequireSingle(Type expectedType)
+        {
+            MonoBehaviour[] behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            Component found = null;
+            int count = 0;
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (!expectedType.IsInstanceOfType(behaviours[i]))
+                {
+                    continue;
+                }
+                found = behaviours[i];
+                count++;
+            }
+            Assert.That(count, Is.EqualTo(1),
+                $"City scene requires exactly one {expectedType.Name}; found {count}.");
+            return found;
+        }
+
+        private static Component FindFirstOptional(Type expectedType)
+        {
+            if (expectedType == null)
+            {
+                return null;
+            }
+
+            MonoBehaviour[] behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (expectedType.IsInstanceOfType(behaviours[i]))
+                {
+                    return behaviours[i];
+                }
+            }
+            return null;
+        }
+
+        private static T GetPublicProperty<T>(Component target, string propertyName)
+        {
+            PropertyInfo property = target.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(property, Is.Not.Null,
+                $"{target.GetType().Name} is missing public property '{propertyName}'.");
+            return (T)property.GetValue(target);
+        }
+
+        private static void InvokePublic(Component target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.Public);
+            Assert.That(method, Is.Not.Null,
+                $"{target.GetType().Name} is missing public method '{methodName}'.");
+            method.Invoke(target, null);
+        }
+
+        private static Transform FindDescendant(Transform root, string name)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+            if (root.name == name)
+            {
+                return root;
+            }
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDescendant(root.GetChild(i), name);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+            return null;
+        }
+    }
+}

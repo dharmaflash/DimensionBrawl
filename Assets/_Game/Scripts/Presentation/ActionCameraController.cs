@@ -49,6 +49,8 @@ namespace DimensionBrawl.Presentation
         [Tooltip("Keeps current threat readable without becoming hard lock-on. This is intentionally inspectable for tuning.")]
         [SerializeField, Range(0f, 1f)] private float threatBias = 0.25f;
         [SerializeField, Min(0f)] private float maxThreatFocusOffset = 1.8f;
+        [Tooltip("Preserves the legacy rig when enabled. Disable for a fixed shoulder position that still looks toward the current threat.")]
+        [SerializeField] private bool threatFocusAffectsCameraPosition = true;
         [SerializeField, Min(0f)] private float maxLeadFromPlayerSpeed = 0.35f;
 
         [Header("Cue")]
@@ -744,8 +746,12 @@ namespace DimensionBrawl.Presentation
             Quaternion cameraPositionRotation = aimOrbitRotatesCameraPosition ? aimRotation : lookPeekRotation;
             Vector3 baseFocus = BuildFocusPoint()
                 + Vector3.up * (cueFocusHeightDelta * cueWeight);
+            Vector3 cameraPositionAnchor = threatFocusAffectsCameraPosition
+                ? baseFocus
+                : BuildTargetFocusPoint()
+                    + Vector3.up * (cueFocusHeightDelta * cueWeight);
             Vector3 cueCameraOffset = Vector3.forward * (cueCameraDistanceDelta * cueWeight);
-            Vector3 basePosition = baseFocus
+            Vector3 basePosition = cameraPositionAnchor
                 + lookPeekRotation * (cameraOffset + cueCameraOffset)
                 + cueOffset * cueWeight;
             Vector3 aimFocus = baseFocus
@@ -767,7 +773,7 @@ namespace DimensionBrawl.Presentation
             }
             else
             {
-                desiredPosition = baseFocus
+                desiredPosition = cameraPositionAnchor
                     + cameraPositionRotation * (cameraOffset + cueCameraOffset + aimCameraOffset * aimWeight)
                     + cueOffset * cueWeight;
                 focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, totalAimYawOffsetDegrees * aimWeight);
@@ -877,13 +883,20 @@ namespace DimensionBrawl.Presentation
 
         private Vector3 BuildFocusPoint()
         {
-            Vector3 focus = target.position + lookOffset;
+            Vector3 focus = BuildTargetFocusPoint();
 
             if (threat != null)
             {
                 Vector3 threatOffset = Vector3.ProjectOnPlane(threat.position - target.position, Vector3.up) * threatBias;
                 focus += Vector3.ClampMagnitude(threatOffset, maxThreatFocusOffset);
             }
+
+            return focus;
+        }
+
+        private Vector3 BuildTargetFocusPoint()
+        {
+            Vector3 focus = target.position + lookOffset;
 
             Vector3 lead = Vector3.ProjectOnPlane(target.forward, Vector3.up) * maxLeadFromPlayerSpeed;
             return focus + lead;
