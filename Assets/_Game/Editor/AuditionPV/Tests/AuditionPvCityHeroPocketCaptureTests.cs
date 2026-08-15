@@ -14,6 +14,49 @@ using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Editor.AuditionPV.Tests
 {
+    [DefaultExecutionOrder(-32600)]
+    internal sealed class AuditionPvCityRecorderWarmupBeginHarness : MonoBehaviour
+    {
+        private AuditionPvCityHeroPocketDirector director;
+        private bool armed;
+
+        public bool Began { get; private set; }
+        public Exception Failure { get; private set; }
+
+        public void Configure(AuditionPvCityHeroPocketDirector value)
+        {
+            director = value ?? throw new ArgumentNullException(nameof(value));
+        }
+
+        public void Arm()
+        {
+            if (director == null || armed || Began || Failure != null)
+            {
+                throw new InvalidOperationException(
+                    "The Recorder warmup begin harness can be armed exactly once.");
+            }
+            armed = true;
+        }
+
+        private void Update()
+        {
+            if (!armed || Began || Failure != null)
+            {
+                return;
+            }
+            armed = false;
+            try
+            {
+                director.BeginShotForRecorder(2);
+                Began = true;
+            }
+            catch (Exception exception)
+            {
+                Failure = exception;
+            }
+        }
+    }
+
     public sealed class AuditionPvCityHeroPocketCaptureTests
     {
         [Test]
@@ -33,6 +76,37 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(
                 AuditionPvCityHeroPocketCapture.DeterministicRandomSeed,
                 Is.EqualTo(0xC172));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime,
+                Is.EqualTo(1f / 60f));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.FixedDeltaTimeRestoreTolerance,
+                Is.EqualTo(0.0000001f));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02IgnoredProjectileTriggerFrames,
+                Is.EqualTo(new[] { 327, 329, 337 }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02ExpectedFiredCount,
+                Is.EqualTo(11));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02ReloadLifecycleEventNames,
+                Is.EqualTo(new[]
+                {
+                    "started", "canceled", "started", "canceled",
+                    "started", "completed", "started"
+                }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02ReloadLifecycleFrames,
+                Is.EqualTo(new[] { 55, 84, 85, 126, 127, 248, 324 }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02ReloadLifecycleAmmo,
+                Is.EqualTo(new[] { 23, 23, 22, 22, 21, 24, 16 }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.G02ReloadLifecycleIsReloading,
+                Is.EqualTo(new[]
+                {
+                    true, false, true, false, true, false, true
+                }));
 
             AuditionPvBaselineManifestEntry[] baselines =
                 AuditionPvCityHeroPocketCapture.CreateBaselineManifestEntries();
@@ -314,6 +388,27 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "g02PlayerFramingSampleCount++"));
             Assert.That(source, Does.Contain(
                 "g02EnemyFramingSampleCount++"));
+            Assert.That(source, Does.Contain("BuildG02CompletionDiagnostics()"));
+            Assert.That(source, Does.Contain("ignoredLedgerExact="));
+            Assert.That(source, Does.Contain("ArmG02RecorderWarmupSuspension()"));
+            Assert.That(source, Does.Contain(
+                "ReleaseG02RecorderWarmupSuspension("));
+            Assert.That(source, Does.Contain(
+                "AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime;"));
+            Assert.That(source, Does.Contain(
+                "Time.fixedDeltaTime = savedFixedDeltaTime;"));
+            Assert.That(source, Does.Contain(
+                "RequireCaptureFixedDeltaTimeExact(\"logical frame zero\")"));
+            Assert.That(source, Does.Contain("RestoreSessionGlobalState()"));
+            Assert.That(source, Does.Contain("RawRuntimeProofJson="));
+            Assert.That(source, Does.Contain(
+                "RangedReloadCompleted += HandleRangedReloadCompleted"));
+            Assert.That(source, Does.Contain(
+                "RangedReloadCompleted -= HandleRangedReloadCompleted"));
+            Assert.That(source, Does.Contain(
+                "RangedReloadCanceled += HandleRangedReloadCanceled"));
+            Assert.That(source, Does.Contain(
+                "RangedReloadCanceled -= HandleRangedReloadCanceled"));
             foreach (string forbidden in new[]
                      {
                          "characterController.Move(",
@@ -377,6 +472,102 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void RuntimeProof_RejectsFixedTimestepDriftOrWrongCleanupOwnership()
+        {
+            foreach (AuditionPvCityShot shot in Enum.GetValues(typeof(AuditionPvCityShot)))
+            {
+                AssertRejected(shot, value => value.originalFixedDeltaTime = 0f);
+                AssertRejected(shot, value => value.fixedDeltaTimeAtPreparation = 0.02f);
+                AssertRejected(shot, value =>
+                    value.fixedDeltaTimeAtLogicalFrameZero = 0.02f);
+                AssertRejected(shot, value =>
+                    value.fixedDeltaTimeAtLastLogicalFrame = 0.02f);
+                AssertRejected(shot, value =>
+                    value.fixedDeltaTimeLogicalFrameSampleCount--);
+                AssertRejected(shot, value =>
+                    value.fixedDeltaTimeExactThroughoutShot = false);
+            }
+
+            AssertRejected(AuditionPvCityShot.G01, value =>
+                value.fixedDeltaTimeLeasePreservedForContinuation = false);
+            AssertRejected(AuditionPvCityShot.G01, value =>
+                value.fixedDeltaTimeRestored = true);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.fixedDeltaTimeLeasePreservedForContinuation = false);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.fixedDeltaTimeRestored = true);
+            AssertRejected(AuditionPvCityShot.G03, value =>
+                value.fixedDeltaTimeLeasePreservedForContinuation = true);
+            AssertRejected(AuditionPvCityShot.G03, value =>
+                value.fixedDeltaTimeRestored = false);
+        }
+
+        [Test]
+        public void RuntimeProof_G02FailureNamesEveryPredicateAndEmbedsRawProofJson()
+        {
+            AuditionPvCityHeroPocketRuntimeProof proof =
+                PassingProof(AuditionPvCityShot.G02);
+            proof.ammoAtShotEnd = 13;
+            proof.g02ReloadStartedCount = 3;
+            proof.g02ReloadCompletedCount = 0;
+            proof.g02ReloadCanceledCount = 3;
+            proof.g02ReloadRefilledAmmoCount = 2;
+            proof.g02ReloadingAtShotEnd = true;
+            proof.g02ReloadLifecycleLedger = new[]
+            {
+                new AuditionPvCityReloadLifecycleLedgerEntry
+                {
+                    eventName = "started",
+                    logicalFrame = 55,
+                    unityFrame = 2055,
+                    ammo = 22,
+                    isReloading = true
+                },
+                new AuditionPvCityReloadLifecycleLedgerEntry
+                {
+                    eventName = "canceled",
+                    logicalFrame = 84,
+                    unityFrame = 2084,
+                    ammo = 22,
+                    isReloading = false
+                }
+            };
+
+            InvalidOperationException failure = Assert.Throws<
+                InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketCapture.ValidateRuntimeProof(proof));
+            Assert.That(failure.Message, Does.Contain(
+                nameof(proof.ammoAtShotEnd)));
+            Assert.That(failure.Message, Does.Contain(
+                nameof(proof.g02ReloadStartedCount)));
+            Assert.That(failure.Message, Does.Contain(
+                nameof(proof.g02ReloadLifecycleLedger)));
+            Assert.That(failure.Message, Does.Contain(
+                "ammoAtShotStart + g02ReloadRefilledAmmoCount - ammoAtShotEnd"));
+
+            const string marker = "RawRuntimeProofJson=";
+            int rawJsonStart = failure.Message.IndexOf(
+                marker,
+                StringComparison.Ordinal);
+            Assert.That(rawJsonStart, Is.GreaterThanOrEqualTo(0));
+            string rawJson = failure.Message.Substring(
+                rawJsonStart + marker.Length);
+            AuditionPvCityHeroPocketRuntimeProof preserved =
+                JsonUtility.FromJson<AuditionPvCityHeroPocketRuntimeProof>(rawJson);
+            Assert.That(preserved.shotId, Is.EqualTo("g02"));
+            Assert.That(preserved.ammoAtShotEnd, Is.EqualTo(13));
+            Assert.That(preserved.g02ReloadStartedCount, Is.EqualTo(3));
+            Assert.That(preserved.g02ReloadCompletedCount, Is.EqualTo(0));
+            Assert.That(preserved.g02ReloadCanceledCount, Is.EqualTo(3));
+            Assert.That(preserved.g02ReloadRefilledAmmoCount, Is.EqualTo(2));
+            Assert.That(preserved.g02ReloadingAtShotEnd, Is.True);
+            Assert.That(preserved.g02ReloadLifecycleLedger, Has.Length.EqualTo(2));
+            Assert.That(
+                preserved.g02ReloadLifecycleLedger[1].eventName,
+                Is.EqualTo("canceled"));
+        }
+
+        [Test]
         public void G01Proof_RejectsFreezeCompositionAndRestorationDrift()
         {
             AssertRejected(AuditionPvCityShot.G01, value => value.g01PlayerDrift = 0.011f);
@@ -394,9 +585,36 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         [Test]
         public void G02Proof_RejectsEveryGameplayCameraAndHandoffBoundary()
         {
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RecorderWarmupSuspensionAcquired = false);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RecorderWarmupEndOfFrameCount = 1);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero = false);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RecorderWarmupProductStateUnchanged = false);
+            AssertRejected(AuditionPvCityShot.G02,
+                value => value.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero = false);
             AssertRejected(AuditionPvCityShot.G02, value => value.rangedProjectileFiredCount = 9);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02UsesMagazineReload = false);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02MagazineSize = 23);
+            AssertRejected(AuditionPvCityShot.G02, value => value.ammoAtShotStart = 23);
             AssertRejected(AuditionPvCityShot.G02, value => value.ammoAtShotEnd = 15);
-            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadStartedCount = 1);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadingAtShotStart = true);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadStartedCount = 3);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadCompletedCount = 0);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadCanceledCount = 1);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadRefilledAmmoCount = 2);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadLifecycleStateExact = false);
+            AssertRejected(AuditionPvCityShot.G02, value => value.g02ReloadingAtShotEnd = false);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02ReloadLifecycleLedger[0].logicalFrame = 54);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02ReloadLifecycleLedger[1].eventName = "completed");
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02ReloadLifecycleLedger[5].ammo = 23);
+            AssertRejected(AuditionPvCityShot.G02, value =>
+                value.g02ReloadLifecycleLedger[6].isReloading = false);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02PlayerPathLength = 5.99f);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02PlayerNetDisplacement = 1.99f);
             AssertRejected(AuditionPvCityShot.G02, value => value.g02MaximumFrameDisplacement = 0.752f);
@@ -475,6 +693,17 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         {
             AuditionPvCityHeroPocketRuntimeProof mutable =
                 PassingProof(AuditionPvCityShot.G02);
+            mutable.g02ReloadLifecycleLedger = new[]
+            {
+                new AuditionPvCityReloadLifecycleLedgerEntry
+                {
+                    eventName = "started",
+                    logicalFrame = 55,
+                    unityFrame = 2055,
+                    ammo = 22,
+                    isReloading = true
+                }
+            };
             AuditionPvCityHeroPocketRuntimeProof sealedCopy =
                 AuditionPvCityHeroPocketCapture.DeepCopyRuntimeProof(mutable);
             mutable.shotId = "g03";
@@ -482,6 +711,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             mutable.g02PlayerPathLength = 0f;
             mutable.g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
                 .colliderName = "mutated";
+            mutable.g02ReloadLifecycleLedger[0].eventName = "mutated";
 
             Assert.That(sealedCopy, Is.Not.SameAs(mutable));
             Assert.That(sealedCopy.shotId, Is.EqualTo("g02"));
@@ -491,6 +721,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 sealedCopy.g02IgnoredLaneActionProjectileTriggerEnterLedger[0]
                     .colliderName,
                 Is.EqualTo("PF_PlayerRangedBasicProjectile_AimBolt(Clone)"));
+            Assert.That(
+                sealedCopy.g02ReloadLifecycleLedger[0].eventName,
+                Is.EqualTo("started"));
 
             AuditionPvCityHeroPocketRuntimeProof exposed =
                 AuditionPvCityHeroPocketCapture.DeepCopyRuntimeProof(sealedCopy);
@@ -550,8 +783,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             yield return new EnterPlayMode();
             yield return null;
 
+            float fixedDeltaTimeBeforeDirector = Time.fixedDeltaTime;
+            int captureFramerateBeforeDirector = Time.captureFramerate;
+            int targetFrameRateBeforeDirector = Application.targetFrameRate;
+            UnityEngine.Random.State randomStateBeforeDirector =
+                UnityEngine.Random.state;
+
             string diagnostics = "G03 precondition diagnostics were not reached.";
+            AuditionPvCityHeroPocketRuntimeProof observedG02Proof = null;
             AuditionPvCityHeroPocketDirector director = null;
+            AuditionPvCityRecorderWarmupBeginHarness warmupBeginHarness = null;
             try
             {
                 director = AuditionPvCityHeroPocketCapture.AttachToFreshActiveScene(
@@ -586,6 +827,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     break;
                 }
                 yield return yielded;
+            }
+            if (capturedFailure == null
+                && Time.fixedDeltaTime
+                    != AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime)
+            {
+                capturedFailure = new InvalidOperationException(
+                    "The City director did not acquire the exact 1/Fps fixed timestep "
+                    + "before G01.");
             }
 
             if (capturedFailure == null)
@@ -691,11 +940,44 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             {
                 try
                 {
-                    director.BeginShot();
+                    warmupBeginHarness = director.gameObject.AddComponent<
+                        AuditionPvCityRecorderWarmupBeginHarness>();
+                    warmupBeginHarness.Configure(director);
+                    director.ArmG02RecorderWarmupSuspension();
                 }
                 catch (Exception exception)
                 {
                     capturedFailure = exception;
+                }
+            }
+            if (capturedFailure == null)
+            {
+                yield return new WaitForEndOfFrame();
+                yield return new WaitForEndOfFrame();
+                try
+                {
+                    warmupBeginHarness.Arm();
+                }
+                catch (Exception exception)
+                {
+                    capturedFailure = exception;
+                }
+            }
+            if (capturedFailure == null)
+            {
+                double beginDeadline = Time.realtimeSinceStartupAsDouble + 2d;
+                while (!warmupBeginHarness.Began
+                    && warmupBeginHarness.Failure == null
+                    && Time.realtimeSinceStartupAsDouble < beginDeadline)
+                {
+                    yield return null;
+                }
+                capturedFailure = warmupBeginHarness.Failure;
+                if (capturedFailure == null && !warmupBeginHarness.Began)
+                {
+                    capturedFailure = new TimeoutException(
+                        "The early Recorder warmup begin harness did not open logical f0 "
+                        + "within two realtime seconds.");
                 }
             }
             deadline = Time.realtimeSinceStartupAsDouble + 18d;
@@ -719,12 +1001,22 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             {
                 try
                 {
+                    observedG02Proof = director.SnapshotRuntimeProof();
                     AuditionPvCityHeroPocketRuntimeProof g02Proof =
-                        director.SnapshotRuntimeProof();
+                        observedG02Proof;
                     diagnostics = director.GetG03ContinuationPreconditionDiagnostics();
+                    diagnostics += " RawObservedG02BeforeSealJson="
+                        + JsonUtility.ToJson(observedG02Proof) + ".";
                     if (g02Proof.presentedFrameCount != 420
                         || g02Proof.lastLogicalFrame != 419
                         || !g02Proof.directorCompleted
+                        || !g02Proof.g02RecorderWarmupSuspensionAcquired
+                        || g02Proof.g02RecorderWarmupEndOfFrameCount != 2
+                        || !g02Proof
+                            .g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero
+                        || !g02Proof.g02RecorderWarmupProductStateUnchanged
+                        || !g02Proof
+                            .g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero
                         || !g02Proof.naturalWonObserved
                         || !g02Proof.naturalEnemyDeathObserved
                         || g02Proof.g02IgnoredLaneActionProjectileTriggerEnterCount != 3
@@ -739,7 +1031,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         || g02Proof.g02RejectedTriggerEnterLedger.Length != 0
                         || rejectedLedger.Count != 0
                         || !g02Proof.g02EndedOutsideExitTrigger
-                        || !g02Proof.g02EndedSouthOfExitTrigger)
+                        || !g02Proof.g02EndedSouthOfExitTrigger
+                        || g02Proof.fixedDeltaTimeAtPreparation
+                            != AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime
+                        || g02Proof.fixedDeltaTimeAtLogicalFrameZero
+                            != AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime
+                        || g02Proof.fixedDeltaTimeAtLastLogicalFrame
+                            != AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime
+                        || g02Proof.fixedDeltaTimeLogicalFrameSampleCount != 420
+                        || !g02Proof.fixedDeltaTimeExactThroughoutShot)
                     {
                         capturedFailure = new InvalidOperationException(
                             "G02 did not reach its exact no-Recorder completion proof. "
@@ -815,9 +1115,97 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
 
             if (director != null)
             {
+                if (capturedFailure == null)
+                {
+                    try
+                    {
+                        var injectedCleanupFailure = new InvalidOperationException(
+                            "expected continuation cleanup fault");
+                        director.InjectContinuationCleanupFailureForTest(
+                            injectedCleanupFailure);
+                        IEnumerator faultedContinuation =
+                            director.PrepareContinuationShot(
+                                AuditionPvCityShot.G03);
+                        bool moved = TryMoveNext(
+                            faultedContinuation,
+                            out _,
+                            out Exception observedCleanupFailure);
+                        if (moved || observedCleanupFailure == null
+                            || !observedCleanupFailure.ToString().Contains(
+                                injectedCleanupFailure.Message))
+                        {
+                            throw new InvalidOperationException(
+                                "The continuation-cleanup fault seam did not fail at the "
+                                + "expected already-cleaned restoration boundary.",
+                                observedCleanupFailure);
+                        }
+                        AssertSessionGlobalsExact(
+                            captureFramerateBeforeDirector,
+                            targetFrameRateBeforeDirector,
+                            fixedDeltaTimeBeforeDirector,
+                            randomStateBeforeDirector,
+                            "faulted continuation cleanup");
+
+                        AuditionPvCityHeroPocketRuntimeProof sealedG02Proof =
+                            director.LastSealedRuntimeProof;
+                        if (sealedG02Proof == null)
+                        {
+                            throw new InvalidOperationException(
+                                "The faulted G02 continuation did not preserve its "
+                                + "post-cleanup sealed runtime proof.");
+                        }
+                        string sealedG02Json = JsonUtility.ToJson(sealedG02Proof);
+                        diagnostics += " RawSealedG02RuntimeProofJson="
+                            + sealedG02Json + ".";
+                        try
+                        {
+                            AuditionPvCityHeroPocketCapture.ValidateRuntimeProof(
+                                sealedG02Proof);
+                        }
+                        catch (Exception validationFailure)
+                        {
+                            throw new InvalidOperationException(
+                                "The sealed no-Recorder G02 runtime proof failed full "
+                                + "validation. RawSealedG02RuntimeProofJson="
+                                + sealedG02Json,
+                                validationFailure);
+                        }
+                    }
+                    catch (Exception cleanupRegressionException)
+                    {
+                        MergeFailure(
+                            ref capturedFailure,
+                            cleanupRegressionException);
+                    }
+                }
                 try
                 {
                     director.RestoreShotState();
+                    AuditionPvCityHeroPocketRuntimeProof restoredProof =
+                        director.SnapshotRuntimeProof();
+                    AssertSessionGlobalsExact(
+                        captureFramerateBeforeDirector,
+                        targetFrameRateBeforeDirector,
+                        fixedDeltaTimeBeforeDirector,
+                        randomStateBeforeDirector,
+                        "explicit RestoreShotState");
+                    if (!restoredProof.fixedDeltaTimeRestored
+                        || restoredProof.fixedDeltaTimeLeasePreservedForContinuation)
+                    {
+                        throw new InvalidOperationException(
+                            "Final City cleanup did not restore the exact authored fixed "
+                            + "timestep proof. "
+                            + $"proofRestored={restoredProof.fixedDeltaTimeRestored}; "
+                            + "proofContinuationLease="
+                            + $"{restoredProof.fixedDeltaTimeLeasePreservedForContinuation}.");
+                    }
+                    director.enabled = false;
+                    AssertSessionGlobalsExact(
+                        captureFramerateBeforeDirector,
+                        targetFrameRateBeforeDirector,
+                        fixedDeltaTimeBeforeDirector,
+                        randomStateBeforeDirector,
+                        "director OnDisable");
                 }
                 catch (Exception restoreException)
                 {
@@ -832,6 +1220,19 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     MergeFailure(ref capturedFailure, destroyException);
                 }
                 yield return null;
+                try
+                {
+                    AssertSessionGlobalsExact(
+                        captureFramerateBeforeDirector,
+                        targetFrameRateBeforeDirector,
+                        fixedDeltaTimeBeforeDirector,
+                        randomStateBeforeDirector,
+                        "director OnDestroy");
+                }
+                catch (Exception destroyRestoreException)
+                {
+                    MergeFailure(ref capturedFailure, destroyRestoreException);
+                }
             }
 
             yield return new ExitPlayMode();
@@ -872,6 +1273,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 cameraRailActualReadbackFrameCount = count,
                 cameraRailActualComposedPoseExact = true,
                 deterministicRandomSeed = 0xC172,
+                originalFixedDeltaTime = 0.02f,
+                fixedDeltaTimeAtPreparation =
+                    AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime,
+                fixedDeltaTimeAtLogicalFrameZero =
+                    AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime,
+                fixedDeltaTimeAtLastLogicalFrame =
+                    AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime,
+                fixedDeltaTimeLogicalFrameSampleCount = count,
+                fixedDeltaTimeExactThroughoutShot = true,
+                fixedDeltaTimeLeasePreservedForContinuation =
+                    shot != AuditionPvCityShot.G03,
+                fixedDeltaTimeRestored = shot == AuditionPvCityShot.G03,
                 microShakeWithinClamp = true,
                 stateRestored = true,
                 presentationClockReleased = true,
@@ -912,14 +1325,19 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 proof.pointerDragCount = 1;
                 proof.pointerUpCount = 8;
                 proof.g02PointerScheduleExact = true;
-                proof.rangedProjectileFiredCount = 10;
-                proof.enemyDamagedCount = 10;
+                proof.g02RecorderWarmupSuspensionAcquired = true;
+                proof.g02RecorderWarmupEndOfFrameCount = 2;
+                proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero = true;
+                proof.g02RecorderWarmupProductStateUnchanged = true;
+                proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero = true;
+                proof.rangedProjectileFiredCount = 11;
+                proof.enemyDamagedCount = 11;
                 proof.enemyDiedCount = 1;
                 proof.encounterWonCount = 1;
                 proof.naturalEnemyDeathObserved = true;
                 proof.naturalWonObserved = true;
                 proof.ammoAtShotStart = 24;
-                proof.ammoAtShotEnd = 14;
+                proof.ammoAtShotEnd = 16;
                 proof.g02PlayerPathLength = 6f;
                 proof.g02PlayerNetDisplacement = 2f;
                 proof.g02MaximumFrameDisplacement = 0.75f;
@@ -945,6 +1363,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 proof.g02EnemyFramingPassCount = 3;
                 proof.g02RifleFeedbackRequestDelta = 1;
                 proof.g02MicroShakeRequestDelta = 1;
+                proof.g02UsesMagazineReload = true;
+                proof.g02MagazineSize = 24;
+                proof.g02ReloadingAtShotStart = false;
+                proof.g02ReloadStartedCount = 4;
+                proof.g02ReloadCompletedCount = 1;
+                proof.g02ReloadCanceledCount = 2;
+                proof.g02ReloadRefilledAmmoCount = 3;
+                proof.g02ReloadLifecycleStateExact = true;
+                proof.g02ReloadingAtShotEnd = true;
+                proof.g02ReloadLifecycleLedger = PassingReloadLifecycleLedger();
                 proof.microShakeSourceFrameCount = 5;
                 proof.microShakeComposedFrameCount = 5;
                 proof.g02EndedOutsideExitTrigger = true;
@@ -1022,6 +1450,29 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 .ToArray();
         }
 
+        private static AuditionPvCityReloadLifecycleLedgerEntry[]
+            PassingReloadLifecycleLedger()
+        {
+            return Enumerable.Range(
+                    0,
+                    AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleFrames.Length)
+                .Select(index => new AuditionPvCityReloadLifecycleLedgerEntry
+                {
+                    eventName = AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleEventNames[index],
+                    logicalFrame = AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleFrames[index],
+                    unityFrame = 2000 + AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleFrames[index],
+                    ammo = AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleAmmo[index],
+                    isReloading = AuditionPvCityHeroPocketCapture
+                        .G02ReloadLifecycleIsReloading[index]
+                })
+                .ToArray();
+        }
+
         private static void AssertRejected(
             AuditionPvCityShot shot,
             Action<AuditionPvCityHeroPocketRuntimeProof> mutate)
@@ -1083,6 +1534,32 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             capturedFailure = capturedFailure == null
                 ? additionalFailure
                 : new AggregateException(capturedFailure, additionalFailure);
+        }
+
+        private static void AssertSessionGlobalsExact(
+            int expectedCaptureFramerate,
+            int expectedTargetFrameRate,
+            float expectedFixedDeltaTime,
+            UnityEngine.Random.State expectedRandomState,
+            string phase)
+        {
+            Assert.That(
+                Time.captureFramerate,
+                Is.EqualTo(expectedCaptureFramerate),
+                phase + " captureFramerate");
+            Assert.That(
+                Application.targetFrameRate,
+                Is.EqualTo(expectedTargetFrameRate),
+                phase + " targetFrameRate");
+            Assert.That(
+                Time.fixedDeltaTime,
+                Is.EqualTo(expectedFixedDeltaTime).Within(
+                    AuditionPvCityHeroPocketCapture.FixedDeltaTimeRestoreTolerance),
+                phase + " fixedDeltaTime");
+            Assert.That(
+                UnityEngine.Random.state.Equals(expectedRandomState),
+                Is.True,
+                phase + " Random.state");
         }
 
         private static bool IsRestorableSceneSetup(SceneSetup[] setup)

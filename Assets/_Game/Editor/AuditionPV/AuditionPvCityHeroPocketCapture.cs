@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using DimensionBrawl.AI;
@@ -123,6 +124,23 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
     }
 
+    [Serializable]
+    public sealed class AuditionPvCityReloadLifecycleLedgerEntry
+    {
+        public string eventName = string.Empty;
+        public int logicalFrame = -1;
+        public int unityFrame = -1;
+        public int ammo;
+        public bool isReloading;
+
+        public override string ToString()
+        {
+            return $"event={eventName}; logicalFrame={logicalFrame}; "
+                + $"unityFrame={unityFrame}; ammo={ammo}; "
+                + $"isReloading={isReloading}";
+        }
+    }
+
     /// <summary>
     /// Product-state, frame-index-authoritative contracts for the three City Hero
     /// Pocket golden sources. Recorder lifecycle remains runner-owned.
@@ -168,6 +186,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             "BL02_CITY_RIFLE_DODGE__HUDON__t04.000000.png";
         internal const string BaselinesFolderName = "baselines";
         internal const int DeterministicRandomSeed = 0xC172;
+        internal const float CaptureFixedDeltaTime =
+            1f / AuditionPvCaptureContract.Fps;
+        internal const float FixedDeltaTimeRestoreTolerance = 0.0000001f;
 
         internal const int G02FirstMoveDownFrame = 12;
         internal const int G02FirstAttackDownFrame = 54;
@@ -188,7 +209,39 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int G02ThirdMoveUpFrame = 378;
         internal static readonly int[] G02IgnoredProjectileTriggerFrames =
         {
-            327, 329, 338
+            327, 329, 337
+        };
+        internal const string G02ReloadStartedEvent = "started";
+        internal const string G02ReloadCompletedEvent = "completed";
+        internal const string G02ReloadCanceledEvent = "canceled";
+        internal const int G02ExpectedMagazineSize = 24;
+        internal const int G02ExpectedFiredCount = 11;
+        internal const int G02ExpectedReloadStartedCount = 4;
+        internal const int G02ExpectedReloadCompletedCount = 1;
+        internal const int G02ExpectedReloadCanceledCount = 2;
+        internal const int G02ExpectedReloadRefilledAmmoCount = 3;
+        internal const int G02ExpectedAmmoAtEnd = 16;
+        internal static readonly string[] G02ReloadLifecycleEventNames =
+        {
+            G02ReloadStartedEvent,
+            G02ReloadCanceledEvent,
+            G02ReloadStartedEvent,
+            G02ReloadCanceledEvent,
+            G02ReloadStartedEvent,
+            G02ReloadCompletedEvent,
+            G02ReloadStartedEvent
+        };
+        internal static readonly int[] G02ReloadLifecycleFrames =
+        {
+            55, 84, 85, 126, 127, 248, 324
+        };
+        internal static readonly int[] G02ReloadLifecycleAmmo =
+        {
+            23, 23, 22, 22, 21, 24, 16
+        };
+        internal static readonly bool[] G02ReloadLifecycleIsReloading =
+        {
+            true, false, true, false, true, false, true
         };
         internal const int G03JoystickPointerId = 401;
         internal const int G03TriggerAcceptFirstPreRollFrame = 36;
@@ -540,6 +593,41 @@ namespace DimensionBrawl.Editor.AuditionPV
             return true;
         }
 
+        internal static bool HasExactG02ReloadLifecycleLedger(
+            IReadOnlyList<AuditionPvCityReloadLifecycleLedgerEntry> entries)
+        {
+            if (entries == null
+                || entries.Count != G02ReloadLifecycleFrames.Length
+                || entries.Count != G02ReloadLifecycleEventNames.Length
+                || entries.Count != G02ReloadLifecycleAmmo.Length
+                || entries.Count != G02ReloadLifecycleIsReloading.Length)
+            {
+                return false;
+            }
+
+            int previousUnityFrame = -1;
+            for (int index = 0; index < entries.Count; index++)
+            {
+                AuditionPvCityReloadLifecycleLedgerEntry entry = entries[index];
+                if (entry == null
+                    || !string.Equals(
+                        entry.eventName,
+                        G02ReloadLifecycleEventNames[index],
+                        StringComparison.Ordinal)
+                    || entry.logicalFrame != G02ReloadLifecycleFrames[index]
+                    || entry.unityFrame < 0
+                    || entry.unityFrame <= previousUnityFrame
+                    || entry.ammo != G02ReloadLifecycleAmmo[index]
+                    || entry.isReloading
+                        != G02ReloadLifecycleIsReloading[index])
+                {
+                    return false;
+                }
+                previousUnityFrame = entry.unityFrame;
+            }
+            return true;
+        }
+
         private static bool IsFinite(Vector3 value)
         {
             return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
@@ -821,6 +909,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && proof.maximumCameraFovReadbackError
                     <= CameraRailFovReadbackTolerance
                 && proof.deterministicRandomSeed == DeterministicRandomSeed
+                && proof.originalFixedDeltaTime > 0f
+                && proof.fixedDeltaTimeAtPreparation == CaptureFixedDeltaTime
+                && proof.fixedDeltaTimeAtLogicalFrameZero == CaptureFixedDeltaTime
+                && proof.fixedDeltaTimeAtLastLogicalFrame == CaptureFixedDeltaTime
+                && proof.fixedDeltaTimeLogicalFrameSampleCount
+                    == proof.expectedFrameCount
+                && proof.fixedDeltaTimeExactThroughoutShot
+                && (proof.fixedDeltaTimeLeasePreservedForContinuation
+                    || proof.fixedDeltaTimeRestored)
                 && proof.microShakeWithinClamp
                 && proof.stateRestored
                 && proof.presentationClockReleased
@@ -833,14 +930,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && proof.transitionStateRestored;
             if (!common)
             {
-                throw new InvalidOperationException(
-                    "City runtime proof is missing exact frame, rail, HUD, clock, or restoration evidence.");
+                throw CreateRuntimeProofValidationFailure(
+                    proof,
+                    "common",
+                    CollectCommonRuntimeProofFailures(proof));
             }
 
             switch (proof.shotId)
             {
                 case G01ShotId:
                     if (proof.expectedFrameCount != G01ExpectedFrameCount
+                        || !proof.fixedDeltaTimeLeasePreservedForContinuation
+                        || proof.fixedDeltaTimeRestored
                         || proof.pointerDownCount != 0 || proof.pointerDragCount != 0
                         || proof.pointerUpCount != 0 || proof.enemyDiedCount != 0
                         || proof.encounterWonCount != 0
@@ -868,20 +969,49 @@ namespace DimensionBrawl.Editor.AuditionPV
                         || !proof.g01ThreeDepthCompositionObserved
                         || !proof.productOutcomePreservedForContinuation)
                     {
-                        throw new InvalidOperationException(
-                            "G01 proof is missing exact capture locks, HUD-off activity, or unchanged actor/health/ammo/projectile evidence.");
+                        throw CreateRuntimeProofValidationFailure(
+                            proof,
+                            G01ShotId,
+                            CollectG01RuntimeProofFailures(proof));
                     }
                     break;
                 case G02ShotId:
                     if (proof.expectedFrameCount != G02ExpectedFrameCount
+                        || !proof.fixedDeltaTimeLeasePreservedForContinuation
+                        || proof.fixedDeltaTimeRestored
                         || !proof.g02PointerScheduleExact
+                        || !proof.g02RecorderWarmupSuspensionAcquired
+                        || proof.g02RecorderWarmupEndOfFrameCount != 2
+                        || !proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero
+                        || !proof.g02RecorderWarmupProductStateUnchanged
+                        || !proof
+                            .g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero
                         || proof.pointerDownCount != 8
                         || proof.pointerDragCount != 1
                         || proof.pointerUpCount != 8
-                        || proof.rangedProjectileFiredCount < 10
-                        || proof.ammoAtShotStart - proof.ammoAtShotEnd
+                        || proof.rangedProjectileFiredCount
+                            != G02ExpectedFiredCount
+                        || !proof.g02UsesMagazineReload
+                        || proof.g02MagazineSize != G02ExpectedMagazineSize
+                        || proof.ammoAtShotStart != G02ExpectedMagazineSize
+                        || proof.ammoAtShotEnd != G02ExpectedAmmoAtEnd
+                        || proof.g02ReloadingAtShotStart
+                        || proof.g02ReloadStartedCount
+                            != G02ExpectedReloadStartedCount
+                        || proof.g02ReloadCompletedCount
+                            != G02ExpectedReloadCompletedCount
+                        || proof.g02ReloadCanceledCount
+                            != G02ExpectedReloadCanceledCount
+                        || proof.g02ReloadRefilledAmmoCount
+                            != G02ExpectedReloadRefilledAmmoCount
+                        || !proof.g02ReloadLifecycleStateExact
+                        || !proof.g02ReloadingAtShotEnd
+                        || !HasExactG02ReloadLifecycleLedger(
+                            proof.g02ReloadLifecycleLedger)
+                        || proof.ammoAtShotStart
+                            + proof.g02ReloadRefilledAmmoCount
+                            - proof.ammoAtShotEnd
                             != proof.rangedProjectileFiredCount
-                        || proof.g02ReloadStartedCount != 0
                         || proof.g02PlayerPathLength < 6f
                         || proof.g02PlayerNetDisplacement < 2f
                         || proof.g02MaximumFrameDisplacement
@@ -923,12 +1053,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                         || !proof.g02EndedSouthOfExitTrigger
                         || !proof.productOutcomePreservedForContinuation)
                     {
-                        throw new InvalidOperationException(
-                            "G02 proof is missing exact hardware input, movement/dodge, projectile/telegraph, camera feedback, natural death/Won, or G03 handoff evidence.");
+                        throw CreateRuntimeProofValidationFailure(
+                            proof,
+                            G02ShotId,
+                            CollectG02RuntimeProofFailures(proof));
                     }
                     break;
                 case G03ShotId:
                     if (proof.expectedFrameCount != G03ExpectedFrameCount
+                        || proof.fixedDeltaTimeLeasePreservedForContinuation
+                        || !proof.fixedDeltaTimeRestored
                         || !proof.continuityFromPreviousShot
                         || proof.encounterInstanceId <= 0
                         || proof.playerInstanceId <= 0
@@ -991,13 +1125,21 @@ namespace DimensionBrawl.Editor.AuditionPV
                         || !proof.transitionCoverReachedFull
                         || !proof.transitionInputAndAiLocked)
                     {
-                        throw new InvalidOperationException(
-                            "G03 proof is missing same-session Won identity, real joystick trigger truth, zero new gameplay events, or offset-based product transition evidence.");
+                        throw CreateRuntimeProofValidationFailure(
+                            proof,
+                            G03ShotId,
+                            CollectG03RuntimeProofFailures(proof));
                     }
                     break;
                 default:
-                    throw new InvalidOperationException(
-                        $"Unknown City runtime proof shot '{proof.shotId}'.");
+                    throw CreateRuntimeProofValidationFailure(
+                        proof,
+                        "shot-id",
+                        new List<string>
+                        {
+                            $"shotId: expected one of [{G01ShotId}, {G02ShotId}, "
+                            + $"{G03ShotId}]; actual={ProofDiagnosticValue(proof.shotId)}"
+                        });
             }
         }
 
@@ -1008,6 +1150,848 @@ namespace DimensionBrawl.Editor.AuditionPV
                 ? null
                 : JsonUtility.FromJson<AuditionPvCityHeroPocketRuntimeProof>(
                     JsonUtility.ToJson(source));
+        }
+
+        private static List<string> CollectCommonRuntimeProofFailures(
+            AuditionPvCityHeroPocketRuntimeProof proof)
+        {
+            var failures = new List<string>(40);
+            AddRuntimeProofFailure(failures, proof.directorCompleted,
+                nameof(proof.directorCompleted), "true", proof.directorCompleted);
+            AddRuntimeProofFailure(failures,
+                proof.lastLogicalFrame == proof.expectedFrameCount - 1,
+                nameof(proof.lastLogicalFrame),
+                $"expectedFrameCount - 1 ({proof.expectedFrameCount - 1})",
+                proof.lastLogicalFrame);
+            AddRuntimeProofFailure(failures,
+                proof.presentedFrameCount == proof.expectedFrameCount,
+                nameof(proof.presentedFrameCount),
+                $"expectedFrameCount ({proof.expectedFrameCount})",
+                proof.presentedFrameCount);
+            AddRuntimeProofFailure(failures, proof.presentedFramesExact,
+                nameof(proof.presentedFramesExact), "true",
+                proof.presentedFramesExact);
+            AddRuntimeProofFailure(failures, proof.presentationClockExact,
+                nameof(proof.presentationClockExact), "true",
+                proof.presentationClockExact);
+            AddRuntimeProofFailure(failures, proof.hudModeExact,
+                nameof(proof.hudModeExact), "true", proof.hudModeExact);
+            AddRuntimeProofFailure(failures, proof.actionCameraStayedEnabled,
+                nameof(proof.actionCameraStayedEnabled), "true",
+                proof.actionCameraStayedEnabled);
+            AddRuntimeProofFailure(failures,
+                proof.cameraRailAppliedFrameCount == proof.expectedFrameCount,
+                nameof(proof.cameraRailAppliedFrameCount),
+                $"expectedFrameCount ({proof.expectedFrameCount})",
+                proof.cameraRailAppliedFrameCount);
+            AddRuntimeProofFailure(failures, proof.cameraRailBasePoseExact,
+                nameof(proof.cameraRailBasePoseExact), "true",
+                proof.cameraRailBasePoseExact);
+            AddRuntimeProofFailure(failures, proof.cameraRailFovExact,
+                nameof(proof.cameraRailFovExact), "true",
+                proof.cameraRailFovExact);
+            AddRuntimeProofFailure(failures,
+                proof.cameraRailActualReadbackFrameCount
+                    == proof.expectedFrameCount,
+                nameof(proof.cameraRailActualReadbackFrameCount),
+                $"expectedFrameCount ({proof.expectedFrameCount})",
+                proof.cameraRailActualReadbackFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.cameraRailActualComposedPoseExact,
+                nameof(proof.cameraRailActualComposedPoseExact), "true",
+                proof.cameraRailActualComposedPoseExact);
+            AddRuntimeProofFailure(failures,
+                proof.maximumCameraPositionReadbackError >= 0f
+                    && proof.maximumCameraPositionReadbackError
+                        <= CameraRailPositionReadbackTolerance,
+                nameof(proof.maximumCameraPositionReadbackError),
+                $"within [0, {CameraRailPositionReadbackTolerance:R}]",
+                proof.maximumCameraPositionReadbackError);
+            AddRuntimeProofFailure(failures,
+                proof.maximumCameraRotationReadbackErrorDegrees >= 0f
+                    && proof.maximumCameraRotationReadbackErrorDegrees
+                        <= CameraRailRotationReadbackToleranceDegrees,
+                nameof(proof.maximumCameraRotationReadbackErrorDegrees),
+                $"within [0, {CameraRailRotationReadbackToleranceDegrees:R}]",
+                proof.maximumCameraRotationReadbackErrorDegrees);
+            AddRuntimeProofFailure(failures,
+                proof.maximumCameraFovReadbackError >= 0f
+                    && proof.maximumCameraFovReadbackError
+                        <= CameraRailFovReadbackTolerance,
+                nameof(proof.maximumCameraFovReadbackError),
+                $"within [0, {CameraRailFovReadbackTolerance:R}]",
+                proof.maximumCameraFovReadbackError);
+            AddRuntimeProofFailure(failures,
+                proof.deterministicRandomSeed == DeterministicRandomSeed,
+                nameof(proof.deterministicRandomSeed),
+                DeterministicRandomSeed.ToString(CultureInfo.InvariantCulture),
+                proof.deterministicRandomSeed);
+            AddRuntimeProofFailure(failures, proof.originalFixedDeltaTime > 0f,
+                nameof(proof.originalFixedDeltaTime), "> 0",
+                proof.originalFixedDeltaTime);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeAtPreparation == CaptureFixedDeltaTime,
+                nameof(proof.fixedDeltaTimeAtPreparation),
+                CaptureFixedDeltaTime.ToString("R", CultureInfo.InvariantCulture),
+                proof.fixedDeltaTimeAtPreparation);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeAtLogicalFrameZero == CaptureFixedDeltaTime,
+                nameof(proof.fixedDeltaTimeAtLogicalFrameZero),
+                CaptureFixedDeltaTime.ToString("R", CultureInfo.InvariantCulture),
+                proof.fixedDeltaTimeAtLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeAtLastLogicalFrame == CaptureFixedDeltaTime,
+                nameof(proof.fixedDeltaTimeAtLastLogicalFrame),
+                CaptureFixedDeltaTime.ToString("R", CultureInfo.InvariantCulture),
+                proof.fixedDeltaTimeAtLastLogicalFrame);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeLogicalFrameSampleCount
+                    == proof.expectedFrameCount,
+                nameof(proof.fixedDeltaTimeLogicalFrameSampleCount),
+                $"expectedFrameCount ({proof.expectedFrameCount})",
+                proof.fixedDeltaTimeLogicalFrameSampleCount);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeExactThroughoutShot,
+                nameof(proof.fixedDeltaTimeExactThroughoutShot), "true",
+                proof.fixedDeltaTimeExactThroughoutShot);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeLeasePreservedForContinuation
+                    || proof.fixedDeltaTimeRestored,
+                "fixedDeltaTimeLeasePreservedForContinuation || fixedDeltaTimeRestored",
+                "true",
+                $"lease={proof.fixedDeltaTimeLeasePreservedForContinuation}; "
+                    + $"restored={proof.fixedDeltaTimeRestored}");
+            AddRuntimeProofFailure(failures, proof.microShakeWithinClamp,
+                nameof(proof.microShakeWithinClamp), "true",
+                proof.microShakeWithinClamp);
+            AddRuntimeProofFailure(failures, proof.stateRestored,
+                nameof(proof.stateRestored), "true", proof.stateRestored);
+            AddRuntimeProofFailure(failures, proof.presentationClockReleased,
+                nameof(proof.presentationClockReleased), "true",
+                proof.presentationClockReleased);
+            AddRuntimeProofFailure(failures, proof.pointerLeasesReleased,
+                nameof(proof.pointerLeasesReleased), "true",
+                proof.pointerLeasesReleased);
+            AddRuntimeProofFailure(failures, proof.hudStateRestored,
+                nameof(proof.hudStateRestored), "true", proof.hudStateRestored);
+            AddRuntimeProofFailure(failures, proof.cameraStateRestored,
+                nameof(proof.cameraStateRestored), "true",
+                proof.cameraStateRestored);
+            AddRuntimeProofFailure(failures, proof.actionCameraStateRestored,
+                nameof(proof.actionCameraStateRestored), "true",
+                proof.actionCameraStateRestored);
+            AddRuntimeProofFailure(failures,
+                proof.actionCameraTransientStateRestored,
+                nameof(proof.actionCameraTransientStateRestored), "true",
+                proof.actionCameraTransientStateRestored);
+            AddRuntimeProofFailure(failures, proof.cameraRailReleased,
+                nameof(proof.cameraRailReleased), "true",
+                proof.cameraRailReleased);
+            AddRuntimeProofFailure(failures, proof.transitionStateRestored,
+                nameof(proof.transitionStateRestored), "true",
+                proof.transitionStateRestored);
+            return failures;
+        }
+
+        private static List<string> CollectG01RuntimeProofFailures(
+            AuditionPvCityHeroPocketRuntimeProof proof)
+        {
+            var failures = new List<string>(32);
+            AddRuntimeProofFailure(failures,
+                proof.expectedFrameCount == G01ExpectedFrameCount,
+                nameof(proof.expectedFrameCount),
+                G01ExpectedFrameCount.ToString(CultureInfo.InvariantCulture),
+                proof.expectedFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeLeasePreservedForContinuation,
+                nameof(proof.fixedDeltaTimeLeasePreservedForContinuation),
+                "true", proof.fixedDeltaTimeLeasePreservedForContinuation);
+            AddRuntimeProofFailure(failures, !proof.fixedDeltaTimeRestored,
+                nameof(proof.fixedDeltaTimeRestored), "false",
+                proof.fixedDeltaTimeRestored);
+            AddRuntimeProofFailure(failures, proof.pointerDownCount == 0,
+                nameof(proof.pointerDownCount), "0", proof.pointerDownCount);
+            AddRuntimeProofFailure(failures, proof.pointerDragCount == 0,
+                nameof(proof.pointerDragCount), "0", proof.pointerDragCount);
+            AddRuntimeProofFailure(failures, proof.pointerUpCount == 0,
+                nameof(proof.pointerUpCount), "0", proof.pointerUpCount);
+            AddRuntimeProofFailure(failures, proof.enemyDiedCount == 0,
+                nameof(proof.enemyDiedCount), "0", proof.enemyDiedCount);
+            AddRuntimeProofFailure(failures, proof.encounterWonCount == 0,
+                nameof(proof.encounterWonCount), "0", proof.encounterWonCount);
+            AddRuntimeProofFailure(failures,
+                proof.rangedProjectileFiredCount == 0,
+                nameof(proof.rangedProjectileFiredCount), "0",
+                proof.rangedProjectileFiredCount);
+            AddRuntimeProofFailure(failures, proof.enemyDamagedCount == 0,
+                nameof(proof.enemyDamagedCount), "0", proof.enemyDamagedCount);
+            AddRuntimeProofFailure(failures, proof.g01PlayerDrift <= 0.01f,
+                nameof(proof.g01PlayerDrift), "<= 0.01",
+                proof.g01PlayerDrift);
+            AddRuntimeProofFailure(failures, proof.g01EnemyDrift <= 0.01f,
+                nameof(proof.g01EnemyDrift), "<= 0.01", proof.g01EnemyDrift);
+            AddRuntimeProofFailure(failures,
+                Mathf.Abs(proof.playerHealthAtShotStart
+                    - proof.playerHealthAtShotEnd) <= 0.001f,
+                "abs(playerHealthAtShotStart - playerHealthAtShotEnd)",
+                "<= 0.001",
+                Mathf.Abs(proof.playerHealthAtShotStart
+                    - proof.playerHealthAtShotEnd));
+            AddRuntimeProofFailure(failures,
+                Mathf.Abs(proof.enemyHealthAtShotStart
+                    - proof.enemyHealthAtShotEnd) <= 0.001f,
+                "abs(enemyHealthAtShotStart - enemyHealthAtShotEnd)",
+                "<= 0.001",
+                Mathf.Abs(proof.enemyHealthAtShotStart
+                    - proof.enemyHealthAtShotEnd));
+            AddRuntimeProofFailure(failures,
+                proof.ammoAtShotStart == proof.ammoAtShotEnd,
+                "ammoAtShotStart == ammoAtShotEnd", "true",
+                $"start={proof.ammoAtShotStart}; end={proof.ammoAtShotEnd}");
+            AddRuntimeProofFailure(failures,
+                proof.playerProjectileCountAtShotStart
+                    == proof.playerProjectileCountAtShotEnd,
+                "playerProjectileCountAtShotStart == playerProjectileCountAtShotEnd",
+                "true", $"start={proof.playerProjectileCountAtShotStart}; "
+                    + $"end={proof.playerProjectileCountAtShotEnd}");
+            AddRuntimeProofFailure(failures,
+                proof.enemyFiredCountAtShotStart
+                    == proof.enemyFiredCountAtShotEnd,
+                "enemyFiredCountAtShotStart == enemyFiredCountAtShotEnd",
+                "true", $"start={proof.enemyFiredCountAtShotStart}; "
+                    + $"end={proof.enemyFiredCountAtShotEnd}");
+            AddRuntimeProofFailure(failures, proof.g01GameplaySuspensionExact,
+                nameof(proof.g01GameplaySuspensionExact), "true",
+                proof.g01GameplaySuspensionExact);
+            AddRuntimeProofFailure(failures, proof.g01HudRootStayedActive,
+                nameof(proof.g01HudRootStayedActive), "true",
+                proof.g01HudRootStayedActive);
+            AddRuntimeProofFailure(failures,
+                proof.g01CompositionSampleCount == 3,
+                nameof(proof.g01CompositionSampleCount), "3",
+                proof.g01CompositionSampleCount);
+            AddRuntimeProofFailure(failures,
+                proof.g01CompositionPassingSampleCount >= 1,
+                nameof(proof.g01CompositionPassingSampleCount), ">= 1",
+                proof.g01CompositionPassingSampleCount);
+            AddRuntimeProofFailure(failures,
+                proof.g01ForegroundDepthObserved,
+                nameof(proof.g01ForegroundDepthObserved), "true",
+                proof.g01ForegroundDepthObserved);
+            AddRuntimeProofFailure(failures,
+                proof.g01MidgroundActorsObserved,
+                nameof(proof.g01MidgroundActorsObserved), "true",
+                proof.g01MidgroundActorsObserved);
+            AddRuntimeProofFailure(failures,
+                proof.g01BackgroundDepthObserved,
+                nameof(proof.g01BackgroundDepthObserved), "true",
+                proof.g01BackgroundDepthObserved);
+            AddRuntimeProofFailure(failures,
+                proof.g01PlayerEnemyLineOfSightClear,
+                nameof(proof.g01PlayerEnemyLineOfSightClear), "true",
+                proof.g01PlayerEnemyLineOfSightClear);
+            AddRuntimeProofFailure(failures,
+                proof.g01ThreeDepthCompositionObserved,
+                nameof(proof.g01ThreeDepthCompositionObserved), "true",
+                proof.g01ThreeDepthCompositionObserved);
+            AddRuntimeProofFailure(failures,
+                proof.productOutcomePreservedForContinuation,
+                nameof(proof.productOutcomePreservedForContinuation), "true",
+                proof.productOutcomePreservedForContinuation);
+            return failures;
+        }
+
+        private static List<string> CollectG02RuntimeProofFailures(
+            AuditionPvCityHeroPocketRuntimeProof proof)
+        {
+            var failures = new List<string>(56);
+            AddRuntimeProofFailure(failures,
+                proof.expectedFrameCount == G02ExpectedFrameCount,
+                nameof(proof.expectedFrameCount),
+                G02ExpectedFrameCount.ToString(CultureInfo.InvariantCulture),
+                proof.expectedFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.fixedDeltaTimeLeasePreservedForContinuation,
+                nameof(proof.fixedDeltaTimeLeasePreservedForContinuation),
+                "true", proof.fixedDeltaTimeLeasePreservedForContinuation);
+            AddRuntimeProofFailure(failures, !proof.fixedDeltaTimeRestored,
+                nameof(proof.fixedDeltaTimeRestored), "false",
+                proof.fixedDeltaTimeRestored);
+            AddRuntimeProofFailure(failures, proof.g02PointerScheduleExact,
+                nameof(proof.g02PointerScheduleExact), "true",
+                proof.g02PointerScheduleExact);
+            AddRuntimeProofFailure(failures,
+                proof.g02RecorderWarmupSuspensionAcquired,
+                nameof(proof.g02RecorderWarmupSuspensionAcquired), "true",
+                proof.g02RecorderWarmupSuspensionAcquired);
+            AddRuntimeProofFailure(failures,
+                proof.g02RecorderWarmupEndOfFrameCount == 2,
+                nameof(proof.g02RecorderWarmupEndOfFrameCount), "2",
+                proof.g02RecorderWarmupEndOfFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero,
+                nameof(proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero),
+                "true",
+                proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.g02RecorderWarmupProductStateUnchanged,
+                nameof(proof.g02RecorderWarmupProductStateUnchanged), "true",
+                proof.g02RecorderWarmupProductStateUnchanged);
+            AddRuntimeProofFailure(failures,
+                proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero,
+                nameof(proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero),
+                "true",
+                proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero);
+            AddRuntimeProofFailure(failures, proof.pointerDownCount == 8,
+                nameof(proof.pointerDownCount), "8", proof.pointerDownCount);
+            AddRuntimeProofFailure(failures, proof.pointerDragCount == 1,
+                nameof(proof.pointerDragCount), "1", proof.pointerDragCount);
+            AddRuntimeProofFailure(failures, proof.pointerUpCount == 8,
+                nameof(proof.pointerUpCount), "8", proof.pointerUpCount);
+            AddRuntimeProofFailure(failures,
+                proof.rangedProjectileFiredCount == G02ExpectedFiredCount,
+                nameof(proof.rangedProjectileFiredCount),
+                G02ExpectedFiredCount.ToString(CultureInfo.InvariantCulture),
+                proof.rangedProjectileFiredCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02UsesMagazineReload,
+                nameof(proof.g02UsesMagazineReload), "true",
+                proof.g02UsesMagazineReload);
+            AddRuntimeProofFailure(failures,
+                proof.g02MagazineSize == G02ExpectedMagazineSize,
+                nameof(proof.g02MagazineSize),
+                G02ExpectedMagazineSize.ToString(CultureInfo.InvariantCulture),
+                proof.g02MagazineSize);
+            AddRuntimeProofFailure(failures,
+                proof.ammoAtShotStart == G02ExpectedMagazineSize,
+                nameof(proof.ammoAtShotStart),
+                G02ExpectedMagazineSize.ToString(CultureInfo.InvariantCulture),
+                proof.ammoAtShotStart);
+            AddRuntimeProofFailure(failures,
+                proof.ammoAtShotEnd == G02ExpectedAmmoAtEnd,
+                nameof(proof.ammoAtShotEnd),
+                G02ExpectedAmmoAtEnd.ToString(CultureInfo.InvariantCulture),
+                proof.ammoAtShotEnd);
+            AddRuntimeProofFailure(failures,
+                !proof.g02ReloadingAtShotStart,
+                nameof(proof.g02ReloadingAtShotStart), "false",
+                proof.g02ReloadingAtShotStart);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadStartedCount
+                    == G02ExpectedReloadStartedCount,
+                nameof(proof.g02ReloadStartedCount),
+                G02ExpectedReloadStartedCount.ToString(
+                    CultureInfo.InvariantCulture),
+                proof.g02ReloadStartedCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadCompletedCount
+                    == G02ExpectedReloadCompletedCount,
+                nameof(proof.g02ReloadCompletedCount),
+                G02ExpectedReloadCompletedCount.ToString(
+                    CultureInfo.InvariantCulture),
+                proof.g02ReloadCompletedCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadCanceledCount
+                    == G02ExpectedReloadCanceledCount,
+                nameof(proof.g02ReloadCanceledCount),
+                G02ExpectedReloadCanceledCount.ToString(
+                    CultureInfo.InvariantCulture),
+                proof.g02ReloadCanceledCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadRefilledAmmoCount
+                    == G02ExpectedReloadRefilledAmmoCount,
+                nameof(proof.g02ReloadRefilledAmmoCount),
+                G02ExpectedReloadRefilledAmmoCount.ToString(
+                    CultureInfo.InvariantCulture),
+                proof.g02ReloadRefilledAmmoCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadLifecycleStateExact,
+                nameof(proof.g02ReloadLifecycleStateExact), "true",
+                proof.g02ReloadLifecycleStateExact);
+            AddRuntimeProofFailure(failures,
+                proof.g02ReloadingAtShotEnd,
+                nameof(proof.g02ReloadingAtShotEnd), "true",
+                proof.g02ReloadingAtShotEnd);
+            AddRuntimeProofFailure(failures,
+                HasExactG02ReloadLifecycleLedger(
+                    proof.g02ReloadLifecycleLedger),
+                nameof(proof.g02ReloadLifecycleLedger),
+                "exact started/canceled/started/canceled/started/completed/"
+                    + "started lifecycle at frames ["
+                    + string.Join(", ", G02ReloadLifecycleFrames) + "]",
+                SummarizeReloadLifecycleLedger(
+                    proof.g02ReloadLifecycleLedger));
+            AddRuntimeProofFailure(failures,
+                proof.ammoAtShotStart
+                    + proof.g02ReloadRefilledAmmoCount
+                    - proof.ammoAtShotEnd
+                    == proof.rangedProjectileFiredCount,
+                "ammoAtShotStart + g02ReloadRefilledAmmoCount - ammoAtShotEnd",
+                $"rangedProjectileFiredCount ({proof.rangedProjectileFiredCount})",
+                proof.ammoAtShotStart
+                    + proof.g02ReloadRefilledAmmoCount
+                    - proof.ammoAtShotEnd);
+            AddRuntimeProofFailure(failures, proof.g02PlayerPathLength >= 6f,
+                nameof(proof.g02PlayerPathLength), ">= 6",
+                proof.g02PlayerPathLength);
+            AddRuntimeProofFailure(failures,
+                proof.g02PlayerNetDisplacement >= 2f,
+                nameof(proof.g02PlayerNetDisplacement), ">= 2",
+                proof.g02PlayerNetDisplacement);
+            AddRuntimeProofFailure(failures,
+                proof.g02MaximumFrameDisplacement <= 0.751f,
+                nameof(proof.g02MaximumFrameDisplacement), "<= 0.751",
+                proof.g02MaximumFrameDisplacement);
+            AddRuntimeProofFailure(failures,
+                proof.g02DodgeDownFrame == G02DodgeDownFrame,
+                nameof(proof.g02DodgeDownFrame),
+                G02DodgeDownFrame.ToString(CultureInfo.InvariantCulture),
+                proof.g02DodgeDownFrame);
+            AddRuntimeProofFailure(failures,
+                proof.g02DodgeStartedCount == 1,
+                nameof(proof.g02DodgeStartedCount), "1",
+                proof.g02DodgeStartedCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02DodgeEndedCount == 1,
+                nameof(proof.g02DodgeEndedCount), "1",
+                proof.g02DodgeEndedCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02DodgeDirectionRailRightDot > 0.55f,
+                nameof(proof.g02DodgeDirectionRailRightDot), "> 0.55",
+                proof.g02DodgeDirectionRailRightDot);
+            AddRuntimeProofFailure(failures, proof.g02PlayerAliveAtEnd,
+                nameof(proof.g02PlayerAliveAtEnd), "true",
+                proof.g02PlayerAliveAtEnd);
+            AddRuntimeProofFailure(failures, proof.g02PlayerStayedInBounds,
+                nameof(proof.g02PlayerStayedInBounds), "true",
+                proof.g02PlayerStayedInBounds);
+            AddRuntimeProofFailure(failures,
+                proof.g02EnemyHealthAtEnd <= 0.001f,
+                nameof(proof.g02EnemyHealthAtEnd), "<= 0.001",
+                proof.g02EnemyHealthAtEnd);
+            AddRuntimeProofFailure(failures, proof.enemyDiedCount == 1,
+                nameof(proof.enemyDiedCount), "1", proof.enemyDiedCount);
+            AddRuntimeProofFailure(failures, proof.encounterWonCount == 1,
+                nameof(proof.encounterWonCount), "1", proof.encounterWonCount);
+            AddRuntimeProofFailure(failures, proof.naturalEnemyDeathObserved,
+                nameof(proof.naturalEnemyDeathObserved), "true",
+                proof.naturalEnemyDeathObserved);
+            AddRuntimeProofFailure(failures, proof.naturalWonObserved,
+                nameof(proof.naturalWonObserved), "true",
+                proof.naturalWonObserved);
+            AddRuntimeProofFailure(failures, proof.g02EnemyTelegraphObserved,
+                nameof(proof.g02EnemyTelegraphObserved), "true",
+                proof.g02EnemyTelegraphObserved);
+            AddRuntimeProofFailure(failures,
+                proof.g02EnemyTelegraphVisibleFrameCount > 0,
+                nameof(proof.g02EnemyTelegraphVisibleFrameCount), "> 0",
+                proof.g02EnemyTelegraphVisibleFrameCount);
+            AddRuntimeProofFailure(failures, proof.g02EnemyFiredDelta >= 1,
+                nameof(proof.g02EnemyFiredDelta), ">= 1",
+                proof.g02EnemyFiredDelta);
+            AddRuntimeProofFailure(failures,
+                proof.g02ProjectileRootsIndependentAndSceneOwned,
+                nameof(proof.g02ProjectileRootsIndependentAndSceneOwned),
+                "true", proof.g02ProjectileRootsIndependentAndSceneOwned);
+            AddRuntimeProofFailure(failures,
+                proof.g02PlayerProjectileVisibleFrameCount > 0,
+                nameof(proof.g02PlayerProjectileVisibleFrameCount), "> 0",
+                proof.g02PlayerProjectileVisibleFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02EnemyProjectileVisibleFrameCount > 0,
+                nameof(proof.g02EnemyProjectileVisibleFrameCount), "> 0",
+                proof.g02EnemyProjectileVisibleFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02IgnoredLaneActionProjectileTriggerEnterCount == 3,
+                nameof(proof.g02IgnoredLaneActionProjectileTriggerEnterCount),
+                "3", proof.g02IgnoredLaneActionProjectileTriggerEnterCount);
+            AddRuntimeProofFailure(failures,
+                HasExactG02IgnoredProjectileTriggerLedger(
+                    proof.g02IgnoredLaneActionProjectileTriggerEnterLedger),
+                nameof(proof.g02IgnoredLaneActionProjectileTriggerEnterLedger),
+                "three distinct active LaneActionProjectile entries at logical "
+                    + "frames ["
+                    + string.Join(", ", G02IgnoredProjectileTriggerFrames)
+                    + "]",
+                SummarizeTriggerEnterLedger(
+                    proof.g02IgnoredLaneActionProjectileTriggerEnterLedger));
+            AddRuntimeProofFailure(failures,
+                proof.g02RejectedTriggerEnterCount == 0,
+                nameof(proof.g02RejectedTriggerEnterCount), "0",
+                proof.g02RejectedTriggerEnterCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02RejectedTriggerEnterLedger != null
+                    && proof.g02RejectedTriggerEnterLedger.Length == 0,
+                nameof(proof.g02RejectedTriggerEnterLedger),
+                "non-null empty array",
+                SummarizeTriggerEnterLedger(
+                    proof.g02RejectedTriggerEnterLedger));
+            AddRuntimeProofFailure(failures,
+                proof.g02PlayerFramingSampleCount == 4,
+                nameof(proof.g02PlayerFramingSampleCount), "4",
+                proof.g02PlayerFramingSampleCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02PlayerFramingPassCount == 4,
+                nameof(proof.g02PlayerFramingPassCount), "4",
+                proof.g02PlayerFramingPassCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02EnemyFramingSampleCount == 3,
+                nameof(proof.g02EnemyFramingSampleCount), "3",
+                proof.g02EnemyFramingSampleCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02EnemyFramingPassCount == 3,
+                nameof(proof.g02EnemyFramingPassCount), "3",
+                proof.g02EnemyFramingPassCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02RifleFeedbackRequestDelta > 0,
+                nameof(proof.g02RifleFeedbackRequestDelta), "> 0",
+                proof.g02RifleFeedbackRequestDelta);
+            AddRuntimeProofFailure(failures,
+                proof.g02MicroShakeRequestDelta > 0,
+                nameof(proof.g02MicroShakeRequestDelta), "> 0",
+                proof.g02MicroShakeRequestDelta);
+            AddRuntimeProofFailure(failures,
+                proof.microShakeSourceFrameCount > 0,
+                nameof(proof.microShakeSourceFrameCount), "> 0",
+                proof.microShakeSourceFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.microShakeComposedFrameCount >= 5,
+                nameof(proof.microShakeComposedFrameCount), ">= 5",
+                proof.microShakeComposedFrameCount);
+            AddRuntimeProofFailure(failures, proof.enemyDamagedCount > 0,
+                nameof(proof.enemyDamagedCount), "> 0",
+                proof.enemyDamagedCount);
+            AddRuntimeProofFailure(failures,
+                proof.g02EndedOutsideExitTrigger,
+                nameof(proof.g02EndedOutsideExitTrigger), "true",
+                proof.g02EndedOutsideExitTrigger);
+            AddRuntimeProofFailure(failures,
+                proof.g02EndedSouthOfExitTrigger,
+                nameof(proof.g02EndedSouthOfExitTrigger), "true",
+                proof.g02EndedSouthOfExitTrigger);
+            AddRuntimeProofFailure(failures,
+                proof.productOutcomePreservedForContinuation,
+                nameof(proof.productOutcomePreservedForContinuation), "true",
+                proof.productOutcomePreservedForContinuation);
+            return failures;
+        }
+
+        private static List<string> CollectG03RuntimeProofFailures(
+            AuditionPvCityHeroPocketRuntimeProof proof)
+        {
+            var failures = new List<string>(56);
+            AddRuntimeProofFailure(failures,
+                proof.expectedFrameCount == G03ExpectedFrameCount,
+                nameof(proof.expectedFrameCount),
+                G03ExpectedFrameCount.ToString(CultureInfo.InvariantCulture),
+                proof.expectedFrameCount);
+            AddRuntimeProofFailure(failures,
+                !proof.fixedDeltaTimeLeasePreservedForContinuation,
+                nameof(proof.fixedDeltaTimeLeasePreservedForContinuation),
+                "false", proof.fixedDeltaTimeLeasePreservedForContinuation);
+            AddRuntimeProofFailure(failures, proof.fixedDeltaTimeRestored,
+                nameof(proof.fixedDeltaTimeRestored), "true",
+                proof.fixedDeltaTimeRestored);
+            AddRuntimeProofFailure(failures, proof.continuityFromPreviousShot,
+                nameof(proof.continuityFromPreviousShot), "true",
+                proof.continuityFromPreviousShot);
+            AddRuntimeProofFailure(failures, proof.encounterInstanceId > 0,
+                nameof(proof.encounterInstanceId), "> 0",
+                proof.encounterInstanceId);
+            AddRuntimeProofFailure(failures, proof.playerInstanceId > 0,
+                nameof(proof.playerInstanceId), "> 0", proof.playerInstanceId);
+            AddRuntimeProofFailure(failures, proof.enemyInstanceId > 0,
+                nameof(proof.enemyInstanceId), "> 0", proof.enemyInstanceId);
+            AddRuntimeProofFailure(failures, proof.g03StartedAlreadyWon,
+                nameof(proof.g03StartedAlreadyWon), "true",
+                proof.g03StartedAlreadyWon);
+            AddRuntimeProofFailure(failures, proof.g03StartedTransitionArmed,
+                nameof(proof.g03StartedTransitionArmed), "true",
+                proof.g03StartedTransitionArmed);
+            AddRuntimeProofFailure(failures, proof.g03StartedOutsideExitTrigger,
+                nameof(proof.g03StartedOutsideExitTrigger), "true",
+                proof.g03StartedOutsideExitTrigger);
+            AddRuntimeProofFailure(failures, proof.g03StartedSouthOfExitTrigger,
+                nameof(proof.g03StartedSouthOfExitTrigger), "true",
+                proof.g03StartedSouthOfExitTrigger);
+            AddRuntimeProofFailure(failures, proof.naturalEnemyDeathObserved,
+                nameof(proof.naturalEnemyDeathObserved), "true",
+                proof.naturalEnemyDeathObserved);
+            AddRuntimeProofFailure(failures, proof.naturalWonObserved,
+                nameof(proof.naturalWonObserved), "true",
+                proof.naturalWonObserved);
+            AddRuntimeProofFailure(failures,
+                proof.g03NewDamageEventCount == 0,
+                nameof(proof.g03NewDamageEventCount), "0",
+                proof.g03NewDamageEventCount);
+            AddRuntimeProofFailure(failures,
+                proof.g03NewDeathEventCount == 0,
+                nameof(proof.g03NewDeathEventCount), "0",
+                proof.g03NewDeathEventCount);
+            AddRuntimeProofFailure(failures,
+                proof.g03NewWonEventCount == 0,
+                nameof(proof.g03NewWonEventCount), "0",
+                proof.g03NewWonEventCount);
+            AddRuntimeProofFailure(failures, proof.enemyDamagedCount == 0,
+                nameof(proof.enemyDamagedCount), "0", proof.enemyDamagedCount);
+            AddRuntimeProofFailure(failures, proof.enemyDiedCount == 0,
+                nameof(proof.enemyDiedCount), "0", proof.enemyDiedCount);
+            AddRuntimeProofFailure(failures, proof.encounterWonCount == 0,
+                nameof(proof.encounterWonCount), "0", proof.encounterWonCount);
+            AddRuntimeProofFailure(failures,
+                proof.g03JoystickPointerId == G03JoystickPointerId,
+                nameof(proof.g03JoystickPointerId),
+                G03JoystickPointerId.ToString(CultureInfo.InvariantCulture),
+                proof.g03JoystickPointerId);
+            AddRuntimeProofFailure(failures,
+                Vector2.Distance(proof.g03JoystickInput, G03JoystickInput)
+                    <= 0.0001f,
+                nameof(proof.g03JoystickInput),
+                G03JoystickInput.ToString(), proof.g03JoystickInput.ToString());
+            AddRuntimeProofFailure(failures, proof.g03JoystickInputExact,
+                nameof(proof.g03JoystickInputExact), "true",
+                proof.g03JoystickInputExact);
+            AddRuntimeProofFailure(failures,
+                proof.g03JoystickInputMaintainedUntilTrigger,
+                nameof(proof.g03JoystickInputMaintainedUntilTrigger), "true",
+                proof.g03JoystickInputMaintainedUntilTrigger);
+            AddRuntimeProofFailure(failures,
+                proof.g03JoystickInputExactAtTrigger,
+                nameof(proof.g03JoystickInputExactAtTrigger), "true",
+                proof.g03JoystickInputExactAtTrigger);
+            AddRuntimeProofFailure(failures,
+                proof.g03TriggerAcceptedPreRollFrame
+                    >= G03TriggerAcceptFirstPreRollFrame,
+                nameof(proof.g03TriggerAcceptedPreRollFrame),
+                $">= {G03TriggerAcceptFirstPreRollFrame}",
+                proof.g03TriggerAcceptedPreRollFrame);
+            AddRuntimeProofFailure(failures,
+                proof.g03TriggerAcceptedPreRollFrame
+                    <= G03TriggerAcceptLastPreRollFrame,
+                nameof(proof.g03TriggerAcceptedPreRollFrame),
+                $"<= {G03TriggerAcceptLastPreRollFrame}",
+                proof.g03TriggerAcceptedPreRollFrame);
+            AddRuntimeProofFailure(failures, proof.g03PreRollPathLength > 0f,
+                nameof(proof.g03PreRollPathLength), "> 0",
+                proof.g03PreRollPathLength);
+            AddRuntimeProofFailure(failures,
+                proof.g03PreRollNetDisplacement > 0f,
+                nameof(proof.g03PreRollNetDisplacement), "> 0",
+                proof.g03PreRollNetDisplacement);
+            AddRuntimeProofFailure(failures,
+                proof.transitionIgnoredLaneActionProjectileBaseline == 3,
+                nameof(proof.transitionIgnoredLaneActionProjectileBaseline),
+                "3", proof.transitionIgnoredLaneActionProjectileBaseline);
+            AddRuntimeProofFailure(failures,
+                proof.transitionIgnoredLaneActionProjectileEnd == 3,
+                nameof(proof.transitionIgnoredLaneActionProjectileEnd), "3",
+                proof.transitionIgnoredLaneActionProjectileEnd);
+            AddRuntimeProofFailure(failures,
+                proof.transitionIgnoredLaneActionProjectileDelta == 0,
+                nameof(proof.transitionIgnoredLaneActionProjectileDelta), "0",
+                proof.transitionIgnoredLaneActionProjectileDelta);
+            AddRuntimeProofFailure(failures,
+                proof.transitionRejectedTriggerEnterBaseline == 0,
+                nameof(proof.transitionRejectedTriggerEnterBaseline), "0",
+                proof.transitionRejectedTriggerEnterBaseline);
+            AddRuntimeProofFailure(failures,
+                proof.transitionRejectedTriggerEnterEnd == 0,
+                nameof(proof.transitionRejectedTriggerEnterEnd), "0",
+                proof.transitionRejectedTriggerEnterEnd);
+            AddRuntimeProofFailure(failures,
+                proof.transitionRejectedTriggerEnterDelta == 0,
+                nameof(proof.transitionRejectedTriggerEnterDelta), "0",
+                proof.transitionRejectedTriggerEnterDelta);
+            AddRuntimeProofFailure(failures,
+                proof.captureTransitionStartCallCount == 0,
+                nameof(proof.captureTransitionStartCallCount), "0",
+                proof.captureTransitionStartCallCount);
+            AddRuntimeProofFailure(failures,
+                proof.captureHudMutationCount == 0,
+                nameof(proof.captureHudMutationCount), "0",
+                proof.captureHudMutationCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionTriggerAcceptedCount == 1,
+                nameof(proof.transitionTriggerAcceptedCount), "1",
+                proof.transitionTriggerAcceptedCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionStartedCount == 1,
+                nameof(proof.transitionStartedCount), "1",
+                proof.transitionStartedCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionHudHiddenCount == 1,
+                nameof(proof.transitionHudHiddenCount), "1",
+                proof.transitionHudHiddenCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionFullCoverCount == 1,
+                nameof(proof.transitionFullCoverCount), "1",
+                proof.transitionFullCoverCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionExitReadyCount == 1,
+                nameof(proof.transitionExitReadyCount), "1",
+                proof.transitionExitReadyCount);
+            AddRuntimeProofFailure(failures,
+                proof.hudHiddenBeforeLogicalFrameZero,
+                nameof(proof.hudHiddenBeforeLogicalFrameZero), "true",
+                proof.hudHiddenBeforeLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionFrameBeforeLogicalFrameZero >= 18
+                    && proof.transitionFrameBeforeLogicalFrameZero <= 24,
+                nameof(proof.transitionFrameBeforeLogicalFrameZero),
+                "within [18, 24]",
+                proof.transitionFrameBeforeLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionFrameAtLogicalFrameZero >= 19
+                    && proof.transitionFrameAtLogicalFrameZero <= 25,
+                nameof(proof.transitionFrameAtLogicalFrameZero),
+                "within [19, 25]",
+                proof.transitionFrameAtLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionAdvancedOnceBeforeRailFrameZero,
+                nameof(proof.transitionAdvancedOnceBeforeRailFrameZero), "true",
+                proof.transitionAdvancedOnceBeforeRailFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionPortalAuthoredLogicalFrame >= 0,
+                nameof(proof.transitionPortalAuthoredLogicalFrame), ">= 0",
+                proof.transitionPortalAuthoredLogicalFrame);
+            AddRuntimeProofFailure(failures,
+                proof.transitionPortalAuthoredLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero == 42,
+                "transitionPortalAuthoredLogicalFrame + transitionFrameAtLogicalFrameZero",
+                "42", proof.transitionPortalAuthoredLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionCoverStartedLogicalFrame >= 0,
+                nameof(proof.transitionCoverStartedLogicalFrame), ">= 0",
+                proof.transitionCoverStartedLogicalFrame);
+            AddRuntimeProofFailure(failures,
+                proof.transitionCoverStartedLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero == 234,
+                "transitionCoverStartedLogicalFrame + transitionFrameAtLogicalFrameZero",
+                "234", proof.transitionCoverStartedLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero);
+            AddRuntimeProofFailure(failures,
+                proof.transitionFullCoverLogicalFrame >= 0
+                    && proof.transitionFullCoverLogicalFrame <= 276,
+                nameof(proof.transitionFullCoverLogicalFrame),
+                "within [0, 276]", proof.transitionFullCoverLogicalFrame);
+            AddRuntimeProofFailure(failures,
+                proof.transitionFullCoverLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero == 294,
+                "transitionFullCoverLogicalFrame + transitionFrameAtLogicalFrameZero",
+                "294", proof.transitionFullCoverLogicalFrame
+                    + proof.transitionFrameAtLogicalFrameZero);
+            AddRuntimeProofFailure(failures, proof.cleanCoverFrameCount >= 24,
+                nameof(proof.cleanCoverFrameCount), ">= 24",
+                proof.cleanCoverFrameCount);
+            AddRuntimeProofFailure(failures,
+                proof.transitionPortalReachedAuthoredScale,
+                nameof(proof.transitionPortalReachedAuthoredScale), "true",
+                proof.transitionPortalReachedAuthoredScale);
+            AddRuntimeProofFailure(failures,
+                proof.transitionCoverReachedFull,
+                nameof(proof.transitionCoverReachedFull), "true",
+                proof.transitionCoverReachedFull);
+            AddRuntimeProofFailure(failures,
+                proof.transitionInputAndAiLocked,
+                nameof(proof.transitionInputAndAiLocked), "true",
+                proof.transitionInputAndAiLocked);
+            return failures;
+        }
+
+        private static void AddRuntimeProofFailure<T>(
+            ICollection<string> failures,
+            bool passed,
+            string predicate,
+            string expected,
+            T actual)
+        {
+            if (!passed)
+            {
+                failures.Add(
+                    $"{predicate}: expected={expected}; "
+                    + $"actual={ProofDiagnosticValue(actual)}");
+            }
+        }
+
+        private static string ProofDiagnosticValue<T>(T value)
+        {
+            if (value == null)
+            {
+                return "<null>";
+            }
+            if (value is float single)
+            {
+                return single.ToString("R", CultureInfo.InvariantCulture);
+            }
+            if (value is double number)
+            {
+                return number.ToString("R", CultureInfo.InvariantCulture);
+            }
+            if (value is bool boolean)
+            {
+                return boolean ? "true" : "false";
+            }
+            if (value is IFormattable formattable)
+            {
+                return formattable.ToString(null, CultureInfo.InvariantCulture);
+            }
+            return value.ToString();
+        }
+
+        private static string SummarizeTriggerEnterLedger(
+            AuditionPvCityTriggerEnterLedgerEntry[] entries)
+        {
+            if (entries == null)
+            {
+                return "<null>";
+            }
+            return $"count={entries.Length}; logicalFrames=["
+                + string.Join(", ", entries.Select(entry => entry == null
+                    ? "<null>"
+                    : entry.logicalFrame.ToString(CultureInfo.InvariantCulture)))
+                + "]; projectileInstanceIds=["
+                + string.Join(", ", entries.Select(entry => entry == null
+                    ? "<null>"
+                    : entry.projectileInstanceId.ToString(
+                        CultureInfo.InvariantCulture)))
+                + "]";
+        }
+
+        private static string SummarizeReloadLifecycleLedger(
+            AuditionPvCityReloadLifecycleLedgerEntry[] entries)
+        {
+            if (entries == null)
+            {
+                return "<null>";
+            }
+            return $"count={entries.Length}; entries=["
+                + string.Join(" || ", entries.Select(entry =>
+                    entry?.ToString() ?? "<null>"))
+                + "]";
+        }
+
+        private static InvalidOperationException CreateRuntimeProofValidationFailure(
+            AuditionPvCityHeroPocketRuntimeProof proof,
+            string validationScope,
+            List<string> failures)
+        {
+            if (failures == null || failures.Count == 0)
+            {
+                failures = new List<string>
+                {
+                    "validation branch rejected the proof but its diagnostic "
+                    + "predicate collector reported no failures"
+                };
+            }
+
+            string rawRuntimeProofJson = JsonUtility.ToJson(proof);
+            return new InvalidOperationException(
+                $"City runtime proof validation failed for shot "
+                + $"'{ProofDiagnosticValue(proof.shotId)}' in scope "
+                + $"'{validationScope}'. Failed predicates ({failures.Count}):\n- "
+                + string.Join("\n- ", failures)
+                + "\nRawRuntimeProofJson=" + rawRuntimeProofJson);
         }
 
         private static void ValidateFrameIndex(
@@ -1089,6 +2073,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         public float maximumCameraRotationReadbackErrorDegrees;
         public float maximumCameraFovReadbackError;
         public int deterministicRandomSeed;
+        public float originalFixedDeltaTime;
+        public float fixedDeltaTimeAtPreparation;
+        public float fixedDeltaTimeAtLogicalFrameZero;
+        public float fixedDeltaTimeAtLastLogicalFrame;
+        public int fixedDeltaTimeLogicalFrameSampleCount;
+        public bool fixedDeltaTimeExactThroughoutShot = true;
+        public bool fixedDeltaTimeLeasePreservedForContinuation;
+        public bool fixedDeltaTimeRestored;
         public int microShakeSourceFrameCount;
         public int microShakeComposedFrameCount;
         public float maximumComposedMicroShakePosition;
@@ -1098,6 +2090,11 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int pointerDragCount;
         public int pointerUpCount;
         public bool g02PointerScheduleExact;
+        public bool g02RecorderWarmupSuspensionAcquired;
+        public int g02RecorderWarmupEndOfFrameCount;
+        public bool g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero;
+        public bool g02RecorderWarmupProductStateUnchanged;
+        public bool g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero;
         public int rangedProjectileFiredCount;
         public int enemyDamagedCount;
         public int enemyDiedCount;
@@ -1202,7 +2199,17 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int g02EnemyFramingPassCount;
         public int g02RifleFeedbackRequestDelta;
         public int g02MicroShakeRequestDelta;
+        public bool g02UsesMagazineReload;
+        public int g02MagazineSize;
+        public bool g02ReloadingAtShotStart;
         public int g02ReloadStartedCount;
+        public int g02ReloadCompletedCount;
+        public int g02ReloadCanceledCount;
+        public int g02ReloadRefilledAmmoCount;
+        public bool g02ReloadLifecycleStateExact = true;
+        public bool g02ReloadingAtShotEnd;
+        public AuditionPvCityReloadLifecycleLedgerEntry[] g02ReloadLifecycleLedger =
+            Array.Empty<AuditionPvCityReloadLifecycleLedgerEntry>();
         public bool g02PlayerAliveAtEnd;
         public float g02EnemyHealthAtEnd;
         public int transitionPresentationFrameAtEnd = -1;
@@ -1223,6 +2230,75 @@ namespace DimensionBrawl.Editor.AuditionPV
         private const float FloatTolerance = 0.001f;
         private const float G01MaximumDrift = 0.01f;
         private const float G02MaximumFrameDisplacement = 0.75f;
+
+        private struct G02RecorderWarmupSnapshot
+        {
+            public Vector3 playerPosition;
+            public Quaternion playerRotation;
+            public Vector3 enemyPosition;
+            public Quaternion enemyRotation;
+            public float playerHealth;
+            public float enemyHealth;
+            public int ammo;
+            public int playerActiveProjectileCount;
+            public int enemyFiredCount;
+            public int enemyActiveProjectileCount;
+            public bool playerAlive;
+            public bool enemyAlive;
+            public bool encounterRunning;
+            public bool encounterWon;
+            public bool encounterFailed;
+            public bool encounterFaulted;
+            public long encounterRunGeneration;
+            public PlayerCombatMode combatMode;
+            public Vector3 playerPlanarVelocity;
+            public bool playerHasMoveInput;
+            public bool playerDodging;
+            public bool rangedReloading;
+            public bool rangedFireHeld;
+            public bool rangedHasExternalFireHeldInput;
+            public CombatAiPatternState enemyPatternState;
+            public int enemyActivePatternDeckIndex;
+            public bool enemyTelegraphVisible;
+            public int actionCameraRifleFeedbackCount;
+            public int actionCameraMicroShakeCount;
+            public int rangedProjectileFiredCount;
+            public int enemyDamagedCount;
+            public int enemyDiedCount;
+            public int encounterWonCount;
+            public int pointerDownCount;
+            public int pointerDragCount;
+            public int pointerUpCount;
+            public int dodgeStartedCount;
+            public int dodgeEndedCount;
+            public int reloadStartedCount;
+            public int reloadCompletedCount;
+            public int reloadCanceledCount;
+            public int reloadRefilledAmmoCount;
+            public bool reloadLifecycleStateExact;
+            public int reloadLifecycleEntryCount;
+            public bool reloadCycleActive;
+            public int reloadCycleStartAmmo;
+            public int executedCommandCount;
+            public int transitionTriggerAcceptedCount;
+            public int transitionIgnoredProjectileCount;
+            public int transitionRejectedCount;
+            public int transitionStartedCount;
+            public int transitionHudHiddenCount;
+            public int transitionFullCoverCount;
+            public int transitionExitReadyCount;
+            public int transitionPresentationFrame;
+            public bool transitionArmed;
+            public bool transitionRunning;
+            public bool transitionExitReady;
+            public bool transitionInputLocked;
+            public bool transitionAiLocked;
+            public int currentFrame;
+            public bool presentationClockManuallyDriven;
+            public float presentationClockTime;
+            public float fixedDeltaTime;
+            public bool fixedDeltaTimeLeaseOwned;
+        }
         private const float G02MinimumPathLength = 6f;
         private const float G02MinimumNetDisplacement = 2f;
         private const float G02MinimumDodgeRailRightDot = 0.55f;
@@ -1232,6 +2308,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             g02IgnoredLaneActionProjectileTriggerEnterLedger = new(4);
         private readonly List<AuditionPvCityTriggerEnterLedgerEntry>
             g02RejectedTriggerEnterLedger = new(1);
+        private readonly List<AuditionPvCityReloadLifecycleLedgerEntry>
+            g02ReloadLifecycleLedger = new(8);
+        private bool g02ReloadCycleActive;
+        private int g02ReloadCycleStartAmmo;
         private AuditionPvCityShot shot;
         private AuditionPvCityHeroPocketCameraRail rail;
         private CombatEncounterController encounter;
@@ -1273,6 +2353,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private bool savedRandomStateValid;
         private int savedCaptureFramerate;
         private int savedTargetFrameRate;
+        private float savedFixedDeltaTime;
         private float savedHudAlpha;
         private bool savedHudInteractable;
         private bool savedHudBlocksRaycasts;
@@ -1284,11 +2365,16 @@ namespace DimensionBrawl.Editor.AuditionPV
         private Transform savedActionCameraTarget;
         private Transform savedActionCameraThreat;
         private bool restorableStateCaptured;
+        private bool fixedDeltaTimeLeaseOwned;
         private bool restoring;
         private bool currentShotRestored;
         private bool finalRestoreCompleted;
         private bool continuationInProgress;
         private bool g01SuspensionOwned;
+        private bool g02RecorderWarmupSuspensionOwned;
+        private bool g02RecorderWarmupSnapshotValid;
+        private Exception continuationCleanupFailureForTest;
+        private G02RecorderWarmupSnapshot g02RecorderWarmupSnapshot;
         private int currentFrame = -1;
         private int nextExpectedPresentedFrame;
         private int nextMovePointerId = 5101;
@@ -1385,6 +2471,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     $"Illegal City continuation order: {shot} -> {nextShot}; expected {expected}.");
             }
 
+            try
+            {
+                RequireCaptureFixedDeltaTimeExact("continuation handoff");
+            }
+            catch (Exception exception)
+            {
+                Fail(exception);
+                throw;
+            }
+
             continuationInProgress = true;
             bool prepared = false;
             try
@@ -1401,6 +2497,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 CleanupCurrentShot(finalCleanup: false);
                 lastSealedRuntimeProof =
                     AuditionPvCityHeroPocketCapture.DeepCopyRuntimeProof(proof);
+                Exception injectedFailure = continuationCleanupFailureForTest;
+                continuationCleanupFailureForTest = null;
+                if (injectedFailure != null)
+                {
+                    throw injectedFailure;
+                }
 
                 ResetShotProof(nextShot);
                 IEnumerator preparation = PrepareCurrentProductState(isContinuation: true);
@@ -1413,7 +2515,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             finally
             {
                 continuationInProgress = false;
-                if (!prepared && !currentShotRestored)
+                if (!prepared)
                 {
                     RestoreShotState();
                 }
@@ -1425,12 +2527,108 @@ namespace DimensionBrawl.Editor.AuditionPV
             return AuditionPvCityHeroPocketCapture.DeepCopyRuntimeProof(proof);
         }
 
+        internal void InjectContinuationCleanupFailureForTest(Exception exception)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+            if (!IsComplete || IsRunning || currentShotRestored
+                || finalRestoreCompleted || continuationInProgress
+                || continuationCleanupFailureForTest != null)
+            {
+                throw new InvalidOperationException(
+                    "A continuation-cleanup test failure may be injected exactly once "
+                    + "after a completed, un-restored City shot.");
+            }
+            continuationCleanupFailureForTest = exception;
+        }
+
+        public void ArmG02RecorderWarmupSuspension()
+        {
+            if (shot != AuditionPvCityShot.G02 || !IsPrepared || IsRunning
+                || IsComplete || currentShotRestored || finalRestoreCompleted
+                || continuationInProgress || currentFrame != -1
+                || g02RecorderWarmupSuspensionOwned)
+            {
+                throw new InvalidOperationException(
+                    "Only one prepared, not-yet-started G02 shot may arm the Recorder warmup suspension.");
+            }
+            try
+            {
+                RequireCaptureFixedDeltaTimeExact("G02 Recorder warmup acquisition");
+            }
+            catch (Exception exception)
+            {
+                Fail(exception);
+                throw;
+            }
+            if (playerMovement.IsCinematicMoveInputLocked
+                || playerAction.IsCinematicInputLocked
+                || playerCombatMode.IsCinematicInputLocked
+                || rangedAction.IsCinematicInputLocked
+                || enemySoldier.IsGameplaySuspended)
+            {
+                throw new InvalidOperationException(
+                    "G02 Recorder warmup cannot acquire over existing product locks.");
+            }
+
+            g02RecorderWarmupSuspensionOwned = true;
+            try
+            {
+                playerMovement.SetCinematicMoveInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    true);
+                playerAction.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    true);
+                playerCombatMode.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    true);
+                rangedAction.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    true);
+                enemySoldier.SetGameplaySuspended(true);
+
+                proof.g02RecorderWarmupSuspensionAcquired =
+                    IsG02RecorderWarmupSuspensionHeld();
+                if (!proof.g02RecorderWarmupSuspensionAcquired)
+                {
+                    throw new InvalidOperationException(
+                        "G02 Recorder warmup suspension did not acquire all product locks.");
+                }
+
+                g02RecorderWarmupSnapshot = CaptureG02RecorderWarmupSnapshot();
+                g02RecorderWarmupSnapshotValid = true;
+            }
+            catch (Exception acquisitionFailure)
+            {
+                try
+                {
+                    ReleaseG02RecorderWarmupSuspension(
+                        recorderWarmupEndOfFrameCount: 0,
+                        requireExactRecorderWarmup: false);
+                }
+                catch (Exception releaseFailure)
+                {
+                    throw new AggregateException(
+                        "G02 Recorder warmup suspension acquisition and rollback both failed.",
+                        acquisitionFailure,
+                        releaseFailure);
+                }
+                throw;
+            }
+        }
+
         private IEnumerator PrepareCurrentProductState(bool isContinuation)
         {
             bool prepared = false;
             try
             {
                 ValidateProductStateForShot(isContinuation);
+                RequireCaptureFixedDeltaTimeExact("shot preparation");
+                proof.originalFixedDeltaTime = savedFixedDeltaTime;
+                proof.fixedDeltaTimeAtPreparation = Time.fixedDeltaTime;
                 if (!savedRandomStateValid)
                 {
                     savedRandomState = UnityEngine.Random.state;
@@ -1491,12 +2689,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             BeginShotCore(recorderOwnsCadence: false);
         }
 
-        public void BeginShotForRecorder()
+        public void BeginShotForRecorder(int recorderWarmupEndOfFrameCount)
         {
-            BeginShotCore(recorderOwnsCadence: true);
+            BeginShotCore(
+                recorderOwnsCadence: true,
+                recorderWarmupEndOfFrameCount);
         }
 
-        private void BeginShotCore(bool recorderOwnsCadence)
+        private void BeginShotCore(
+            bool recorderOwnsCadence,
+            int recorderWarmupEndOfFrameCount = 0)
         {
             if (!IsPrepared || IsRunning || IsComplete || currentShotRestored
                 || finalRestoreCompleted || continuationInProgress)
@@ -1507,6 +2709,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (Time.timeScale <= 0f)
             {
                 throw new InvalidOperationException("City capture cannot run at timeScale zero.");
+            }
+            try
+            {
+                RequireCaptureFixedDeltaTimeExact("logical frame zero");
+                proof.fixedDeltaTimeAtLogicalFrameZero = Time.fixedDeltaTime;
+            }
+            catch (Exception exception)
+            {
+                Fail(exception);
+                throw;
             }
             if (recorderOwnsCadence)
             {
@@ -1522,6 +2734,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 Time.captureFramerate = AuditionPvCaptureContract.Fps;
                 Application.targetFrameRate = AuditionPvCaptureContract.Fps;
+            }
+
+            if (shot == AuditionPvCityShot.G02)
+            {
+                ReleaseG02RecorderWarmupSuspension(
+                    recorderWarmupEndOfFrameCount,
+                    requireExactRecorderWarmup: recorderOwnsCadence);
             }
 
             currentFrame = 0;
@@ -1546,6 +2765,18 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void Update()
         {
+            if (fixedDeltaTimeLeaseOwned && !restoring && !currentShotRestored)
+            {
+                try
+                {
+                    RequireCaptureFixedDeltaTimeExact("director Update");
+                }
+                catch (Exception exception)
+                {
+                    Fail(exception);
+                    return;
+                }
+            }
             if (!IsRunning || Failure != null)
             {
                 return;
@@ -1592,6 +2823,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
             try
             {
+                RequireCaptureFixedDeltaTimeExact(
+                    $"logical frame {frameIndex} camera readback");
+                proof.fixedDeltaTimeAtLastLogicalFrame = Time.fixedDeltaTime;
+                proof.fixedDeltaTimeLogicalFrameSampleCount++;
                 proof.presentedFramesExact &= frameIndex == nextExpectedPresentedFrame
                     && frameIndex == currentFrame;
                 proof.presentationClockExact &= PresentationClock.IsManuallyDriven
@@ -1691,8 +2926,19 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         public void RestoreShotState()
         {
-            if (currentShotRestored || restoring)
+            if (restoring)
             {
+                return;
+            }
+            if (currentShotRestored)
+            {
+                if (!finalRestoreCompleted)
+                {
+                    RestoreSessionGlobalState();
+                    proof.fixedDeltaTimeLeasePreservedForContinuation = false;
+                    proof.stateRestored &= proof.fixedDeltaTimeRestored;
+                }
+                finalRestoreCompleted = true;
                 return;
             }
             CleanupCurrentShot(finalCleanup: true);
@@ -1757,6 +3003,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             savedCaptureFramerate = Time.captureFramerate;
             savedTargetFrameRate = Application.targetFrameRate;
+            savedFixedDeltaTime = Time.fixedDeltaTime;
             savedHudAlpha = hud.alpha;
             savedHudInteractable = hud.interactable;
             savedHudBlocksRaycasts = hud.blocksRaycasts;
@@ -1768,6 +3015,137 @@ namespace DimensionBrawl.Editor.AuditionPV
             savedActionCameraTarget = actionCamera.Target;
             savedActionCameraThreat = actionCamera.Threat;
             restorableStateCaptured = true;
+            AcquireCaptureFixedDeltaTime();
+        }
+
+        private void AcquireCaptureFixedDeltaTime()
+        {
+            if (!restorableStateCaptured || fixedDeltaTimeLeaseOwned)
+            {
+                throw new InvalidOperationException(
+                    "City capture fixed-timestep ownership must be acquired exactly once.");
+            }
+            if (savedFixedDeltaTime <= 0f || float.IsNaN(savedFixedDeltaTime)
+                || float.IsInfinity(savedFixedDeltaTime))
+            {
+                throw new InvalidOperationException(
+                    $"The authored fixed timestep is invalid: {savedFixedDeltaTime:R}.");
+            }
+
+            proof.originalFixedDeltaTime = savedFixedDeltaTime;
+            Time.fixedDeltaTime =
+                AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime;
+            fixedDeltaTimeLeaseOwned = true;
+            try
+            {
+                RequireCaptureFixedDeltaTimeExact("session acquisition");
+            }
+            catch
+            {
+                Time.fixedDeltaTime = savedFixedDeltaTime;
+                fixedDeltaTimeLeaseOwned = false;
+                throw;
+            }
+        }
+
+        private void RequireCaptureFixedDeltaTimeExact(string phase)
+        {
+            bool exact = restorableStateCaptured
+                && fixedDeltaTimeLeaseOwned
+                && Time.fixedDeltaTime
+                    == AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime;
+            if (proof != null)
+            {
+                proof.fixedDeltaTimeExactThroughoutShot &= exact;
+            }
+            if (!exact)
+            {
+                throw new InvalidOperationException(
+                    "City capture lost its exact 1/Fps fixed timestep during "
+                    + $"{phase}: actual={Time.fixedDeltaTime:R}; expected="
+                    + $"{AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime:R}; "
+                    + $"leaseOwned={fixedDeltaTimeLeaseOwned}.");
+            }
+        }
+
+        private void RestoreCaptureFixedDeltaTime()
+        {
+            if (!restorableStateCaptured)
+            {
+                return;
+            }
+
+            Time.fixedDeltaTime = savedFixedDeltaTime;
+            bool restored = FixedDeltaTimeMatchesRestoreValue(
+                Time.fixedDeltaTime,
+                savedFixedDeltaTime);
+            if (proof != null)
+            {
+                proof.fixedDeltaTimeRestored = restored;
+            }
+            fixedDeltaTimeLeaseOwned = !restored;
+            if (!restored)
+            {
+                throw new InvalidOperationException(
+                    "City capture could not restore the authored fixed timestep: "
+                    + $"actual={Time.fixedDeltaTime:R}; expected={savedFixedDeltaTime:R}.");
+            }
+        }
+
+        private static bool FixedDeltaTimeMatchesRestoreValue(
+            float actual,
+            float expected)
+        {
+            return Mathf.Abs(actual - expected)
+                <= AuditionPvCityHeroPocketCapture.FixedDeltaTimeRestoreTolerance;
+        }
+
+        private void RestoreSessionGlobalState()
+        {
+            if (!restorableStateCaptured)
+            {
+                return;
+            }
+
+            var failures = new List<Exception>(4);
+            CaptureRestoreFailure(failures, () =>
+            {
+                Time.captureFramerate = savedCaptureFramerate;
+                if (Time.captureFramerate != savedCaptureFramerate)
+                {
+                    throw new InvalidOperationException(
+                        "City capture could not restore Time.captureFramerate.");
+                }
+            });
+            CaptureRestoreFailure(failures, () =>
+            {
+                Application.targetFrameRate = savedTargetFrameRate;
+                if (Application.targetFrameRate != savedTargetFrameRate)
+                {
+                    throw new InvalidOperationException(
+                        "City capture could not restore Application.targetFrameRate.");
+                }
+            });
+            CaptureRestoreFailure(failures, () =>
+            {
+                if (!savedRandomStateValid)
+                {
+                    return;
+                }
+                UnityEngine.Random.state = savedRandomState;
+                if (!UnityEngine.Random.state.Equals(savedRandomState))
+                {
+                    throw new InvalidOperationException(
+                        "City capture could not restore UnityEngine.Random.state.");
+                }
+            });
+            CaptureRestoreFailure(failures, RestoreCaptureFixedDeltaTime);
+            if (failures.Count > 0)
+            {
+                throw new AggregateException(
+                    "City capture session-global restoration encountered errors.",
+                    failures);
+            }
         }
 
         private void ValidateProductStateForShot(bool isContinuation)
@@ -1820,6 +3198,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     throw new InvalidOperationException(
                         "G02 requires the unchanged live outcome from G01.");
+                }
+                if (playerMovement.IsCinematicMoveInputLocked
+                    || playerAction.IsCinematicInputLocked
+                    || playerCombatMode.IsCinematicInputLocked
+                    || rangedAction.IsCinematicInputLocked
+                    || enemySoldier.IsGameplaySuspended)
+                {
+                    throw new InvalidOperationException(
+                        "G02 Recorder warmup cannot acquire over existing product locks.");
                 }
                 return;
             }
@@ -1917,6 +3304,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 + $"g02IgnoredProjectileLedger=[{string.Join(" || ", g02IgnoredLaneActionProjectileTriggerEnterLedger)}]; "
                 + $"g02RejectedLedgerCount={g02RejectedTriggerEnterLedger.Count}; "
                 + $"g02RejectedLedger=[{string.Join(" || ", g02RejectedTriggerEnterLedger)}]; "
+                + $"fixedDeltaTime={Time.fixedDeltaTime:R}; "
+                + $"captureFixedDeltaTime="
+                + $"{AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime:R}; "
+                + $"originalFixedDeltaTime={savedFixedDeltaTime:R}; "
+                + $"fixedDeltaTimeLeaseOwned={fixedDeltaTimeLeaseOwned}; "
+                + $"fixedDeltaTimeExactThroughoutShot="
+                + $"{proof.fixedDeltaTimeExactThroughoutShot}; "
                 + $"playerPosition={FormatVector3(characterController.transform.position)}; "
                 + $"enemyPosition={FormatVector3(enemyHealth.transform.position)}; "
                 + $"playerBounds={FormatBounds(playerBounds)}; "
@@ -2029,6 +3423,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
             if (shot == AuditionPvCityShot.G02)
             {
+                proof.g02UsesMagazineReload = rangedAction.UsesMagazineReload;
+                proof.g02MagazineSize = rangedAction.MagazineSize;
+                proof.g02ReloadingAtShotStart = rangedAction.IsReloading;
                 proof.g02PlayerStayedInBounds = Mathf.Abs(shotPlayerStartPosition.x) <= 6f
                     && Mathf.Abs(shotPlayerStartPosition.z) <= 9f;
                 actionCameraRifleFeedbackAtShotStart =
@@ -2111,6 +3508,281 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && !enemySoldier.IsGameplaySuspended;
         }
 
+        private bool IsG02RecorderWarmupSuspensionHeld()
+        {
+            return g02RecorderWarmupSuspensionOwned
+                && playerMovement.IsCinematicMoveInputLocked
+                && playerAction.IsCinematicInputLocked
+                && playerCombatMode.IsCinematicInputLocked
+                && rangedAction.IsCinematicInputLocked
+                && enemySoldier.IsGameplaySuspended;
+        }
+
+        private G02RecorderWarmupSnapshot CaptureG02RecorderWarmupSnapshot()
+        {
+            return new G02RecorderWarmupSnapshot
+            {
+                playerPosition = characterController.transform.position,
+                playerRotation = characterController.transform.rotation,
+                enemyPosition = enemyHealth.transform.position,
+                enemyRotation = enemyHealth.transform.rotation,
+                playerHealth = playerHealth.CurrentHealth,
+                enemyHealth = enemyHealth.CurrentHealth,
+                ammo = rangedAction.CurrentAmmo,
+                playerActiveProjectileCount = rangedAction.ActiveProjectileCount,
+                enemyFiredCount = enemyProjectileDriver.FiredCount,
+                enemyActiveProjectileCount = enemyProjectileDriver.ActiveProjectileCount,
+                playerAlive = playerHealth.IsAlive,
+                enemyAlive = enemyHealth.IsAlive,
+                encounterRunning = encounter.IsRunning,
+                encounterWon = encounter.IsWon,
+                encounterFailed = encounter.IsFailed,
+                encounterFaulted = encounter.IsFaulted,
+                encounterRunGeneration = encounter.RunGeneration,
+                combatMode = playerCombatMode.CurrentMode,
+                playerPlanarVelocity = playerMovement.PlanarVelocity,
+                playerHasMoveInput = playerMovement.HasMoveInput,
+                playerDodging = playerAction.IsDodging,
+                rangedReloading = rangedAction.IsReloading,
+                rangedFireHeld = rangedAction.IsFireHeld,
+                rangedHasExternalFireHeldInput = rangedAction.HasExternalFireHeldInput,
+                enemyPatternState = enemySoldier.CurrentPatternState,
+                enemyActivePatternDeckIndex = enemySoldier.ActivePatternDeckIndex,
+                enemyTelegraphVisible = enemyTelegraphPresenter.IsVisible,
+                actionCameraRifleFeedbackCount =
+                    actionCamera.RifleFireFeedbackRequestCount,
+                actionCameraMicroShakeCount = actionCamera.MicroShakeRequestCount,
+                rangedProjectileFiredCount = proof.rangedProjectileFiredCount,
+                enemyDamagedCount = proof.enemyDamagedCount,
+                enemyDiedCount = proof.enemyDiedCount,
+                encounterWonCount = proof.encounterWonCount,
+                pointerDownCount = proof.pointerDownCount,
+                pointerDragCount = proof.pointerDragCount,
+                pointerUpCount = proof.pointerUpCount,
+                dodgeStartedCount = proof.g02DodgeStartedCount,
+                dodgeEndedCount = proof.g02DodgeEndedCount,
+                reloadStartedCount = proof.g02ReloadStartedCount,
+                reloadCompletedCount = proof.g02ReloadCompletedCount,
+                reloadCanceledCount = proof.g02ReloadCanceledCount,
+                reloadRefilledAmmoCount = proof.g02ReloadRefilledAmmoCount,
+                reloadLifecycleStateExact =
+                    proof.g02ReloadLifecycleStateExact,
+                reloadLifecycleEntryCount = g02ReloadLifecycleLedger.Count,
+                reloadCycleActive = g02ReloadCycleActive,
+                reloadCycleStartAmmo = g02ReloadCycleStartAmmo,
+                executedCommandCount = executedG02Commands.Count,
+                transitionTriggerAcceptedCount = exitTransition.TriggerAcceptedCount,
+                transitionIgnoredProjectileCount =
+                    exitTransition.IgnoredLaneActionProjectileTriggerEnterCount,
+                transitionRejectedCount = exitTransition.RejectedTriggerEnterCount,
+                transitionStartedCount = exitTransition.TransitionStartedCount,
+                transitionHudHiddenCount = exitTransition.HudHiddenCount,
+                transitionFullCoverCount = exitTransition.FullCoverCount,
+                transitionExitReadyCount = exitTransition.ExitReadyCount,
+                transitionPresentationFrame = exitTransition.PresentationFrame,
+                transitionArmed = exitTransition.IsArmed,
+                transitionRunning = exitTransition.IsTransitionRunning,
+                transitionExitReady = exitTransition.IsExitReady,
+                transitionInputLocked = exitTransition.IsInputLocked,
+                transitionAiLocked = exitTransition.IsAiLocked,
+                currentFrame = currentFrame,
+                presentationClockManuallyDriven = PresentationClock.IsManuallyDriven,
+                presentationClockTime = PresentationClock.UnscaledTime,
+                fixedDeltaTime = Time.fixedDeltaTime,
+                fixedDeltaTimeLeaseOwned = fixedDeltaTimeLeaseOwned
+            };
+        }
+
+        private bool IsG02RecorderWarmupProductStateUnchanged()
+        {
+            if (!g02RecorderWarmupSnapshotValid)
+            {
+                return false;
+            }
+
+            G02RecorderWarmupSnapshot value = g02RecorderWarmupSnapshot;
+            return Vector3.Distance(
+                    characterController.transform.position,
+                    value.playerPosition) <= 0.0001f
+                && Quaternion.Angle(
+                    characterController.transform.rotation,
+                    value.playerRotation) <= 0.01f
+                && Vector3.Distance(enemyHealth.transform.position, value.enemyPosition)
+                    <= 0.0001f
+                && Quaternion.Angle(enemyHealth.transform.rotation, value.enemyRotation)
+                    <= 0.01f
+                && Mathf.Abs(playerHealth.CurrentHealth - value.playerHealth)
+                    <= FloatTolerance
+                && Mathf.Abs(enemyHealth.CurrentHealth - value.enemyHealth)
+                    <= FloatTolerance
+                && rangedAction.CurrentAmmo == value.ammo
+                && rangedAction.ActiveProjectileCount
+                    == value.playerActiveProjectileCount
+                && enemyProjectileDriver.FiredCount == value.enemyFiredCount
+                && enemyProjectileDriver.ActiveProjectileCount
+                    == value.enemyActiveProjectileCount
+                && playerHealth.IsAlive == value.playerAlive
+                && enemyHealth.IsAlive == value.enemyAlive
+                && encounter.IsRunning == value.encounterRunning
+                && encounter.IsWon == value.encounterWon
+                && encounter.IsFailed == value.encounterFailed
+                && encounter.IsFaulted == value.encounterFaulted
+                && encounter.RunGeneration == value.encounterRunGeneration
+                && playerCombatMode.CurrentMode == value.combatMode
+                && Vector3.Distance(
+                    playerMovement.PlanarVelocity,
+                    value.playerPlanarVelocity) <= 0.0001f
+                && playerMovement.HasMoveInput == value.playerHasMoveInput
+                && playerAction.IsDodging == value.playerDodging
+                && rangedAction.IsReloading == value.rangedReloading
+                && rangedAction.IsFireHeld == value.rangedFireHeld
+                && rangedAction.HasExternalFireHeldInput
+                    == value.rangedHasExternalFireHeldInput
+                && enemySoldier.CurrentPatternState == value.enemyPatternState
+                && enemySoldier.ActivePatternDeckIndex
+                    == value.enemyActivePatternDeckIndex
+                && enemyTelegraphPresenter.IsVisible == value.enemyTelegraphVisible
+                && actionCamera.RifleFireFeedbackRequestCount
+                    == value.actionCameraRifleFeedbackCount
+                && actionCamera.MicroShakeRequestCount
+                    == value.actionCameraMicroShakeCount
+                && proof.rangedProjectileFiredCount
+                    == value.rangedProjectileFiredCount
+                && proof.enemyDamagedCount == value.enemyDamagedCount
+                && proof.enemyDiedCount == value.enemyDiedCount
+                && proof.encounterWonCount == value.encounterWonCount
+                && proof.pointerDownCount == value.pointerDownCount
+                && proof.pointerDragCount == value.pointerDragCount
+                && proof.pointerUpCount == value.pointerUpCount
+                && proof.g02DodgeStartedCount == value.dodgeStartedCount
+                && proof.g02DodgeEndedCount == value.dodgeEndedCount
+                && proof.g02ReloadStartedCount == value.reloadStartedCount
+                && proof.g02ReloadCompletedCount == value.reloadCompletedCount
+                && proof.g02ReloadCanceledCount == value.reloadCanceledCount
+                && proof.g02ReloadRefilledAmmoCount
+                    == value.reloadRefilledAmmoCount
+                && proof.g02ReloadLifecycleStateExact
+                    == value.reloadLifecycleStateExact
+                && g02ReloadLifecycleLedger.Count
+                    == value.reloadLifecycleEntryCount
+                && g02ReloadCycleActive == value.reloadCycleActive
+                && g02ReloadCycleStartAmmo == value.reloadCycleStartAmmo
+                && executedG02Commands.Count == value.executedCommandCount
+                && exitTransition.TriggerAcceptedCount
+                    == value.transitionTriggerAcceptedCount
+                && exitTransition.IgnoredLaneActionProjectileTriggerEnterCount
+                    == value.transitionIgnoredProjectileCount
+                && exitTransition.RejectedTriggerEnterCount
+                    == value.transitionRejectedCount
+                && exitTransition.TransitionStartedCount
+                    == value.transitionStartedCount
+                && exitTransition.HudHiddenCount == value.transitionHudHiddenCount
+                && exitTransition.FullCoverCount == value.transitionFullCoverCount
+                && exitTransition.ExitReadyCount == value.transitionExitReadyCount
+                && exitTransition.PresentationFrame
+                    == value.transitionPresentationFrame
+                && exitTransition.IsArmed == value.transitionArmed
+                && exitTransition.IsTransitionRunning == value.transitionRunning
+                && exitTransition.IsExitReady == value.transitionExitReady
+                && exitTransition.IsInputLocked == value.transitionInputLocked
+                && exitTransition.IsAiLocked == value.transitionAiLocked
+                && currentFrame == value.currentFrame
+                && PresentationClock.IsManuallyDriven
+                    == value.presentationClockManuallyDriven
+                && Mathf.Abs(
+                    PresentationClock.UnscaledTime - value.presentationClockTime)
+                    <= 0.00001f
+                && value.fixedDeltaTime
+                    == AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime
+                && Time.fixedDeltaTime == value.fixedDeltaTime
+                && value.fixedDeltaTimeLeaseOwned
+                && fixedDeltaTimeLeaseOwned
+                && g02IgnoredLaneActionProjectileTriggerEnterLedger.Count == 0
+                && g02RejectedTriggerEnterLedger.Count == 0
+                && g02ReloadLifecycleLedger.Count == 0;
+        }
+
+        private void ReleaseG02RecorderWarmupSuspension(
+            int recorderWarmupEndOfFrameCount,
+            bool requireExactRecorderWarmup)
+        {
+            if (!g02RecorderWarmupSuspensionOwned)
+            {
+                if (requireExactRecorderWarmup && shot == AuditionPvCityShot.G02)
+                {
+                    throw new InvalidOperationException(
+                        "G02 logical f0 cannot begin without its Recorder warmup suspension.");
+                }
+                return;
+            }
+
+            bool heldUntilLogicalFrameZero =
+                IsG02RecorderWarmupSuspensionHeld();
+            bool productStateUnchanged =
+                IsG02RecorderWarmupProductStateUnchanged();
+            proof.g02RecorderWarmupEndOfFrameCount =
+                recorderWarmupEndOfFrameCount;
+            proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero =
+                heldUntilLogicalFrameZero;
+            proof.g02RecorderWarmupProductStateUnchanged =
+                productStateUnchanged;
+
+            Exception firstFailure = null;
+            CaptureRestoreFailure(
+                ref firstFailure,
+                () => enemySoldier.SetGameplaySuspended(false));
+            CaptureRestoreFailure(
+                ref firstFailure,
+                () => rangedAction.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    false));
+            CaptureRestoreFailure(
+                ref firstFailure,
+                () => playerCombatMode.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    false));
+            CaptureRestoreFailure(
+                ref firstFailure,
+                () => playerAction.SetCinematicInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    false));
+            CaptureRestoreFailure(
+                ref firstFailure,
+                () => playerMovement.SetCinematicMoveInputLocked(
+                    PlayerInputLockSource.EditorVerification,
+                    false));
+
+            bool releasedBeforeLogicalFrameZero = firstFailure == null
+                && currentFrame == -1
+                && !playerMovement.IsCinematicMoveInputLocked
+                && !playerAction.IsCinematicInputLocked
+                && !playerCombatMode.IsCinematicInputLocked
+                && !rangedAction.IsCinematicInputLocked
+                && !enemySoldier.IsGameplaySuspended;
+            proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero =
+                releasedBeforeLogicalFrameZero;
+            g02RecorderWarmupSuspensionOwned = !releasedBeforeLogicalFrameZero;
+            g02RecorderWarmupSnapshotValid = false;
+
+            if (firstFailure != null)
+            {
+                throw new InvalidOperationException(
+                    "G02 Recorder warmup suspension release failed.",
+                    firstFailure);
+            }
+            if (requireExactRecorderWarmup
+                && (recorderWarmupEndOfFrameCount != 2
+                    || !proof.g02RecorderWarmupSuspensionAcquired
+                    || !heldUntilLogicalFrameZero
+                    || !productStateUnchanged
+                    || !releasedBeforeLogicalFrameZero))
+            {
+                throw new InvalidOperationException(
+                    "G02 Recorder warmup must remain product-frozen for exactly two "
+                    + "EndOfFrame samples and release atomically before logical f0.");
+            }
+        }
+
         private void CleanupCurrentShot(bool finalCleanup)
         {
             if (proof == null || currentShotRestored || restoring)
@@ -2123,8 +3795,20 @@ namespace DimensionBrawl.Editor.AuditionPV
             Exception firstFailure = null;
             try
             {
+                if (!finalCleanup)
+                {
+                    CaptureRestoreFailure(
+                        ref firstFailure,
+                        () => RequireCaptureFixedDeltaTimeExact(
+                            "continuation cleanup"));
+                }
                 CaptureRestoreFailure(ref firstFailure, ReleaseAllPointers);
                 CaptureRestoreFailure(ref firstFailure, () => rail?.Stop());
+                CaptureRestoreFailure(
+                    ref firstFailure,
+                    () => ReleaseG02RecorderWarmupSuspension(
+                        proof.g02RecorderWarmupEndOfFrameCount,
+                        requireExactRecorderWarmup: false));
                 CaptureRestoreFailure(ref firstFailure, ReleaseG01Suspension);
                 CaptureRestoreFailure(ref firstFailure, UnsubscribeProductEvidence);
                 CaptureRestoreFailure(ref firstFailure, () =>
@@ -2142,22 +3826,24 @@ namespace DimensionBrawl.Editor.AuditionPV
                 CaptureRestoreFailure(ref firstFailure, RestoreActionCameraState);
                 if (finalCleanup)
                 {
-                    CaptureRestoreFailure(ref firstFailure, () =>
-                    {
-                        if (restorableStateCaptured)
-                        {
-                            Time.captureFramerate = savedCaptureFramerate;
-                            Application.targetFrameRate = savedTargetFrameRate;
-                        }
-                        if (savedRandomStateValid)
-                        {
-                            UnityEngine.Random.state = savedRandomState;
-                        }
-                    });
+                    CaptureRestoreFailure(
+                        ref firstFailure,
+                        RestoreSessionGlobalState);
                 }
             }
             finally
             {
+                proof.fixedDeltaTimeLeasePreservedForContinuation =
+                    !finalCleanup
+                    && fixedDeltaTimeLeaseOwned
+                    && Time.fixedDeltaTime
+                        == AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime;
+                proof.fixedDeltaTimeRestored = finalCleanup
+                    && restorableStateCaptured
+                    && !fixedDeltaTimeLeaseOwned
+                    && FixedDeltaTimeMatchesRestoreValue(
+                        Time.fixedDeltaTime,
+                        savedFixedDeltaTime);
                 proof.presentationClockReleased = !PresentationClock.IsManuallyDriven;
                 proof.pointerLeasesReleased = ArePointerLeasesReleased();
                 proof.hudStateRestored = IsHudStateRestored();
@@ -2188,6 +3874,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                         && exitTransition.RejectedTriggerEnterCount == 0
                         && exitTransition.TransitionStartedCount == 0;
                 proof.stateRestored = firstFailure == null
+                    && !g02RecorderWarmupSuspensionOwned
+                    && (proof.fixedDeltaTimeLeasePreservedForContinuation
+                        || proof.fixedDeltaTimeRestored)
                     && proof.presentationClockReleased
                     && proof.pointerLeasesReleased
                     && proof.hudStateRestored
@@ -2438,19 +4127,30 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ResetShotProof(AuditionPvCityShot newShot)
         {
+            if (g02RecorderWarmupSuspensionOwned)
+            {
+                throw new InvalidOperationException(
+                    "A City shot cannot reset while the G02 Recorder warmup suspension is owned.");
+            }
             shot = newShot;
             proof = new AuditionPvCityHeroPocketRuntimeProof
             {
                 shotId = AuditionPvCityHeroPocketCapture.GetShotId(newShot),
                 expectedFrameCount =
-                    AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(newShot)
+                    AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(newShot),
+                originalFixedDeltaTime = restorableStateCaptured
+                    ? savedFixedDeltaTime
+                    : 0f
             };
             executedG02Commands.Clear();
             if (newShot != AuditionPvCityShot.G03)
             {
                 g02IgnoredLaneActionProjectileTriggerEnterLedger.Clear();
                 g02RejectedTriggerEnterLedger.Clear();
+                g02ReloadLifecycleLedger.Clear();
             }
+            g02ReloadCycleActive = false;
+            g02ReloadCycleStartAmmo = 0;
             IsPrepared = false;
             IsRunning = false;
             IsComplete = false;
@@ -2462,10 +4162,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             nextAttackPointerId = 5201;
             nextDodgePointerId = 5301;
             activeG03PreRollFrame = -1;
+            g02RecorderWarmupSnapshotValid = false;
         }
 
         private IEnumerator PrepareG03TransitionPreRoll()
         {
+            RequireCaptureFixedDeltaTimeExact("G03 transition pre-roll start");
             proof.transitionIgnoredLaneActionProjectileBaseline =
                 exitTransition.IgnoredLaneActionProjectileTriggerEnterCount;
             proof.transitionRejectedTriggerEnterBaseline =
@@ -2495,8 +4197,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 preRollFrame++)
             {
                 activeG03PreRollFrame = preRollFrame;
+                RequireCaptureFixedDeltaTimeExact(
+                    $"G03 transition pre-roll p{preRollFrame} before player frame");
                 presentationClockLease.SetFrame(preRollFrame);
                 yield return WaitForNextPlayerFrame();
+                RequireCaptureFixedDeltaTimeExact(
+                    $"G03 transition pre-roll p{preRollFrame} after player frame");
 
                 Vector3 position = characterController.transform.position;
                 if (proof.g03TriggerAcceptedPreRollFrame < 0)
@@ -2829,6 +4535,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     - actionCameraRifleFeedbackAtShotStart;
                 proof.g02MicroShakeRequestDelta = actionCamera.MicroShakeRequestCount
                     - actionCameraMicroShakeAtShotStart;
+                proof.g02ReloadingAtShotEnd = rangedAction.IsReloading;
+                proof.g02ReloadLifecycleStateExact &=
+                    g02ReloadCycleActive == rangedAction.IsReloading;
+                proof.g02ReloadLifecycleLedger =
+                    g02ReloadLifecycleLedger.ToArray();
                 proof.g02PlayerAliveAtEnd = playerHealth.IsAlive;
                 proof.g02EnemyHealthAtEnd = enemyHealth.CurrentHealth;
                 proof.g02IgnoredLaneActionProjectileTriggerEnterCount =
@@ -2857,7 +4568,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                     || !proof.g02EndedSouthOfExitTrigger)
                 {
                     throw new InvalidOperationException(
-                        "G02 did not finish its exact pointer schedule, natural Won, and south/outside handoff state.");
+                        "G02 did not finish its exact pointer schedule, natural Won, "
+                        + "and south/outside handoff state. Observed: "
+                        + BuildG02CompletionDiagnostics());
                 }
                 return;
             }
@@ -2907,10 +4620,87 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        private string BuildG02CompletionDiagnostics()
+        {
+            Bounds playerBounds = characterController.bounds;
+            Bounds triggerBounds = exitTransition.ExitTrigger.bounds;
+            bool ignoredLedgerExact = AuditionPvCityHeroPocketCapture
+                .HasExactG02IgnoredProjectileTriggerLedger(
+                    proof.g02IgnoredLaneActionProjectileTriggerEnterLedger);
+            return $"pointerScheduleExact={proof.g02PointerScheduleExact}; "
+                + $"executedPointerCommands={executedG02Commands.Count}; "
+                + "recorderWarmup="
+                + $"acquired:{proof.g02RecorderWarmupSuspensionAcquired},"
+                + $"endOfFrames:{proof.g02RecorderWarmupEndOfFrameCount},"
+                + "heldUntilF0:"
+                + $"{proof.g02RecorderWarmupSuspensionHeldUntilLogicalFrameZero},"
+                + $"stateExact:{proof.g02RecorderWarmupProductStateUnchanged},"
+                + "releasedBeforeF0:"
+                + $"{proof.g02RecorderWarmupSuspensionReleasedBeforeLogicalFrameZero}; "
+                + $"reloadUsesMagazine={proof.g02UsesMagazineReload}; "
+                + $"reloadMagazineSize={proof.g02MagazineSize}; "
+                + $"reloadAtStart={proof.g02ReloadingAtShotStart}; "
+                + $"reloadStarted={proof.g02ReloadStartedCount}; "
+                + $"reloadCompleted={proof.g02ReloadCompletedCount}; "
+                + $"reloadCanceled={proof.g02ReloadCanceledCount}; "
+                + $"reloadRefilledAmmo={proof.g02ReloadRefilledAmmoCount}; "
+                + $"reloadLifecycleStateExact="
+                + $"{proof.g02ReloadLifecycleStateExact}; "
+                + $"reloadAtEnd={proof.g02ReloadingAtShotEnd}; "
+                + $"ammoStart={proof.ammoAtShotStart}; "
+                + $"ammoEnd={proof.ammoAtShotEnd}; "
+                + "reloadLedger=["
+                + string.Join(
+                    " || ",
+                    proof.g02ReloadLifecycleLedger
+                        ?.Select(entry => entry?.ToString() ?? "<null>")
+                        ?? Enumerable.Empty<string>())
+                + "]; "
+                + $"encounterWon={encounter.IsWon}; enemyDiedCount={proof.enemyDiedCount}; "
+                + $"encounterWonCount={proof.encounterWonCount}; "
+                + "ignoredLaneActionProjectileCount="
+                + $"{proof.g02IgnoredLaneActionProjectileTriggerEnterCount}; "
+                + $"ignoredLedgerExact={ignoredLedgerExact}; "
+                + "ignoredLedger=["
+                + string.Join(
+                    " || ",
+                    proof.g02IgnoredLaneActionProjectileTriggerEnterLedger
+                        ?.Select(entry => entry?.ToString() ?? "<null>")
+                        ?? Enumerable.Empty<string>())
+                + "]; "
+                + $"rejectedCount={proof.g02RejectedTriggerEnterCount}; "
+                + "rejectedLedger=["
+                + string.Join(
+                    " || ",
+                    proof.g02RejectedTriggerEnterLedger
+                        ?.Select(entry => entry?.ToString() ?? "<null>")
+                        ?? Enumerable.Empty<string>())
+                + "]; "
+                + $"outside={proof.g02EndedOutsideExitTrigger}; "
+                + $"south={proof.g02EndedSouthOfExitTrigger}; "
+                + $"currentFrame={currentFrame}; UnityFrame={Time.frameCount}; "
+                + $"deltaTime={Time.deltaTime:R}; captureDeltaTime={Time.captureDeltaTime:R}; "
+                + $"fixedDeltaTime={Time.fixedDeltaTime:R}; "
+                + $"captureFixedDeltaTime="
+                + $"{AuditionPvCityHeroPocketCapture.CaptureFixedDeltaTime:R}; "
+                + $"originalFixedDeltaTime={savedFixedDeltaTime:R}; "
+                + $"fixedDeltaTimeLeaseOwned={fixedDeltaTimeLeaseOwned}; "
+                + $"fixedDeltaTimeLogicalSamples="
+                + $"{proof.fixedDeltaTimeLogicalFrameSampleCount}; "
+                + $"fixedDeltaTimeExactThroughoutShot="
+                + $"{proof.fixedDeltaTimeExactThroughoutShot}; "
+                + $"playerPosition={FormatVector3(characterController.transform.position)}; "
+                + $"playerBounds={FormatBounds(playerBounds)}; "
+                + $"triggerBounds={FormatBounds(triggerBounds)}; "
+                + $"southGap={triggerBounds.min.z - playerBounds.max.z:R}.";
+        }
+
         private void SubscribeProductEvidence()
         {
             rangedAction.RangedProjectileFired += HandleRangedProjectileFired;
             rangedAction.RangedReloadStarted += HandleRangedReloadStarted;
+            rangedAction.RangedReloadCompleted += HandleRangedReloadCompleted;
+            rangedAction.RangedReloadCanceled += HandleRangedReloadCanceled;
             playerAction.DodgeStarted += HandleDodgeStarted;
             playerAction.DodgeEnded += HandleDodgeEnded;
             enemySoldier.PatternStateChanged += HandleEnemyPatternStateChanged;
@@ -2929,6 +4719,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 rangedAction.RangedProjectileFired -= HandleRangedProjectileFired;
                 rangedAction.RangedReloadStarted -= HandleRangedReloadStarted;
+                rangedAction.RangedReloadCompleted -= HandleRangedReloadCompleted;
+                rangedAction.RangedReloadCanceled -= HandleRangedReloadCanceled;
             }
             if (playerAction != null)
             {
@@ -2981,7 +4773,76 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void HandleRangedReloadStarted()
         {
-            proof.g02ReloadStartedCount++;
+            RecordG02ReloadLifecycle(
+                AuditionPvCityHeroPocketCapture.G02ReloadStartedEvent);
+        }
+
+        private void HandleRangedReloadCompleted()
+        {
+            RecordG02ReloadLifecycle(
+                AuditionPvCityHeroPocketCapture.G02ReloadCompletedEvent);
+        }
+
+        private void HandleRangedReloadCanceled()
+        {
+            RecordG02ReloadLifecycle(
+                AuditionPvCityHeroPocketCapture.G02ReloadCanceledEvent);
+        }
+
+        private void RecordG02ReloadLifecycle(string eventName)
+        {
+            if (shot != AuditionPvCityShot.G02 || proof == null)
+            {
+                return;
+            }
+
+            switch (eventName)
+            {
+                case AuditionPvCityHeroPocketCapture.G02ReloadStartedEvent:
+                    proof.g02ReloadStartedCount++;
+                    proof.g02ReloadLifecycleStateExact &=
+                        !g02ReloadCycleActive && rangedAction.IsReloading;
+                    g02ReloadCycleActive = true;
+                    g02ReloadCycleStartAmmo = rangedAction.CurrentAmmo;
+                    break;
+                case AuditionPvCityHeroPocketCapture.G02ReloadCompletedEvent:
+                    proof.g02ReloadCompletedCount++;
+                    proof.g02ReloadLifecycleStateExact &=
+                        g02ReloadCycleActive && !rangedAction.IsReloading
+                        && rangedAction.CurrentAmmo >= g02ReloadCycleStartAmmo;
+                    if (g02ReloadCycleActive)
+                    {
+                        proof.g02ReloadRefilledAmmoCount += Mathf.Max(
+                            0,
+                            rangedAction.CurrentAmmo - g02ReloadCycleStartAmmo);
+                    }
+                    g02ReloadCycleActive = false;
+                    break;
+                case AuditionPvCityHeroPocketCapture.G02ReloadCanceledEvent:
+                    proof.g02ReloadCanceledCount++;
+                    proof.g02ReloadLifecycleStateExact &=
+                        g02ReloadCycleActive && !rangedAction.IsReloading
+                        && rangedAction.CurrentAmmo == g02ReloadCycleStartAmmo;
+                    g02ReloadCycleActive = false;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(eventName),
+                        eventName,
+                        "Unknown City G02 reload lifecycle event.");
+            }
+
+            g02ReloadLifecycleLedger.Add(
+                new AuditionPvCityReloadLifecycleLedgerEntry
+                {
+                    eventName = eventName,
+                    logicalFrame = currentFrame,
+                    unityFrame = Time.frameCount,
+                    ammo = rangedAction.CurrentAmmo,
+                    isReloading = rangedAction.IsReloading
+                });
+            proof.g02ReloadLifecycleLedger =
+                g02ReloadLifecycleLedger.ToArray();
         }
 
         private void HandleDodgeStarted()
@@ -3320,6 +5181,20 @@ namespace DimensionBrawl.Editor.AuditionPV
             catch (Exception exception)
             {
                 firstFailure ??= exception;
+            }
+        }
+
+        private static void CaptureRestoreFailure(
+            ICollection<Exception> failures,
+            Action action)
+        {
+            try
+            {
+                action?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                failures?.Add(exception);
             }
         }
 

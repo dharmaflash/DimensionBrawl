@@ -27,6 +27,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertShotMapping(AuditionPvCityShot.G02, 420, 421);
             AssertShotMapping(AuditionPvCityShot.G03, 300, 301);
             Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner.G02DodgeVisualBeforeFrame,
+                Is.EqualTo(AuditionPvCityHeroPocketCapture.G02DodgeDownFrame - 1));
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner.G02DodgeVisualAfterFrame,
+                Is.EqualTo(AuditionPvCityHeroPocketCapture.G02DodgeUpFrame + 1));
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner.G02DodgeVisualAfterFrame,
+                Is.EqualTo(AuditionPvCityHeroPocketCapture.G02SecondMoveUpFrame));
+            Assert.That(
                 AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
                     AuditionPvCityShot.G01,
                     0),
@@ -99,7 +108,20 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("recorderController.PrepareRecording();"));
             Assert.That(source, Does.Contain("recorderController.StartRecording()"));
             Assert.That(source, Does.Contain("new WaitForEndOfFrame()"));
-            Assert.That(source, Does.Contain("director.BeginShotForRecorder();"));
+            Assert.That(source, Does.Contain("director.BeginShotForRecorder("));
+            Assert.That(source, Does.Contain(
+                "activeProof.recorderWarmupEndOfFrameCount"));
+            int warmupArmIndex = source.IndexOf(
+                "director.ArmG02RecorderWarmupSuspension();",
+                StringComparison.Ordinal);
+            int prepareRecordingIndex = source.IndexOf(
+                "recorderController.PrepareRecording();",
+                StringComparison.Ordinal);
+            Assert.That(warmupArmIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(
+                warmupArmIndex,
+                Is.LessThan(prepareRecordingIndex),
+                "G02 must acquire its product-state barrier before Recorder warmup frames.");
             Assert.That(source, Does.Contain("director.RestoreShotState();"));
             Assert.That(
                 source,
@@ -464,6 +486,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             // City/portal cyan outside the reviewed energy-bar ROI is not HUD proof.
             pixels[16 * Width + 16] = cyan;
             pixels[240 * Width + 400] = cyan;
+            // A matching cyan inside the horizontal band but above the reviewed
+            // bottom HUD region must not count.
+            pixels[80 * Width + 144] = cyan;
             Assert.That(
                 AuditionPvCityHeroPocketGoldenRunner.EvaluatePixels(
                     pixels,
@@ -472,11 +497,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     measureHud: true).frameZeroHudAccentSamples,
                 Is.EqualTo(0));
 
-            for (int y = 432; y <= 464; y += 32)
+            for (int topY = 432; topY <= 464; topY += 32)
             {
                 for (int x = 144; x <= 240; x += 32)
                 {
-                    pixels[y * Width + x] = cyan;
+                    pixels[topY * Width + x] = cyan;
                 }
             }
 
@@ -495,6 +520,91 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     Height,
                     measureHud: false).frameZeroHudAccentSamples,
                 Is.EqualTo(0));
+        }
+
+        [Test]
+        public void HudCyanProbe_QhdPresentationGridAvoidsRawRowPhaseDrift()
+        {
+            const int Width = 2560;
+            const int Height = 1440;
+            Color32 gray = new(60, 70, 80, 255);
+            Color32 cyan = new(40, 190, 230, 255);
+            Color32[] pixels = Enumerable.Repeat(gray, Width * Height).ToArray();
+
+            // The reviewed QHD grid samples topY=1264. A one-pixel phase drift
+            // must not be accepted merely because the cyan band is nearby.
+            for (int x = 720; x <= 1296; x += 32)
+            {
+                pixels[1263 * Width + x] = cyan;
+            }
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner.EvaluatePixels(
+                    pixels,
+                    Width,
+                    Height,
+                    measureHud: true).frameZeroHudAccentSamples,
+                Is.EqualTo(0));
+
+            for (int x = 720; x <= 1296; x += 32)
+            {
+                pixels[1264 * Width + x] = cyan;
+            }
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner.EvaluatePixels(
+                    pixels,
+                    Width,
+                    Height,
+                    measureHud: true).frameZeroHudAccentSamples,
+                Is.EqualTo(19));
+        }
+
+        [Test]
+        public void HudCyanProbe_LoadedPngUsesSemanticColorAndOrientation()
+        {
+            const int Width = 512;
+            const int Height = 512;
+            Color32 gray = new(60, 70, 80, 255);
+            Color32 cyan = new(40, 190, 230, 255);
+            var source = new Texture2D(
+                Width,
+                Height,
+                TextureFormat.RGBA32,
+                false,
+                true);
+            var loaded = new Texture2D(
+                2,
+                2,
+                TextureFormat.RGBA32,
+                false,
+                true);
+            try
+            {
+                source.SetPixels32(
+                    Enumerable.Repeat(gray, Width * Height).ToArray());
+                for (int topY = 432; topY <= 464; topY += 32)
+                {
+                    for (int x = 144; x <= 240; x += 32)
+                    {
+                        source.SetPixel(x, Height - 1 - topY, cyan);
+                    }
+                }
+                source.Apply(false, false);
+
+                byte[] png = source.EncodeToPNG();
+                Assert.That(
+                    ImageConversion.LoadImage(loaded, png, markNonReadable: false),
+                    Is.True);
+                Assert.That(
+                    AuditionPvCityHeroPocketGoldenRunner.EvaluateTexturePixels(
+                        loaded,
+                        measureHud: true).frameZeroHudAccentSamples,
+                    Is.EqualTo(8));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(loaded);
+                UnityEngine.Object.DestroyImmediate(source);
+            }
         }
 
         [Test]

@@ -63,6 +63,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private const double MaximumFrameMagentaRatio = 0.02d;
         private const int MinimumHealthyFramePercent = 90;
         private const int MinimumHudAccentSamples = 12;
+        internal const int G02DodgeVisualBeforeFrame = 239;
+        internal const int G02DodgeVisualAfterFrame = 242;
 
         internal static readonly AuditionPvCityShot[] ShotOrder =
         {
@@ -440,18 +442,58 @@ namespace DimensionBrawl.Editor.AuditionPV
                 throw new ArgumentException("City pixel buffer dimensions are invalid.");
             }
 
-            return EvaluateSampledPixels(
+            SequenceVisualMetrics metrics = EvaluateSampledPixels(
                 index => pixels[index],
                 width,
-                height,
-                measureHud);
+                height);
+            if (measureHud)
+            {
+                // Synthetic test buffers use presentation (top-left) row order.
+                metrics.frameZeroHudAccentSamples = CountHudCyanAccentSamples(
+                    (x, topY) => pixels[topY * width + x],
+                    width,
+                    height);
+            }
+
+            return metrics;
+        }
+
+        internal static SequenceVisualMetrics EvaluateTexturePixels(
+            Texture2D texture,
+            bool measureHud)
+        {
+            if (texture == null || !texture.isReadable
+                || texture.width <= 0 || texture.height <= 0)
+            {
+                throw new ArgumentException(
+                    "City texture pixel buffer is null, unreadable, or empty.");
+            }
+
+            NativeArray<Color32> native = texture.GetRawTextureData<Color32>();
+            SequenceVisualMetrics metrics = EvaluateSampledPixels(
+                index => native[index],
+                texture.width,
+                texture.height);
+            if (measureHud)
+            {
+                // GetPixel provides semantic RGBA values with a bottom-left
+                // origin, independent of raw texture byte order on the active
+                // graphics backend.
+                metrics.frameZeroHudAccentSamples = CountHudCyanAccentSamples(
+                    (x, topY) => (Color32)texture.GetPixel(
+                        x,
+                        texture.height - 1 - topY),
+                    texture.width,
+                    texture.height);
+            }
+
+            return metrics;
         }
 
         private static SequenceVisualMetrics EvaluateSampledPixels(
             Func<int, Color32> readPixel,
             int width,
-            int height,
-            bool measureHud)
+            int height)
         {
             var metrics = new SequenceVisualMetrics
             {
@@ -480,19 +522,6 @@ namespace DimensionBrawl.Editor.AuditionPV
                         metrics.magentaSampleCount++;
                     }
 
-                    bool hudEnergyBarRoi = x >= width * 0.27f
-                        && x <= width * 0.53f
-                        && y >= height * 0.84f
-                        && y <= height * 0.92f;
-                    bool cyanHudAccent = pixel.g >= 145
-                        && pixel.b >= 165
-                        && pixel.r <= 125
-                        && pixel.b - pixel.r >= 45;
-                    if (measureHud && hudEnergyBarRoi && cyanHudAccent)
-                    {
-                        metrics.frameZeroHudAccentSamples++;
-                    }
-
                     metrics.sampleCount++;
                 }
             }
@@ -505,6 +534,44 @@ namespace DimensionBrawl.Editor.AuditionPV
             metrics.healthyFrameCount =
                 metrics.blackRatio < MaximumSequenceBlackRatio ? 1 : 0;
             return metrics;
+        }
+
+        private static int CountHudCyanAccentSamples(
+            Func<int, int, Color32> readPresentationPixel,
+            int width,
+            int height)
+        {
+            // Keep this sparse probe in presentation (top-left) coordinates.
+            // The caller owns any Texture2D storage-orientation/channel mapping.
+            const int Step = 32;
+            int count = 0;
+            for (int topY = Step / 2; topY < height; topY += Step)
+            {
+                if (topY < height * 0.84f || topY > height * 0.92f)
+                {
+                    continue;
+                }
+
+                for (int x = Step / 2; x < width; x += Step)
+                {
+                    if (x < width * 0.27f || x > width * 0.53f)
+                    {
+                        continue;
+                    }
+
+                    Color32 pixel = readPresentationPixel(x, topY);
+                    bool cyanHudAccent = pixel.g >= 145
+                        && pixel.b >= 165
+                        && pixel.r <= 125
+                        && pixel.b - pixel.r >= 45;
+                    if (cyanHudAccent)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
         }
 
         internal static ScreenDeltaMetrics EvaluateScreenDelta(
@@ -628,7 +695,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                         3d,
                         0.12d);
                     ValidateScreenDelta(
-                        "City G02 dodge f239->f241",
+                        $"City G02 dodge f{G02DodgeVisualBeforeFrame}"
+                        + $"->f{G02DodgeVisualAfterFrame}",
                         metrics.dodgeDelta,
                         2d,
                         0.05d);
@@ -668,8 +736,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                         || value.cyanAccentSamples < MinimumHudAccentSamples)
                     .Any())
             {
+                string observed = string.Join(
+                    ",",
+                    probes.Select(value => value == null
+                        ? "<null>"
+                        : $"f{value.frame}:{value.cyanAccentSamples}"));
                 throw new InvalidOperationException(
-                    "City G02 HUD-on cyan pixel evidence is incomplete.");
+                    "City G02 HUD-on cyan pixel evidence is incomplete; expected "
+                    + string.Join(",", expectedFrames.Select(frame =>
+                        $"f{frame}>={MinimumHudAccentSamples}"))
+                    + ", observed "
+                    + observed
+                    + ".");
             }
         }
 
@@ -1519,14 +1597,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 Texture2D texture = LoadPng(path);
                 try
                 {
+                    bool measureHud = Array.IndexOf(hudProbeFrames, frame) >= 0;
+                    SequenceVisualMetrics current = EvaluateTexturePixels(
+                        texture,
+                        measureHud);
                     NativeArray<Color32> native =
                         texture.GetRawTextureData<Color32>();
-                    bool measureHud = Array.IndexOf(hudProbeFrames, frame) >= 0;
-                    SequenceVisualMetrics current = EvaluateSampledPixels(
-                        index => native[index],
-                        texture.width,
-                        texture.height,
-                        measureHud);
                     aggregate.sampleCount += current.sampleCount;
                     aggregate.blackSampleCount += current.blackSampleCount;
                     aggregate.magentaSampleCount += current.magentaSampleCount;
@@ -1605,8 +1681,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 aggregate.dodgeDelta = AnalyzeScreenDelta(
                     frameDirectory,
                     shot,
-                    239,
-                    241);
+                    G02DodgeVisualBeforeFrame,
+                    G02DodgeVisualAfterFrame);
             }
 
             return aggregate;
@@ -2553,7 +2629,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                             CultureInfo.InvariantCulture));
                 }
 
-                director.BeginShotForRecorder();
+                director.BeginShotForRecorder(
+                    activeProof.recorderWarmupEndOfFrameCount);
                 beganLogicalShot = true;
             }
             catch (Exception exception)
@@ -2692,6 +2769,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvCityHeroPocketGoldenRunner.RawWarmupFrame,
                 AuditionPvCityHeroPocketGoldenRunner.RawLastFrame(shot));
             AuditionPvRecorderSettingsFactory.Validate(recorderSettings);
+            if (shot == AuditionPvCityShot.G02)
+            {
+                director.ArmG02RecorderWarmupSuspension();
+            }
             recorderController = new RecorderController(
                 recorderSettings.controllerSettings);
             recorderController.PrepareRecording();

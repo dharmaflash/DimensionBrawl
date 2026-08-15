@@ -869,7 +869,7 @@ namespace DimensionBrawl.Tests
             controller.Move(Vector3.forward * crossingDistance);
             Physics.SyncTransforms();
             yield return new WaitForFixedUpdate();
-            yield return null;
+            yield return new WaitForFixedUpdate();
         }
 
         private static IEnumerator Click(
