@@ -49,6 +49,22 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/Sanitized/DB_Akaza_C27_InPlace.anim";
         private const string PhaseTwoProjectilePath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_AkazaPhase2.prefab";
+        private const string PhaseTwoProjectileCoreMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_AkazaPhase2_Core.mat";
+        private const string PhaseTwoProjectileAccentMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_AkazaPhase2_Accent.mat";
+        private const string PhaseTwoProjectileTrailMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_AkazaPhase2_Trail.mat";
+        private const string PhaseTwoProjectileSmokeMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_AkazaPhase2_Smoke.mat";
+        private const string MagicMissileFlareTexturePath =
+            "Assets/_Game/Art/VFX/MagicMissiles/Textures/shared_flare.png";
+        private const string MagicMissileRaysTexturePath =
+            "Assets/_Game/Art/VFX/MagicMissiles/Textures/shared_rays.png";
+        private const string MagicMissileTrailTexturePath =
+            "Assets/_Game/Art/VFX/MagicMissiles/Textures/shared_trail.png";
+        private const string MagicMissileSmokeTexturePath =
+            "Assets/_Game/Art/VFX/MagicMissiles/Textures/shared_smoke.png";
         private const string PhaseTwoLookProfilePath =
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Volume_OlympusStationAkazaPhase2Intro.asset";
         private const string PhaseTwoLookMaterialFolder =
@@ -88,6 +104,101 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_AkazaPhase2.asset";
         private const string SummonPressurePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossSummonPressure_AkazaPhase2.asset";
+
+        [Test]
+        public void PhaseTwoProjectileUsesLayeredMagicMissileMaterialsWithoutRuntimeOverride()
+        {
+            GameObject projectilePrefab = RequireAsset<GameObject>(PhaseTwoProjectilePath);
+            Material core = RequireAsset<Material>(PhaseTwoProjectileCoreMaterialPath);
+            Material accent = RequireAsset<Material>(PhaseTwoProjectileAccentMaterialPath);
+            Material trail = RequireAsset<Material>(PhaseTwoProjectileTrailMaterialPath);
+            Material smoke = RequireAsset<Material>(PhaseTwoProjectileSmokeMaterialPath);
+
+            ParticleSystem coreParticles = RequireChild(
+                projectilePrefab,
+                "BossBarrageProjectileVfx_MagicMissilesFireShot").GetComponent<ParticleSystem>();
+            ParticleSystem waveParticles = RequireChild(
+                projectilePrefab,
+                "WaveTrail").GetComponent<ParticleSystem>();
+            ParticleSystem smokeParticles = RequireChild(
+                projectilePrefab,
+                "SmokeTrail").GetComponent<ParticleSystem>();
+            Assert.That(coreParticles, Is.Not.Null);
+            Assert.That(waveParticles, Is.Not.Null);
+            Assert.That(smokeParticles, Is.Not.Null);
+
+            Assert.That(
+                coreParticles.GetComponent<ParticleSystemRenderer>().sharedMaterial,
+                Is.SameAs(core));
+            Assert.That(
+                waveParticles.GetComponent<ParticleSystemRenderer>().sharedMaterial,
+                Is.SameAs(accent));
+            Assert.That(
+                smokeParticles.GetComponent<ParticleSystemRenderer>().sharedMaterial,
+                Is.SameAs(smoke));
+            Assert.That(projectilePrefab.GetComponent<TrailRenderer>().sharedMaterial, Is.SameAs(trail));
+            Assert.That(projectilePrefab.GetComponent<MeshRenderer>().sharedMaterial, Is.SameAs(core));
+            Assert.That(
+                RequireChild(projectilePrefab, "FireTrail")
+                    .GetComponent<ParticleSystemRenderer>().sharedMaterial,
+                Is.SameAs(accent));
+
+            Assert.That(coreParticles.textureSheetAnimation.enabled, Is.False);
+            Assert.That(waveParticles.textureSheetAnimation.enabled, Is.False);
+            Assert.That(smokeParticles.textureSheetAnimation.enabled, Is.True);
+            Assert.That(smokeParticles.textureSheetAnimation.numTilesX, Is.EqualTo(2));
+            Assert.That(smokeParticles.textureSheetAnimation.numTilesY, Is.EqualTo(2));
+            foreach (ParticleSystem particles in projectilePrefab
+                         .GetComponentsInChildren<ParticleSystem>(includeInactive: true))
+            {
+                ParticleSystem.ColorOverLifetimeModule colorOverLifetime =
+                    particles.colorOverLifetime;
+                if (!colorOverLifetime.enabled)
+                {
+                    continue;
+                }
+
+                ParticleSystem.MinMaxGradient tint = colorOverLifetime.color;
+                Assert.That(
+                    tint.mode,
+                    Is.EqualTo(ParticleSystemGradientMode.Gradient),
+                    $"{particles.name} must expose one deterministic lifetime tint.");
+                AssertNeutralGradient(tint.gradient, particles.name);
+            }
+
+            AssertNeutralGradient(
+                projectilePrefab.GetComponent<TrailRenderer>().colorGradient,
+                "projectile trail");
+
+            AssertProjectileMaterial(core, MagicMissileFlareTexturePath, additive: true);
+            AssertProjectileMaterial(accent, MagicMissileRaysTexturePath, additive: true);
+            AssertProjectileMaterial(trail, MagicMissileTrailTexturePath, additive: true);
+            AssertProjectileMaterial(smoke, MagicMissileSmokeTexturePath, additive: false);
+
+            foreach (string profilePath in new[]
+                     {
+                         HoverLancePath,
+                         SummonCurtainPath,
+                         SpiralVolleyPath,
+                         CrushNetPath
+                     })
+            {
+                Assert.That(
+                    RequireAsset<BossBarragePatternProfile>(profilePath).ProjectileMaterial,
+                    Is.Null,
+                    $"{profilePath} must preserve the prefab's layered particle materials.");
+            }
+
+            Assert.That(
+                RequireAsset<BossBasicFireProfile>(BasicFirePath).ProjectileMaterial,
+                Is.Null,
+                "Phase 2 basic fire must preserve the same layered particle materials.");
+            Assert.That(
+                projectilePrefab.GetComponentsInChildren<Light>(includeInactive: true)
+                    .All(light => !light.enabled),
+                Is.True,
+                "The material upgrade must not restore the projectile's mobile-costly point light.");
+        }
 
         [UnityTest]
         [Timeout(30000)]
@@ -1725,6 +1836,43 @@ namespace DimensionBrawl.Tests
             T asset = AssetDatabase.LoadAssetAtPath<T>(path);
             Assert.That(asset, Is.Not.Null, $"Required Phase 2 test asset is missing: {path}");
             return asset;
+        }
+
+        private static void AssertProjectileMaterial(
+            Material material,
+            string expectedTexturePath,
+            bool additive)
+        {
+            Assert.That(material.shader, Is.Not.Null);
+            Assert.That(material.shader.isSupported, Is.True, $"Unsupported shader on {material.name}.");
+            Assert.That(
+                material.shader.name,
+                Does.Contain("Particles/Unlit"),
+                $"{material.name} must preserve ParticleSystem vertex color and lifetime fade.");
+            Assert.That(material.renderQueue, Is.EqualTo(3000));
+            Assert.That(material.HasProperty("_Surface"), Is.True);
+            Assert.That(material.GetFloat("_Surface"), Is.EqualTo(1f).Within(0.001f));
+            Assert.That(material.HasProperty("_ZWrite"), Is.True);
+            Assert.That(material.GetFloat("_ZWrite"), Is.EqualTo(0f).Within(0.001f));
+            Assert.That(material.HasProperty("_DstBlend"), Is.True);
+            Assert.That(
+                material.GetFloat("_DstBlend"),
+                Is.EqualTo(additive ? 1f : 10f).Within(0.001f));
+            Assert.That(material.HasProperty("_BaseMap"), Is.True);
+            Assert.That(
+                AssetDatabase.GetAssetPath(material.GetTexture("_BaseMap")),
+                Is.EqualTo(expectedTexturePath));
+        }
+
+        private static void AssertNeutralGradient(Gradient gradient, string ownerName)
+        {
+            Assert.That(gradient, Is.Not.Null);
+            foreach (GradientColorKey key in gradient.colorKeys)
+            {
+                Assert.That(key.color.r, Is.EqualTo(1f).Within(0.001f), ownerName);
+                Assert.That(key.color.g, Is.EqualTo(1f).Within(0.001f), ownerName);
+                Assert.That(key.color.b, Is.EqualTo(1f).Within(0.001f), ownerName);
+            }
         }
 
         private static void ConfigureHealth(CombatHealth health, DamageTeam team, float maxHealth)

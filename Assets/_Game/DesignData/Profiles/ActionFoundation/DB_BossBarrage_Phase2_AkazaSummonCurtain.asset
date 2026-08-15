@@ -26,7 +26,7 @@ MonoBehaviour:
   telegraphPulseScale: 1.18
   projectileColor: {r: 0.24, g: 1, b: 0.72, a: 1}
   projectileVisualScale: {x: 1.04, y: 0.64, z: 1.45}
-  projectileMaterial: {fileID: 2100000, guid: a6c8fa06a6f9a2744b15636aa56b2e58, type: 2}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.18
   windupSeconds: 0.96
   waveIntervalSeconds: 5
