@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
 
@@ -18,6 +19,14 @@ namespace DimensionBrawl.Tests
         [UnityTest]
         public IEnumerator CanonicalPrefabRendersBossHeaderPixels()
         {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Assert.Ignore(
+                    "This is a GPU render smoke test. Run Unity in batch mode without -nographics; "
+                    + "NullGfx returns an uninitialized 0xCD RenderTexture instead of HUD pixels.");
+                yield break;
+            }
+
             GameObject cameraObject = null;
             GameObject canvasObject = null;
             GameObject hudInstance = null;
@@ -76,6 +85,13 @@ namespace DimensionBrawl.Tests
                     hudInstance,
                     "DimensionBrawl.UI.CombatHudPresenter");
                 Assert.IsNotNull(presenter);
+                InvokePresenter(presenter, "SetObjective", "BREAK THE PRESSURE LINE");
+                InvokePresenter(presenter, "SetTimer", 138f);
+                InvokePresenter(presenter, "SetHealth", 840f, 1000f);
+                InvokePresenter(presenter, "SetResource", 56f, 100f);
+                InvokePresenter(presenter, "SetInputMode", "FRONT READY LV2 x1.6");
+                InvokePresenter(presenter, "SetAmmo", "24 / 24", false);
+                InvokePresenter(presenter, "SetAimReticleVisible", true, false);
                 InvokePresenter(presenter, "SetBossHudVisible", true);
                 InvokePresenter(presenter, "SetBossHealth", 100f, 100f);
                 InvokePresenter(presenter, "SetBossResource", 3f, 3f);
@@ -150,7 +166,11 @@ namespace DimensionBrawl.Tests
                 for (int x = xMin; x < xMax; x++)
                 {
                     Color32 pixel = frame.GetPixel(x, y);
-                    if (pixel.r >= 190 && pixel.g <= 90 && pixel.b <= 90 && pixel.a >= 180)
+                    bool celestialBossHealth = pixel.r >= 180
+                        && pixel.r >= pixel.g + 70
+                        && pixel.r >= pixel.b + 50
+                        && pixel.a >= 160;
+                    if (celestialBossHealth)
                     {
                         count++;
                     }

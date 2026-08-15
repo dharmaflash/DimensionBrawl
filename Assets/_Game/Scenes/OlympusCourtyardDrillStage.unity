@@ -147,7 +147,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
   m_SendPointerHoverToParent: 1
   m_MoveRepeatDelay: 0.5
@@ -178,7 +178,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
   m_FirstSelected: {fileID: 0}
   m_sendNavigationEvents: 1
@@ -737,7 +737,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1456148916}
   actionId: 100
@@ -847,7 +847,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
   anchorId: Add_RifleCrossfire
   groupId: CombatSpawnAnchors
@@ -951,7 +951,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3421799b414862e41bf7db1dca383675, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionSceneBinding
   stageDefinition: {fileID: 11400000, guid: d5a58f1363673274a8ec0f03ce01b79b, type: 2}
   mapRoot: {fileID: 1309660976}
@@ -1098,7 +1098,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 986963292427936881, guid: e75bb88d724d4734dbf99ea8ff3f10d4, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: 8543bcde4d734eaf906f6ea649aeb45e, type: 2}
     - target: {fileID: 986963292427936881, guid: e75bb88d724d4734dbf99ea8ff3f10d4, type: 3}
       propertyPath: m_ApplyRootMotion
@@ -1133,21 +1133,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 736581117297395710, guid: e75bb88d724d4734dbf99ea8ff3f10d4, type: 3}
   m_PrefabInstance: {fileID: 883846139}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &946620632
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1456148919}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0.02, b: 0.04, a: 0.96}
-  m_EffectDistance: {x: 1.25, y: -1.25}
-  m_UseGraphicAlpha: 1
 --- !u!1001 &964960863
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1268,7 +1253,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
   anchorId: Boss_Terminal
   groupId: CombatSpawnAnchors
@@ -1574,22 +1559,6 @@ PrefabInstance:
       propertyPath: m_Interactable
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1582267177572352312, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.b
-      value: 0.62
-      objectReference: {fileID: 0}
-    - target: {fileID: 1582267177572352312, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.g
-      value: 0.91
-      objectReference: {fileID: 0}
-    - target: {fileID: 1582267177572352312, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1582267177572352312, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_FontData.m_FontStyle
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 1932301448396892621, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Interactable
       value: 0
@@ -1698,22 +1667,6 @@ PrefabInstance:
       propertyPath: m_Interactable
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7776788796999170649, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7776788796999170649, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.g
-      value: 0.97
-      objectReference: {fileID: 0}
-    - target: {fileID: 7776788796999170649, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_Color.r
-      value: 0.9
-      objectReference: {fileID: 0}
-    - target: {fileID: 7776788796999170649, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      propertyPath: m_FontData.m_FontStyle
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8163093375362245534, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       propertyPath: m_Name
       value: PF_UI_CombatHud
@@ -1734,12 +1687,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8163093375362245534, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1456148928}
-    - targetCorrespondingSourceObject: {fileID: 2252768527828751009, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 946620632}
-    - targetCorrespondingSourceObject: {fileID: 7937221915011792213, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1456148925}
     - targetCorrespondingSourceObject: {fileID: 5926529328835010513, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1456148926}
@@ -1759,7 +1706,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bc64d552008343f1ba0be75f22a635ea, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatSessionOverlayPresenter
 --- !u!1 &1456148915 stripped
 GameObject:
@@ -1775,7 +1722,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e0cbb26d23b4f04099f0d449c3dd76b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudInputBridge
 --- !u!114 &1456148917 stripped
 MonoBehaviour:
@@ -1786,21 +1733,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: edaeb11f8bb452e4e88e030f3e7654f6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPresenter
 --- !u!1 &1456148918 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4003952392966830183, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-  m_PrefabInstance: {fileID: 1456148913}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1456148919 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2252768527828751009, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-  m_PrefabInstance: {fileID: 1456148913}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1456148920 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7937221915011792213, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
   m_PrefabInstance: {fileID: 1456148913}
   m_PrefabAsset: {fileID: 0}
 --- !u!224 &1456148921 stripped
@@ -1813,31 +1750,11 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5926529328835010513, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
   m_PrefabInstance: {fileID: 1456148913}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1456148923 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 30444043197168018, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
-  m_PrefabInstance: {fileID: 1456148913}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1456148924 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8163093375362245534, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
   m_PrefabInstance: {fileID: 1456148913}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1456148925
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1456148920}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0.02, b: 0.04, a: 0.96}
-  m_EffectDistance: {x: 1.25, y: -1.25}
-  m_UseGraphicAlpha: 1
 --- !u!114 &1456148926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1848,7 +1765,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d85f5878113320a48a4d953bd098c390, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudVirtualJoystick
   movementController: {fileID: 1986931656}
   knob: {fileID: 1456148921}
@@ -1865,7 +1782,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b48f2e1c9af34c708731a8cc6915bc61, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.OneRowCombatHudBinder
   hudPresenter: {fileID: 1456148917}
   inputBridge: {fileID: 1456148916}
@@ -1894,7 +1811,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
@@ -1911,14 +1828,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 1920, y: 1080}
+  m_ReferenceResolution: {x: 2560, y: 1440}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0.5
+  m_MatchWidthOrHeight: 1
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1957,7 +1874,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e764d6dd84658b34d9df199b296e940b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudPointerActionInput
   inputBridge: {fileID: 1456148916}
   actionId: 110
@@ -2080,7 +1997,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8458cb9e152104d488058b9266d455c1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageAnchorPoint
   anchorId: Player_Start
   groupId: CombatSpawnAnchors
@@ -2195,7 +2112,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
   maxHealth: 260
@@ -2276,7 +2193,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6253f5fe88f04869b1dc4654feb51dd1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerMovementController
   moveAction: {fileID: 0}
   lookAction: {fileID: 0}
@@ -2335,7 +2252,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 418dc101151a481e99bf66c89a1a2c85, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerActionController
   basicAttackAction: {fileID: 0}
   dodgeAction: {fileID: 0}
@@ -2450,7 +2367,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934852f257b94ad6a96b33999f3ab7f9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatTargetSelector
   selfHealth: {fileID: 1986931660}
   selectionOrigin: {fileID: 1986931657}
@@ -2481,7 +2398,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 1
   maxHealth: 180
@@ -2549,7 +2466,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac42f5986b8f4efb9f25f811da8d2031, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageCountOneEncounterExecutor
   sceneBinding: {fileID: 853078694}
   activationKind: 0
@@ -2565,7 +2482,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10604f08d8a049e594cfb4379d6c736b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OneRowStageRunResultPresenter
   encounter: {fileID: 1993010914}
   resultOverlayBehaviour: {fileID: 1993010913}
@@ -2581,7 +2498,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 832921f37a1542c29c985dd944778e5d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OneRowStageRunFactAdapter
   encounter: {fileID: 1993010914}
   playerHealth: {fileID: 1986931660}
@@ -2600,7 +2517,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5c2b369623c541b5b8d30f87fa5fc79f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OneRowStageRunBootstrap
   playableStageDefinition: {fileID: 11400000, guid: e7a54e232daf8414d833c2d4e39285c8, type: 2}
   encounter: {fileID: 1993010914}
@@ -2616,7 +2533,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bd1a9936cc7a40bcb1358f7c1a6d6b1a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStageClearOverlay
   sortOrder: 7000
   combatHudExitSeconds: 0.42
@@ -2632,7 +2549,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3332ce2d0b3240ea95c5c66945f512a5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatEncounterController
   playerHealth: {fileID: 1986931660}
   enemyHealth: {fileID: 1958469932}

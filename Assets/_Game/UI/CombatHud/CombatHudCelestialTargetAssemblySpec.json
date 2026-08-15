@@ -1,0 +1,64 @@
+{
+  "version": 23,
+  "artRoot": "Assets/_Game/UI/CombatHud/Art/CelestialHudTarget/Runtime",
+  "sprites": [
+    { "role": "objective.body", "path": "Objective/objective_body.png", "required": true },
+    { "role": "objective.topFacets", "path": "Objective/objective_facets_top.png", "required": true },
+    { "role": "objective.bottomFacets", "path": "Objective/objective_facets_bottom.png", "required": true },
+
+    { "role": "boss.chassis", "path": "Boss/boss_chassis.png", "required": true },
+    { "role": "boss.nameTab", "path": "Boss/boss_name_tab.png", "required": true },
+    { "role": "boss.hpTrack", "path": "Boss/boss_hp_track.png", "required": true },
+    { "role": "boss.hpFill", "path": "Boss/boss_hp_fill.png", "required": true },
+    { "role": "boss.costTrack", "path": "Boss/boss_cost_track.png", "required": true },
+    { "role": "boss.costFill", "path": "Boss/boss_cost_fill.png", "required": true },
+
+    { "role": "pause.plate", "path": "System/pause_plate.png", "required": true },
+    { "role": "pause.glyph", "path": "System/pause_glyph.png", "required": true },
+
+    { "role": "action.plate", "path": "Action/action_plate.png", "required": true },
+    { "role": "action.readyArc", "path": "Action/action_ready_arc.png", "required": true },
+    { "role": "action.cooldownDisc", "path": "Action/action_cooldown_disc.png", "required": true },
+    { "role": "action.weaponSwapGlyph", "path": "Action/glyph_weapon_swap.png", "required": true },
+    { "role": "action.ultimateGlyph", "path": "Action/glyph_ultimate.png", "required": true },
+    { "role": "action.dashGlyph", "path": "Action/glyph_dash.png", "required": true },
+    { "role": "action.rangedGlyph", "path": "Action/glyph_attack.png", "required": true },
+
+    { "role": "summon.mask1", "path": "Summon/summon_mask_s1.png", "required": true },
+    { "role": "summon.mask2", "path": "Summon/summon_mask_s2.png", "required": true },
+    { "role": "summon.mask3", "path": "Summon/summon_mask_s3.png", "required": true },
+    { "role": "summon.frame1", "path": "Summon/summon_frame_s1.png", "required": true },
+    { "role": "summon.frame2", "path": "Summon/summon_frame_s2.png", "required": true },
+    { "role": "summon.frame3", "path": "Summon/summon_frame_s3.png", "required": true },
+    { "role": "summon.accent1", "path": "Summon/summon_accent_s1.png", "required": true },
+    { "role": "summon.accent2", "path": "Summon/summon_accent_s2.png", "required": true },
+    { "role": "summon.accent3", "path": "Summon/summon_accent_s3.png", "required": true },
+    { "role": "summon.costTab1", "path": "Summon/summon_cost_tab_s1.png", "required": true },
+    { "role": "summon.costTab2", "path": "Summon/summon_cost_tab_s2.png", "required": true },
+    { "role": "summon.costTab3", "path": "Summon/summon_cost_tab_s3.png", "required": true },
+    { "role": "summon.portrait1", "path": "Summon/summon_portrait_s1.png", "required": true },
+    { "role": "summon.portrait2", "path": "Summon/summon_portrait_s2.png", "required": true },
+    { "role": "summon.portrait3", "path": "Summon/summon_portrait_s3.png", "required": true },
+
+    { "role": "joystick.baseGlass", "path": "Joystick/joystick_base_glass.png", "required": true },
+    { "role": "joystick.ringTicks", "path": "Joystick/joystick_ring_ticks.png", "required": true },
+    { "role": "joystick.knob", "path": "Joystick/joystick_knob.png", "required": true },
+
+    { "role": "player.portrait", "path": "Player/player_portrait.png", "required": true },
+    { "role": "player.portraitMask", "path": "Player/player_portrait_mask.png", "required": true },
+    { "role": "player.portraitFrame", "path": "Player/player_portrait_frame.png", "required": true },
+    { "role": "player.chassis", "path": "Player/player_chassis.png", "required": true },
+    { "role": "player.hpTrack", "path": "Player/player_hp_track.png", "required": true },
+    { "role": "player.hpFill", "path": "Player/player_hp_fill.png", "required": true },
+    { "role": "player.costTrack", "path": "Player/player_cost_track.png", "required": true },
+    { "role": "player.costFill", "path": "Player/player_cost_fill_segmented.png", "required": true },
+    { "role": "player.statePips", "path": "Player/player_state_pips.png", "required": true },
+    { "role": "player.modeGlyph", "path": "Player/player_mode_glyph.png", "required": true },
+    { "role": "player.ammoPlate", "path": "Player/player_ammo_plate_compact.png", "required": true },
+    { "role": "player.bulletGlyph", "path": "Player/player_bullet_glyph.png", "required": true },
+    { "role": "player.ammoSeparator", "path": "Player/player_ammo_separator.png", "required": true },
+
+    { "role": "reticle.dot", "path": "Reticle/reticle_precision_dot.png", "required": true },
+    { "role": "reticle.needle", "path": "Reticle/reticle_precision_needle.png", "required": true }
+  ]
+}

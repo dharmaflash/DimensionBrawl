@@ -22,6 +22,8 @@ namespace DimensionBrawl.UI
         private static readonly Color ResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
         private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
         private static readonly Color AmmoReadoutColor = new Color(1f, 0.86f, 0.38f, 1f);
+        private static readonly Color TargetIvoryReadoutColor = new Color32(0xF7, 0xF5, 0xEE, 0xFF);
+        private static readonly Color TargetReloadReadoutColor = new Color32(0x8D, 0xD4, 0xDF, 0xFF);
         private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
         private static readonly Color SummonChargingFillColor = new Color(0.08f, 0.86f, 1f, 0.94f);
         private static readonly Color SummonReadyIconColor = new Color(1f, 1f, 1f, 0.98f);
@@ -41,7 +43,9 @@ namespace DimensionBrawl.UI
             LeftTop,
             LeftBottom,
             RightTop,
-            RightBottom
+            RightBottom,
+            CenterBottom,
+            CenterScreen
         }
 
         [Serializable]
@@ -88,6 +92,12 @@ namespace DimensionBrawl.UI
                         SetText(
                             cooldownText,
                             displayTenths >= 0 ? $"{displayTenths / 10f:0.0}s" : string.Empty);
+                    }
+
+                    bool showCooldown = displayTenths >= 0;
+                    if (cooldownText.gameObject.activeSelf != showCooldown)
+                    {
+                        cooldownText.gameObject.SetActive(showCooldown);
                     }
                 }
 
@@ -278,14 +288,32 @@ namespace DimensionBrawl.UI
                 SetVisible(true);
                 ResolveStateVisuals();
                 ApplyStaticVisuals();
+                bool compactV22 = IsCompactV22Readout();
+                string compactStatus = compactV22 ? ResolveCompactCooldown(state) : string.Empty;
                 if (labelText != null)
                 {
-                    SetText(labelText, label);
+                    SetText(labelText, compactV22 ? ResolveCompactCost(label, state) : label);
+                    if (compactV22)
+                    {
+                        bool showCost = string.IsNullOrEmpty(compactStatus);
+                        SetGameObjectActive(labelText.gameObject, showCost);
+                        Transform unit = labelText.transform.parent != null
+                            ? labelText.transform.parent.Find("CostUnitText")
+                            : null;
+                        if (unit != null)
+                        {
+                            SetGameObjectActive(
+                                unit.gameObject,
+                                showCost && HasCompactEnergyCost(state));
+                        }
+                    }
                 }
 
                 if (stateText != null)
                 {
-                    SetText(stateText, state);
+                    string displayedState = compactV22 ? compactStatus : state;
+                    SetText(stateText, displayedState);
+                    SetGameObjectActive(stateText.gameObject, !string.IsNullOrEmpty(displayedState));
                     Color stateColor = enabled ? HealthReadoutColor : InputModeReadoutColor;
                     if (stateText.color != stateColor)
                     {
@@ -320,6 +348,95 @@ namespace DimensionBrawl.UI
                         canvasGroup.blocksRaycasts = enabled;
                     }
                 }
+            }
+
+            private bool IsCompactV22Readout()
+            {
+                return labelText != null
+                    && stateText != null
+                    && string.Equals(labelText.name, "CostText", StringComparison.Ordinal)
+                    && string.Equals(stateText.name, "StatusText", StringComparison.Ordinal);
+            }
+
+            private static string ResolveCompactCost(string label, string state)
+            {
+                if (!string.IsNullOrEmpty(state))
+                {
+                    int energySuffix = state.IndexOf("EN", StringComparison.OrdinalIgnoreCase);
+                    if (energySuffix > 0)
+                    {
+                        int start = 0;
+                        while (start < energySuffix && char.IsWhiteSpace(state[start]))
+                        {
+                            start++;
+                        }
+
+                        int end = start;
+                        while (end < energySuffix && char.IsDigit(state[end]))
+                        {
+                            end++;
+                        }
+
+                        if (end > start)
+                        {
+                            return state.Substring(start, end - start);
+                        }
+                    }
+                }
+
+                return label ?? string.Empty;
+            }
+
+            private static bool HasCompactEnergyCost(string state)
+            {
+                if (string.IsNullOrEmpty(state))
+                {
+                    return false;
+                }
+
+                int energySuffix = state.IndexOf("EN", StringComparison.OrdinalIgnoreCase);
+                if (energySuffix <= 0)
+                {
+                    return false;
+                }
+
+                int index = 0;
+                while (index < energySuffix && char.IsWhiteSpace(state[index]))
+                {
+                    index++;
+                }
+
+                int digitStart = index;
+                while (index < energySuffix && char.IsDigit(state[index]))
+                {
+                    index++;
+                }
+
+                return index > digitStart;
+            }
+
+            private static string ResolveCompactCooldown(string state)
+            {
+                if (string.IsNullOrEmpty(state))
+                {
+                    return string.Empty;
+                }
+
+                int marker = state.IndexOf("CD ", StringComparison.OrdinalIgnoreCase);
+                if (marker < 0)
+                {
+                    return string.Empty;
+                }
+
+                int start = marker + 3;
+                int end = start;
+                while (end < state.Length
+                    && (char.IsDigit(state[end]) || state[end] == '.'))
+                {
+                    end++;
+                }
+
+                return end > start ? state.Substring(start, end - start) : string.Empty;
             }
 
             private void ApplyStaticVisuals()
@@ -364,6 +481,18 @@ namespace DimensionBrawl.UI
                 cooldownFill ??= FindChildImage(root, "CooldownFill");
                 iconImage ??= FindChildImage(root, "Icon");
                 unavailableIconImage ??= FindChildImage(root, "IconDisabled");
+                if (IsCompactV22Readout())
+                {
+                    cooldownFill ??= FindChildImage(root, "StateArc");
+                    // The componentized rail deliberately has no breathing glow, enlarged
+                    // ready ring, or rotating spark. Do not rediscover the inactive V19
+                    // children after the assembler clears their serialized references.
+                    readyGlowImage = null;
+                    readyRingImage = null;
+                    readySparkImage = null;
+                    return;
+                }
+
                 readyGlowImage ??= FindChildImage(root, "ReadyGlow");
                 readyRingImage ??= FindChildImage(root, "ReadyRing");
                 readySparkImage ??= FindChildImage(root, "ReadySparkRing");
@@ -535,7 +664,12 @@ namespace DimensionBrawl.UI
             private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
             {
                 float fill = Mathf.Clamp01(availabilityFill01);
-                bool showFill = !enabled && fill > 0.001f;
+                bool compactV22 = string.Equals(image.name, "StateArc", StringComparison.Ordinal);
+                bool targetAtomicAccent =
+                    image.GetComponentInParent<CombatHudCelestialTargetLayoutProfile>() != null;
+                bool showFill = compactV22
+                    ? fill > 0.001f
+                    : !enabled && fill > 0.001f;
                 image.enabled = true;
                 image.raycastTarget = false;
                 image.preserveAspect = false;
@@ -543,12 +677,18 @@ namespace DimensionBrawl.UI
                 image.fillMethod = Image.FillMethod.Radial360;
                 image.fillOrigin = (int)Image.Origin360.Top;
                 image.fillClockwise = true;
-                float displayedFill = showFill ? fill : 0f;
+                float displayedFill = showFill ? enabled && compactV22 ? 1f : fill : 0f;
                 if (!Mathf.Approximately(image.fillAmount, displayedFill))
                 {
                     image.fillAmount = displayedFill;
                 }
-                Color color = SummonChargingFillColor;
+                Color color = targetAtomicAccent
+                    ? Color.white
+                    : compactV22
+                    ? enabled
+                        ? new Color(0.26f, 0.92f, 1f, 1f)
+                        : new Color(1f, 0.80f, 0.48f, 1f)
+                    : SummonChargingFillColor;
                 color.a = showFill ? Mathf.Lerp(0.70f, 0.96f, fill) : 0f;
                 if (image.color != color)
                 {
@@ -583,6 +723,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image resourceFill;
         [SerializeField] private RectTransform bossHudRoot;
         [SerializeField] private Text bossHealthText;
+        [SerializeField] private Text bossResourceText;
         [SerializeField] private Image bossHealthFill;
         [SerializeField] private Image bossResourceFill;
         [SerializeField] private RectTransform aimReticleRoot;
@@ -600,6 +741,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
+        [SerializeField, Tooltip("Target v23 only. Keeps the optional timer hidden unless explicitly enabled.")]
+        private bool celestialTargetTimerVisible;
 
         private float bossHealthFillBaseWidth = -1f;
         private float bossResourceFillBaseWidth = -1f;
@@ -635,6 +778,14 @@ namespace DimensionBrawl.UI
         private bool lastAimReticleActive;
         private bool bossHudVisibilityInitialized;
         private bool bossHudVisible;
+        private CombatHudCelestialV2LayoutProfile celestialV22Layout;
+        private CombatHudCelestialTargetLayoutProfile celestialTargetLayout;
+        private bool celestialV22TimerRequested;
+        private bool celestialV22TimerFits = true;
+        private int lastBossHealthCurrent = int.MinValue;
+        private int lastBossHealthMax = int.MinValue;
+        private int lastBossResourceCurrent = int.MinValue;
+        private int lastBossResourceMax = int.MinValue;
 
         public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
         public float BossResourceFillAmount => bossResourceFill != null ? bossResourceFill.fillAmount : 0f;
@@ -645,6 +796,8 @@ namespace DimensionBrawl.UI
 
         private void Awake()
         {
+            celestialV22Layout = GetComponent<CombatHudCelestialV2LayoutProfile>();
+            celestialTargetLayout = GetComponent<CombatHudCelestialTargetLayoutProfile>();
             ResolveOptionalRuntimeReferences();
             DisableDuplicateHudText("AmmoText", ammoText);
             ApplyPlayerReadoutStyles();
@@ -710,6 +863,17 @@ namespace DimensionBrawl.UI
 
         public void SetTimer(float secondsRemaining)
         {
+            if (UsesCelestialTargetLayout)
+            {
+                SetCelestialV22TimerVisible(
+                    celestialTargetTimerVisible && celestialV22TimerFits);
+            }
+            else if (UsesCelestialV22Layout && !celestialV22TimerRequested)
+            {
+                celestialV22TimerRequested = true;
+                SetCelestialV22TimerVisible(celestialV22TimerFits);
+            }
+
             float clamped = Mathf.Max(0f, secondsRemaining);
             int wholeSeconds = Mathf.FloorToInt(clamped);
             if (wholeSeconds == lastTimerSecond)
@@ -721,6 +885,17 @@ namespace DimensionBrawl.UI
             int minutes = wholeSeconds / 60;
             int seconds = wholeSeconds % 60;
             SetText(timerText, $"{minutes:00}:{seconds:00}");
+        }
+
+        public void SetCelestialTargetTimerVisible(bool visible)
+        {
+            if (!UsesCelestialTargetLayout)
+            {
+                return;
+            }
+
+            celestialTargetTimerVisible = visible;
+            SetCelestialV22TimerVisible(visible && celestialV22TimerFits);
         }
 
         public void SetHealth(float current, float max)
@@ -765,8 +940,24 @@ namespace DimensionBrawl.UI
 
             if (bossHealthText != null && bossHealthText != actionFeedbackText)
             {
-                SetText(bossHealthText, string.Empty);
-                bossHealthText.gameObject.SetActive(false);
+                if (UsesReviewedCelestialLayout)
+                {
+                    int displayedCurrent = Mathf.CeilToInt(Mathf.Max(0f, current));
+                    int displayedMax = Mathf.CeilToInt(Mathf.Max(0f, max));
+                    if (displayedCurrent != lastBossHealthCurrent || displayedMax != lastBossHealthMax)
+                    {
+                        lastBossHealthCurrent = displayedCurrent;
+                        lastBossHealthMax = displayedMax;
+                        SetText(bossHealthText, $"{displayedCurrent}/{displayedMax}");
+                    }
+
+                    bossHealthText.gameObject.SetActive(max > 0f);
+                }
+                else
+                {
+                    SetText(bossHealthText, string.Empty);
+                    bossHealthText.gameObject.SetActive(false);
+                }
             }
         }
 
@@ -806,6 +997,20 @@ namespace DimensionBrawl.UI
             if (bossResourceFill != null)
             {
                 ApplyHorizontalMeter(bossResourceFill, ratio, ref bossResourceFillBaseWidth);
+            }
+
+            if (UsesReviewedCelestialLayout && bossResourceText != null)
+            {
+                int displayedCurrent = Mathf.CeilToInt(Mathf.Max(0f, current));
+                int displayedMax = Mathf.CeilToInt(Mathf.Max(0f, max));
+                if (displayedCurrent != lastBossResourceCurrent || displayedMax != lastBossResourceMax)
+                {
+                    lastBossResourceCurrent = displayedCurrent;
+                    lastBossResourceMax = displayedMax;
+                    SetText(bossResourceText, $"{displayedCurrent}/{displayedMax}");
+                }
+
+                bossResourceText.gameObject.SetActive(max > 0f);
             }
         }
 
@@ -912,7 +1117,11 @@ namespace DimensionBrawl.UI
             lastAimReticleActive = active;
 
             aimReticleRoot.gameObject.SetActive(visible);
-            Color color = active ? aimReticleActiveColor : aimReticleColor;
+            Color color = active
+                ? aimReticleActiveColor
+                : UsesCelestialTargetLayout
+                    ? Color.white
+                    : aimReticleColor;
             for (int i = 0; i < aimReticleSegments.Length; i++)
             {
                 if (aimReticleSegments[i] != null)
@@ -943,7 +1152,37 @@ namespace DimensionBrawl.UI
 
         public void SetInputMode(string label)
         {
-            SetText(inputModeText, label);
+            if (UsesCelestialTargetLayout)
+            {
+                SetText(inputModeText, string.Empty);
+                if (inputModeText != null)
+                {
+                    SetGameObjectActive(inputModeText.gameObject, false);
+                }
+
+                return;
+            }
+
+            if (UsesCelestialV22Layout)
+            {
+                string compact = CompactCelestialV22ModeLabel(label);
+                SetText(inputModeText, compact);
+                if (inputModeText != null)
+                {
+                    SetGameObjectActive(inputModeText.gameObject, !string.IsNullOrWhiteSpace(compact));
+                }
+
+                return;
+            }
+
+            bool isRedundantWeaponMode = string.Equals(label, "MELEE", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(label, "RANGED", StringComparison.OrdinalIgnoreCase);
+            string displayedLabel = isRedundantWeaponMode ? string.Empty : label;
+            SetText(inputModeText, displayedLabel);
+            if (inputModeText != null)
+            {
+                SetGameObjectActive(inputModeText.gameObject, !string.IsNullOrWhiteSpace(displayedLabel));
+            }
         }
 
         public void SetAmmo(string label, bool reloading)
@@ -954,7 +1193,16 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            bool visible = !string.IsNullOrWhiteSpace(label);
+            string displayedLabel = UsesCelestialTargetLayout
+                ? CompactCelestialTargetAmmoLabel(label, reloading)
+                : label;
+            bool visible = !string.IsNullOrWhiteSpace(displayedLabel);
+            if (UsesCelestialTargetLayout)
+            {
+                SetNamedHudObjectActive("PlayerAmmoChip", visible);
+                SetNamedHudObjectActive("PlayerModeCell", visible);
+            }
+
             ammoText.gameObject.SetActive(visible);
             if (!visible)
             {
@@ -964,12 +1212,81 @@ namespace DimensionBrawl.UI
             int fontSize = 32;
             if (!ammoStyleInitialized || lastAmmoReloading != reloading)
             {
-                ApplyPlayerReadoutStyle(ammoText, fontSize, reloading ? InputModeReadoutColor : AmmoReadoutColor);
+                if (UsesCelestialTargetLayout)
+                {
+                    ApplyExactPlayerReadoutStyle(
+                        ammoText,
+                        25,
+                        reloading ? TargetReloadReadoutColor : TargetIvoryReadoutColor,
+                        TextAnchor.MiddleRight);
+                }
+                else if (UsesCelestialV22Layout)
+                {
+                    ApplyExactPlayerReadoutStyle(
+                        ammoText,
+                        30,
+                        reloading ? InputModeReadoutColor : AmmoReadoutColor,
+                        TextAnchor.MiddleRight);
+                }
+                else
+                {
+                    ApplyPlayerReadoutStyle(
+                        ammoText,
+                        fontSize,
+                        reloading ? InputModeReadoutColor : AmmoReadoutColor);
+                }
                 ammoStyleInitialized = true;
                 lastAmmoReloading = reloading;
             }
 
-            SetText(ammoText, label);
+            SetText(ammoText, displayedLabel);
+        }
+
+        private static string CompactCelestialTargetAmmoLabel(string label, bool reloading)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                return string.Empty;
+            }
+
+            string compact = label.Trim();
+            if (reloading)
+            {
+                int reloadMarker = compact.IndexOf("RLD", StringComparison.OrdinalIgnoreCase);
+                return reloadMarker >= 0
+                    ? compact.Substring(reloadMarker).Trim()
+                    : compact;
+            }
+
+            int slash = compact.IndexOf('/');
+            if (slash <= 0 || slash >= compact.Length - 1)
+            {
+                return compact;
+            }
+
+            string current = compact.Substring(0, slash).Trim();
+            string capacity = compact.Substring(slash + 1).Trim();
+            return $"{current} / {capacity}";
+        }
+
+        private static string CompactCelestialV22ModeLabel(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                return string.Empty;
+            }
+
+            if (string.Equals(label, "MELEE", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(label, "RANGED", StringComparison.OrdinalIgnoreCase))
+            {
+                return label.ToUpperInvariant();
+            }
+
+            return label
+                .Replace(" READY ", " ")
+                .Replace(" READY", string.Empty)
+                .Replace(" x", " ×")
+                .Trim();
         }
 
         public void SetSkillCooldown(CombatHudActionId actionId, float normalizedRemaining, string label, float secondsRemaining = -1f)
@@ -1050,6 +1367,11 @@ namespace DimensionBrawl.UI
             if (bossHealthText == null)
             {
                 bossHealthText = FindText("BossHpText");
+            }
+
+            if (bossResourceText == null)
+            {
+                bossResourceText = FindText("BossCostText");
             }
 
             if (ammoText == null)
@@ -1173,10 +1495,36 @@ namespace DimensionBrawl.UI
 
         private void ApplyPlayerReadoutStyles()
         {
-            ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
-            ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
-            ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
-            ApplyPlayerReadoutStyle(ammoText, 32, AmmoReadoutColor);
+            if (UsesCelestialTargetLayout)
+            {
+                ApplyExactPlayerReadoutStyle(
+                    healthText,
+                    30,
+                    TargetIvoryReadoutColor,
+                    TextAnchor.MiddleLeft);
+                ApplyExactPlayerReadoutStyle(resourceText, 23, ResourceReadoutColor, TextAnchor.MiddleRight);
+                ApplyExactPlayerReadoutStyle(inputModeText, 20, InputModeReadoutColor, TextAnchor.MiddleCenter);
+                ApplyExactPlayerReadoutStyle(
+                    ammoText,
+                    25,
+                    TargetIvoryReadoutColor,
+                    TextAnchor.MiddleRight);
+                return;
+            }
+
+            if (UsesCelestialV22Layout)
+            {
+                ApplyExactPlayerReadoutStyle(healthText, 28, HealthReadoutColor, TextAnchor.MiddleLeft);
+                ApplyExactPlayerReadoutStyle(resourceText, 23, ResourceReadoutColor, TextAnchor.MiddleRight);
+                ApplyExactPlayerReadoutStyle(inputModeText, 24, InputModeReadoutColor, TextAnchor.MiddleCenter);
+                ApplyExactPlayerReadoutStyle(ammoText, 30, AmmoReadoutColor, TextAnchor.MiddleRight);
+                return;
+            }
+
+            ApplyPlayerReadoutStyle(healthText, 29, HealthReadoutColor);
+            ApplyPlayerReadoutStyle(resourceText, 24, ResourceReadoutColor);
+            ApplyPlayerReadoutStyle(inputModeText, 20, InputModeReadoutColor);
+            ApplyPlayerReadoutStyle(ammoText, 27, AmmoReadoutColor);
         }
 
         private void ApplyResponsiveSideLayout()
@@ -1192,23 +1540,497 @@ namespace DimensionBrawl.UI
                 new Vector2(Screen.width, Screen.height),
                 canvasSize);
 
-            ApplyResponsiveDesignRect("TopLeftPanel", new Rect(45f, 36f, 571f, 165f), ResponsiveHudAnchor.LeftTop);
-            ApplyResponsiveDesignRect("Timer", new Rect(178f, 55f, 409f, 48f), ResponsiveHudAnchor.LeftTop);
-            ApplyResponsiveDesignRect("Objective", new Rect(180f, 117f, 409f, 64f), ResponsiveHudAnchor.LeftTop);
+            if (UsesCelestialTargetLayout)
+            {
+                ApplyCelestialTargetResponsiveLayout(canvasSize);
+                return;
+            }
+
+            if (UsesCelestialV22Layout)
+            {
+                ApplyCelestialV22ResponsiveLayout(canvasSize);
+                return;
+            }
+
+            ApplyLegacyResponsiveLayout(canvasSize);
+        }
+
+        private void ApplyLegacyResponsiveLayout(Vector2 canvasSize)
+        {
+
+            // Keep objective, timer, and system controls as separate information groups.
+            // This mirrors the reviewed PGR-style hierarchy without changing bindings.
+            ApplyResponsiveDesignRect("TopLeftPanel", new Rect(24f, 316f, 760f, 160f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveDesignRect("Objective", new Rect(88f, 329f, 620f, 126f), ResponsiveHudAnchor.LeftTop);
+            ApplyResponsiveMissionTimerLayout(canvasSize);
             ApplyResponsiveDesignRect("SettingsButton", new Rect(2250f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("PauseButton", new Rect(2396f, 47f, 100f, 95f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("PauseButton", new Rect(2404f, 44f, 89f, 89f), ResponsiveHudAnchor.RightTop);
 
-            ApplyResponsiveDesignRect("MoveJoystickRing", new Rect(155f, 853f, 421f, 415f), ResponsiveHudAnchor.LeftBottom);
-            ApplyResponsiveDesignRect("MoveJoystickKnob", new Rect(303f, 1004f, 122f, 121f), ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect("MoveJoystickRing", new Rect(201f, 979f, 269f, 269f), ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect("MoveJoystickKnob", new Rect(285f, 1063f, 101f, 101f), ResponsiveHudAnchor.LeftBottom);
 
-            ApplyResponsiveDesignRect("BasicAttackButton", new Rect(2239f, 1156f, 230f, 248f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("DodgeButton", new Rect(1975f, 1172f, 256f, 218f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("Skill1Button", new Rect(2217f, 868f, 236f, 286f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("UltimateButton", new Rect(1975f, 896f, 248f, 226f), ResponsiveHudAnchor.RightBottom);
-            ApplyResponsiveDesignRect("SummonSlot1Button", new Rect(2293f, 235f, 211f, 216f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2308f, 472f, 182f, 186f), ResponsiveHudAnchor.RightTop);
-            ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2312f, 683f, 179f, 183f), ResponsiveHudAnchor.RightTop);
+            // Preserve the existing action IDs: Ultimate is the weapon swap at upper-left,
+            // Skill1 is the high-priority skill at upper-right, then Dodge and BasicAttack.
+            ApplyResponsiveDesignRect("UltimateButton", new Rect(2059f, 967f, 171f, 171f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("Skill1Button", new Rect(2261f, 938f, 187f, 187f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("DodgeButton", new Rect(2046f, 1177f, 184f, 184f), ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect("BasicAttackButton", new Rect(2248f, 1131f, 273f, 272f), ResponsiveHudAnchor.RightBottom);
+
+            ApplyResponsiveDesignRect("SummonSlot1Button", new Rect(2263f, 171f, 211f, 226f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot2Button", new Rect(2275f, 413f, 193f, 211f), ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect("SummonSlot3Button", new Rect(2275f, 640f, 193f, 211f), ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect("PlayerPortraitFrame", new Rect(686f, 1262f, 153f, 153f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("HealthBar_Track", new Rect(731f, 1287f, 944f, 49f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("HealthBar", new Rect(818f, 1302f, 766f, 15f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("HealthText", new Rect(1390f, 1246f, 214f, 45f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("ResourceBar_Track", new Rect(780f, 1333f, 846f, 40f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("ResourceBar", new Rect(818f, 1347f, 766f, 12f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("ResourceText", new Rect(1415f, 1324f, 180f, 43f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("InputMode", new Rect(805f, 1380f, 500f, 32f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("PlayerAmmoChip", new Rect(1614f, 1284f, 144f, 77f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("AmmoText", new Rect(1623f, 1294f, 125f, 56f), ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect("CenterAimReticle", new Rect(1232.5f, 672.5f, 95f, 95f), ResponsiveHudAnchor.CenterScreen);
             RefreshVirtualJoystickRestPosition();
+        }
+
+        private void ApplyCelestialV22ResponsiveLayout(Vector2 canvasSize)
+        {
+            ResetCelestialV22ResponsiveGroups();
+
+            ApplyCelestialV22ObjectiveFrameRect();
+            ApplyCelestialV22ObjectiveTextRect();
+            ApplyResponsiveMissionTimerLayout(canvasSize);
+            ApplyResponsiveDesignRect(
+                "PauseButton",
+                CombatHudCelestialV2LayoutProfile.PauseHit,
+                ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect(
+                "MoveJoystickRing",
+                CombatHudCelestialV2LayoutProfile.JoystickVisual,
+                ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect(
+                "MoveJoystickKnob",
+                CombatHudCelestialV2LayoutProfile.JoystickKnob,
+                ResponsiveHudAnchor.LeftBottom);
+
+            ApplyResponsiveDesignRect(
+                "UltimateButton",
+                CombatHudCelestialV2LayoutProfile.WeaponSwap,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "Skill1Button",
+                CombatHudCelestialV2LayoutProfile.Skill,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "DodgeButton",
+                CombatHudCelestialV2LayoutProfile.Dodge,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "BasicAttackButton",
+                CombatHudCelestialV2LayoutProfile.BasicAttack,
+                ResponsiveHudAnchor.RightBottom);
+
+            ApplyResponsiveDesignRect(
+                "SummonSlot1Button",
+                CombatHudCelestialV2LayoutProfile.SummonSlot1,
+                ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect(
+                "SummonSlot2Button",
+                CombatHudCelestialV2LayoutProfile.SummonSlot2,
+                ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect(
+                "SummonSlot3Button",
+                CombatHudCelestialV2LayoutProfile.SummonSlot3,
+                ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect(
+                "PlayerPortraitFrame",
+                CombatHudCelestialV2LayoutProfile.PlayerPortrait,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthText",
+                CombatHudCelestialV2LayoutProfile.PlayerHpText,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthBar_Track",
+                CombatHudCelestialV2LayoutProfile.PlayerHpTrack,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthBar",
+                CombatHudCelestialV2LayoutProfile.PlayerHpFill,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "ResourceBar_Track",
+                CombatHudCelestialV2LayoutProfile.PlayerEnTrack,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "ResourceBar",
+                CombatHudCelestialV2LayoutProfile.PlayerEnFill,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "ResourceText",
+                CombatHudCelestialV2LayoutProfile.PlayerEnText,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "PlayerModeCell",
+                CombatHudCelestialV2LayoutProfile.PlayerMode,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "InputMode",
+                CombatHudCelestialV2LayoutProfile.PlayerMode,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "PlayerAmmoChip",
+                CombatHudCelestialV2LayoutProfile.PlayerAmmo,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "AmmoText",
+                CombatHudCelestialV2LayoutProfile.PlayerAmmo,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "CenterAimReticle",
+                CombatHudCelestialV2LayoutProfile.Reticle,
+                ResponsiveHudAnchor.CenterScreen);
+
+            ApplyCelestialV22CollisionGuards(canvasSize);
+            RefreshVirtualJoystickRestPosition();
+        }
+
+        private void ApplyCelestialTargetResponsiveLayout(Vector2 canvasSize)
+        {
+            ResetResponsiveGroup("PlayerHudTargetRoot");
+            ResetResponsiveGroup("SummonRailTargetRoot");
+
+            ApplyCelestialTargetObjectiveFrameRect();
+            ApplyCelestialTargetObjectiveTextRect();
+            ApplyResponsiveMissionTimerLayout(canvasSize);
+            ApplyResponsiveDesignRect(
+                "PauseButton",
+                CombatHudCelestialTargetLayoutProfile.PauseHit,
+                ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect(
+                "MoveJoystickRing",
+                CombatHudCelestialTargetLayoutProfile.JoystickVisual,
+                ResponsiveHudAnchor.LeftBottom);
+            ApplyResponsiveDesignRect(
+                "MoveJoystickKnob",
+                CombatHudCelestialTargetLayoutProfile.JoystickKnob,
+                ResponsiveHudAnchor.LeftBottom);
+
+            ApplyResponsiveDesignRect(
+                "UltimateButton",
+                CombatHudCelestialTargetLayoutProfile.WeaponSwap,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "Skill1Button",
+                CombatHudCelestialTargetLayoutProfile.Ultimate,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "DodgeButton",
+                CombatHudCelestialTargetLayoutProfile.Dash,
+                ResponsiveHudAnchor.RightBottom);
+            ApplyResponsiveDesignRect(
+                "BasicAttackButton",
+                CombatHudCelestialTargetLayoutProfile.BasicAttack,
+                ResponsiveHudAnchor.RightBottom);
+
+            ApplyResponsiveDesignRect(
+                "SummonSlot1Button",
+                CombatHudCelestialTargetLayoutProfile.SummonSlot1,
+                ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect(
+                "SummonSlot2Button",
+                CombatHudCelestialTargetLayoutProfile.SummonSlot2,
+                ResponsiveHudAnchor.RightTop);
+            ApplyResponsiveDesignRect(
+                "SummonSlot3Button",
+                CombatHudCelestialTargetLayoutProfile.SummonSlot3,
+                ResponsiveHudAnchor.RightTop);
+
+            ApplyResponsiveDesignRect(
+                "PlayerTargetChassis",
+                CombatHudCelestialTargetLayoutProfile.PlayerComposite,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "PlayerPortraitFrame",
+                CombatHudCelestialTargetLayoutProfile.PlayerPortrait,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthText",
+                CombatHudCelestialTargetLayoutProfile.PlayerHpText,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthBar_Track",
+                CombatHudCelestialTargetLayoutProfile.PlayerHpTrack,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "HealthBar",
+                CombatHudCelestialTargetLayoutProfile.PlayerHpFill,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "ResourceBar_Track",
+                CombatHudCelestialTargetLayoutProfile.PlayerCostTrack,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "ResourceBar",
+                CombatHudCelestialTargetLayoutProfile.PlayerCostFill,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "PlayerModeCell",
+                CombatHudCelestialTargetLayoutProfile.PlayerModeGlyph,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "PlayerAmmoChip",
+                CombatHudCelestialTargetLayoutProfile.PlayerAmmo,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "AmmoText",
+                CombatHudCelestialTargetLayoutProfile.PlayerAmmoText,
+                ResponsiveHudAnchor.CenterBottom);
+            ApplyResponsiveDesignRect(
+                "CenterAimReticle",
+                CombatHudCelestialTargetLayoutProfile.Reticle,
+                ResponsiveHudAnchor.CenterScreen);
+
+            ApplyCelestialTargetCollisionGuards(canvasSize);
+            RefreshVirtualJoystickRestPosition();
+        }
+
+        private void ApplyCelestialTargetObjectiveFrameRect()
+        {
+            Transform found = FindDeepChild(transform, "TopLeftPanel");
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            Rect designRect = CombatHudCelestialTargetLayoutProfile.ObjectiveFrame;
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(
+                0f,
+                -(designRect.yMin + safeAreaInsets.Top));
+            rectTransform.sizeDelta = designRect.size;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void ApplyCelestialTargetObjectiveTextRect()
+        {
+            Transform found = FindDeepChild(transform, "Objective");
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            Rect resolvedRect = CombatHudCelestialTargetLayoutProfile.ResolveObjectiveText(
+                safeAreaInsets.Left);
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(
+                resolvedRect.xMin,
+                -(resolvedRect.yMin + safeAreaInsets.Top));
+            rectTransform.sizeDelta = resolvedRect.size;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void ApplyCelestialTargetCollisionGuards(Vector2 canvasSize)
+        {
+            float actionLeft = canvasSize.x
+                - (DimensionHudDesignWidth - CombatHudCelestialTargetLayoutProfile.Dash.xMin)
+                - safeAreaInsets.Right;
+            float playerCenter = canvasSize.x * 0.5f
+                + CombatHudCelestialTargetLayoutProfile.PlayerComposite.center.x
+                - DimensionHudDesignWidth * 0.5f;
+            float playerHalfWidth =
+                CombatHudCelestialTargetLayoutProfile.PlayerComposite.width * 0.5f;
+            float missingGap = Mathf.Max(
+                0f,
+                CombatHudCelestialTargetLayoutProfile.MinimumPlayerActionGap
+                    - (actionLeft - (playerCenter + playerHalfWidth)));
+            float playerShift = Mathf.Min(
+                CombatHudCelestialTargetLayoutProfile.MaximumPlayerLeftShift,
+                missingGap);
+            float remainingRight = actionLeft
+                - CombatHudCelestialTargetLayoutProfile.MinimumPlayerActionGap
+                - (playerCenter - playerShift);
+            float playerScale = Mathf.Clamp(
+                remainingRight / Mathf.Max(1f, playerHalfWidth),
+                CombatHudCelestialTargetLayoutProfile.MinimumPlayerScale,
+                1f);
+
+            Transform playerGroup = FindDeepChild(transform, "PlayerHudTargetRoot");
+            RectTransform playerGroupRect = playerGroup != null
+                ? playerGroup.GetComponent<RectTransform>()
+                : null;
+            if (playerGroupRect != null)
+            {
+                playerGroupRect.anchoredPosition = new Vector2(-playerShift, 0f);
+                playerGroupRect.localScale = new Vector3(playerScale, playerScale, 1f);
+            }
+
+            float playerLeft = playerCenter - playerShift - playerHalfWidth * playerScale;
+            float joystickCenter = safeAreaInsets.Left
+                + CombatHudCelestialTargetLayoutProfile.JoystickVisual.center.x;
+            float availableActivationHalfWidth = playerLeft
+                - CombatHudCelestialTargetLayoutProfile.MinimumPlayerActionGap
+                - joystickCenter;
+            float activationSize = Mathf.Clamp(
+                availableActivationHalfWidth * 2f,
+                CombatHudCelestialTargetLayoutProfile.MinimumJoystickActivationSize,
+                CombatHudCelestialTargetLayoutProfile.JoystickActivation.width);
+            RectTransform activationHit = FindDeepChild(transform, "JoystickActivationHit")
+                as RectTransform;
+            if (activationHit != null)
+            {
+                activationHit.sizeDelta = new Vector2(activationSize, activationSize);
+            }
+
+            float summonActionGap = CombatHudCelestialTargetLayoutProfile.Ultimate.yMin
+                - safeAreaInsets.Bottom
+                - (CombatHudCelestialTargetLayoutProfile.SummonSlot3.yMax
+                    + safeAreaInsets.Top);
+            float summonScale = summonActionGap >= 24f ? 1f : 0.96f;
+            Transform summonGroup = FindDeepChild(transform, "SummonRailTargetRoot");
+            RectTransform summonGroupRect = summonGroup != null
+                ? summonGroup.GetComponent<RectTransform>()
+                : null;
+            if (summonGroupRect != null)
+            {
+                summonGroupRect.localScale = new Vector3(summonScale, summonScale, 1f);
+            }
+        }
+
+        private void ApplyCelestialV22ObjectiveFrameRect()
+        {
+            Transform found = FindDeepChild(transform, "TopLeftPanel");
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            Rect designRect = CombatHudCelestialV2LayoutProfile.ObjectiveFrame;
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            // The measured PGR-style facet strip intentionally bleeds to the physical
+            // left screen edge. Only its top edge follows the safe area.
+            rectTransform.anchoredPosition = new Vector2(0f, -(designRect.yMin + safeAreaInsets.Top));
+            rectTransform.sizeDelta = designRect.size;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void ApplyCelestialV22ObjectiveTextRect()
+        {
+            Transform found = FindDeepChild(transform, "Objective");
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            Rect resolvedRect = CombatHudCelestialV2LayoutProfile.ResolveObjectiveText(
+                safeAreaInsets.Left);
+            rectTransform.anchorMin = new Vector2(0f, 1f);
+            rectTransform.anchorMax = new Vector2(0f, 1f);
+            rectTransform.pivot = new Vector2(0f, 1f);
+            rectTransform.anchoredPosition = new Vector2(
+                resolvedRect.xMin,
+                -(resolvedRect.yMin + safeAreaInsets.Top));
+            rectTransform.sizeDelta = resolvedRect.size;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void ResetCelestialV22ResponsiveGroups()
+        {
+            ResetResponsiveGroup("PlayerHudV22Root");
+            ResetResponsiveGroup("SummonRailV22Root");
+        }
+
+        private void ResetResponsiveGroup(string objectName)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return;
+            }
+
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        private void ApplyCelestialV22CollisionGuards(Vector2 canvasSize)
+        {
+            float actionLeft = canvasSize.x
+                - (DimensionHudDesignWidth - CombatHudCelestialV2LayoutProfile.Dodge.xMin)
+                - safeAreaInsets.Right;
+            float playerCenter = canvasSize.x * 0.5f
+                + CombatHudCelestialV2LayoutProfile.PlayerComposite.center.x
+                - DimensionHudDesignWidth * 0.5f;
+            float playerHalfWidth = CombatHudCelestialV2LayoutProfile.PlayerComposite.width * 0.5f;
+            float unguardedPlayerRight = playerCenter + playerHalfWidth;
+            float missingGap = Mathf.Max(
+                0f,
+                CombatHudCelestialV2LayoutProfile.MinimumPlayerActionGap
+                    - (actionLeft - unguardedPlayerRight));
+            float playerShift = Mathf.Min(
+                CombatHudCelestialV2LayoutProfile.MaximumPlayerLeftShift,
+                missingGap);
+            float remainingRight = actionLeft
+                - CombatHudCelestialV2LayoutProfile.MinimumPlayerActionGap
+                - (playerCenter - playerShift);
+            float playerScale = Mathf.Clamp(
+                remainingRight / Mathf.Max(1f, playerHalfWidth),
+                CombatHudCelestialV2LayoutProfile.MinimumPlayerScale,
+                1f);
+
+            Transform playerGroup = FindDeepChild(transform, "PlayerHudV22Root");
+            RectTransform playerGroupRect = playerGroup != null
+                ? playerGroup.GetComponent<RectTransform>()
+                : null;
+            if (playerGroupRect != null)
+            {
+                playerGroupRect.anchoredPosition = new Vector2(-playerShift, 0f);
+                playerGroupRect.localScale = new Vector3(playerScale, playerScale, 1f);
+            }
+
+            float playerLeft = playerCenter - playerShift - playerHalfWidth * playerScale;
+            float joystickCenter = safeAreaInsets.Left
+                + CombatHudCelestialV2LayoutProfile.JoystickVisual.center.x;
+            float availableActivationHalfWidth = playerLeft
+                - CombatHudCelestialV2LayoutProfile.MinimumPlayerActionGap
+                - joystickCenter;
+            float activationSize = Mathf.Clamp(
+                availableActivationHalfWidth * 2f,
+                CombatHudCelestialV2LayoutProfile.MinimumJoystickActivationSize,
+                CombatHudCelestialV2LayoutProfile.JoystickActivation.width);
+            RectTransform activationHit = FindDeepChild(transform, "JoystickActivationHit")
+                as RectTransform;
+            if (activationHit != null)
+            {
+                activationHit.sizeDelta = new Vector2(activationSize, activationSize);
+            }
+
+            float summonActionGap = CombatHudCelestialV2LayoutProfile.Skill.yMin
+                - safeAreaInsets.Bottom
+                - (CombatHudCelestialV2LayoutProfile.SummonSlot3.yMax + safeAreaInsets.Top);
+            float summonScale = summonActionGap >= 24f ? 1f : 0.96f;
+            Transform summonGroup = FindDeepChild(transform, "SummonRailV22Root");
+            RectTransform summonGroupRect = summonGroup != null
+                ? summonGroup.GetComponent<RectTransform>()
+                : null;
+            if (summonGroupRect != null)
+            {
+                summonGroupRect.localScale = new Vector3(summonScale, summonScale, 1f);
+            }
         }
 
         private void RefreshSafeAreaLayoutIfNeeded(bool force)
@@ -1224,12 +2046,41 @@ namespace DimensionBrawl.UI
 
         private void ApplyBossHeaderSpacing()
         {
-            ApplyCenterDesignRect("BossNameArea", new Rect(930f, 51f, 745f, 48f));
-            ApplyCenterDesignRect("ActionFeedback", new Rect(930f, 51f, 745f, 48f));
-            ApplyCenterDesignRect("BossHpBackground", new Rect(925f, 109f, 782f, 31f));
-            ApplyCenterDesignRect("BossHpFill", new Rect(941f, 113f, 749f, 24f));
-            ApplyCenterDesignRect("BossCostBackground", new Rect(928f, 142f, 775f, 34f));
-            ApplyCenterDesignRect("BossCostFill", new Rect(944f, 144f, 745f, 25f));
+            if (UsesCelestialTargetLayout)
+            {
+                ApplyCenterDesignRect("BossTargetChassis", CombatHudCelestialTargetLayoutProfile.BossChassis);
+                ApplyCenterDesignRect("BossNameArea", CombatHudCelestialTargetLayoutProfile.BossName);
+                ApplyCenterDesignRect("BossNameText", CombatHudCelestialTargetLayoutProfile.BossName);
+                ApplyCenterDesignRect("BossHpBackground", CombatHudCelestialTargetLayoutProfile.BossHpTrack);
+                ApplyCenterDesignRect("BossHpFill", CombatHudCelestialTargetLayoutProfile.BossHpFill);
+                ApplyCenterDesignRect("BossHpText", CombatHudCelestialTargetLayoutProfile.BossHpValue);
+                ApplyCenterDesignRect("BossCostBackground", CombatHudCelestialTargetLayoutProfile.BossCostTrack);
+                ApplyCenterDesignRect("BossCostFill", CombatHudCelestialTargetLayoutProfile.BossCostFill);
+                ApplyCenterDesignRect("BossCostText", CombatHudCelestialTargetLayoutProfile.BossCostValue);
+                return;
+            }
+
+            if (UsesCelestialV22Layout)
+            {
+                ApplyCenterDesignRect("BossNameArea", CombatHudCelestialV2LayoutProfile.BossName);
+                ApplyCenterDesignRect("BossNameText", CombatHudCelestialV2LayoutProfile.BossName);
+                ApplyCenterDesignRect("BossHpBackground", CombatHudCelestialV2LayoutProfile.BossHpTrack);
+                ApplyCenterDesignRect("BossHpFill", CombatHudCelestialV2LayoutProfile.BossHpFill);
+                ApplyCenterDesignRect("BossHpText", CombatHudCelestialV2LayoutProfile.BossHpValue);
+                ApplyCenterDesignRect("BossCostBackground", CombatHudCelestialV2LayoutProfile.BossCostTrack);
+                ApplyCenterDesignRect("BossCostFill", CombatHudCelestialV2LayoutProfile.BossCostFill);
+                ApplyCenterDesignRect("BossCostText", CombatHudCelestialV2LayoutProfile.BossCostValue);
+                return;
+            }
+
+            ApplyCenterDesignRect("BossNameArea", new Rect(796f, 52f, 1056f, 132f));
+            ApplyCenterDesignRect("ActionFeedback", new Rect(850f, 57f, 500f, 46f));
+            ApplyCenterDesignRect("BossHpBackground", new Rect(839f, 104f, 913f, 18f));
+            ApplyCenterDesignRect("BossHpFill", new Rect(842f, 103f, 741f, 29f));
+            ApplyCenterDesignRect("BossCostBackground", new Rect(839f, 147f, 913f, 14f));
+            // 821 is the full cost width. At the v19 sample's 64/100 value it renders
+            // as 525 design pixels, matching the 343-pixel source fill.
+            ApplyCenterDesignRect("BossCostFill", new Rect(842f, 138f, 821f, 13f));
         }
 
         private void ApplyCenterDesignRect(string objectName, Rect designRect)
@@ -1291,6 +2142,122 @@ namespace DimensionBrawl.UI
             ApplyResponsiveDesignRect(rectTransform, designRect, anchor);
         }
 
+        private void ApplyResponsiveMissionTimerLayout(Vector2 canvasSize)
+        {
+            Rect backingDesignRect = UsesCelestialTargetLayout
+                ? CombatHudCelestialTargetLayoutProfile.MissionTimerBacking
+                : UsesCelestialV22Layout
+                    ? CombatHudCelestialV2LayoutProfile.MissionTimerBacking
+                    : new Rect(2014f, 47f, 184f, 86f);
+            Rect timerDesignRect = UsesCelestialTargetLayout
+                ? CombatHudCelestialTargetLayoutProfile.MissionTimerText
+                : UsesCelestialV22Layout
+                    ? CombatHudCelestialV2LayoutProfile.MissionTimerText
+                    : new Rect(2026f, 47f, 160f, 86f);
+
+            const float bossDesignRight = 1852f;
+            const float settingsDesignLeft = 2250f;
+            const float bossSeparation = 24f;
+            const float settingsSeparation = 52f;
+
+            float bossCanvasRight = (canvasSize.x - DimensionHudDesignWidth) * 0.5f + bossDesignRight;
+            float settingsCanvasLeft = canvasSize.x
+                - (DimensionHudDesignWidth - settingsDesignLeft)
+                - safeAreaInsets.Right;
+            float groupRight = settingsCanvasLeft - settingsSeparation;
+            float availableWidth = Mathf.Max(1f, groupRight - (bossCanvasRight + bossSeparation));
+            float fitScale = Mathf.Min(1f, availableWidth / backingDesignRect.width);
+            float minimumTimerScale = UsesCelestialTargetLayout
+                ? CombatHudCelestialTargetLayoutProfile.MinimumTimerScale
+                : CombatHudCelestialV2LayoutProfile.MinimumTimerScale;
+            if (UsesReviewedCelestialLayout && fitScale < minimumTimerScale)
+            {
+                celestialV22TimerFits = false;
+                SetCelestialV22TimerVisible(false);
+                return;
+            }
+
+            if (UsesReviewedCelestialLayout)
+            {
+                celestialV22TimerFits = true;
+                bool timerRequested = UsesCelestialTargetLayout
+                    ? celestialTargetTimerVisible
+                    : celestialV22TimerRequested;
+                SetCelestialV22TimerVisible(timerRequested);
+            }
+
+            float groupLeft = groupRight - backingDesignRect.width * fitScale;
+            float groupTop = backingDesignRect.yMin + safeAreaInsets.Top;
+
+            ApplyResolvedRightTopRect(
+                "MissionTimerBacking",
+                ResolveScaledGroupRect(
+                    backingDesignRect,
+                    backingDesignRect,
+                    groupLeft,
+                    groupTop,
+                    fitScale),
+                canvasSize.x);
+            RectTransform timerRect = ApplyResolvedRightTopRect(
+                "Timer",
+                ResolveScaledGroupRect(
+                    timerDesignRect,
+                    backingDesignRect,
+                    groupLeft,
+                    groupTop,
+                    fitScale),
+                canvasSize.x);
+
+            Text timer = timerRect != null ? timerRect.GetComponent<Text>() : null;
+            if (timer != null)
+            {
+                timer.fontSize = Mathf.Max(1, Mathf.RoundToInt(46f * fitScale));
+            }
+        }
+
+        private void SetCelestialV22TimerVisible(bool visible)
+        {
+            SetNamedHudObjectActive("MissionTimerBacking", visible);
+            SetNamedHudObjectActive("Timer", visible);
+        }
+
+        private static Rect ResolveScaledGroupRect(
+            Rect designRect,
+            Rect groupDesignRect,
+            float groupLeft,
+            float groupTop,
+            float fitScale)
+        {
+            return new Rect(
+                groupLeft + (designRect.xMin - groupDesignRect.xMin) * fitScale,
+                groupTop + (designRect.yMin - groupDesignRect.yMin) * fitScale,
+                designRect.width * fitScale,
+                designRect.height * fitScale);
+        }
+
+        private RectTransform ApplyResolvedRightTopRect(
+            string objectName,
+            Rect resolvedRect,
+            float canvasWidth)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            RectTransform rectTransform = found != null ? found.GetComponent<RectTransform>() : null;
+            if (rectTransform == null)
+            {
+                return null;
+            }
+
+            rectTransform.anchorMin = Vector2.one;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.pivot = Vector2.one;
+            rectTransform.anchoredPosition = new Vector2(
+                -(canvasWidth - resolvedRect.xMax),
+                -resolvedRect.yMin);
+            rectTransform.sizeDelta = resolvedRect.size;
+            rectTransform.localScale = Vector3.one;
+            return rectTransform;
+        }
+
         private void ApplyResponsiveDesignRect(
             RectTransform rectTransform,
             Rect designRect,
@@ -1332,6 +2299,22 @@ namespace DimensionBrawl.UI
                         -(rightInset + safeAreaInsets.Right),
                         bottomInset + safeAreaInsets.Bottom);
                     break;
+                case ResponsiveHudAnchor.CenterBottom:
+                    rectTransform.anchorMin = new Vector2(0.5f, 0f);
+                    rectTransform.anchorMax = new Vector2(0.5f, 0f);
+                    rectTransform.pivot = new Vector2(0.5f, 0f);
+                    rectTransform.anchoredPosition = new Vector2(
+                        designRect.center.x - DimensionHudDesignWidth * 0.5f,
+                        bottomInset + safeAreaInsets.Bottom);
+                    break;
+                case ResponsiveHudAnchor.CenterScreen:
+                    rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                    rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                    rectTransform.pivot = new Vector2(0.5f, 0.5f);
+                    rectTransform.anchoredPosition = new Vector2(
+                        designRect.center.x - DimensionHudDesignWidth * 0.5f,
+                        DimensionHudDesignHeight * 0.5f - designRect.center.y);
+                    break;
             }
 
             rectTransform.sizeDelta = new Vector2(designRect.width, designRect.height);
@@ -1364,6 +2347,54 @@ namespace DimensionBrawl.UI
             outline.useGraphicAlpha = true;
         }
 
+        private static void ApplyExactPlayerReadoutStyle(
+            Text text,
+            int fontSize,
+            Color color,
+            TextAnchor alignment)
+        {
+            ApplyPlayerReadoutStyle(text, fontSize, color);
+            if (text == null)
+            {
+                return;
+            }
+
+            text.fontSize = fontSize;
+            text.alignment = alignment;
+        }
+
+        private bool UsesCelestialV22Layout
+        {
+            get
+            {
+                if (celestialV22Layout == null)
+                {
+                    celestialV22Layout = GetComponent<CombatHudCelestialV2LayoutProfile>();
+                }
+
+                return celestialV22Layout != null
+                    && celestialV22Layout.Version == CombatHudCelestialV2LayoutProfile.LayoutVersion;
+            }
+        }
+
+        private bool UsesCelestialTargetLayout
+        {
+            get
+            {
+                if (celestialTargetLayout == null)
+                {
+                    celestialTargetLayout = GetComponent<CombatHudCelestialTargetLayoutProfile>();
+                }
+
+                return celestialTargetLayout != null
+                    && celestialTargetLayout.Version
+                        == CombatHudCelestialTargetLayoutProfile.LayoutVersion;
+            }
+        }
+
+        private bool UsesReviewedCelestialLayout =>
+            UsesCelestialTargetLayout || UsesCelestialV22Layout;
+
         private static void ApplyHorizontalMeter(Image image, float ratio, ref float baseWidth)
         {
             RectTransform rectTransform = image.rectTransform;
@@ -1377,20 +2408,14 @@ namespace DimensionBrawl.UI
                     baseWidth = Mathf.Max(1f, Mathf.Abs(currentWidth));
                 }
 
-                if (!Mathf.Approximately(rectTransform.pivot.x, 0f))
-                {
-                    Vector2 anchoredPosition = rectTransform.anchoredPosition;
-                    anchoredPosition.x -= currentWidth * rectTransform.pivot.x;
-                    rectTransform.pivot = new Vector2(0f, rectTransform.pivot.y);
-                    rectTransform.anchoredPosition = anchoredPosition;
-                }
-
-                float targetWidth = Mathf.Max(0f, baseWidth * ratio);
-                if (!Mathf.Approximately(rectTransform.rect.width, targetWidth))
+                // The Image fill already clips horizontally. Keep the authored full-width
+                // rectangle so applying both width scaling and fillAmount cannot square the
+                // presented ratio (for example, 50% accidentally becoming 25%).
+                if (!Mathf.Approximately(Mathf.Abs(currentWidth), baseWidth))
                 {
                     rectTransform.SetSizeWithCurrentAnchors(
                         RectTransform.Axis.Horizontal,
-                        targetWidth);
+                        baseWidth);
                 }
             }
 
@@ -1434,6 +2459,15 @@ namespace DimensionBrawl.UI
                 aimReticleRoot.sizeDelta = new Vector2(96f, 96f);
                 aimReticleRoot.anchoredPosition = Vector2.zero;
                 aimReticleRoot.SetAsLastSibling();
+            }
+
+            Image authoredReticle = aimReticleRoot.GetComponent<Image>();
+            if (authoredReticle != null && authoredReticle.sprite != null)
+            {
+                authoredReticle.raycastTarget = false;
+                authoredReticle.preserveAspect = true;
+                aimReticleSegments = new[] { authoredReticle };
+                return;
             }
 
             if (aimReticleSegments == null || aimReticleSegments.Length < 4)
