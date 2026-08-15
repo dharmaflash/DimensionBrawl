@@ -194411,6 +194411,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.AkazaPhase2CinematicLookDriver
   director: {fileID: 784321780}
+  lookStateController: {fileID: 1648882834}
   wingDeployKey: {fileID: 2102396998}
   eyeOpenKey: {fileID: 1828939677}
   backgroundKey: {fileID: 318586527}
@@ -212389,7 +212390,7 @@ MonoBehaviour:
   m_IsGlobal: 1
   priority: 220
   blendDistance: 0
-  weight: 1
+  weight: 0
   sharedProfile: {fileID: 11400000, guid: e38f79cf6764cf049bd3f42ce00b2ccf, type: 2}
 --- !u!1 &1440316699
 GameObject:
@@ -238423,6 +238424,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1648882833}
+  - component: {fileID: 1648882834}
   m_Layer: 0
   m_Name: OlympusCorridorInvasionLookdev_RuntimeFreePass
   m_TagString: Untagged
@@ -238451,6 +238453,28 @@ Transform:
   - {fileID: 1826890581}
   m_Father: {fileID: 1675588418}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1648882834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1648882832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 709049ab41eb4307a199db355d58c60f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.GameplayLookStateController
+  gameplayBaseVolume: {fileID: 283228877}
+  overlayBindings:
+  - state: 100
+    volume: {fileID: 1976744013}
+    blendInSeconds: 0.15
+    blendOutSeconds: 0.12
+  - state: 200
+    volume: {fileID: 1439506038}
+    blendInSeconds: 0
+    blendOutSeconds: 0
 --- !u!1 &1648936641
 GameObject:
   m_ObjectHideFlags: 0
@@ -286105,7 +286129,7 @@ MonoBehaviour:
   m_IsGlobal: 1
   priority: 95
   blendDistance: 0
-  weight: 1
+  weight: 0
   sharedProfile: {fileID: 11400000, guid: f2f593f7d07e5e4418206c231b5b316c, type: 2}
 --- !u!1 &1977366925
 GameObject:

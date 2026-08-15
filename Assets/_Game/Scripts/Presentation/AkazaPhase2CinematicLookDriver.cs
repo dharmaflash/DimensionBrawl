@@ -15,6 +15,7 @@ namespace DimensionBrawl.Presentation
     public sealed class AkazaPhase2CinematicLookDriver : MonoBehaviour
     {
         [SerializeField] private PlayableDirector director;
+        [SerializeField] private GameplayLookStateController lookStateController;
         [SerializeField] private Light wingDeployKey;
         [SerializeField] private Light eyeOpenKey;
         [SerializeField] private Light backgroundKey;
@@ -30,6 +31,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private float cinematicFogEndDistance = 600f;
 
         private bool lightingLeaseHeld;
+        private GameplayLookStateController.LookLease phaseTwoLookLease;
         private bool[] suppressedLightEnabledStates = Array.Empty<bool>();
         private bool previousFogEnabled;
         private Color previousFogColor;
@@ -39,6 +41,9 @@ namespace DimensionBrawl.Presentation
         private float previousFogEndDistance;
 
         public bool LightingLeaseHeld => lightingLeaseHeld;
+        public GameplayLookStateController LookStateController => lookStateController;
+        public bool PhaseTwoLookLeaseHeld => phaseTwoLookLease != null
+            && phaseTwoLookLease.IsValid;
         public int SuppressedDirectionalLightCount => suppressedDirectionalLights?.Length ?? 0;
         public Light WingDeployKey => wingDeployKey;
         public Light EyeOpenKey => eyeOpenKey;
@@ -52,13 +57,26 @@ namespace DimensionBrawl.Presentation
 
         public void BeginManualLightingLease()
         {
+            AcquireLookStateLease();
             AcquireLightingLease();
             ApplyCurrentTime();
         }
 
         public void EndManualLightingLease()
         {
+            ReleaseLookStateLease();
             ReleaseLightingLease();
+        }
+
+        public void ConfigureLookStateController(
+            GameplayLookStateController sourceLookStateController)
+        {
+            ReleaseLookStateLease();
+            lookStateController = sourceLookStateController;
+            if (Application.isPlaying && isActiveAndEnabled)
+            {
+                AcquireLookStateLease();
+            }
         }
 
         public void Configure(
@@ -121,6 +139,7 @@ namespace DimensionBrawl.Presentation
         {
             if (Application.isPlaying)
             {
+                AcquireLookStateLease();
                 AcquireLightingLease();
                 ApplyCurrentTime();
             }
@@ -133,12 +152,39 @@ namespace DimensionBrawl.Presentation
 
         private void OnDisable()
         {
+            ReleaseLookStateLease();
             ReleaseLightingLease();
         }
 
         private void OnDestroy()
         {
+            ReleaseLookStateLease();
             ReleaseLightingLease();
+        }
+
+        private void AcquireLookStateLease()
+        {
+            if (phaseTwoLookLease != null && phaseTwoLookLease.IsValid)
+            {
+                return;
+            }
+
+            phaseTwoLookLease?.Dispose();
+            phaseTwoLookLease = null;
+            if (lookStateController != null
+                && lookStateController.TryAcquire(
+                    GameplayLookState.Phase2Cinematic,
+                    this,
+                    out GameplayLookStateController.LookLease lease))
+            {
+                phaseTwoLookLease = lease;
+            }
+        }
+
+        private void ReleaseLookStateLease()
+        {
+            phaseTwoLookLease?.Dispose();
+            phaseTwoLookLease = null;
         }
 
         private void AcquireLightingLease()

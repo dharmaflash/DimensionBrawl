@@ -156,6 +156,7 @@ namespace DimensionBrawl.Editor
                 phaseTwoLookMaterials,
                 phaseTwoLookProfile);
             AlignGameplayVisualToCinematicTerminal(phaseTwoVisual, transitionRig);
+            GameplayLookStateSetup.ConfigureLoadedScene(scene);
 
             OlympusStationAkazaPhase2FlowController flow =
                 bossRoot.GetComponent<OlympusStationAkazaPhase2FlowController>()
@@ -1448,7 +1449,7 @@ namespace DimensionBrawl.Editor
             Volume volume = volumeObject.AddComponent<Volume>();
             volume.isGlobal = true;
             volume.priority = 220f;
-            volume.weight = 1f;
+            volume.weight = 0f;
             volume.sharedProfile = profile;
         }
 
@@ -1754,14 +1755,21 @@ namespace DimensionBrawl.Editor
                 rig.Root.GetComponentsInChildren<AkazaPhase2CinematicLookDriver>(
                     includeInactive: true);
             Volume[] lookVolumes = rig.Root.GetComponentsInChildren<Volume>(includeInactive: true);
+            GameplayLookStateController gameplayLookState =
+                RequireSingle<GameplayLookStateController>(scene);
             UniversalAdditionalCameraData wingCameraData =
                 rig.WingCamera.GetComponent<UniversalAdditionalCameraData>();
             UniversalAdditionalCameraData eyeCameraData =
                 rig.EyeCamera.GetComponent<UniversalAdditionalCameraData>();
             if (lookDrivers.Length != 1
                 || lookDrivers[0].SuppressedDirectionalLightCount == 0
+                || lookDrivers[0].LookStateController != gameplayLookState
+                || !gameplayLookState.HasBinding(GameplayLookState.Phase2Cinematic)
                 || lookVolumes.Length != 1
                 || !lookVolumes[0].isGlobal
+                || lookVolumes[0].weight > 0.0001f
+                || gameplayLookState.GetOverlayVolume(GameplayLookState.Phase2Cinematic)
+                    != lookVolumes[0]
                 || lookVolumes[0].sharedProfile
                     != RequireAsset<VolumeProfile>(PhaseTwoLookProfilePath)
                 || wingCameraData == null
