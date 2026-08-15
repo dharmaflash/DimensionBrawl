@@ -37,6 +37,12 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string ContactSheetDownsamplePolicy =
             "rgba8-box-4x4-unpremultiplied-round-half-up-linear-storage-v1";
         internal const string CounterShotId = "g06";
+        internal const string G06RuntimeProofFileName =
+            AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProofFileName;
+        internal const string G06EvidenceFolderName =
+            AuditionPvStationPhase2SummonCounterGoldenRunner.EvidenceFolderName;
+        internal const string G06WarmupEvidenceFileName =
+            AuditionPvStationPhase2SummonCounterGoldenRunner.WarmupEvidenceFileName;
         internal const int ExpectedFrameCount = 720;
         internal const int ContactSheetCellWidth = 640;
         internal const int ContactSheetCellHeight = 360;
@@ -89,6 +95,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             "required-semantic-roles-exact-once-and-order",
             "g06-perfect-dodge-counter-source",
+            "g06-runtime-proof-sha256-content-and-failure-absence",
             "current-head-clean-and-source-git-identical",
             "source-manifest-and-dependency-identities-pinned",
             "source-frame-sha256-pins-preflight-and-copy-verified",
@@ -267,10 +274,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                     manifest,
                     manifestSha256);
 
-                ValidateSourceManifestPins(plan);
                 ValidateProxyToolPins(proxyTools);
                 AuditionPvGitSnapshot gitAtInstall = finalGitProbe();
                 ValidateStableGit(currentGit, gitAtInstall);
+                ValidateSourceIdentityPins(plan);
                 if (Directory.Exists(finalDirectory) || File.Exists(finalDirectory))
                 {
                     throw new IOException(
@@ -379,6 +386,17 @@ namespace DimensionBrawl.Editor.AuditionPV
                     throw new InvalidDataException(
                         $"Segment '{segment.role}' must pin both source manifest and "
                         + "dependency-identity SHA-256 values.");
+                }
+
+                bool requiresRuntimeProof = index == segments.Length - 1;
+                if (requiresRuntimeProof != AuditionPvSha256.IsSha256(
+                        segment.sourceRuntimeProofSha256) ||
+                    !requiresRuntimeProof &&
+                    !string.IsNullOrEmpty(segment.sourceRuntimeProofSha256))
+                {
+                    throw new InvalidDataException(
+                        "Only the final G06 perfect-dodge-counter segment must pin "
+                        + "one canonical runtime-proof SHA-256 value.");
                 }
 
                 checked
@@ -658,19 +676,84 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + "BL07 real summon-counter evidence frame.");
             }
 
+            LoadAndValidateG06RuntimeProof(counterSegment);
+
+            string captureDirectory = counterSegment.source.captureDirectory;
+            string proofPath = counterSegment.source.runtimeProofPath;
+            string warmupPath = ResolveG06EvidencePath(
+                captureDirectory,
+                G06WarmupEvidenceFileName);
+            string framesPath = ResolveDirectChildPath(
+                ResolveDirectChildPath(captureDirectory, "frames"),
+                CounterShotId);
+            string baselineDirectory = ResolveDirectChildPath(
+                captureDirectory,
+                "baselines");
             var requiredTests = new[]
             {
                 new
                 {
+                    suite = "recorder",
+                    name = "raw-warmup-and-logical-frame-mapping",
+                    artifactPath = warmupPath
+                },
+                new
+                {
                     suite = "product-state",
-                    name = "real-station-phase2-perfect-dodge-slot1-counter"
+                    name = "real-station-phase2-perfect-dodge-slot1-counter",
+                    artifactPath = proofPath
                 },
                 new
                 {
                     suite = "render",
-                    name = "slot1-screen-intercept-counter-f251"
+                    name = "png-hud-and-visual-sanity",
+                    artifactPath = framesPath
+                },
+                new
+                {
+                    suite = "render",
+                    name = "perfect-dodge-screen-domain-f189",
+                    artifactPath = ResolveDirectChildPath(
+                        baselineDirectory,
+                        counterSegment.source.manifest.baselines.Single(value =>
+                            string.Equals(
+                                value.id,
+                                "bl06",
+                                StringComparison.Ordinal)).fileName)
+                },
+                new
+                {
+                    suite = "render",
+                    name = "slot1-screen-intercept-counter-f251",
+                    artifactPath = ResolveDirectChildPath(
+                        baselineDirectory,
+                        counterSegment.source.manifest.baselines.Single(value =>
+                            string.Equals(
+                                value.id,
+                                "bl07",
+                                StringComparison.Ordinal)).fileName)
+                },
+                new
+                {
+                    suite = "provenance",
+                    name = "git-dependencies-and-station-scene-stable",
+                    artifactPath = proofPath
+                },
+                new
+                {
+                    suite = "lifecycle",
+                    name = "state-restored-and-product-scene-reopened",
+                    artifactPath = proofPath
                 }
             };
+            if (counterSegment.source.manifest.testResults.Length !=
+                requiredTests.Length)
+            {
+                throw new InvalidDataException(
+                    "The G06 source must contain the exact seven-result golden-runner "
+                    + "semantic evidence test set without substituted or extra results.");
+            }
+
             foreach (var required in requiredTests)
             {
                 int count = counterSegment.source.manifest.testResults.Count(value =>
@@ -686,13 +769,356 @@ namespace DimensionBrawl.Editor.AuditionPV
                     string.Equals(
                         value.status,
                         "passed",
-                        StringComparison.Ordinal));
+                        StringComparison.Ordinal) &&
+                    PathsEqual(value.artifactPath, required.artifactPath));
                 if (count != 1)
                 {
                     throw new InvalidDataException(
-                        "The G06 source must contain exactly one passed semantic "
-                        + $"evidence test '{required.suite}/{required.name}'.");
+                        "The G06 source must contain exactly one passed, canonically "
+                        + "linked golden-runner evidence test "
+                        + $"'{required.suite}/{required.name}'.");
                 }
+            }
+        }
+
+        private static void LoadAndValidateG06RuntimeProof(
+            ValidatedSegment counterSegment)
+        {
+            LoadedSource source = counterSegment.source;
+            ValidateNoG06FailureArtifacts(source.captureDirectory);
+            string proofPath = ResolveG06EvidencePath(
+                source.captureDirectory,
+                G06RuntimeProofFileName);
+            if (!File.Exists(proofPath))
+            {
+                throw new FileNotFoundException(
+                    "The canonical G06 runtime proof is missing.",
+                    proofPath);
+            }
+
+            RejectExistingReparseChain(proofPath, "G06 runtime proof");
+            byte[] bytes = File.ReadAllBytes(proofPath);
+            string sha256 = BytesSha256(bytes);
+            if (!string.Equals(
+                    sha256,
+                    counterSegment.specification.sourceRuntimeProofSha256,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The canonical G06 runtime-proof SHA-256 does not match the "
+                    + "segment specification pin.");
+            }
+
+            ValidateG06RuntimeProofDocument(
+                source,
+                Encoding.UTF8.GetString(bytes));
+            source.runtimeProofPath = NormalizePath(proofPath);
+            source.runtimeProofSha256 = sha256;
+        }
+
+        private static void ValidateG06RuntimeProofDocument(
+            LoadedSource source,
+            string json)
+        {
+            AuditionPvG06RuntimeProofArtifact artifact =
+                JsonUtility.FromJson<AuditionPvG06RuntimeProofArtifact>(json);
+            if (artifact == null ||
+                !string.Equals(
+                    artifact.schema,
+                    AuditionPvG06RuntimeProofArtifact.Schema,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    artifact.captureId,
+                    source.manifest.captureId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    artifact.mapping,
+                    AuditionPvG06RuntimeProofArtifact.Mapping,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    artifact.productScreenProfile,
+                    AuditionPvG06RuntimeProofArtifact.ProductScreenProfile,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    artifact.summonCounterContract,
+                    AuditionPvG06RuntimeProofArtifact.SummonCounterContract,
+                    StringComparison.Ordinal) ||
+                artifact.runtime == null)
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime-proof wrapper, capture identity, or exact "
+                    + "authored contract text is invalid.");
+            }
+
+            string canonicalJson = JsonUtility.ToJson(artifact, true)
+                                   + Environment.NewLine;
+            if (!string.Equals(json, canonicalJson, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof is not the exact canonical v1 JSON "
+                    + "document emitted by the golden runner.");
+            }
+
+            ValidateFiniteG06RuntimeProofNumbers(artifact.runtime);
+
+            try
+            {
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ValidateRuntimeProof(artifact.runtime);
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ValidateVisualSequence(artifact.runtime.visualMetrics);
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ValidateScreenDelta(artifact.runtime.screenDelta);
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ValidateCounterDelta(artifact.runtime.counterDelta);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof failed the golden runner's exact "
+                    + "gameplay, render, Recorder, or restoration predicates.",
+                    exception);
+            }
+
+            float captureDelta =
+                artifact.runtime.recorderCaptureDeltaTimeAtLogicalFrameZero;
+            float minimumDelta = 1f / AuditionPvCaptureContract.Fps;
+            if (captureDelta <= minimumDelta ||
+                captureDelta >= minimumDelta + 0.001f ||
+                Math.Abs(artifact.runtime.hudEnergyMaxMana - 300f) > 0.001f)
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof does not preserve the exact Recorder "
+                    + "padding or authored full-energy 300->100 contract.");
+            }
+
+            string warmupPath = ResolveG06EvidencePath(
+                source.captureDirectory,
+                G06WarmupEvidenceFileName);
+            if (!PathsEqual(
+                    artifact.runtime.warmupEvidencePath,
+                    warmupPath) ||
+                !File.Exists(warmupPath))
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof is not linked to the canonical warm-up "
+                    + "evidence PNG.");
+            }
+
+            RejectExistingReparseChain(warmupPath, "G06 warm-up evidence");
+            ValidatePngHeader(
+                warmupPath,
+                AuditionPvCaptureContract.Width,
+                AuditionPvCaptureContract.Height);
+            if (!AuditionPvSha256.IsSha256(
+                    artifact.runtime.warmupEvidenceSha256) ||
+                !string.Equals(
+                    FileSha256(warmupPath),
+                    artifact.runtime.warmupEvidenceSha256,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The G06 warm-up evidence SHA-256 does not match the runtime "
+                    + "proof.");
+            }
+        }
+
+        private static void ValidateFiniteG06RuntimeProofNumbers(
+            AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof runtime)
+        {
+            bool Invalid(float value) =>
+                float.IsNaN(value) || float.IsInfinity(value);
+            bool InvalidDouble(double value) =>
+                double.IsNaN(value) || double.IsInfinity(value);
+            if (runtime == null ||
+                runtime.visualMetrics == null ||
+                runtime.screenDelta == null ||
+                runtime.counterDelta == null ||
+                Invalid(runtime.bossRiskAtFirstFrame) ||
+                runtime.bossRiskAtFirstFrame > 1f ||
+                Invalid(runtime.bossRiskAtFireFrame) ||
+                runtime.bossRiskAtFireFrame > 1f ||
+                Invalid(runtime.bossRiskAtImpactFrame) ||
+                runtime.bossRiskAtImpactFrame > 1f ||
+                Invalid(runtime.hudEnergyMana) ||
+                Invalid(runtime.hudEnergyMaxMana) ||
+                Invalid(runtime.summonEnergyBeforeUse) ||
+                Invalid(runtime.summonEnergyAfterUse) ||
+                Invalid(runtime.authoredCounterDamage) ||
+                Invalid(runtime.bossCounterDamageAmount) ||
+                Invalid(runtime.bossCounterHealthDelta) ||
+                Invalid(runtime.recorderCaptureDeltaTimeAtLogicalFrameZero) ||
+                InvalidDouble(runtime.visualMetrics.blackRatio) ||
+                InvalidDouble(runtime.visualMetrics.magentaRatio) ||
+                InvalidDouble(runtime.visualMetrics.maximumFrameMagentaRatio) ||
+                InvalidDouble(runtime.screenDelta.meanAbsoluteRgb) ||
+                InvalidDouble(runtime.screenDelta.changedSampleRatio) ||
+                InvalidDouble(runtime.counterDelta.meanAbsoluteRgb) ||
+                InvalidDouble(runtime.counterDelta.changedSampleRatio))
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof contains a missing metric or a non-finite "
+                    + "gameplay/render number.");
+            }
+
+            AuditionPvStationPhase2SummonCounterGoldenRunner.SequenceVisualMetrics
+                visual = runtime.visualMetrics;
+            const long exactVisualSampleCount = 1296000L;
+            const long exactDeltaSampleCount = 115200L;
+            if (visual.sampleCount != exactVisualSampleCount ||
+                visual.blackSampleCount < 0 ||
+                visual.blackSampleCount > visual.sampleCount ||
+                visual.magentaSampleCount < 0 ||
+                visual.magentaSampleCount > visual.sampleCount ||
+                Math.Abs(visual.blackRatio -
+                         visual.blackSampleCount / (double)visual.sampleCount) >
+                0.000000000001d ||
+                Math.Abs(visual.magentaRatio -
+                         visual.magentaSampleCount / (double)visual.sampleCount) >
+                0.000000000001d ||
+                visual.maximumFrameMagentaRatio < 0d ||
+                visual.healthyFrameCount < 0 ||
+                visual.healthyFrameCount > 360 ||
+                visual.magentaAffectedFrameCount < 0 ||
+                visual.magentaAffectedFrameCount > 360 ||
+                visual.minimumSampledLuma < 0 ||
+                visual.minimumSampledLuma > 255 ||
+                visual.maximumSampledLuma < 0 ||
+                visual.maximumSampledLuma > 255 ||
+                visual.frameZeroHudAccentSamples < 0 ||
+                visual.frameZeroHudAccentSamples > 3600 ||
+                runtime.screenDelta.sampleCount != exactDeltaSampleCount ||
+                runtime.counterDelta.sampleCount != exactDeltaSampleCount ||
+                !HasConsistentG06Delta(runtime.screenDelta) ||
+                !HasConsistentG06Delta(runtime.counterDelta))
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof contains internally inconsistent "
+                    + "visual or pixel-delta counts and ratios.");
+            }
+        }
+
+        private static bool HasConsistentG06Delta(
+            AuditionPvStationPhase2SummonCounterGoldenRunner.ScreenDeltaMetrics
+                metrics)
+        {
+            return metrics.sampleCount > 0 &&
+                   metrics.changedSampleCount >= 0 &&
+                   metrics.changedSampleCount <= metrics.sampleCount &&
+                   metrics.meanAbsoluteRgb >= 0d &&
+                   metrics.meanAbsoluteRgb <= 255d &&
+                   metrics.changedSampleRatio >= 0d &&
+                   metrics.changedSampleRatio <= 1d &&
+                   Math.Abs(metrics.changedSampleRatio -
+                            metrics.changedSampleCount /
+                            (double)metrics.sampleCount) <= 0.000000000001d;
+        }
+
+        private static string ResolveG06EvidencePath(
+            string captureDirectory,
+            string fileName)
+        {
+            return ResolveDirectChildPath(
+                ResolveDirectChildPath(
+                    captureDirectory,
+                    G06EvidenceFolderName),
+                fileName);
+        }
+
+        private static bool IsCanonicalG06RuntimeProofIdentity(
+            AuditionPvTwelveSecondSourceManifestIdentity source)
+        {
+            try
+            {
+                if (!AuditionPvSha256.IsSha256(source.runtimeProofSha256) ||
+                    string.IsNullOrWhiteSpace(source.runtimeProofPath) ||
+                    !Path.IsPathRooted(source.runtimeProofPath) ||
+                    string.IsNullOrWhiteSpace(source.manifestPath) ||
+                    !Path.IsPathRooted(source.manifestPath) ||
+                    !string.Equals(
+                        Path.GetFileName(source.manifestPath),
+                        AuditionPvCaptureContract.ManifestFileName,
+                        StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                string captureDirectory = Path.GetDirectoryName(
+                    source.manifestPath) ?? string.Empty;
+                return string.Equals(
+                           Path.GetFileName(captureDirectory),
+                           source.captureId,
+                           StringComparison.Ordinal) &&
+                       PathsEqual(
+                           source.runtimeProofPath,
+                           ResolveG06EvidencePath(
+                               captureDirectory,
+                               G06RuntimeProofFileName));
+            }
+            catch (Exception exception) when (
+                exception is ArgumentException ||
+                exception is NotSupportedException ||
+                exception is PathTooLongException)
+            {
+                return false;
+            }
+        }
+
+        private static string ResolveDirectChildPath(string parent, string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) ||
+                ContainsTraversalSegment(name) ||
+                !string.Equals(
+                    Path.GetFileName(name),
+                    name,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "A canonical G06 evidence path contains an unsafe file or "
+                    + "directory name.");
+            }
+
+            string normalizedParent = Path.GetFullPath(parent);
+            string path = Path.GetFullPath(Path.Combine(normalizedParent, name));
+            if (!PathsEqual(
+                    Path.GetDirectoryName(path) ?? string.Empty,
+                    normalizedParent))
+            {
+                throw new InvalidDataException(
+                    "A canonical G06 evidence path escaped its direct parent.");
+            }
+
+            return NormalizePath(path);
+        }
+
+        private static void ValidateNoG06FailureArtifacts(string captureDirectory)
+        {
+            string[] failures = Directory.GetFileSystemEntries(
+                    captureDirectory,
+                    "*",
+                    SearchOption.TopDirectoryOnly)
+                .Where(path =>
+                {
+                    string name = Path.GetFileName(path);
+                    return string.Equals(
+                               name,
+                               AuditionPvStationPhase2SummonCounterGoldenRunner
+                                   .FailureFileName,
+                               StringComparison.OrdinalIgnoreCase) ||
+                           name.StartsWith(
+                               "g06_capture_failure_",
+                               StringComparison.OrdinalIgnoreCase) &&
+                           name.EndsWith(
+                               ".json",
+                               StringComparison.OrdinalIgnoreCase);
+                })
+                .ToArray();
+            if (failures.Length != 0)
+            {
+                throw new InvalidDataException(
+                    "The G06 source contains a capture-failure artifact and cannot "
+                    + "be used for the product Gate: "
+                    + string.Join(", ", failures.Select(Path.GetFileName)));
             }
         }
 
@@ -1079,7 +1505,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                     selectStartFrame = segment.outputStartFrame,
                     selectEndFrame = segment.outputEndFrame,
                     frameCount = segment.outputEndFrame
-                                 - segment.outputStartFrame + 1
+                                 - segment.outputStartFrame + 1,
+                    sourceRuntimeProofSha256 =
+                        segment.specification.sourceRuntimeProofSha256
                 });
 
                 for (int sourceFrame = segment.specification.startFrame;
@@ -1203,7 +1631,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                             source.manifest.recorderPackageVersion,
                         urpPackageVersion = source.manifest.urpPackageVersion,
                         activeRenderPipelineAssetPath =
-                            source.manifest.activeRenderPipelineAssetPath
+                            source.manifest.activeRenderPipelineAssetPath,
+                        runtimeProofPath = source.runtimeProofPath,
+                        runtimeProofSha256 = source.runtimeProofSha256
                     }).ToArray(),
                 segments = segmentEntries.ToArray(),
                 frames = mappings.ToArray(),
@@ -1546,7 +1976,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                     != segment.frameCount ||
                     segment.selectStartFrame != expectedStart ||
                     segment.selectEndFrame - segment.selectStartFrame + 1
-                    != segment.frameCount)
+                    != segment.frameCount ||
+                    (index == manifest.segments.Length - 1) !=
+                    AuditionPvSha256.IsSha256(
+                        segment.sourceRuntimeProofSha256) ||
+                    index != manifest.segments.Length - 1 &&
+                    !string.IsNullOrEmpty(
+                        segment.sourceRuntimeProofSha256))
                 {
                     throw new InvalidDataException(
                         "12-second select segment topology is invalid at index "
@@ -1570,11 +2006,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                 string,
                 AuditionPvTwelveSecondSourceManifestIdentity>(
                 StringComparer.Ordinal);
+            int runtimeProofIdentityCount = 0;
             foreach (AuditionPvTwelveSecondSourceManifestIdentity source in
                      manifest.sourceManifests)
             {
-                if (source == null ||
-                    string.IsNullOrWhiteSpace(source.captureId) ||
+                if (source == null)
+                {
+                    throw new InvalidDataException(
+                        "Select source-manifest identity table contains a null entry.");
+                }
+
+                bool hasRuntimeProof =
+                    !string.IsNullOrEmpty(source.runtimeProofPath) ||
+                    !string.IsNullOrEmpty(source.runtimeProofSha256);
+                if (string.IsNullOrWhiteSpace(source.captureId) ||
                     !sourceIdentities.TryAdd(source.captureId, source) ||
                     !AuditionPvSha256.IsSha256(source.manifestSha256) ||
                     !AuditionPvSha256.IsSha256(
@@ -1590,11 +2035,34 @@ namespace DimensionBrawl.Editor.AuditionPV
                     !string.Equals(
                         source.worktreeDirtyHashSha256,
                         manifest.worktreeDirtyHashSha256,
-                        StringComparison.Ordinal))
+                        StringComparison.Ordinal) ||
+                    hasRuntimeProof &&
+                    !IsCanonicalG06RuntimeProofIdentity(source))
                 {
                     throw new InvalidDataException(
                         "Select source-manifest identity table is invalid.");
                 }
+
+                if (hasRuntimeProof)
+                {
+                    runtimeProofIdentityCount++;
+                }
+            }
+
+            AuditionPvTwelveSecondSelectSegment counterSegment =
+                manifest.segments[^1];
+            if (runtimeProofIdentityCount != 1 ||
+                !sourceIdentities.TryGetValue(
+                    counterSegment.sourceCaptureId,
+                    out AuditionPvTwelveSecondSourceManifestIdentity counterSource) ||
+                !string.Equals(
+                    counterSegment.sourceRuntimeProofSha256,
+                    counterSource.runtimeProofSha256,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "The installed select must bind its final G06 segment to exactly "
+                    + "one canonical source runtime-proof identity.");
             }
 
             string framesDirectory = Path.Combine(
@@ -1856,6 +2324,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             string manifestSha256,
             DateTime validatedAtUtc)
         {
+            AuditionPvTwelveSecondSelectSegment counterSegment =
+                manifest.segments[^1];
+            AuditionPvTwelveSecondSourceManifestIdentity counterSource =
+                manifest.sourceManifests.Single(source => string.Equals(
+                    source.captureId,
+                    counterSegment.sourceCaptureId,
+                    StringComparison.Ordinal));
             var report = new AuditionPvTwelveSecondValidationReport
             {
                 schemaVersion = ValidationSchema,
@@ -1874,6 +2349,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proxySha256 = manifest.proxy.proxySha256,
                 proxyProbeFile = manifest.proxy.probeFile,
                 proxyProbeSha256 = manifest.proxy.probeSha256,
+                g06SourceCaptureId = counterSource.captureId,
+                g06RuntimeProofPath = counterSource.runtimeProofPath,
+                g06RuntimeProofSha256 = counterSource.runtimeProofSha256,
                 sourceManifestCount = manifest.sourceManifests.Length,
                 segmentCount = manifest.segments.Length,
                 frameCount = manifest.frames.Length,
@@ -1890,6 +2368,17 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvTwelveSecondSelectManifest manifest,
             string manifestSha256)
         {
+            AuditionPvTwelveSecondSelectSegment counterSegment =
+                manifest != null && manifest.segments != null &&
+                manifest.segments.Length > 0
+                    ? manifest.segments[manifest.segments.Length - 1]
+                    : null;
+            AuditionPvTwelveSecondSourceManifestIdentity counterSource =
+                manifest?.sourceManifests?.SingleOrDefault(source =>
+                    source != null && counterSegment != null && string.Equals(
+                        source.captureId,
+                        counterSegment.sourceCaptureId,
+                        StringComparison.Ordinal));
             string path = Path.Combine(
                 physicalDirectory,
                 ValidationReportFileName);
@@ -1958,6 +2447,19 @@ namespace DimensionBrawl.Editor.AuditionPV
                     report.proxyProbeSha256,
                     manifest.proxy?.probeSha256,
                     StringComparison.Ordinal) ||
+                counterSource == null ||
+                !string.Equals(
+                    report.g06SourceCaptureId,
+                    counterSource.captureId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    report.g06RuntimeProofPath,
+                    counterSource.runtimeProofPath,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    report.g06RuntimeProofSha256,
+                    counterSource.runtimeProofSha256,
+                    StringComparison.Ordinal) ||
                 report.sourceManifestCount != manifest.sourceManifests.Length ||
                 report.segmentCount != manifest.segments.Length ||
                 report.frameCount != manifest.frames.Length ||
@@ -1971,7 +2473,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
-        private static void ValidateSourceManifestPins(ValidatedPlan plan)
+        private static void ValidateSourceIdentityPins(ValidatedPlan plan)
         {
             foreach (LoadedSource source in plan.sources)
             {
@@ -1984,6 +2486,35 @@ namespace DimensionBrawl.Editor.AuditionPV
                     throw new InvalidDataException(
                         "A source capture manifest changed during assembly: "
                         + source.manifestPath);
+                }
+
+                if (!string.IsNullOrEmpty(source.runtimeProofSha256))
+                {
+                    ValidateNoG06FailureArtifacts(source.captureDirectory);
+                    if (!File.Exists(source.runtimeProofPath))
+                    {
+                        throw new InvalidDataException(
+                            "The pinned G06 runtime proof disappeared during "
+                            + "assembly: " + source.runtimeProofPath);
+                    }
+
+                    RejectExistingReparseChain(
+                        source.runtimeProofPath,
+                        "G06 runtime proof");
+                    byte[] proofBytes = File.ReadAllBytes(source.runtimeProofPath);
+                    if (!string.Equals(
+                            BytesSha256(proofBytes),
+                            source.runtimeProofSha256,
+                            StringComparison.Ordinal))
+                    {
+                        throw new InvalidDataException(
+                            "The pinned G06 runtime proof changed during assembly: "
+                            + source.runtimeProofPath);
+                    }
+
+                    ValidateG06RuntimeProofDocument(
+                        source,
+                        Encoding.UTF8.GetString(proofBytes));
                 }
             }
         }
@@ -3162,6 +3693,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string captureDirectory = string.Empty;
             public string manifestSha256 = string.Empty;
             public string dependencyIdentitySha256 = string.Empty;
+            public string runtimeProofPath = string.Empty;
+            public string runtimeProofSha256 = string.Empty;
             public AuditionPvCaptureManifest manifest;
         }
 
@@ -3207,10 +3740,33 @@ namespace DimensionBrawl.Editor.AuditionPV
         public string sourceManifestPath = string.Empty;
         public string sourceManifestSha256 = string.Empty;
         public string sourceDependencyIdentitySha256 = string.Empty;
+        public string sourceRuntimeProofSha256 = string.Empty;
         public string shotId = string.Empty;
         public int startFrame;
         public int endFrame;
         public string[] sourceFrameSha256 = Array.Empty<string>();
+    }
+
+    [Serializable]
+    internal sealed class AuditionPvG06RuntimeProofArtifact
+    {
+        internal const string Schema =
+            "dimension-brawl.audition-pv.g06-runtime-proof.v1";
+        internal const string Mapping =
+            "Recorder raw0 is preserved warm-up evidence; raw1..raw360 map to logical f0..f359.";
+        internal const string ProductScreenProfile =
+            "authored product profile used unchanged: enabled=true, domain=.14, "
+            + "invert=.015, edge=.18, glitch=.03, duration=.42s.";
+        internal const string SummonCounterContract =
+            "authored Slot1 cost=200, full EN 300->100, tier=2, "
+            + "screen intercept=1, automatic counter damage=29.44.";
+
+        public string schema = string.Empty;
+        public string captureId = string.Empty;
+        public string mapping = string.Empty;
+        public string productScreenProfile = string.Empty;
+        public string summonCounterContract = string.Empty;
+        public AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof runtime;
     }
 
     [Serializable]
@@ -3260,6 +3816,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         public string recorderPackageVersion = string.Empty;
         public string urpPackageVersion = string.Empty;
         public string activeRenderPipelineAssetPath = string.Empty;
+        public string runtimeProofPath = string.Empty;
+        public string runtimeProofSha256 = string.Empty;
     }
 
     [Serializable]
@@ -3275,6 +3833,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int selectStartFrame;
         public int selectEndFrame;
         public int frameCount;
+        public string sourceRuntimeProofSha256 = string.Empty;
     }
 
     [Serializable]
@@ -3386,6 +3945,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         public string proxySha256 = string.Empty;
         public string proxyProbeFile = string.Empty;
         public string proxyProbeSha256 = string.Empty;
+        public string g06SourceCaptureId = string.Empty;
+        public string g06RuntimeProofPath = string.Empty;
+        public string g06RuntimeProofSha256 = string.Empty;
         public int sourceManifestCount;
         public int segmentCount;
         public int frameCount;

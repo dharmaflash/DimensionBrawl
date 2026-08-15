@@ -1914,7 +1914,13 @@ namespace DimensionBrawl.Editor.AuditionPV
     public sealed class AuditionPvStationPhase2SummonCounterGoldenRunnerBehaviour
         : MonoBehaviour
     {
-        private const double ShotTimeoutSeconds = 60d;
+        // QHD lossless PNG encoding is intentionally allowed to run slower
+        // than presentation time.  The first clean 360-frame observation on
+        // the reference workstation produced 346 frames in 60 wall-clock
+        // seconds while every gameplay/proof predicate had already passed.
+        // Keep the semantic frame contract exact and give only the encoder
+        // enough wall-clock headroom to finish the remaining frames.
+        private const double ShotTimeoutSeconds = 90d;
 
         private string statePath;
         private string outputDirectory;

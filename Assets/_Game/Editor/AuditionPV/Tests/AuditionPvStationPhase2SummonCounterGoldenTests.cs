@@ -36,6 +36,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void RunnerTimeout_AllowsObservedQhdPngEncodingHeadroom()
+        {
+            string source = File.ReadAllText(ProjectAbsolutePath(
+                AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .RunnerScriptPath));
+
+            Assert.That(
+                source,
+                Does.Contain("private const double ShotTimeoutSeconds = 90d;"));
+        }
+
+        [Test]
         public void CaptureSchedule_PreservesG05AndAddsAuthoredSlot1Counter()
         {
             Assert.That(

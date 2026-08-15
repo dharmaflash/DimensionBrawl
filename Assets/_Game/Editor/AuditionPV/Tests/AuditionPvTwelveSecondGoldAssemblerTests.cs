@@ -237,6 +237,24 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(manifest.proxy.audioStreamCount, Is.Zero);
             Assert.That(manifest.proxy.frameCount, Is.EqualTo(720));
             Assert.That(manifest.proxy.durationSeconds, Is.EqualTo(12d));
+            AuditionPvTwelveSecondSourceManifestIdentity g06Identity =
+                manifest.sourceManifests.Single(value =>
+                    value.captureId == "fixture-g06");
+            Assert.That(
+                g06Identity.runtimeProofPath,
+                Is.EqualTo(fixture.sources["fixture-g06"].runtimeProofPath));
+            Assert.That(
+                g06Identity.runtimeProofSha256,
+                Is.EqualTo(fixture.sources["fixture-g06"].runtimeProofSha256));
+            Assert.That(
+                manifest.segments[^1].sourceRuntimeProofSha256,
+                Is.EqualTo(g06Identity.runtimeProofSha256));
+            Assert.That(
+                report.g06RuntimeProofPath,
+                Is.EqualTo(g06Identity.runtimeProofPath));
+            Assert.That(
+                report.g06RuntimeProofSha256,
+                Is.EqualTo(g06Identity.runtimeProofSha256));
             Assert.DoesNotThrow(() =>
                 AuditionPvTwelveSecondGoldAssembler.ValidateInstalledPackage(
                     result.outputDirectory));
@@ -480,6 +498,128 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void MissingG06RuntimeProof_IsRejectedBeforeOutputReservation()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            File.Delete(fixture.sources["fixture-g06"].runtimeProofPath);
+
+            FileNotFoundException exception = Assert.Throws<FileNotFoundException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("runtime proof"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
+        public void ChangedG06RuntimeProof_IsRejectedAgainstPinnedSha()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            File.AppendAllText(
+                fixture.sources["fixture-g06"].runtimeProofPath,
+                " ",
+                new UTF8Encoding(false));
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("runtime-proof SHA-256"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
+        public void PinnedG06ProofWithInvalidCounterPredicate_IsRejected()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            RewriteG06RuntimeProof(fixture, runtime =>
+                runtime.bossCounterDamageEventCount = 0);
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("runtime proof"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
+        public void PinnedG06ProofWithImpossibleSampleCount_IsRejected()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            RewriteG06RuntimeProof(fixture, runtime =>
+                runtime.counterDelta.sampleCount--);
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("internally inconsistent"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
+        public void G06FailureArtifact_IsRejectedBeforeOutputReservation()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            File.WriteAllText(
+                Path.Combine(
+                    Path.GetDirectoryName(
+                        fixture.sources["fixture-g06"].manifestPath),
+                    "g06_capture_failure_20260816T000000000Z.json"),
+                "{}\n",
+                new UTF8Encoding(false));
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("capture-failure"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
+        public void G06FailureAppearingDuringAssembly_BlocksAtomicInstall()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(
+                    fixture,
+                    beforeFinalGitProbe: () => File.WriteAllText(
+                        Path.Combine(
+                            Path.GetDirectoryName(
+                                fixture.sources["fixture-g06"].manifestPath),
+                            "g06_capture_failure.json"),
+                        "{}\n",
+                        new UTF8Encoding(false))));
+
+            Assert.That(exception.Message, Does.Contain("capture-failure"));
+            Assert.That(
+                Directory.Exists(Path.Combine(
+                    fixture.outputRoot,
+                    "fixture-select")),
+                Is.False);
+            Assert.That(
+                Directory.GetDirectories(
+                    fixture.outputRoot,
+                    ".*.staging-*",
+                    SearchOption.TopDirectoryOnly),
+                Is.Empty);
+        }
+
+        [Test]
+        public void G06SemanticResultMustLinkCanonicalRuntimeProof()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            RewriteSourceManifest(fixture, "fixture-g06", manifest =>
+                manifest.testResults.Single(value =>
+                        value.suite == "product-state")
+                    .artifactPath = "substituted-proof.json");
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                Assemble(fixture));
+
+            Assert.That(exception.Message, Does.Contain("canonically linked"));
+            Assert.That(Directory.Exists(fixture.outputRoot), Is.False);
+        }
+
+        [Test]
         public void DirtyCurrentWorktree_IsRejectedBeforeOutputRootCreation()
         {
             Fixture fixture = CreateFixture(writeFrames: false);
@@ -572,6 +712,27 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void TamperedInstalledG06ProofLinkage_FailsCrossValidation()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            AuditionPvTwelveSecondAssemblyResult result = Assemble(fixture);
+            AuditionPvTwelveSecondSelectManifest manifest =
+                AuditionPvTwelveSecondGoldAssembler.ReadInstalledManifest(
+                    result.outputDirectory);
+            manifest.segments[^1].sourceRuntimeProofSha256 = new string('0', 64);
+            File.WriteAllText(
+                result.manifestPath,
+                JsonUtility.ToJson(manifest, true) + Environment.NewLine,
+                new UTF8Encoding(false));
+
+            InvalidDataException exception = Assert.Throws<InvalidDataException>(() =>
+                AuditionPvTwelveSecondGoldAssembler.ValidateInstalledPackage(
+                    result.outputDirectory));
+
+            Assert.That(exception.Message, Does.Contain("runtime-proof identity"));
+        }
+
+        [Test]
         public void ContactSheetMutationMissingAndWrongDimensions_AreRejected()
         {
             Fixture fixture = CreateFixture(writeFrames: true);
@@ -650,7 +811,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         private AuditionPvTwelveSecondAssemblyResult Assemble(
             Fixture fixture,
             string outputId = "fixture-select",
-            string outputRoot = null)
+            string outputRoot = null,
+            Action beforeFinalGitProbe = null)
         {
             return AuditionPvTwelveSecondGoldAssembler.Assemble(
                 fixture.specification,
@@ -659,7 +821,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 fixture.git,
                 new DateTime(2026, 8, 16, 0, 0, 0, DateTimeKind.Utc),
                 outputId,
-                () => CloneGit(fixture.git),
+                () =>
+                {
+                    beforeFinalGitProbe?.Invoke();
+                    return CloneGit(fixture.git);
+                },
                 fixture.proxyEncoder);
         }
 
@@ -762,6 +928,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         {
             string directory = Path.Combine(fixture.sourceRoot, captureId);
             Directory.CreateDirectory(directory);
+            string runtimeProofPath = string.Empty;
+            string runtimeProofSha256 = string.Empty;
             if (writeFrames)
             {
                 foreach (AuditionPvShotManifestEntry shot in shots)
@@ -796,6 +964,31 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 }
             }
 
+            if (string.Equals(captureId, "fixture-g06", StringComparison.Ordinal))
+            {
+                string evidenceDirectory = Path.Combine(
+                    directory,
+                    AuditionPvTwelveSecondGoldAssembler.G06EvidenceFolderName);
+                Directory.CreateDirectory(evidenceDirectory);
+                string warmupPath = Path.Combine(
+                    evidenceDirectory,
+                    AuditionPvTwelveSecondGoldAssembler.G06WarmupEvidenceFileName);
+                WriteFixturePng(
+                    warmupPath,
+                    AuditionPvCaptureContract.Width,
+                    AuditionPvCaptureContract.Height,
+                    "fixture-g06-warmup-evidence");
+                runtimeProofPath = Path.Combine(
+                    evidenceDirectory,
+                    AuditionPvTwelveSecondGoldAssembler.G06RuntimeProofFileName);
+                WriteG06RuntimeProof(
+                    runtimeProofPath,
+                    captureId,
+                    warmupPath,
+                    CreatePassingG06RuntimeProof());
+                runtimeProofSha256 = AuditionPvSha256.FileHash(runtimeProofPath);
+            }
+
             var manifest = new AuditionPvCaptureManifest
             {
                 captureId = captureId,
@@ -824,7 +1017,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         sha256 = DependencySha
                     }
                 },
-                testResults = FixtureTestResults(captureId)
+                testResults = FixtureTestResults(
+                    captureId,
+                    directory,
+                    baselines,
+                    runtimeProofPath)
             };
             AuditionPvCaptureManifestWriter.Validate(manifest);
             string manifestPath = Path.Combine(
@@ -842,7 +1039,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 manifestSha256 = AuditionPvSha256.FileHash(manifestPath),
                 dependencyIdentitySha256 =
                     AuditionPvTwelveSecondGoldAssembler
-                        .ComputeDependencyIdentityForTests(manifest)
+                        .ComputeDependencyIdentityForTests(manifest),
+                runtimeProofPath = string.IsNullOrEmpty(runtimeProofPath)
+                    ? string.Empty
+                    : Normalize(runtimeProofPath),
+                runtimeProofSha256 = runtimeProofSha256
             };
         }
 
@@ -873,6 +1074,159 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 segment.sourceDependencyIdentitySha256 =
                     source.dependencyIdentitySha256;
             }
+        }
+
+        private static void RewriteG06RuntimeProof(
+            Fixture fixture,
+            Action<AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof>
+                mutate)
+        {
+            SourceCapture source = fixture.sources["fixture-g06"];
+            AuditionPvG06RuntimeProofArtifact artifact =
+                JsonUtility.FromJson<AuditionPvG06RuntimeProofArtifact>(
+                    File.ReadAllText(source.runtimeProofPath, Encoding.UTF8));
+            mutate(artifact.runtime);
+            File.WriteAllText(
+                source.runtimeProofPath,
+                JsonUtility.ToJson(artifact, true) + Environment.NewLine,
+                new UTF8Encoding(false));
+            source.runtimeProofSha256 = AuditionPvSha256.FileHash(
+                source.runtimeProofPath);
+            fixture.specification.segments[^1].sourceRuntimeProofSha256 =
+                source.runtimeProofSha256;
+        }
+
+        private static void WriteG06RuntimeProof(
+            string path,
+            string captureId,
+            string warmupPath,
+            AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof runtime)
+        {
+            runtime.warmupEvidencePath = Normalize(warmupPath);
+            runtime.warmupEvidenceSha256 = AuditionPvSha256.FileHash(warmupPath);
+            var artifact = new AuditionPvG06RuntimeProofArtifact
+            {
+                schema = AuditionPvG06RuntimeProofArtifact.Schema,
+                captureId = captureId,
+                mapping = AuditionPvG06RuntimeProofArtifact.Mapping,
+                productScreenProfile =
+                    AuditionPvG06RuntimeProofArtifact.ProductScreenProfile,
+                summonCounterContract =
+                    AuditionPvG06RuntimeProofArtifact.SummonCounterContract,
+                runtime = runtime
+            };
+            File.WriteAllText(
+                path,
+                JsonUtility.ToJson(artifact, true) + Environment.NewLine,
+                new UTF8Encoding(false));
+        }
+
+        private static AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof
+            CreatePassingG06RuntimeProof()
+        {
+            return new AuditionPvStationPhase2SummonCounterGoldenRunner.RuntimeProof
+            {
+                directorCompleted = true,
+                lastLogicalFrame = 359,
+                presentedFrameCount = 360,
+                presentedFramesExact = true,
+                presentationClockExact = true,
+                perfectDodgeCount = 1,
+                firedProjectileCount = 7,
+                usedActualCrushNetPattern = true,
+                impactAppliedOrBlocked = true,
+                impactProjectileInactive = true,
+                damageBlockedObservationCount = 1,
+                damageModifyingObservationCount = 0,
+                playerHealthUnchanged = true,
+                cameraCueRequested = true,
+                screenCueRequested = true,
+                screenCueActiveAtBaselineFrame = true,
+                productScreenProfileActive = true,
+                bossRiskAtFirstFrame = 0.6f,
+                bossRiskAtFireFrame = 0.9f,
+                bossRiskAtImpactFrame = 0.91f,
+                exactHudRenderable = true,
+                exactHudResources = true,
+                exactEnergyBinding = true,
+                hudAmmo = 12,
+                hudMagazineSize = 12,
+                hudEnergyMana = 100f,
+                hudEnergyMaxMana = 300f,
+                summonEnergyBeforeUse = 300f,
+                summonEnergyAfterUse = 100f,
+                summonSpentTier = 2,
+                summonUseCountDelta = 1,
+                summonInterceptCountDelta = 1,
+                summonUsedEventCount = 1,
+                summonBlockedEventCount = 1,
+                screenInterceptEventCount = 1,
+                screenFirstObservedFrame = 239,
+                summonPressureScreenTier = 2,
+                summonPressureScreenRemainingIntercepts = 1,
+                uniqueSummonPressureScreenObserved = true,
+                retainedProjectileCountBeforeIntercept = 6,
+                retainedProjectileIdentitySetExact = true,
+                retainedProjectileImpactApplied = true,
+                retainedProjectileInactive = true,
+                activeCounterProjectileCountAfterIntercept = 1,
+                bossDamageEventCount = 1,
+                bossAllyDamageEventCount = 1,
+                bossCounterDamageEventCount = 1,
+                bossCounterDamageFrame = 280,
+                counterProjectileDamageAppliedCount = 1,
+                counterProjectileDamageAppliedFrame = 280,
+                authoredCounterDamage = 29.439999f,
+                bossCounterDamageAmount = 29.439999f,
+                bossCounterHealthDelta = 29.439999f,
+                fixedDeltaTimeExact = true,
+                recorderWarmupEndOfFrameCount = 2,
+                recorderPaddingActiveAtLogicalFrameZero = true,
+                recorderCaptureDeltaTimeAtLogicalFrameZero =
+                    1f / AuditionPvCaptureContract.Fps + 0.0001f,
+                recorderAutoStoppedAfterLastFrame = true,
+                stateRestored = true,
+                screenProfileRestored = true,
+                fixedDeltaTimeRestored = true,
+                captureInputLocksReleased = true,
+                captureHudStateRestored = true,
+                captureEventsReleased = true,
+                captureSummonArtifactsReleased = true,
+                bossCompositionRestored = true,
+                presentationClockReleased = true,
+                cadenceSuspensionCountAfterRestore = 0,
+                visualMetrics = new AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .SequenceVisualMetrics
+                {
+                    sampleCount = 1296000,
+                    blackSampleCount = 12960,
+                    magentaSampleCount = 1296,
+                    healthyFrameCount = 360,
+                    magentaAffectedFrameCount = 1,
+                    blackRatio = 0.01d,
+                    magentaRatio = 0.001d,
+                    maximumFrameMagentaRatio = 0.001d,
+                    minimumSampledLuma = 12,
+                    maximumSampledLuma = 180,
+                    frameZeroHudAccentSamples = 12
+                },
+                screenDelta = new AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ScreenDeltaMetrics
+                {
+                    sampleCount = 115200,
+                    changedSampleCount = 11520,
+                    meanAbsoluteRgb = 2.5d,
+                    changedSampleRatio = 0.1d
+                },
+                counterDelta = new AuditionPvStationPhase2SummonCounterGoldenRunner
+                    .ScreenDeltaMetrics
+                {
+                    sampleCount = 115200,
+                    changedSampleCount = 11520,
+                    meanAbsoluteRgb = 1.5d,
+                    changedSampleRatio = 0.1d
+                }
+            };
         }
 
         private static AuditionPvShotManifestEntry Shot(
@@ -910,46 +1264,87 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         private static AuditionPvTestResult[] FixtureTestResults(
-            string captureId)
+            string captureId,
+            string captureDirectory,
+            AuditionPvBaselineManifestEntry[] baselines,
+            string runtimeProofPath)
         {
-            var results = new List<AuditionPvTestResult>
-            {
-                new AuditionPvTestResult
-                {
-                    suite = "fixture",
-                    name = "deterministic-source",
-                    status = "passed",
-                    durationMilliseconds = 0,
-                    details = "fixture",
-                    artifactPath = "fixture"
-                }
-            };
-            if (string.Equals(
+            if (!string.Equals(
                     captureId,
                     "fixture-g06",
                     StringComparison.Ordinal))
             {
-                results.Add(new AuditionPvTestResult
+                return new[]
                 {
-                    suite = "product-state",
-                    name = "real-station-phase2-perfect-dodge-slot1-counter",
-                    status = "passed",
-                    durationMilliseconds = 0,
-                    details = "fixture semantic proof",
-                    artifactPath = "fixture-g06-runtime-proof.json"
-                });
-                results.Add(new AuditionPvTestResult
-                {
-                    suite = "render",
-                    name = "slot1-screen-intercept-counter-f251",
-                    status = "passed",
-                    durationMilliseconds = 0,
-                    details = "fixture semantic proof",
-                    artifactPath = "BL07_FIXTURE.png"
-                });
+                    new AuditionPvTestResult
+                    {
+                        suite = "fixture",
+                        name = "deterministic-source",
+                        status = "passed",
+                        durationMilliseconds = 0,
+                        details = "fixture",
+                        artifactPath = "fixture"
+                    }
+                };
             }
 
-            return results.ToArray();
+            string evidenceDirectory = Path.Combine(
+                captureDirectory,
+                AuditionPvTwelveSecondGoldAssembler.G06EvidenceFolderName);
+            string baselineDirectory = Path.Combine(captureDirectory, "baselines");
+            string Artifact(string baselineId) => Path.Combine(
+                baselineDirectory,
+                baselines.Single(value => value.id == baselineId).fileName);
+            AuditionPvTestResult Passed(
+                string suite,
+                string name,
+                string artifactPath)
+            {
+                return new AuditionPvTestResult
+                {
+                    suite = suite,
+                    name = name,
+                    status = "passed",
+                    durationMilliseconds = 0,
+                    details = "fixture golden-runner evidence",
+                    artifactPath = Normalize(artifactPath)
+                };
+            }
+
+            return new[]
+            {
+                Passed(
+                    "recorder",
+                    "raw-warmup-and-logical-frame-mapping",
+                    Path.Combine(
+                        evidenceDirectory,
+                        AuditionPvTwelveSecondGoldAssembler
+                            .G06WarmupEvidenceFileName)),
+                Passed(
+                    "product-state",
+                    "real-station-phase2-perfect-dodge-slot1-counter",
+                    runtimeProofPath),
+                Passed(
+                    "render",
+                    "png-hud-and-visual-sanity",
+                    Path.Combine(captureDirectory, "frames", "g06")),
+                Passed(
+                    "render",
+                    "perfect-dodge-screen-domain-f189",
+                    Artifact("bl06")),
+                Passed(
+                    "render",
+                    "slot1-screen-intercept-counter-f251",
+                    Artifact("bl07")),
+                Passed(
+                    "provenance",
+                    "git-dependencies-and-station-scene-stable",
+                    runtimeProofPath),
+                Passed(
+                    "lifecycle",
+                    "state-restored-and-product-scene-reopened",
+                    runtimeProofPath)
+            };
         }
 
         private static AuditionPvTwelveSecondSegmentSpec Segment(
@@ -968,6 +1363,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 sourceManifestSha256 = source.manifestSha256,
                 sourceDependencyIdentitySha256 =
                     source.dependencyIdentitySha256,
+                sourceRuntimeProofSha256 = source.runtimeProofSha256,
                 shotId = shotId,
                 startFrame = start,
                 endFrame = end,
@@ -1215,6 +1611,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             public string manifestPath;
             public string manifestSha256;
             public string dependencyIdentitySha256;
+            public string runtimeProofPath;
+            public string runtimeProofSha256;
             public AuditionPvCaptureManifest manifest;
         }
 
