@@ -26,6 +26,11 @@ DS_Store
 .DS_Store
 Thumbs.db
 
+# Python helper caches are local build products, including under Unity Assets.
+__pycache__/
+__pycache__.meta
+*.py[cod]
+
 # Local-only raw asset packs imported from external stores.
 # Keep curated game-ready prefabs/data under Assets/_Game instead.
 Assets/_Imported/
