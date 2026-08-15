@@ -84,6 +84,7 @@ updated: 2026-08-15
 ### 3.1 작업 기준과 소유권
 
 - 현재 관련 전투·Phase 2·룩·투사체·벽 변경을 UI 작업과 분리해 체크포인트한다.
+- 검증 가능한 작업 단위마다 작은 로컬 커밋을 남긴다. 원격 push는 개별 커밋마다 하지 않고, 여러 검증 완료 커밋을 의미 있는 체크포인트에서 묶어 수행한다.
 - 다른 세션이 소유한 `_Game/UI/**`, Combat HUD prefab/presenter를 이 작업에서 수정하지 않는다.
 - `.unity` 파일은 동시에 한 작업자만 편집한다.
 - 가능한 변경은 독립 prefab/profile/asset으로 만들고 씬에는 참조만 연결한다.
@@ -390,11 +391,13 @@ Capture PC는 RTX 5060 Ti를 사용한다. Android SDK/NDK/JDK와 Unity 내장 a
 |---|---|---|
 | 김강일 Chrome · ElevenLabs Music | `뮤직 | ElevenLabs` 창이 열려 있음을 확인 | 대본/beat lock 후 BGM, ambience, SFX, original/consented VO 생성 |
 | 이데올로기 Chrome/Cloud · Unity Asset Store | Asset Store account/assets 창이 열려 있음을 확인 | 필요한 asset의 보유 여부·버전·URP/Unity6 호환성·license 확인 |
-| Higgsfield | 마스터가 로그인 상태를 준비했다고 명시 | 실제 gameplay를 대체하지 않는 0~10% 연결/분위기 shot만 |
+| Higgsfield | 마스터가 로그인 상태를 준비했다고 명시 | 실제 gameplay를 대체하지 않는 0~10% 연결/분위기 shot만 사용한다. 생성 전 현재 plan의 상업 이용·다운로드·워터마크 조건을 확인하고 prompt·model·생성일·원본/출력·사용 Shot ID를 `99_licenses`에 기록한다. |
 | Google Drive | 아래 asset folder 접근 제공 | package inventory와 원본 보관; import 전 구매·사용권 재확인 |
 | YouTube reference tabs | Snowbreak PV와 광고 제작 workflow reference | 결과 복제가 아니라 구조·작업 순서·밀도 분석 |
 
 장기 작업에서 browser/Chrome/computer-use 도구를 사용할 수 있다. 단, 결제·구매 확정, 외부 공개, 메시지 발송, 권한 변경은 해당 행동 직전에 범위와 대상을 확인한다.
+
+공개 웹 조사 결과는 URL·제목/제작자·접근일·적용 판단을 관련 연구 문서나 권리 원장에 남긴다. 명시적 라이선스가 없는 코드·이미지·영상·오디오·폰트·템플릿은 참고 분석만 하고 결과물에 포함하지 않는다.
 
 Codex 작업 경로:
 
