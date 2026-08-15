@@ -527,6 +527,202 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void PinnedG06ProofWithActualProductionOneUlpLexeme_IsAccepted()
+        {
+            Fixture fixture = CreateFixture(writeFrames: true);
+            RewriteG06RuntimeProof(fixture, runtime =>
+            {
+                runtime.counterDelta.changedSampleCount = 45235;
+                runtime.counterDelta.changedSampleRatio = 45235d / 115200d;
+            });
+            Assert.That(
+                File.ReadAllText(
+                    fixture.sources["fixture-g06"].runtimeProofPath,
+                    Encoding.UTF8),
+                Does.Contain(
+                    "\"changedSampleRatio\": 0.39266493055555559"),
+                "The fixture must preserve the exact production writer lexeme before validation.");
+
+            AuditionPvTwelveSecondAssemblyResult result = Assemble(fixture);
+
+            Assert.That(result.frameCount, Is.EqualTo(720));
+            Assert.That(Directory.Exists(result.outputDirectory), Is.True);
+        }
+
+        [Test]
+        public void G06JsonLexicalEquivalence_AllowsOnlyDeclaredOneUlpDouble()
+        {
+            string[] declaredDoubleMetricPaths =
+            {
+                "runtime.visualMetrics.blackRatio",
+                "runtime.visualMetrics.magentaRatio",
+                "runtime.visualMetrics.maximumFrameMagentaRatio",
+                "runtime.screenDelta.meanAbsoluteRgb",
+                "runtime.screenDelta.changedSampleRatio",
+                "runtime.counterDelta.meanAbsoluteRgb",
+                "runtime.counterDelta.changedSampleRatio"
+            };
+            foreach (string path in declaredDoubleMetricPaths)
+            {
+                Assert.DoesNotThrow(
+                    () => AuditionPvTwelveSecondGoldAssembler
+                        .ValidateG06JsonLexicalEquivalenceForTests(
+                            JsonNumberAtPropertyPath(
+                                path,
+                                "0.39266493055555559"),
+                            JsonNumberAtPropertyPath(
+                                path,
+                                "0.3926649305555556")),
+                    path);
+            }
+
+            string canonical = JsonNumberAtPropertyPath(
+                "runtime.counterDelta.changedSampleRatio",
+                "0.3926649305555556");
+
+            double canonicalValue = double.Parse(
+                "0.3926649305555556",
+                CultureInfo.InvariantCulture);
+            double twoUlpsAway = BitConverter.Int64BitsToDouble(
+                BitConverter.DoubleToInt64Bits(canonicalValue) + 2L);
+            string twoUlpSource = JsonNumberAtPropertyPath(
+                "runtime.counterDelta.changedSampleRatio",
+                twoUlpsAway.ToString("R", CultureInfo.InvariantCulture));
+            InvalidDataException twoUlpException =
+                Assert.Throws<InvalidDataException>(() =>
+                    AuditionPvTwelveSecondGoldAssembler
+                        .ValidateG06JsonLexicalEquivalenceForTests(
+                            twoUlpSource,
+                            canonical));
+            Assert.That(twoUlpException.Message, Does.Contain("ULPs"));
+
+            string wrongPathSource =
+                "{\"runtime\":{\"hudEnergyMaxMana\":"
+                + "0.39266493055555559}}";
+            string wrongPathCanonical =
+                "{\"runtime\":{\"hudEnergyMaxMana\":"
+                + "0.3926649305555556}}";
+            InvalidDataException wrongPathException =
+                Assert.Throws<InvalidDataException>(() =>
+                    AuditionPvTwelveSecondGoldAssembler
+                        .ValidateG06JsonLexicalEquivalenceForTests(
+                            wrongPathSource,
+                            wrongPathCanonical));
+            Assert.That(
+                wrongPathException.Message,
+                Does.Contain("lexical structure"));
+        }
+
+        [Test]
+        public void G06JsonLexicalEquivalence_RejectsAllStructuralDrift()
+        {
+            const string canonical =
+                "{\n"
+                + "  \"runtime\": {\n"
+                + "    \"counterDelta\": {\n"
+                + "      \"changedSampleRatio\": 0.3926649305555556,\n"
+                + "      \"changedSampleCount\": 45235\n"
+                + "    }\n"
+                + "  }\n"
+                + "}\n";
+            const string productionLexeme =
+                "{\n"
+                + "  \"runtime\": {\n"
+                + "    \"counterDelta\": {\n"
+                + "      \"changedSampleRatio\": 0.39266493055555559,\n"
+                + "      \"changedSampleCount\": 45235\n"
+                + "    }\n"
+                + "  }\n"
+                + "}\n";
+            var mutations = new[]
+            {
+                new
+                {
+                    name = "unknown-key",
+                    json = productionLexeme.Replace(
+                        "      \"changedSampleRatio\"",
+                        "      \"unknown\": true,\n"
+                        + "      \"changedSampleRatio\"")
+                },
+                new
+                {
+                    name = "duplicate-key",
+                    json = productionLexeme.Replace(
+                        "      \"changedSampleCount\": 45235\n",
+                        "      \"changedSampleCount\": 45235,\n"
+                        + "      \"changedSampleCount\": 45235\n")
+                },
+                new
+                {
+                    name = "property-order",
+                    json =
+                        "{\n"
+                        + "  \"runtime\": {\n"
+                        + "    \"counterDelta\": {\n"
+                        + "      \"changedSampleCount\": 45235,\n"
+                        + "      \"changedSampleRatio\": 0.39266493055555559\n"
+                        + "    }\n"
+                        + "  }\n"
+                        + "}\n"
+                },
+                new
+                {
+                    name = "whitespace",
+                    json = productionLexeme.Replace(
+                        "  \"runtime\"",
+                        "   \"runtime\"")
+                },
+                new
+                {
+                    name = "trailing-whitespace",
+                    json = productionLexeme + " "
+                },
+                new
+                {
+                    name = "integer-number",
+                    json = productionLexeme.Replace("45235\n", "45236\n")
+                }
+            };
+
+            foreach (var mutation in mutations)
+            {
+                Assert.That(
+                    () => AuditionPvTwelveSecondGoldAssembler
+                        .ValidateG06JsonLexicalEquivalenceForTests(
+                            mutation.json,
+                            canonical),
+                    Throws.TypeOf<InvalidDataException>(),
+                    mutation.name);
+            }
+        }
+
+        [Test]
+        public void G06JsonLexer_RejectsInvalidNumberAndStringStates()
+        {
+            const string canonical = "{\"value\":0.5}";
+            string[] invalidSources =
+            {
+                "{\"value\":01.5}",
+                "{\"value\":0.}",
+                "{\"value\":0.5e+}",
+                "{\"value\":\"bad\\q\"}",
+                "{\"value\":\"unterminated}",
+                "{\"value\":\"bad" + '\u0001' + "\"}",
+                "\ufeff" + canonical
+            };
+
+            foreach (string invalid in invalidSources)
+            {
+                Assert.That(
+                    () => AuditionPvTwelveSecondGoldAssembler
+                        .ValidateG06JsonLexicalEquivalenceForTests(
+                            invalid,
+                            canonical),
+                    Throws.TypeOf<InvalidDataException>());
+            }
+        }
+
+        [Test]
         public void PinnedG06ProofWithInvalidCounterPredicate_IsRejected()
         {
             Fixture fixture = CreateFixture(writeFrames: true);
@@ -1094,6 +1290,66 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 source.runtimeProofPath);
             fixture.specification.segments[^1].sourceRuntimeProofSha256 =
                 source.runtimeProofSha256;
+        }
+
+        private static void RewritePinnedG06RuntimeProofText(
+            Fixture fixture,
+            Func<string, string> mutate)
+        {
+            SourceCapture source = fixture.sources["fixture-g06"];
+            string original = File.ReadAllText(
+                source.runtimeProofPath,
+                Encoding.UTF8);
+            string rewritten = mutate(original)
+                ?? throw new InvalidOperationException(
+                    "The runtime-proof text mutation returned null.");
+            File.WriteAllText(
+                source.runtimeProofPath,
+                rewritten,
+                new UTF8Encoding(false));
+            source.runtimeProofSha256 = AuditionPvSha256.FileHash(
+                source.runtimeProofPath);
+            fixture.specification.segments[^1].sourceRuntimeProofSha256 =
+                source.runtimeProofSha256;
+        }
+
+        private static string ReplaceExactlyOnce(
+            string value,
+            string oldValue,
+            string newValue)
+        {
+            int first = value.IndexOf(oldValue, StringComparison.Ordinal);
+            if (first < 0 ||
+                value.IndexOf(
+                    oldValue,
+                    first + oldValue.Length,
+                    StringComparison.Ordinal) >= 0)
+            {
+                throw new InvalidOperationException(
+                    "Expected exactly one runtime-proof lexical replacement for '"
+                    + oldValue
+                    + "'.");
+            }
+
+            return value.Substring(0, first)
+                   + newValue
+                   + value.Substring(first + oldValue.Length);
+        }
+
+        private static string JsonNumberAtPropertyPath(
+            string propertyPath,
+            string number)
+        {
+            string value = number;
+            string[] properties = propertyPath.Split(
+                new[] { '.' },
+                StringSplitOptions.None);
+            for (int index = properties.Length - 1; index >= 0; index--)
+            {
+                value = "{\"" + properties[index] + "\":" + value + "}";
+            }
+
+            return value;
         }
 
         private static void WriteG06RuntimeProof(

@@ -91,6 +91,23 @@ namespace DimensionBrawl.Editor.AuditionPV
             "hud-on"
         };
 
+        // JsonUtility can move one emitted binary64 metric by one ULP during
+        // FromJson -> ToJson. Only these declared double-valued leaf tokens may
+        // differ, and only by <= 1 ULP; the parser preserves every other lexeme
+        // exactly and the typed gameplay/render predicates still validate the
+        // source-parsed DTO below.
+        private static readonly HashSet<string> RelaxedG06DoubleMetricPaths =
+            new(StringComparer.Ordinal)
+            {
+                "runtime.visualMetrics.blackRatio",
+                "runtime.visualMetrics.magentaRatio",
+                "runtime.visualMetrics.maximumFrameMagentaRatio",
+                "runtime.screenDelta.meanAbsoluteRgb",
+                "runtime.screenDelta.changedSampleRatio",
+                "runtime.counterDelta.meanAbsoluteRgb",
+                "runtime.counterDelta.changedSampleRatio"
+            };
+
         private static readonly string[] RequiredValidationChecks =
         {
             "required-semantic-roles-exact-once-and-order",
@@ -811,7 +828,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             ValidateG06RuntimeProofDocument(
                 source,
-                Encoding.UTF8.GetString(bytes));
+                DecodeStrictUtf8Json(bytes, "G06 runtime proof"));
             source.runtimeProofPath = NormalizePath(proofPath);
             source.runtimeProofSha256 = sha256;
         }
@@ -820,6 +837,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             LoadedSource source,
             string json)
         {
+            G06JsonLexicalDocument sourceLexical =
+                ParseG06JsonLexicalDocument(json, "source G06 runtime proof");
             AuditionPvG06RuntimeProofArtifact artifact =
                 JsonUtility.FromJson<AuditionPvG06RuntimeProofArtifact>(json);
             if (artifact == null ||
@@ -852,12 +871,13 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             string canonicalJson = JsonUtility.ToJson(artifact, true)
                                    + Environment.NewLine;
-            if (!string.Equals(json, canonicalJson, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException(
-                    "The G06 runtime proof is not the exact canonical v1 JSON "
-                    + "document emitted by the golden runner.");
-            }
+            G06JsonLexicalDocument canonicalLexical =
+                ParseG06JsonLexicalDocument(
+                    canonicalJson,
+                    "canonical G06 runtime proof");
+            ValidateG06JsonLexicalEquivalence(
+                sourceLexical,
+                canonicalLexical);
 
             ValidateFiniteG06RuntimeProofNumbers(artifact.runtime);
 
@@ -921,6 +941,648 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "The G06 warm-up evidence SHA-256 does not match the runtime "
                     + "proof.");
             }
+        }
+
+        internal static void ValidateG06JsonLexicalEquivalenceForTests(
+            string sourceJson,
+            string canonicalJson)
+        {
+            ValidateG06JsonLexicalEquivalence(
+                ParseG06JsonLexicalDocument(sourceJson, "test source JSON"),
+                ParseG06JsonLexicalDocument(
+                    canonicalJson,
+                    "test canonical JSON"));
+        }
+
+        private static string DecodeStrictUtf8Json(byte[] bytes, string label)
+        {
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes));
+            }
+
+            if (bytes.Length >= 3 &&
+                bytes[0] == 0xef &&
+                bytes[1] == 0xbb &&
+                bytes[2] == 0xbf)
+            {
+                throw new InvalidDataException(
+                    label + " must be BOM-free UTF-8 JSON.");
+            }
+
+            try
+            {
+                return new UTF8Encoding(
+                    encoderShouldEmitUTF8Identifier: false,
+                    throwOnInvalidBytes: true).GetString(bytes);
+            }
+            catch (DecoderFallbackException exception)
+            {
+                throw new InvalidDataException(
+                    label + " contains invalid UTF-8.",
+                    exception);
+            }
+        }
+
+        private static G06JsonLexicalDocument ParseG06JsonLexicalDocument(
+            string json,
+            string label)
+        {
+            return new G06JsonLexicalParser(json, label).Parse();
+        }
+
+        private static void ValidateG06JsonLexicalEquivalence(
+            G06JsonLexicalDocument source,
+            G06JsonLexicalDocument canonical)
+        {
+            int mismatch = FirstOrdinalMismatch(
+                source.skeleton,
+                canonical.skeleton);
+            if (mismatch >= 0)
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof differs from the canonical v1 JSON "
+                    + "lexical structure at skeleton index "
+                    + mismatch.ToString(CultureInfo.InvariantCulture)
+                    + " (source "
+                    + DescribeCodeUnit(source.skeleton, mismatch)
+                    + ", canonical "
+                    + DescribeCodeUnit(canonical.skeleton, mismatch)
+                    + "). Keys, order, duplicate state, strings, trivia, integer/"
+                    + "float numbers, and EOF must be exact.");
+            }
+
+            if (source.relaxedNumbers.Length !=
+                canonical.relaxedNumbers.Length)
+            {
+                throw new InvalidDataException(
+                    "The G06 runtime proof has a different canonical double-"
+                    + "metric token count.");
+            }
+
+            for (int index = 0;
+                 index < source.relaxedNumbers.Length;
+                 index++)
+            {
+                G06RelaxedJsonNumber sourceNumber =
+                    source.relaxedNumbers[index];
+                G06RelaxedJsonNumber canonicalNumber =
+                    canonical.relaxedNumbers[index];
+                if (!string.Equals(
+                        sourceNumber.path,
+                        canonicalNumber.path,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        "The G06 runtime proof changed a canonical double-metric "
+                        + "property path.");
+                }
+
+                if (string.Equals(
+                        sourceNumber.raw,
+                        canonicalNumber.raw,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                ulong ulpDistance = DoubleUlpDistance(
+                    sourceNumber.value,
+                    canonicalNumber.value);
+                if (ulpDistance > 1UL)
+                {
+                    throw new InvalidDataException(
+                        "The G06 runtime proof double metric '"
+                        + sourceNumber.path
+                        + "' differs from the canonical JsonUtility round-trip "
+                        + "by "
+                        + ulpDistance.ToString(CultureInfo.InvariantCulture)
+                        + " ULPs; at most one ULP is permitted.");
+                }
+            }
+        }
+
+        private static int FirstOrdinalMismatch(string left, string right)
+        {
+            int sharedLength = Math.Min(left.Length, right.Length);
+            for (int index = 0; index < sharedLength; index++)
+            {
+                if (left[index] != right[index])
+                {
+                    return index;
+                }
+            }
+
+            return left.Length == right.Length ? -1 : sharedLength;
+        }
+
+        private static string DescribeCodeUnit(string value, int index)
+        {
+            return index >= value.Length
+                ? "<EOF>"
+                : "U+" + ((int)value[index]).ToString(
+                    "X4",
+                    CultureInfo.InvariantCulture);
+        }
+
+        private static ulong DoubleUlpDistance(double left, double right)
+        {
+            ulong leftOrdered = OrderedDoubleBits(left);
+            ulong rightOrdered = OrderedDoubleBits(right);
+            return leftOrdered >= rightOrdered
+                ? leftOrdered - rightOrdered
+                : rightOrdered - leftOrdered;
+        }
+
+        private static ulong OrderedDoubleBits(double value)
+        {
+            ulong bits = unchecked((ulong)BitConverter.DoubleToInt64Bits(value));
+            const ulong SignBit = 0x8000000000000000UL;
+            return (bits & SignBit) == 0UL
+                ? bits | SignBit
+                : ~bits;
+        }
+
+        private sealed class G06JsonLexicalParser
+        {
+            private const char RelaxedNumberStart = '\u0001';
+            private const char RelaxedNumberEnd = '\u0002';
+
+            private readonly string json;
+            private readonly string label;
+            private readonly StringBuilder skeleton = new();
+            private readonly List<G06RelaxedJsonNumber> relaxedNumbers = new();
+            private int index;
+
+            public G06JsonLexicalParser(string json, string label)
+            {
+                this.json = json ?? throw new InvalidDataException(
+                    label + " is null.");
+                this.label = label;
+            }
+
+            public G06JsonLexicalDocument Parse()
+            {
+                ParseTrivia();
+                ParseValue(string.Empty);
+                ParseTrivia();
+                if (index != json.Length)
+                {
+                    Fail("contains trailing non-JSON content");
+                }
+
+                return new G06JsonLexicalDocument(
+                    skeleton.ToString(),
+                    relaxedNumbers.ToArray());
+            }
+
+            private void ParseValue(string path)
+            {
+                if (index >= json.Length)
+                {
+                    Fail("ends before a JSON value");
+                }
+
+                char value = json[index];
+                switch (value)
+                {
+                    case '{':
+                        ParseObject(path);
+                        return;
+                    case '[':
+                        ParseArray(path);
+                        return;
+                    case '"':
+                        ParseString();
+                        return;
+                    case 't':
+                        ParseLiteral("true");
+                        return;
+                    case 'f':
+                        ParseLiteral("false");
+                        return;
+                    case 'n':
+                        ParseLiteral("null");
+                        return;
+                    default:
+                        if (value == '-' || IsDigit(value))
+                        {
+                            ParseNumber(path);
+                            return;
+                        }
+
+                        Fail("contains an invalid JSON value token");
+                        return;
+                }
+            }
+
+            private void ParseObject(string path)
+            {
+                AppendExpected('{');
+                ParseTrivia();
+                if (TryAppend('}'))
+                {
+                    return;
+                }
+
+                var propertyNames = new HashSet<string>(StringComparer.Ordinal);
+                while (true)
+                {
+                    if (index >= json.Length || json[index] != '"')
+                    {
+                        Fail("contains an object member without a string key");
+                    }
+
+                    string propertyName = ParseString();
+                    if (!propertyNames.Add(propertyName))
+                    {
+                        Fail(
+                            "contains duplicate object key '"
+                            + propertyName
+                            + "'");
+                    }
+
+                    ParseTrivia();
+                    AppendExpected(':');
+                    ParseTrivia();
+                    string propertyPath = string.IsNullOrEmpty(path)
+                        ? propertyName
+                        : path + "." + propertyName;
+                    ParseValue(propertyPath);
+                    ParseTrivia();
+                    if (TryAppend('}'))
+                    {
+                        return;
+                    }
+
+                    AppendExpected(',');
+                    ParseTrivia();
+                }
+            }
+
+            private void ParseArray(string path)
+            {
+                AppendExpected('[');
+                ParseTrivia();
+                if (TryAppend(']'))
+                {
+                    return;
+                }
+
+                int elementIndex = 0;
+                while (true)
+                {
+                    ParseValue(
+                        path
+                        + "["
+                        + elementIndex.ToString(CultureInfo.InvariantCulture)
+                        + "]");
+                    elementIndex++;
+                    ParseTrivia();
+                    if (TryAppend(']'))
+                    {
+                        return;
+                    }
+
+                    AppendExpected(',');
+                    ParseTrivia();
+                }
+            }
+
+            private string ParseString()
+            {
+                int start = index;
+                index++;
+                var decoded = new StringBuilder();
+                while (index < json.Length)
+                {
+                    char character = json[index++];
+                    if (character == '"')
+                    {
+                        ValidateDecodedString(decoded, start);
+                        skeleton.Append(json, start, index - start);
+                        return decoded.ToString();
+                    }
+
+                    if (character < 0x20)
+                    {
+                        Fail("contains an unescaped control character in a string");
+                    }
+
+                    if (character != '\\')
+                    {
+                        decoded.Append(character);
+                        continue;
+                    }
+
+                    if (index >= json.Length)
+                    {
+                        Fail("ends inside a JSON string escape");
+                    }
+
+                    char escape = json[index++];
+                    switch (escape)
+                    {
+                        case '"':
+                            decoded.Append('"');
+                            break;
+                        case '\\':
+                            decoded.Append('\\');
+                            break;
+                        case '/':
+                            decoded.Append('/');
+                            break;
+                        case 'b':
+                            decoded.Append('\b');
+                            break;
+                        case 'f':
+                            decoded.Append('\f');
+                            break;
+                        case 'n':
+                            decoded.Append('\n');
+                            break;
+                        case 'r':
+                            decoded.Append('\r');
+                            break;
+                        case 't':
+                            decoded.Append('\t');
+                            break;
+                        case 'u':
+                            if (index + 4 > json.Length)
+                            {
+                                Fail("ends inside a JSON Unicode escape");
+                            }
+
+                            int codeUnit = 0;
+                            for (int digit = 0; digit < 4; digit++)
+                            {
+                                int value = HexDigitValue(json[index + digit]);
+                                if (value < 0)
+                                {
+                                    Fail("contains an invalid JSON Unicode escape");
+                                }
+
+                                codeUnit = codeUnit * 16 + value;
+                            }
+
+                            index += 4;
+                            decoded.Append((char)codeUnit);
+                            break;
+                        default:
+                            Fail("contains an invalid JSON string escape");
+                            break;
+                    }
+                }
+
+                Fail("ends inside an unterminated JSON string");
+                return string.Empty;
+            }
+
+            private void ValidateDecodedString(StringBuilder decoded, int start)
+            {
+                for (int character = 0; character < decoded.Length; character++)
+                {
+                    char value = decoded[character];
+                    if (char.IsHighSurrogate(value))
+                    {
+                        if (character + 1 >= decoded.Length ||
+                            !char.IsLowSurrogate(decoded[character + 1]))
+                        {
+                            FailAt(
+                                start,
+                                "contains an unpaired high surrogate in a string");
+                        }
+
+                        character++;
+                    }
+                    else if (char.IsLowSurrogate(value))
+                    {
+                        FailAt(
+                            start,
+                            "contains an unpaired low surrogate in a string");
+                    }
+                }
+            }
+
+            private void ParseNumber(string path)
+            {
+                int start = index;
+                if (json[index] == '-')
+                {
+                    index++;
+                    if (index >= json.Length)
+                    {
+                        Fail("ends after a JSON number sign");
+                    }
+                }
+
+                if (json[index] == '0')
+                {
+                    index++;
+                    if (index < json.Length && IsDigit(json[index]))
+                    {
+                        Fail("contains a JSON number with a leading zero");
+                    }
+                }
+                else if (json[index] >= '1' && json[index] <= '9')
+                {
+                    while (index < json.Length && IsDigit(json[index]))
+                    {
+                        index++;
+                    }
+                }
+                else
+                {
+                    Fail("contains a JSON number without an integer part");
+                }
+
+                if (index < json.Length && json[index] == '.')
+                {
+                    index++;
+                    if (index >= json.Length || !IsDigit(json[index]))
+                    {
+                        Fail("contains a JSON number without fractional digits");
+                    }
+
+                    while (index < json.Length && IsDigit(json[index]))
+                    {
+                        index++;
+                    }
+                }
+
+                if (index < json.Length &&
+                    (json[index] == 'e' || json[index] == 'E'))
+                {
+                    index++;
+                    if (index < json.Length &&
+                        (json[index] == '+' || json[index] == '-'))
+                    {
+                        index++;
+                    }
+
+                    if (index >= json.Length || !IsDigit(json[index]))
+                    {
+                        Fail("contains a JSON number without exponent digits");
+                    }
+
+                    while (index < json.Length && IsDigit(json[index]))
+                    {
+                        index++;
+                    }
+                }
+
+                string raw = json.Substring(start, index - start);
+                if (!RelaxedG06DoubleMetricPaths.Contains(path))
+                {
+                    skeleton.Append(raw);
+                    return;
+                }
+
+                if (!double.TryParse(
+                        raw,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out double value) ||
+                    double.IsNaN(value) ||
+                    double.IsInfinity(value))
+                {
+                    FailAt(
+                        start,
+                        "contains a non-finite or unparseable double metric");
+                }
+
+                skeleton.Append(RelaxedNumberStart)
+                    .Append(path)
+                    .Append(RelaxedNumberEnd);
+                relaxedNumbers.Add(new G06RelaxedJsonNumber(path, raw, value));
+            }
+
+            private void ParseLiteral(string literal)
+            {
+                if (index + literal.Length > json.Length ||
+                    !string.Equals(
+                        json.Substring(index, literal.Length),
+                        literal,
+                        StringComparison.Ordinal))
+                {
+                    Fail("contains an invalid JSON literal");
+                }
+
+                skeleton.Append(literal);
+                index += literal.Length;
+            }
+
+            private void ParseTrivia()
+            {
+                int start = index;
+                while (index < json.Length)
+                {
+                    char value = json[index];
+                    if (value != ' ' &&
+                        value != '\t' &&
+                        value != '\r' &&
+                        value != '\n')
+                    {
+                        break;
+                    }
+
+                    index++;
+                }
+
+                skeleton.Append(json, start, index - start);
+            }
+
+            private bool TryAppend(char expected)
+            {
+                if (index >= json.Length || json[index] != expected)
+                {
+                    return false;
+                }
+
+                skeleton.Append(expected);
+                index++;
+                return true;
+            }
+
+            private void AppendExpected(char expected)
+            {
+                if (!TryAppend(expected))
+                {
+                    Fail("expected JSON token '" + expected + "'");
+                }
+            }
+
+            private void Fail(string detail)
+            {
+                FailAt(index, detail);
+            }
+
+            private void FailAt(int position, string detail)
+            {
+                throw new InvalidDataException(
+                    label
+                    + " "
+                    + detail
+                    + " at UTF-16 index "
+                    + position.ToString(CultureInfo.InvariantCulture)
+                    + ".");
+            }
+
+            private static bool IsDigit(char value)
+            {
+                return value >= '0' && value <= '9';
+            }
+
+            private static int HexDigitValue(char value)
+            {
+                if (value >= '0' && value <= '9')
+                {
+                    return value - '0';
+                }
+
+                if (value >= 'a' && value <= 'f')
+                {
+                    return value - 'a' + 10;
+                }
+
+                if (value >= 'A' && value <= 'F')
+                {
+                    return value - 'A' + 10;
+                }
+
+                return -1;
+            }
+        }
+
+        private sealed class G06JsonLexicalDocument
+        {
+            public G06JsonLexicalDocument(
+                string skeleton,
+                G06RelaxedJsonNumber[] relaxedNumbers)
+            {
+                this.skeleton = skeleton;
+                this.relaxedNumbers = relaxedNumbers;
+            }
+
+            public readonly string skeleton;
+            public readonly G06RelaxedJsonNumber[] relaxedNumbers;
+        }
+
+        private sealed class G06RelaxedJsonNumber
+        {
+            public G06RelaxedJsonNumber(
+                string path,
+                string raw,
+                double value)
+            {
+                this.path = path;
+                this.raw = raw;
+                this.value = value;
+            }
+
+            public readonly string path;
+            public readonly string raw;
+            public readonly double value;
         }
 
         private static void ValidateFiniteG06RuntimeProofNumbers(
@@ -2514,7 +3176,9 @@ namespace DimensionBrawl.Editor.AuditionPV
 
                     ValidateG06RuntimeProofDocument(
                         source,
-                        Encoding.UTF8.GetString(proofBytes));
+                        DecodeStrictUtf8Json(
+                            proofBytes,
+                            "G06 runtime proof at atomic install"));
                 }
             }
         }
