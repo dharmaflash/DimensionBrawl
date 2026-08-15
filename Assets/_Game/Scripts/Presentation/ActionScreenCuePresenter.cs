@@ -336,7 +336,8 @@ namespace DimensionBrawl.Presentation
 
             while (isActiveAndEnabled && HasActivePresentationTimer())
             {
-                float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
+                float presentationDeltaTime = PresentationClock.UnscaledDeltaTime;
+                float deltaTime = presentationDeltaTime > 0f ? presentationDeltaTime : Time.deltaTime;
                 float cueDeltaTime = activeCategory == ScreenCueCategory.Result
                     ? Mathf.Min(deltaTime, MaximumResultCueDeltaSeconds)
                     : deltaTime;
@@ -749,8 +750,9 @@ namespace DimensionBrawl.Presentation
 
             float elapsed = perfectDodgeDomainDuration - perfectDodgeDomainTimer;
             float openingPulse = Mathf.Clamp01(1f - elapsed / Mathf.Max(0.01f, perfectDodgePulseSeconds));
-            float inversionWave = 0.58f + Mathf.Sin((age01 * 8.5f + Time.unscaledTime * 2.1f) * Mathf.PI) * 0.42f;
-            float sliceNoise = 0.72f + Mathf.Sin((age01 * 23f + Time.unscaledTime * 7.6f) * Mathf.PI) * 0.28f;
+            float presentationTime = PresentationClock.UnscaledTime;
+            float inversionWave = 0.58f + Mathf.Sin((age01 * 8.5f + presentationTime * 2.1f) * Mathf.PI) * 0.42f;
+            float sliceNoise = 0.72f + Mathf.Sin((age01 * 23f + presentationTime * 7.6f) * Mathf.PI) * 0.28f;
             float domainAlpha = maxPerfectDodgeDomainAlpha * sustain * (0.92f + sliceNoise * 0.08f);
             float invertAlpha = maxPerfectDodgeInvertAlpha * sustain * Mathf.Clamp01(openingPulse * 0.82f + inversionWave * 0.34f);
             float edgeAlpha = maxPerfectDodgeEdgeAlpha * sustain * (0.88f + sliceNoise * 0.12f);
@@ -776,7 +778,7 @@ namespace DimensionBrawl.Presentation
                 perfectDodgeFractureStrength,
                 perfectDodgeChromaticStrength,
                 domainCenter,
-                Time.unscaledTime);
+                presentationTime);
         }
 
         private Vector2 ResolvePerfectDodgeScreenCenter()
@@ -1116,7 +1118,7 @@ namespace DimensionBrawl.Presentation
             if (criticalHealthPulseTimer > 0f && criticalHealthPulseAlpha > 0f)
             {
                 float pulseFade = ResolveFade01(criticalHealthPulseTimer, criticalHealthPulseSeconds);
-                float wave = 0.55f + Mathf.Sin(Time.unscaledTime * criticalHealthPulseRate * Mathf.PI * 2f) * 0.45f;
+                float wave = 0.55f + Mathf.Sin(PresentationClock.UnscaledTime * criticalHealthPulseRate * Mathf.PI * 2f) * 0.45f;
                 float pulseAlpha = criticalHealthPulseAlpha * pulseFade * Mathf.Clamp01(wave);
                 DrawTexture(
                     new Rect(0f, 0f, Screen.width, Screen.height),

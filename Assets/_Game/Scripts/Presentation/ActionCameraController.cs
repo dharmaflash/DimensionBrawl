@@ -480,7 +480,7 @@ namespace DimensionBrawl.Presentation
                 - direction * (0.017f * scale);
 
             rifleFireFeedbackRequestCount++;
-            lastRifleFireFeedbackTime = Time.unscaledTime;
+            lastRifleFireFeedbackTime = PresentationClock.UnscaledTime;
             RequestCue(additiveOffset, duration, 0.345f * scale, -0.035f * scale, 0f);
             RequestMicroShake(
                 duration,
@@ -747,7 +747,7 @@ namespace DimensionBrawl.Presentation
             Quaternion desiredRotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
             float rotationStep = 1f - Mathf.Exp(-rotationSmooth * deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, rotationStep);
-            ApplyMicroShake(Time.unscaledDeltaTime);
+            ApplyMicroShake(PresentationClock.UnscaledDeltaTime);
         }
 
         private void Awake()
@@ -1219,7 +1219,7 @@ namespace DimensionBrawl.Presentation
             float normalized = Mathf.Clamp01(microShakeTimer / duration);
             float envelope = normalized * normalized * (3f - 2f * normalized);
             float activeFrequency = microShakeActiveFrequency > 0f ? microShakeActiveFrequency : microShakeFrequency;
-            float phase = (Time.unscaledTime + microShakeSeed) * Mathf.Max(1f, activeFrequency);
+            float phase = (PresentationClock.UnscaledTime + microShakeSeed) * Mathf.Max(1f, activeFrequency);
             float x = Mathf.Sin(phase * 6.283185f);
             float y = Mathf.Sin((phase * 1.37f + 0.23f + microShakeSeed) * 6.283185f);
             float z = Mathf.Sin((phase * 1.91f + 0.41f + microShakeSeed) * 6.283185f);
@@ -1251,7 +1251,7 @@ namespace DimensionBrawl.Presentation
 
         private bool TryReserveFeedback(ref float nextAllowedTime, float cooldownSeconds)
         {
-            float now = Time.unscaledTime;
+            float now = PresentationClock.UnscaledTime;
             if (now < nextAllowedTime)
             {
                 return false;
