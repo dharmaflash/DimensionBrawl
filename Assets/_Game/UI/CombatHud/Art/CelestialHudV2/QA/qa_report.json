@@ -1,0 +1,1036 @@
+{
+  "assets": [
+    {
+      "path": "Runtime/action_cooldown_disc.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        19,
+        19,
+        237,
+        237
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "4024df7214c880485119d1c7e2def836757980102277f7649d611b6048e2496d"
+    },
+    {
+      "path": "Runtime/action_plate.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        4,
+        4,
+        252,
+        252
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": true,
+      "sha256": "0d7af71d553dc308acfd9f85f167e8dae4e74221914824efd8ea745a3f9f4513"
+    },
+    {
+      "path": "Runtime/action_ready_arc.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        131,
+        10,
+        242,
+        100
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "d085323ba950af44ecbbed55fe722ec5203124b83d6cad8e80477383098b129f"
+    },
+    {
+      "path": "Runtime/boss_cost_fill.png",
+      "dimensions": [
+        1024,
+        18
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        18
+      ],
+      "corner_alpha": [
+        18,
+        0,
+        70,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "f29c68eb5232ebf09f4a9f517c261ce5128e83f258efb84204d22d9fd78694d7"
+    },
+    {
+      "path": "Runtime/boss_cost_track.png",
+      "dimensions": [
+        1024,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        48
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "fbe4a3ab0a1da3244d65910f27c0266b7962102bfecd53d7d6fefe28ac64d2e1"
+    },
+    {
+      "path": "Runtime/boss_hp_fill.png",
+      "dimensions": [
+        1024,
+        24
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        24
+      ],
+      "corner_alpha": [
+        18,
+        0,
+        70,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "585616fd92c042a6ff7277d79de59ac24ad82f7608b49283890005b166e15552"
+    },
+    {
+      "path": "Runtime/boss_hp_track.png",
+      "dimensions": [
+        1024,
+        80
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        80
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "c00517511ea0542a1c4693b96ec1137d8da4da8f9d573faf190e51beacb86ea1"
+    },
+    {
+      "path": "Runtime/boss_name_tab.png",
+      "dimensions": [
+        512,
+        72
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        4,
+        504,
+        68
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "3949d03c3bc8d775cd0e10e426864a6a31168786ad6b5e508c263640273b3341"
+    },
+    {
+      "path": "Runtime/glyph_attack_ranged.png",
+      "dimensions": [
+        320,
+        320
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        50,
+        75,
+        270,
+        245
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": true,
+      "sha256": "8b14fa4a4151210ce8819c68bb2bc3b1677b466fec22e190984fff182a425eee"
+    },
+    {
+      "path": "Runtime/glyph_bullet.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        41,
+        24,
+        87,
+        107
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "fdef8923fe39d5f1b11848f24889c4b0d2e27eb46c631a02d96621791ede8094"
+    },
+    {
+      "path": "Runtime/glyph_dash.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        40,
+        73,
+        216,
+        182
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": true,
+      "sha256": "7180cdd20d5931ebfa1bc6536c69624f51fa51671dc4838b3191c553fc0ae4e1"
+    },
+    {
+      "path": "Runtime/glyph_mode_ranged.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        17,
+        17,
+        111,
+        111
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "667c36b2ccbcccd6890aeb463363a229851ecfb3b5306def616e747671bf2d07"
+    },
+    {
+      "path": "Runtime/glyph_pause.png",
+      "dimensions": [
+        160,
+        160
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        54,
+        50,
+        106,
+        110
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "a2d0f81b0e1df0e729a0b1740c62da0e98a1843f6ac4eb2d7a823b06f06e4bf0"
+    },
+    {
+      "path": "Runtime/glyph_ultimate.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        52,
+        40,
+        204,
+        216
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": true,
+      "sha256": "3386a58ff07e484d398855437fa69a90b04307a22bfb61144794cc497a080087"
+    },
+    {
+      "path": "Runtime/glyph_weapon_swap.png",
+      "dimensions": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        40,
+        46,
+        216,
+        210
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": true,
+      "sha256": "0d7a944b1681d89f6581b3b9748d781f2a3b0f68f3fb85551891238af35a1f93"
+    },
+    {
+      "path": "Runtime/joystick_base.png",
+      "dimensions": [
+        320,
+        320
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        8,
+        8,
+        312,
+        312
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "131de2cffdb29cc509164d3032b4b3f26d10f87ceb04d4cc4d88f8c018b5ccc4"
+    },
+    {
+      "path": "Runtime/joystick_knob.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        4,
+        4,
+        124,
+        124
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "877d0e1c09e5ed441d151c8ffc5b270083e93fb0a4affe126f8d9237ee4bb452"
+    },
+    {
+      "path": "Runtime/objective_frame.png",
+      "dimensions": [
+        960,
+        199
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        20,
+        959,
+        180
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "4334696560ce92154bef7d1e20a877b9db1425c72a0c31ad8e429ffafa19a46b"
+    },
+    {
+      "path": "Runtime/pause_plate.png",
+      "dimensions": [
+        160,
+        160
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        8,
+        8,
+        152,
+        152
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "8a5c845629bdca376ed6bbca8bec49d4cf298e5bc2fcab7d3bf7bddd653b1a3e"
+    },
+    {
+      "path": "Runtime/player_ammo_plate.png",
+      "dimensions": [
+        256,
+        144
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        3,
+        11,
+        249,
+        133
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "7b858ac0c2d027ffe9fb85bb06cceaecbe08f12f70474a983fd23d0e608aefdd"
+    },
+    {
+      "path": "Runtime/player_en_fill.png",
+      "dimensions": [
+        1024,
+        20
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        20
+      ],
+      "corner_alpha": [
+        18,
+        0,
+        70,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "cd3a1c21e39d0bc5e567f31223bda3dc3e0cce0a45f1405db53f193f90025f8a"
+    },
+    {
+      "path": "Runtime/player_en_track.png",
+      "dimensions": [
+        1024,
+        44
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        1,
+        0,
+        1024,
+        44
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "ea70b6e1eefbeb001ce10721b9d4c7f81df6d87aa425e2eb08f57301561a5cef"
+    },
+    {
+      "path": "Runtime/player_hp_fill.png",
+      "dimensions": [
+        1024,
+        24
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1024,
+        24
+      ],
+      "corner_alpha": [
+        18,
+        0,
+        70,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "403c07e9a5e8370e1ca1aeb9dd0e1712a3d018ec0cae6f2194ed9674bafc86c7"
+    },
+    {
+      "path": "Runtime/player_hp_track.png",
+      "dimensions": [
+        1024,
+        56
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        1,
+        0,
+        1024,
+        56
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "fc077efb20261cfb6cc08c4d068ca59cfeb1b164a321ffd7b998299603855eec"
+    },
+    {
+      "path": "Runtime/player_portrait.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        1,
+        1,
+        511,
+        511
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "f0d1bf5efa5f616594fc5a7104f9a859a61b8a332315687e91d09b2f6f9c4775"
+    },
+    {
+      "path": "Runtime/player_portrait_frame.png",
+      "dimensions": [
+        200,
+        200
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        13,
+        13,
+        187,
+        187
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "cac06ad09d621024d58bc9a0cf3f3dbe85273cf4b007487c3b07fd97a24e6ef5"
+    },
+    {
+      "path": "Runtime/player_portrait_mask.png",
+      "dimensions": [
+        200,
+        200
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        28,
+        28,
+        174,
+        174
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "66b2fd0a4b8f81460182b3c893169d3811eb397a7f5a9c2d34090a81c78a4e67"
+    },
+    {
+      "path": "Runtime/reticle_dot.png",
+      "dimensions": [
+        192,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        86,
+        87,
+        106,
+        105
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "7705cd8012c73544ef0b49ec4d2cfbee7441786e2a827692b1ce44be28485920"
+    },
+    {
+      "path": "Runtime/reticle_needle.png",
+      "dimensions": [
+        192,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        37,
+        89,
+        81,
+        101
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "fabd51cb64ea5916ba0dd80ef699ccc453f132d10b3bdbf41229c9780ccef92d"
+    },
+    {
+      "path": "Runtime/summon_cost_tab.png",
+      "dimensions": [
+        92,
+        54
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        1,
+        92,
+        54
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "dd0ff6626d2739626f46342759f6c9f37f33a277162d82a26bf41826dc5ea2ff"
+    },
+    {
+      "path": "Runtime/summon_frame_s1.png",
+      "dimensions": [
+        320,
+        344
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        4,
+        5,
+        319,
+        339
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "24a4805546e7fe588555c5aa324b3540183bde4fd5ea7569859e3e8d868f7043"
+    },
+    {
+      "path": "Runtime/summon_frame_s2.png",
+      "dimensions": [
+        288,
+        316
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        4,
+        6,
+        287,
+        312
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "f51c05008b099ff2b5ef8dd7697aca4bbfd3ef1c75cd659f08edb2a93975f7f5"
+    },
+    {
+      "path": "Runtime/summon_frame_s3.png",
+      "dimensions": [
+        288,
+        316
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        4,
+        6,
+        287,
+        312
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "f51c05008b099ff2b5ef8dd7697aca4bbfd3ef1c75cd659f08edb2a93975f7f5"
+    },
+    {
+      "path": "Runtime/summon_mask.png",
+      "dimensions": [
+        320,
+        344
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        22,
+        25,
+        301,
+        320
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "964eb1dcd72e28a6e0aeb1f9ce7184e928aaa94550c5370107ef0197e6f143f1"
+    },
+    {
+      "path": "Runtime/summon_portrait_s1.png",
+      "dimensions": [
+        600,
+        600
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        43,
+        57,
+        559,
+        576
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "a2c370dc9138b89ddd51541a9b2e4d98dad32bc46db237293c3a75cb20adbb19"
+    },
+    {
+      "path": "Runtime/summon_portrait_s2.png",
+      "dimensions": [
+        600,
+        600
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        82,
+        63,
+        553,
+        583
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "8a8b59b3e729aa6b7ad0e4f0a956f1c9fad9a7b8fb416886dc72900e25fede06"
+    },
+    {
+      "path": "Runtime/summon_portrait_s3.png",
+      "dimensions": [
+        600,
+        600
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        57,
+        57,
+        560,
+        580
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "65684113d8461ef26531362cfd7850fcaf51845b1d416f764a1302c000da1f7f"
+    },
+    {
+      "path": "Runtime/summon_state_arc.png",
+      "dimensions": [
+        320,
+        344
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        162,
+        32,
+        289,
+        134
+      ],
+      "corner_alpha": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "e01705a65d4d531468e352722594d03492fbce8190ecd7de438bb406c3670c57"
+    },
+    {
+      "path": "Motion/DB_UI_CelestialFlow.png",
+      "dimensions": [
+        128,
+        64
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        128,
+        64
+      ],
+      "corner_alpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "214fbe5524929ac4d199f4086cc189ab07c6b7f9828b900c19f276bd38a67635"
+    },
+    {
+      "path": "Motion/panel_micrograin_128.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        128,
+        128
+      ],
+      "corner_alpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "73a4ddc310788fa40044730d2a80fe7961e03c079259f0a11e48baedd6f4f8bc"
+    },
+    {
+      "path": "QA/action_components_contact_sheet.png",
+      "dimensions": [
+        1400,
+        620
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1400,
+        620
+      ],
+      "corner_alpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "b878b9d433de28b898c9dbfc1be17614fe2e8c28dbae11cff8c7da7a004b5911"
+    },
+    {
+      "path": "QA/hud_components_contact_sheet.png",
+      "dimensions": [
+        1800,
+        1200
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1800,
+        1200
+      ],
+      "corner_alpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "d1dd8d051c0ec0861805064e5984dd0c0825c00b52fd3199194e886fc60ad0f7"
+    },
+    {
+      "path": "QA/summon_components_contact_sheet.png",
+      "dimensions": [
+        1200,
+        450
+      ],
+      "mode": "RGBA",
+      "alpha_bbox_gt3": [
+        0,
+        0,
+        1200,
+        450
+      ],
+      "corner_alpha": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "transparent_rgb_pixels": 0,
+      "green_fringe_pixels": 0,
+      "imagegen_derived": false,
+      "sha256": "ea497a0642961f369d9cea46e54df1b03aa462c0747723af704b44ffe630c7de"
+    }
+  ]
+}
