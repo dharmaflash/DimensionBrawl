@@ -13,17 +13,20 @@ namespace DimensionBrawl.Rendering
         [SerializeField] private RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
 
         private PerfectDodgeScreenDomainPass pass;
+        private Material runtimePassMaterial;
 
         public void SetPassMaterial(Material material)
         {
             passMaterial = material;
-            pass?.Setup(passMaterial, injectionPoint);
+            RebuildRuntimePassMaterial();
+            pass?.Setup(runtimePassMaterial, injectionPoint);
         }
 
         public override void Create()
         {
             pass ??= new PerfectDodgeScreenDomainPass();
-            pass.Setup(passMaterial, injectionPoint);
+            RebuildRuntimePassMaterial();
+            pass.Setup(runtimePassMaterial, injectionPoint);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -33,18 +36,36 @@ namespace DimensionBrawl.Rendering
                 return;
             }
 
-            if (passMaterial == null || !PerfectDodgeScreenDomainRuntime.HasActiveCue)
+            if (runtimePassMaterial == null || !PerfectDodgeScreenDomainRuntime.HasActiveCue)
             {
                 return;
             }
 
-            pass.Setup(passMaterial, injectionPoint);
+            pass.Setup(runtimePassMaterial, injectionPoint);
             renderer.EnqueuePass(pass);
         }
 
         protected override void Dispose(bool disposing)
         {
             pass = null;
+            CoreUtils.Destroy(runtimePassMaterial);
+            runtimePassMaterial = null;
+        }
+
+        private void RebuildRuntimePassMaterial()
+        {
+            CoreUtils.Destroy(runtimePassMaterial);
+            runtimePassMaterial = null;
+            if (passMaterial == null)
+            {
+                return;
+            }
+
+            runtimePassMaterial = new Material(passMaterial)
+            {
+                name = $"{passMaterial.name} (Runtime)",
+                hideFlags = HideFlags.HideAndDontSave
+            };
         }
 
         private sealed class PerfectDodgeScreenDomainPass : ScriptableRenderPass

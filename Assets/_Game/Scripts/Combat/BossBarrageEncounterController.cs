@@ -307,6 +307,7 @@ namespace DimensionBrawl.Combat
         public bool PhaseTwoPocketObjectiveCompleted => phaseTwoPocketObjectiveCompleted;
         public bool IsFailed => state == PocketState.Failed;
         public bool IsExternalCombatSuspended => externalCombatSuspended;
+        public SummonEnergyLadder EnergyLadder => energyLadder;
         public RouteFailureReason FailureReason => failureReason;
         public bool FailedFromRouteStabilityCollapse => failureReason == RouteFailureReason.RouteStabilityCollapsed;
         public bool UsedSkill1 => usedSkill1;

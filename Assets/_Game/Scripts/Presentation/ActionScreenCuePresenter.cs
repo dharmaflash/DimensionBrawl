@@ -281,6 +281,25 @@ namespace DimensionBrawl.Presentation
             perfectDodgeGlitchOverlayMaterial = material;
         }
 
+        public void ConfigurePerfectDodgeDomainPresentation(
+            bool enabled,
+            float domainAlpha,
+            float invertAlpha,
+            float edgeAlpha,
+            float glitchOverlayAlpha)
+        {
+            playPerfectDodgeScreenDomain = enabled;
+            maxPerfectDodgeDomainAlpha = Mathf.Clamp(domainAlpha, 0f, 0.65f);
+            maxPerfectDodgeInvertAlpha = Mathf.Clamp(invertAlpha, 0f, 0.45f);
+            maxPerfectDodgeEdgeAlpha = Mathf.Clamp(edgeAlpha, 0f, 0.75f);
+            perfectDodgeGlitchOverlayAlpha = Mathf.Clamp01(glitchOverlayAlpha);
+            if (!enabled)
+            {
+                perfectDodgeDomainTimer = 0f;
+                PerfectDodgeScreenDomainRuntime.Clear();
+            }
+        }
+
         public void Configure(
             PlayerActionController newActionController,
             CombatHealth newPlayerHealth,

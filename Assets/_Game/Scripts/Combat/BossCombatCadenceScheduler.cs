@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ namespace DimensionBrawl.Combat
         private readonly List<BossPressureActionDirector> actionDirectors = new(4);
         private readonly List<BossBarrageEmitter> barrageEmitters = new(4);
         private readonly List<EnemySummonPacingDirector> summonPacingDirectors = new(4);
+        private readonly Dictionary<int, UnityEngine.Object> externalSuspensionOwners = new(2);
+        private int nextExternalSuspensionToken;
 
         public static int RegisteredBasicFireEmitterCount =>
             instance != null ? instance.basicFireEmitters.Count : 0;
@@ -22,6 +25,23 @@ namespace DimensionBrawl.Combat
         public static int RegisteredSummonPacingDirectorCount =>
             instance != null ? instance.summonPacingDirectors.Count : 0;
         public static bool IsTicking => instance != null && instance.enabled;
+        public static bool IsExternallySuspended =>
+            instance != null && instance.PruneAndCountExternalSuspensions() > 0;
+        public static int ExternalSuspensionCount =>
+            instance != null ? instance.PruneAndCountExternalSuspensions() : 0;
+
+        public static IDisposable AcquireExternalSuspension(UnityEngine.Object owner)
+        {
+            if (owner == null)
+            {
+                throw new ArgumentNullException(nameof(owner));
+            }
+
+            BossCombatCadenceScheduler scheduler = EnsureInstance();
+            int token = ++scheduler.nextExternalSuspensionToken;
+            scheduler.externalSuspensionOwners.Add(token, owner);
+            return new ExternalSuspensionLease(scheduler, token);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -155,6 +175,7 @@ namespace DimensionBrawl.Combat
 
         private void OnDestroy()
         {
+            externalSuspensionOwners.Clear();
             if (instance == this)
             {
                 instance = null;
@@ -163,6 +184,11 @@ namespace DimensionBrawl.Combat
 
         private void Update()
         {
+            if (PruneAndCountExternalSuspensions() > 0)
+            {
+                return;
+            }
+
             float deltaTime = Time.deltaTime;
             if (deltaTime <= 0f)
             {
@@ -272,6 +298,59 @@ namespace DimensionBrawl.Combat
             }
 
             enabled = false;
+        }
+
+        private int PruneAndCountExternalSuspensions()
+        {
+            if (externalSuspensionOwners.Count == 0)
+            {
+                return 0;
+            }
+
+            List<int> staleTokens = null;
+            foreach (KeyValuePair<int, UnityEngine.Object> pair in externalSuspensionOwners)
+            {
+                if (pair.Value != null)
+                {
+                    continue;
+                }
+
+                staleTokens ??= new List<int>();
+                staleTokens.Add(pair.Key);
+            }
+
+            if (staleTokens != null)
+            {
+                for (int index = 0; index < staleTokens.Count; index++)
+                {
+                    externalSuspensionOwners.Remove(staleTokens[index]);
+                }
+            }
+
+            return externalSuspensionOwners.Count;
+        }
+
+        private sealed class ExternalSuspensionLease : IDisposable
+        {
+            private BossCombatCadenceScheduler scheduler;
+            private readonly int token;
+
+            public ExternalSuspensionLease(
+                BossCombatCadenceScheduler scheduler,
+                int token)
+            {
+                this.scheduler = scheduler;
+                this.token = token;
+            }
+
+            public void Dispose()
+            {
+                if (scheduler != null)
+                {
+                    scheduler.externalSuspensionOwners.Remove(token);
+                    scheduler = null;
+                }
+            }
         }
     }
 }
