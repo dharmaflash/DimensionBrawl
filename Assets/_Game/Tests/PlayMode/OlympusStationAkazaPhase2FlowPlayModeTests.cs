@@ -3,6 +3,8 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using DimensionBrawl.Combat;
+using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
@@ -198,6 +200,111 @@ namespace DimensionBrawl.Tests
                     .All(light => !light.enabled),
                 Is.True,
                 "The material upgrade must not restore the projectile's mobile-costly point light.");
+        }
+
+        [UnityTest]
+        [Timeout(30000)]
+        public IEnumerator AuthoredStationExposesCanonicalCaptureOwnersThroughReadOnlyGetters()
+        {
+            Time.timeScale = 1f;
+            EditorSceneManager.LoadSceneInPlayMode(
+                StationScenePath,
+                new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+            yield return null;
+
+            Scene scene = SceneManager.GetSceneByPath(StationScenePath);
+            Assert.That(scene.IsValid() && scene.isLoaded, Is.True, "Station scene did not load.");
+
+            OlympusStationAkazaPhase2FlowController[] flows =
+                FindSceneComponents<OlympusStationAkazaPhase2FlowController>(scene);
+            Assert.That(flows, Has.Length.EqualTo(1), "Station must own exactly one Phase 2 flow.");
+            OlympusStationAkazaPhase2FlowController flow = flows[0];
+
+            AssertSerializedGetter(
+                flow,
+                "bossBarrageEncounterController",
+                flow.EncounterController);
+            AssertSerializedGetter(flow, "bossBarrageEmitter", flow.BarrageEmitter);
+            AssertSerializedGetter(flow, "combatHudCanvasGroup", flow.CombatHudCanvasGroup);
+            AssertSerializedGetter(flow, "playerHealth", flow.PlayerHealth);
+            AssertSerializedGetter(flow, "playerMovement", flow.PlayerMovement);
+            AssertSerializedGetter(flow, "playerActionController", flow.PlayerActionController);
+            AssertSerializedGetter(
+                flow,
+                "playerRangedBasicAttackAction",
+                flow.PlayerRangedBasicAttackAction);
+
+            Assert.That(
+                FindSceneComponents<BossBarrageEncounterController>(scene),
+                Is.EqualTo(new[] { flow.EncounterController }),
+                "The capture route must use the Station's sole encounter owner.");
+            Assert.That(
+                FindSceneComponents<BossBarrageEmitter>(scene),
+                Is.EqualTo(new[] { flow.BarrageEmitter }),
+                "The capture route must use the Station's sole barrage emitter.");
+
+            SerializedProperty encounterPlayerHealth = new SerializedObject(flow.EncounterController)
+                .FindProperty("playerHealth");
+            Assert.That(encounterPlayerHealth, Is.Not.Null);
+            Assert.That(
+                flow.PlayerHealth,
+                Is.SameAs(encounterPlayerHealth.objectReferenceValue),
+                "The capture route must use the encounter's canonical player health.");
+            Assert.That(flow.PlayerMovement.gameObject, Is.SameAs(flow.PlayerHealth.gameObject));
+            Assert.That(flow.PlayerActionController.gameObject, Is.SameAs(flow.PlayerHealth.gameObject));
+            Assert.That(
+                flow.PlayerRangedBasicAttackAction.gameObject,
+                Is.SameAs(flow.PlayerHealth.gameObject));
+            Assert.That(
+                FindSceneComponents<PlayerMovementController>(scene),
+                Is.EqualTo(new[] { flow.PlayerMovement }));
+            Assert.That(
+                FindSceneComponents<PlayerActionController>(scene),
+                Is.EqualTo(new[] { flow.PlayerActionController }));
+            Assert.That(
+                FindSceneComponents<PlayerRangedBasicAttackAction>(scene),
+                Is.EqualTo(new[] { flow.PlayerRangedBasicAttackAction }));
+
+            CanvasGroup hudRoot = flow.CombatHudCanvasGroup;
+            CanvasGroup[] exactHudRoots = FindSceneComponents<CanvasGroup>(scene)
+                .Where(group => group.gameObject.name == "PF_UI_CombatHud")
+                .ToArray();
+            Assert.That(exactHudRoots, Has.Length.EqualTo(1), "Station must own one canonical HUD root.");
+            Assert.That(hudRoot, Is.SameAs(exactHudRoots[0]));
+            Assert.That(
+                hudRoot.gameObject.GetComponents<CanvasGroup>(),
+                Is.EqualTo(new[] { hudRoot }),
+                "The canonical HUD root must expose exactly one root CanvasGroup.");
+            Assert.That(
+                hudRoot.GetComponentsInParent<CanvasGroup>(includeInactive: true),
+                Is.EqualTo(new[] { hudRoot }),
+                "The capture HUD lease must not target a nested or multiply-grouped root.");
+            Assert.That(
+                hudRoot.GetComponentsInChildren<CanvasGroup>(includeInactive: true)
+                    .Where(group => group.GetComponentsInParent<CanvasGroup>(
+                        includeInactive: true).Length == 1),
+                Is.EqualTo(new[] { hudRoot }),
+                "The HUD hierarchy must expose one and only one top-level CanvasGroup.");
+
+            foreach (string propertyName in new[]
+                     {
+                         nameof(OlympusStationAkazaPhase2FlowController.EncounterController),
+                         nameof(OlympusStationAkazaPhase2FlowController.BarrageEmitter),
+                         nameof(OlympusStationAkazaPhase2FlowController.CombatHudCanvasGroup),
+                         nameof(OlympusStationAkazaPhase2FlowController.PlayerHealth),
+                         nameof(OlympusStationAkazaPhase2FlowController.PlayerMovement),
+                         nameof(OlympusStationAkazaPhase2FlowController.PlayerActionController),
+                         nameof(OlympusStationAkazaPhase2FlowController.PlayerRangedBasicAttackAction)
+                     })
+            {
+                PropertyInfo property = typeof(OlympusStationAkazaPhase2FlowController)
+                    .GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+                Assert.That(property, Is.Not.Null, $"Missing capture getter {propertyName}.");
+                Assert.That(property.CanRead, Is.True);
+                Assert.That(property.GetSetMethod(nonPublic: true), Is.Null,
+                    $"Capture contract {propertyName} must remain read-only.");
+            }
         }
 
         [UnityTest]
@@ -1490,6 +1597,21 @@ namespace DimensionBrawl.Tests
             return scene.GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<T>(includeInactive: true))
                 .ToArray();
+        }
+
+        private static void AssertSerializedGetter<T>(
+            OlympusStationAkazaPhase2FlowController flow,
+            string fieldName,
+            T getterValue)
+            where T : Object
+        {
+            Assert.That(getterValue, Is.Not.Null, $"Capture getter for {fieldName} is null.");
+            SerializedProperty serializedField = new SerializedObject(flow).FindProperty(fieldName);
+            Assert.That(serializedField, Is.Not.Null, $"Missing serialized field {fieldName}.");
+            Assert.That(
+                getterValue,
+                Is.SameAs(serializedField.objectReferenceValue),
+                $"Capture getter for {fieldName} drifted from the authored Station binding.");
         }
 
         private static bool ApplyAuthoredPlayerDamage(

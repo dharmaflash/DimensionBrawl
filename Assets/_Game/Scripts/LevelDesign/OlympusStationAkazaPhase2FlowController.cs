@@ -144,6 +144,15 @@ namespace DimensionBrawl.LevelDesign
         public int TransitionStartCount => transitionStartCount;
         public int TransitionCompletionCount => transitionCompletionCount;
         public CombatHealth BossHealth => bossHealth;
+        public BossBarrageEncounterController EncounterController =>
+            bossBarrageEncounterController;
+        public BossBarrageEmitter BarrageEmitter => bossBarrageEmitter;
+        public CanvasGroup CombatHudCanvasGroup => combatHudCanvasGroup;
+        public CombatHealth PlayerHealth => playerHealth;
+        public PlayerMovementController PlayerMovement => playerMovement;
+        public PlayerActionController PlayerActionController => playerActionController;
+        public PlayerRangedBasicAttackAction PlayerRangedBasicAttackAction =>
+            playerRangedBasicAttackAction;
         public bool PhaseTwoApplied => phaseTwoApplied;
         public bool TransitionFaultedOpen => transitionFaultedOpen;
         public bool BossTerminalized => bossTerminalized;
