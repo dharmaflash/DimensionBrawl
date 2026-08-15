@@ -2614,9 +2614,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     manifest.segments[index];
                 if (segment != null)
                 {
-                    ValidateSimpleId(
-                        segment.sourceCaptureId,
-                        "select segment source capture ID");
+                    ValidateSourceCaptureId(segment.sourceCaptureId);
                     ValidateSimpleId(
                         segment.sourceShotId,
                         "select segment source shot ID");
@@ -4084,6 +4082,21 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidDataException(
                     label + " must be a safe lowercase ASCII identifier.");
+            }
+        }
+
+        internal static void ValidateSourceCaptureId(string value)
+        {
+            try
+            {
+                AuditionPvOutputPaths.ValidateOutputId(value);
+            }
+            catch (ArgumentException exception)
+            {
+                throw new InvalidDataException(
+                    "Select segment source capture ID must be a valid golden "
+                    + "capture output ID.",
+                    exception);
             }
         }
 

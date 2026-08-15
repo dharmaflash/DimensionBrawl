@@ -98,6 +98,29 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void SourceCaptureId_UsesCanonicalGoldenOutputIdLengthContract()
+        {
+            const string productionLengthCaptureId =
+                "20260815t211339z_g06-station-phase2-summon-counter_"
+                + "g99efc0173b09_clean";
+            Assert.That(productionLengthCaptureId.Length, Is.GreaterThan(64));
+            Assert.That(productionLengthCaptureId.Length, Is.LessThanOrEqualTo(128));
+            Assert.DoesNotThrow(() =>
+                AuditionPvTwelveSecondGoldAssembler.ValidateSourceCaptureId(
+                    productionLengthCaptureId));
+
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvTwelveSecondGoldAssembler.ValidateSourceCaptureId(
+                    new string('a', 129)));
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvTwelveSecondGoldAssembler.ValidateSourceCaptureId(
+                    "capture-ID"));
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvTwelveSecondGoldAssembler.ValidateSourceCaptureId(
+                    "capture..id"));
+        }
+
+        [Test]
         public void MissingG06_FailsBeforeOutputRootReservationOrCopy()
         {
             Fixture fixture = CreateFixture(writeFrames: false);
