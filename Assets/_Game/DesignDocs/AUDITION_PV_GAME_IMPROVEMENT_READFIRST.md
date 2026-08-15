@@ -178,7 +178,8 @@ VFX가 판정과 피해를 소유하지 않고 실제 combat event를 구독한�
 
 도시는 소극적인 teaser가 아니라 최종 영상의 약 `15~18초`를 담당한다.
 
-- `City Builder Urban`에서 도로 한 블록 또는 옥상 한 곳을 staging한다.
+- 권리와 URP17 검증을 통과한 `Tokyo Street` 24-seed 선별본으로 도로 한 블록을 staging한다.
+- `City Builder Urban`은 Tokyo Street가 제품 조립에서 실패할 때만 쓰는 보조 후보로 유지한다.
 - 전경 잔해, 중경 전투 공간, 원경 skyline의 세 층을 만든다.
 - 실제 이동·사격·회피가 가능한 연속 gameplay를 확보한다.
 - 연기, 비상등, 바람, 간판, 먼지와 ambience를 추가한다.
@@ -327,7 +328,8 @@ Drive·Asset Store 후보:
 
 | 자료 | 단기 사용 |
 |---|---|
-| City Builder Urban | 도시 Hero Pocket |
+| Tokyo Street | 도시 Hero Pocket 24-seed 제품 선별본 |
+| City Builder Urban | 도시 Hero Pocket 보조 후보 |
 | Stylized Shoot Hit | 피격·충돌 후보 |
 | UNI VFX Fire/Smoke | 도시 ambience·원경 사건 |
 | Action RPG SFX | 총기·충돌·기계음 후보 |
@@ -357,7 +359,8 @@ Asset Store 구매 계정·영수증·버전·사용 위치를 확인한 것만 
 - [ ] 도시·올림푸스·보스·충돌 기준 frame 6장 고정
 - [ ] 카메라 화면 점유율 수정
 - [ ] 12초 골드 원본 Shot Manifest 작성
-- [ ] City Builder Urban staging 및 dependency 선별
+- [x] Tokyo Street entitlement·URP17·Rich24 dependency 선별
+- [ ] City Hero Pocket 제품 씬 및 G01·G02·G03 골든 원본
 - [ ] 보스 패턴 3종의 표현 채널 누락표 작성
 - [ ] 임시 음악·SFX·VO bed 준비
 - [ ] 편집 시작 Gate 통과 판정
@@ -429,7 +432,8 @@ TPK 원본은 Built-in RP/Unity 2017 자료이고 현재 프로젝트는 Unity 6
 
 | 파일 | 대략 크기 | 계획 |
 |---|---:|---|
-| City Builder Urban | 3.93 GB | 단기 도시 Hero Pocket 1순위 |
+| Tokyo Street (Asset Store) | 3.47 GB outer / 1.12 GB URP | Rich24 선별본만 제품 승격; 원본 패키지 미포함 |
+| City Builder Urban | 3.93 GB | 도시 Hero Pocket 보조 후보 |
 | SciFi Neon City | 4.32 GB | 이후 정식 도시 후보; Unity6 URP 검증 선행 |
 | Stylized Shoot Hit Vol1 | 4.3 MB | hit/impact 후보 |
 | UNI VFX Realistic Explosions Fire Smoke | 177.5 MB | 도시 ambience·원경 사건 후보 |
