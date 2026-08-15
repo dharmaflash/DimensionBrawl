@@ -28,6 +28,8 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Transform projectileRoot;
 
         private readonly List<BossBarrageProjectile> pool = new List<BossBarrageProjectile>(16);
+        private readonly List<BossBarrageProjectile> projectilesInPoolOrder =
+            new List<BossBarrageProjectile>(16);
         private readonly Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>> standbyPools =
             new Dictionary<BossBarrageProjectile, List<BossBarrageProjectile>>();
         private BossBarrageProjectile pooledProjectilePrefab;
@@ -70,9 +72,10 @@ namespace DimensionBrawl.Combat
             get
             {
                 int count = 0;
-                for (int i = 0; i < pool.Count; i++)
+                for (int i = 0; i < projectilesInPoolOrder.Count; i++)
                 {
-                    if (pool[i] != null && pool[i].IsActive)
+                    BossBarrageProjectile projectile = projectilesInPoolOrder[i];
+                    if (projectile != null && projectile.IsActive)
                     {
                         count++;
                     }
@@ -80,6 +83,31 @@ namespace DimensionBrawl.Combat
 
                 return count;
             }
+        }
+
+        /// <summary>
+        /// Copies every live projectile owned by this emitter in deterministic
+        /// creation order. Callers can reuse the destination list without this
+        /// method creating a temporary collection.
+        /// </summary>
+        public int CopyActiveProjectiles(List<BossBarrageProjectile> destination)
+        {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            destination.Clear();
+            for (int i = 0; i < projectilesInPoolOrder.Count; i++)
+            {
+                BossBarrageProjectile projectile = projectilesInPoolOrder[i];
+                if (projectile != null && projectile.IsActive)
+                {
+                    destination.Add(projectile);
+                }
+            }
+
+            return destination.Count;
         }
 
         private BossBarragePatternProfile ActivePattern => ResolveActivePattern();
@@ -773,6 +801,7 @@ namespace DimensionBrawl.Combat
                     $"{targetProjectilePrefab.name}_{nameSuffix}_{targetPool.Count:00}";
                 projectile.Deactivate();
                 targetPool.Add(projectile);
+                projectilesInPoolOrder.Add(projectile);
             }
         }
 
@@ -805,9 +834,9 @@ namespace DimensionBrawl.Combat
 
         private void DeactivateActiveProjectiles()
         {
-            for (int i = 0; i < pool.Count; i++)
+            for (int i = 0; i < projectilesInPoolOrder.Count; i++)
             {
-                BossBarrageProjectile projectile = pool[i];
+                BossBarrageProjectile projectile = projectilesInPoolOrder[i];
                 if (projectile != null && projectile.IsActive)
                 {
                     projectile.Deactivate();
