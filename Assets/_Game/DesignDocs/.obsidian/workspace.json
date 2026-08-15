@@ -11,10 +11,14 @@
             "id": "cf872e5bf08e6bdb",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "그래프 뷰"
+              "type": "markdown",
+              "state": {
+                "file": "AUDITION_PV_GAME_IMPROVEMENT_READFIRST.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AUDITION_PV_GAME_IMPROVEMENT_READFIRST"
             }
           }
         ]
@@ -179,8 +183,10 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "cf872e5bf08e6bdb",
+  "active": "820e56b1a8b236da",
   "lastOpenFiles": [
+    "AUDITION_PV_GAME_IMPROVEMENT_READFIRST.md.meta",
+    "AUDITION_PV_GAME_IMPROVEMENT_READFIRST.md",
     "ACTIVE_COMBAT_PRESENTATION_CONTEXT.md.meta",
     "ACTIVE_COMBAT_PRESENTATION_CONTEXT.md",
     "무제 1.canvas.meta",
