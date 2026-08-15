@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -97,6 +99,49 @@ namespace DimensionBrawl.Editor.CityHeroPocket.Tests
             Assert.That(CityHeroPocketAuthoredPackValidator.TemporaryLilToonShaderDebtRoot,
                 Is.EqualTo("Assets/_Imported/AssetStore/lilToon/Shader/"),
                 "Temporary Inori shader debt must stay narrow and explicit.");
+            Assert.That(CityHeroPocketSceneSetup.ExitPortalPrefabPath,
+                Is.EqualTo(
+                    "Assets/_Game/Art/VFX/CombatCues/Prefabs/" +
+                    "DB_VFX_PlayerSummonPreSpawnPortal.prefab"));
+            Assert.That(CityHeroPocketSceneSetup.ExitTriggerPosition,
+                Is.EqualTo(new Vector3(0f, 1f, 7.6f)));
+            Assert.That(CityHeroPocketSceneSetup.ExitTriggerSize,
+                Is.EqualTo(new Vector3(10.8f, 2f, 0.6f)));
+            Assert.That(CityHeroPocketSceneSetup.ExitTriggerCenter,
+                Is.EqualTo(new Vector3(0f, 0.05f, 0f)),
+                "The exit trigger must stay clear of the road collider at y=0.");
+            Assert.That(CityHeroPocketSceneSetup.TransitionFocusPosition,
+                Is.EqualTo(new Vector3(0f, 2.8f, 10.55f)));
+            Assert.That(CityHeroPocketSceneSetup.ExitCoverColor,
+                Is.EqualTo(new Color(0.84f, 0.97f, 1f, 1f)));
+            Assert.That(CityHeroPocketExitTransitionController.HudFadeFrameCount,
+                Is.EqualTo(18));
+            Assert.That(CityHeroPocketExitTransitionController.PortalGrowFrameCount,
+                Is.EqualTo(42));
+            Assert.That(CityHeroPocketExitTransitionController.CoverFadeStartFrame,
+                Is.EqualTo(234));
+            Assert.That(CityHeroPocketExitTransitionController.ExitReadyFrame,
+                Is.EqualTo(294));
+            Assert.That(
+                CityHeroPocketExitTransitionController.InitialPortalScaleFactor,
+                Is.EqualTo(0.08f));
+            Assert.That(
+                typeof(CityHeroPocketExitTransitionController).GetProperty(
+                    nameof(CityHeroPocketExitTransitionController.RejectedTriggerEnterCount)),
+                Is.Not.Null,
+                "G03 requires a public wrong-collider trigger proof counter.");
+            Assert.That(
+                (int)PlayerInputLockSource.CityHeroPocketExitTransition,
+                Is.EqualTo(1 << 9));
+            Assert.That(
+                PlayerInputLockMask.WithState(
+                    PlayerInputLockSource.CinematicCue,
+                    PlayerInputLockSource.CityHeroPocketExitTransition,
+                    locked: true),
+                Is.EqualTo(
+                    PlayerInputLockSource.CinematicCue
+                    | PlayerInputLockSource.CityHeroPocketExitTransition),
+                "City exit input ownership must coexist with another cinematic cue.");
         }
 
         [Test]

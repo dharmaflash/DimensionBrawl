@@ -13,7 +13,8 @@ namespace DimensionBrawl.Player
         EditorVerification = 1 << 5,
         CorridorCombatFlow = 1 << 6,
         CombatMenu = 1 << 7,
-        BossPhaseTransition = 1 << 8
+        BossPhaseTransition = 1 << 8,
+        CityHeroPocketExitTransition = 1 << 9
     }
 
     public static class PlayerInputLockMask

@@ -148,6 +148,11 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                     CityHeroPocketSceneSetup.CityLookProfilePath) != null,
                 $"Owned city look profile is missing: {CityHeroPocketSceneSetup.CityLookProfilePath}");
             Require(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    CityHeroPocketSceneSetup.ExitPortalPrefabPath) != null,
+                $"Promoted City exit portal is missing: " +
+                CityHeroPocketSceneSetup.ExitPortalPrefabPath);
+            Require(
                 AssetDatabase.LoadAssetAtPath<SceneAsset>(
                     CityHeroPocketSceneSetup.ScenePath) != null,
                 $"Direct-load city scene is missing: {CityHeroPocketSceneSetup.ScenePath}");
@@ -451,6 +456,12 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             ValidateCamera(scene, playerRoot, enemyRoot);
             ValidateLook(scene);
             ValidateCombat(scene, runtimeRoot, playerRoot, enemyRoot, hudRoot);
+            ValidateExitTransition(
+                scene,
+                runtimeRoot,
+                playerRoot,
+                enemyRoot,
+                hudRoot);
             ValidateTokyoComposition(scene, mapRoot);
             ValidateSceneIntegrity(scene);
         }
@@ -1029,6 +1040,191 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 aim,
                 ranged,
                 RequireSingleSceneComponent<ActionCameraController>(scene));
+        }
+
+        private static void ValidateExitTransition(
+            Scene scene,
+            GameObject runtimeRoot,
+            GameObject playerRoot,
+            GameObject enemyRoot,
+            GameObject hudRoot)
+        {
+            Require(CityHeroPocketExitTransitionController.HudFadeFrameCount == 18
+                    && CityHeroPocketExitTransitionController.PortalGrowFrameCount == 42
+                    && CityHeroPocketExitTransitionController.CoverFadeStartFrame == 234
+                    && CityHeroPocketExitTransitionController.ExitReadyFrame == 294,
+                "City exit fixed-frame presentation contract drifted.");
+            Require(Mathf.Abs(
+                    CityHeroPocketExitTransitionController.InitialPortalScaleFactor - 0.08f)
+                    <= 0.0001f,
+                "City exit portal must start at exactly 0.08 of authored scale.");
+
+            GameObject triggerObject = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.ExitTriggerName);
+            GameObject focusObject = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.TransitionFocusName);
+            GameObject portalObject = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.ExitPortalRootName);
+            GameObject coverObject = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.ExitCoverRootName);
+            GameObject dodgeBeatAnchor = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.DodgeBeatAnchorName);
+            GameObject reserveEnemyAnchor = RequireUniqueSceneObject(
+                scene,
+                CityHeroPocketSceneSetup.ReserveEnemyAnchorName);
+
+            Require(triggerObject.transform.IsChildOf(runtimeRoot.transform)
+                    && focusObject.transform.IsChildOf(runtimeRoot.transform)
+                    && portalObject.transform.IsChildOf(runtimeRoot.transform)
+                    && dodgeBeatAnchor.transform.IsChildOf(runtimeRoot.transform)
+                    && reserveEnemyAnchor.transform.IsChildOf(runtimeRoot.transform),
+                "City exit trigger, portal and capture anchors must stay runtime-owned.");
+            Require(coverObject.transform.parent == null && coverObject.activeInHierarchy,
+                "City exit cover must remain an active scene-owned overlay root.");
+            Require((triggerObject.transform.localPosition
+                        - CityHeroPocketSceneSetup.ExitTriggerPosition).sqrMagnitude
+                    <= 0.0001f,
+                "City exit trigger position drifted.");
+            Require((focusObject.transform.localPosition
+                        - CityHeroPocketSceneSetup.TransitionFocusPosition).sqrMagnitude
+                    <= 0.0001f,
+                "City transition focus position drifted.");
+            Require((portalObject.transform.localPosition
+                        - CityHeroPocketSceneSetup.TransitionFocusPosition).sqrMagnitude
+                    <= 0.0001f
+                    && Quaternion.Angle(
+                        portalObject.transform.localRotation,
+                        Quaternion.Euler(CityHeroPocketSceneSetup.ExitPortalEuler))
+                        <= 0.001f,
+                "City exit portal focus transform drifted.");
+            Require((dodgeBeatAnchor.transform.localPosition
+                        - CityHeroPocketSceneSetup.DodgeBeatAnchorPosition).sqrMagnitude
+                    <= 0.0001f
+                    && (reserveEnemyAnchor.transform.localPosition
+                        - CityHeroPocketSceneSetup.ReserveEnemyAnchorPosition).sqrMagnitude
+                    <= 0.0001f,
+                "City capture beat anchors drifted.");
+
+            BoxCollider trigger = RequireSingle<BoxCollider>(triggerObject);
+            Require(trigger.isTrigger
+                    && (trigger.size - CityHeroPocketSceneSetup.ExitTriggerSize)
+                        .sqrMagnitude <= 0.0001f
+                    && (trigger.center - CityHeroPocketSceneSetup.ExitTriggerCenter)
+                        .sqrMagnitude <= 0.0001f,
+                "City exit requires the reviewed, road-separated 10.8x2x0.6 trigger volume.");
+            Rigidbody triggerBody = RequireSingle<Rigidbody>(triggerObject);
+            Require(triggerBody.isKinematic
+                    && !triggerBody.useGravity
+                    && triggerBody.collisionDetectionMode == CollisionDetectionMode.Discrete,
+                "City exit trigger requires its deterministic kinematic Rigidbody.");
+
+            string portalPrefabPath =
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(portalObject);
+            Require(string.Equals(
+                    portalPrefabPath,
+                    CityHeroPocketSceneSetup.ExitPortalPrefabPath,
+                    StringComparison.Ordinal),
+                $"City exit portal lost promoted prefab ownership: {portalPrefabPath}");
+            Vector3 expectedInitialPortalScale =
+                CityHeroPocketSceneSetup.ExitPortalAuthoredScale
+                * CityHeroPocketExitTransitionController.InitialPortalScaleFactor;
+            Require(!portalObject.activeSelf
+                    && (portalObject.transform.localScale - expectedInitialPortalScale)
+                        .sqrMagnitude <= 0.0001f,
+                "City exit portal must save inactive at 0.08 authored scale.");
+            ParticleSystem[] particles =
+                portalObject.GetComponentsInChildren<ParticleSystem>(true);
+            Require(particles.Length > 0,
+                "City exit portal contains no particle systems.");
+            for (int i = 0; i < particles.Length; i++)
+            {
+                Require(!particles[i].useAutoRandomSeed
+                        && particles[i].randomSeed
+                            == CityHeroPocketExitTransitionController.FirstParticleRandomSeed
+                                + (uint)i,
+                    $"City exit particle {i} lost deterministic seed ownership.");
+            }
+
+            Canvas coverCanvas = RequireSingle<Canvas>(coverObject);
+            CanvasGroup coverGroup = RequireSingle<CanvasGroup>(coverObject);
+            Image coverImage = RequireSingle<Image>(coverObject);
+            Require(coverCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+                    && coverCanvas.sortingOrder == 32000,
+                "City exit cover must stay above the gameplay HUD as ScreenSpaceOverlay.");
+            Require(Mathf.Abs(coverGroup.alpha) <= 0.0001f
+                    && !coverGroup.interactable
+                    && !coverGroup.blocksRaycasts,
+                "City exit cover must save transparent and non-interactive.");
+            Require(!coverImage.raycastTarget
+                    && coverImage.color == CityHeroPocketSceneSetup.ExitCoverColor
+                    && coverImage.transform is RectTransform coverRect
+                    && coverRect.anchorMin == Vector2.zero
+                    && coverRect.anchorMax == Vector2.one
+                    && coverRect.anchoredPosition.sqrMagnitude <= 0.0001f
+                    && coverRect.sizeDelta.sqrMagnitude <= 0.0001f,
+                "City exit cyan-white full-cover image drifted.");
+
+            CityHeroPocketExitTransitionController transition =
+                RequireSingleSceneComponent<CityHeroPocketExitTransitionController>(scene);
+            CharacterController playerController =
+                RequireSingle<CharacterController>(playerRoot);
+            CombatEncounterController encounter =
+                RequireSingleSceneComponent<CombatEncounterController>(scene);
+            PlayerMovementController movement =
+                RequireSingle<PlayerMovementController>(playerRoot);
+            PlayerActionController action =
+                RequireSingle<PlayerActionController>(playerRoot);
+            PlayerCombatModeController mode =
+                RequireSingle<PlayerCombatModeController>(playerRoot);
+            PlayerRangedBasicAttackAction ranged =
+                RequireSingle<PlayerRangedBasicAttackAction>(playerRoot);
+            BasicSoldierEnemy enemyAi = RequireSingle<BasicSoldierEnemy>(enemyRoot);
+            BasicSoldierProjectileAttackDriver enemyProjectileDriver =
+                RequireSingle<BasicSoldierProjectileAttackDriver>(enemyRoot);
+            CanvasGroup hudGroup = hudRoot.GetComponent<CanvasGroup>();
+
+            Require(ReferenceEquals(transition.gameObject, triggerObject)
+                    && transition.IsConfigured
+                    && ReferenceEquals(transition.Encounter, encounter)
+                    && ReferenceEquals(transition.PlayerController, playerController)
+                    && ReferenceEquals(transition.ExitTrigger, trigger)
+                    && ReferenceEquals(transition.TransitionFocus, focusObject.transform)
+                    && ReferenceEquals(transition.PortalRoot, portalObject.transform)
+                    && ReferenceEquals(transition.HudCanvasGroup, hudGroup)
+                    && ReferenceEquals(transition.CoverCanvasGroup, coverGroup)
+                    && ReferenceEquals(transition.PlayerMovement, movement)
+                    && ReferenceEquals(transition.PlayerAction, action)
+                    && ReferenceEquals(transition.PlayerCombatMode, mode)
+                    && ReferenceEquals(transition.PlayerRangedAttack, ranged)
+                    && ReferenceEquals(transition.EnemyAi, enemyAi)
+                    && ReferenceEquals(
+                        transition.EnemyProjectileDriver,
+                        enemyProjectileDriver),
+                "City exit controller serialized reference contract drifted.");
+            Require((transition.PortalAuthoredScale
+                        - CityHeroPocketSceneSetup.ExitPortalAuthoredScale).sqrMagnitude
+                    <= 0.0001f,
+                "City exit controller lost authored portal scale.");
+            Require(!transition.IsArmed
+                    && !transition.IsTransitionRunning
+                    && !transition.IsHudHidden
+                    && !transition.IsFullCover
+                    && !transition.IsExitReady
+                    && !transition.IsInputLocked
+                    && !transition.IsAiLocked
+                    && transition.PresentationFrame == 0
+                    && transition.RejectedTriggerEnterCount == 0
+                    && transition.TriggerAcceptedCount == 0
+                    && transition.TransitionStartedCount == 0
+                    && transition.HudHiddenCount == 0
+                    && transition.FullCoverCount == 0
+                    && transition.ExitReadyCount == 0,
+                "City exit controller must save in its exact pre-Won restart state.");
         }
 
         private static void ValidateAimDragArea(

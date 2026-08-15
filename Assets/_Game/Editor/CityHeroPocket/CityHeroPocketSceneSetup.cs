@@ -60,6 +60,18 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             "CityHeroPocket_PlayerProjectiles";
         public const string EnemyProjectileRootName =
             "CityHeroPocket_EnemyProjectiles";
+        public const string ExitTriggerName =
+            "CityHeroPocket_ExitTrigger";
+        public const string TransitionFocusName =
+            "CityHeroPocket_TransitionFocus";
+        public const string ExitPortalRootName =
+            "CityHeroPocket_ExitPortal";
+        public const string ExitCoverRootName =
+            "CityHeroPocket_ExitCover";
+        public const string DodgeBeatAnchorName =
+            "CityHeroPocket_DodgeBeatAnchor";
+        public const string ReserveEnemyAnchorName =
+            "CityHeroPocket_ReserveEnemyAnchor";
         public const string ProductObjectiveText =
             "Clear the intersection and reach the breach.";
 
@@ -76,6 +88,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
         private const string HudPrefabPath =
             "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab";
+        public const string ExitPortalPrefabPath =
+            "Assets/_Game/Art/VFX/CombatCues/Prefabs/DB_VFX_PlayerSummonPreSpawnPortal.prefab";
 
         internal const string AsphaltMaterialPath =
             "Assets/_Game/Art/Environment/CityHeroPocket/Materials/DB_CityHeroPocket_Asphalt.mat";
@@ -142,6 +156,15 @@ namespace DimensionBrawl.Editor.CityHeroPocket
         public static readonly Vector3 EnemyPosition = new(0.4f, 0f, 5.6f);
         public static readonly Vector3 CameraPosition = new(-0.35f, 2.35f, -10.2f);
         public static readonly Vector3 CameraLookAt = new(-0.2f, 1.15f, 1.7f);
+        public static readonly Vector3 ExitTriggerPosition = new(0f, 1f, 7.6f);
+        public static readonly Vector3 ExitTriggerSize = new(10.8f, 2f, 0.6f);
+        public static readonly Vector3 ExitTriggerCenter = new(0f, 0.05f, 0f);
+        public static readonly Vector3 TransitionFocusPosition = new(0f, 2.8f, 10.55f);
+        public static readonly Vector3 ExitPortalEuler = new(90f, 0f, 0f);
+        public static readonly Vector3 ExitPortalAuthoredScale = new(0.92f, 0.92f, 0.92f);
+        public static readonly Color ExitCoverColor = new(0.84f, 0.97f, 1f, 1f);
+        public static readonly Vector3 DodgeBeatAnchorPosition = new(2.1f, 0f, 6.55f);
+        public static readonly Vector3 ReserveEnemyAnchorPosition = new(-2.65f, 0f, 8.25f);
 
         private static readonly string[] ObsoletePlayerChildNames =
         {
@@ -350,6 +373,13 @@ namespace DimensionBrawl.Editor.CityHeroPocket
 
                 HudPackage hud = CreateHud(scene);
                 ConfigureHud(hud, encounter, player, enemy, camera.Controller);
+                CreateExitTransition(
+                    scene,
+                    runtimeRoot.transform,
+                    encounter,
+                    player,
+                    enemy,
+                    hud);
 
                 stageRoot.SetActive(true);
                 player.Root.SetActive(true);
@@ -385,6 +415,7 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             LoadRequired<GameObject>(PlayerProjectilePrefabPath);
             LoadRequired<GameObject>(EnemyPrefabPath);
             LoadRequired<GameObject>(HudPrefabPath);
+            LoadRequired<GameObject>(ExitPortalPrefabPath);
             for (int i = 0; i < RequiredTokyoPrefabPaths.Length; i++)
             {
                 LoadRequired<GameObject>(RequiredTokyoPrefabPaths[i]);
@@ -1041,6 +1072,123 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             CityHeroPocketEnemyProjectileRootBinder binder =
                 runtimeOwner.AddComponent<CityHeroPocketEnemyProjectileRootBinder>();
             binder.Configure(enemy.ProjectileDriver, enemyProjectiles);
+        }
+
+        private static void CreateExitTransition(
+            Scene scene,
+            Transform runtimeRoot,
+            CombatEncounterController encounter,
+            PlayerPackage player,
+            EnemyPackage enemy,
+            HudPackage hud)
+        {
+            Transform transitionFocus = CreateChild(
+                runtimeRoot,
+                TransitionFocusName).transform;
+            transitionFocus.localPosition = TransitionFocusPosition;
+
+            Transform dodgeBeatAnchor = CreateChild(
+                runtimeRoot,
+                DodgeBeatAnchorName).transform;
+            dodgeBeatAnchor.localPosition = DodgeBeatAnchorPosition;
+
+            Transform reserveEnemyAnchor = CreateChild(
+                runtimeRoot,
+                ReserveEnemyAnchorName).transform;
+            reserveEnemyAnchor.localPosition = ReserveEnemyAnchorPosition;
+
+            GameObject portalPrefab = LoadRequired<GameObject>(ExitPortalPrefabPath);
+            GameObject portal = PrefabUtility.InstantiatePrefab(portalPrefab, scene) as GameObject;
+            Require(portal != null,
+                "Failed to instantiate the promoted City exit portal prefab.");
+            portal.name = ExitPortalRootName;
+            portal.transform.SetParent(runtimeRoot, worldPositionStays: false);
+            portal.transform.localPosition = TransitionFocusPosition;
+            portal.transform.localRotation = Quaternion.Euler(ExitPortalEuler);
+            portal.transform.localScale = ExitPortalAuthoredScale
+                * CityHeroPocketExitTransitionController.InitialPortalScaleFactor;
+            ParticleSystem[] particles = portal.GetComponentsInChildren<ParticleSystem>(true);
+            Require(particles.Length > 0,
+                "Promoted City exit portal contains no deterministic particle systems.");
+            for (int i = 0; i < particles.Length; i++)
+            {
+                particles[i].useAutoRandomSeed = false;
+                particles[i].randomSeed =
+                    CityHeroPocketExitTransitionController.FirstParticleRandomSeed + (uint)i;
+                RecordPrefabOverride(particles[i]);
+            }
+            portal.SetActive(false);
+            RecordPrefabOverride(portal.transform);
+            RecordPrefabOverride(portal);
+
+            GameObject coverRoot = new(
+                ExitCoverRootName,
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(CanvasGroup));
+            SceneManager.MoveGameObjectToScene(coverRoot, scene);
+            Canvas coverCanvas = coverRoot.GetComponent<Canvas>();
+            coverCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            coverCanvas.sortingOrder = 32000;
+            CanvasScaler coverScaler = coverRoot.GetComponent<CanvasScaler>();
+            coverScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            coverScaler.referenceResolution = new Vector2(1920f, 1080f);
+            coverScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            coverScaler.matchWidthOrHeight = 0.5f;
+            CanvasGroup coverGroup = coverRoot.GetComponent<CanvasGroup>();
+            coverGroup.alpha = 0f;
+            coverGroup.interactable = false;
+            coverGroup.blocksRaycasts = false;
+
+            GameObject coverImageObject = new(
+                "CyanWhiteFullCover",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            coverImageObject.transform.SetParent(coverRoot.transform, worldPositionStays: false);
+            RectTransform coverRect = (RectTransform)coverImageObject.transform;
+            coverRect.anchorMin = Vector2.zero;
+            coverRect.anchorMax = Vector2.one;
+            coverRect.pivot = new Vector2(0.5f, 0.5f);
+            coverRect.anchoredPosition = Vector2.zero;
+            coverRect.sizeDelta = Vector2.zero;
+            Image coverImage = coverImageObject.GetComponent<Image>();
+            coverImage.color = ExitCoverColor;
+            coverImage.raycastTarget = false;
+
+            GameObject triggerObject = CreateChild(runtimeRoot, ExitTriggerName);
+            triggerObject.transform.localPosition = ExitTriggerPosition;
+            BoxCollider trigger = triggerObject.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = ExitTriggerSize;
+            trigger.center = ExitTriggerCenter;
+            Rigidbody triggerBody = triggerObject.AddComponent<Rigidbody>();
+            triggerBody.isKinematic = true;
+            triggerBody.useGravity = false;
+            triggerBody.interpolation = RigidbodyInterpolation.None;
+            triggerBody.collisionDetectionMode = CollisionDetectionMode.Discrete;
+
+            CanvasGroup hudGroup = hud.Root.GetComponent<CanvasGroup>();
+            Require(hudGroup != null,
+                "City combat HUD root requires its product-instance CanvasGroup.");
+            CityHeroPocketExitTransitionController transition =
+                triggerObject.AddComponent<CityHeroPocketExitTransitionController>();
+            transition.Configure(
+                encounter,
+                RequireSingle<CharacterController>(player.Root),
+                trigger,
+                transitionFocus,
+                portal.transform,
+                ExitPortalAuthoredScale,
+                hudGroup,
+                coverGroup,
+                player.Movement,
+                player.Action,
+                player.Mode,
+                player.Ranged,
+                enemy.Soldier,
+                enemy.ProjectileDriver);
         }
 
         private static HudPackage CreateHud(Scene scene)

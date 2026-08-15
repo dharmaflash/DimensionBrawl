@@ -375,6 +375,355 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [UnityTest]
+        [Timeout(20000)]
+        public IEnumerator WonGatedExitUsesRealCharacterTriggerAndRestoresExactlyOnceState()
+        {
+            CityHeroPocketExitTransitionController transition =
+                RequireSingle<CityHeroPocketExitTransitionController>();
+            CombatEncounterController encounter = RequireSingle<CombatEncounterController>();
+            CharacterController playerController = transition.PlayerController;
+            Assert.That(transition.IsConfigured, Is.True);
+            Assert.That(transition.Encounter, Is.SameAs(encounter));
+            Assert.That(transition.PlayerController, Is.SameAs(playerController));
+            Assert.That(transition.ExitTrigger.isTrigger, Is.True);
+            Assert.That(transition.IsArmed, Is.False);
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+
+            yield return CrossExitTrigger(transition);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero,
+                "Crossing the real exit trigger before Won armed the product transition.");
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+
+            yield return PlacePlayerBeforeExit(transition);
+            bool lethalDamageApplied = false;
+            CombatRootAdmissionResult admission = encounter.AdmitCombatRoot(
+                "city.exit-transition.playmode-proof",
+                context =>
+                {
+                    lethalDamageApplied = context.TryApplyDamage(
+                        encounter.EnemyHealth,
+                        new DamageInfo(
+                            encounter.PlayerHealth,
+                            DamageTeam.Player,
+                            encounter.EnemyHealth.MaxHealth * 2f,
+                            encounter.EnemyHealth.transform.position,
+                            Vector3.forward,
+                            0f,
+                            DamageResponsePolicy.DamageOnly,
+                            CombatControlLockPolicy.None));
+                });
+            Assert.That(
+                admission.Disposition,
+                Is.EqualTo(CombatRootAdmissionDisposition.Executed));
+            Assert.That(lethalDamageApplied, Is.True);
+            Assert.That(encounter.IsWon, Is.True);
+            Assert.That(transition.IsArmed, Is.True,
+                "The configured real encounter Won event did not arm the exit.");
+
+            int hudHiddenFrame = -1;
+            int fullCoverFrame = -1;
+            int exitReadyFrame = -1;
+            transition.HudHidden += () => hudHiddenFrame = transition.PresentationFrame;
+            transition.FullCover += () => fullCoverFrame = transition.PresentationFrame;
+            transition.ExitReady += () => exitReadyFrame = transition.PresentationFrame;
+            SetForeignCinematicCueLocks(transition, locked: true);
+
+            yield return CrossExitTrigger(transition);
+            Assert.That(transition.TriggerAcceptedCount, Is.EqualTo(1));
+            Assert.That(transition.TransitionStartedCount, Is.EqualTo(1));
+            Assert.That(transition.IsTransitionRunning, Is.True);
+            Assert.That(transition.IsInputLocked, Is.True);
+            Assert.That(transition.IsAiLocked, Is.True);
+            Assert.That(transition.PlayerMovement.IsCinematicMoveInputLocked, Is.True);
+            Assert.That(transition.PlayerAction.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerCombatMode.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerRangedAttack.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.EnemyAi.enabled, Is.False);
+            Assert.That(transition.EnemyProjectileDriver.enabled, Is.False);
+
+            int timeoutFrames = 360;
+            while (!transition.IsExitReady && timeoutFrames-- > 0)
+            {
+                yield return null;
+            }
+            Assert.That(timeoutFrames, Is.GreaterThan(0),
+                "City exit did not reach its fixed-frame opaque-cover terminal state.");
+            Assert.That(transition.PresentationFrame,
+                Is.EqualTo(CityHeroPocketExitTransitionController.ExitReadyFrame));
+            Assert.That(hudHiddenFrame,
+                Is.EqualTo(CityHeroPocketExitTransitionController.HudFadeFrameCount));
+            Assert.That(fullCoverFrame,
+                Is.EqualTo(CityHeroPocketExitTransitionController.ExitReadyFrame));
+            Assert.That(exitReadyFrame,
+                Is.EqualTo(CityHeroPocketExitTransitionController.ExitReadyFrame));
+            Assert.That(transition.HudHiddenCount, Is.EqualTo(1));
+            Assert.That(transition.FullCoverCount, Is.EqualTo(1));
+            Assert.That(transition.ExitReadyCount, Is.EqualTo(1));
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero,
+                "A non-player collider contaminated the reviewed exit run.");
+            Assert.That(transition.TriggerAcceptedCount, Is.EqualTo(1));
+            Assert.That(transition.TransitionStartedCount, Is.EqualTo(1));
+            Assert.That(transition.IsTransitionRunning, Is.False);
+            Assert.That(transition.IsHudHidden, Is.True);
+            Assert.That(transition.IsFullCover, Is.True);
+            Assert.That(transition.IsExitReady, Is.True);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(transition.CoverCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That((transition.PortalRoot.localScale
+                    - transition.PortalAuthoredScale).sqrMagnitude,
+                Is.LessThan(0.0001f));
+
+            yield return PlacePlayerBeforeExit(transition);
+            yield return CrossExitTrigger(transition);
+            Assert.That(transition.TriggerAcceptedCount, Is.EqualTo(1),
+                "A second trigger entry duplicated the completed transition.");
+            Assert.That(transition.ExitReadyCount, Is.EqualTo(1));
+
+            transition.ResetForRestart();
+            Assert.That(transition.IsArmed, Is.False);
+            Assert.That(transition.IsTransitionRunning, Is.False);
+            Assert.That(transition.IsHudHidden, Is.False);
+            Assert.That(transition.IsFullCover, Is.False);
+            Assert.That(transition.IsExitReady, Is.False);
+            Assert.That(transition.IsInputLocked, Is.False);
+            Assert.That(transition.IsAiLocked, Is.False);
+            Assert.That(transition.PresentationFrame, Is.Zero);
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(transition.HudHiddenCount, Is.Zero);
+            Assert.That(transition.FullCoverCount, Is.Zero);
+            Assert.That(transition.ExitReadyCount, Is.Zero);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(transition.HudCanvasGroup.interactable, Is.True);
+            Assert.That(transition.HudCanvasGroup.blocksRaycasts, Is.True);
+            Assert.That(transition.CoverCanvasGroup.alpha, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.False);
+            Assert.That((transition.PortalRoot.localScale
+                    - transition.PortalAuthoredScale
+                        * CityHeroPocketExitTransitionController.InitialPortalScaleFactor)
+                    .sqrMagnitude,
+                Is.LessThan(0.0001f));
+            Assert.That(transition.PlayerMovement.IsCinematicMoveInputLocked, Is.True,
+                "City reset cleared another cinematic input-lock owner.");
+            Assert.That(transition.PlayerAction.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerCombatMode.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerRangedAttack.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.EnemyAi.enabled, Is.True);
+            Assert.That(transition.EnemyProjectileDriver.enabled, Is.True);
+
+            SetForeignCinematicCueLocks(transition, locked: false);
+            Assert.That(transition.PlayerMovement.IsCinematicMoveInputLocked, Is.False);
+            Assert.That(transition.PlayerAction.IsCinematicInputLocked, Is.False);
+            Assert.That(transition.PlayerCombatMode.IsCinematicInputLocked, Is.False);
+            Assert.That(transition.PlayerRangedAttack.IsCinematicInputLocked, Is.False);
+
+            yield return PlacePlayerBeforeExit(transition);
+            yield return CrossExitTrigger(transition);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero,
+                "Reset inferred a new arm from stale Encounter.IsWon state.");
+        }
+
+        [UnityTest]
+        [Timeout(15000)]
+        public IEnumerator DisableAndDestroyRestoreOwnedTransitionStateIdempotently()
+        {
+            CityHeroPocketExitTransitionController transition =
+                RequireSingle<CityHeroPocketExitTransitionController>();
+            CombatEncounterController encounter = RequireSingle<CombatEncounterController>();
+            CanvasGroup hudGroup = transition.HudCanvasGroup;
+            yield return PlacePlayerBeforeExit(transition);
+
+            bool lethalDamageApplied = false;
+            CombatRootAdmissionResult admission = encounter.AdmitCombatRoot(
+                "city.exit-transition.disable-proof",
+                context => lethalDamageApplied = context.TryApplyDamage(
+                    encounter.EnemyHealth,
+                    new DamageInfo(
+                        encounter.PlayerHealth,
+                        DamageTeam.Player,
+                        encounter.EnemyHealth.MaxHealth * 2f,
+                        encounter.EnemyHealth.transform.position,
+                        Vector3.forward,
+                        0f,
+                        DamageResponsePolicy.DamageOnly,
+                        CombatControlLockPolicy.None)));
+            Assert.That(admission.Disposition,
+                Is.EqualTo(CombatRootAdmissionDisposition.Executed));
+            Assert.That(lethalDamageApplied, Is.True);
+            Assert.That(transition.IsArmed, Is.True);
+
+            SetForeignCinematicCueLocks(transition, locked: true);
+            yield return CrossExitTrigger(transition);
+            for (int i = 0; i < 30; i++)
+            {
+                yield return null;
+            }
+            Assert.That(transition.IsTransitionRunning, Is.True);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.LessThan(1f));
+            Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.True);
+            Assert.That(transition.IsInputLocked, Is.True);
+            Assert.That(transition.IsAiLocked, Is.True);
+
+            transition.enabled = false;
+            yield return null;
+            AssertTeardownStateRestored(transition);
+            Assert.That(transition.PlayerMovement.IsCinematicMoveInputLocked, Is.True,
+                "OnDisable cleared the independent CinematicCue owner.");
+            Assert.That(transition.PlayerAction.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerCombatMode.IsCinematicInputLocked, Is.True);
+            Assert.That(transition.PlayerRangedAttack.IsCinematicInputLocked, Is.True);
+
+            transition.enabled = false;
+            UnityEngine.Object.Destroy(transition);
+            yield return null;
+            Assert.That(transition == null, Is.True);
+            Assert.That(RequireSingle<PlayerMovementController>().IsCinematicMoveInputLocked,
+                Is.True,
+                "Idempotent OnDestroy cleared the foreign lock after OnDisable restoration.");
+            Assert.That(RequireSingle<BasicSoldierEnemy>().enabled, Is.True);
+            Assert.That(RequireSingle<BasicSoldierProjectileAttackDriver>().enabled, Is.True);
+            Assert.That(hudGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+
+            PlayerMovementController movement = RequireSingle<PlayerMovementController>();
+            PlayerActionController action = RequireSingle<PlayerActionController>();
+            PlayerCombatModeController mode = RequireSingle<PlayerCombatModeController>();
+            PlayerRangedBasicAttackAction ranged =
+                RequireSingle<PlayerRangedBasicAttackAction>();
+            movement.SetCinematicMoveInputLocked(PlayerInputLockSource.CinematicCue, false);
+            action.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            mode.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            ranged.SetCinematicInputLocked(PlayerInputLockSource.CinematicCue, false);
+            Assert.That(movement.IsCinematicMoveInputLocked, Is.False);
+            Assert.That(action.IsCinematicInputLocked, Is.False);
+            Assert.That(mode.IsCinematicInputLocked, Is.False);
+            Assert.That(ranged.IsCinematicInputLocked, Is.False);
+        }
+
+        [UnityTest]
+        [Timeout(10000)]
+        public IEnumerator RealWrongColliderEntryIsCountedButCannotChangeProductState()
+        {
+            CityHeroPocketExitTransitionController transition =
+                RequireSingle<CityHeroPocketExitTransitionController>();
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(transition.IsArmed, Is.False);
+
+            GameObject wrongColliderObject = new(
+                "CityExitWrongColliderProof",
+                typeof(SphereCollider));
+            SphereCollider wrongCollider =
+                wrongColliderObject.GetComponent<SphereCollider>();
+            wrongCollider.radius = 0.15f;
+            Vector3 triggerCenter = transition.ExitTrigger.bounds.center;
+            wrongColliderObject.transform.position = triggerCenter
+                - Vector3.forward * (transition.ExitTrigger.bounds.extents.z + 1f);
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+
+            wrongColliderObject.transform.position = triggerCenter;
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return null;
+
+            Assert.That(transition.RejectedTriggerEnterCount, Is.EqualTo(1),
+                "A real non-player collider entry was not observed by the exit trigger.");
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(transition.IsArmed, Is.False);
+            Assert.That(transition.IsTransitionRunning, Is.False);
+            Assert.That(transition.IsInputLocked, Is.False);
+            Assert.That(transition.IsAiLocked, Is.False);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(transition.CoverCanvasGroup.alpha, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.False);
+
+            transition.ResetForRestart();
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+
+            UnityEngine.Object.Destroy(wrongColliderObject);
+            yield return null;
+        }
+
+        private static void AssertTeardownStateRestored(
+            CityHeroPocketExitTransitionController transition)
+        {
+            Assert.That(transition.IsArmed, Is.False);
+            Assert.That(transition.IsTransitionRunning, Is.False);
+            Assert.That(transition.IsHudHidden, Is.False);
+            Assert.That(transition.IsFullCover, Is.False);
+            Assert.That(transition.IsExitReady, Is.False);
+            Assert.That(transition.IsInputLocked, Is.False);
+            Assert.That(transition.IsAiLocked, Is.False);
+            Assert.That(transition.PresentationFrame, Is.Zero);
+            Assert.That(transition.RejectedTriggerEnterCount, Is.Zero);
+            Assert.That(transition.TriggerAcceptedCount, Is.Zero);
+            Assert.That(transition.TransitionStartedCount, Is.Zero);
+            Assert.That(transition.HudHiddenCount, Is.Zero);
+            Assert.That(transition.FullCoverCount, Is.Zero);
+            Assert.That(transition.ExitReadyCount, Is.Zero);
+            Assert.That(transition.HudCanvasGroup.alpha, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(transition.HudCanvasGroup.interactable, Is.True);
+            Assert.That(transition.HudCanvasGroup.blocksRaycasts, Is.True);
+            Assert.That(transition.CoverCanvasGroup.alpha, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(transition.PortalRoot.gameObject.activeSelf, Is.False);
+            Assert.That(transition.EnemyAi.enabled, Is.True);
+            Assert.That(transition.EnemyProjectileDriver.enabled, Is.True);
+        }
+
+        private static void SetForeignCinematicCueLocks(
+            CityHeroPocketExitTransitionController transition,
+            bool locked)
+        {
+            transition.PlayerMovement.SetCinematicMoveInputLocked(
+                PlayerInputLockSource.CinematicCue,
+                locked);
+            transition.PlayerAction.SetCinematicInputLocked(
+                PlayerInputLockSource.CinematicCue,
+                locked);
+            transition.PlayerCombatMode.SetCinematicInputLocked(
+                PlayerInputLockSource.CinematicCue,
+                locked);
+            transition.PlayerRangedAttack.SetCinematicInputLocked(
+                PlayerInputLockSource.CinematicCue,
+                locked);
+        }
+
+        private static IEnumerator PlacePlayerBeforeExit(
+            CityHeroPocketExitTransitionController transition)
+        {
+            CharacterController controller = transition.PlayerController;
+            bool wasEnabled = controller.enabled;
+            controller.enabled = false;
+            Vector3 triggerCenter = transition.ExitTrigger.bounds.center;
+            controller.transform.position = new Vector3(
+                triggerCenter.x,
+                0f,
+                transition.ExitTrigger.bounds.min.z - controller.radius - 0.35f);
+            controller.enabled = wasEnabled;
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+        }
+
+        private static IEnumerator CrossExitTrigger(
+            CityHeroPocketExitTransitionController transition)
+        {
+            yield return PlacePlayerBeforeExit(transition);
+            CharacterController controller = transition.PlayerController;
+            float crossingDistance = transition.ExitTrigger.bounds.center.z
+                - controller.bounds.center.z
+                + 0.05f;
+            controller.Move(Vector3.forward * crossingDistance);
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return null;
+        }
+
         private static IEnumerator Click(
             Mouse mouse,
             Vector2 screenPosition,
