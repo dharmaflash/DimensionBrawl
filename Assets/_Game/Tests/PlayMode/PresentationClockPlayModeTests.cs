@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Reflection;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEngine;
@@ -121,6 +123,48 @@ namespace DimensionBrawl.Tests
                 if (presenterObject != null)
                 {
                     UnityEngine.Object.DestroyImmediate(presenterObject);
+                }
+            }
+        }
+
+        [Test]
+        public void PerfectDodgeTimeWarpConsumesTheManualPresentationDelta()
+        {
+            object clockOwner = new object();
+            GameObject warpObject = null;
+            try
+            {
+                using PresentationClock.ManualLease lease = PresentationClock.AcquireManual(clockOwner, 60);
+                lease.SetFrame(188);
+
+                warpObject = new GameObject(
+                    "DeterministicPerfectDodgeTimeWarp",
+                    typeof(PlayerActionController),
+                    typeof(PerfectDodgeTimeWarp));
+                PerfectDodgeTimeWarp warp = warpObject.GetComponent<PerfectDodgeTimeWarp>();
+                SetPrivateField(warp, "timer", 1f);
+
+                IEnumerator routine = (IEnumerator)(typeof(PerfectDodgeTimeWarp).GetMethod(
+                    "RefreshWarpUntilSettled",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(warp, null)
+                    ?? throw new MissingMethodException(
+                        nameof(PerfectDodgeTimeWarp),
+                        "RefreshWarpUntilSettled"));
+
+                Assert.That(routine.MoveNext(), Is.True, "The warp routine must yield once before sampling time.");
+                Assert.That(routine.MoveNext(), Is.True, "The active warp must continue after one manual frame.");
+
+                float remaining = (float)(typeof(PerfectDodgeTimeWarp).GetField(
+                    "timer",
+                    BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(warp)
+                    ?? throw new MissingFieldException(nameof(PerfectDodgeTimeWarp), "timer"));
+                Assert.That(remaining, Is.EqualTo(1f - 1f / 60f).Within(0.000001f));
+            }
+            finally
+            {
+                if (warpObject != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(warpObject);
                 }
             }
         }

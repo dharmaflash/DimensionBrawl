@@ -107,7 +107,8 @@ namespace DimensionBrawl.Presentation
 
             while (isActiveAndEnabled && IsWarpActive)
             {
-                float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
+                float presentationDeltaTime = PresentationClock.UnscaledDeltaTime;
+                float deltaTime = presentationDeltaTime > 0f ? presentationDeltaTime : Time.deltaTime;
                 if (timer > 0f)
                 {
                     timer = Mathf.Max(0f, timer - deltaTime);
