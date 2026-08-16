@@ -196,6 +196,56 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void StationPlayerComposition_UsesTheSingleActiveRenderedAnimatorRoot()
+        {
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene station = SceneManager.GetSceneByPath(
+                AuditionPvStationBossDeathAftermathCapture.StationScenePath);
+            bool openedByTest = !station.IsValid() || !station.isLoaded;
+
+            try
+            {
+                if (openedByTest)
+                {
+                    station = EditorSceneManager.OpenScene(
+                        AuditionPvStationBossDeathAftermathCapture.StationScenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                PlayerMovementController movement = station.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        PlayerMovementController>(true))
+                    .Single();
+                Animator[] activeRenderedAnimators = movement
+                    .GetComponentsInChildren<Animator>(true)
+                    .Where(value => value != null
+                        && value.gameObject.activeInHierarchy
+                        && value.GetComponentsInChildren<SkinnedMeshRenderer>(false)
+                            .Any(renderer => renderer != null
+                                && renderer.enabled
+                                && renderer.gameObject.activeInHierarchy))
+                    .ToArray();
+
+                Assert.That(activeRenderedAnimators.Length, Is.EqualTo(1));
+                Assert.That(
+                    activeRenderedAnimators[0].gameObject.name,
+                    Is.EqualTo("BossBarrageLaneReview_RangedModel_Inori"));
+            }
+            finally
+            {
+                if (openedByTest && station.IsValid() && station.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(station, removeScene: true);
+                }
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousActiveScene);
+                }
+            }
+        }
+
+        [Test]
         public void StationFinisherDirector_EvaluatesExactStartSettleAndHeldRigPose()
         {
             Scene previousActiveScene = SceneManager.GetActiveScene();

@@ -1694,8 +1694,11 @@ namespace DimensionBrawl.Editor.AuditionPV
             Animator[] playerAnimators = movement != null
                 ? movement.GetComponentsInChildren<Animator>(true)
                     .Where(value => value != null
-                        && value.GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                            .Length > 0)
+                        && value.gameObject.activeInHierarchy
+                        && value.GetComponentsInChildren<SkinnedMeshRenderer>(false)
+                            .Any(renderer => renderer != null
+                                && renderer.enabled
+                                && renderer.gameObject.activeInHierarchy))
                     .ToArray()
                 : Array.Empty<Animator>();
             playerRendererRoot = playerAnimators.Length == 1
