@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
 using UnityEngine;
@@ -39,6 +40,12 @@ namespace DimensionBrawl.LevelDesign
         private bool combatLocked;
         private bool worldTimeScaleFrozen;
         private bool aftermathGateAttached;
+        private bool aftermathSignalsSubscribed;
+        private bool aftermathHandoffCompleted;
+        private bool resultSceneLoadRequested;
+        private int resultSceneLoadLeaseToken;
+        private bool resultSurfaceFinalized;
+        private bool presentationFailureFinalized;
         private float previousTimeScale = 1f;
         private StageRunResultSummary resultSummary;
         private string presentedResultDigest = string.Empty;
@@ -63,8 +70,8 @@ namespace DimensionBrawl.LevelDesign
         private void OnDisable()
         {
             bool presentationWasPending = shown
-                && resultSummary != null
-                && string.IsNullOrEmpty(presentedResultDigest);
+                && !resultSurfaceFinalized
+                && !presentationFailureFinalized;
             if (stageClearRoutine != null)
             {
                 StopCoroutine(stageClearRoutine);
@@ -78,6 +85,7 @@ namespace DimensionBrawl.LevelDesign
                     logAsError: false);
             }
 
+            CancelOwnedResultSceneLoad();
             CancelAftermathAndRelease("The result overlay was disabled before terminal handoff cleanup.");
             RestoreCombatTimeScale();
         }
@@ -120,12 +128,25 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
+            RefreshResultSceneLoadLease();
+            ResultScenePreloadLease.RetryCancellation();
+            if (ResultScenePreloadLease.IsBusy)
+            {
+                error = "A previous authored result-scene preload is still being cleaned up.";
+                LastPresentationError = error;
+                return false;
+            }
+
             resultSummary = summary;
             presentedResultDigest = string.Empty;
             LastPresentationError = string.Empty;
             LastAftermathError = string.Empty;
             shown = true;
             aftermathGateAttached = false;
+            aftermathHandoffCompleted = false;
+            resultSceneLoadRequested = false;
+            resultSurfaceFinalized = false;
+            presentationFailureFinalized = false;
             bool useBossTerminalAftermath = IsBossTerminalClear(summary)
                 && bossTerminalAftermath != null;
             if (useBossTerminalAftermath
@@ -144,13 +165,36 @@ namespace DimensionBrawl.LevelDesign
             try
             {
                 PrepareCombatAfterClear();
-                if (!aftermathGateAttached)
+                if (aftermathGateAttached)
+                {
+                    SubscribeAftermathSignals();
+                    if (bossTerminalAftermath.IsHandoffImminent)
+                    {
+                        HandleAftermathHandoffImminent();
+                    }
+
+                    if (shown && bossTerminalAftermath.IsComplete)
+                    {
+                        HandleAftermathCompleted();
+                    }
+                }
+                else
                 {
                     FreezeWorldForResult();
                 }
 
-                stageClearRoutine = StartCoroutine(
-                    RunPresentationSafely(aftermathGateAttached));
+                if (!shown)
+                {
+                    error = LastPresentationError;
+                    return false;
+                }
+
+                if (!resultSurfaceFinalized)
+                {
+                    stageClearRoutine = StartCoroutine(
+                        RunPresentationSafely(useBossTerminalAftermath));
+                }
+
                 return true;
             }
             catch (Exception exception)
@@ -159,6 +203,7 @@ namespace DimensionBrawl.LevelDesign
                 error = "The result overlay could not start safely: " + exception.Message;
                 LastPresentationError = error;
                 CancelAftermathAndRelease(error);
+                CancelOwnedResultSceneLoad();
                 RestoreCombatTimeScale();
                 return false;
             }
@@ -240,20 +285,25 @@ namespace DimensionBrawl.LevelDesign
                         bossTerminalAftermath.AftermathDurationSeconds
                             - bossTerminalAftermath.ElapsedUnscaledSeconds)
                     : 0f;
-                float aftermathTimeoutAt = Time.realtimeSinceStartup
+                float aftermathTimeoutAt = PresentationClock.UnscaledTime
                     + remaining
                     + Mathf.Max(0.1f, bossTerminalAftermathWaitSlackSeconds);
                 while (bossTerminalAftermath != null
                     && !bossTerminalAftermath.IsComplete
                     && !bossTerminalAftermath.IsCancelled)
                 {
-                    if (Time.realtimeSinceStartup > aftermathTimeoutAt)
+                    if (PresentationClock.UnscaledTime > aftermathTimeoutAt)
                     {
                         FailPresentation("The authored Station boss-terminal aftermath timed out.");
                         yield break;
                     }
 
                     yield return null;
+                }
+
+                if (!shown || presentationFailureFinalized || resultSurfaceFinalized)
+                {
+                    yield break;
                 }
 
                 if (bossTerminalAftermath == null
@@ -269,56 +319,33 @@ namespace DimensionBrawl.LevelDesign
                     yield break;
                 }
 
-                FreezeWorldForResult();
-                bossTerminalAftermath.ReleaseInputLeaseForResultSurface();
-                if (bossTerminalAftermath.InputLeaseActive)
+                if (!aftermathHandoffCompleted)
                 {
-                    LastAftermathError = bossTerminalAftermath.LastError;
-                    FailPresentation(
-                        "The authored Station boss-terminal aftermath input lease did not release exactly.");
-                    yield break;
+                    HandleAftermathCompleted();
                 }
 
-                aftermathGateAttached = false;
+                if (!shown || resultSurfaceFinalized)
+                {
+                    yield break;
+                }
             }
             else if (postBossDefeatHoldSeconds > 0f)
             {
                 yield return new WaitForSecondsRealtime(postBossDefeatHoldSeconds);
             }
 
-            bool sceneLoadRequested = false;
-            try
+            if (!TryRequestStageClearSceneLoad(out string sceneLoadError))
             {
-                Scene clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
-                if (!clearScene.IsValid() || !clearScene.isLoaded)
-                {
-#if UNITY_EDITOR
-                    EditorSceneManager.LoadSceneInPlayMode(
-                        ClearUiScenePath,
-                        new LoadSceneParameters(LoadSceneMode.Additive));
-#else
-                    SceneManager.LoadScene(ClearUiSceneName, LoadSceneMode.Additive);
-#endif
-                    sceneLoadRequested = true;
-                }
-            }
-            catch (Exception exception)
-            {
-                FailPresentation($"Failed to load authored clear UI scene: {exception.Message}");
+                FailPresentation(sceneLoadError);
                 yield break;
             }
 
-            if (sceneLoadRequested)
-            {
-                yield return null;
-            }
-
             bool configured = false;
-            float timeoutAt = Time.realtimeSinceStartup + 2f;
-            while (Time.realtimeSinceStartup <= timeoutAt)
+            float timeoutAt = PresentationClock.UnscaledTime + 2f;
+            while (PresentationClock.UnscaledTime <= timeoutAt)
             {
                 configured = ConfigureStageClearPresenters(
-                    SceneManager.GetSceneByName(ClearUiSceneName),
+                    ResolveRequestedResultScene(),
                     sortOrder,
                     resultSummary);
                 if (configured)
@@ -336,6 +363,228 @@ namespace DimensionBrawl.LevelDesign
                 yield break;
             }
 
+            CompleteSuccessfulPresentation();
+        }
+
+        private void SubscribeAftermathSignals()
+        {
+            if (aftermathSignalsSubscribed || bossTerminalAftermath == null)
+            {
+                return;
+            }
+
+            bossTerminalAftermath.AftermathHandoffImminent +=
+                HandleAftermathHandoffImminent;
+            bossTerminalAftermath.AftermathCompleted += HandleAftermathCompleted;
+            aftermathSignalsSubscribed = true;
+        }
+
+        private void UnsubscribeAftermathSignals()
+        {
+            if (!aftermathSignalsSubscribed)
+            {
+                return;
+            }
+
+            if (bossTerminalAftermath != null)
+            {
+                bossTerminalAftermath.AftermathHandoffImminent -=
+                    HandleAftermathHandoffImminent;
+                bossTerminalAftermath.AftermathCompleted -= HandleAftermathCompleted;
+            }
+
+            aftermathSignalsSubscribed = false;
+        }
+
+        private void HandleAftermathHandoffImminent()
+        {
+            if (!shown || !aftermathGateAttached || resultSurfaceFinalized)
+            {
+                return;
+            }
+
+            if (!TryRequestStageClearSceneLoad(out string error))
+            {
+                FailPresentation(error);
+            }
+        }
+
+        private void HandleAftermathCompleted()
+        {
+            if (!shown
+                || !aftermathGateAttached
+                || aftermathHandoffCompleted
+                || resultSurfaceFinalized)
+            {
+                return;
+            }
+
+            try
+            {
+                if (bossTerminalAftermath == null
+                    || bossTerminalAftermath.IsCancelled
+                    || !bossTerminalAftermath.CompletedSuccessfully)
+                {
+                    LastAftermathError = bossTerminalAftermath != null
+                        ? bossTerminalAftermath.LastError
+                        : "The authored Station boss-terminal aftermath owner was lost.";
+                    FailPresentation(
+                        "The authored Station boss-terminal aftermath did not complete successfully: "
+                        + LastAftermathError);
+                    return;
+                }
+
+                FreezeWorldForResult();
+                bossTerminalAftermath.ReleaseInputLeaseForResultSurface();
+                if (bossTerminalAftermath.InputLeaseActive)
+                {
+                    LastAftermathError = bossTerminalAftermath.LastError;
+                    FailPresentation(
+                        "The authored Station boss-terminal aftermath input lease did not release exactly.");
+                    return;
+                }
+
+                aftermathHandoffCompleted = true;
+                aftermathGateAttached = false;
+                UnsubscribeAftermathSignals();
+                if (!TryRequestStageClearSceneLoad(out string sceneLoadError))
+                {
+                    FailPresentation(sceneLoadError);
+                    return;
+                }
+
+                Scene clearScene = ResolveRequestedResultScene();
+                if (clearScene.IsValid() && clearScene.isLoaded)
+                {
+                    if (!ConfigureStageClearPresenters(
+                        clearScene,
+                        sortOrder,
+                        resultSummary))
+                    {
+                        FailPresentation(
+                            $"Authored stage clear scene did not configure an exact {nameof(StageClearScreenPresenter)}.");
+                        return;
+                    }
+
+                    CompleteSuccessfulPresentation();
+                }
+            }
+            catch (Exception exception)
+            {
+                FailPresentation(
+                    "The authored Station boss-terminal completion handoff failed safely: "
+                    + exception.Message);
+            }
+        }
+
+        private bool TryRequestStageClearSceneLoad(out string error)
+        {
+            error = string.Empty;
+            Scene clearScene = SceneManager.GetSceneByName(ClearUiSceneName);
+            if (clearScene.IsValid() && clearScene.isLoaded)
+            {
+                resultSceneLoadRequested = true;
+                return true;
+            }
+
+            if (resultSceneLoadRequested)
+            {
+                return true;
+            }
+
+            if (!ResultScenePreloadLease.TryAcquire(
+                ClearUiSceneName,
+                out int leaseToken,
+                out error))
+            {
+                return false;
+            }
+
+            resultSceneLoadLeaseToken = leaseToken;
+            resultSceneLoadRequested = true;
+            try
+            {
+                Scene requestedScene;
+#if UNITY_EDITOR
+                requestedScene = EditorSceneManager.LoadSceneInPlayMode(
+                    ClearUiScenePath,
+                    new LoadSceneParameters(LoadSceneMode.Additive));
+#else
+                requestedScene = SceneManager.LoadScene(
+                    ClearUiSceneName,
+                    new LoadSceneParameters(LoadSceneMode.Additive));
+#endif
+                ResultScenePreloadLease.RecordRequestedScene(
+                    resultSceneLoadLeaseToken,
+                    requestedScene);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                ResultScenePreloadLease.Abandon(resultSceneLoadLeaseToken);
+                resultSceneLoadLeaseToken = 0;
+                resultSceneLoadRequested = false;
+                error = "Failed to load authored clear UI scene: " + exception.Message;
+                return false;
+            }
+        }
+
+        private bool ResultSceneLoadOwned =>
+            ResultScenePreloadLease.IsOwned(resultSceneLoadLeaseToken);
+
+        private void RefreshResultSceneLoadLease()
+        {
+            if (resultSceneLoadLeaseToken == 0
+                || ResultScenePreloadLease.IsOwned(resultSceneLoadLeaseToken))
+            {
+                return;
+            }
+
+            resultSceneLoadLeaseToken = 0;
+            resultSceneLoadRequested = false;
+        }
+
+        private Scene ResolveRequestedResultScene()
+        {
+            if (resultSceneLoadLeaseToken != 0
+                && ResultScenePreloadLease.TryResolve(
+                    resultSceneLoadLeaseToken,
+                    out Scene ownedScene))
+            {
+                return ownedScene;
+            }
+
+            return resultSceneLoadLeaseToken == 0
+                ? SceneManager.GetSceneByName(ClearUiSceneName)
+                : default;
+        }
+
+        private void CancelOwnedResultSceneLoad()
+        {
+            if (!ResultSceneLoadOwned || resultSurfaceFinalized)
+            {
+                return;
+            }
+
+            ResultScenePreloadLease.Cancel(resultSceneLoadLeaseToken);
+        }
+
+        private void RelinquishOwnedResultSceneLoad()
+        {
+            ResultScenePreloadLease.Relinquish(resultSceneLoadLeaseToken);
+            resultSceneLoadLeaseToken = 0;
+        }
+
+        private void CompleteSuccessfulPresentation()
+        {
+            if (resultSurfaceFinalized || presentationFailureFinalized)
+            {
+                return;
+            }
+
+            resultSurfaceFinalized = true;
+            RelinquishOwnedResultSceneLoad();
+            UnsubscribeAftermathSignals();
             presentedResultDigest = resultSummary?.ResultSummaryDigest ?? string.Empty;
             LastPresentationError = string.Empty;
             stageClearRoutine = null;
@@ -344,7 +593,14 @@ namespace DimensionBrawl.LevelDesign
 
         private void FailPresentation(string error, bool logAsError = true)
         {
+            if (presentationFailureFinalized || resultSurfaceFinalized)
+            {
+                return;
+            }
+
+            presentationFailureFinalized = true;
             LastPresentationError = error ?? string.Empty;
+            CancelOwnedResultSceneLoad();
             CancelAftermathAndRelease(LastPresentationError);
             RestoreCombatTimeScale();
             shown = false;
@@ -433,7 +689,9 @@ namespace DimensionBrawl.LevelDesign
                 yield break;
             }
 
-            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            for (float elapsed = 0f;
+                elapsed < duration;
+                elapsed += PresentationClock.UnscaledDeltaTime)
             {
                 ApplyHudExit(targets, EaseOutCubic(elapsed / duration));
                 yield return null;
@@ -641,6 +899,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void CancelAftermathAndRelease(string reason)
         {
+            UnsubscribeAftermathSignals();
             if (bossTerminalAftermath != null
                 && bossTerminalAftermath.IsStarted
                 && (!bossTerminalAftermath.IsComplete
@@ -650,6 +909,263 @@ namespace DimensionBrawl.LevelDesign
             }
 
             aftermathGateAttached = false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetResultScenePreloadLease()
+        {
+            ResultScenePreloadLease.Reset();
+        }
+
+#if UNITY_INCLUDE_TESTS
+        public static bool IsResultScenePreloadLeaseBusyForTests =>
+            ResultScenePreloadLease.IsBusy;
+#endif
+
+        private static class ResultScenePreloadLease
+        {
+            private static int nextToken;
+            private static int activeToken;
+            private static int activeSceneHandle;
+            private static string activeSceneName = string.Empty;
+            private static bool cancellationPending;
+            private static bool sceneLoadedSubscribed;
+            private static AsyncOperation unloadOperation;
+
+            public static bool IsBusy => activeToken != 0;
+
+            public static bool TryAcquire(
+                string sceneName,
+                out int token,
+                out string error)
+            {
+                token = 0;
+                error = string.Empty;
+                if (activeToken != 0)
+                {
+                    error = "Another authored result-scene preload lease is still active.";
+                    return false;
+                }
+
+                unchecked
+                {
+                    nextToken++;
+                    if (nextToken <= 0)
+                    {
+                        nextToken = 1;
+                    }
+                }
+
+                activeToken = nextToken;
+                activeSceneHandle = 0;
+                activeSceneName = sceneName ?? string.Empty;
+                cancellationPending = false;
+                unloadOperation = null;
+                SubscribeSceneLoaded();
+                token = activeToken;
+                return true;
+            }
+
+            public static void RecordRequestedScene(int token, Scene scene)
+            {
+                if (!IsOwned(token) || !scene.IsValid())
+                {
+                    return;
+                }
+
+                activeSceneHandle = scene.handle;
+            }
+
+            public static bool IsOwned(int token)
+            {
+                return token != 0 && token == activeToken;
+            }
+
+            public static bool TryResolve(int token, out Scene scene)
+            {
+                scene = default;
+                if (!IsOwned(token))
+                {
+                    return false;
+                }
+
+                scene = ResolveActiveScene();
+                return scene.IsValid();
+            }
+
+            public static void RetryCancellation()
+            {
+                if (activeToken == 0
+                    || !cancellationPending
+                    || unloadOperation != null)
+                {
+                    return;
+                }
+
+                Scene scene = ResolveActiveScene();
+                if (scene.IsValid() && scene.isLoaded)
+                {
+                    BeginUnload(activeToken, scene);
+                }
+            }
+
+            public static void Cancel(int token)
+            {
+                if (!IsOwned(token))
+                {
+                    return;
+                }
+
+                cancellationPending = true;
+                Scene scene = ResolveActiveScene();
+                if (scene.IsValid() && scene.isLoaded)
+                {
+                    BeginUnload(token, scene);
+                }
+                else
+                {
+                    SubscribeSceneLoaded();
+                }
+            }
+
+            public static void Relinquish(int token)
+            {
+                if (IsOwned(token) && !cancellationPending)
+                {
+                    Clear(token);
+                }
+            }
+
+            public static void Abandon(int token)
+            {
+                if (IsOwned(token))
+                {
+                    Clear(token);
+                }
+            }
+
+            public static void Reset()
+            {
+                UnsubscribeSceneLoaded();
+                activeToken = 0;
+                activeSceneHandle = 0;
+                activeSceneName = string.Empty;
+                cancellationPending = false;
+                unloadOperation = null;
+            }
+
+            private static void SubscribeSceneLoaded()
+            {
+                if (sceneLoadedSubscribed)
+                {
+                    return;
+                }
+
+                SceneManager.sceneLoaded += HandleSceneLoaded;
+                sceneLoadedSubscribed = true;
+            }
+
+            private static void UnsubscribeSceneLoaded()
+            {
+                if (!sceneLoadedSubscribed)
+                {
+                    return;
+                }
+
+                SceneManager.sceneLoaded -= HandleSceneLoaded;
+                sceneLoadedSubscribed = false;
+            }
+
+            private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+            {
+                if (activeToken == 0
+                    || !string.Equals(scene.name, activeSceneName, StringComparison.Ordinal)
+                    || (activeSceneHandle != 0 && scene.handle != activeSceneHandle))
+                {
+                    return;
+                }
+
+                activeSceneHandle = scene.handle;
+                UnsubscribeSceneLoaded();
+                if (cancellationPending)
+                {
+                    BeginUnload(activeToken, scene);
+                }
+            }
+
+            private static Scene ResolveActiveScene()
+            {
+                if (activeSceneHandle != 0)
+                {
+                    for (int sceneIndex = 0;
+                        sceneIndex < SceneManager.sceneCount;
+                        sceneIndex++)
+                    {
+                        Scene byHandle = SceneManager.GetSceneAt(sceneIndex);
+                        if (byHandle.IsValid() && byHandle.handle == activeSceneHandle)
+                        {
+                            return byHandle;
+                        }
+                    }
+
+                    return default;
+                }
+
+                return SceneManager.GetSceneByName(activeSceneName);
+            }
+
+            private static void BeginUnload(int token, Scene scene)
+            {
+                if (!IsOwned(token)
+                    || unloadOperation != null
+                    || (activeSceneHandle != 0 && scene.handle != activeSceneHandle))
+                {
+                    return;
+                }
+
+                try
+                {
+                    AsyncOperation operation = SceneManager.UnloadSceneAsync(scene);
+                    if (operation == null)
+                    {
+                        Debug.LogError(
+                            "[OlympusStageClearOverlay] The owned result-scene preload did not return an unload operation.");
+                        return;
+                    }
+
+                    unloadOperation = operation;
+                    operation.completed += _ => CompleteUnload(token);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError(
+                        "[OlympusStageClearOverlay] Failed to unload the owned result-scene preload: "
+                        + exception.Message);
+                }
+            }
+
+            private static void CompleteUnload(int token)
+            {
+                if (IsOwned(token))
+                {
+                    Clear(token);
+                }
+            }
+
+            private static void Clear(int token)
+            {
+                if (!IsOwned(token))
+                {
+                    return;
+                }
+
+                UnsubscribeSceneLoaded();
+                activeToken = 0;
+                activeSceneHandle = 0;
+                activeSceneName = string.Empty;
+                cancellationPending = false;
+                unloadOperation = null;
+            }
         }
 
         private static bool IsBossTerminalClear(StageRunResultSummary summary)

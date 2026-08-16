@@ -45,6 +45,7 @@ namespace DimensionBrawl.LevelDesign
         private bool inputLeaseActive;
         private bool resultLeaseTimedOut;
         private bool cancelled;
+        private bool handoffImminent;
         private bool scaleOneObserved;
         private bool scaleOneViolationRecorded;
         private bool playerMovementLeaseHeld;
@@ -60,6 +61,7 @@ namespace DimensionBrawl.LevelDesign
         private float resultAttachedRealtimeSinceStartup = -1f;
         private float completedRealtimeSinceStartup = -1f;
         private int beginCount;
+        private int handoffImminentCount;
         private int completeCount;
 
         public CombatHealth BossHealth => bossHealth;
@@ -85,9 +87,11 @@ namespace DimensionBrawl.LevelDesign
             && playerCombatModeLeaseHeld;
         public bool ResultLeaseTimedOut => resultLeaseTimedOut;
         public bool IsCancelled => cancelled;
+        public bool IsHandoffImminent => handoffImminent;
         public bool ScaleOneObserved => scaleOneObserved;
         public bool ScaleOneViolationRecorded => scaleOneViolationRecorded;
         public int BeginCount => beginCount;
+        public int HandoffImminentCount => handoffImminentCount;
         public int CompleteCount => completeCount;
         public string AttachedResultDigest => attachedResultDigest;
         public string LastError { get; private set; } = string.Empty;
@@ -102,6 +106,7 @@ namespace DimensionBrawl.LevelDesign
             && string.IsNullOrEmpty(LastError);
 
         public event Action AftermathStarted;
+        public event Action AftermathHandoffImminent;
         public event Action AftermathCompleted;
 
         private void OnEnable()
@@ -336,6 +341,7 @@ namespace DimensionBrawl.LevelDesign
             resultAttached = false;
             resultLeaseTimedOut = false;
             cancelled = false;
+            handoffImminent = false;
             scaleOneObserved = Mathf.Approximately(Time.timeScale, 1f);
             scaleOneViolationRecorded = false;
             elapsedUnscaledSeconds = 0f;
@@ -454,9 +460,17 @@ namespace DimensionBrawl.LevelDesign
             while (elapsedUnscaledSeconds + 0.00001f < duration)
             {
                 yield return null;
-                float deltaTime = Mathf.Max(0f, Time.unscaledDeltaTime);
+                float deltaTime = Mathf.Max(
+                    0f,
+                    PresentationClock.UnscaledDeltaTime);
                 elapsedUnscaledSeconds = Mathf.Min(duration, elapsedUnscaledSeconds + deltaTime);
                 ObserveAuthoredTimeScale();
+                if (elapsedUnscaledSeconds
+                    + Mathf.Max(0.00001f, deltaTime)
+                    + 0.00001f >= duration)
+                {
+                    SignalHandoffImminent();
+                }
             }
 
             CompleteAftermath();
@@ -466,7 +480,9 @@ namespace DimensionBrawl.LevelDesign
             while (inputLeaseActive && !resultAttached && unattachedElapsed + 0.00001f < timeout)
             {
                 yield return null;
-                unattachedElapsed += Mathf.Max(0f, Time.unscaledDeltaTime);
+                unattachedElapsed += Mathf.Max(
+                    0f,
+                    PresentationClock.UnscaledDeltaTime);
             }
 
             if (inputLeaseActive && !resultAttached)
@@ -486,6 +502,8 @@ namespace DimensionBrawl.LevelDesign
             {
                 return;
             }
+
+            SignalHandoffImminent();
 
             if (CameraCueSucceeded
                 && cameraCueDriver != null
@@ -507,6 +525,18 @@ namespace DimensionBrawl.LevelDesign
             complete = true;
             completeCount++;
             InvokeSafely(AftermathCompleted, "completed");
+        }
+
+        private void SignalHandoffImminent()
+        {
+            if (handoffImminent)
+            {
+                return;
+            }
+
+            handoffImminent = true;
+            handoffImminentCount++;
+            InvokeSafely(AftermathHandoffImminent, "handoff-imminent");
         }
 
         private void AcquireInputLease()

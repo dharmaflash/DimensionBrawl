@@ -133,10 +133,17 @@ publication are forbidden in the logical shot.
 
 The death-anchored product aftermath must acquire all eight distinct
 `BossTerminalAftermath` input leases at `f62`, preserve scale-one presentation after bounded lethal
-hit-stop, and run its real camera, Phase 2-anchored VFX, non-silent death audio, and death motion.
+hit-stop, advance from the presentation clock at exactly 60 samples per second, and run its real
+camera, Phase 2-anchored VFX, non-silent death audio, and death motion.
 The death animator remains terminal through the aftermath hero checkpoint. Product completion,
-lease release, world freeze, result request, and result scene arrival are exact at `f218`; no early
-freeze or result is allowed. The committed canonical facts and result summary must remain the same
+lease release, world freeze, visible result request, configuration, and result scene arrival are
+exact at `f218`; no early freeze or visible/interactable result is allowed. A one-sample-early
+`AftermathHandoffImminent` signal may request the additive scene in its transparent, unconfigured
+state so Unity completes that load on `f218`; the completion event owns the atomic freeze, release,
+configuration, and entrance start. Until that successful handoff, the overlay owns the preload and
+unloads it after cancellation, failure, or disable without publishing duplicate failure callbacks.
+The result presentation-clock `.02 s` delay plus `.42 s`
+entrance spans exactly 28 logical frames. The committed canonical facts and result summary must remain the same
 instances presented by both overlay and result screen, which is fully interactive and stable at
 `f246`.
 

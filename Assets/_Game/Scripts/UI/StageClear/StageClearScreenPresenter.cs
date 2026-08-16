@@ -1,5 +1,6 @@
 using System.Collections;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -321,11 +322,18 @@ namespace DimensionBrawl.UI.StageClear
 
             if (entranceDelaySeconds > 0f)
             {
-                yield return new WaitForSecondsRealtime(entranceDelaySeconds);
+                for (float elapsed = 0f;
+                    elapsed < entranceDelaySeconds;
+                    elapsed += PresentationClock.UnscaledDeltaTime)
+                {
+                    yield return null;
+                }
             }
 
             float duration = Mathf.Max(0.01f, entranceDurationSeconds);
-            for (float elapsed = 0f; elapsed < duration; elapsed += Time.unscaledDeltaTime)
+            for (float elapsed = 0f;
+                elapsed < duration;
+                elapsed += PresentationClock.UnscaledDeltaTime)
             {
                 float t = Mathf.Clamp01(elapsed / duration);
                 float eased = Mathf.Clamp01(1f - Mathf.Pow(1f - t, 3f));

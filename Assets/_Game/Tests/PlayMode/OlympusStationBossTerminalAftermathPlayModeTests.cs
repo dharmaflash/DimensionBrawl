@@ -13,6 +13,114 @@ namespace DimensionBrawl.Tests
 {
     public sealed class OlympusStationBossTerminalAftermathPlayModeTests
     {
+        [Test]
+        public void BossDeathMotionSettlesAtF116AfterFiftyFivePresentationClockSamples()
+        {
+            GameObject bossObject = new GameObject("ManualClockBossDeathMotion");
+            try
+            {
+                AkazaPhase2CombatMotionDriver motion =
+                    bossObject.AddComponent<AkazaPhase2CombatMotionDriver>();
+                motion.Configure(
+                    null,
+                    null,
+                    bossObject.transform,
+                    Array.Empty<Transform>(),
+                    null,
+                    null);
+                motion.PlayDeath();
+
+                MethodInfo lateUpdate = typeof(AkazaPhase2CombatMotionDriver)
+                    .GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(lateUpdate, Is.Not.Null);
+
+                using (PresentationClock.ManualLease lease =
+                    PresentationClock.AcquireManual(this, 60))
+                {
+                    for (int frame = 1; frame <= 54; frame++)
+                    {
+                        lease.SetFrame(frame);
+                        lateUpdate.Invoke(motion, null);
+                        Assert.That(motion.DeathProgress01, Is.LessThan(1f),
+                            $"frame={frame}");
+                    }
+
+                    Assert.That(motion.DeathProgress01,
+                        Is.GreaterThan(0.99999f).And.LessThan(1f));
+                    lease.SetFrame(55);
+                    lateUpdate.Invoke(motion, null);
+                    Assert.That(motion.DeathProgress01, Is.EqualTo(1f));
+                }
+
+                Assert.That(PresentationClock.IsManuallyDriven, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(bossObject);
+            }
+        }
+
+        [Test]
+        public void AftermathUsesExactlyOneHundredFiftySixPresentationClockSamples()
+        {
+            GameObject gateObject = new GameObject("ManualClockAftermathGate");
+            IEnumerator routine = null;
+            int imminentCount = 0;
+            int completedCount = 0;
+            try
+            {
+                OlympusStationBossTerminalAftermathPresenter aftermath =
+                    gateObject.AddComponent<OlympusStationBossTerminalAftermathPresenter>();
+                aftermath.AftermathHandoffImminent += () => imminentCount++;
+                aftermath.AftermathCompleted += () => completedCount++;
+                SetField(aftermath, "started", true);
+                SetField(aftermath, "aftermathDurationSeconds", 2.6f);
+                MethodInfo method = typeof(OlympusStationBossTerminalAftermathPresenter)
+                    .GetMethod("RunAftermath", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(method, Is.Not.Null);
+                routine = (IEnumerator)method.Invoke(aftermath, null);
+                Assert.That(routine, Is.Not.Null);
+
+                using (PresentationClock.ManualLease lease =
+                    PresentationClock.AcquireManual(this, 60))
+                {
+                    lease.SetFrame(0);
+                    Assert.That(routine.MoveNext(), Is.True);
+                    Assert.That(aftermath.ElapsedUnscaledSeconds, Is.Zero);
+
+                    for (int frame = 1; frame < 156; frame++)
+                    {
+                        lease.SetFrame(frame);
+                        Assert.That(routine.MoveNext(), Is.True, $"frame={frame}");
+                        Assert.That(aftermath.IsComplete, Is.False, $"frame={frame}");
+                        Assert.That(imminentCount, Is.EqualTo(frame < 155 ? 0 : 1),
+                            $"imminent frame={frame}");
+                    }
+
+                    Assert.That(aftermath.ElapsedUnscaledSeconds,
+                        Is.EqualTo(155f / 60f).Within(0.00001f));
+                    Assert.That(aftermath.IsHandoffImminent, Is.True);
+                    Assert.That(aftermath.HandoffImminentCount, Is.EqualTo(1));
+                    Assert.That(completedCount, Is.Zero);
+                    lease.SetFrame(156);
+                    Assert.That(routine.MoveNext(), Is.False);
+                    Assert.That(aftermath.IsComplete, Is.True);
+                    Assert.That(aftermath.CompleteCount, Is.EqualTo(1));
+                    Assert.That(imminentCount, Is.EqualTo(1));
+                    Assert.That(completedCount, Is.EqualTo(1));
+                    Assert.That(aftermath.ElapsedUnscaledSeconds,
+                        Is.EqualTo(2.6f).Within(0.00001f));
+                }
+
+                Assert.That(PresentationClock.IsManuallyDriven, Is.False);
+            }
+            finally
+            {
+                (routine as IDisposable)?.Dispose();
+                UnityEngine.Object.DestroyImmediate(gateObject);
+            }
+        }
+
         [UnityTest]
         public IEnumerator TerminalTakeoverStopsLateShotsAndPreservesExternalScaleAndForeignLocks()
         {

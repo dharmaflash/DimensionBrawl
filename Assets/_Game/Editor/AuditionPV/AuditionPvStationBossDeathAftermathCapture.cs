@@ -234,6 +234,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/LevelDesign/StageRunRuntime.cs",
                 "Assets/_Game/Scripts/LevelDesign/StageRunHandoff.cs",
                 "Assets/_Game/Scripts/LevelDesign/StageRunFacts.cs",
+                "Assets/_Game/Scripts/LevelDesign/StageRunFinalization.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusCorridorCombatFlowController.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStationAkazaPhase2FlowController.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStationBossTerminalAftermathPresenter.cs",
@@ -246,6 +247,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/Presentation/BossBarrageCameraCueDriver.cs",
                 "Assets/_Game/Scripts/Presentation/BossBarrageVisualCueDriver.cs",
                 "Assets/_Game/Scripts/Presentation/AkazaPhase2CombatMotionDriver.cs",
+                "Assets/_Game/Scripts/Presentation/PresentationClock.cs",
                 "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.cs",
                 "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.Timing.cs",
                 "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.Camera.cs",
@@ -537,6 +539,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         private bool allEightLocksObservedAtImpact;
         private bool allEightLocksReleasedAtResult;
         private bool deathStateAtAftermathHero;
+        private bool bossDeathUsedPhaseTwoAnchorAtImpact;
+        private long terminalResolutionRunGeneration;
+        private long terminalResolutionRootAdmissionSequence;
+        private long terminalResolutionEpoch;
         private Vector3 projectileSpawnPosition;
         private Vector3 projectilePositionAtFrame61;
         private Vector3 projectileImpactPoint;
@@ -711,12 +717,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             deathVisual?.BossDeathWorldVfxCueRequestCount ?? -1;
         public int BossDeathAudioSourceDelta =>
             deathVisual?.BossDeathProfileAudioSourceDelta ?? -1;
-        public bool BossDeathUsesPhaseTwoAnchor => deathVisual != null
-            && deathVisual.LastBossDeathCueAnchor == deathVisual.PulseRoot
-            && deathVisual.PulseRoot != null
-            && Vector3.Distance(
-                deathVisual.LastBossDeathCueWorldPosition,
-                deathVisual.PulseRoot.position) <= 0.001f;
+        public bool BossDeathUsesPhaseTwoAnchor =>
+            bossDeathUsedPhaseTwoAnchorAtImpact;
         public int DeathMotionRequestCount => deathMotion?.DeathRequestCount ?? -1;
         public bool MotionIsDead => deathMotion != null && deathMotion.IsDead;
         public bool MotionAttacksStopped => deathMotion != null && deathMotion.AttacksStopped;
@@ -2423,6 +2425,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 HudWasActiveAtImpact = combatHud.gameObject.activeInHierarchy
                     && combatHud.alpha > 0.01f;
+                Vector3 cuePosition = deathVisual.LastBossDeathCueWorldPosition;
+                bossDeathUsedPhaseTwoAnchorAtImpact =
+                    deathVisual.LastBossDeathCueAnchor == deathVisual.PulseRoot
+                    && deathVisual.PulseRoot != null
+                    && float.IsFinite(cuePosition.x)
+                    && float.IsFinite(cuePosition.y)
+                    && float.IsFinite(cuePosition.z);
                 allEightLocksObservedAtImpact = ExactAllEightInputLocks(true)
                     && aftermath.InputLeaseFullyAcquired
                     && aftermath.InputLeaseActive
@@ -2447,7 +2456,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && clearPresenter.GetComponent<CanvasGroup>() is CanvasGroup group
                     && group.interactable
                     && group.blocksRaycasts;
-                HudYieldedAtResult = !combatHud.gameObject.activeSelf;
+                HudYieldedAtResult = !combatHud.gameObject.activeInHierarchy;
                 CaptureTerminalFactsAndResultIdentity();
             }
         }
@@ -2478,20 +2487,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             OutcomeFactDigest = summary?.OutcomeFact?.CanonicalDigest ?? string.Empty;
             TerminalRecordReceiptCount = runContext.TerminalRecordReceiptCount;
 
-            EncounterTerminalResolutionCoordinator coordinator =
-                encounter.TerminalCoordinator;
-            EncounterTerminalEpochEvidence epoch =
-                coordinator?.TerminalEpochEvidence;
-            if (epoch != null)
-            {
-                RootAdmissionSequence = epoch.Resolution.RootAdmissionSequence;
-                TerminalEpoch = epoch.Resolution.Epoch;
-                TerminalEpochEvidenceDigest = epoch.CanonicalDigest;
-            }
-
-            TerminalClosureDigest =
-                runContext.TerminalEpochClosureRecord?.CanonicalDigest
+            TerminalEpochClosureRecord closure =
+                runContext.TerminalEpochClosureRecord;
+            RootAdmissionSequence = closure?.RootAdmissionSequence ?? 0;
+            TerminalEpoch = closure?.TerminalEpoch ?? 0;
+            TerminalEpochEvidenceDigest = closure?.SourceEvidenceDigest
                 ?? string.Empty;
+            TerminalClosureDigest = closure?.CanonicalDigest ?? string.Empty;
             TerminalFactsExact = summary != null
                 && summary.Outcome == StageRouteOutcome.Clear
                 && summary.OutcomeFact != null
@@ -2516,16 +2518,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     resultPresenter.CommitReceipt.ResultSummaryDigest,
                     summary.ResultSummaryDigest,
                     StringComparison.Ordinal)
-                && epoch != null
-                && epoch.QueueDrained
-                && epoch.BothSubjectsFinalized
-                && epoch.ActiveTokenInvalidated
-                && epoch.SubjectSnapshotCount == 2
-                && epoch.CandidateCoverageCount == 1
-                && runContext.TerminalEpochClosureRecord != null
-                && runContext.TerminalEpochClosureRecord
-                    .QueueDrainedAndSubjectsFinalized
-                && runContext.TerminalEpochClosureRecord.ActiveTokenInvalidated
+                && closure != null
+                && closure.QueueDrainedAndSubjectsFinalized
+                && closure.ActiveTokenInvalidated
+                && closure.SubjectSnapshotCount == 2
+                && closure.CandidateCoverageCount == 1
+                && closure.CoordinatorRunGeneration
+                    == terminalResolutionRunGeneration
+                && closure.RootAdmissionSequence
+                    == terminalResolutionRootAdmissionSequence
+                && closure.TerminalEpoch == terminalResolutionEpoch
                 && runContext.TerminalFinalizationAuthority != null
                 && runContext.OwnerCoverageRecord != null
                 && runContext.OwnerCoverageRecord.ZeroPendingFinalizationOwners
@@ -2623,6 +2625,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !aftermath.IsComplete
                 || !aftermath.CompletedSuccessfully
                 || aftermath.BeginCount != 1
+                || !aftermath.IsHandoffImminent
+                || aftermath.HandoffImminentCount != 1
                 || aftermath.CompleteCount != 1
                 || aftermath.InputLeaseActive
                 || !aftermath.ScaleOneObserved
@@ -2784,6 +2788,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 encounterTerminalResolvedCount++;
                 terminalResolvedFrame = currentFrame;
                 terminalResolvedSequence = ++eventSequence;
+                terminalResolutionRunGeneration = resolution.RunGeneration;
+                terminalResolutionRootAdmissionSequence =
+                    resolution.RootAdmissionSequence;
+                terminalResolutionEpoch = resolution.Epoch;
                 if (resolution.Outcome != EncounterTerminalOutcome.Clear
                     || resolution.Reason != EncounterTerminalReason.BossTerminal)
                 {

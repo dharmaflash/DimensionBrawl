@@ -183,8 +183,9 @@ namespace DimensionBrawl.Presentation
         }
 
         /// <summary>
-        /// Advances only presentation state. LateUpdate supplies unscaled delta time;
-        /// the public entry point also keeps focused tests and custom schedulers deterministic.
+        /// Advances only presentation state. LateUpdate supplies the shared presentation
+        /// delta time; the public entry point also keeps focused tests and custom schedulers
+        /// deterministic.
         /// </summary>
         public void TickPresentation(float unscaledDeltaTime)
         {
@@ -320,7 +321,7 @@ namespace DimensionBrawl.Presentation
 
         private void LateUpdate()
         {
-            TickPresentation(Time.unscaledDeltaTime);
+            TickPresentation(PresentationClock.UnscaledDeltaTime);
         }
 
         private void OnValidate()

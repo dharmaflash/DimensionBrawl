@@ -1144,6 +1144,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(dependencies, Does.Contain(
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .ExpectedRenderPipelineAssetPath + ".meta"));
+            Assert.That(dependencies, Does.Contain(
+                "Assets/_Game/Scripts/Presentation/PresentationClock.cs"));
+            Assert.That(dependencies, Does.Contain(
+                "Assets/_Game/Scripts/Presentation/PresentationClock.cs.meta"));
+            Assert.That(dependencies, Does.Contain(
+                "Assets/_Game/Scripts/LevelDesign/StageRunFinalization.cs"));
+            Assert.That(dependencies, Does.Contain(
+                "Assets/_Game/Scripts/LevelDesign/StageRunFinalization.cs.meta"));
             foreach (string partial in new[]
                      {
                          "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.cs",
@@ -1171,6 +1179,62 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 && value.exists
                 && value.byteLength >= 0
                 && AuditionPvSha256.IsSha256(value.sha256)), Is.True);
+        }
+
+        [Test]
+        public void ProductPresentationSchedule_IsBoundToTheManualClockAndExactResultFrames()
+        {
+            string aftermath = ReadProjectFile(
+                "Assets/_Game/Scripts/LevelDesign/OlympusStationBossTerminalAftermathPresenter.cs");
+            string overlay = ReadProjectFile(
+                "Assets/_Game/Scripts/LevelDesign/OlympusStageClearOverlay.cs");
+            string result = ReadProjectFile(
+                "Assets/_Game/Scripts/UI/StageClear/StageClearScreenPresenter.cs");
+            string motion = ReadProjectFile(
+                "Assets/_Game/Scripts/Presentation/AkazaPhase2CombatMotionDriver.cs");
+            string capture = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathCapture.CaptureScriptPath);
+
+            Assert.That(Count(aftermath, "PresentationClock.UnscaledDeltaTime"),
+                Is.EqualTo(2));
+            Assert.That(Count(overlay, "PresentationClock.UnscaledTime"),
+                Is.GreaterThanOrEqualTo(4));
+            Assert.That(overlay, Does.Contain(
+                "elapsed += PresentationClock.UnscaledDeltaTime"));
+            Assert.That(overlay, Does.Contain(
+                "AftermathHandoffImminent +="));
+            Assert.That(overlay, Does.Contain(
+                "AftermathCompleted += HandleAftermathCompleted"));
+            Assert.That(overlay, Does.Contain(
+                "HandleAftermathHandoffImminent"));
+            Assert.That(overlay, Does.Contain(
+                "TryRequestStageClearSceneLoad"));
+            Assert.That(overlay, Does.Contain(
+                "CancelOwnedResultSceneLoad"));
+            Assert.That(overlay, Does.Contain(
+                "SceneManager.sceneLoaded += HandleSceneLoaded"));
+            Assert.That(overlay, Does.Contain(
+                "operation.completed += _ => CompleteUnload(token)"));
+            Assert.That(overlay, Does.Contain(
+                "ResultScenePreloadLease.IsBusy"));
+            Assert.That(overlay, Does.Contain(
+                "ResolveRequestedResultScene()"));
+            Assert.That(overlay, Does.Contain(
+                "presentationFailureFinalized"));
+            Assert.That(result, Does.Not.Contain("WaitForSecondsRealtime"));
+            Assert.That(Count(result, "PresentationClock.UnscaledDeltaTime"),
+                Is.EqualTo(2));
+            Assert.That(motion, Does.Contain(
+                "TickPresentation(PresentationClock.UnscaledDeltaTime);"));
+            Assert.That(aftermath, Does.Contain(
+                "SignalHandoffImminent();"));
+
+            Assert.That(capture, Does.Contain(
+                "TerminalEpochClosureRecord closure ="));
+            Assert.That(capture, Does.Contain(
+                "HudYieldedAtResult = !combatHud.gameObject.activeInHierarchy;"));
+            Assert.That(capture, Does.Contain(
+                "bossDeathUsedPhaseTwoAnchorAtImpact ="));
         }
 
         [Test]

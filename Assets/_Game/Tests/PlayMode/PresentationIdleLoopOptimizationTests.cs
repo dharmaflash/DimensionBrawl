@@ -4,13 +4,62 @@ using DimensionBrawl.Debugging;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Tests
 {
     public sealed class PresentationIdleLoopOptimizationTests
     {
+        private bool stageClearSceneTouchedByTest;
+
+        [UnityTearDown]
+        public IEnumerator CleanupStageClearSceneAfterTest()
+        {
+            if (!stageClearSceneTouchedByTest)
+            {
+                yield break;
+            }
+
+            int minimumFrame = Time.frameCount + 2;
+            float timeoutAt = Time.realtimeSinceStartup + 3f;
+            while (Time.realtimeSinceStartup <= timeoutAt)
+            {
+                bool leaseBusy = DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+                    .IsResultScenePreloadLeaseBusyForTests;
+                Scene scene = SceneManager.GetSceneByName("UI_StageClear");
+                if (!leaseBusy && scene.IsValid() && scene.isLoaded)
+                {
+                    AsyncOperation unload = SceneManager.UnloadSceneAsync(scene);
+                    while (unload != null && !unload.isDone)
+                    {
+                        yield return null;
+                    }
+                }
+
+                Scene remaining = SceneManager.GetSceneByName("UI_StageClear");
+                if (Time.frameCount >= minimumFrame
+                    && !leaseBusy
+                    && !remaining.IsValid())
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            bool finalLeaseBusy = DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+                .IsResultScenePreloadLeaseBusyForTests;
+            Scene finalScene = SceneManager.GetSceneByName("UI_StageClear");
+            stageClearSceneTouchedByTest = false;
+            Assert.That(finalLeaseBusy, Is.False,
+                "The owned result-scene preload lease did not settle during teardown.");
+            Assert.That(finalScene.IsValid(), Is.False,
+                "UI_StageClear remained loaded or loading after teardown.");
+        }
+
         [Test]
         public void EventDrivenPresentationDriversDoNotDeclareIdleUpdateLoops()
         {
@@ -133,6 +182,236 @@ namespace DimensionBrawl.Tests
 
         }
 
+        [Test]
+        public void StageClearEntranceUsesExactlyTwentyEightPresentationClockSamples()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            GameObject root = new GameObject("ManualClockStageClearEntrance");
+            root.SetActive(false);
+            IEnumerator routine = null;
+            try
+            {
+                DimensionBrawl.UI.StageClear.StageClearScreenPresenter presenter =
+                    root.AddComponent<
+                        DimensionBrawl.UI.StageClear.StageClearScreenPresenter>();
+                presenter.GetType().GetField("playEntranceOnEnable", flags)
+                    ?.SetValue(presenter, false);
+                presenter.GetType().GetField("entranceDelaySeconds", flags)
+                    ?.SetValue(presenter, 0.02f);
+                presenter.GetType().GetField("entranceDurationSeconds", flags)
+                    ?.SetValue(presenter, 0.42f);
+                MethodInfo method = presenter.GetType().GetMethod(
+                    "EntranceRoutine",
+                    flags);
+                Assert.That(method, Is.Not.Null);
+                routine = (IEnumerator)method.Invoke(presenter, null);
+                Assert.That(routine, Is.Not.Null);
+
+                using (PresentationClock.ManualLease lease =
+                    PresentationClock.AcquireManual(this, 60))
+                {
+                    for (int sample = 0; sample < 28; sample++)
+                    {
+                        lease.SetFrame(sample);
+                        Assert.That(routine.MoveNext(), Is.True, $"sample={sample}");
+                        Assert.That(presenter.EntranceCompleted, Is.False,
+                            $"sample={sample}");
+                    }
+
+                    lease.SetFrame(28);
+                    Assert.That(routine.MoveNext(), Is.False);
+                    Assert.That(presenter.EntranceCompleted, Is.True);
+                }
+
+                Assert.That(PresentationClock.IsManuallyDriven, Is.False);
+            }
+            finally
+            {
+                (routine as System.IDisposable)?.Dispose();
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator StageClearAdditivePreloadBecomesAvailableOnTheFollowingPlayerFrame()
+        {
+            const string sceneName = "UI_StageClear";
+            const string scenePath = "Assets/_Game/Scenes/UI/UI_StageClear.unity";
+            Scene existing = SceneManager.GetSceneByName(sceneName);
+            if (existing.IsValid() && existing.isLoaded)
+            {
+                AsyncOperation existingUnload = SceneManager.UnloadSceneAsync(existing);
+                while (existingUnload != null && !existingUnload.isDone)
+                {
+                    yield return null;
+                }
+            }
+
+            stageClearSceneTouchedByTest = true;
+            System.Exception loadFailure = null;
+            Scene loading = default;
+            try
+            {
+                loading = EditorSceneManager.LoadSceneInPlayMode(
+                    scenePath,
+                    new LoadSceneParameters(LoadSceneMode.Additive));
+            }
+            catch (System.Exception exception)
+            {
+                loadFailure = exception;
+            }
+
+            bool immediateValid = loading.IsValid();
+            bool immediateLoaded = loading.isLoaded;
+
+            yield return null;
+
+            Scene loaded = SceneManager.GetSceneByName(sceneName);
+            int presenterCount = 0;
+            bool loadedOnFollowingFrame = loaded.IsValid() && loaded.isLoaded;
+            if (loadedOnFollowingFrame)
+            {
+                GameObject[] roots = loaded.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    presenterCount += roots[i].GetComponentsInChildren<
+                        DimensionBrawl.UI.StageClear.StageClearScreenPresenter>(true).Length;
+                }
+            }
+
+            if (loadedOnFollowingFrame)
+            {
+                AsyncOperation unload = SceneManager.UnloadSceneAsync(loaded);
+                while (unload != null && !unload.isDone)
+                {
+                    yield return null;
+                }
+            }
+
+            Assert.That(loadFailure, Is.Null);
+            Assert.That(immediateValid, Is.True);
+            Assert.That(immediateLoaded, Is.False,
+                "The terminal result scene must be requested one frame before its exact presentation frame.");
+            Assert.That(loadedOnFollowingFrame, Is.True);
+            Assert.That(presenterCount, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator StageClearOverlayDestroyCancelsItsDeferredAdditivePreload()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            const string sceneName = "UI_StageClear";
+            Scene existing = SceneManager.GetSceneByName(sceneName);
+            if (existing.IsValid() && existing.isLoaded)
+            {
+                AsyncOperation existingUnload = SceneManager.UnloadSceneAsync(existing);
+                while (existingUnload != null && !existingUnload.isDone)
+                {
+                    yield return null;
+                }
+            }
+
+            stageClearSceneTouchedByTest = true;
+            GameObject root = new GameObject("OwnedStageClearPreloadCancellationTest");
+            root.SetActive(false);
+            var overlay = root.AddComponent<
+                DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
+            overlay.GetType().GetField("postBossDefeatHoldSeconds", flags)
+                ?.SetValue(overlay, 0f);
+            overlay.GetType().GetField("combatHudExitSeconds", flags)
+                ?.SetValue(overlay, 0f);
+            int failureCount = 0;
+            overlay.PresentationFailed += (_, _) => failureCount++;
+            root.SetActive(true);
+            float previousTimeScale = Time.timeScale;
+            bool requested = overlay.TryShow(null, out string requestError);
+            bool busyBeforeDestroy = DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+                .IsResultScenePreloadLeaseBusyForTests;
+            bool shownBeforeDestroy = overlay.IsShown;
+            LogAssert.Expect(
+                LogType.Warning,
+                "[OlympusStageClearOverlay] The result overlay was disabled before presentation acknowledgement.");
+            Object.DestroyImmediate(root);
+            root = null;
+            bool busyImmediatelyAfterDestroy = DimensionBrawl.LevelDesign
+                .OlympusStageClearOverlay.IsResultScenePreloadLeaseBusyForTests;
+
+            GameObject retryRoot = new GameObject("BlockedStageClearPreloadRetryTest");
+            var retryOverlay = retryRoot.AddComponent<
+                DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
+            bool retryAccepted = retryOverlay.TryShow(null, out string retryError);
+            Object.DestroyImmediate(retryRoot);
+
+            float timeoutAt = Time.realtimeSinceStartup + 3f;
+            while (DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+                    .IsResultScenePreloadLeaseBusyForTests
+                && Time.realtimeSinceStartup <= timeoutAt)
+            {
+                yield return null;
+            }
+
+            Scene remaining = SceneManager.GetSceneByName(sceneName);
+            while (remaining.IsValid()
+                && remaining.isLoaded
+                && Time.realtimeSinceStartup <= timeoutAt)
+            {
+                yield return null;
+                remaining = SceneManager.GetSceneByName(sceneName);
+            }
+
+            try
+            {
+                Assert.That(requested, Is.True, requestError);
+                Assert.That(busyBeforeDestroy, Is.True);
+                Assert.That(busyImmediatelyAfterDestroy, Is.True);
+                Assert.That(shownBeforeDestroy, Is.True);
+                Assert.That(failureCount, Is.EqualTo(1));
+                Assert.That(retryAccepted, Is.False);
+                Assert.That(retryError, Does.Contain("still being cleaned up"));
+                Assert.That(DimensionBrawl.LevelDesign.OlympusStageClearOverlay
+                    .IsResultScenePreloadLeaseBusyForTests, Is.False);
+                Assert.That(remaining.IsValid() && remaining.isLoaded, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(previousTimeScale).Within(0.0001f));
+            }
+            finally
+            {
+                if (root != null)
+                {
+                    Object.DestroyImmediate(root);
+                }
+
+                Time.timeScale = previousTimeScale;
+            }
+        }
+
+        [Test]
+        public void StageClearOverlayPublishesOnlyOneTerminalFailure()
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            GameObject root = new GameObject("IdempotentStageClearFailureTest");
+            try
+            {
+                var overlay = root.AddComponent<
+                    DimensionBrawl.LevelDesign.OlympusStageClearOverlay>();
+                int failureCount = 0;
+                overlay.PresentationFailed += (_, _) => failureCount++;
+                MethodInfo fail = overlay.GetType().GetMethod("FailPresentation", flags);
+                Assert.That(fail, Is.Not.Null);
+                LogAssert.Expect(
+                    LogType.Warning,
+                    "[OlympusStageClearOverlay] injected terminal failure");
+                fail.Invoke(overlay, new object[] { "injected terminal failure", false });
+                fail.Invoke(overlay, new object[] { "duplicate terminal failure", false });
+                Assert.That(failureCount, Is.EqualTo(1));
+                Assert.That(overlay.LastPresentationError,
+                    Is.EqualTo("injected terminal failure"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
         [UnityTest]
         public IEnumerator TutorialOverlayFiniteAnimationResumesAfterReenableAndSettles()
         {
@@ -210,6 +489,9 @@ namespace DimensionBrawl.Tests
             }
             finally
             {
+                LogAssert.Expect(
+                    LogType.Warning,
+                    "[OlympusStageClearOverlay] The result overlay was disabled before presentation acknowledgement.");
                 Object.DestroyImmediate(overlayRoot);
                 Time.timeScale = previousTimeScale;
             }
