@@ -657,6 +657,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private int curtainFireVisibleRendererCount;
         private int hoverWindupVisibleRendererCount;
         private int hoverFireVisibleRendererCount;
+        private bool telegraphMarkerCollidersNonBlocking = true;
         private Color curtainWindupMarkerColor;
         private Color curtainFireMarkerColor;
         private Color hoverWindupMarkerColor;
@@ -767,6 +768,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int CurtainFireVisibleRendererCount => curtainFireVisibleRendererCount;
         public int HoverWindupVisibleRendererCount => hoverWindupVisibleRendererCount;
         public int HoverFireVisibleRendererCount => hoverFireVisibleRendererCount;
+        public bool TelegraphMarkerCollidersNonBlocking =>
+            telegraphMarkerCollidersNonBlocking;
         public Color CurtainWindupMarkerColor => curtainWindupMarkerColor;
         public Color CurtainFireMarkerColor => curtainFireMarkerColor;
         public Color HoverWindupMarkerColor => hoverWindupMarkerColor;
@@ -2086,6 +2089,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
             }
 
+            if (telegraph.EnabledMarkerColliderCount != 0)
+            {
+                telegraphMarkerCollidersNonBlocking = false;
+                throw new InvalidOperationException(
+                    $"G07 {expectedPattern.PatternId} telegraph presentation enabled "
+                    + telegraph.EnabledMarkerColliderCount
+                    + " marker collider(s); visual warnings must never alter movement or physics.");
+            }
+
             bool windup = emitter.IsWindupActive;
             Color expectedColor = windup
                 ? expectedPattern.TelegraphWindupColor
@@ -2148,6 +2160,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || curtainFireVisibleRendererCount != 7
                 || hoverWindupVisibleRendererCount != 4
                 || hoverFireVisibleRendererCount != 4
+                || !telegraphMarkerCollidersNonBlocking
                 || runStartedCount != 2
                 || stopSettleCount != 2
                 || curtainMoveFirstAppliedFrame != 17

@@ -57,6 +57,40 @@ namespace DimensionBrawl.Presentation
         public SummonLaneSpace LaneSpace => laneSpace;
         public int MarkerCount => markerTransforms != null ? markerTransforms.Length : 0;
         public int VisibleMarkerCount => visibleMarkerCount;
+        public int EnabledMarkerColliderCount
+        {
+            get
+            {
+                if (markerTransforms == null)
+                {
+                    return 0;
+                }
+
+                int count = 0;
+                for (int index = 0; index < markerTransforms.Length; index++)
+                {
+                    Transform marker = markerTransforms[index];
+                    if (marker == null)
+                    {
+                        continue;
+                    }
+
+                    Collider[] colliders = marker.GetComponents<Collider>();
+                    for (int colliderIndex = 0;
+                        colliderIndex < colliders.Length;
+                        colliderIndex++)
+                    {
+                        if (colliders[colliderIndex] != null
+                            && colliders[colliderIndex].enabled)
+                        {
+                            count++;
+                        }
+                    }
+                }
+
+                return count;
+            }
+        }
         public int LastPreviewCount => lastPreviewCount;
         public int WindupRefreshCount => windupRefreshCount;
         public int ReleaseFlashCount => releaseFlashCount;
@@ -81,6 +115,7 @@ namespace DimensionBrawl.Presentation
             markerRoot = newMarkerRoot;
             markerTransforms = newMarkerTransforms ?? System.Array.Empty<Transform>();
             markerRenderers = newMarkerRenderers ?? System.Array.Empty<Renderer>();
+            DisableMarkerColliders();
             EnsurePreviewBuffer();
             Subscribe();
             RefreshNow();
@@ -144,6 +179,7 @@ namespace DimensionBrawl.Presentation
             }
 
             propertyBlock ??= new MaterialPropertyBlock();
+            DisableMarkerColliders();
             EnsurePreviewBuffer();
         }
 
@@ -426,9 +462,51 @@ namespace DimensionBrawl.Presentation
 
         private void SetMarkerVisible(int index, bool visible)
         {
-            if (markerTransforms[index] != null && markerTransforms[index].gameObject.activeSelf != visible)
+            if (markerTransforms[index] != null
+                && markerTransforms[index].gameObject.activeSelf != visible)
             {
+                if (visible)
+                {
+                    DisableMarkerColliders(index);
+                }
+
                 markerTransforms[index].gameObject.SetActive(visible);
+            }
+        }
+
+        private void DisableMarkerColliders()
+        {
+            if (markerTransforms == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < markerTransforms.Length; index++)
+            {
+                DisableMarkerColliders(index);
+            }
+        }
+
+        private void DisableMarkerColliders(int index)
+        {
+            if (markerTransforms == null
+                || index < 0
+                || index >= markerTransforms.Length
+                || markerTransforms[index] == null)
+            {
+                return;
+            }
+
+            Collider[] colliders = markerTransforms[index].GetComponents<Collider>();
+            for (int colliderIndex = 0;
+                colliderIndex < colliders.Length;
+                colliderIndex++)
+            {
+                Collider collider = colliders[colliderIndex];
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
             }
         }
 

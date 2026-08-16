@@ -188,6 +188,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             marker.transform.SetParent(root.transform, false);
             marker.SetActive(false);
             MeshRenderer markerRenderer = marker.GetComponent<MeshRenderer>();
+            BoxCollider markerCollider = marker.GetComponent<BoxCollider>();
             markerRenderer.sharedMaterial = authoredMaterial;
             BossBarrageLaneTelegraphPresenter presenter = null;
             try
@@ -212,6 +213,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     root.transform,
                     new[] { marker.transform },
                     new Renderer[] { markerRenderer });
+                Assert.That(markerCollider.enabled, Is.False,
+                    "Presentation-only lane markers must never become solid gameplay obstacles.");
+                Assert.That(presenter.EnabledMarkerColliderCount, Is.Zero);
                 emitter.SetFiringEnabled(true);
                 for (int frame = 0; frame <= 10; frame++)
                 {
@@ -230,6 +234,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Assert.That(markerRenderer.sharedMaterial,
                     Is.SameAs(firstRuntimeMaterial),
                     "Repeated refreshes must reuse the owned runtime material.");
+                Assert.That(markerCollider.enabled, Is.False);
+                Assert.That(presenter.EnabledMarkerColliderCount, Is.Zero);
 
                 presenter.Configure(
                     null,
@@ -642,6 +648,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.runStartedCount = 1);
             AssertMutation(proof => proof.hoverDirectionDot = 0.98f);
             AssertMutation(proof => proof.exactProjectileAndVfxBindings = false);
+            AssertMutation(proof => proof.telegraphMarkerCollidersNonBlocking = false);
             AssertMutation(proof => proof.lifecycleEmergencyResetUsed = true);
             AssertMutation(proof => proof.spawnOriginOrderRestored = false);
             AssertMutation(proof => proof.captureStartProvenanceSha256 = "not-a-sha");
@@ -649,6 +656,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.frame67Sha256 = proof.bl08Sha256);
             AssertMutation(proof => proof.frame417Sha256 = proof.bl09Sha256);
             AssertMutation(proof => proof.curtainFireMarkerColor = Color.red);
+            AssertMutation(proof => proof.curtainWindupColors.roiX = 1);
             AssertMutation(proof => proof.renderEvents[4].finalHeroComposition = false);
             AssertMutation(proof =>
             {
@@ -1344,6 +1352,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 curtainFireVisibleRendererCount = 7,
                 hoverWindupVisibleRendererCount = 4,
                 hoverFireVisibleRendererCount = 4,
+                telegraphMarkerCollidersNonBlocking = true,
                 curtainWindupMarkerColor = new Color(0.16f, 1f, 0.66f, 1f),
                 curtainFireMarkerColor = new Color(0.75f, 1f, 0.9f, 1f),
                 hoverWindupMarkerColor = new Color(0.2f, 0.9f, 1f, 1f),
@@ -1415,17 +1424,31 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 curtainWindupDelta = ValidWindupDelta(),
                 hoverWindupDelta = ValidWindupDelta(),
                 curtainFireDelta = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .FrameDeltaMetrics { sampleCount = 1 },
+                    .FrameDeltaMetrics { sampleCount = 1, meanAbsoluteRgb = 10 },
                 curtainQuietDelta = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .FrameDeltaMetrics { sampleCount = 1 },
+                    .FrameDeltaMetrics { sampleCount = 1, meanAbsoluteRgb = 1 },
                 hoverFireDelta = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .FrameDeltaMetrics { sampleCount = 1 },
+                    .FrameDeltaMetrics { sampleCount = 1, meanAbsoluteRgb = 10 },
                 hoverQuietDelta = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .FrameDeltaMetrics { sampleCount = 1 },
-                curtainFireColors = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .PatternColorMetrics { sampleCount = 1 },
-                hoverFireColors = new AuditionPvStationPhase2PatternRelayGoldenRunner
-                    .PatternColorMetrics { sampleCount = 1 }
+                    .FrameDeltaMetrics { sampleCount = 1, meanAbsoluteRgb = 1 },
+                curtainWindupColors = new AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .PatternColorMetrics
+                    {
+                        sampleCount = 81,
+                        curtainGreenSampleCount = 80,
+                        roiWidth = 34,
+                        roiHeight = 34,
+                        sampleStride = 4
+                    },
+                hoverWindupColors = new AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .PatternColorMetrics
+                    {
+                        sampleCount = 81,
+                        hoverCyanSampleCount = 80,
+                        roiWidth = 34,
+                        roiHeight = 34,
+                        sampleStride = 4
+                    }
             };
             proof.renderEvents = new[]
             {

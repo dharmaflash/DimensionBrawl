@@ -61,10 +61,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const double MinimumHudMeanLuma = 140d;
         internal const double MaximumHudMeanLuma = 170d;
         // The first honest G07 take is deliberately non-publishing. Its dynamic
-        // marker/muzzle ROI measurements establish these floors; only then may
-        // this switch and the two positive minima be frozen with negative
-        // fixtures. Until that calibration, metrics are preserved in the sole
-        // failure artifact and no manifest can be written.
+        // boss-windup and marker/boss release ROI measurements establish these
+        // floors; only then may this switch and the positive minima be frozen
+        // with negative fixtures. Until that calibration, metrics are preserved
+        // in the sole failure artifact and no manifest can be written.
         internal static readonly bool PatternPixelCalibrationLocked = false;
         internal const long MinimumCurtainGreenSamples = 0;
         internal const long MinimumHoverCyanSamples = 0;
@@ -72,6 +72,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const double MinimumHoverLocalizedFireMeanAbsoluteRgb = 0d;
         internal const double MinimumCurtainFireOverQuietMeanMargin = 0d;
         internal const double MinimumHoverFireOverQuietMeanMargin = 0d;
+        internal const int PatternWindupColorRoiPadding = 24;
         // Independent clean G06 QHD HUD-on capture (manifest SHA prefix
         // 2f6d7c) measured this raw-bottom ROI across all 360 frames:
         // pink 569..622, dark 227..228, bright 877..966, luma 149.1..159.7.
@@ -727,6 +728,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.curtainFireVisibleRendererCount != 7
                 || proof.hoverWindupVisibleRendererCount != 4
                 || proof.hoverFireVisibleRendererCount != 4
+                || !proof.telegraphMarkerCollidersNonBlocking
                 || proof.basicVolleyEventCount != 0
                 || proof.pressureActionEventCount != 0
                 || proof.enemySummonReleaseCountDelta != 0
@@ -837,15 +839,21 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.curtainQuietDelta.sampleCount <= 0
                 || proof.hoverQuietDelta == null
                 || proof.hoverQuietDelta.sampleCount <= 0
-                || proof.curtainFireColors == null
-                || proof.curtainFireColors.sampleCount <= 0
-                || proof.hoverFireColors == null
-                || proof.hoverFireColors.sampleCount <= 0)
+                || proof.curtainWindupColors == null
+                || proof.hoverWindupColors == null)
             {
                 throw new InvalidOperationException(
-                    "G07 fire telemetry or pattern-color evidence is missing.");
+                    "G07 fire telemetry or pattern-specific windup color evidence is missing.");
             }
 
+            ValidatePatternColorRoi(
+                proof.curtainWindupColors,
+                proof.renderEvents[0].boss,
+                "Curtain");
+            ValidatePatternColorRoi(
+                proof.hoverWindupColors,
+                proof.renderEvents[2].boss,
+                "Hover");
 
             if (requirePixelCalibration)
             {
@@ -867,11 +875,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G07 CalibrationRequired: first honest take retained dynamic Curtain/Hover color and localized fire metrics; freeze measured fail-closed minima and negative fixtures before publishing a manifest.");
             }
 
-            if (proof?.curtainFireColors == null
-                || proof.curtainFireColors.curtainGreenSampleCount
+            if (proof?.curtainWindupColors == null
+                || proof.curtainWindupColors.curtainGreenSampleCount
                     < MinimumCurtainGreenSamples
-                || proof.hoverFireColors == null
-                || proof.hoverFireColors.hoverCyanSampleCount
+                || proof.hoverWindupColors == null
+                || proof.hoverWindupColors.hoverCyanSampleCount
                     < MinimumHoverCyanSamples
                 || proof.curtainFireDelta == null
                 || proof.curtainFireDelta.meanAbsoluteRgb
@@ -890,6 +898,32 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidOperationException(
                     "G07 calibrated dynamic-ROI color or localized fire boundary gate failed.");
+            }
+        }
+
+        private static void ValidatePatternColorRoi(
+            PatternColorMetrics metrics,
+            SubjectViewportEvidence boss,
+            string label)
+        {
+            RectInt expected = ExpandAndClamp(
+                RectFromSubject(boss),
+                PatternWindupColorRoiPadding,
+                AuditionPvCaptureContract.Width,
+                AuditionPvCaptureContract.Height);
+            long expectedSamples = ((expected.width + 3L) / 4L)
+                * ((expected.height + 3L) / 4L);
+            if (metrics == null
+                || metrics.roiX != expected.x
+                || metrics.roiY != expected.y
+                || metrics.roiWidth != expected.width
+                || metrics.roiHeight != expected.height
+                || metrics.sampleStride != 4
+                || metrics.sampleCount != expectedSamples)
+            {
+                throw new InvalidOperationException(
+                    "G07 " + label
+                    + " pattern-color evidence is not bound to the exact late-rendered boss windup ROI.");
             }
         }
 
@@ -1787,17 +1821,29 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvCaptureContract.Height,
                 hoverFireRoi,
                 sampleStride: 4);
-            proof.curtainFireColors = EvaluatePatternColors(
-                selected[68],
+            RenderEventEvidence curtainWindupRender = RequireRenderEvidence(proof, 10);
+            RenderEventEvidence hoverWindupRender = RequireRenderEvidence(proof, 368);
+            RectInt curtainWindupColorRoi = ExpandAndClamp(
+                RectFromSubject(curtainWindupRender.boss),
+                PatternWindupColorRoiPadding,
+                AuditionPvCaptureContract.Width,
+                AuditionPvCaptureContract.Height);
+            RectInt hoverWindupColorRoi = ExpandAndClamp(
+                RectFromSubject(hoverWindupRender.boss),
+                PatternWindupColorRoiPadding,
+                AuditionPvCaptureContract.Width,
+                AuditionPvCaptureContract.Height);
+            proof.curtainWindupColors = EvaluatePatternColors(
+                selected[10],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
-                curtainMarkerRoi,
+                curtainWindupColorRoi,
                 4);
-            proof.hoverFireColors = EvaluatePatternColors(
-                selected[418],
+            proof.hoverWindupColors = EvaluatePatternColors(
+                selected[368],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
-                hoverMarkerRoi,
+                hoverWindupColorRoi,
                 4);
         }
 
@@ -3653,8 +3699,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             public FrameDeltaMetrics hoverWindupDelta;
             public FrameDeltaMetrics hoverFireDelta;
             public FrameDeltaMetrics hoverQuietDelta;
-            public PatternColorMetrics curtainFireColors;
-            public PatternColorMetrics hoverFireColors;
+            public PatternColorMetrics curtainWindupColors;
+            public PatternColorMetrics hoverWindupColors;
+            public bool telegraphMarkerCollidersNonBlocking;
         }
 
         [Serializable]
@@ -4106,6 +4153,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.curtainFireVisibleRendererCount = director.CurtainFireVisibleRendererCount;
                 proof.hoverWindupVisibleRendererCount = director.HoverWindupVisibleRendererCount;
                 proof.hoverFireVisibleRendererCount = director.HoverFireVisibleRendererCount;
+                proof.telegraphMarkerCollidersNonBlocking =
+                    director.TelegraphMarkerCollidersNonBlocking;
                 proof.curtainWindupMarkerColor = director.CurtainWindupMarkerColor;
                 proof.curtainFireMarkerColor = director.CurtainFireMarkerColor;
                 proof.hoverWindupMarkerColor = director.HoverWindupMarkerColor;
