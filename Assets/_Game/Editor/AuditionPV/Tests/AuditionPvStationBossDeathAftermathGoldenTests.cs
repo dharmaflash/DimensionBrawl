@@ -398,7 +398,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Assert.That(rig, Is.Not.Null);
                 Assert.That(rig, Is.SameAs(controller.transform));
                 Assert.That(controller.FinisherCamera.fieldOfView,
-                    Is.EqualTo(46f).Within(0.0001f));
+                    Is.EqualTo(44f).Within(0.0001f));
                 Assert.That(controller.FinisherTimeline, Is.Not.Null);
                 Assert.That(director.playableAsset,
                     Is.SameAs(controller.FinisherTimeline));

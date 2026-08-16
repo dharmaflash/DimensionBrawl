@@ -170,7 +170,7 @@ and dependency provenance, and exhaustive scene/global/input/event/Recorder rest
 
 The bounded product change behind this acceptance contract is exact: Akaza terminal settle is
 `0.90 s` around local pivot Y `0.72`, with drop `0.50`, back travel `0.22`, pitch `20°`, roll `62°`,
-wing fold `52°`, and wing yaw `20°`. The dedicated FOV `46°` finisher camera starts at
+wing fold `52°`, and wing yaw `20°`. The dedicated FOV `44°` finisher camera starts at
 `(0,1.45,5.35)` looking at `(0,-0.40,0)`, then settles at `(0,1.40,5.60)` looking at
 `(0,-0.78,0)`. These authored values are setup/test pins; publication still depends on the runtime
 baked-geometry and projected-axis proof below, and the visual sentinel remains false until a new

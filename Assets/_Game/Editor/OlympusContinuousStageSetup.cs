@@ -69,7 +69,7 @@ namespace DimensionBrawl.Editor
         internal const string StationBossDisplayName = "AKAZA";
         internal const float StationBossTerminalFinisherDurationSeconds = 2.6f;
         internal const float StationBossTerminalFinisherSettleSeconds = 0.14f;
-        internal const float StationBossTerminalFinisherFieldOfView = 46f;
+        internal const float StationBossTerminalFinisherFieldOfView = 44f;
         internal static readonly Vector3 StationBossTerminalFinisherStartLocalPosition =
             new(0f, 1.45f, 5.35f);
         internal static readonly Vector3 StationBossTerminalFinisherSettleLocalPosition =

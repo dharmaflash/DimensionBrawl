@@ -653,7 +653,7 @@ namespace DimensionBrawl.Editor
             report.AppendLine(
                 $"- Station finisher stable boss-root owner: {(exactOwner ? "exact" : "invalid")}");
             report.AppendLine(
-                $"- Station finisher exclusive Camera/FOV46/no-listener: {(exactCameraComponents ? "exact" : "invalid")}");
+                $"- Station finisher exclusive Camera/FOV44/no-listener: {(exactCameraComponents ? "exact" : "invalid")}");
             report.AppendLine(
                 $"- Station finisher manual Timeline 2.6s + terminal hold: {(exactTimeline ? "exact" : "invalid")}");
             report.AppendLine(
@@ -667,7 +667,7 @@ namespace DimensionBrawl.Editor
                 || !configurationValid)
             {
                 report.AddIssue(
-                    $"{expectation.ScenePath}: Station boss-terminal finisher must retain its stable boss-root local rig, exact FOV46 Camera cut, 2.6s manually sampled Timeline with terminal hold, zero AudioListeners, and 0.46s result-cover release.");
+                    $"{expectation.ScenePath}: Station boss-terminal finisher must retain its stable boss-root local rig, exact FOV44 Camera cut, 2.6s manually sampled Timeline with terminal hold, zero AudioListeners, and 0.46s result-cover release.");
             }
         }
 
