@@ -24,6 +24,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         public string probeError = string.Empty;
     }
 
+    [Serializable]
     internal sealed class AuditionPvEngineSnapshot
     {
         public string unityVersion = string.Empty;

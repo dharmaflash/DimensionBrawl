@@ -138,9 +138,10 @@ Phase 2-anchored VFX, non-silent death audio, death motion, and dedicated author
 Logical `f0..f61` are the causal gameplay handle, not approved hero footage. `f61` must still be the
 exclusive gameplay camera with the exact player-facing `소환 에너지를 충전하세요` objective and
 `AKAZA` boss label; `f62` is the unique hard cut to the dedicated finisher Camera and its manually
-sampled 2.6-second Timeline. The causal target remains fully inside the gameplay capture at `f61`,
-but the shoulder player may stay cropped and no `f61` actor ratio is a hero-composition gate. The
-normal Station path must never request the older additive
+sampled 2.6-second Timeline. At `f61` the full boss envelope only has to intersect the gameplay
+capture as a modest causal/identity handle; actor safe-area and size ratios are not hero-composition
+gates, and the shoulder player may stay cropped. The normal Station path must never request the
+older additive
 `BossBarrageCameraCueDriver` fallback.
 The death animator remains terminal through the aftermath hero checkpoint. Product completion,
 lease release, world freeze, result configuration, and result scene arrival are exact at `f218`;
@@ -162,17 +163,38 @@ Baselines are byte-exact logical-frame copies: BL10=`f62` death impact (`HUDON`)
 aftermath hero (`HUDOFF`), and BL12=`f246` interactive result (`AUTHOREDRESULT`). The package also
 requires the 360-frame SHA-256 ledger, QHD
 decode/dimension checks, black/magenta health, independent impact/aftermath/result pixel deltas,
-result-surface color evidence, actor-body renderer bounds and frustum classification, exact
+result-surface color evidence, tight baked-skinned-vertex core-body projection, separate full-boss
+renderer-bounds envelope/frustum telemetry, exact
 Git/Unity/Recorder/URP
 and dependency provenance, and exhaustive scene/global/input/event/Recorder restoration.
 
-Composition telemetry is the exact ordered set `f61/f62/f116/f181/f246`. At `f62`, `f116`, and
-`f181`, only the finisher Camera may be enabled; the boss body must occupy `0.25..0.40` of viewport
-height, the three height samples may span no more than `0.05`, and each boss center may drift no more
-than `0.08` viewport units from every other sample. The player must either be fully inside at
-`0.25..0.32` height
-or fully outside the finisher frustum; partial clipping fails. BL10 alone remains HUD-on, while BL11
-and `f181` are HUD-off. The green PocketClear marker must be unbound and inactive, the terminal
+The bounded product change behind this acceptance contract is exact: Akaza terminal settle is
+`0.90 s` around local pivot Y `0.72`, with drop `0.50`, back travel `0.22`, pitch `20°`, roll `62°`,
+wing fold `52°`, and wing yaw `20°`. The dedicated FOV `46°` finisher camera starts at
+`(0,1.45,5.35)` looking at `(0,-0.40,0)`, then settles at `(0,1.40,5.60)` looking at
+`(0,-0.78,0)`. These authored values are setup/test pins; publication still depends on the runtime
+baked-geometry and projected-axis proof below, and the visual sentinel remains false until a new
+exact take is independently reviewed.
+
+Composition telemetry is the exact ordered set `f61/f62/f116/f181/f246`. Core-body acceptance is
+computed from baked vertices of exactly
+`DB_AkazaPhase2Combined_BodySilhouette` and
+`DB_AkazaPhase2Combined_FaceHairDetail`, transformed by each renderer's actual local-to-world
+matrix; wing-inclusive renderer AABBs are retained only as a separate full-boss identity/envelope
+measurement. At `f62`, `f116`, and `f181`, only the finisher Camera may be enabled and the tight core
+body must remain fully inside the safe viewport. At `f62` its vertical height must be `0.25..0.40`.
+Because the authored collapse may become horizontal, `f116` and `f181` instead require tight
+screen-height-equivalent `max(width * 16/9,height)` (equivalently
+`max(pixelWidth,pixelHeight)/1440`) of `0.25..0.40`, with no more than `0.05` difference between
+those terminal samples. Exact projected authored `CHakazaA:hip_C`-to-`CHakazaA:head_C` endpoints are likewise evaluated in
+screen-height-equivalent coordinates `(dx * 16/9, dy)`; that axis must be at least `0.08` units
+long, change orientation by at least `35` degrees from `f62` to both terminal samples, and drift no
+more than `8` degrees from `f116` through `f181`. Each tight core center may drift no more than
+`0.08` viewport units from every other finisher sample. Peripheral wing/envelope clipping is
+explicitly allowed so long as the full envelope still intersects the capture; it can never make a
+cropped core pass. The player must either be fully inside at `0.25..0.32` height or fully outside the
+finisher frustum; partial clipping fails. BL10 alone remains HUD-on, while BL11 and `f181` are
+HUD-off. The green PocketClear marker must be unbound and inactive, the terminal
 NoCross visual must be hidden from `f62` through the authored result, internal objective tokens and
 `ARCHON PROXY` are forbidden, and `f246` must show the real CLEAR icon while the redundant
 `Claer!_Text` placeholder remains inactive.

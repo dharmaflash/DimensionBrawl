@@ -121,10 +121,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal static readonly bool VisualCompositionAcceptanceLocked = false;
         internal const float MinimumFinisherBossBodyHeightRatio = 0.25f;
         internal const float MaximumFinisherBossBodyHeightRatio = 0.40f;
+        internal const float MinimumTerminalBossBodyMaxExtentRatio = 0.25f;
+        internal const float MaximumTerminalBossBodyMaxExtentRatio = 0.40f;
         internal const float MinimumVisiblePlayerBodyHeightRatio = 0.25f;
         internal const float MaximumVisiblePlayerBodyHeightRatio = 0.32f;
+        internal const float MinimumBossEnvelopeReadableExtentRatio = 0.05f;
+        internal const float MinimumBossCoreAxisViewportLength = 0.08f;
+        internal const float MinimumTerminalBossCoreAxisOrientationDeltaDegrees = 35f;
+        internal const float MaximumTerminalBossCoreAxisHoldDriftDegrees = 8f;
+        internal const float ExpectedCompositionProjectionAspect = 16f / 9f;
+        internal const string BossCoreAxisSource =
+            "akaza-generic-hip_C-to-head_C";
         internal const float MaximumFinisherBossCenterDrift = 0.08f;
-        internal const float MaximumFinisherBossHeightSpread = 0.05f;
+        internal const float MaximumTerminalBossBodyMaxExtentSpread = 0.05f;
         internal static readonly int[] CompositionEvidenceFrames =
             { 61, 62, 116, 181, 246 };
 
@@ -252,6 +261,42 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidOperationException(
                     "G08 requires the exact authored Unity, Recorder, URP, and render-pipeline provenance.");
+            }
+        }
+
+        internal static void ValidateRequiredEngineProvenance(
+            AuditionPvEngineSnapshot engine)
+        {
+            if (engine == null)
+            {
+                throw new InvalidDataException(
+                    "G08 engine provenance is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(engine.unityVersion)
+                || string.IsNullOrWhiteSpace(engine.unityVersionWithRevision)
+                || string.IsNullOrWhiteSpace(engine.recorderPackageVersion)
+                || string.IsNullOrWhiteSpace(engine.urpPackageVersion)
+                || string.IsNullOrWhiteSpace(engine.activeRenderPipelineAssetPath))
+            {
+                throw new InvalidDataException(
+                    "G08 engine provenance is incomplete.");
+            }
+
+            try
+            {
+                ValidateExactEngineProvenance(
+                    engine.unityVersion,
+                    engine.unityVersionWithRevision,
+                    engine.recorderPackageVersion,
+                    engine.urpPackageVersion,
+                    engine.activeRenderPipelineAssetPath);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw new InvalidDataException(
+                    "G08 engine provenance is invalid.",
+                    exception);
             }
         }
 
@@ -1009,7 +1054,31 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || gameplay.finisherCameraExact
                 || !gameplay.exclusiveCameraRoleExact
                 || !gameplay.combatHudVisible
-                || !gameplay.bossSafeViewport
+                || !float.IsFinite(gameplay.projectionAspect)
+                || Mathf.Abs(
+                    gameplay.projectionAspect
+                    - ExpectedCompositionProjectionAspect) > 0.0001f
+                || !gameplay.bossEnvelopeVisible
+                || gameplay.bossEnvelopeFullyOutsideFrustum
+                || gameplay.bossEnvelopeRendererCount < 2
+                || !IsFiniteInRange(
+                    gameplay.bossEnvelopeMaxExtentRatio,
+                    MinimumBossEnvelopeReadableExtentRatio,
+                    float.MaxValue)
+                || !IsFiniteInRange(
+                    gameplay.bossEnvelopeWidthRatio,
+                    0d,
+                    float.MaxValue)
+                || !IsFiniteInRange(
+                    gameplay.bossEnvelopeHeightRatio,
+                    0d,
+                    float.MaxValue)
+                || Mathf.Abs(
+                    gameplay.bossEnvelopeMaxExtentRatio
+                    - Mathf.Max(
+                        gameplay.bossEnvelopeWidthRatio
+                            * gameplay.projectionAspect,
+                        gameplay.bossEnvelopeHeightRatio)) > 0.0001f
                 || !string.Equals(gameplay.cameraRole, "gameplay", StringComparison.Ordinal)
                 || !string.Equals(
                     gameplay.objectiveText,
@@ -1055,18 +1124,71 @@ namespace DimensionBrawl.Editor.AuditionPV
                             AuditionPvStationBossDeathAftermathCapture
                                 .ExpectedBossDisplayName,
                             StringComparison.Ordinal));
-                if (value.gameplayCameraExact
-                    || !value.finisherCameraExact
-                    || !value.exclusiveCameraRoleExact
-                    || !string.Equals(value.cameraRole, "finisher", StringComparison.Ordinal)
-                    || !value.bossFullyInsideFrustum
-                    || !value.bossSafeViewport
-                    || value.bossPartiallyClipped
-                    || !IsFiniteInRange(
+                bool bodyGeometryExact = string.Equals(
+                        value.bossBodyRendererNames,
+                        "DB_AkazaPhase2Combined_BodySilhouette|DB_AkazaPhase2Combined_FaceHairDetail",
+                        StringComparison.Ordinal)
+                    && value.bossBodyRendererCount == 2
+                    && IsFiniteInRange(value.bossBodyWidthRatio, 0d, 1d)
+                    && IsFiniteInRange(value.bossBodyHeightRatio, 0d, 1d)
+                    && IsFiniteInRange(
+                        value.bossBodyMaxExtentRatio,
+                        0d,
+                        float.MaxValue)
+                    && Mathf.Abs(value.bossBodyMaxExtentRatio - Mathf.Max(
+                        value.bossBodyWidthRatio * value.projectionAspect,
+                        value.bossBodyHeightRatio)) <= 0.0001f
+                    && IsFinite(value.bossViewport)
+                    && IsFinite(value.bossPixelExtent)
+                    && value.bossPixelExtent.x >= 8f
+                    && value.bossPixelExtent.y >= 8f;
+                bool bodySizeExact = value.frame == 62
+                    ? IsFiniteInRange(
                         value.bossBodyHeightRatio,
                         MinimumFinisherBossBodyHeightRatio,
                         MaximumFinisherBossBodyHeightRatio)
-                    || !IsFinite(value.bossViewport)
+                    : IsFiniteInRange(
+                        value.bossBodyMaxExtentRatio,
+                        MinimumTerminalBossBodyMaxExtentRatio,
+                        MaximumTerminalBossBodyMaxExtentRatio);
+                bool envelopePresenceExact = value.bossEnvelopeVisible
+                    && !value.bossEnvelopeFullyOutsideFrustum
+                    && value.bossEnvelopeRendererCount >= 2
+                    && IsFinite(value.bossEnvelopeViewport)
+                    && IsFinite(value.bossEnvelopePixelExtent)
+                    && IsFiniteInRange(
+                        value.bossEnvelopeWidthRatio,
+                        0d,
+                        float.MaxValue)
+                    && IsFiniteInRange(
+                        value.bossEnvelopeHeightRatio,
+                        0d,
+                        float.MaxValue)
+                    && IsFiniteInRange(
+                        value.bossEnvelopeMaxExtentRatio,
+                        MinimumBossEnvelopeReadableExtentRatio,
+                        float.MaxValue)
+                    && Mathf.Abs(
+                        value.bossEnvelopeMaxExtentRatio
+                        - Mathf.Max(
+                            value.bossEnvelopeWidthRatio
+                                * value.projectionAspect,
+                            value.bossEnvelopeHeightRatio)) <= 0.0001f;
+                if (value.gameplayCameraExact
+                    || !value.finisherCameraExact
+                    || !value.exclusiveCameraRoleExact
+                    || !float.IsFinite(value.projectionAspect)
+                    || Mathf.Abs(
+                        value.projectionAspect
+                        - ExpectedCompositionProjectionAspect) > 0.0001f
+                    || !string.Equals(value.cameraRole, "finisher", StringComparison.Ordinal)
+                    || !value.bossFullyInsideFrustum
+                    || value.bossFullyOutsideFrustum
+                    || !value.bossSafeViewport
+                    || value.bossPartiallyClipped
+                    || !bodyGeometryExact
+                    || !bodySizeExact
+                    || !envelopePresenceExact
                     || !playerCompositionExact
                     || !hudModeExact
                     || !hudCopyExact
@@ -1081,12 +1203,39 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
             }
 
-            float minimumHeight = finisher.Min(value => value.bossBodyHeightRatio);
-            float maximumHeight = finisher.Max(value => value.bossBodyHeightRatio);
-            if (maximumHeight - minimumHeight > MaximumFinisherBossHeightSpread)
+            RenderEvidence impact = finisher[0];
+            RenderEvidence terminalHero = finisher[1];
+            RenderEvidence terminalHold = finisher[2];
+            if (Mathf.Abs(
+                    terminalHero.bossBodyMaxExtentRatio
+                    - terminalHold.bossBodyMaxExtentRatio)
+                > MaximumTerminalBossBodyMaxExtentSpread)
             {
                 throw new InvalidOperationException(
-                    "G08 finisher boss projected-height stability exceeded the exact 0.05 viewport span.");
+                    "G08 terminal boss tight max-axis stability exceeded the exact 0.05 viewport span.");
+            }
+
+            Vector2 impactCoreAxis = ValidateBossCoreAxisEvidence(impact);
+            Vector2 terminalHeroCoreAxis = ValidateBossCoreAxisEvidence(terminalHero);
+            Vector2 terminalHoldCoreAxis = ValidateBossCoreAxisEvidence(terminalHold);
+            float heroOrientationDelta = Vector2.Angle(
+                impactCoreAxis,
+                terminalHeroCoreAxis);
+            float heldOrientationDelta = Vector2.Angle(
+                impactCoreAxis,
+                terminalHoldCoreAxis);
+            float terminalHoldDrift = Vector2.Angle(
+                terminalHeroCoreAxis,
+                terminalHoldCoreAxis);
+            if (heroOrientationDelta
+                    < MinimumTerminalBossCoreAxisOrientationDeltaDegrees
+                || heldOrientationDelta
+                    < MinimumTerminalBossCoreAxisOrientationDeltaDegrees
+                || terminalHoldDrift
+                    > MaximumTerminalBossCoreAxisHoldDriftDegrees)
+            {
+                throw new InvalidOperationException(
+                    "G08 projected hips-to-head evidence did not prove a materially different terminal orientation at f116 held through f181.");
             }
 
             bool centerDriftExceeded = false;
@@ -1135,6 +1284,49 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        private static Vector2 ValidateBossCoreAxisEvidence(RenderEvidence value)
+        {
+            if (value == null
+                || !string.Equals(
+                    value.bossCoreAxisSource,
+                    BossCoreAxisSource,
+                    StringComparison.Ordinal)
+                || !float.IsFinite(value.projectionAspect)
+                || Mathf.Abs(
+                    value.projectionAspect
+                    - ExpectedCompositionProjectionAspect) > 0.0001f
+                || !IsFinite(value.bossCoreAxisHipsViewport)
+                || !IsFinite(value.bossCoreAxisHeadViewport)
+                || value.bossCoreAxisHipsViewport.z <= 0f
+                || value.bossCoreAxisHeadViewport.z <= 0f
+                || !IsFiniteInRange(value.bossCoreAxisHipsViewport.x, 0d, 1d)
+                || !IsFiniteInRange(value.bossCoreAxisHipsViewport.y, 0d, 1d)
+                || !IsFiniteInRange(value.bossCoreAxisHeadViewport.x, 0d, 1d)
+                || !IsFiniteInRange(value.bossCoreAxisHeadViewport.y, 0d, 1d))
+            {
+                throw new InvalidOperationException(
+                    $"G08 f{value?.frame ?? -1} projected authored Akaza hip/head evidence is missing or outside the capture.");
+            }
+
+            Vector2 axis = new(
+                (value.bossCoreAxisHeadViewport.x
+                    - value.bossCoreAxisHipsViewport.x)
+                    * value.projectionAspect,
+                value.bossCoreAxisHeadViewport.y
+                    - value.bossCoreAxisHipsViewport.y);
+            float measuredLength = axis.magnitude;
+            if (!float.IsFinite(value.bossCoreAxisViewportLength)
+                || measuredLength < MinimumBossCoreAxisViewportLength
+                || Mathf.Abs(value.bossCoreAxisViewportLength - measuredLength)
+                    > 0.0001f)
+            {
+                throw new InvalidOperationException(
+                    $"G08 f{value.frame} projected authored Akaza hip/head axis is too short or internally inconsistent.");
+            }
+
+            return axis / measuredLength;
+        }
+
         internal static void ValidateLockedPixelThresholdsForTests(
             RuntimeProof proof)
         {
@@ -1171,6 +1363,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             return float.IsFinite(value.x)
                 && float.IsFinite(value.y)
                 && float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Vector2 value)
+        {
+            return float.IsFinite(value.x)
+                && float.IsFinite(value.y);
         }
 
         private static bool IsRatio(double value)
@@ -2957,6 +3155,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 path,
                 state,
                 AuditionPvCaptureContract.OutputRoot);
+            ValidateRequiredEngineProvenance(state.engine);
             return state;
         }
 
@@ -3170,6 +3369,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvEngineSnapshot engine,
             AuditionPvDependencyHash[] dependencies)
         {
+            ValidateRequiredEngineProvenance(engine);
+
             var canonical = new StringBuilder();
             void Append(string value)
             {
@@ -3647,15 +3848,33 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool exclusiveCameraRoleExact;
             public bool finisherLeaseReleased;
             public bool combatHudVisible;
+            public float projectionAspect;
             public bool playerSafeViewport;
             public bool bossSafeViewport;
             public bool playerFullyInsideFrustum;
             public bool playerFullyOutsideFrustum;
             public bool playerPartiallyClipped;
             public bool bossFullyInsideFrustum;
+            public bool bossFullyOutsideFrustum;
             public bool bossPartiallyClipped;
             public float playerBodyHeightRatio;
+            public string bossBodyRendererNames = string.Empty;
+            public int bossBodyRendererCount;
+            public float bossBodyWidthRatio;
             public float bossBodyHeightRatio;
+            public float bossBodyMaxExtentRatio;
+            public bool bossEnvelopeVisible;
+            public bool bossEnvelopeFullyInsideFrustum;
+            public bool bossEnvelopeFullyOutsideFrustum;
+            public bool bossEnvelopePartiallyClipped;
+            public int bossEnvelopeRendererCount;
+            public float bossEnvelopeWidthRatio;
+            public float bossEnvelopeHeightRatio;
+            public float bossEnvelopeMaxExtentRatio;
+            public string bossCoreAxisSource = string.Empty;
+            public Vector3 bossCoreAxisHipsViewport;
+            public Vector3 bossCoreAxisHeadViewport;
+            public float bossCoreAxisViewportLength;
             public bool resultCanvasVisible;
             public bool resultInteractive;
             public string objectiveText = string.Empty;
@@ -3672,8 +3891,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool realClearIconActive;
             public Vector3 playerViewport;
             public Vector3 bossViewport;
+            public Vector3 bossEnvelopeViewport;
             public Vector2 playerPixelExtent;
             public Vector2 bossPixelExtent;
+            public Vector2 bossEnvelopePixelExtent;
         }
 
         [Serializable]
@@ -4648,7 +4869,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         private readonly List<
             AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence>
             evidence = new();
+        private readonly List<Vector3> bakedCoreVertices = new();
         private AuditionPvStationBossDeathAftermathDirector director;
+        private Mesh bakedCoreMesh;
         private int lastSampledFrame = -1;
 
         public Exception Failure { get; private set; }
@@ -4671,15 +4894,38 @@ namespace DimensionBrawl.Editor.AuditionPV
                     exclusiveCameraRoleExact = value.exclusiveCameraRoleExact,
                     finisherLeaseReleased = value.finisherLeaseReleased,
                     combatHudVisible = value.combatHudVisible,
+                    projectionAspect = value.projectionAspect,
                     playerSafeViewport = value.playerSafeViewport,
                     bossSafeViewport = value.bossSafeViewport,
                     playerFullyInsideFrustum = value.playerFullyInsideFrustum,
                     playerFullyOutsideFrustum = value.playerFullyOutsideFrustum,
                     playerPartiallyClipped = value.playerPartiallyClipped,
                     bossFullyInsideFrustum = value.bossFullyInsideFrustum,
+                    bossFullyOutsideFrustum = value.bossFullyOutsideFrustum,
                     bossPartiallyClipped = value.bossPartiallyClipped,
                     playerBodyHeightRatio = value.playerBodyHeightRatio,
+                    bossBodyRendererNames = value.bossBodyRendererNames,
+                    bossBodyRendererCount = value.bossBodyRendererCount,
+                    bossBodyWidthRatio = value.bossBodyWidthRatio,
                     bossBodyHeightRatio = value.bossBodyHeightRatio,
+                    bossBodyMaxExtentRatio = value.bossBodyMaxExtentRatio,
+                    bossEnvelopeVisible = value.bossEnvelopeVisible,
+                    bossEnvelopeFullyInsideFrustum =
+                        value.bossEnvelopeFullyInsideFrustum,
+                    bossEnvelopeFullyOutsideFrustum =
+                        value.bossEnvelopeFullyOutsideFrustum,
+                    bossEnvelopePartiallyClipped =
+                        value.bossEnvelopePartiallyClipped,
+                    bossEnvelopeRendererCount = value.bossEnvelopeRendererCount,
+                    bossEnvelopeWidthRatio = value.bossEnvelopeWidthRatio,
+                    bossEnvelopeHeightRatio = value.bossEnvelopeHeightRatio,
+                    bossEnvelopeMaxExtentRatio =
+                        value.bossEnvelopeMaxExtentRatio,
+                    bossCoreAxisSource = value.bossCoreAxisSource,
+                    bossCoreAxisHipsViewport = value.bossCoreAxisHipsViewport,
+                    bossCoreAxisHeadViewport = value.bossCoreAxisHeadViewport,
+                    bossCoreAxisViewportLength =
+                        value.bossCoreAxisViewportLength,
                     resultCanvasVisible = value.resultCanvasVisible,
                     resultInteractive = value.resultInteractive,
                     objectiveText = value.objectiveText,
@@ -4700,10 +4946,22 @@ namespace DimensionBrawl.Editor.AuditionPV
                     realClearIconActive = value.realClearIconActive,
                     playerViewport = value.playerViewport,
                     bossViewport = value.bossViewport,
+                    bossEnvelopeViewport = value.bossEnvelopeViewport,
                     playerPixelExtent = value.playerPixelExtent,
-                    bossPixelExtent = value.bossPixelExtent
+                    bossPixelExtent = value.bossPixelExtent,
+                    bossEnvelopePixelExtent = value.bossEnvelopePixelExtent
                 })
                 .ToArray();
+        }
+
+        private void OnDisable()
+        {
+            ReleaseBakedCoreMesh();
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseBakedCoreMesh();
         }
 
         private void LateUpdate()
@@ -4811,10 +5069,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                 return result;
             }
 
-            ProjectedBodyEvidence player = ResolveProjectedBody(
+            result.projectionAspect = camera.aspect;
+
+            ProjectedBodyEvidence player = ResolveProjectedRendererBounds(
                 camera,
                 director.PlayerRendererRoot);
-            ProjectedBodyEvidence boss = ResolveProjectedBody(
+            SkinnedMeshRenderer[] coreRenderers =
+                director.BossCoreBodyRenderers
+                ?? Array.Empty<SkinnedMeshRenderer>();
+            ProjectedBodyEvidence boss = ResolveProjectedSkinnedGeometry(
+                camera,
+                coreRenderers);
+            ProjectedBodyEvidence envelope = ResolveProjectedRendererBounds(
                 camera,
                 director.BossRendererRoot);
             result.playerSafeViewport = player.safeViewport;
@@ -4823,13 +5089,52 @@ namespace DimensionBrawl.Editor.AuditionPV
             result.playerFullyOutsideFrustum = player.fullyOutsideFrustum;
             result.playerPartiallyClipped = player.partiallyClipped;
             result.bossFullyInsideFrustum = boss.fullyInsideFrustum;
+            result.bossFullyOutsideFrustum = boss.fullyOutsideFrustum;
             result.bossPartiallyClipped = boss.partiallyClipped;
             result.playerBodyHeightRatio = player.bodyHeightRatio;
+            result.bossBodyRendererNames = string.Join(
+                "|",
+                coreRenderers
+                    .Where(value => value != null)
+                    .Select(value => value.gameObject.name));
+            result.bossBodyRendererCount = boss.rendererCount;
+            result.bossBodyWidthRatio = boss.bodyWidthRatio;
             result.bossBodyHeightRatio = boss.bodyHeightRatio;
+            result.bossBodyMaxExtentRatio = boss.bodyMaxExtentRatio;
+            result.bossEnvelopeVisible = envelope.visibleInFrustum;
+            result.bossEnvelopeFullyInsideFrustum =
+                envelope.fullyInsideFrustum;
+            result.bossEnvelopeFullyOutsideFrustum =
+                envelope.fullyOutsideFrustum;
+            result.bossEnvelopePartiallyClipped = envelope.partiallyClipped;
+            result.bossEnvelopeRendererCount = envelope.rendererCount;
+            result.bossEnvelopeWidthRatio = envelope.bodyWidthRatio;
+            result.bossEnvelopeHeightRatio = envelope.bodyHeightRatio;
+            result.bossEnvelopeMaxExtentRatio = envelope.bodyMaxExtentRatio;
             result.playerViewport = player.viewport;
             result.bossViewport = boss.viewport;
+            result.bossEnvelopeViewport = envelope.viewport;
             result.playerPixelExtent = player.pixelExtent;
             result.bossPixelExtent = boss.pixelExtent;
+            result.bossEnvelopePixelExtent = envelope.pixelExtent;
+
+            Transform hips = director.BossCoreAxisHips;
+            Transform head = director.BossCoreAxisHead;
+            if (hips != null && head != null && hips != head)
+            {
+                result.bossCoreAxisSource =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .BossCoreAxisSource;
+                result.bossCoreAxisHipsViewport =
+                    camera.WorldToViewportPoint(hips.position);
+                result.bossCoreAxisHeadViewport =
+                    camera.WorldToViewportPoint(head.position);
+                result.bossCoreAxisViewportLength = new Vector2(
+                    (result.bossCoreAxisHeadViewport.x
+                        - result.bossCoreAxisHipsViewport.x) * camera.aspect,
+                    result.bossCoreAxisHeadViewport.y
+                        - result.bossCoreAxisHipsViewport.y).magnitude;
+            }
 
             if (frame == 61 || frame == 62)
             {
@@ -4853,7 +5158,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && camera.pixelHeight > 0;
         }
 
-        private static ProjectedBodyEvidence ResolveProjectedBody(
+        private static ProjectedBodyEvidence ResolveProjectedRendererBounds(
             Camera camera,
             Transform root)
         {
@@ -4932,10 +5237,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             float maximumX = inFront.Max(value => value.x);
             float minimumY = inFront.Min(value => value.y);
             float maximumY = inFront.Max(value => value.y);
+            result.bodyWidthRatio = Mathf.Max(0f, maximumX - minimumX);
             result.bodyHeightRatio = Mathf.Max(0f, maximumY - minimumY);
+            result.bodyMaxExtentRatio = Mathf.Max(
+                result.bodyWidthRatio * camera.aspect,
+                result.bodyHeightRatio);
             result.pixelExtent = new Vector2(
-                Mathf.Max(0f, maximumX - minimumX) * camera.pixelWidth,
+                result.bodyWidthRatio * camera.pixelWidth,
                 result.bodyHeightRatio * camera.pixelHeight);
+            result.visibleInFrustum = anyRendererIntersects;
+            result.rendererCount = renderers.Length;
             result.safeViewport = result.fullyInsideFrustum
                 && result.viewport.z > 0f
                 && result.viewport.x >= 0.03f
@@ -4945,6 +5256,139 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && result.pixelExtent.x >= 8f
                 && result.pixelExtent.y >= 8f;
             return result;
+        }
+
+        private ProjectedBodyEvidence ResolveProjectedSkinnedGeometry(
+            Camera camera,
+            SkinnedMeshRenderer[] renderers)
+        {
+            var result = new ProjectedBodyEvidence();
+            if (camera == null || renderers == null || renderers.Length == 0)
+            {
+                return result;
+            }
+
+            SkinnedMeshRenderer[] active = renderers
+                .Where(renderer => renderer != null
+                    && renderer.enabled
+                    && !renderer.forceRenderingOff
+                    && renderer.shadowCastingMode
+                        != UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly
+                    && renderer.gameObject.activeInHierarchy
+                    && (camera.cullingMask & (1 << renderer.gameObject.layer)) != 0)
+                .ToArray();
+            result.rendererCount = active.Length;
+            if (active.Length != renderers.Length)
+            {
+                return result;
+            }
+
+            bakedCoreMesh ??= new Mesh
+            {
+                name = "G08_TemporaryBossCoreGeometry",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            bool anyVertex = false;
+            bool anyVertexInside = false;
+            bool allVerticesInside = true;
+            bool anyBoundsIntersects = false;
+            float minimumX = float.PositiveInfinity;
+            float maximumX = float.NegativeInfinity;
+            float minimumY = float.PositiveInfinity;
+            float maximumY = float.NegativeInfinity;
+            float depthSum = 0f;
+            int inFrontCount = 0;
+            Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
+
+            foreach (SkinnedMeshRenderer renderer in active)
+            {
+                anyBoundsIntersects |= GeometryUtility.TestPlanesAABB(
+                    planes,
+                    renderer.bounds);
+                bakedCoreMesh.Clear(keepVertexLayout: false);
+                renderer.BakeMesh(bakedCoreMesh);
+                bakedCoreVertices.Clear();
+                bakedCoreMesh.GetVertices(bakedCoreVertices);
+                Matrix4x4 localToWorld = renderer.localToWorldMatrix;
+                foreach (Vector3 localVertex in bakedCoreVertices)
+                {
+                    anyVertex = true;
+                    Vector3 viewport = camera.WorldToViewportPoint(
+                        localToWorld.MultiplyPoint3x4(localVertex));
+                    bool inside = viewport.z > 0f
+                        && viewport.x >= 0f
+                        && viewport.x <= 1f
+                        && viewport.y >= 0f
+                        && viewport.y <= 1f;
+                    anyVertexInside |= inside;
+                    allVerticesInside &= inside;
+                    if (viewport.z <= 0f)
+                    {
+                        continue;
+                    }
+
+                    minimumX = Mathf.Min(minimumX, viewport.x);
+                    maximumX = Mathf.Max(maximumX, viewport.x);
+                    minimumY = Mathf.Min(minimumY, viewport.y);
+                    maximumY = Mathf.Max(maximumY, viewport.y);
+                    depthSum += viewport.z;
+                    inFrontCount++;
+                }
+            }
+
+            if (!anyVertex || inFrontCount == 0)
+            {
+                return result;
+            }
+
+            result.fullyInsideFrustum = allVerticesInside;
+            result.fullyOutsideFrustum = !anyBoundsIntersects
+                && !anyVertexInside;
+            result.partiallyClipped = !result.fullyInsideFrustum
+                && !result.fullyOutsideFrustum;
+            result.visibleInFrustum = anyBoundsIntersects || anyVertexInside;
+            result.bodyWidthRatio = Mathf.Max(0f, maximumX - minimumX);
+            result.bodyHeightRatio = Mathf.Max(0f, maximumY - minimumY);
+            result.bodyMaxExtentRatio = Mathf.Max(
+                result.bodyWidthRatio * camera.aspect,
+                result.bodyHeightRatio);
+            result.viewport = new Vector3(
+                (minimumX + maximumX) * 0.5f,
+                (minimumY + maximumY) * 0.5f,
+                depthSum / inFrontCount);
+            result.pixelExtent = new Vector2(
+                result.bodyWidthRatio * camera.pixelWidth,
+                result.bodyHeightRatio * camera.pixelHeight);
+            result.safeViewport = result.fullyInsideFrustum
+                && result.viewport.z > 0f
+                && minimumX >= 0.03f
+                && maximumX <= 0.97f
+                && minimumY >= 0.03f
+                && maximumY <= 0.97f
+                && result.pixelExtent.x >= 8f
+                && result.pixelExtent.y >= 8f;
+            return result;
+        }
+
+        private void ReleaseBakedCoreMesh()
+        {
+            if (bakedCoreMesh == null)
+            {
+                return;
+            }
+
+            Mesh value = bakedCoreMesh;
+            bakedCoreMesh = null;
+            bakedCoreVertices.Clear();
+            if (Application.isPlaying)
+            {
+                Destroy(value);
+            }
+            else
+            {
+                DestroyImmediate(value);
+            }
         }
 
         private static bool IsExplicitBodyMeshName(string value)
@@ -4993,10 +5437,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         private struct ProjectedBodyEvidence
         {
             public bool safeViewport;
+            public bool visibleInFrustum;
             public bool fullyInsideFrustum;
             public bool fullyOutsideFrustum;
             public bool partiallyClipped;
+            public int rendererCount;
+            public float bodyWidthRatio;
             public float bodyHeightRatio;
+            public float bodyMaxExtentRatio;
             public Vector3 viewport;
             public Vector2 pixelExtent;
         }

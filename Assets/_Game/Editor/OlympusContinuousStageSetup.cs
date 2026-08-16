@@ -71,11 +71,13 @@ namespace DimensionBrawl.Editor
         internal const float StationBossTerminalFinisherSettleSeconds = 0.14f;
         internal const float StationBossTerminalFinisherFieldOfView = 46f;
         internal static readonly Vector3 StationBossTerminalFinisherStartLocalPosition =
-            new(0f, 2.42f, 12.15f);
+            new(0f, 1.45f, 5.35f);
         internal static readonly Vector3 StationBossTerminalFinisherSettleLocalPosition =
-            new(0f, 2.35f, 12.40f);
-        internal static readonly Vector3 StationBossTerminalFinisherLookTarget =
-            new(0f, 2.10f, 0f);
+            new(0f, 1.40f, 5.60f);
+        internal static readonly Vector3 StationBossTerminalFinisherStartLookTarget =
+            new(0f, -0.40f, 0f);
+        internal static readonly Vector3 StationBossTerminalFinisherSettleLookTarget =
+            new(0f, -0.78f, 0f);
         private const string StairTraversalSupportName =
             "OlympusCorridor_IntroStairTraversalSupport";
         private const string UpperLandingTraversalSupportName =
@@ -1080,11 +1082,11 @@ namespace DimensionBrawl.Editor
             cameraClip.ClearCurves();
 
             Quaternion startRotation = Quaternion.LookRotation(
-                StationBossTerminalFinisherLookTarget
+                StationBossTerminalFinisherStartLookTarget
                     - StationBossTerminalFinisherStartLocalPosition,
                 Vector3.up);
             Quaternion settleRotation = Quaternion.LookRotation(
-                StationBossTerminalFinisherLookTarget
+                StationBossTerminalFinisherSettleLookTarget
                     - StationBossTerminalFinisherSettleLocalPosition,
                 Vector3.up);
             SetLocalTransformCurve(
@@ -1399,7 +1401,7 @@ namespace DimensionBrawl.Editor
             rig.transform.localScale = Vector3.one;
             rig.transform.localPosition = StationBossTerminalFinisherStartLocalPosition;
             rig.transform.localRotation = Quaternion.LookRotation(
-                StationBossTerminalFinisherLookTarget
+                StationBossTerminalFinisherStartLookTarget
                     - StationBossTerminalFinisherStartLocalPosition,
                 Vector3.up);
 

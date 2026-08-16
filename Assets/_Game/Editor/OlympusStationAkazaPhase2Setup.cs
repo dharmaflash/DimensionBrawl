@@ -1055,6 +1055,24 @@ namespace DimensionBrawl.Editor
                 wingRoots,
                 barrageEmitter,
                 basicFireEmitter);
+            var serializedMotion = new SerializedObject(motionDriver);
+            serializedMotion.FindProperty("deathSettleSeconds").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathSettleSeconds;
+            serializedMotion.FindProperty("deathDropDistance").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathDropDistance;
+            serializedMotion.FindProperty("deathBackDistance").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathBackDistance;
+            serializedMotion.FindProperty("deathPitchDegrees").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathPitchDegrees;
+            serializedMotion.FindProperty("deathRollDegrees").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathRollDegrees;
+            serializedMotion.FindProperty("deathPivotLocalHeight").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathPivotLocalHeight;
+            serializedMotion.FindProperty("deathWingFoldDegrees").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathWingFoldDegrees;
+            serializedMotion.FindProperty("deathWingYawDegrees").floatValue =
+                AkazaPhase2CombatMotionDriver.RequiredDeathWingYawDegrees;
+            serializedMotion.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(motionDriver);
         }
 
@@ -1804,10 +1822,34 @@ namespace DimensionBrawl.Editor
                     includeInactive: true);
             if (motionDrivers.Length != 1
                 || motionDrivers[0].BossHealth != bossHealth
-                || motionDrivers[0].ConfiguredWingCount != 6)
+                || motionDrivers[0].ConfiguredWingCount != 6
+                || Mathf.Abs(
+                    motionDrivers[0].DeathSettleDurationSeconds
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathSettleSeconds) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathDropDistance
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathDropDistance) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathBackDistance
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathBackDistance) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathPitchDegrees
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathPitchDegrees) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathRollDegrees
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathRollDegrees) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathPivotLocalHeight
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathPivotLocalHeight) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathWingFoldDegrees
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathWingFoldDegrees) > 0.0001f
+                || Mathf.Abs(
+                    motionDrivers[0].DeathWingYawDegrees
+                    - AkazaPhase2CombatMotionDriver.RequiredDeathWingYawDegrees) > 0.0001f)
             {
                 throw new InvalidOperationException(
-                    "Akaza gameplay visual requires one six-wing hover, recoil, and death-motion owner.");
+                    "Akaza gameplay visual requires one exact six-wing hover, recoil, pivoted-collapse, and death-motion owner.");
             }
 
             SkinnedMeshRenderer[] allGameplayRenderers = phaseTwoVisual

@@ -464,12 +464,45 @@ namespace DimensionBrawl.Editor
                 && Approximately(
                     serializedVisual.FindProperty("bossDeathPulseScale")?.floatValue ?? -1f,
                     0.42f);
+            AkazaPhase2CombatMotionDriver[] deathMotionDrivers = bossHealth != null
+                ? bossHealth.GetComponentsInChildren<AkazaPhase2CombatMotionDriver>(true)
+                : System.Array.Empty<AkazaPhase2CombatMotionDriver>();
+            AkazaPhase2CombatMotionDriver deathMotion = deathMotionDrivers.Length == 1
+                ? deathMotionDrivers[0]
+                : null;
+            bool exactDeathMotion = deathMotion != null
+                && deathMotion.ConfiguredWingCount == 6
+                && Approximately(
+                    deathMotion.DeathSettleDurationSeconds,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathSettleSeconds)
+                && Approximately(
+                    deathMotion.DeathDropDistance,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathDropDistance)
+                && Approximately(
+                    deathMotion.DeathBackDistance,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathBackDistance)
+                && Approximately(
+                    deathMotion.DeathPitchDegrees,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathPitchDegrees)
+                && Approximately(
+                    deathMotion.DeathRollDegrees,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathRollDegrees)
+                && Approximately(
+                    deathMotion.DeathPivotLocalHeight,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathPivotLocalHeight)
+                && Approximately(
+                    deathMotion.DeathWingFoldDegrees,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathWingFoldDegrees)
+                && Approximately(
+                    deathMotion.DeathWingYawDegrees,
+                    AkazaPhase2CombatMotionDriver.RequiredDeathWingYawDegrees);
             report.AppendLine($"- Station boss-death camera envelope: {(exactCamera ? "exact" : "invalid")}");
             report.AppendLine($"- Station boss-death VFX/audio cue: {(exactVisual ? "exact" : "invalid")}");
-            if (!exactCamera || !exactVisual)
+            report.AppendLine($"- Station boss-death pivoted collapse: {(exactDeathMotion ? "exact" : "invalid")}");
+            if (!exactCamera || !exactVisual || !exactDeathMotion)
             {
                 report.AddIssue(
-                    $"{expectation.ScenePath}: Station boss-death camera and VFX/audio authoring drifted from the reviewed contract.");
+                    $"{expectation.ScenePath}: Station boss-death camera, VFX/audio, or pivoted-collapse authoring drifted from the reviewed contract.");
             }
         }
 
@@ -604,7 +637,7 @@ namespace DimensionBrawl.Editor
                 && HasExactStationFinisherCameraCurves(cameraClip);
 
             Quaternion expectedStartRotation = Quaternion.LookRotation(
-                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget
+                OlympusContinuousStageSetup.StationBossTerminalFinisherStartLookTarget
                     - OlympusContinuousStageSetup
                         .StationBossTerminalFinisherStartLocalPosition,
                 Vector3.up);
@@ -668,10 +701,12 @@ namespace DimensionBrawl.Editor
             Vector3 settle = OlympusContinuousStageSetup
                 .StationBossTerminalFinisherSettleLocalPosition;
             Quaternion startRotation = Quaternion.LookRotation(
-                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget - start,
+                OlympusContinuousStageSetup
+                    .StationBossTerminalFinisherStartLookTarget - start,
                 Vector3.up);
             Quaternion settleRotation = Quaternion.LookRotation(
-                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget - settle,
+                OlympusContinuousStageSetup
+                    .StationBossTerminalFinisherSettleLookTarget - settle,
                 Vector3.up);
             return HasExactStationFinisherCurve(
                     clip, "m_LocalPosition.x", start.x, settle.x)

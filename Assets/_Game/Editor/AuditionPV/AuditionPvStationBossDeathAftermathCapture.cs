@@ -326,6 +326,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud_CelestialTarget_Staging.prefab",
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud_CelestialV2_Staging.prefab",
                 "Assets/_Game/Editor/OlympusContinuousStageSetup.cs",
+                "Assets/_Game/Editor/OlympusStationAkazaPhase2Setup.cs",
                 "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs",
                 "Assets/_Game/Editor/CombatHud/CombatHudCelestialTargetPrefabAssembler.cs",
                 "Assets/_Game/Editor/CombatHud/CombatHudCelestialV2PrefabAssembler.cs",
@@ -520,6 +521,12 @@ namespace DimensionBrawl.Editor.AuditionPV
         private const double EntryGuideTimeoutSeconds = 10d;
         private const double PhaseTwoTimeoutSeconds = 8d;
         private const float Tolerance = 0.001f;
+        private const string BossCoreBodySilhouetteObjectName =
+            "DB_AkazaPhase2Combined_BodySilhouette";
+        private const string BossCoreFaceHairDetailObjectName =
+            "DB_AkazaPhase2Combined_FaceHairDetail";
+        internal const string BossCoreAxisHipsObjectName = "CHakazaA:hip_C";
+        internal const string BossCoreAxisHeadObjectName = "CHakazaA:head_C";
 
         private OlympusCorridorCombatFlowController corridorFlow;
         private StageRunContext runContext;
@@ -555,6 +562,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         private GameObject pocketClearMarker;
         private Transform playerRendererRoot;
         private Transform bossRendererRoot;
+        private SkinnedMeshRenderer[] bossCoreBodyRenderers =
+            Array.Empty<SkinnedMeshRenderer>();
+        private Transform bossCoreAxisHips;
+        private Transform bossCoreAxisHead;
         private ICombatEntryGuideGate entryGuide;
         private LaneActionProjectile firedProjectile;
         private StageClearScreenPresenter clearPresenter;
@@ -684,6 +695,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             && combatHud.alpha > 0.01f;
         public Transform PlayerRendererRoot => playerRendererRoot;
         public Transform BossRendererRoot => bossRendererRoot;
+        public SkinnedMeshRenderer[] BossCoreBodyRenderers =>
+            bossCoreBodyRenderers;
+        public Transform BossCoreAxisHips => bossCoreAxisHips;
+        public Transform BossCoreAxisHead => bossCoreAxisHead;
         public StageClearScreenPresenter ClearPresenter => clearPresenter;
         public GameObject PocketClearMarker => pocketClearMarker;
         public GameObject TerminalBoundaryVisualRoot =>
@@ -1791,6 +1806,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             bossRendererRoot = deathMotion.Animator != null
                 ? deathMotion.Animator.transform
                 : null;
+            bossCoreBodyRenderers = ResolveExactBossCoreBodyRenderers(
+                bossRendererRoot);
+            ResolveExactBossCoreAxisTransforms(
+                bossRendererRoot,
+                out bossCoreAxisHips,
+                out bossCoreAxisHead);
             objectiveText = FindSingleNamedComponent<Text>(
                 combatHud != null ? combatHud.transform : null,
                 "Objective");
@@ -1826,6 +1847,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || combatHud == null
                 || playerRendererRoot == null
                 || bossRendererRoot == null
+                || bossCoreBodyRenderers.Length != 2
+                || bossCoreBodyRenderers.Any(value => value == null
+                    || !value.enabled
+                    || value.forceRenderingOff
+                    || !value.gameObject.activeInHierarchy)
+                || bossCoreAxisHips == null
+                || bossCoreAxisHead == null
+                || bossCoreAxisHips == bossCoreAxisHead
                 || objectiveText == null
                 || bossNameText == null
                 || pocketClearMarker == null
@@ -3273,6 +3302,69 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             return values[0];
+        }
+
+        internal static SkinnedMeshRenderer[] ResolveExactBossCoreBodyRenderers(
+            Transform bossRoot)
+        {
+            if (bossRoot == null)
+            {
+                return Array.Empty<SkinnedMeshRenderer>();
+            }
+
+            SkinnedMeshRenderer[] candidates = bossRoot
+                .GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            SkinnedMeshRenderer[] body = candidates
+                .Where(value => value != null
+                    && string.Equals(
+                        value.gameObject.name,
+                        BossCoreBodySilhouetteObjectName,
+                        StringComparison.Ordinal))
+                .ToArray();
+            SkinnedMeshRenderer[] face = candidates
+                .Where(value => value != null
+                    && string.Equals(
+                        value.gameObject.name,
+                        BossCoreFaceHairDetailObjectName,
+                        StringComparison.Ordinal))
+                .ToArray();
+            return body.Length == 1 && face.Length == 1
+                ? new[] { body[0], face[0] }
+                : Array.Empty<SkinnedMeshRenderer>();
+        }
+
+        internal static void ResolveExactBossCoreAxisTransforms(
+            Transform bossRoot,
+            out Transform hips,
+            out Transform head)
+        {
+            hips = null;
+            head = null;
+            if (bossRoot == null)
+            {
+                return;
+            }
+
+            Transform[] transforms = bossRoot.GetComponentsInChildren<Transform>(true);
+            Transform[] hipsMatches = transforms
+                .Where(value => value != null
+                    && string.Equals(
+                        value.gameObject.name,
+                        BossCoreAxisHipsObjectName,
+                        StringComparison.Ordinal))
+                .ToArray();
+            Transform[] headMatches = transforms
+                .Where(value => value != null
+                    && string.Equals(
+                        value.gameObject.name,
+                        BossCoreAxisHeadObjectName,
+                        StringComparison.Ordinal))
+                .ToArray();
+            if (hipsMatches.Length == 1 && headMatches.Length == 1)
+            {
+                hips = hipsMatches[0];
+                head = headMatches[0];
+            }
         }
 
         private static T FindSingleNamedComponent<T>(Transform root, string objectName)

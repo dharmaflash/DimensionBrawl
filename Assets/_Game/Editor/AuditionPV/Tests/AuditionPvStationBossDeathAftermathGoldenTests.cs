@@ -246,6 +246,112 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void StationBossCoreComposition_BindsOnlyExactBodyMeshesAndAuthoredAxis()
+        {
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene station = SceneManager.GetSceneByPath(
+                AuditionPvStationBossDeathAftermathCapture.StationScenePath);
+            bool openedByTest = !station.IsValid() || !station.isLoaded;
+
+            try
+            {
+                if (openedByTest)
+                {
+                    station = EditorSceneManager.OpenScene(
+                        AuditionPvStationBossDeathAftermathCapture.StationScenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                AkazaPhase2CombatMotionDriver motion = station.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        AkazaPhase2CombatMotionDriver>(true))
+                    .Single();
+                Assert.That(motion.Animator, Is.Not.Null);
+                SkinnedMeshRenderer[] allBossRenderers = motion.Animator
+                    .GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                SkinnedMeshRenderer[] core =
+                    AuditionPvStationBossDeathAftermathDirector
+                        .ResolveExactBossCoreBodyRenderers(
+                            motion.Animator.transform);
+
+                Assert.That(core.Select(value => value.gameObject.name),
+                    Is.EqualTo(new[]
+                    {
+                        "DB_AkazaPhase2Combined_BodySilhouette",
+                        "DB_AkazaPhase2Combined_FaceHairDetail"
+                    }));
+                Assert.That(core.Distinct().Count(), Is.EqualTo(2));
+                foreach (SkinnedMeshRenderer renderer in core)
+                {
+                    Assert.That(renderer.enabled, Is.True,
+                        $"{renderer.name} must be enabled.");
+                    Assert.That(renderer.forceRenderingOff, Is.False,
+                        $"{renderer.name} must not force rendering off.");
+                    Assert.That(renderer.gameObject.activeSelf, Is.True,
+                        $"{renderer.name} must be authored active under the runtime-owned Phase2 root.");
+                    Assert.That(renderer.sharedMesh, Is.Not.Null,
+                        $"{renderer.name} must retain its authored mesh.");
+                    Assert.That(renderer.sharedMesh.vertexCount, Is.GreaterThan(0),
+                        $"{renderer.name} must contain renderable vertices.");
+                }
+                Assert.That(allBossRenderers.Length, Is.GreaterThan(core.Length));
+                Assert.That(core.Any(value => value.gameObject.name.IndexOf(
+                    "Wing",
+                    StringComparison.OrdinalIgnoreCase) >= 0), Is.False);
+
+                AuditionPvStationBossDeathAftermathDirector
+                    .ResolveExactBossCoreAxisTransforms(
+                        motion.Animator.transform,
+                        out Transform hips,
+                        out Transform head);
+                Assert.That(hips, Is.Not.Null);
+                Assert.That(head, Is.Not.Null);
+                Assert.That(head, Is.Not.SameAs(hips));
+                Assert.That(hips.name, Is.EqualTo("CHakazaA:hip_C"));
+                Assert.That(head.name, Is.EqualTo("CHakazaA:head_C"));
+                Assert.That(hips.IsChildOf(motion.Animator.transform), Is.True);
+                Assert.That(head.IsChildOf(motion.Animator.transform), Is.True);
+
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathSettleSeconds, Is.EqualTo(0.90f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathPivotLocalHeight, Is.EqualTo(0.72f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathDropDistance, Is.EqualTo(0.50f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathBackDistance, Is.EqualTo(0.22f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathPitchDegrees, Is.EqualTo(20f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathRollDegrees, Is.EqualTo(62f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathWingFoldDegrees, Is.EqualTo(52f));
+                Assert.That(AkazaPhase2CombatMotionDriver
+                    .RequiredDeathWingYawDegrees, Is.EqualTo(20f));
+                Assert.That(motion.DeathSettleDurationSeconds, Is.EqualTo(0.90f));
+                Assert.That(motion.DeathPivotLocalHeight, Is.EqualTo(0.72f));
+                Assert.That(motion.DeathDropDistance, Is.EqualTo(0.50f));
+                Assert.That(motion.DeathBackDistance, Is.EqualTo(0.22f));
+                Assert.That(motion.DeathPitchDegrees, Is.EqualTo(20f));
+                Assert.That(motion.DeathRollDegrees, Is.EqualTo(62f));
+                Assert.That(motion.DeathWingFoldDegrees, Is.EqualTo(52f));
+                Assert.That(motion.DeathWingYawDegrees, Is.EqualTo(20f));
+            }
+            finally
+            {
+                if (openedByTest && station.IsValid() && station.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(station, removeScene: true);
+                }
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousActiveScene);
+                }
+            }
+        }
+
+        [Test]
         public void StationFinisherDirector_EvaluatesExactStartSettleAndHeldRigPose()
         {
             Scene previousActiveScene = SceneManager.GetActiveScene();
@@ -284,6 +390,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Assert.That(director, Is.Not.Null);
                 Assert.That(rig, Is.Not.Null);
                 Assert.That(rig, Is.SameAs(controller.transform));
+                Assert.That(controller.FinisherCamera.fieldOfView,
+                    Is.EqualTo(46f).Within(0.0001f));
                 Assert.That(controller.FinisherTimeline, Is.Not.Null);
                 Assert.That(director.playableAsset,
                     Is.SameAs(controller.FinisherTimeline));
@@ -310,20 +418,29 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     director,
                     rig,
                     0d,
-                    new Vector3(0f, 2.42f, 12.15f),
-                    new Quaternion(0f, 0.99991333f, -0.0131653f, 0f));
+                    new Vector3(0f, 1.45f, 5.35f),
+                    Quaternion.LookRotation(
+                        new Vector3(0f, -0.40f, 0f)
+                            - new Vector3(0f, 1.45f, 5.35f),
+                        Vector3.up));
                 AssertFinisherRigPose(
                     director,
                     rig,
                     0.14d,
-                    new Vector3(0f, 2.35f, 12.4f),
-                    new Quaternion(0f, 0.9999492f, -0.010079109f, 0f));
+                    new Vector3(0f, 1.40f, 5.60f),
+                    Quaternion.LookRotation(
+                        new Vector3(0f, -0.78f, 0f)
+                            - new Vector3(0f, 1.40f, 5.60f),
+                        Vector3.up));
                 AssertFinisherRigPose(
                     director,
                     rig,
                     2.6d,
-                    new Vector3(0f, 2.35f, 12.4f),
-                    new Quaternion(0f, 0.9999492f, -0.010079109f, 0f));
+                    new Vector3(0f, 1.40f, 5.60f),
+                    Quaternion.LookRotation(
+                        new Vector3(0f, -0.78f, 0f)
+                            - new Vector3(0f, 1.40f, 5.60f),
+                        Vector3.up));
             }
             finally
             {
@@ -1105,6 +1222,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(0.40f));
             Assert.That(
                 AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumTerminalBossBodyMaxExtentRatio,
+                Is.EqualTo(0.25f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumTerminalBossBodyMaxExtentRatio,
+                Is.EqualTo(0.40f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
                     .MinimumVisiblePlayerBodyHeightRatio,
                 Is.EqualTo(0.25f));
             Assert.That(
@@ -1117,8 +1242,33 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(0.08f));
             Assert.That(
                 AuditionPvStationBossDeathAftermathGoldenRunner
-                    .MaximumFinisherBossHeightSpread,
+                    .MaximumTerminalBossBodyMaxExtentSpread,
                 Is.EqualTo(0.05f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumBossEnvelopeReadableExtentRatio,
+                Is.EqualTo(0.05f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumBossCoreAxisViewportLength,
+                Is.EqualTo(0.08f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumTerminalBossCoreAxisOrientationDeltaDegrees,
+                Is.EqualTo(35f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumTerminalBossCoreAxisHoldDriftDegrees,
+                Is.EqualTo(8f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedCompositionProjectionAspect,
+                Is.EqualTo(16f / 9f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedCompositionProjectionAspect,
+                Is.EqualTo(AuditionPvCaptureContract.Width
+                    / (float)AuditionPvCaptureContract.Height));
             Assert.DoesNotThrow(() =>
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof));
@@ -1126,6 +1276,140 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 .G08VisualCompositionAcceptanceRequiredException>(() =>
                     AuditionPvStationBossDeathAftermathGoldenRunner
                         .ValidateRuntimeProofForPublication(proof));
+        }
+
+        [Test]
+        public void EngineProvenance_JsonRoundTripsThroughStateAndFailsClosedPerField()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(),
+                "DimensionBrawl_G08_EngineProvenance_RoundTrip");
+            AuditionPvStationBossDeathAftermathGoldenRunner.PersistedRunnerState state =
+                CreateState(
+                    root,
+                    "20260816t120000z_g08-station-boss-death-aftermath_gaaaaaaaaaaaa_clean",
+                    new DateTime(2026, 8, 16, 12, 0, 0, DateTimeKind.Utc));
+            string engineJson = JsonUtility.ToJson(state.engine);
+            AuditionPvEngineSnapshot engineRoundTrip =
+                JsonUtility.FromJson<AuditionPvEngineSnapshot>(engineJson);
+            AssertEngineSnapshotExact(engineRoundTrip);
+
+            string before = AuditionPvStationBossDeathAftermathGoldenRunner
+                .ComputeCaptureStartProvenanceSha256(state);
+            string stateJson = JsonUtility.ToJson(state);
+            AuditionPvStationBossDeathAftermathGoldenRunner.PersistedRunnerState
+                stateRoundTrip = JsonUtility.FromJson<
+                    AuditionPvStationBossDeathAftermathGoldenRunner.PersistedRunnerState>(
+                        stateJson);
+            Assert.That(stateRoundTrip, Is.Not.Null);
+            AssertEngineSnapshotExact(stateRoundTrip.engine);
+            string after = AuditionPvStationBossDeathAftermathGoldenRunner
+                .ComputeCaptureStartProvenanceSha256(stateRoundTrip);
+            Assert.That(after, Is.EqualTo(before));
+            Assert.That(AuditionPvSha256.IsSha256(after), Is.True);
+
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRequiredEngineProvenance(null));
+            Action<AuditionPvEngineSnapshot>[] blankOneField =
+            {
+                value => value.unityVersion = string.Empty,
+                value => value.unityVersionWithRevision = " ",
+                value => value.recorderPackageVersion = string.Empty,
+                value => value.urpPackageVersion = "\t",
+                value => value.activeRenderPipelineAssetPath = string.Empty
+            };
+            foreach (Action<AuditionPvEngineSnapshot> blank in blankOneField)
+            {
+                AuditionPvEngineSnapshot candidate =
+                    JsonUtility.FromJson<AuditionPvEngineSnapshot>(engineJson);
+                blank(candidate);
+                Assert.Throws<InvalidDataException>(() =>
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ValidateRequiredEngineProvenance(candidate));
+            }
+        }
+
+        [Test]
+        public void CompositionEvidence_AllowsPeripheralEnvelopeCropButNotCoreCrop()
+        {
+            AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
+                CreateValidProof();
+            foreach (AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence value
+                in proof.renderEvidence.Skip(1).Take(3))
+            {
+                value.bossEnvelopeFullyInsideFrustum = false;
+                value.bossEnvelopePartiallyClipped = true;
+            }
+
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(proof));
+
+            proof.renderEvidence[2].bossPartiallyClipped = true;
+            proof.renderEvidence[2].bossFullyInsideFrustum = false;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(proof));
+        }
+
+        [Test]
+        public void RenderEvidence_CopyAndJsonRoundTripPreserveCoreEnvelopeAndAxisTelemetry()
+        {
+            var owner = new GameObject("G08_RenderProbe_Copy_Test");
+            try
+            {
+                AuditionPvStationBossDeathAftermathRenderProbe probe =
+                    owner.AddComponent<AuditionPvStationBossDeathAftermathRenderProbe>();
+                AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence source =
+                    FinisherEvidence(116, 0.31f, new Vector2(0.52f, 0.51f));
+                var values = (IList)typeof(
+                        AuditionPvStationBossDeathAftermathRenderProbe)
+                    .GetField(
+                        "evidence",
+                        System.Reflection.BindingFlags.Instance
+                            | System.Reflection.BindingFlags.NonPublic)
+                    ?.GetValue(probe);
+                Assert.That(values, Is.Not.Null);
+                values.Add(source);
+
+                AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence copy =
+                    probe.CopyEvidence().Single();
+                Assert.That(copy, Is.Not.SameAs(source));
+                Assert.That(copy.bossBodyRendererNames, Is.EqualTo(
+                    "DB_AkazaPhase2Combined_BodySilhouette|DB_AkazaPhase2Combined_FaceHairDetail"));
+                Assert.That(copy.bossBodyRendererCount, Is.EqualTo(2));
+                Assert.That(copy.projectionAspect, Is.EqualTo(16f / 9f));
+                Assert.That(copy.bossBodyWidthRatio,
+                    Is.EqualTo(0.31f / (16f / 9f)));
+                Assert.That(copy.bossBodyMaxExtentRatio, Is.EqualTo(0.31f));
+                Assert.That(copy.bossEnvelopeVisible, Is.True);
+                Assert.That(copy.bossEnvelopePartiallyClipped, Is.True);
+                Assert.That(copy.bossEnvelopeRendererCount, Is.EqualTo(4));
+                Assert.That(copy.bossCoreAxisSource,
+                    Is.EqualTo("akaza-generic-hip_C-to-head_C"));
+                Assert.That(copy.bossCoreAxisHipsViewport,
+                    Is.EqualTo(source.bossCoreAxisHipsViewport));
+                Assert.That(copy.bossCoreAxisHeadViewport,
+                    Is.EqualTo(source.bossCoreAxisHeadViewport));
+
+                string json = JsonUtility.ToJson(copy);
+                AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
+                    roundTrip = JsonUtility.FromJson<
+                        AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence>(json);
+                Assert.That(roundTrip.bossBodyRendererNames,
+                    Is.EqualTo(copy.bossBodyRendererNames));
+                Assert.That(roundTrip.bossBodyWidthRatio,
+                    Is.EqualTo(copy.bossBodyWidthRatio));
+                Assert.That(roundTrip.bossEnvelopeMaxExtentRatio,
+                    Is.EqualTo(copy.bossEnvelopeMaxExtentRatio));
+                Assert.That(roundTrip.bossCoreAxisViewportLength,
+                    Is.EqualTo(copy.bossCoreAxisViewportLength));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
         [Test]
@@ -1812,9 +2096,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                          "Assets/_Game/Scripts/LevelDesign/FrontlineWaveStageProfile.cs",
                          "Assets/_Game/UI/CombatHud/CombatHudPresenter.cs",
                          "Assets/_Game/UI/CombatHud/BossBarrageLaneReviewCombatHudBinder.cs",
-                         "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset",
-                         "Assets/_Game/Editor/OlympusContinuousStageSetup.cs",
-                         "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs"
+                          "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset",
+                          "Assets/_Game/Editor/OlympusContinuousStageSetup.cs",
+                          "Assets/_Game/Editor/OlympusStationAkazaPhase2Setup.cs",
+                          "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs"
                      })
             {
                 Assert.That(dependencies, Does.Contain(finisherDependency));
@@ -1950,6 +2235,17 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(probeOrder.order, Is.EqualTo(32000));
             Assert.That(probeOrder.order, Is.GreaterThan(cameraOrder.order));
             Assert.That(probeOrder.order, Is.GreaterThan(motionOrder.order));
+
+            string runner = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathGoldenRunner.RunnerScriptPath);
+            Assert.That(runner, Does.Contain("renderer.BakeMesh(bakedCoreMesh)"));
+            Assert.That(runner, Does.Contain(
+                "localToWorld.MultiplyPoint3x4(localVertex)"));
+            Assert.That(runner, Does.Contain(
+                "result.projectionAspect = camera.aspect"));
+            Assert.That(runner, Does.Contain(
+                "bakedCoreMesh ??= new Mesh"));
+            Assert.That(runner, Does.Contain("ReleaseBakedCoreMesh()"));
         }
 
         [Test]
@@ -2133,7 +2429,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.renderEvidence[0].frame = 60);
             AssertRuntimeMutation(value => value.renderEvidence[0].gameplayCameraExact = false);
             AssertRuntimeMutation(value => value.renderEvidence[0].combatHudVisible = false);
-            AssertRuntimeMutation(value => value.renderEvidence[0].bossSafeViewport = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].bossEnvelopeVisible = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0]
+                .bossEnvelopeFullyOutsideFrustum = true);
             AssertRuntimeMutation(value => value.renderEvidence[0].objectiveText =
                 "Build EN for SummonSlot1");
             AssertRuntimeMutation(value =>
@@ -2152,8 +2450,21 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 0.249f);
             AssertRuntimeMutation(value => value.renderEvidence[1].bossBodyHeightRatio =
                 0.401f);
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .bossBodyRendererNames =
+                    "DB_AkazaPhase2Combined_WingSilhouette|DB_AkazaPhase2Combined_FaceHairDetail");
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .bossBodyRendererCount = 3);
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .bossBodyMaxExtentRatio = 0.33f);
             AssertRuntimeMutation(value => value.renderEvidence[1].bossSafeViewport = false);
             AssertRuntimeMutation(value => value.renderEvidence[1].bossPartiallyClipped = true);
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .bossEnvelopeVisible = false);
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .projectionAspect = 1f);
+            AssertRuntimeMutation(value => value.renderEvidence[0]
+                .projectionAspect = float.NaN);
             AssertRuntimeMutation(value => value.renderEvidence[1].playerFullyOutsideFrustum =
                 false);
             AssertRuntimeMutation(value =>
@@ -2173,8 +2484,55 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.renderEvidence[1]
                 .terminalBoundaryVisualHidden = false);
             AssertRuntimeMutation(value => value.renderEvidence[2].combatHudVisible = true);
-            AssertRuntimeMutation(value => value.renderEvidence[3].bossBodyHeightRatio =
-                value.renderEvidence[1].bossBodyHeightRatio + 0.051f);
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[2].bossBodyWidthRatio =
+                    0.249f / (16f / 9f);
+                value.renderEvidence[2].bossBodyMaxExtentRatio = 0.249f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[2].bossBodyWidthRatio =
+                    0.401f / (16f / 9f);
+                value.renderEvidence[2].bossBodyMaxExtentRatio = 0.401f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[3].bossBodyWidthRatio =
+                    (value.renderEvidence[2].bossBodyMaxExtentRatio + 0.051f)
+                    / (16f / 9f);
+                value.renderEvidence[3].bossBodyMaxExtentRatio =
+                    value.renderEvidence[2].bossBodyMaxExtentRatio + 0.051f;
+            });
+            AssertRuntimeMutation(value => value.renderEvidence[2]
+                .bossCoreAxisSource = "motion-driver-flag");
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[2].bossCoreAxisHeadViewport =
+                    value.renderEvidence[2].bossCoreAxisHipsViewport
+                    + new Vector3(0f, 0.16f, 0f);
+                value.renderEvidence[2].bossCoreAxisViewportLength = 0.16f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[3].bossCoreAxisHeadViewport =
+                    value.renderEvidence[3].bossCoreAxisHipsViewport
+                    + new Vector3(0f, 0.16f, 0f);
+                value.renderEvidence[3].bossCoreAxisViewportLength = 0.16f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                var heldAxis = new Vector2(0.13f, 0.10f);
+                value.renderEvidence[3].bossCoreAxisHeadViewport =
+                    value.renderEvidence[3].bossCoreAxisHipsViewport
+                    + new Vector3(heldAxis.x, heldAxis.y, 0f);
+                value.renderEvidence[3].bossCoreAxisViewportLength =
+                    new Vector2(
+                        heldAxis.x * (16f / 9f),
+                        heldAxis.y).magnitude;
+            });
+            AssertRuntimeMutation(value => value.renderEvidence[2]
+                .bossCoreAxisViewportLength = 0.01f);
             AssertRuntimeMutation(value => value.renderEvidence[3].bossViewport =
                 value.renderEvidence[1].bossViewport + new Vector3(0.081f, 0f, 0f));
             AssertRuntimeMutation(value => value.renderEvidence[4].finisherLeaseReleased = false);
@@ -2596,12 +2954,24 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 finisherCameraExact = false,
                 exclusiveCameraRoleExact = true,
                 combatHudVisible = true,
+                projectionAspect = 16f / 9f,
                 playerSafeViewport = true,
                 bossSafeViewport = true,
                 playerFullyInsideFrustum = true,
                 bossFullyInsideFrustum = true,
                 playerBodyHeightRatio = 0.28f,
+                bossBodyRendererNames =
+                    "DB_AkazaPhase2Combined_BodySilhouette|DB_AkazaPhase2Combined_FaceHairDetail",
+                bossBodyRendererCount = 2,
+                bossBodyWidthRatio = 0.08f,
                 bossBodyHeightRatio = 0.12f,
+                bossBodyMaxExtentRatio = 0.12f,
+                bossEnvelopeVisible = true,
+                bossEnvelopeFullyInsideFrustum = true,
+                bossEnvelopeRendererCount = 4,
+                bossEnvelopeWidthRatio = 0.18f,
+                bossEnvelopeHeightRatio = 0.16f,
+                bossEnvelopeMaxExtentRatio = 0.32f,
                 objectiveText = AuditionPvStationBossDeathAftermathCapture
                     .ExpectedPlayerFacingKoObjective,
                 bossLabelText = AuditionPvStationBossDeathAftermathCapture
@@ -2612,14 +2982,26 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 pocketClearMarkerInactive = true,
                 playerViewport = new Vector3(0.25f, 0.5f, 10f),
                 bossViewport = new Vector3(0.75f, 0.5f, 10f),
+                bossEnvelopeViewport = new Vector3(0.75f, 0.5f, 10f),
                 playerPixelExtent = new Vector2(100f, 200f),
-                bossPixelExtent = new Vector2(150f, 250f)
+                bossPixelExtent = new Vector2(205f, 173f),
+                bossEnvelopePixelExtent = new Vector2(461f, 230f)
             };
         }
 
         private static AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
-            FinisherEvidence(int frame, float bossHeight, Vector2 bossCenter)
+            FinisherEvidence(int frame, float bossExtent, Vector2 bossCenter)
         {
+            const float ProjectionAspect = 16f / 9f;
+            bool impact = frame == 62;
+            float bodyWidth = impact ? 0.18f : bossExtent / ProjectionAspect;
+            float bodyHeight = impact ? bossExtent : 0.13f;
+            Vector3 hipsViewport = impact
+                ? new Vector3(0.50f, 0.42f, 10f)
+                : new Vector3(0.42f, frame == 116 ? 0.50f : 0.496f, 10f);
+            Vector3 headViewport = impact
+                ? new Vector3(0.50f, 0.58f, 10f)
+                : new Vector3(0.58f, frame == 116 ? 0.50f : 0.504f, 10f);
             return new AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
             {
                 frame = frame,
@@ -2628,15 +3010,47 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 finisherCameraExact = true,
                 exclusiveCameraRoleExact = true,
                 combatHudVisible = frame == 62,
+                projectionAspect = ProjectionAspect,
                 playerFullyOutsideFrustum = true,
                 playerFullyInsideFrustum = false,
                 playerPartiallyClipped = false,
                 bossFullyInsideFrustum = true,
                 bossPartiallyClipped = false,
                 bossSafeViewport = true,
-                bossBodyHeightRatio = bossHeight,
+                bossBodyRendererNames =
+                    "DB_AkazaPhase2Combined_BodySilhouette|DB_AkazaPhase2Combined_FaceHairDetail",
+                bossBodyRendererCount = 2,
+                bossBodyWidthRatio = bodyWidth,
+                bossBodyHeightRatio = bodyHeight,
+                bossBodyMaxExtentRatio = Mathf.Max(
+                    bodyWidth * ProjectionAspect,
+                    bodyHeight),
                 bossViewport = new Vector3(bossCenter.x, bossCenter.y, 10f),
-                bossPixelExtent = new Vector2(420f, bossHeight * 1440f),
+                bossPixelExtent = new Vector2(
+                    bodyWidth * 2560f,
+                    bodyHeight * 1440f),
+                bossEnvelopeVisible = true,
+                bossEnvelopeFullyInsideFrustum = impact,
+                bossEnvelopePartiallyClipped = !impact,
+                bossEnvelopeRendererCount = 4,
+                bossEnvelopeWidthRatio = impact ? 0.38f : 0.66f,
+                bossEnvelopeHeightRatio = impact ? 0.37f : 0.44f,
+                bossEnvelopeMaxExtentRatio = Mathf.Max(
+                    (impact ? 0.38f : 0.66f) * ProjectionAspect,
+                    impact ? 0.37f : 0.44f),
+                bossEnvelopeViewport = new Vector3(
+                    bossCenter.x,
+                    bossCenter.y,
+                    10f),
+                bossEnvelopePixelExtent = new Vector2(
+                    (impact ? 0.38f : 0.66f) * 2560f,
+                    (impact ? 0.37f : 0.44f) * 1440f),
+                bossCoreAxisSource = "akaza-generic-hip_C-to-head_C",
+                bossCoreAxisHipsViewport = hipsViewport,
+                bossCoreAxisHeadViewport = headViewport,
+                bossCoreAxisViewportLength = new Vector2(
+                    (headViewport.x - hipsViewport.x) * ProjectionAspect,
+                    headViewport.y - hipsViewport.y).magnitude,
                 objectiveText = frame == 62
                     ? AuditionPvStationBossDeathAftermathCapture
                         .ExpectedPlayerFacingKoObjective
@@ -2719,6 +3133,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 dependencyPaths = Array.Empty<string>(),
                 dependencyHashesAtStart = Array.Empty<AuditionPvDependencyHash>()
             };
+        }
+
+        private static void AssertEngineSnapshotExact(AuditionPvEngineSnapshot value)
+        {
+            Assert.That(value, Is.Not.Null);
+            Assert.That(value.unityVersion, Is.EqualTo("6000.3.5f2"));
+            Assert.That(value.unityVersionWithRevision,
+                Is.EqualTo("6000.3.5f2 (3fa8bc678cb0)"));
+            Assert.That(value.recorderPackageVersion, Is.EqualTo("5.1.6"));
+            Assert.That(value.urpPackageVersion, Is.EqualTo("17.3.0"));
+            Assert.That(value.activeRenderPipelineAssetPath,
+                Is.EqualTo("Assets/Settings/PC_RPAsset.asset"));
         }
 
         private static AuditionPvStationBossDeathAftermathGoldenRunner.PersistedRunnerState

@@ -16,6 +16,14 @@ namespace DimensionBrawl.Presentation
     public sealed class AkazaPhase2CombatMotionDriver : MonoBehaviour
     {
         private const float TwoPi = Mathf.PI * 2f;
+        public const float RequiredDeathSettleSeconds = 0.9f;
+        public const float RequiredDeathDropDistance = 0.50f;
+        public const float RequiredDeathBackDistance = 0.22f;
+        public const float RequiredDeathPitchDegrees = 20f;
+        public const float RequiredDeathRollDegrees = 62f;
+        public const float RequiredDeathPivotLocalHeight = 0.72f;
+        public const float RequiredDeathWingFoldDegrees = 52f;
+        public const float RequiredDeathWingYawDegrees = 20f;
 
         [Header("References")]
         [SerializeField] private Animator animator;
@@ -48,22 +56,33 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float hitWingKickDegrees = 7f;
 
         [Header("Lethal Settle")]
-        [SerializeField, Min(0.01f)] private float deathSettleSeconds = 0.9f;
-        [SerializeField, Min(0f)] private float deathDropDistance = 0.32f;
-        [SerializeField, Min(0f)] private float deathBackDistance = 0.1f;
-        [SerializeField] private float deathPitchDegrees = 18f;
-        [SerializeField, Min(0f)] private float deathWingFoldDegrees = 32f;
-        [SerializeField, Min(0f)] private float deathWingYawDegrees = 12f;
+        [SerializeField, Min(0.01f)] private float deathSettleSeconds =
+            RequiredDeathSettleSeconds;
+        [SerializeField, Min(0f)] private float deathDropDistance =
+            RequiredDeathDropDistance;
+        [SerializeField, Min(0f)] private float deathBackDistance =
+            RequiredDeathBackDistance;
+        [SerializeField] private float deathPitchDegrees = RequiredDeathPitchDegrees;
+        [SerializeField] private float deathRollDegrees = RequiredDeathRollDegrees;
+        [SerializeField, Min(0f)] private float deathPivotLocalHeight =
+            RequiredDeathPivotLocalHeight;
+        [SerializeField, Min(0f)] private float deathWingFoldDegrees =
+            RequiredDeathWingFoldDegrees;
+        [SerializeField, Min(0f)] private float deathWingYawDegrees =
+            RequiredDeathWingYawDegrees;
 
         private Quaternion[] originalWingLocalRotations = Array.Empty<Quaternion>();
         private Quaternion[] lastBaseWingLocalRotations = Array.Empty<Quaternion>();
         private Quaternion[] lastAppliedWingLocalRotations = Array.Empty<Quaternion>();
+        private Quaternion[] deathBaseWingLocalRotations = Array.Empty<Quaternion>();
         private Vector3 originalRootLocalPosition;
         private Quaternion originalRootLocalRotation = Quaternion.identity;
         private Vector3 lastBaseRootLocalPosition;
         private Quaternion lastBaseRootLocalRotation = Quaternion.identity;
         private Vector3 lastAppliedRootLocalPosition;
         private Quaternion lastAppliedRootLocalRotation = Quaternion.identity;
+        private Vector3 deathBaseRootLocalPosition;
+        private Quaternion deathBaseRootLocalRotation = Quaternion.identity;
         private float hoverClock;
         private float heavyReleaseRemaining;
         private float hitReactionRemaining;
@@ -74,6 +93,7 @@ namespace DimensionBrawl.Presentation
         private bool subscribed;
         private bool emitterSubscribed;
         private bool dead;
+        private bool deathBasePoseCaptured;
         private bool attacksStopped;
         private bool lastAnimatorTriggerAccepted;
         private int capturedWingCount;
@@ -95,11 +115,19 @@ namespace DimensionBrawl.Presentation
         public bool IsHeavyReleaseActive => !dead && heavyReleaseRemaining > 0f;
         public bool IsHitReactionActive => !dead && hitReactionRemaining > 0f;
         public bool IsDead => dead;
+        public bool DeathBasePoseCaptured => deathBasePoseCaptured;
         public bool AttacksStopped => attacksStopped;
         public float DeathProgress01 => dead
             ? Mathf.Clamp01(deathElapsed / Mathf.Max(0.01f, deathSettleSeconds))
             : 0f;
         public float DeathSettleDurationSeconds => deathSettleSeconds;
+        public float DeathDropDistance => deathDropDistance;
+        public float DeathBackDistance => deathBackDistance;
+        public float DeathPitchDegrees => deathPitchDegrees;
+        public float DeathRollDegrees => deathRollDegrees;
+        public float DeathPivotLocalHeight => deathPivotLocalHeight;
+        public float DeathWingFoldDegrees => deathWingFoldDegrees;
+        public float DeathWingYawDegrees => deathWingYawDegrees;
         public int HeavyReleaseRequestCount => heavyReleaseRequestCount;
         public int HitReactionRequestCount => hitReactionRequestCount;
         public int DeathRequestCount => deathRequestCount;
@@ -173,6 +201,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            CaptureDeathBasePose();
             dead = true;
             deathRequestCount++;
             deathElapsed = 0f;
@@ -239,6 +268,7 @@ namespace DimensionBrawl.Presentation
             originalWingLocalRotations = new Quaternion[wingCount];
             lastBaseWingLocalRotations = new Quaternion[wingCount];
             lastAppliedWingLocalRotations = new Quaternion[wingCount];
+            deathBaseWingLocalRotations = new Quaternion[wingCount];
             capturedWingCount = 0;
             for (int i = 0; i < wingCount; i++)
             {
@@ -249,6 +279,7 @@ namespace DimensionBrawl.Presentation
                 originalWingLocalRotations[i] = localRotation;
                 lastBaseWingLocalRotations[i] = localRotation;
                 lastAppliedWingLocalRotations[i] = localRotation;
+                deathBaseWingLocalRotations[i] = localRotation;
                 if (wingRoot != null)
                 {
                     capturedWingCount++;
@@ -290,6 +321,9 @@ namespace DimensionBrawl.Presentation
             lastBaseRootLocalRotation = originalRootLocalRotation;
             lastAppliedRootLocalPosition = originalRootLocalPosition;
             lastAppliedRootLocalRotation = originalRootLocalRotation;
+            deathBaseRootLocalPosition = originalRootLocalPosition;
+            deathBaseRootLocalRotation = originalRootLocalRotation;
+            deathBasePoseCaptured = false;
             lastWingOffsetDegrees = 0f;
             poseApplied = false;
         }
@@ -341,6 +375,7 @@ namespace DimensionBrawl.Presentation
             deathSettleSeconds = Mathf.Max(0.01f, deathSettleSeconds);
             deathDropDistance = Mathf.Max(0f, deathDropDistance);
             deathBackDistance = Mathf.Max(0f, deathBackDistance);
+            deathPivotLocalHeight = Mathf.Max(0f, deathPivotLocalHeight);
             deathWingFoldDegrees = Mathf.Max(0f, deathWingFoldDegrees);
             deathWingYawDegrees = Mathf.Max(0f, deathWingYawDegrees);
         }
@@ -512,6 +547,7 @@ namespace DimensionBrawl.Presentation
             hitReactionRemaining = 0f;
             deathElapsed = 0f;
             dead = false;
+            deathBasePoseCaptured = false;
             attacksStopped = false;
             lastWingOffsetDegrees = 0f;
         }
@@ -520,7 +556,19 @@ namespace DimensionBrawl.Presentation
         {
             Vector3 baseRootPosition = motionRoot.localPosition;
             Quaternion baseRootRotation = motionRoot.localRotation;
-            if (poseApplied
+            if (dead && deathBasePoseCaptured)
+            {
+                float baseBlendEase = ResolveDeathEase();
+                baseRootPosition = Vector3.Lerp(
+                    deathBaseRootLocalPosition,
+                    originalRootLocalPosition,
+                    baseBlendEase);
+                baseRootRotation = Quaternion.Slerp(
+                    deathBaseRootLocalRotation,
+                    originalRootLocalRotation,
+                    baseBlendEase);
+            }
+            else if (poseApplied
                 && Approximately(baseRootPosition, lastAppliedRootLocalPosition)
                 && Approximately(baseRootRotation, lastAppliedRootLocalRotation))
             {
@@ -533,17 +581,23 @@ namespace DimensionBrawl.Presentation
             float hoverWave = Mathf.Sin(hoverAngle);
             float heavyEnvelope = ResolvePulseEnvelope(heavyReleaseRemaining, heavyReleaseSeconds);
             float hitEnvelope = ResolvePulseEnvelope(hitReactionRemaining, hitReactionSeconds);
-            float deathProgress = DeathProgress01;
-            float deathEase = deathProgress * deathProgress * (3f - 2f * deathProgress);
+            float deathEase = ResolveDeathEase();
             float hoverWeight = dead ? 0f : 1f - Mathf.Clamp01(Mathf.Max(heavyEnvelope, hitEnvelope));
 
             Vector3 rootOffset;
             Quaternion rootOffsetRotation;
             if (dead)
             {
-                rootOffset = Vector3.down * (deathDropDistance * deathEase)
+                rootOffsetRotation = Quaternion.Euler(
+                    deathPitchDegrees * deathEase,
+                    0f,
+                    deathRollDegrees * deathEase);
+                Vector3 localPivot = Vector3.up * deathPivotLocalHeight;
+                Vector3 pivotCorrection = baseRootRotation
+                    * (localPivot - rootOffsetRotation * localPivot);
+                rootOffset = pivotCorrection
+                    + Vector3.down * (deathDropDistance * deathEase)
                     + Vector3.back * (deathBackDistance * deathEase);
-                rootOffsetRotation = Quaternion.Euler(deathPitchDegrees * deathEase, 0f, 0f);
             }
             else
             {
@@ -578,7 +632,13 @@ namespace DimensionBrawl.Presentation
                 }
 
                 Quaternion baseWingRotation = wingRoot.localRotation;
-                if (poseApplied
+                if (dead
+                    && deathBasePoseCaptured
+                    && i < deathBaseWingLocalRotations.Length)
+                {
+                    baseWingRotation = deathBaseWingLocalRotations[i];
+                }
+                else if (poseApplied
                     && Approximately(baseWingRotation, lastAppliedWingLocalRotations[i]))
                 {
                     baseWingRotation = lastBaseWingLocalRotations[i];
@@ -616,6 +676,59 @@ namespace DimensionBrawl.Presentation
             }
 
             poseApplied = true;
+        }
+
+        private void CaptureDeathBasePose()
+        {
+            deathBasePoseCaptured = false;
+            if (!poseCaptured || motionRoot == null)
+            {
+                return;
+            }
+
+            Vector3 rootPosition = motionRoot.localPosition;
+            Quaternion rootRotation = motionRoot.localRotation;
+            if (poseApplied
+                && Approximately(rootPosition, lastAppliedRootLocalPosition)
+                && Approximately(rootRotation, lastAppliedRootLocalRotation))
+            {
+                rootPosition = lastBaseRootLocalPosition;
+                rootRotation = lastBaseRootLocalRotation;
+            }
+
+            deathBaseRootLocalPosition = rootPosition;
+            deathBaseRootLocalRotation = rootRotation;
+
+            int count = wingRoots != null ? wingRoots.Length : 0;
+            if (deathBaseWingLocalRotations.Length != count)
+            {
+                deathBaseWingLocalRotations = new Quaternion[count];
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                Transform wingRoot = wingRoots[i];
+                Quaternion wingRotation = wingRoot != null
+                    ? wingRoot.localRotation
+                    : Quaternion.identity;
+                if (wingRoot != null
+                    && poseApplied
+                    && i < lastAppliedWingLocalRotations.Length
+                    && Approximately(wingRotation, lastAppliedWingLocalRotations[i]))
+                {
+                    wingRotation = lastBaseWingLocalRotations[i];
+                }
+
+                deathBaseWingLocalRotations[i] = wingRotation;
+            }
+
+            deathBasePoseCaptured = true;
+        }
+
+        private float ResolveDeathEase()
+        {
+            float progress = DeathProgress01;
+            return progress * progress * (3f - 2f * progress);
         }
 
         private void RemoveLastAppliedOffsets()

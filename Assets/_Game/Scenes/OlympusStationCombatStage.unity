@@ -482,7 +482,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -303214,8 +303214,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2105000000}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.99991333, z: -0.013165307, w: 0}
-  m_LocalPosition: {x: 0, y: 2.42, z: 12.15}
+  m_LocalRotation: {x: -0, y: 0.9861772, z: -0.16569395, w: 0}
+  m_LocalPosition: {x: 0, y: 1.45, z: 5.35}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -316682,11 +316682,13 @@ MonoBehaviour:
   hitPitchDegrees: 3.5
   hitWingKickDegrees: 7
   deathSettleSeconds: 0.9
-  deathDropDistance: 0.32
-  deathBackDistance: 0.1
-  deathPitchDegrees: 18
-  deathWingFoldDegrees: 32
-  deathWingYawDegrees: 12
+  deathDropDistance: 0.5
+  deathBackDistance: 0.22
+  deathPitchDegrees: 20
+  deathRollDegrees: 62
+  deathPivotLocalHeight: 0.72
+  deathWingFoldDegrees: 52
+  deathWingYawDegrees: 20
 --- !u!1 &2138649180
 GameObject:
   m_ObjectHideFlags: 0
