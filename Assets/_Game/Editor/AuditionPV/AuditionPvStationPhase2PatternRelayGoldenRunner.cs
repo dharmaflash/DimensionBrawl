@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
-using Unity.Collections;
 using UnityEditor;
 using UnityEditor.Recorder;
 using UnityEditor.SceneManagement;
@@ -352,7 +351,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 if (texture.width != expectedWidth
                     || texture.height != expectedHeight
-                    || texture.GetRawTextureData<Color32>().Length
+                    || texture.GetPixels32().Length
                         != expectedWidth * expectedHeight)
                 {
                     throw new InvalidDataException(
@@ -462,7 +461,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = area.xMin; x < area.xMax; x += sampleStride)
                 {
-                    int index = RawIndexFromBottomLeft(x, y, width, height);
+                    int index = y * width + x;
                     Color32 left = before[index];
                     Color32 right = after[index];
                     int red = Math.Abs(left.r - right.r);
@@ -519,8 +518,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += sampleStride)
                 {
-                    Color32 pixel = pixels[
-                        RawIndexFromBottomLeft(x, y, width, height)];
+                    Color32 pixel = pixels[y * width + x];
                     if (IsCurtainGreen(pixel))
                     {
                         metrics.curtainGreenSampleCount++;
@@ -554,20 +552,20 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         internal static HudVisualMetrics EvaluateHudRoi(
-            Color32[] pixels,
-            int width,
-            int height,
+            Texture2D texture,
             RectInt roi,
             int sampleStride)
         {
-            if (pixels == null
-                || pixels.Length != width * height
+            if (texture == null
+                || !texture.isReadable
+                || texture.width <= 0
+                || texture.height <= 0
                 || sampleStride <= 0)
             {
-                throw new ArgumentException("G07 HUD buffer is invalid.");
+                throw new ArgumentException("G07 HUD texture is invalid.");
             }
 
-            ValidateRoi(roi, width, height);
+            ValidateRoi(roi, texture.width, texture.height);
             var metrics = new HudVisualMetrics
             {
                 minimumFramePinkSamples = int.MaxValue,
@@ -583,9 +581,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 frameCount = 1
             };
             EvaluateHudFrame(
-                pixels,
-                width,
-                height,
+                texture,
                 roi,
                 sampleStride,
                 out int pink,
@@ -1713,17 +1709,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                     AuditionPvStationPhase2PatternRelayCapture.FrameFileName(frame)));
                 try
                 {
-                    NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
-                    AnalyzeSequenceFrame(pixels, texture.width, texture.height, sequence);
+                    AnalyzeSequenceFrame(texture, sequence);
                     AnalyzeHudFrame(
-                        pixels,
-                        texture.width,
-                        texture.height,
+                        texture,
                         HudRawBottomLeftRoi,
                         hud);
                     if (selectedSet.Contains(frame))
                     {
-                        selected[frame] = pixels.ToArray();
+                        selected[frame] = texture.GetPixels32();
                     }
                 }
                 finally
@@ -1871,11 +1864,11 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         private static void AnalyzeSequenceFrame(
-            NativeArray<Color32> pixels,
-            int width,
-            int height,
+            Texture2D texture,
             SequenceVisualMetrics metrics)
         {
+            int width = texture.width;
+            int height = texture.height;
             long samples = 0;
             long black = 0;
             long magenta = 0;
@@ -1886,7 +1879,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = Step / 2; x < width; x += Step)
                 {
-                    Color32 pixel = pixels[y * width + x];
+                    Color32 pixel = texture.GetPixel(x, y);
                     int luma = Luma(pixel);
                     minimumLuma = Math.Min(minimumLuma, luma);
                     maximumLuma = Math.Max(maximumLuma, luma);
@@ -1931,9 +1924,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         private static void AnalyzeHudFrame(
-            NativeArray<Color32> pixels,
-            int width,
-            int height,
+            Texture2D texture,
             RectInt roi,
             HudVisualMetrics aggregate)
         {
@@ -1946,8 +1937,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += 4)
                 {
-                    Color32 pixel = pixels[
-                        RawIndexFromBottomLeft(x, y, width, height)];
+                    Color32 pixel = texture.GetPixel(x, y);
                     int luma = Luma(pixel);
                     if (pixel.r >= 140
                         && pixel.r - pixel.g >= 15
@@ -2000,9 +1990,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         private static void EvaluateHudFrame(
-            Color32[] pixels,
-            int width,
-            int height,
+            Texture2D texture,
             RectInt roi,
             int stride,
             out int pink,
@@ -2019,8 +2007,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += stride)
                 {
-                    Color32 pixel = pixels[
-                        RawIndexFromBottomLeft(x, y, width, height)];
+                    Color32 pixel = texture.GetPixel(x, y);
                     int luma = Luma(pixel);
                     if (pixel.r >= 140
                         && pixel.r - pixel.g >= 15
@@ -2050,18 +2037,6 @@ namespace DimensionBrawl.Editor.AuditionPV
         private static int Luma(Color32 pixel)
         {
             return (pixel.r * 54 + pixel.g * 183 + pixel.b * 19) >> 8;
-        }
-
-        private static int RawIndexFromBottomLeft(
-            int x,
-            int y,
-            int width,
-            int height)
-        {
-            // ImageConversion.LoadImage exposes PNG storage rows top-down via
-            // GetRawTextureData, while camera/viewport RectInt evidence uses
-            // Unity's bottom-left presentation coordinates.
-            return (height - 1 - y) * width + x;
         }
 
         private static void ValidateRoi(RectInt roi, int width, int height)

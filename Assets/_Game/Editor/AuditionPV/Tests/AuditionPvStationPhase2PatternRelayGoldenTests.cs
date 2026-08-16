@@ -608,15 +608,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Color32[] before = Enumerable.Repeat(new Color32(0, 0, 0, 255), 16)
                 .ToArray();
             Color32[] after = before.ToArray();
-            // Raw PNG rows are top-down. Presentation coordinate (1, 1) in a
-            // 4x4 image is raw index 9, not the tempting unflipped index 5.
-            after[(4 - 1 - 1) * 4 + 1] = new Color32(30, 30, 30, 255);
+            // GetPixels32 is semantic RGBA in Unity bottom-left order.
+            after[1 * 4 + 1] = new Color32(30, 30, 30, 255);
             var delta = AuditionPvStationPhase2PatternRelayGoldenRunner
                 .EvaluateFrameDelta(before, after, 4, 4, new RectInt(1, 1, 1, 1));
             Assert.That(delta.sampleCount, Is.EqualTo(1));
             Assert.That(delta.changedSampleCount, Is.EqualTo(1));
             after = before.ToArray();
-            after[1 * 4 + 1] = new Color32(30, 30, 30, 255);
+            after[2 * 4 + 1] = new Color32(30, 30, 30, 255);
             delta = AuditionPvStationPhase2PatternRelayGoldenRunner
                 .EvaluateFrameDelta(before, after, 4, 4, new RectInt(1, 1, 1, 1));
             Assert.That(delta.changedSampleCount, Is.Zero,
@@ -672,48 +671,79 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void PixelRoiHelpers_MapTopDownRawRowsToBottomLeftPresentationCoordinates()
+        public void PixelRoiHelpers_UseSemanticRgbaAndBottomLeftCoordinatesAfterPngDecode()
         {
             const int width = 4;
             const int height = 4;
-            int RawIndex(int x, int bottomY) =>
-                (height - 1 - bottomY) * width + x;
-
-            Color32[] hud = Enumerable.Repeat(
-                new Color32(100, 100, 100, 255), width * height).ToArray();
-            for (int rawIndex = 0; rawIndex < width * 2; rawIndex++)
+            var source = new Texture2D(
+                width, height, TextureFormat.RGBA32, false, true);
+            var decoded = new Texture2D(
+                2, 2, TextureFormat.RGBA32, false, true);
+            try
             {
-                hud[rawIndex] = new Color32(255, 0, 0, 255);
+                Color32[] hud = Enumerable.Repeat(
+                    new Color32(100, 100, 100, 255), width * height).ToArray();
+                for (int y = 2; y < height; y++)
+                {
+                    for (int x = 0; x < 2; x++)
+                    {
+                        hud[y * width + x] = new Color32(255, 0, 0, 255);
+                    }
+                }
+
+                hud[0 * width + 0] = new Color32(200, 100, 100, 255);
+                hud[0 * width + 1] = new Color32(10, 10, 10, 255);
+                hud[1 * width + 0] = new Color32(240, 240, 240, 255);
+                hud[1 * width + 1] = new Color32(100, 100, 100, 255);
+                source.SetPixels32(hud);
+                source.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+                Assert.That(ImageConversion.LoadImage(
+                    decoded,
+                    ImageConversion.EncodeToPNG(source),
+                    markNonReadable: false), Is.True);
+                var hudMetrics = AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .EvaluateHudRoi(decoded, new RectInt(0, 0, 2, 2), 1);
+                Assert.That(hudMetrics.minimumFramePinkSamples, Is.EqualTo(1));
+                Assert.That(hudMetrics.minimumFrameDarkSamples, Is.EqualTo(1));
+                Assert.That(hudMetrics.minimumFrameBrightSamples, Is.EqualTo(1));
+                Assert.That(hudMetrics.minimumFrameMeanLuma, Is.EqualTo(117.75d));
+
+                Color32[] pattern = Enumerable.Repeat(
+                    new Color32(100, 100, 100, 255), width * height).ToArray();
+                for (int y = 2; y < height; y++)
+                {
+                    for (int x = 0; x < 2; x++)
+                    {
+                        pattern[y * width + x] = x == 0
+                            ? new Color32(146, 170, 162, 255)
+                            : new Color32(125, 170, 180, 255);
+                    }
+                }
+
+                pattern[0 * width + 0] = new Color32(146, 170, 162, 255);
+                pattern[0 * width + 1] = new Color32(125, 170, 180, 255);
+                source.SetPixels32(pattern);
+                source.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+                Assert.That(ImageConversion.LoadImage(
+                    decoded,
+                    ImageConversion.EncodeToPNG(source),
+                    markNonReadable: false), Is.True);
+                var colors = AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .EvaluatePatternColors(
+                        decoded.GetPixels32(),
+                        width,
+                        height,
+                        new RectInt(0, 0, 2, 2),
+                        1);
+                Assert.That(colors.sampleCount, Is.EqualTo(4));
+                Assert.That(colors.curtainGreenSampleCount, Is.EqualTo(1));
+                Assert.That(colors.hoverCyanSampleCount, Is.EqualTo(1));
             }
-
-            hud[RawIndex(0, 0)] = new Color32(200, 100, 100, 255);
-            hud[RawIndex(1, 0)] = new Color32(10, 10, 10, 255);
-            hud[RawIndex(0, 1)] = new Color32(240, 240, 240, 255);
-            hud[RawIndex(1, 1)] = new Color32(100, 100, 100, 255);
-            var hudMetrics = AuditionPvStationPhase2PatternRelayGoldenRunner
-                .EvaluateHudRoi(hud, width, height, new RectInt(0, 0, 2, 2), 1);
-            Assert.That(hudMetrics.minimumFramePinkSamples, Is.EqualTo(1));
-            Assert.That(hudMetrics.minimumFrameDarkSamples, Is.EqualTo(1));
-            Assert.That(hudMetrics.minimumFrameBrightSamples, Is.EqualTo(1));
-            Assert.That(hudMetrics.minimumFrameMeanLuma, Is.EqualTo(117.75d));
-
-            Color32[] pattern = Enumerable.Repeat(
-                new Color32(100, 100, 100, 255), width * height).ToArray();
-            for (int rawIndex = 0; rawIndex < width * 2; rawIndex++)
+            finally
             {
-                pattern[rawIndex] = rawIndex % 2 == 0
-                    ? new Color32(146, 170, 162, 255)
-                    : new Color32(125, 170, 180, 255);
+                UnityEngine.Object.DestroyImmediate(source);
+                UnityEngine.Object.DestroyImmediate(decoded);
             }
-
-            pattern[RawIndex(0, 0)] = new Color32(146, 170, 162, 255);
-            pattern[RawIndex(1, 0)] = new Color32(125, 170, 180, 255);
-            var colors = AuditionPvStationPhase2PatternRelayGoldenRunner
-                .EvaluatePatternColors(
-                    pattern, width, height, new RectInt(0, 0, 2, 2), 1);
-            Assert.That(colors.sampleCount, Is.EqualTo(4));
-            Assert.That(colors.curtainGreenSampleCount, Is.EqualTo(1));
-            Assert.That(colors.hoverCyanSampleCount, Is.EqualTo(1));
         }
 
         [Test]
