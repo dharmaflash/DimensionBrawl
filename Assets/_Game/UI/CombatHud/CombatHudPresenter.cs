@@ -12,6 +12,7 @@ namespace DimensionBrawl.UI
         {
             "BossSymbol",
             "BossNameArea",
+            "BossNameText",
             "BossHpBackground",
             "BossHpFill",
             "BossCostBackground",
@@ -722,6 +723,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image healthFill;
         [SerializeField] private Image resourceFill;
         [SerializeField] private RectTransform bossHudRoot;
+        [SerializeField] private Text bossNameText;
         [SerializeField] private Text bossHealthText;
         [SerializeField] private Text bossResourceText;
         [SerializeField] private Image bossHealthFill;
@@ -959,6 +961,12 @@ namespace DimensionBrawl.UI
                     bossHealthText.gameObject.SetActive(false);
                 }
             }
+        }
+
+        public void SetBossName(string displayName)
+        {
+            ResolveOptionalRuntimeReferences();
+            SetText(bossNameText, displayName);
         }
 
         public void SetBossHudVisible(bool visible)
@@ -1367,6 +1375,11 @@ namespace DimensionBrawl.UI
             if (bossHealthText == null)
             {
                 bossHealthText = FindText("BossHpText");
+            }
+
+            if (bossNameText == null)
+            {
+                bossNameText = FindText("BossNameText");
             }
 
             if (bossResourceText == null)

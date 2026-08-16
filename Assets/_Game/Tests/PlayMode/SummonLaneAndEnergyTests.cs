@@ -22,6 +22,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller";
         private const string MissingHitAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private const string FrontlineWaveStageProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
+        private const string PreThreatObjectiveCopy = "근접 위협을 먼저 처치하세요";
+        private const string SummonChargeObjectiveCopy = "소환 에너지를 충전하세요";
+        private const string SummonReadyObjectiveCopy = "소환으로 탄막을 막으세요";
 
         [Test]
         public void LaneSpaceClampsPlayerZoneButKeepsForwardBattlefieldAvailable()
@@ -289,6 +294,51 @@ namespace DimensionBrawl.Tests
             }
             finally
             {
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
+        public void BossBarrageEarlyObjectivesUseExactPlayerCopyWithoutInternalTokens()
+        {
+            GameObject playerObject = new GameObject("EarlyObjectivePlayer");
+            GameObject ownerObject = new GameObject("EarlyObjectiveOwner");
+            FrontlineWaveStageProfile defaultProfile =
+                ScriptableObject.CreateInstance<FrontlineWaveStageProfile>();
+            try
+            {
+                FrontlineWaveStageProfile authoredProfile =
+                    AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(
+                        FrontlineWaveStageProfilePath);
+                Assert.That(authoredProfile, Is.Not.Null, FrontlineWaveStageProfilePath);
+                AssertEarlyObjectiveProfileCopy(defaultProfile);
+                AssertEarlyObjectiveProfileCopy(authoredProfile);
+
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                BossBarrageEncounterController owner =
+                    ownerObject.AddComponent<BossBarrageEncounterController>();
+                SetPrivateInstanceField(owner, "energyLadder", energy);
+
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, PreThreatObjectiveCopy);
+                SetPrivateInstanceField(owner, "closeThreatDefeated", true);
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, SummonChargeObjectiveCopy);
+                energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+                Assert.That(energy.CanSpend, Is.True);
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, SummonReadyObjectiveCopy);
+
+                owner.AssignStageProfile(authoredProfile);
+                SetPrivateInstanceField(owner, "closeThreatDefeated", false);
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, PreThreatObjectiveCopy);
+                energy.ResetLadder();
+                SetPrivateInstanceField(owner, "closeThreatDefeated", true);
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, SummonChargeObjectiveCopy);
+                energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+                AssertEarlyObjectiveCue(owner.ObjectiveCue, SummonReadyObjectiveCopy);
+            }
+            finally
+            {
+                Object.DestroyImmediate(defaultProfile);
+                Object.DestroyImmediate(ownerObject);
                 Object.DestroyImmediate(playerObject);
             }
         }
@@ -7324,6 +7374,25 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(callback, "The enabled VFX bridge should subscribe to the encounter follow-up event.");
 
             callback.Invoke(tier, damage);
+        }
+
+        private static void AssertEarlyObjectiveProfileCopy(FrontlineWaveStageProfile profile)
+        {
+            Assert.That(profile, Is.Not.Null);
+            AssertEarlyObjectiveCue(profile.PreThreatChargeCue, PreThreatObjectiveCopy);
+            AssertEarlyObjectiveCue(profile.PreThreatReadyCue, PreThreatObjectiveCopy);
+            AssertEarlyObjectiveCue(profile.SummonChargeCue, SummonChargeObjectiveCopy);
+            AssertEarlyObjectiveCue(profile.SummonReadyCue, SummonReadyObjectiveCopy);
+        }
+
+        private static void AssertEarlyObjectiveCue(string actual, string expected)
+        {
+            Assert.That(actual, Is.EqualTo(expected));
+            Assert.That(actual, Does.Not.Contain("SummonSlot1"));
+            Assert.That(actual, Does.Not.Contain("LV"));
+            Assert.That(actual, Does.Not.Contain(":"));
+            Assert.That(actual, Does.Not.Contain("Build EN"));
+            Assert.That(actual, Does.Not.Contain("boss curtain"));
         }
 
         private static void SetPrivateInstanceField<T>(object target, string fieldName, T value)

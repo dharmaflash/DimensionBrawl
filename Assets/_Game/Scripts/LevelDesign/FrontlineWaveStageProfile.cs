@@ -93,10 +93,10 @@ namespace DimensionBrawl.LevelDesign
         [Header("Objective Copy")]
         [SerializeField, Min(1)] private int objectiveStepCount = 3;
         [SerializeField] private string stepPrefix = "Survive";
-        [TextArea, SerializeField] private string preThreatChargeCue = "Keep HP safe, build EN, then stop the close probe";
-        [TextArea, SerializeField] private string preThreatReadyCue = "Stop the close probe and keep SummonSlot1 ready for boss curtain";
-        [TextArea, SerializeField] private string summonChargeCue = "Build EN for SummonSlot1; boss curtain is returning";
-        [TextArea, SerializeField] private string summonReadyCue = "Spend SummonSlot1 to block boss curtain";
+        [TextArea, SerializeField] private string preThreatChargeCue = "근접 위협을 먼저 처치하세요";
+        [TextArea, SerializeField] private string preThreatReadyCue = "근접 위협을 먼저 처치하세요";
+        [TextArea, SerializeField] private string summonChargeCue = "소환 에너지를 충전하세요";
+        [TextArea, SerializeField] private string summonReadyCue = "소환으로 탄막을 막으세요";
         [TextArea, SerializeField] private string summonOpportunityCue = "Summon cover is open";
         [TextArea, SerializeField] private string followupReadyCue = "Confirm the summon opening with Skill1";
         [TextArea, SerializeField] private string followupFiredCue = "Skill1 committed into the summon opening";

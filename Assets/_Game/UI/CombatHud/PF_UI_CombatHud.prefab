@@ -4478,7 +4478,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: ARCHON PROXY
+  m_Text: BOSS
 --- !u!1 &2714855393085647489
 GameObject:
   m_ObjectHideFlags: 0

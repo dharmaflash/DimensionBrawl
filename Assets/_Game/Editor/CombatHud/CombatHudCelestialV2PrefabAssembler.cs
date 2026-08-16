@@ -437,7 +437,7 @@ namespace DimensionBrawl.Editor
             ConfigureText(
                 nameText,
                 font,
-                "ARCHON PROXY",
+                "BOSS",
                 30,
                 TextAnchor.MiddleLeft,
                 new Color(0.96f, 0.97f, 0.98f, 1f));

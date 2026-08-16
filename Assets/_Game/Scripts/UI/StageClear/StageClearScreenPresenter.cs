@@ -10,6 +10,9 @@ namespace DimensionBrawl.UI.StageClear
     [DisallowMultipleComponent]
     public sealed class StageClearScreenPresenter : MonoBehaviour
     {
+        private const string RedundantClearTextObjectName =
+            "Stage_Clear_UI_0000s_0001_Claer!_Text";
+
         private static readonly string[] ProofRowObjectNames =
         {
             "Mission1",
@@ -204,6 +207,7 @@ namespace DimensionBrawl.UI.StageClear
             ResolveButtons();
             ResolveMotionTargets();
             ResolveResultLabels();
+            SetNamedObjectActive(RedundantClearTextObjectName, false);
             ApplyEntranceStartState();
 
             if (retryButton != null)
@@ -780,7 +784,7 @@ namespace DimensionBrawl.UI.StageClear
             }
 
             SetNamedObjectActive("Stage_Clear_UI_0000s_0000_StageClear_Icon", clear);
-            SetNamedObjectActive("Stage_Clear_UI_0000s_0001_Claer!_Text", clear);
+            SetNamedObjectActive(RedundantClearTextObjectName, false);
             SetNamedObjectActive("RewardCategory", false);
             SetNamedObjectActive("Stage_Clear_UI_0002s_0006_RewardCategory_Frame", false);
             SetNamedObjectActive("Stage_Clear_UI_0002s_0004_Reward_Panel", false);
@@ -835,7 +839,7 @@ namespace DimensionBrawl.UI.StageClear
             SetNamedObjectActive("Stage_Clear_UI_0000s_0007_BatteTime_Frame", false);
             SetNamedObjectActive("Stage_Clear_UI_0000s_0006_BatteTime_Icon", false);
             SetNamedObjectActive("Stage_Clear_UI_0000s_0000_StageClear_Icon", false);
-            SetNamedObjectActive("Stage_Clear_UI_0000s_0001_Claer!_Text", false);
+            SetNamedObjectActive(RedundantClearTextObjectName, false);
             SetNamedObjectActive("MissionCategory", false);
             SetNamedObjectActive("Stage_Clear_UI_0001s_0000_MissionCategory_Frame", false);
             SetNamedObjectActive("RewardCategory", false);

@@ -556,15 +556,21 @@ namespace DimensionBrawl.Combat
                     }
 
                     return energyLadder != null && !energyLadder.CanSpend
-                        ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Build EN for SummonSlot1; boss curtain is returning")}: {ResolveObjectiveSummonAnswerLabel()}"
-                        : $"{ResolveStageText(stageProfile != null ? stageProfile.SummonReadyCue : null, "Spend SummonSlot1 to block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}";
+                        ? ResolveStageText(
+                            stageProfile != null ? stageProfile.SummonChargeCue : null,
+                            "소환 에너지를 충전하세요")
+                        : ResolveStageText(
+                            stageProfile != null ? stageProfile.SummonReadyCue : null,
+                            "소환으로 탄막을 막으세요");
                 }
 
                 return energyLadder != null && !energyLadder.CanSpend
                     ? ResolveStageText(
                         stageProfile != null ? stageProfile.PreThreatChargeCue : null,
-                        "Keep HP safe, build EN, then stop the close probe")
-                    : $"{ResolveStageText(stageProfile != null ? stageProfile.PreThreatReadyCue : null, "Stop the close probe and prepare the summon answer")}: {ResolveObjectiveSummonAnswerLabel()}";
+                        "근접 위협을 먼저 처치하세요")
+                    : ResolveStageText(
+                        stageProfile != null ? stageProfile.PreThreatReadyCue : null,
+                        "근접 위협을 먼저 처치하세요");
             }
         }
 

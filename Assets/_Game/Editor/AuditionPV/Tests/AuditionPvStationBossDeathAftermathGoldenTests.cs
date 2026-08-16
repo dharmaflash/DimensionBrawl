@@ -4,9 +4,14 @@ using System.IO;
 using System.Linq;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.SceneManagement;
+using UnityEngine.Timeline;
 
 namespace DimensionBrawl.Editor.AuditionPV.Tests
 {
@@ -34,6 +39,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(62));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.AftermathHeroFrame,
                 Is.EqualTo(116));
+            Assert.That(AuditionPvStationBossDeathAftermathCapture.FinisherStabilityFrame,
+                Is.EqualTo(181));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.ResultRequestFrame,
                 Is.EqualTo(218));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.InteractiveResultFrame,
@@ -122,8 +129,208 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(baselines.Select(value => value.sourceFrame),
                 Is.EqualTo(new[] { 62, 116, 246 }));
             Assert.That(baselines.Select(value => value.hudMode),
-                Is.EqualTo(new[] { "hud-on", "hud-on", "authored-result" }));
+                Is.EqualTo(new[] { "hud-on", "hud-off", "authored-result" }));
+            Assert.That(baselines[1].fileName, Does.Contain("__HUDOFF__"));
+            Assert.That(baselines[2].fileName, Does.Contain("__AUTHOREDRESULT__"));
             Assert.That(baselines.All(value => value.status == "captured"), Is.True);
+        }
+
+        [Test]
+        public void FinisherAssets_HaveExactTransformCurvesAndSingleHeldTimelineClip()
+        {
+            const string AnimationPath =
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim";
+            const string TimelinePath =
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable";
+            AnimationClip animation = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                AnimationPath);
+            TimelineAsset timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(
+                TimelinePath);
+            Assert.That(animation, Is.Not.Null);
+            Assert.That(timeline, Is.Not.Null);
+
+            EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(animation);
+            string[] expectedProperties =
+            {
+                "m_LocalPosition.x", "m_LocalPosition.y", "m_LocalPosition.z",
+                "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z",
+                "m_LocalRotation.w"
+            };
+            Assert.That(bindings.Length, Is.EqualTo(7));
+            Assert.That(bindings.All(value => value.type == typeof(Transform)), Is.True);
+            Assert.That(bindings.All(value => string.IsNullOrEmpty(value.path)), Is.True);
+            Assert.That(
+                bindings.Select(value => value.propertyName)
+                    .OrderBy(value => value, StringComparer.Ordinal),
+                Is.EqualTo(expectedProperties.OrderBy(
+                    value => value,
+                    StringComparer.Ordinal)));
+            Assert.That(animation.frameRate, Is.EqualTo(60f).Within(0.0001f));
+            Assert.That(animation.length, Is.EqualTo(2.6f).Within(0.0001f));
+
+            TrackAsset[] rootTracks = timeline.GetRootTracks().ToArray();
+            Assert.That(rootTracks.Length, Is.EqualTo(1));
+            AnimationTrack track = rootTracks.Single() as AnimationTrack;
+            Assert.That(track, Is.Not.Null);
+            TimelineClip[] clips = track.GetClips().ToArray();
+            Assert.That(clips.Length, Is.EqualTo(1));
+            TimelineClip timelineClip = clips.Single();
+            AnimationPlayableAsset playable =
+                timelineClip.asset as AnimationPlayableAsset;
+            Assert.That(playable, Is.Not.Null);
+            Assert.That(playable.clip, Is.SameAs(animation));
+            Assert.That(timeline.durationMode,
+                Is.EqualTo(TimelineAsset.DurationMode.FixedLength));
+            Assert.That(timeline.fixedDuration, Is.EqualTo(2.6d).Within(0.0001d));
+            Assert.That(timeline.duration, Is.EqualTo(2.6d).Within(0.0001d));
+            Assert.That(timeline.editorSettings.frameRate,
+                Is.EqualTo(60d).Within(0.0001d));
+            Assert.That(timelineClip.start, Is.Zero.Within(0.0001d));
+            Assert.That(timelineClip.clipIn, Is.Zero.Within(0.0001d));
+            Assert.That(timelineClip.duration, Is.EqualTo(2.6d).Within(0.0001d));
+            Assert.That(timelineClip.timeScale, Is.EqualTo(1d).Within(0.0001d));
+            Assert.That(timelineClip.preExtrapolationMode,
+                Is.EqualTo(TimelineClip.ClipExtrapolation.None));
+            Assert.That(timelineClip.postExtrapolationMode,
+                Is.EqualTo(TimelineClip.ClipExtrapolation.Hold));
+        }
+
+        [Test]
+        public void StationFinisherDirector_EvaluatesExactStartSettleAndHeldRigPose()
+        {
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene station = SceneManager.GetSceneByPath(
+                AuditionPvStationBossDeathAftermathCapture.StationScenePath);
+            bool openedByTest = !station.IsValid() || !station.isLoaded;
+            bool sceneWasDirty = station.IsValid() && station.isLoaded && station.isDirty;
+            OlympusStationBossTerminalFinisherCameraController controller = null;
+            PlayableDirector director = null;
+            Transform rig = null;
+            Vector3 savedLocalPosition = default;
+            Quaternion savedLocalRotation = Quaternion.identity;
+            Vector3 savedLocalScale = Vector3.one;
+            double savedDirectorTime = 0d;
+            DirectorUpdateMode savedUpdateMode = DirectorUpdateMode.GameTime;
+            bool directorMutationStarted = false;
+
+            try
+            {
+                if (openedByTest)
+                {
+                    station = EditorSceneManager.OpenScene(
+                        AuditionPvStationBossDeathAftermathCapture.StationScenePath,
+                        OpenSceneMode.Additive);
+                    sceneWasDirty = station.isDirty;
+                }
+
+                controller = station.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        OlympusStationBossTerminalFinisherCameraController>(true))
+                    .Single();
+                director = controller.FinisherDirector;
+                rig = controller.FinisherCamera != null
+                    ? controller.FinisherCamera.transform
+                    : null;
+                Assert.That(director, Is.Not.Null);
+                Assert.That(rig, Is.Not.Null);
+                Assert.That(rig, Is.SameAs(controller.transform));
+                Assert.That(controller.FinisherTimeline, Is.Not.Null);
+                Assert.That(director.playableAsset,
+                    Is.SameAs(controller.FinisherTimeline));
+                AnimationTrack track = controller.FinisherTimeline.GetRootTracks()
+                    .Single() as AnimationTrack;
+                Assert.That(track, Is.Not.Null);
+                Assert.That(director.GetGenericBinding(track),
+                    Is.SameAs(controller.GetComponent<Animator>()));
+                if (director.state == PlayState.Playing)
+                {
+                    Assert.Ignore(
+                        "The Station finisher Director is already playing; its live state was left untouched.");
+                }
+
+                savedLocalPosition = rig.localPosition;
+                savedLocalRotation = rig.localRotation;
+                savedLocalScale = rig.localScale;
+                savedDirectorTime = director.time;
+                savedUpdateMode = director.timeUpdateMode;
+                directorMutationStarted = true;
+                director.timeUpdateMode = DirectorUpdateMode.Manual;
+
+                AssertFinisherRigPose(
+                    director,
+                    rig,
+                    0d,
+                    new Vector3(0f, 2.42f, 12.15f),
+                    new Quaternion(0f, 0.99991333f, -0.0131653f, 0f));
+                AssertFinisherRigPose(
+                    director,
+                    rig,
+                    0.14d,
+                    new Vector3(0f, 2.35f, 12.4f),
+                    new Quaternion(0f, 0.9999492f, -0.010079109f, 0f));
+                AssertFinisherRigPose(
+                    director,
+                    rig,
+                    2.6d,
+                    new Vector3(0f, 2.35f, 12.4f),
+                    new Quaternion(0f, 0.9999492f, -0.010079109f, 0f));
+            }
+            finally
+            {
+                try
+                {
+                    if (directorMutationStarted && director != null)
+                    {
+                        director.Stop();
+                        director.timeUpdateMode = savedUpdateMode;
+                        director.time = savedDirectorTime;
+                    }
+
+                    if (directorMutationStarted && rig != null)
+                    {
+                        rig.localPosition = savedLocalPosition;
+                        rig.localRotation = savedLocalRotation;
+                        rig.localScale = savedLocalScale;
+                    }
+
+                    if (!openedByTest
+                        && !sceneWasDirty
+                        && station.IsValid()
+                        && station.isLoaded
+                        && station.isDirty)
+                    {
+                        System.Reflection.MethodInfo clearDirtiness =
+                            typeof(EditorSceneManager).GetMethod(
+                                "ClearSceneDirtiness",
+                                System.Reflection.BindingFlags.Static
+                                    | System.Reflection.BindingFlags.NonPublic);
+                        if (clearDirtiness == null)
+                        {
+                            throw new MissingMethodException(
+                                "Unity Editor cannot restore Station scene dirtiness after the finisher pose test.");
+                        }
+
+                        clearDirtiness.Invoke(null, new object[] { station });
+                    }
+                }
+                finally
+                {
+                    try
+                    {
+                        if (openedByTest && station.IsValid() && station.isLoaded)
+                        {
+                            EditorSceneManager.CloseScene(station, true);
+                        }
+                    }
+                    finally
+                    {
+                        if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                        {
+                            SceneManager.SetActiveScene(previousActiveScene);
+                        }
+                    }
+                }
+            }
         }
 
         [Test]
@@ -561,23 +768,269 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void PixelCalibration_FirstHonestTakeIsFailClosedAfterTelemetryValidation()
+        public void PixelCalibration_IsLockedToReviewedRuntimeTakeWithHeadroom()
+        {
+            AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
+                CreateValidProof();
+            proof.sequenceBlackRatio = 0d;
+            proof.sequenceMagentaRatio = 0d;
+            proof.maximumFrameMagentaRatio = 0d;
+            proof.healthyFramePercent = 100d;
+            proof.impactMeanAbsoluteRgb = 13.542403067130082d;
+            proof.impactChangedRatio = 0.29932291666666668d;
+            proof.aftermathEvolutionMeanAbsoluteRgb = 30.48984809027858d;
+            proof.aftermathEvolutionChangedRatio = 0.5495182291666667d;
+            proof.resultAppearanceMeanAbsoluteRgb = 8.468068576389213d;
+            proof.resultAppearanceChangedRatio = 0.32838541666666665d;
+            proof.resultEntranceMeanAbsoluteRgb = 35.30529513888843d;
+            proof.resultEntranceChangedRatio = 0.8523480902777778d;
+            proof.resultBrightSamples = 76646;
+            proof.resultNavySamples = 630;
+            proof.resultBlueSamples = 80369;
+
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.PixelCalibrationLocked,
+                Is.True);
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.PixelCalibrationCaptureId,
+                Is.EqualTo(
+                    "20260816t084414z_g08-station-boss-death-aftermath_g174d6862472a_clean"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.PixelCalibrationHeadSha,
+                Is.EqualTo("174d6862472abf89b295749e37fdd1b280f97c49"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .PixelCalibrationFailureSha256,
+                Is.EqualTo(
+                    "e44e24e74c31f9ad6b6b1e0e6ef903ee10f7181cce5fd22afca0e1eda5defa9a"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .PixelCalibrationReconstructedLedgerSha256,
+                Is.EqualTo(
+                    "66577dd2934bae05f50c9812026d5e46e98f9de45de23c3c00393e1196d24de1"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.ImpactDeltaFromFrame,
+                Is.EqualTo(61));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.ImpactDeltaToFrame,
+                Is.EqualTo(62));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .AftermathDeltaFromFrame,
+                Is.EqualTo(62));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.AftermathDeltaToFrame,
+                Is.EqualTo(116));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultAppearanceFromFrame,
+                Is.EqualTo(218));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultAppearanceToFrame,
+                Is.EqualTo(221));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultEntranceFromFrame,
+                Is.EqualTo(221));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultEntranceToFrame,
+                Is.EqualTo(246));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner.ResultSurfaceFrame,
+                Is.EqualTo(246));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .SequencePixelSampleStride,
+                Is.EqualTo(8));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedSequencePixelSampleCount,
+                Is.EqualTo(20736000L));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .FrameDeltaPixelSampleStride,
+                Is.EqualTo(4));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedFrameDeltaPixelSampleCount,
+                Is.EqualTo(230400));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .FrameDeltaChangedRgbSumCutoff,
+                Is.EqualTo(24));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.x,
+                Is.EqualTo(256));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.y,
+                Is.EqualTo(180));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.width,
+                Is.EqualTo(2048));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.height,
+                Is.EqualTo(1080));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceSampleStride,
+                Is.EqualTo(4));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedResultSurfaceSampleCount,
+                Is.EqualTo(138240));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultBrightMinimumChannel,
+                Is.EqualTo(200));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultNavyMaximumLuma,
+                Is.EqualTo(75));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultBlueMinimumChannel,
+                Is.EqualTo(120));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultBlueMinimumRedDelta,
+                Is.EqualTo(25));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultBlueMinimumGreenDelta,
+                Is.EqualTo(10));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumSequenceBlackRatio,
+                Is.EqualTo(0.05d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumSequenceMagentaRatio,
+                Is.EqualTo(0.001d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumFrameMagentaRatio,
+                Is.EqualTo(0.005d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumHealthyFramePercent,
+                Is.EqualTo(100));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumImpactMeanAbsoluteRgb,
+                Is.EqualTo(6d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumImpactChangedRatio,
+                Is.EqualTo(0.12d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumAftermathEvolutionMeanAbsoluteRgb,
+                Is.EqualTo(12d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumAftermathEvolutionChangedRatio,
+                Is.EqualTo(0.20d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultAppearanceMeanAbsoluteRgb,
+                Is.EqualTo(3d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultAppearanceChangedRatio,
+                Is.EqualTo(0.08d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultEntranceMeanAbsoluteRgb,
+                Is.EqualTo(15d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultEntranceChangedRatio,
+                Is.EqualTo(0.30d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultBrightSamples,
+                Is.EqualTo(60000));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultNavySamples,
+                Is.EqualTo(500));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultBlueSamples,
+                Is.EqualTo(60000));
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(proof));
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProof(proof));
+            Assert.That(proof.impactMeanAbsoluteRgb,
+                Is.GreaterThan(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumImpactMeanAbsoluteRgb));
+            Assert.That(proof.aftermathEvolutionChangedRatio,
+                Is.GreaterThan(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumAftermathEvolutionChangedRatio));
+            Assert.That(proof.resultAppearanceChangedRatio,
+                Is.GreaterThan(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultAppearanceChangedRatio));
+            Assert.That(proof.resultEntranceChangedRatio,
+                Is.GreaterThan(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultEntranceChangedRatio));
+            Assert.That(proof.resultBlueSamples,
+                Is.GreaterThan(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultBlueSamples));
+        }
+
+        [Test]
+        public void VisualCompositionAcceptance_FailsClosedAfterCompleteTelemetryValidation()
         {
             AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
                 CreateValidProof();
             Assert.That(
-                AuditionPvStationBossDeathAftermathGoldenRunner.PixelCalibrationLocked,
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceLocked,
                 Is.False);
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .CompositionEvidenceFrames,
+                Is.EqualTo(new[] { 61, 62, 116, 181, 246 }));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumFinisherBossBodyHeightRatio,
+                Is.EqualTo(0.25f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumFinisherBossBodyHeightRatio,
+                Is.EqualTo(0.40f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumVisiblePlayerBodyHeightRatio,
+                Is.EqualTo(0.25f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumVisiblePlayerBodyHeightRatio,
+                Is.EqualTo(0.32f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumFinisherBossCenterDrift,
+                Is.EqualTo(0.08f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MaximumFinisherBossHeightSpread,
+                Is.EqualTo(0.05f));
             Assert.DoesNotThrow(() =>
                 AuditionPvStationBossDeathAftermathGoldenRunner
-                    .ValidateRuntimeProofBeforePixelCalibration(proof));
-            AuditionPvStationBossDeathAftermathGoldenRunner
-                .G08PixelCalibrationRequiredException failure = Assert.Throws<
+                    .ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof));
+            Assert.Throws<AuditionPvStationBossDeathAftermathGoldenRunner
+                .G08VisualCompositionAcceptanceRequiredException>(() =>
                     AuditionPvStationBossDeathAftermathGoldenRunner
-                        .G08PixelCalibrationRequiredException>(() =>
-                    AuditionPvStationBossDeathAftermathGoldenRunner
-                        .ValidateRuntimeProof(proof));
-            Assert.That(failure.Message, Does.Contain("calibration"));
+                        .ValidateRuntimeProofForPublication(proof));
         }
 
         [Test]
@@ -588,10 +1041,50 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(proof => proof.maximumFrameMagentaRatio = double.NaN);
             AssertRuntimeMutation(proof => proof.healthyFramePercent = 100.0001d);
             AssertRuntimeMutation(proof => proof.impactMeanAbsoluteRgb = -1d);
+            AssertRuntimeMutation(proof => proof.impactMeanAbsoluteRgb = 255.0001d);
             AssertRuntimeMutation(proof => proof.impactChangedRatio = 1.0001d);
+            AssertRuntimeMutation(proof =>
+                proof.aftermathEvolutionMeanAbsoluteRgb = 255.0001d);
             AssertRuntimeMutation(proof => proof.aftermathEvolutionChangedRatio = -1d);
+            AssertRuntimeMutation(proof =>
+                proof.resultAppearanceMeanAbsoluteRgb = 255.0001d);
+            AssertRuntimeMutation(proof =>
+                proof.resultEntranceMeanAbsoluteRgb = 255.0001d);
             AssertRuntimeMutation(proof => proof.resultEntranceChangedRatio = double.NaN);
             AssertRuntimeMutation(proof => proof.resultBrightSamples = -1);
+            AssertRuntimeMutation(proof => proof.resultNavySamples = -1);
+            AssertRuntimeMutation(proof => proof.resultBlueSamples = -1);
+            AssertRuntimeMutation(proof =>
+                proof.resultBrightSamples = proof.resultSurfaceSampleCount + 1);
+            AssertRuntimeMutation(proof =>
+                proof.resultNavySamples = proof.resultSurfaceSampleCount + 1);
+            AssertRuntimeMutation(proof =>
+                proof.resultBlueSamples = proof.resultSurfaceSampleCount + 1);
+            AssertRuntimeMutation(proof => proof.pixelSampleStride = 7);
+            AssertRuntimeMutation(proof => proof.pixelSampleCount--);
+            AssertRuntimeMutation(proof => proof.frameDeltaPixelSampleStride = 3);
+            AssertRuntimeMutation(proof => proof.frameDeltaPixelSampleCount--);
+            AssertRuntimeMutation(proof => proof.frameDeltaChangedRgbSumCutoff = 23);
+            AssertRuntimeMutation(proof => proof.impactDeltaFromFrame = 60);
+            AssertRuntimeMutation(proof => proof.impactDeltaToFrame = 61);
+            AssertRuntimeMutation(proof => proof.aftermathDeltaFromFrame = 61);
+            AssertRuntimeMutation(proof => proof.aftermathDeltaToFrame = 115);
+            AssertRuntimeMutation(proof => proof.resultAppearanceFromFrame = 217);
+            AssertRuntimeMutation(proof => proof.resultAppearanceToFrame = 220);
+            AssertRuntimeMutation(proof => proof.resultEntranceFromFrame = 220);
+            AssertRuntimeMutation(proof => proof.resultEntranceToFrame = 245);
+            AssertRuntimeMutation(proof => proof.resultSurfaceFrame = 245);
+            AssertRuntimeMutation(proof => proof.resultSurfaceRoiX++);
+            AssertRuntimeMutation(proof => proof.resultSurfaceRoiY++);
+            AssertRuntimeMutation(proof => proof.resultSurfaceRoiWidth--);
+            AssertRuntimeMutation(proof => proof.resultSurfaceRoiHeight--);
+            AssertRuntimeMutation(proof => proof.resultSurfaceSampleStride++);
+            AssertRuntimeMutation(proof => proof.resultSurfaceSampleCount--);
+            AssertRuntimeMutation(proof => proof.resultBrightMinimumChannel--);
+            AssertRuntimeMutation(proof => proof.resultNavyMaximumLuma--);
+            AssertRuntimeMutation(proof => proof.resultBlueMinimumChannel--);
+            AssertRuntimeMutation(proof => proof.resultBlueMinimumRedDelta--);
+            AssertRuntimeMutation(proof => proof.resultBlueMinimumGreenDelta--);
             AssertRuntimeMutation(proof => proof.cleanupFailure = "cleanup leaked");
             AssertRuntimeMutation(proof => proof.aftermathElapsedSeconds = 2.599f);
             AssertRuntimeMutation(proof => proof.overlayPresentationSucceededCount = 0);
@@ -624,21 +1117,27 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 proof.aftermathEvolutionMeanAbsoluteRgb =
                     AuditionPvStationBossDeathAftermathGoldenRunner
                         .MinimumAftermathEvolutionMeanAbsoluteRgb;
-                proof.resultCutMeanAbsoluteRgb =
+                proof.aftermathEvolutionChangedRatio =
                     AuditionPvStationBossDeathAftermathGoldenRunner
-                        .MinimumResultCutMeanAbsoluteRgb;
-                proof.resultCutChangedRatio =
+                        .MinimumAftermathEvolutionChangedRatio;
+                proof.resultAppearanceMeanAbsoluteRgb =
                     AuditionPvStationBossDeathAftermathGoldenRunner
-                        .MinimumResultCutChangedRatio;
+                        .MinimumResultAppearanceMeanAbsoluteRgb;
+                proof.resultAppearanceChangedRatio =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .MinimumResultAppearanceChangedRatio;
                 proof.resultEntranceMeanAbsoluteRgb =
                     AuditionPvStationBossDeathAftermathGoldenRunner
                         .MinimumResultEntranceMeanAbsoluteRgb;
+                proof.resultEntranceChangedRatio =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .MinimumResultEntranceChangedRatio;
                 proof.resultBrightSamples = AuditionPvStationBossDeathAftermathGoldenRunner
                     .MinimumResultBrightSamples;
-                proof.resultDarkSamples = AuditionPvStationBossDeathAftermathGoldenRunner
-                    .MinimumResultDarkSamples;
-                proof.resultCyanSamples = AuditionPvStationBossDeathAftermathGoldenRunner
-                    .MinimumResultCyanSamples;
+                proof.resultNavySamples = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultNavySamples;
+                proof.resultBlueSamples = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .MinimumResultBlueSamples;
                 return proof;
             }
 
@@ -663,16 +1162,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Reject(value => value.impactMeanAbsoluteRgb -= 0.000001d);
             Reject(value => value.impactChangedRatio -= 0.000001d);
             Reject(value => value.aftermathEvolutionMeanAbsoluteRgb -= 0.000001d);
-            Reject(value => value.resultCutMeanAbsoluteRgb -= 0.000001d);
-            Reject(value => value.resultCutChangedRatio -= 0.000001d);
+            Reject(value => value.aftermathEvolutionChangedRatio -= 0.000001d);
+            Reject(value => value.resultAppearanceMeanAbsoluteRgb -= 0.000001d);
+            Reject(value => value.resultAppearanceChangedRatio -= 0.000001d);
             Reject(value => value.resultEntranceMeanAbsoluteRgb -= 0.000001d);
+            Reject(value => value.resultEntranceChangedRatio -= 0.000001d);
             Reject(value => value.resultBrightSamples--);
-            Reject(value => value.resultDarkSamples--);
-            Reject(value => value.resultCyanSamples--);
+            Reject(value => value.resultNavySamples--);
+            Reject(value => value.resultBlueSamples--);
         }
 
         [Test]
-        public void CalibrationFailure_WritesTelemetryAndLeavesNoSuccessArtifacts()
+        public void CalibrationFailureReplay_WritesTelemetryAndLeavesNoSuccessArtifacts()
         {
             string root = NewTempRoot("g08-calibration");
             const string CaptureId = "g08-calibration-first-take";
@@ -693,12 +1194,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
 
                 var state = CreateState(root, CaptureId);
                 var proof = CreateValidProof();
-                AuditionPvStationBossDeathAftermathGoldenRunner
-                    .G08PixelCalibrationRequiredException exception = Assert.Throws<
-                        AuditionPvStationBossDeathAftermathGoldenRunner
-                            .G08PixelCalibrationRequiredException>(() =>
-                        AuditionPvStationBossDeathAftermathGoldenRunner
-                            .ValidateRuntimeProof(proof));
+                var exception = new AuditionPvStationBossDeathAftermathGoldenRunner
+                    .G08PixelCalibrationRequiredException(
+                        "CalibrationRequired historical first-take replay");
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .WriteFailureArtifactForRoot(
                         output,
@@ -713,7 +1211,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     AuditionPvStationBossDeathAftermathGoldenRunner.FailureFileName);
                 CalibrationFailureProbe artifact = JsonUtility.FromJson<
                     CalibrationFailureProbe>(File.ReadAllText(failurePath));
-                Assert.That(artifact.pixelCalibrationLocked, Is.False);
+                Assert.That(artifact.pixelCalibrationLocked, Is.True);
                 Assert.That(artifact.calibrationRequired, Is.True);
                 Assert.That(artifact.exception, Does.Contain("CalibrationRequired"));
                 Assert.That(artifact.runtime, Is.Not.Null);
@@ -721,6 +1219,68 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     Is.EqualTo(proof.impactMeanAbsoluteRgb));
                 Assert.That(successArtifacts.All(path => !File.Exists(path)), Is.True);
                 Assert.That(File.Exists(failurePath), Is.True);
+            }
+            finally
+            {
+                DeleteTempRoot(root);
+            }
+        }
+
+        [Test]
+        public void VisualAcceptanceFirstTake_WritesCompositionTelemetryAndNoSuccessArtifacts()
+        {
+            string root = NewTempRoot("g08-visual-acceptance");
+            const string CaptureId = "g08-finisher-visual-first-take";
+            string output = AuditionPvOutputPaths.ResolveOutputDirectory(root, CaptureId);
+            Directory.CreateDirectory(Path.Combine(
+                output,
+                AuditionPvStationBossDeathAftermathGoldenRunner.EvidenceFolderName));
+            Directory.CreateDirectory(Path.Combine(
+                output,
+                AuditionPvStationBossDeathAftermathCapture.BaselinesFolderName));
+            string[] successArtifacts = SuccessArtifactPaths(output);
+            try
+            {
+                foreach (string path in successArtifacts)
+                {
+                    File.WriteAllText(path, "must-be-removed");
+                }
+
+                var state = CreateState(root, CaptureId);
+                var proof = CreateValidProof();
+                Assert.DoesNotThrow(() =>
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof));
+                var exception = Assert.Throws<
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .G08VisualCompositionAcceptanceRequiredException>(() =>
+                            AuditionPvStationBossDeathAftermathGoldenRunner
+                                .ValidateRuntimeProofForPublication(proof));
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .WriteFailureArtifactForRoot(
+                        output,
+                        "AwaitingEditMode",
+                        exception,
+                        proof,
+                        state,
+                        root);
+
+                CalibrationFailureProbe artifact = JsonUtility.FromJson<
+                    CalibrationFailureProbe>(File.ReadAllText(Path.Combine(
+                        output,
+                        AuditionPvStationBossDeathAftermathGoldenRunner
+                            .FailureFileName)));
+                Assert.That(artifact.pixelCalibrationLocked, Is.True);
+                Assert.That(artifact.calibrationRequired, Is.False);
+                Assert.That(artifact.visualCompositionAcceptanceLocked, Is.False);
+                Assert.That(artifact.visualCompositionAcceptanceRequired, Is.True);
+                Assert.That(artifact.runtime.renderEvidence.Select(value => value.frame),
+                    Is.EqualTo(new[] { 61, 62, 116, 181, 246 }));
+                Assert.That(artifact.runtime.finisherCameraSampleCount,
+                    Is.EqualTo(156));
+                Assert.That(artifact.runtime.finisherCameraResultCoverReleaseSampleCount,
+                    Is.EqualTo(28));
+                Assert.That(successArtifacts.All(path => !File.Exists(path)), Is.True);
             }
             finally
             {
@@ -1148,6 +1708,23 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "Assets/_Game/Scripts/Presentation/PresentationClock.cs"));
             Assert.That(dependencies, Does.Contain(
                 "Assets/_Game/Scripts/Presentation/PresentationClock.cs.meta"));
+            foreach (string finisherDependency in new[]
+                     {
+                         "Assets/_Game/Scripts/Presentation/OlympusStationBossTerminalFinisherCameraController.cs",
+                         "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable",
+                         "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim",
+                         "Assets/_Game/Scripts/Combat/BossBarrageEncounterController.cs",
+                         "Assets/_Game/Scripts/LevelDesign/FrontlineWaveStageProfile.cs",
+                         "Assets/_Game/UI/CombatHud/CombatHudPresenter.cs",
+                         "Assets/_Game/UI/CombatHud/BossBarrageLaneReviewCombatHudBinder.cs",
+                         "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset",
+                         "Assets/_Game/Editor/OlympusContinuousStageSetup.cs",
+                         "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs"
+                     })
+            {
+                Assert.That(dependencies, Does.Contain(finisherDependency));
+                Assert.That(dependencies, Does.Contain(finisherDependency + ".meta"));
+            }
             Assert.That(dependencies, Does.Contain(
                 "Assets/_Game/Scripts/LevelDesign/StageRunFinalization.cs"));
             Assert.That(dependencies, Does.Contain(
@@ -1281,7 +1858,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void TransactionSource_IsCalibrationFirstManifestLastAndManifestWinsRecovery()
+        public void TransactionSource_IsPixelThenVisualAcceptanceFirstAndManifestLast()
         {
             string source = ReadProjectFile(
                 AuditionPvStationBossDeathAftermathGoldenRunner.RunnerScriptPath);
@@ -1296,6 +1873,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "CopyBaselines(state, frames, proof)",
                 finalize,
                 StringComparison.Ordinal);
+            int visualAcceptance = source.IndexOf(
+                "ValidateRuntimeProofForPublication(proof)",
+                calibration,
+                StringComparison.Ordinal);
             int manifestWrite = source.IndexOf(
                 "AuditionPvCaptureManifestWriter.WriteNew(manifest);",
                 finalize,
@@ -1306,7 +1887,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 StringComparison.Ordinal);
             Assert.That(finalize, Is.GreaterThanOrEqualTo(0));
             Assert.That(calibration, Is.GreaterThan(finalize));
-            Assert.That(baselineWrite, Is.GreaterThan(calibration));
+            Assert.That(visualAcceptance, Is.GreaterThan(calibration));
+            Assert.That(baselineWrite, Is.GreaterThan(visualAcceptance));
             Assert.That(manifestWrite, Is.GreaterThan(baselineWrite));
             Assert.That(nextMethod, Is.GreaterThan(manifestWrite));
             string afterCommit = source.Substring(
@@ -1412,7 +1994,35 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.firstInteractiveFrame = 245);
             AssertRuntimeMutation(value => value.allEightLocksObservedAtImpact = false);
             AssertRuntimeMutation(value => value.allEightLocksReleasedAtResult = false);
+            AssertRuntimeMutation(value => value.exclusiveCameraScheduleExact = false);
+            AssertRuntimeMutation(value => value.cameraRoleTransitionCount = 1);
+            AssertRuntimeMutation(value => value.firstFinisherCameraFrame = 63);
+            AssertRuntimeMutation(value => value.firstGameplayCameraRestoreFrame = 245);
+            AssertRuntimeMutation(value => value.finisherTerminalHoldExactAt218 = false);
+            AssertRuntimeMutation(value => value.finisherReleaseExactAt246 = false);
+            AssertRuntimeMutation(value => value.finisherCameraSucceeded = false);
+            AssertRuntimeMutation(value => value.finisherCameraReleaseScheduled = false);
+            AssertRuntimeMutation(value => value.finisherCameraInterrupted = true);
+            AssertRuntimeMutation(value => value.fallbackCameraCueSucceeded = true);
+            AssertRuntimeMutation(value => value.finisherCameraRequestVersion = 2);
+            AssertRuntimeMutation(value => value.finisherCameraAcquireCount = 2);
+            AssertRuntimeMutation(value => value.finisherCameraReleaseCount = 0);
+            AssertRuntimeMutation(value =>
+                value.finisherCameraControllerRequestVersion = 2);
+            AssertRuntimeMutation(value => value.finisherCameraSampleCount = 155);
+            AssertRuntimeMutation(value =>
+                value.finisherCameraResultCoverReleaseSampleCount = 27);
+            AssertRuntimeMutation(value => value.finisherCameraLastSampledSeconds = 2.59d);
+            AssertRuntimeMutation(value =>
+                value.finisherCameraResultCoverReleaseElapsedSeconds = 0.45f);
+            AssertRuntimeMutation(value => value.finisherCameraReachedTerminalSample = false);
+            AssertRuntimeMutation(value => value.finisherCameraLeaseReleased = false);
+            AssertRuntimeMutation(value => value.finisherCameraGameplayRestored = false);
+            AssertRuntimeMutation(value => value.finisherCameraDisabledAtResult = false);
+            AssertRuntimeMutation(value => value.bossDeathCameraRequestCount = 1);
+            AssertRuntimeMutation(value => value.bossDeathCameraVersion = 0);
             AssertRuntimeMutation(value => value.bossDeathCameraInterrupted = true);
+            AssertRuntimeMutation(value => value.bossDeathCameraComplete = true);
             AssertRuntimeMutation(value => value.bossDeathVfxRequestCount = 2);
             AssertRuntimeMutation(value => value.bossDeathAudioSourceDelta = 0);
             AssertRuntimeMutation(value => value.bossDeathUsesPhaseTwoAnchor = false);
@@ -1422,8 +2032,62 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.eventsReleased = false);
             AssertRuntimeMutation(value => value.bossPressureMovementRestored = false);
             AssertRuntimeMutation(value => value.editModeGlobalCleanupExact = false);
-            AssertRuntimeMutation(value => value.renderEvidence[0].bossPixelExtent =
-                new Vector2(7f, 20f));
+            AssertRuntimeMutation(value => value.pocketClearMarkerReferenceUnbound = false);
+            AssertRuntimeMutation(value => value.pocketClearMarkerInactiveAtEnd = false);
+            AssertRuntimeMutation(value => value.terminalBoundaryVisualHiddenAtEnd = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].frame = 60);
+            AssertRuntimeMutation(value => value.renderEvidence[0].gameplayCameraExact = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].combatHudVisible = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].bossSafeViewport = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].objectiveText =
+                "Build EN for SummonSlot1");
+            AssertRuntimeMutation(value =>
+                value.renderEvidence[0].objectiveForbiddenInternalTokensAbsent = false);
+            AssertRuntimeMutation(value => value.renderEvidence[0].bossLabelText =
+                "ARCHON PROXY");
+            AssertRuntimeMutation(value =>
+                value.renderEvidence[0].pocketClearMarkerInactive = false);
+            AssertRuntimeMutation(value => value.renderEvidence[1].finisherCameraExact = false);
+            AssertRuntimeMutation(value => value.renderEvidence[1].combatHudVisible = false);
+            AssertRuntimeMutation(value => value.renderEvidence[1].objectiveText =
+                "Build EN for SummonSlot1");
+            AssertRuntimeMutation(value => value.renderEvidence[1].bossLabelText =
+                "ARCHON PROXY");
+            AssertRuntimeMutation(value => value.renderEvidence[1].bossBodyHeightRatio =
+                0.249f);
+            AssertRuntimeMutation(value => value.renderEvidence[1].bossBodyHeightRatio =
+                0.401f);
+            AssertRuntimeMutation(value => value.renderEvidence[1].bossSafeViewport = false);
+            AssertRuntimeMutation(value => value.renderEvidence[1].bossPartiallyClipped = true);
+            AssertRuntimeMutation(value => value.renderEvidence[1].playerFullyOutsideFrustum =
+                false);
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[1].playerFullyOutsideFrustum = false;
+                value.renderEvidence[1].playerFullyInsideFrustum = true;
+                value.renderEvidence[1].playerSafeViewport = true;
+                value.renderEvidence[1].playerBodyHeightRatio = 0.249f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.renderEvidence[1].playerFullyOutsideFrustum = false;
+                value.renderEvidence[1].playerFullyInsideFrustum = true;
+                value.renderEvidence[1].playerSafeViewport = false;
+                value.renderEvidence[1].playerBodyHeightRatio = 0.28f;
+            });
+            AssertRuntimeMutation(value => value.renderEvidence[1]
+                .terminalBoundaryVisualHidden = false);
+            AssertRuntimeMutation(value => value.renderEvidence[2].combatHudVisible = true);
+            AssertRuntimeMutation(value => value.renderEvidence[3].bossBodyHeightRatio =
+                value.renderEvidence[1].bossBodyHeightRatio + 0.051f);
+            AssertRuntimeMutation(value => value.renderEvidence[3].bossViewport =
+                value.renderEvidence[1].bossViewport + new Vector3(0.081f, 0f, 0f));
+            AssertRuntimeMutation(value => value.renderEvidence[4].finisherLeaseReleased = false);
+            AssertRuntimeMutation(value => value.renderEvidence[4]
+                .redundantClearTextInactive = false);
+            AssertRuntimeMutation(value => value.renderEvidence[4].realClearIconActive = false);
+            AssertRuntimeMutation(value => value.renderEvidence[4]
+                .terminalBoundaryVisualHidden = false);
         }
 
         private static void AssertRuntimeMutation(
@@ -1646,10 +2310,32 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 aftermathBeginCount = 1,
                 aftermathCompleteCount = 1,
                 aftermathElapsedSeconds = 2.6f,
-                bossDeathCameraRequestCount = 1,
-                bossDeathCameraVersion = 4,
+                exclusiveCameraScheduleExact = true,
+                cameraRoleTransitionCount = 2,
+                firstFinisherCameraFrame = 62,
+                firstGameplayCameraRestoreFrame = 246,
+                finisherTerminalHoldExactAt218 = true,
+                finisherReleaseExactAt246 = true,
+                finisherCameraSucceeded = true,
+                finisherCameraReleaseScheduled = true,
+                finisherCameraInterrupted = false,
+                fallbackCameraCueSucceeded = false,
+                finisherCameraRequestVersion = 1,
+                finisherCameraAcquireCount = 1,
+                finisherCameraReleaseCount = 1,
+                finisherCameraControllerRequestVersion = 1,
+                finisherCameraSampleCount = 156,
+                finisherCameraResultCoverReleaseSampleCount = 28,
+                finisherCameraLastSampledSeconds = 2.6d,
+                finisherCameraResultCoverReleaseElapsedSeconds = 28f / 60f,
+                finisherCameraReachedTerminalSample = true,
+                finisherCameraLeaseReleased = true,
+                finisherCameraGameplayRestored = true,
+                finisherCameraDisabledAtResult = true,
+                bossDeathCameraRequestCount = 0,
+                bossDeathCameraVersion = -1,
                 bossDeathCameraInterrupted = false,
-                bossDeathCameraComplete = true,
+                bossDeathCameraComplete = false,
                 bossDeathVfxRequestCount = 1,
                 bossDeathAudioSourceDelta = 1,
                 bossDeathUsesPhaseTwoAnchor = true,
@@ -1674,6 +2360,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 hudWasActiveAtImpact = true,
                 hudYieldedAtResult = true,
                 resultInteractiveAt246 = true,
+                pocketClearMarkerReferenceUnbound = true,
+                pocketClearMarkerInactiveAtEnd = true,
+                terminalBoundaryVisualHiddenAtEnd = true,
                 stateRestored = true,
                 eventsReleased = true,
                 presentationClockReleased = true,
@@ -1686,32 +2375,91 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 cleanupFailure = string.Empty,
                 renderEvidence = new[]
                 {
-                    GameplayEvidence(62),
-                    GameplayEvidence(116),
-                    new AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
-                    {
-                        frame = 246,
-                        resultCanvasVisible = true,
-                        resultInteractive = true
-                    }
+                    GameplayHandleEvidence(),
+                    FinisherEvidence(62, 0.32f, new Vector2(0.50f, 0.52f)),
+                    FinisherEvidence(116, 0.31f, new Vector2(0.52f, 0.51f)),
+                    FinisherEvidence(181, 0.30f, new Vector2(0.49f, 0.50f)),
+                    ResultEvidence()
                 },
-                pixelSampleStride = 8,
-                pixelSampleCount = 1,
-                sequenceBlackRatio = 0.1d,
+                pixelSampleStride = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .SequencePixelSampleStride,
+                pixelSampleCount = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ExpectedSequencePixelSampleCount,
+                sequenceBlackRatio = 0d,
                 sequenceMagentaRatio = 0d,
                 maximumFrameMagentaRatio = 0d,
                 healthyFramePercent = 100d,
+                frameDeltaPixelSampleStride =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .FrameDeltaPixelSampleStride,
+                frameDeltaPixelSampleCount =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ExpectedFrameDeltaPixelSampleCount,
+                frameDeltaChangedRgbSumCutoff =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .FrameDeltaChangedRgbSumCutoff,
+                impactDeltaFromFrame = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ImpactDeltaFromFrame,
+                impactDeltaToFrame = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ImpactDeltaToFrame,
                 impactMeanAbsoluteRgb = 10d,
                 impactChangedRatio = 0.5d,
-                aftermathEvolutionMeanAbsoluteRgb = 5d,
+                aftermathDeltaFromFrame =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .AftermathDeltaFromFrame,
+                aftermathDeltaToFrame = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .AftermathDeltaToFrame,
+                aftermathEvolutionMeanAbsoluteRgb = 20d,
                 aftermathEvolutionChangedRatio = 0.5d,
-                resultCutMeanAbsoluteRgb = 10d,
-                resultCutChangedRatio = 0.5d,
-                resultEntranceMeanAbsoluteRgb = 5d,
+                resultAppearanceFromFrame =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultAppearanceFromFrame,
+                resultAppearanceToFrame =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultAppearanceToFrame,
+                resultAppearanceMeanAbsoluteRgb = 10d,
+                resultAppearanceChangedRatio = 0.5d,
+                resultEntranceFromFrame =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultEntranceFromFrame,
+                resultEntranceToFrame = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultEntranceToFrame,
+                resultEntranceMeanAbsoluteRgb = 30d,
                 resultEntranceChangedRatio = 0.5d,
-                resultBrightSamples = 1000,
-                resultDarkSamples = 1000,
-                resultCyanSamples = 100,
+                resultSurfaceFrame = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceFrame,
+                resultSurfaceRoiX = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.x,
+                resultSurfaceRoiY = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.y,
+                resultSurfaceRoiWidth = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.width,
+                resultSurfaceRoiHeight = AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResultSurfaceRawBottomLeftRoi.height,
+                resultSurfaceSampleStride =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultSurfaceSampleStride,
+                resultSurfaceSampleCount =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ExpectedResultSurfaceSampleCount,
+                resultBrightMinimumChannel =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultBrightMinimumChannel,
+                resultNavyMaximumLuma =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultNavyMaximumLuma,
+                resultBlueMinimumChannel =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultBlueMinimumChannel,
+                resultBlueMinimumRedDelta =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultBlueMinimumRedDelta,
+                resultBlueMinimumGreenDelta =
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .ResultBlueMinimumGreenDelta,
+                resultBrightSamples = 70000,
+                resultNavySamples = 600,
+                resultBlueSamples = 70000,
                 frameHashLedgerSha256 = ShaA,
                 warmupEvidenceSha256 = ShaA,
                 bl10Sha256 = ShaA,
@@ -1722,19 +2470,118 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             };
         }
 
+        private static void AssertFinisherRigPose(
+            PlayableDirector director,
+            Transform rig,
+            double time,
+            Vector3 expectedLocalPosition,
+            Quaternion expectedLocalRotation)
+        {
+            director.time = time;
+            director.Evaluate();
+            Assert.That(
+                Vector3.Distance(rig.localPosition, expectedLocalPosition),
+                Is.LessThanOrEqualTo(0.0001f),
+                $"Station finisher rig local position drifted at t={time:R}s.");
+            Assert.That(
+                Quaternion.Angle(rig.localRotation, expectedLocalRotation),
+                Is.LessThanOrEqualTo(0.001f),
+                $"Station finisher rig local rotation drifted at t={time:R}s.");
+            Assert.That(rig.localScale, Is.EqualTo(Vector3.one));
+        }
+
         private static AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
-            GameplayEvidence(int frame)
+            GameplayHandleEvidence()
         {
             return new AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
             {
-                frame = frame,
+                frame = 61,
+                cameraRole = "gameplay",
                 gameplayCameraExact = true,
+                finisherCameraExact = false,
+                exclusiveCameraRoleExact = true,
+                combatHudVisible = true,
                 playerSafeViewport = true,
                 bossSafeViewport = true,
+                playerFullyInsideFrustum = true,
+                bossFullyInsideFrustum = true,
+                playerBodyHeightRatio = 0.28f,
+                bossBodyHeightRatio = 0.12f,
+                objectiveText = AuditionPvStationBossDeathAftermathCapture
+                    .ExpectedPlayerFacingKoObjective,
+                bossLabelText = AuditionPvStationBossDeathAftermathCapture
+                    .ExpectedBossDisplayName,
+                objectiveForbiddenInternalTokensAbsent = true,
+                pocketClearMarkerReferenceUnbound = true,
+                pocketClearMarkerPresent = true,
+                pocketClearMarkerInactive = true,
                 playerViewport = new Vector3(0.25f, 0.5f, 10f),
                 bossViewport = new Vector3(0.75f, 0.5f, 10f),
                 playerPixelExtent = new Vector2(100f, 200f),
                 bossPixelExtent = new Vector2(150f, 250f)
+            };
+        }
+
+        private static AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
+            FinisherEvidence(int frame, float bossHeight, Vector2 bossCenter)
+        {
+            return new AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
+            {
+                frame = frame,
+                cameraRole = "finisher",
+                gameplayCameraExact = false,
+                finisherCameraExact = true,
+                exclusiveCameraRoleExact = true,
+                combatHudVisible = frame == 62,
+                playerFullyOutsideFrustum = true,
+                playerFullyInsideFrustum = false,
+                playerPartiallyClipped = false,
+                bossFullyInsideFrustum = true,
+                bossPartiallyClipped = false,
+                bossSafeViewport = true,
+                bossBodyHeightRatio = bossHeight,
+                bossViewport = new Vector3(bossCenter.x, bossCenter.y, 10f),
+                bossPixelExtent = new Vector2(420f, bossHeight * 1440f),
+                objectiveText = frame == 62
+                    ? AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedPlayerFacingKoObjective
+                    : string.Empty,
+                bossLabelText = frame == 62
+                    ? AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedBossDisplayName
+                    : string.Empty,
+                objectiveForbiddenInternalTokensAbsent = frame == 62,
+                pocketClearMarkerReferenceUnbound = true,
+                pocketClearMarkerPresent = true,
+                pocketClearMarkerInactive = true,
+                terminalBoundaryVisualPresent = true,
+                terminalBoundaryVisualHidden = true
+            };
+        }
+
+        private static AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
+            ResultEvidence()
+        {
+            return new AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
+            {
+                frame = 246,
+                cameraRole = "gameplay",
+                gameplayCameraExact = true,
+                finisherCameraExact = false,
+                exclusiveCameraRoleExact = true,
+                finisherLeaseReleased = true,
+                combatHudVisible = false,
+                resultCanvasVisible = true,
+                resultInteractive = true,
+                pocketClearMarkerReferenceUnbound = true,
+                pocketClearMarkerPresent = true,
+                pocketClearMarkerInactive = true,
+                redundantClearTextPresent = true,
+                redundantClearTextInactive = true,
+                realClearIconPresent = true,
+                realClearIconActive = true,
+                terminalBoundaryVisualPresent = true,
+                terminalBoundaryVisualHidden = true
             };
         }
 
@@ -2014,6 +2861,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             public string exception;
             public bool pixelCalibrationLocked;
             public bool calibrationRequired;
+            public bool visualCompositionAcceptanceLocked;
+            public bool visualCompositionAcceptanceRequired;
             public string successArtifactCleanupFailure;
             public AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof runtime;
         }

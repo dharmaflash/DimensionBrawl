@@ -42,10 +42,10 @@ MonoBehaviour:
   counterWaveAnswerEnergyPulseOverride: 205
   objectiveStepCount: 3
   stepPrefix: Survive
-  preThreatChargeCue: Keep HP safe, build EN, then stop the close probe
-  preThreatReadyCue: Stop the close probe and keep SummonSlot1 ready for boss curtain
-  summonChargeCue: Build EN for SummonSlot1; boss curtain is returning
-  summonReadyCue: Spend SummonSlot1 to block boss curtain
+  preThreatChargeCue: 근접 위협을 먼저 처치하세요
+  preThreatReadyCue: 근접 위협을 먼저 처치하세요
+  summonChargeCue: 소환 에너지를 충전하세요
+  summonReadyCue: 소환으로 탄막을 막으세요
   summonOpportunityCue: Summon cover is open
   followupReadyCue: Confirm the summon opening with Skill1
   followupFiredCue: Skill1 committed into the summon opening

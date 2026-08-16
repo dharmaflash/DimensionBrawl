@@ -134,32 +134,79 @@ publication are forbidden in the logical shot.
 The death-anchored product aftermath must acquire all eight distinct
 `BossTerminalAftermath` input leases at `f62`, preserve scale-one presentation after bounded lethal
 hit-stop, advance from the presentation clock at exactly 60 samples per second, and run its real
-camera, Phase 2-anchored VFX, non-silent death audio, and death motion.
+Phase 2-anchored VFX, non-silent death audio, death motion, and dedicated authored finisher camera.
+Logical `f0..f61` are the causal gameplay handle, not approved hero footage. `f61` must still be the
+exclusive gameplay camera with the exact player-facing `소환 에너지를 충전하세요` objective and
+`AKAZA` boss label; `f62` is the unique hard cut to the dedicated finisher Camera and its manually
+sampled 2.6-second Timeline. The causal target remains fully inside the gameplay capture at `f61`,
+but the shoulder player may stay cropped and no `f61` actor ratio is a hero-composition gate. The
+normal Station path must never request the older additive
+`BossBarrageCameraCueDriver` fallback.
 The death animator remains terminal through the aftermath hero checkpoint. Product completion,
-lease release, world freeze, visible result request, configuration, and result scene arrival are
-exact at `f218`; no early freeze or visible/interactable result is allowed. A one-sample-early
+lease release, world freeze, result configuration, and result scene arrival are exact at `f218`;
+no early freeze or visible/interactable result is allowed. A one-sample-early
 `AftermathHandoffImminent` signal may request the additive scene in its transparent, unconfigured
-state so Unity completes that load on `f218`; the completion event owns the atomic freeze, release,
-configuration, and entrance start. Until that successful handoff, the overlay owns the preload and
+state so Unity completes that load on `f218`; the completion event owns the atomic freeze, input
+release, configuration, and entrance start. The finisher has received exactly 156 Timeline samples
+and remains exclusively live under result cover at `f218`. Its exact 0.46-second cover lease consumes
+28 QHD60 samples, disables the finisher Camera, and restores the gameplay Camera at `f246`. Until that
+successful handoff, the overlay owns the preload and
 unloads it after cancellation, failure, or disable without publishing duplicate failure callbacks.
 The result presentation-clock `.02 s` delay plus `.42 s`
-entrance spans exactly 28 logical frames. The committed canonical facts and result summary must remain the same
-instances presented by both overlay and result screen, which is fully interactive and stable at
-`f246`.
+entrance spans exactly 28 logical frames: `f218..f220` remain the transparent gameplay surface,
+`f221` is the first visible result frame, and `f246` is fully interactive and stable. The committed
+canonical facts and result summary must remain the same instances presented by both overlay and
+result screen.
 
-Baselines are byte-exact logical-frame copies: BL10=`f62` death impact, BL11=`f116` aftermath hero,
-and BL12=`f246` interactive result. The package also requires the 360-frame SHA-256 ledger, QHD
+Baselines are byte-exact logical-frame copies: BL10=`f62` death impact (`HUDON`), BL11=`f116`
+aftermath hero (`HUDOFF`), and BL12=`f246` interactive result (`AUTHOREDRESULT`). The package also
+requires the 360-frame SHA-256 ledger, QHD
 decode/dimension checks, black/magenta health, independent impact/aftermath/result pixel deltas,
-result-surface color evidence, renderer-bounds/frustum pixel extent, exact Git/Unity/Recorder/URP
+result-surface color evidence, actor-body renderer bounds and frustum classification, exact
+Git/Unity/Recorder/URP
 and dependency provenance, and exhaustive scene/global/input/event/Recorder restoration.
 
-Pixel calibration is deliberately fail-closed while `PixelCalibrationLocked` is `false`. The first
-honest clean same-HEAD take must validate all non-pixel runtime proof and preserve measured pixel
-telemetry in `g08_capture_failure.json`, while publishing no manifest, baselines, success runtime
-proof, or canonical frame ledger. An independent review must pin justified thresholds and their
-boundary-negative tests before changing the sentinel to `true`. Only then can a new clean take
-publish success artifacts. `capture_manifest.json` is the final fallible write and the immutable
-terminal commit record; a valid committed manifest wins stale runner or terminal-fault state.
+Composition telemetry is the exact ordered set `f61/f62/f116/f181/f246`. At `f62`, `f116`, and
+`f181`, only the finisher Camera may be enabled; the boss body must occupy `0.25..0.40` of viewport
+height, the three height samples may span no more than `0.05`, and each boss center may drift no more
+than `0.08` viewport units from every other sample. The player must either be fully inside at
+`0.25..0.32` height
+or fully outside the finisher frustum; partial clipping fails. BL10 alone remains HUD-on, while BL11
+and `f181` are HUD-off. The green PocketClear marker must be unbound and inactive, the terminal
+NoCross visual must be hidden from `f62` through the authored result, internal objective tokens and
+`ARCHON PROXY` are forbidden, and `f246` must show the real CLEAR icon while the redundant
+`Claer!_Text` placeholder remains inactive.
+
+Pixel calibration is locked from the independently reviewed same-HEAD telemetry capture
+`20260816t084414z_g08-station-boss-death-aftermath_g174d6862472a_clean` at Git
+`174d6862472abf89b295749e37fdd1b280f97c49`. Its intentional calibration failure SHA-256 is
+`e44e24e74c31f9ad6b6b1e0e6ef903ee10f7181cce5fd22afca0e1eda5defa9a`, and an independently
+reconstructed 360-frame ledger hashes to
+`66577dd2934bae05f50c9812026d5e46e98f9de45de23c3c00393e1196d24de1`.
+That take published exactly 360 logical QHD frames, one QHD warm-up, state, and failure telemetry;
+it published no manifest, baselines, success proof, or canonical ledger. Its classification is
+`runtime/pixel calibration take; visual acceptance pending`; the historical `_clean` output-name
+suffix does not make it a clean or approved golden.
+
+`VisualCompositionAcceptanceLocked` is intentionally `false` for the first clean take after the
+finisher-camera and visual-truth change. That take is visual-acceptance calibration-only: it must
+complete the canonical runtime, pixel analysis, five-frame composition telemetry, finisher request/
+sample/terminal/release proof, and provenance checks, then fail with the dedicated visual-acceptance
+exception. Its failure package may retain raw/logical frames, runner state, and telemetry, but must
+contain no manifest, baselines, runtime success proof, or canonical ledger. Only independent review
+of that exact take may justify locking the sentinel and running a separate publishable golden take.
+
+The reviewed measurements were black/magenta/max-frame-magenta=`0/0/0`, healthy=`100%`, impact
+`13.542403/.299323`, death evolution `30.489848/.549518`, first visible result appearance
+`f218->f221=8.468069/.328385`, and visible entrance
+`f221->f246=35.305295/.852348`. The fixed raw-bottom result ROI
+`(256,180,2048,1080)` at stride 4 measured `76,646` bright (all channels `>=200`), `630`
+navy-luma (`(54R+183G+19B)>>8 <=75`), and `80,369` blue (`B>=120`, `B>=R+25`,
+`B>=G+10`) samples at `f246`. Frame deltas use stride 4 and an RGB-sum changed cutoff of `24`.
+Locked gates retain at least about 20% headroom and executable
+boundary-negative tests reject every crossing, frame-pair drift, ROI drift, stride drift, and sample
+count drift. `capture_manifest.json` remains the final fallible write and immutable terminal commit
+record; a valid committed manifest wins stale runner or terminal-fault state.
 Failure cleanup is best-effort across every owned success artifact and records any cleanup fault in
 the atomic failure artifact.
 

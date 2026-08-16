@@ -49,7 +49,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string RuntimeMappingDescription =
             "Recorder raw0 is preserved warm-up evidence; raw1..raw360 map to logical f0..f359.";
         internal const string RuntimeGameplayDescription =
-            "Canonical Corridor product flow; logical f1 one public TryFire; same physical projectile natural f62 impact/Died; f218 product freeze/result; f246 interactive committed SameAs result.";
+            "Canonical Corridor product flow; f0..f61 causal gameplay handle only; logical f1 one public TryFire; same physical projectile natural f62 impact/Died and unique authored finisher-camera hard cut; f218 terminal Timeline sample/result cover; f246 gameplay-camera restore and interactive committed SameAs result.";
         internal const string ExpectedUnityVersion = "6000.3.5f2";
         internal const string ExpectedUnityVersionWithRevision =
             "6000.3.5f2 (3fa8bc678cb0)";
@@ -57,23 +57,76 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string ExpectedRenderPipelineAssetPath =
             "Assets/Settings/PC_RPAsset.asset";
 
-        internal const double MaximumSequenceBlackRatio = 0.90d;
-        internal const double MaximumSequenceMagentaRatio = 0.005d;
-        internal const double MaximumFrameMagentaRatio = 0.02d;
-        internal const int MinimumHealthyFramePercent = 90;
-        internal const double MinimumImpactMeanAbsoluteRgb = 0.75d;
-        internal const double MinimumImpactChangedRatio = 0.01d;
-        internal const double MinimumAftermathEvolutionMeanAbsoluteRgb = 0.35d;
-        internal const double MinimumResultCutMeanAbsoluteRgb = 3.0d;
-        internal const double MinimumResultCutChangedRatio = 0.08d;
-        internal const double MinimumResultEntranceMeanAbsoluteRgb = 0.20d;
-        internal const int MinimumResultBrightSamples = 500;
-        internal const int MinimumResultDarkSamples = 500;
-        internal const int MinimumResultCyanSamples = 40;
-        // This remains false until an independent reviewer locks thresholds
-        // from at least one clean same-HEAD telemetry take. A false sentinel is
-        // intentionally unable to publish baselines, proof, ledger, or manifest.
-        internal static readonly bool PixelCalibrationLocked = false;
+        internal const string PixelCalibrationCaptureId =
+            "20260816t084414z_g08-station-boss-death-aftermath_g174d6862472a_clean";
+        internal const string PixelCalibrationHeadSha =
+            "174d6862472abf89b295749e37fdd1b280f97c49";
+        internal const string PixelCalibrationFailureSha256 =
+            "e44e24e74c31f9ad6b6b1e0e6ef903ee10f7181cce5fd22afca0e1eda5defa9a";
+        internal const string PixelCalibrationReconstructedLedgerSha256 =
+            "66577dd2934bae05f50c9812026d5e46e98f9de45de23c3c00393e1196d24de1";
+
+        internal const int ImpactDeltaFromFrame = 61;
+        internal const int ImpactDeltaToFrame = 62;
+        internal const int AftermathDeltaFromFrame = 62;
+        internal const int AftermathDeltaToFrame = 116;
+        internal const int ResultAppearanceFromFrame = 218;
+        internal const int ResultAppearanceToFrame = 221;
+        internal const int ResultEntranceFromFrame = 221;
+        internal const int ResultEntranceToFrame = 246;
+        internal const int ResultSurfaceFrame = 246;
+        internal const int SequencePixelSampleStride = 8;
+        internal const long ExpectedSequencePixelSampleCount = 20736000;
+        internal const int FrameDeltaPixelSampleStride = 4;
+        internal const int ExpectedFrameDeltaPixelSampleCount = 230400;
+        internal const int FrameDeltaChangedRgbSumCutoff = 24;
+        internal const int ResultSurfaceSampleStride = 4;
+        internal const int ExpectedResultSurfaceSampleCount = 138240;
+        internal const int ResultBrightMinimumChannel = 200;
+        internal const int ResultNavyMaximumLuma = 75;
+        internal const int ResultBlueMinimumChannel = 120;
+        internal const int ResultBlueMinimumRedDelta = 25;
+        internal const int ResultBlueMinimumGreenDelta = 10;
+        internal static readonly RectInt ResultSurfaceRawBottomLeftRoi =
+            new(256, 180, 2048, 1080);
+
+        // Locked from the independently reviewed same-HEAD runtime/pixel-calibration
+        // take above; visual acceptance remains pending.
+        // Observed: black/magenta/max-magenta=0, healthy=100%; impact
+        // 13.542403/.299323; death evolution 30.489848/.549518; first visible
+        // result appearance f218->f221 8.468069/.328385; visible entrance
+        // f221->f246 35.305295/.852348. At f246 the exact raw-bottom ROI
+        // measured bright=76,646, navy-luma=630, blue=80,369 samples. Floors
+        // and ceilings retain at least ~20% headroom from every reviewed value.
+        internal const double MaximumSequenceBlackRatio = 0.05d;
+        internal const double MaximumSequenceMagentaRatio = 0.001d;
+        internal const double MaximumFrameMagentaRatio = 0.005d;
+        internal const int MinimumHealthyFramePercent = 100;
+        internal const double MinimumImpactMeanAbsoluteRgb = 6d;
+        internal const double MinimumImpactChangedRatio = 0.12d;
+        internal const double MinimumAftermathEvolutionMeanAbsoluteRgb = 12d;
+        internal const double MinimumAftermathEvolutionChangedRatio = 0.20d;
+        internal const double MinimumResultAppearanceMeanAbsoluteRgb = 3d;
+        internal const double MinimumResultAppearanceChangedRatio = 0.08d;
+        internal const double MinimumResultEntranceMeanAbsoluteRgb = 15d;
+        internal const double MinimumResultEntranceChangedRatio = 0.30d;
+        internal const int MinimumResultBrightSamples = 60000;
+        internal const int MinimumResultNavySamples = 500;
+        internal const int MinimumResultBlueSamples = 60000;
+        internal static readonly bool PixelCalibrationLocked = true;
+
+        // The first take after the authored finisher-camera/visual-truth change is
+        // intentionally telemetry-only. A human must inspect that exact clean take
+        // before this publication sentinel can be locked.
+        internal static readonly bool VisualCompositionAcceptanceLocked = false;
+        internal const float MinimumFinisherBossBodyHeightRatio = 0.25f;
+        internal const float MaximumFinisherBossBodyHeightRatio = 0.40f;
+        internal const float MinimumVisiblePlayerBodyHeightRatio = 0.25f;
+        internal const float MaximumVisiblePlayerBodyHeightRatio = 0.32f;
+        internal const float MaximumFinisherBossCenterDrift = 0.08f;
+        internal const float MaximumFinisherBossHeightSpread = 0.05f;
+        internal static readonly int[] CompositionEvidenceFrames =
+            { 61, 62, 116, 181, 246 };
 
         private const string SessionActiveKey =
             "DimensionBrawl.AuditionPV.G08GoldenRunner.Active";
@@ -266,6 +319,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvStationBossDeathAftermathCapture.TransitionOverlayPrefabPath,
                 ExpectedRenderPipelineAssetPath,
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset",
+                "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset",
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable",
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim",
                 "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller",
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab"
             };
@@ -514,6 +570,24 @@ namespace DimensionBrawl.Editor.AuditionPV
             ValidateRuntimeProofCore(proof, requirePixelCalibration: true);
         }
 
+        internal static void ValidateRuntimeProofBeforeVisualCompositionAcceptance(
+            RuntimeProof proof)
+        {
+            ValidateRuntimeProof(proof);
+        }
+
+        internal static void ValidateRuntimeProofForPublication(RuntimeProof proof)
+        {
+            ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof);
+            if (!VisualCompositionAcceptanceLocked)
+            {
+                throw new G08VisualCompositionAcceptanceRequiredException(
+                    "G08 authored finisher composition is not visually accepted. Review the "
+                    + "telemetry-only finisher take, approve the exact clean composition, and "
+                    + "set VisualCompositionAcceptanceLocked=true before publication.");
+            }
+        }
+
         internal static void ValidateRuntimeProofBeforePixelCalibration(
             RuntimeProof proof)
         {
@@ -741,10 +815,48 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.aftermathElapsedSeconds < 2.6f
                 || !proof.aftermathScaleOneObserved
                 || proof.aftermathScaleOneViolated
-                || proof.bossDeathCameraRequestCount != 1
-                || proof.bossDeathCameraVersion <= 0
+                || !proof.exclusiveCameraScheduleExact
+                || proof.cameraRoleTransitionCount != 2
+                || proof.firstFinisherCameraFrame != 62
+                || proof.firstGameplayCameraRestoreFrame != 246
+                || !proof.finisherTerminalHoldExactAt218
+                || !proof.finisherReleaseExactAt246
+                || !proof.finisherCameraSucceeded
+                || !proof.finisherCameraReleaseScheduled
+                || proof.finisherCameraInterrupted
+                || proof.fallbackCameraCueSucceeded
+                || proof.finisherCameraRequestVersion != 1
+                || proof.finisherCameraAcquireCount != 1
+                || proof.finisherCameraReleaseCount != 1
+                || proof.finisherCameraControllerRequestVersion
+                    != proof.finisherCameraRequestVersion
+                || proof.finisherCameraSampleCount
+                    != AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedFinisherTimelineSampleCount
+                || proof.finisherCameraResultCoverReleaseSampleCount
+                    != AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedResultCoverReleaseSampleCount
+                || double.IsNaN(proof.finisherCameraLastSampledSeconds)
+                || double.IsInfinity(proof.finisherCameraLastSampledSeconds)
+                || Math.Abs(
+                    proof.finisherCameraLastSampledSeconds
+                    - OlympusStationBossTerminalFinisherCameraController
+                        .RequiredTimelineDurationSeconds) > 0.0001d
+                || !float.IsFinite(
+                    proof.finisherCameraResultCoverReleaseElapsedSeconds)
+                || Mathf.Abs(
+                    proof.finisherCameraResultCoverReleaseElapsedSeconds
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedResultCoverReleaseSampleCount
+                        / (float)AuditionPvCaptureContract.Fps) > 0.0001f
+                || !proof.finisherCameraReachedTerminalSample
+                || !proof.finisherCameraLeaseReleased
+                || !proof.finisherCameraGameplayRestored
+                || !proof.finisherCameraDisabledAtResult
+                || proof.bossDeathCameraRequestCount != 0
+                || proof.bossDeathCameraVersion != -1
                 || proof.bossDeathCameraInterrupted
-                || !proof.bossDeathCameraComplete
+                || proof.bossDeathCameraComplete
                 || proof.bossDeathVfxRequestCount != 1
                 || proof.bossDeathAudioSourceDelta <= 0
                 || !proof.bossDeathUsesPhaseTwoAnchor
@@ -763,6 +875,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !proof.hudWasActiveAtFire
                 || !proof.hudWasActiveAtImpact
                 || !proof.hudYieldedAtResult
+                || !proof.pocketClearMarkerReferenceUnbound
+                || !proof.pocketClearMarkerInactiveAtEnd
+                || !proof.terminalBoundaryVisualHiddenAtEnd
                 || !proof.overlayShown
                 || !proof.overlayFrozen
                 || !proof.resultSummarySameInstance
@@ -798,56 +913,63 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G08 event/input/global/scene cleanup proof failed.");
             }
 
-            if (proof.renderEvidence == null
-                || proof.renderEvidence.Length != 3
-                || !proof.renderEvidence.Any(value =>
-                    value.frame == 62 && value.gameplayCameraExact
-                    && value.playerSafeViewport && value.bossSafeViewport
-                    && value.playerPixelExtent.x >= 8f
-                    && value.playerPixelExtent.y >= 8f
-                    && value.bossPixelExtent.x >= 8f
-                    && value.bossPixelExtent.y >= 8f)
-                || !proof.renderEvidence.Any(value =>
-                    value.frame == 116 && value.gameplayCameraExact
-                    && value.playerSafeViewport && value.bossSafeViewport
-                    && value.playerPixelExtent.x >= 8f
-                    && value.playerPixelExtent.y >= 8f
-                    && value.bossPixelExtent.x >= 8f
-                    && value.bossPixelExtent.y >= 8f)
-                || !proof.renderEvidence.Any(value =>
-                    value.frame == 246 && value.resultCanvasVisible
-                    && value.resultInteractive))
-            {
-                throw new InvalidOperationException(
-                    "G08 final rendered impact/aftermath/result composition proof failed.");
-            }
+            ValidateCompositionEvidence(proof);
 
-            if (proof.pixelSampleStride <= 0
-                || proof.pixelSampleCount <= 0
+            if (proof.pixelSampleStride != SequencePixelSampleStride
+                || proof.pixelSampleCount != ExpectedSequencePixelSampleCount
+                || proof.frameDeltaPixelSampleStride != FrameDeltaPixelSampleStride
+                || proof.frameDeltaPixelSampleCount
+                    != ExpectedFrameDeltaPixelSampleCount
+                || proof.frameDeltaChangedRgbSumCutoff
+                    != FrameDeltaChangedRgbSumCutoff
+                || proof.impactDeltaFromFrame != ImpactDeltaFromFrame
+                || proof.impactDeltaToFrame != ImpactDeltaToFrame
+                || proof.aftermathDeltaFromFrame != AftermathDeltaFromFrame
+                || proof.aftermathDeltaToFrame != AftermathDeltaToFrame
+                || proof.resultAppearanceFromFrame != ResultAppearanceFromFrame
+                || proof.resultAppearanceToFrame != ResultAppearanceToFrame
+                || proof.resultEntranceFromFrame != ResultEntranceFromFrame
+                || proof.resultEntranceToFrame != ResultEntranceToFrame
+                || proof.resultSurfaceFrame != ResultSurfaceFrame
+                || proof.resultSurfaceRoiX != ResultSurfaceRawBottomLeftRoi.x
+                || proof.resultSurfaceRoiY != ResultSurfaceRawBottomLeftRoi.y
+                || proof.resultSurfaceRoiWidth != ResultSurfaceRawBottomLeftRoi.width
+                || proof.resultSurfaceRoiHeight != ResultSurfaceRawBottomLeftRoi.height
+                || proof.resultSurfaceSampleStride != ResultSurfaceSampleStride
+                || proof.resultSurfaceSampleCount != ExpectedResultSurfaceSampleCount
+                || proof.resultBrightMinimumChannel != ResultBrightMinimumChannel
+                || proof.resultNavyMaximumLuma != ResultNavyMaximumLuma
+                || proof.resultBlueMinimumChannel != ResultBlueMinimumChannel
+                || proof.resultBlueMinimumRedDelta != ResultBlueMinimumRedDelta
+                || proof.resultBlueMinimumGreenDelta != ResultBlueMinimumGreenDelta
                 || !IsRatio(proof.sequenceBlackRatio)
                 || !IsRatio(proof.sequenceMagentaRatio)
                 || !IsRatio(proof.maximumFrameMagentaRatio)
                 || !IsFiniteInRange(proof.healthyFramePercent, 0d, 100d)
-                || !IsNonNegativeFinite(proof.impactMeanAbsoluteRgb)
+                || !IsMeanAbsoluteRgb(proof.impactMeanAbsoluteRgb)
                 || !IsRatio(proof.impactChangedRatio)
-                || !IsNonNegativeFinite(proof.aftermathEvolutionMeanAbsoluteRgb)
+                || !IsMeanAbsoluteRgb(proof.aftermathEvolutionMeanAbsoluteRgb)
                 || !IsRatio(proof.aftermathEvolutionChangedRatio)
-                || !IsNonNegativeFinite(proof.resultCutMeanAbsoluteRgb)
-                || !IsRatio(proof.resultCutChangedRatio)
-                || !IsNonNegativeFinite(proof.resultEntranceMeanAbsoluteRgb)
+                || !IsMeanAbsoluteRgb(proof.resultAppearanceMeanAbsoluteRgb)
+                || !IsRatio(proof.resultAppearanceChangedRatio)
+                || !IsMeanAbsoluteRgb(proof.resultEntranceMeanAbsoluteRgb)
                 || !IsRatio(proof.resultEntranceChangedRatio)
                 || proof.resultBrightSamples < 0
-                || proof.resultDarkSamples < 0
-                || proof.resultCyanSamples < 0)
+                || proof.resultBrightSamples > proof.resultSurfaceSampleCount
+                || proof.resultNavySamples < 0
+                || proof.resultNavySamples > proof.resultSurfaceSampleCount
+                || proof.resultBlueSamples < 0
+                || proof.resultBlueSamples > proof.resultSurfaceSampleCount)
             {
                 throw new InvalidOperationException(
-                    "G08 QHD pixel telemetry is absent or non-finite.");
+                    "G08 QHD pixel telemetry is absent, out of domain, "
+                    + "or algorithm metadata drifted.");
             }
 
             if (requirePixelCalibration && !PixelCalibrationLocked)
             {
                 throw new G08PixelCalibrationRequiredException(
-                    "G08 pixel calibration is not locked. Review the clean failure telemetry, "
+                    "G08 pixel calibration is not locked. Review the runtime failure telemetry, "
                     + "pin independently justified thresholds, and set PixelCalibrationLocked=true.");
             }
 
@@ -870,6 +992,149 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        internal static void ValidateCompositionEvidence(RuntimeProof proof)
+        {
+            if (proof?.renderEvidence == null
+                || proof.renderEvidence.Length != CompositionEvidenceFrames.Length
+                || proof.renderEvidence.Any(value => value == null)
+                || !proof.renderEvidence.Select(value => value.frame)
+                    .SequenceEqual(CompositionEvidenceFrames))
+            {
+                throw new InvalidOperationException(
+                    "G08 composition evidence must be the exact ordered f61/f62/f116/f181/f246 set.");
+            }
+
+            RenderEvidence gameplay = proof.renderEvidence[0];
+            if (!gameplay.gameplayCameraExact
+                || gameplay.finisherCameraExact
+                || !gameplay.exclusiveCameraRoleExact
+                || !gameplay.combatHudVisible
+                || !gameplay.bossSafeViewport
+                || !string.Equals(gameplay.cameraRole, "gameplay", StringComparison.Ordinal)
+                || !string.Equals(
+                    gameplay.objectiveText,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedPlayerFacingKoObjective,
+                    StringComparison.Ordinal)
+                || !gameplay.objectiveForbiddenInternalTokensAbsent
+                || !string.Equals(
+                    gameplay.bossLabelText,
+                    AuditionPvStationBossDeathAftermathCapture.ExpectedBossDisplayName,
+                    StringComparison.Ordinal)
+                || !gameplay.pocketClearMarkerReferenceUnbound
+                || !gameplay.pocketClearMarkerPresent
+                || !gameplay.pocketClearMarkerInactive)
+            {
+                throw new InvalidOperationException(
+                    "G08 f61 causal gameplay handle/objective/boss-label/marker truth failed.");
+            }
+
+            RenderEvidence[] finisher = proof.renderEvidence.Skip(1).Take(3).ToArray();
+            foreach (RenderEvidence value in finisher)
+            {
+                bool playerCompositionExact = value.playerFullyOutsideFrustum
+                    ? !value.playerFullyInsideFrustum
+                        && !value.playerPartiallyClipped
+                    : value.playerFullyInsideFrustum
+                        && value.playerSafeViewport
+                        && !value.playerPartiallyClipped
+                        && IsFiniteInRange(
+                            value.playerBodyHeightRatio,
+                            MinimumVisiblePlayerBodyHeightRatio,
+                            MaximumVisiblePlayerBodyHeightRatio);
+                bool hudModeExact = value.combatHudVisible == (value.frame == 62);
+                bool hudCopyExact = value.frame != 62
+                    || (string.Equals(
+                            value.objectiveText,
+                            AuditionPvStationBossDeathAftermathCapture
+                                .ExpectedPlayerFacingKoObjective,
+                            StringComparison.Ordinal)
+                        && value.objectiveForbiddenInternalTokensAbsent
+                        && string.Equals(
+                            value.bossLabelText,
+                            AuditionPvStationBossDeathAftermathCapture
+                                .ExpectedBossDisplayName,
+                            StringComparison.Ordinal));
+                if (value.gameplayCameraExact
+                    || !value.finisherCameraExact
+                    || !value.exclusiveCameraRoleExact
+                    || !string.Equals(value.cameraRole, "finisher", StringComparison.Ordinal)
+                    || !value.bossFullyInsideFrustum
+                    || !value.bossSafeViewport
+                    || value.bossPartiallyClipped
+                    || !IsFiniteInRange(
+                        value.bossBodyHeightRatio,
+                        MinimumFinisherBossBodyHeightRatio,
+                        MaximumFinisherBossBodyHeightRatio)
+                    || !IsFinite(value.bossViewport)
+                    || !playerCompositionExact
+                    || !hudModeExact
+                    || !hudCopyExact
+                    || !value.pocketClearMarkerReferenceUnbound
+                    || !value.pocketClearMarkerPresent
+                    || !value.pocketClearMarkerInactive
+                    || !value.terminalBoundaryVisualPresent
+                    || !value.terminalBoundaryVisualHidden)
+                {
+                    throw new InvalidOperationException(
+                        $"G08 f{value.frame} authored finisher framing or visual-truth evidence failed.");
+                }
+            }
+
+            float minimumHeight = finisher.Min(value => value.bossBodyHeightRatio);
+            float maximumHeight = finisher.Max(value => value.bossBodyHeightRatio);
+            if (maximumHeight - minimumHeight > MaximumFinisherBossHeightSpread)
+            {
+                throw new InvalidOperationException(
+                    "G08 finisher boss projected-height stability exceeded the exact 0.05 viewport span.");
+            }
+
+            bool centerDriftExceeded = false;
+            for (int left = 0; left < finisher.Length; left++)
+            {
+                for (int right = left + 1; right < finisher.Length; right++)
+                {
+                    centerDriftExceeded |= Vector2.Distance(
+                        new Vector2(
+                            finisher[left].bossViewport.x,
+                            finisher[left].bossViewport.y),
+                        new Vector2(
+                            finisher[right].bossViewport.x,
+                            finisher[right].bossViewport.y))
+                        > MaximumFinisherBossCenterDrift;
+                }
+            }
+
+            if (centerDriftExceeded)
+            {
+                throw new InvalidOperationException(
+                    "G08 finisher boss viewport-center drift exceeded the exact 0.08 radius.");
+            }
+
+            RenderEvidence result = proof.renderEvidence[4];
+            if (!result.gameplayCameraExact
+                || result.finisherCameraExact
+                || !result.exclusiveCameraRoleExact
+                || !string.Equals(result.cameraRole, "gameplay", StringComparison.Ordinal)
+                || !result.finisherLeaseReleased
+                || result.combatHudVisible
+                || !result.resultCanvasVisible
+                || !result.resultInteractive
+                || !result.redundantClearTextPresent
+                || !result.redundantClearTextInactive
+                || !result.realClearIconPresent
+                || !result.realClearIconActive
+                || !result.terminalBoundaryVisualPresent
+                || !result.terminalBoundaryVisualHidden
+                || !result.pocketClearMarkerReferenceUnbound
+                || !result.pocketClearMarkerPresent
+                || !result.pocketClearMarkerInactive)
+            {
+                throw new InvalidOperationException(
+                    "G08 f246 gameplay-camera restore/authored-result/CLEAR visual truth failed.");
+            }
+        }
+
         internal static void ValidateLockedPixelThresholdsForTests(
             RuntimeProof proof)
         {
@@ -882,13 +1147,19 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.impactChangedRatio < MinimumImpactChangedRatio
                 || proof.aftermathEvolutionMeanAbsoluteRgb
                     < MinimumAftermathEvolutionMeanAbsoluteRgb
-                || proof.resultCutMeanAbsoluteRgb < MinimumResultCutMeanAbsoluteRgb
-                || proof.resultCutChangedRatio < MinimumResultCutChangedRatio
+                || proof.aftermathEvolutionChangedRatio
+                    < MinimumAftermathEvolutionChangedRatio
+                || proof.resultAppearanceMeanAbsoluteRgb
+                    < MinimumResultAppearanceMeanAbsoluteRgb
+                || proof.resultAppearanceChangedRatio
+                    < MinimumResultAppearanceChangedRatio
                 || proof.resultEntranceMeanAbsoluteRgb
                     < MinimumResultEntranceMeanAbsoluteRgb
+                || proof.resultEntranceChangedRatio
+                    < MinimumResultEntranceChangedRatio
                 || proof.resultBrightSamples < MinimumResultBrightSamples
-                || proof.resultDarkSamples < MinimumResultDarkSamples
-                || proof.resultCyanSamples < MinimumResultCyanSamples)
+                || proof.resultNavySamples < MinimumResultNavySamples
+                || proof.resultBlueSamples < MinimumResultBlueSamples)
             {
                 throw new InvalidOperationException(
                     "G08 QHD pixel health/delta/result-surface gates failed.");
@@ -907,9 +1178,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             return IsFiniteInRange(value, 0d, 1d);
         }
 
-        private static bool IsNonNegativeFinite(double value)
+        private static bool IsMeanAbsoluteRgb(double value)
         {
-            return IsFiniteInRange(value, 0d, double.MaxValue);
+            return IsFiniteInRange(value, 0d, byte.MaxValue);
         }
 
         private static bool IsFiniteInRange(double value, double minimum, double maximum)
@@ -1534,7 +1805,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + "No success artifacts may be published from this first take.");
             }
 
-            ValidateRuntimeProof(proof);
+            ValidateRuntimeProofForPublication(proof);
 
             string failurePath = Path.Combine(state.outputDirectory, FailureFileName);
             if (File.Exists(failurePath))
@@ -1589,7 +1860,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private static void AnalyzeFrames(string frameDirectory, RuntimeProof proof)
         {
-            const int sampleStride = 8;
+            const int sampleStride = SequencePixelSampleStride;
             long total = 0;
             long black = 0;
             long magenta = 0;
@@ -1656,22 +1927,36 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.maximumFrameMagentaRatio = maximumMagenta;
             proof.healthyFramePercent = healthy * 100d
                 / AuditionPvStationBossDeathAftermathCapture.ExpectedFrameCount;
-            MeasureFrameDelta(frameDirectory, 61, 62,
+            proof.frameDeltaPixelSampleStride = FrameDeltaPixelSampleStride;
+            proof.frameDeltaChangedRgbSumCutoff = FrameDeltaChangedRgbSumCutoff;
+            proof.impactDeltaFromFrame = ImpactDeltaFromFrame;
+            proof.impactDeltaToFrame = ImpactDeltaToFrame;
+            proof.frameDeltaPixelSampleCount = MeasureFrameDelta(
+                frameDirectory,
+                ImpactDeltaFromFrame,
+                ImpactDeltaToFrame,
                 out proof.impactMeanAbsoluteRgb,
                 out proof.impactChangedRatio);
-            MeasureFrameDelta(frameDirectory, 62, 116,
+            proof.aftermathDeltaFromFrame = AftermathDeltaFromFrame;
+            proof.aftermathDeltaToFrame = AftermathDeltaToFrame;
+            MeasureFrameDelta(frameDirectory, AftermathDeltaFromFrame, AftermathDeltaToFrame,
                 out proof.aftermathEvolutionMeanAbsoluteRgb,
                 out proof.aftermathEvolutionChangedRatio);
-            MeasureFrameDelta(frameDirectory, 217, 218,
-                out proof.resultCutMeanAbsoluteRgb,
-                out proof.resultCutChangedRatio);
-            MeasureFrameDelta(frameDirectory, 218, 246,
+            proof.resultAppearanceFromFrame = ResultAppearanceFromFrame;
+            proof.resultAppearanceToFrame = ResultAppearanceToFrame;
+            MeasureFrameDelta(frameDirectory, ResultAppearanceFromFrame,
+                ResultAppearanceToFrame,
+                out proof.resultAppearanceMeanAbsoluteRgb,
+                out proof.resultAppearanceChangedRatio);
+            proof.resultEntranceFromFrame = ResultEntranceFromFrame;
+            proof.resultEntranceToFrame = ResultEntranceToFrame;
+            MeasureFrameDelta(frameDirectory, ResultEntranceFromFrame, ResultEntranceToFrame,
                 out proof.resultEntranceMeanAbsoluteRgb,
                 out proof.resultEntranceChangedRatio);
-            MeasureResultSurface(frameDirectory, 246, proof);
+            MeasureResultSurface(frameDirectory, ResultSurfaceFrame, proof);
         }
 
-        private static void MeasureFrameDelta(
+        private static int MeasureFrameDelta(
             string frameDirectory,
             int firstFrame,
             int secondFrame,
@@ -1686,21 +1971,21 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 Color32[] a = first.GetPixels32();
                 Color32[] b = second.GetPixels32();
-                long samples = 0;
+                int samples = 0;
                 long changed = 0;
                 double sum = 0d;
-                const int stride = 4;
-                for (int y = 0; y < first.height; y += stride)
+                for (int y = 0; y < first.height; y += FrameDeltaPixelSampleStride)
                 {
                     int row = y * first.width;
-                    for (int x = 0; x < first.width; x += stride)
+                    for (int x = 0; x < first.width;
+                        x += FrameDeltaPixelSampleStride)
                     {
                         int index = row + x;
                         int delta = Math.Abs(a[index].r - b[index].r)
                             + Math.Abs(a[index].g - b[index].g)
                             + Math.Abs(a[index].b - b[index].b);
                         sum += delta / 3d;
-                        if (delta >= 24)
+                        if (delta >= FrameDeltaChangedRgbSumCutoff)
                         {
                             changed++;
                         }
@@ -1711,6 +1996,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
                 meanAbsoluteRgb = sum / samples;
                 changedRatio = changed / (double)samples;
+                return samples;
             }
             finally
             {
@@ -1729,25 +2015,50 @@ namespace DimensionBrawl.Editor.AuditionPV
             try
             {
                 Color32[] pixels = texture.GetPixels32();
-                for (int y = 180; y < 1260; y += 4)
+                RectInt roi = ResultSurfaceRawBottomLeftRoi;
+                proof.resultSurfaceFrame = frame;
+                proof.resultSurfaceRoiX = roi.x;
+                proof.resultSurfaceRoiY = roi.y;
+                proof.resultSurfaceRoiWidth = roi.width;
+                proof.resultSurfaceRoiHeight = roi.height;
+                proof.resultSurfaceSampleStride = ResultSurfaceSampleStride;
+                proof.resultBrightMinimumChannel = ResultBrightMinimumChannel;
+                proof.resultNavyMaximumLuma = ResultNavyMaximumLuma;
+                proof.resultBlueMinimumChannel = ResultBlueMinimumChannel;
+                proof.resultBlueMinimumRedDelta = ResultBlueMinimumRedDelta;
+                proof.resultBlueMinimumGreenDelta = ResultBlueMinimumGreenDelta;
+                proof.resultSurfaceSampleCount = 0;
+                proof.resultBrightSamples = 0;
+                proof.resultNavySamples = 0;
+                proof.resultBlueSamples = 0;
+                for (int y = roi.yMin; y < roi.yMax;
+                    y += ResultSurfaceSampleStride)
                 {
                     int row = y * texture.width;
-                    for (int x = 256; x < 2304; x += 4)
+                    for (int x = roi.xMin; x < roi.xMax;
+                        x += ResultSurfaceSampleStride)
                     {
                         Color32 color = pixels[row + x];
-                        if (color.r >= 200 && color.g >= 200 && color.b >= 200)
+                        proof.resultSurfaceSampleCount++;
+                        if (color.r >= ResultBrightMinimumChannel
+                            && color.g >= ResultBrightMinimumChannel
+                            && color.b >= ResultBrightMinimumChannel)
                         {
                             proof.resultBrightSamples++;
                         }
 
-                        if (color.r <= 55 && color.g <= 55 && color.b <= 55)
+                        int luma = (54 * color.r + 183 * color.g + 19 * color.b)
+                            >> 8;
+                        if (luma <= ResultNavyMaximumLuma)
                         {
-                            proof.resultDarkSamples++;
+                            proof.resultNavySamples++;
                         }
 
-                        if (color.r <= 120 && color.g >= 100 && color.b >= 140)
+                        if (color.b >= ResultBlueMinimumChannel
+                            && color.b >= color.r + ResultBlueMinimumRedDelta
+                            && color.b >= color.g + ResultBlueMinimumGreenDelta)
                         {
-                            proof.resultCyanSamples++;
+                            proof.resultBlueSamples++;
                         }
                     }
                 }
@@ -2149,9 +2460,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 startGitDirty = state.gitWorktreeDirty,
                 startGitDirtyHashSha256 = state.gitDirtyHashSha256,
                 retainedArtifacts =
-                    "Failure-only: raw/logical frames, runner state, and telemetry may remain; manifest, baselines, success proof, and canonical ledger are absent.",
+                    "Failure-only: raw/logical frames, runner state, and runtime/pixel/composition telemetry may remain; manifest, baselines, success proof, and canonical ledger are absent.",
                 pixelCalibrationLocked = PixelCalibrationLocked,
                 calibrationRequired = exception is G08PixelCalibrationRequiredException,
+                visualCompositionAcceptanceLocked =
+                    VisualCompositionAcceptanceLocked,
+                visualCompositionAcceptanceRequired =
+                    exception is G08VisualCompositionAcceptanceRequiredException,
                 successArtifactCleanupFailure = cleanupFailure,
                 runtime = proof
             });
@@ -3065,6 +3380,15 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        internal sealed class G08VisualCompositionAcceptanceRequiredException
+            : InvalidOperationException
+        {
+            public G08VisualCompositionAcceptanceRequiredException(string message)
+                : base(message)
+            {
+            }
+        }
+
         [Serializable]
         internal sealed class PersistedRunnerState
         {
@@ -3194,6 +3518,28 @@ namespace DimensionBrawl.Editor.AuditionPV
             public int aftermathBeginCount;
             public int aftermathCompleteCount;
             public float aftermathElapsedSeconds;
+            public bool exclusiveCameraScheduleExact;
+            public int cameraRoleTransitionCount;
+            public int firstFinisherCameraFrame = -1;
+            public int firstGameplayCameraRestoreFrame = -1;
+            public bool finisherTerminalHoldExactAt218;
+            public bool finisherReleaseExactAt246;
+            public bool finisherCameraSucceeded;
+            public bool finisherCameraReleaseScheduled;
+            public bool finisherCameraInterrupted;
+            public bool fallbackCameraCueSucceeded;
+            public int finisherCameraRequestVersion = -1;
+            public int finisherCameraAcquireCount;
+            public int finisherCameraReleaseCount;
+            public int finisherCameraControllerRequestVersion = -1;
+            public int finisherCameraSampleCount;
+            public int finisherCameraResultCoverReleaseSampleCount;
+            public double finisherCameraLastSampledSeconds;
+            public float finisherCameraResultCoverReleaseElapsedSeconds;
+            public bool finisherCameraReachedTerminalSample;
+            public bool finisherCameraLeaseReleased;
+            public bool finisherCameraGameplayRestored;
+            public bool finisherCameraDisabledAtResult;
             public int bossDeathCameraRequestCount;
             public int bossDeathCameraVersion;
             public bool bossDeathCameraInterrupted;
@@ -3223,6 +3569,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool hudWasActiveAtImpact;
             public bool hudYieldedAtResult;
             public bool resultInteractiveAt246;
+            public bool pocketClearMarkerReferenceUnbound;
+            public bool pocketClearMarkerInactiveAtEnd;
+            public bool terminalBoundaryVisualHiddenAtEnd;
 
             public bool stateRestored;
             public bool eventsReleased;
@@ -3242,17 +3591,40 @@ namespace DimensionBrawl.Editor.AuditionPV
             public double sequenceMagentaRatio;
             public double maximumFrameMagentaRatio;
             public double healthyFramePercent;
+            public int frameDeltaPixelSampleStride;
+            public int frameDeltaPixelSampleCount;
+            public int frameDeltaChangedRgbSumCutoff;
+            public int impactDeltaFromFrame;
+            public int impactDeltaToFrame;
             public double impactMeanAbsoluteRgb;
             public double impactChangedRatio;
+            public int aftermathDeltaFromFrame;
+            public int aftermathDeltaToFrame;
             public double aftermathEvolutionMeanAbsoluteRgb;
             public double aftermathEvolutionChangedRatio;
-            public double resultCutMeanAbsoluteRgb;
-            public double resultCutChangedRatio;
+            public int resultAppearanceFromFrame;
+            public int resultAppearanceToFrame;
+            public double resultAppearanceMeanAbsoluteRgb;
+            public double resultAppearanceChangedRatio;
+            public int resultEntranceFromFrame;
+            public int resultEntranceToFrame;
             public double resultEntranceMeanAbsoluteRgb;
             public double resultEntranceChangedRatio;
+            public int resultSurfaceFrame;
+            public int resultSurfaceRoiX;
+            public int resultSurfaceRoiY;
+            public int resultSurfaceRoiWidth;
+            public int resultSurfaceRoiHeight;
+            public int resultSurfaceSampleStride;
+            public int resultSurfaceSampleCount;
+            public int resultBrightMinimumChannel;
+            public int resultNavyMaximumLuma;
+            public int resultBlueMinimumChannel;
+            public int resultBlueMinimumRedDelta;
+            public int resultBlueMinimumGreenDelta;
             public int resultBrightSamples;
-            public int resultDarkSamples;
-            public int resultCyanSamples;
+            public int resultNavySamples;
+            public int resultBlueSamples;
 
             public string frameHashLedgerPath = string.Empty;
             public string frameHashLedgerSha256 = string.Empty;
@@ -3269,11 +3641,35 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal sealed class RenderEvidence
         {
             public int frame;
+            public string cameraRole = string.Empty;
             public bool gameplayCameraExact;
+            public bool finisherCameraExact;
+            public bool exclusiveCameraRoleExact;
+            public bool finisherLeaseReleased;
+            public bool combatHudVisible;
             public bool playerSafeViewport;
             public bool bossSafeViewport;
+            public bool playerFullyInsideFrustum;
+            public bool playerFullyOutsideFrustum;
+            public bool playerPartiallyClipped;
+            public bool bossFullyInsideFrustum;
+            public bool bossPartiallyClipped;
+            public float playerBodyHeightRatio;
+            public float bossBodyHeightRatio;
             public bool resultCanvasVisible;
             public bool resultInteractive;
+            public string objectiveText = string.Empty;
+            public string bossLabelText = string.Empty;
+            public bool objectiveForbiddenInternalTokensAbsent;
+            public bool pocketClearMarkerReferenceUnbound;
+            public bool pocketClearMarkerPresent;
+            public bool pocketClearMarkerInactive;
+            public bool terminalBoundaryVisualPresent;
+            public bool terminalBoundaryVisualHidden;
+            public bool redundantClearTextPresent;
+            public bool redundantClearTextInactive;
+            public bool realClearIconPresent;
+            public bool realClearIconActive;
             public Vector3 playerViewport;
             public Vector3 bossViewport;
             public Vector2 playerPixelExtent;
@@ -3306,6 +3702,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string retainedArtifacts = string.Empty;
             public bool pixelCalibrationLocked;
             public bool calibrationRequired;
+            public bool visualCompositionAcceptanceLocked;
+            public bool visualCompositionAcceptanceRequired;
             public string successArtifactCleanupFailure = string.Empty;
             public RuntimeProof runtime;
         }
@@ -3950,6 +4348,46 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.aftermathBeginCount = director.AftermathBeginCount;
                 proof.aftermathCompleteCount = director.AftermathCompleteCount;
                 proof.aftermathElapsedSeconds = director.AftermathElapsedSeconds;
+                proof.exclusiveCameraScheduleExact =
+                    director.ExclusiveCameraScheduleExact;
+                proof.cameraRoleTransitionCount = director.CameraRoleTransitionCount;
+                proof.firstFinisherCameraFrame = director.FirstFinisherCameraFrame;
+                proof.firstGameplayCameraRestoreFrame =
+                    director.FirstGameplayCameraRestoreFrame;
+                proof.finisherTerminalHoldExactAt218 =
+                    director.FinisherTerminalHoldExactAt218;
+                proof.finisherReleaseExactAt246 =
+                    director.FinisherReleaseExactAt246;
+                proof.finisherCameraSucceeded = director.FinisherCameraSucceeded;
+                proof.finisherCameraReleaseScheduled =
+                    director.FinisherCameraReleaseScheduled;
+                proof.finisherCameraInterrupted = director.FinisherCameraInterrupted;
+                proof.fallbackCameraCueSucceeded =
+                    director.FallbackCameraCueSucceeded;
+                proof.finisherCameraRequestVersion =
+                    director.FinisherCameraRequestVersion;
+                proof.finisherCameraAcquireCount =
+                    director.FinisherCameraAcquireCount;
+                proof.finisherCameraReleaseCount =
+                    director.FinisherCameraReleaseCount;
+                proof.finisherCameraControllerRequestVersion =
+                    director.FinisherCameraControllerRequestVersion;
+                proof.finisherCameraSampleCount =
+                    director.FinisherCameraSampleCount;
+                proof.finisherCameraResultCoverReleaseSampleCount =
+                    director.FinisherCameraResultCoverReleaseSampleCount;
+                proof.finisherCameraLastSampledSeconds =
+                    director.FinisherCameraLastSampledSeconds;
+                proof.finisherCameraResultCoverReleaseElapsedSeconds =
+                    director.FinisherCameraResultCoverReleaseElapsedSeconds;
+                proof.finisherCameraReachedTerminalSample =
+                    director.FinisherCameraReachedTerminalSample;
+                proof.finisherCameraLeaseReleased =
+                    director.FinisherCameraLeaseReleased;
+                proof.finisherCameraGameplayRestored =
+                    director.FinisherCameraGameplayRestored;
+                proof.finisherCameraDisabledAtResult =
+                    director.FinisherCameraDisabledAtResult;
                 proof.bossDeathCameraRequestCount =
                     director.BossDeathCameraRequestCount;
                 proof.bossDeathCameraVersion = director.BossDeathCameraVersion;
@@ -3983,6 +4421,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.hudWasActiveAtImpact = director.HudWasActiveAtImpact;
                 proof.hudYieldedAtResult = director.HudYieldedAtResult;
                 proof.resultInteractiveAt246 = director.ResultInteractiveAt246;
+                proof.pocketClearMarkerReferenceUnbound =
+                    director.PocketClearMarkerReferenceUnbound;
+                proof.pocketClearMarkerInactiveAtEnd =
+                    director.PocketClearMarker != null
+                    && !director.PocketClearMarker.activeSelf;
+                proof.terminalBoundaryVisualHiddenAtEnd =
+                    director.TerminalBoundaryVisualRoot != null
+                    && !director.TerminalBoundaryVisualRoot.activeSelf;
                 proof.renderEvidence = renderProbe != null
                     ? renderProbe.CopyEvidence()
                     : Array.Empty<
@@ -4198,7 +4644,7 @@ namespace DimensionBrawl.Editor.AuditionPV
     public sealed class AuditionPvStationBossDeathAftermathRenderProbe
         : MonoBehaviour
     {
-        private static readonly int[] EvidenceFrames = { 62, 116, 246 };
+        private static readonly int[] EvidenceFrames = { 61, 62, 116, 181, 246 };
         private readonly List<
             AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence>
             evidence = new();
@@ -4219,11 +4665,39 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvStationBossDeathAftermathGoldenRunner.RenderEvidence
                 {
                     frame = value.frame,
+                    cameraRole = value.cameraRole,
                     gameplayCameraExact = value.gameplayCameraExact,
+                    finisherCameraExact = value.finisherCameraExact,
+                    exclusiveCameraRoleExact = value.exclusiveCameraRoleExact,
+                    finisherLeaseReleased = value.finisherLeaseReleased,
+                    combatHudVisible = value.combatHudVisible,
                     playerSafeViewport = value.playerSafeViewport,
                     bossSafeViewport = value.bossSafeViewport,
+                    playerFullyInsideFrustum = value.playerFullyInsideFrustum,
+                    playerFullyOutsideFrustum = value.playerFullyOutsideFrustum,
+                    playerPartiallyClipped = value.playerPartiallyClipped,
+                    bossFullyInsideFrustum = value.bossFullyInsideFrustum,
+                    bossPartiallyClipped = value.bossPartiallyClipped,
+                    playerBodyHeightRatio = value.playerBodyHeightRatio,
+                    bossBodyHeightRatio = value.bossBodyHeightRatio,
                     resultCanvasVisible = value.resultCanvasVisible,
                     resultInteractive = value.resultInteractive,
+                    objectiveText = value.objectiveText,
+                    bossLabelText = value.bossLabelText,
+                    objectiveForbiddenInternalTokensAbsent =
+                        value.objectiveForbiddenInternalTokensAbsent,
+                    pocketClearMarkerReferenceUnbound =
+                        value.pocketClearMarkerReferenceUnbound,
+                    pocketClearMarkerPresent = value.pocketClearMarkerPresent,
+                    pocketClearMarkerInactive = value.pocketClearMarkerInactive,
+                    terminalBoundaryVisualPresent =
+                        value.terminalBoundaryVisualPresent,
+                    terminalBoundaryVisualHidden =
+                        value.terminalBoundaryVisualHidden,
+                    redundantClearTextPresent = value.redundantClearTextPresent,
+                    redundantClearTextInactive = value.redundantClearTextInactive,
+                    realClearIconPresent = value.realClearIconPresent,
+                    realClearIconActive = value.realClearIconActive,
                     playerViewport = value.playerViewport,
                     bossViewport = value.bossViewport,
                     playerPixelExtent = value.playerPixelExtent,
@@ -4264,6 +4738,32 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     frame = frame
                 };
+
+            Camera gameplayCamera = director.GameplayCamera;
+            Camera finisherCamera = director.FinisherCamera;
+            bool gameplayActive = IsExactCaptureCamera(gameplayCamera);
+            bool finisherActive = IsExactCaptureCamera(finisherCamera);
+            result.gameplayCameraExact = gameplayActive && !finisherActive;
+            result.finisherCameraExact = finisherActive && !gameplayActive;
+            result.exclusiveCameraRoleExact = gameplayActive != finisherActive;
+            result.cameraRole = result.finisherCameraExact
+                ? "finisher"
+                : result.gameplayCameraExact ? "gameplay" : "invalid";
+            result.finisherLeaseReleased = director.FinisherCameraLeaseReleased;
+            result.combatHudVisible = director.CombatHudVisible;
+            result.pocketClearMarkerReferenceUnbound =
+                director.PocketClearMarkerReferenceUnbound;
+            result.pocketClearMarkerPresent = director.PocketClearMarker != null;
+            result.pocketClearMarkerInactive = director.PocketClearMarker != null
+                && !director.PocketClearMarker.activeSelf
+                && !director.PocketClearMarker.activeInHierarchy;
+            result.terminalBoundaryVisualPresent =
+                director.TerminalBoundaryVisualRoot != null;
+            result.terminalBoundaryVisualHidden =
+                director.TerminalBoundaryVisualRoot != null
+                && !director.TerminalBoundaryVisualRoot.activeSelf
+                && !director.TerminalBoundaryVisualRoot.activeInHierarchy;
+
             if (frame == 246)
             {
                 StageClearScreenPresenter presenter = director.ClearPresenter;
@@ -4286,53 +4786,87 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && group.blocksRaycasts
                     && presenter.EntranceCompleted
                     && !presenter.IsEntrancePlaying;
+                GameObject redundantClearText = FindNamedGameObject(
+                    presenter != null ? presenter.transform : null,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .RedundantClearTextObjectName);
+                GameObject realClearIcon = FindNamedGameObject(
+                    presenter != null ? presenter.transform : null,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .RealClearIconObjectName);
+                result.redundantClearTextPresent = redundantClearText != null;
+                result.redundantClearTextInactive = redundantClearText != null
+                    && !redundantClearText.activeSelf
+                    && !redundantClearText.activeInHierarchy;
+                result.realClearIconPresent = realClearIcon != null;
+                result.realClearIconActive = realClearIcon != null
+                    && realClearIcon.activeSelf
+                    && realClearIcon.activeInHierarchy;
                 return result;
             }
 
-            Camera camera = director.GameplayCamera;
-            result.gameplayCameraExact = camera != null
+            Camera camera = frame == 61 ? gameplayCamera : finisherCamera;
+            if (!IsExactCaptureCamera(camera))
+            {
+                return result;
+            }
+
+            ProjectedBodyEvidence player = ResolveProjectedBody(
+                camera,
+                director.PlayerRendererRoot);
+            ProjectedBodyEvidence boss = ResolveProjectedBody(
+                camera,
+                director.BossRendererRoot);
+            result.playerSafeViewport = player.safeViewport;
+            result.bossSafeViewport = boss.safeViewport;
+            result.playerFullyInsideFrustum = player.fullyInsideFrustum;
+            result.playerFullyOutsideFrustum = player.fullyOutsideFrustum;
+            result.playerPartiallyClipped = player.partiallyClipped;
+            result.bossFullyInsideFrustum = boss.fullyInsideFrustum;
+            result.bossPartiallyClipped = boss.partiallyClipped;
+            result.playerBodyHeightRatio = player.bodyHeightRatio;
+            result.bossBodyHeightRatio = boss.bodyHeightRatio;
+            result.playerViewport = player.viewport;
+            result.bossViewport = boss.viewport;
+            result.playerPixelExtent = player.pixelExtent;
+            result.bossPixelExtent = boss.pixelExtent;
+
+            if (frame == 61 || frame == 62)
+            {
+                result.objectiveText = director.ObjectiveTextValue;
+                result.bossLabelText = director.BossNameTextValue;
+                result.objectiveForbiddenInternalTokensAbsent =
+                    !ContainsForbiddenInternalObjectiveToken(result.objectiveText);
+            }
+
+            return result;
+        }
+
+        private static bool IsExactCaptureCamera(Camera camera)
+        {
+            return camera != null
+                && camera.gameObject.activeInHierarchy
                 && camera.isActiveAndEnabled
                 && camera.targetTexture == null
                 && camera.rect == new Rect(0f, 0f, 1f, 1f)
                 && camera.pixelWidth > 0
                 && camera.pixelHeight > 0;
-            if (!result.gameplayCameraExact)
+        }
+
+        private static ProjectedBodyEvidence ResolveProjectedBody(
+            Camera camera,
+            Transform root)
+        {
+            var result = new ProjectedBodyEvidence();
+            if (camera == null || root == null)
             {
                 return result;
             }
 
-            result.playerSafeViewport = TryResolveSafeViewport(
-                camera,
-                director.PlayerRendererRoot,
-                out Vector3 playerViewport,
-                out Vector2 playerPixelExtent);
-            result.bossSafeViewport = TryResolveSafeViewport(
-                camera,
-                director.BossRendererRoot,
-                out Vector3 bossViewport,
-                out Vector2 bossPixelExtent);
-            result.playerViewport = playerViewport;
-            result.bossViewport = bossViewport;
-            result.playerPixelExtent = playerPixelExtent;
-            result.bossPixelExtent = bossPixelExtent;
-            return result;
-        }
-
-        private static bool TryResolveSafeViewport(
-            Camera camera,
-            Transform root,
-            out Vector3 viewport,
-            out Vector2 pixelExtent)
-        {
-            viewport = default;
-            pixelExtent = default;
-            if (camera == null || root == null)
-            {
-                return false;
-            }
-
-            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true)
+            Renderer[] activeRenderers = root.GetComponentsInChildren<Renderer>(true)
                 .Where(renderer => renderer != null
+                    && (renderer is SkinnedMeshRenderer
+                        || renderer is MeshRenderer)
                     && renderer.enabled
                     && !renderer.forceRenderingOff
                     && renderer.shadowCastingMode
@@ -4340,17 +4874,23 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && renderer.gameObject.activeInHierarchy
                     && (camera.cullingMask & (1 << renderer.gameObject.layer)) != 0)
                 .ToArray();
+            Renderer[] skinnedBodyRenderers = activeRenderers
+                .Where(renderer => renderer is SkinnedMeshRenderer)
+                .ToArray();
+            Renderer[] renderers = skinnedBodyRenderers.Length > 0
+                ? skinnedBodyRenderers
+                : activeRenderers
+                    .Where(renderer => renderer is MeshRenderer
+                        && IsExplicitBodyMeshName(renderer.gameObject.name))
+                    .ToArray();
             if (renderers.Length == 0)
             {
-                return false;
+                return result;
             }
 
             Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
-            if (!renderers.Any(renderer =>
-                    GeometryUtility.TestPlanesAABB(planes, renderer.bounds)))
-            {
-                return false;
-            }
+            bool anyRendererIntersects = renderers.Any(renderer =>
+                GeometryUtility.TestPlanesAABB(planes, renderer.bounds));
 
             Bounds bounds = renderers[0].bounds;
             for (int index = 1; index < renderers.Length; index++)
@@ -4358,7 +4898,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 bounds.Encapsulate(renderers[index].bounds);
             }
 
-            viewport = camera.WorldToViewportPoint(bounds.center);
+            result.viewport = camera.WorldToViewportPoint(bounds.center);
             Vector3 min = bounds.min;
             Vector3 max = bounds.max;
             Vector3[] corners =
@@ -4368,32 +4908,97 @@ namespace DimensionBrawl.Editor.AuditionPV
                 new(max.x, min.y, min.z), new(max.x, min.y, max.z),
                 new(max.x, max.y, min.z), new(max.x, max.y, max.z)
             };
-            Vector3[] visible = corners.Select(camera.WorldToViewportPoint)
-                .Where(value => value.z > 0f)
+            Vector3[] projected = corners.Select(camera.WorldToViewportPoint)
                 .ToArray();
-            if (visible.Length == 0)
+            bool[] projectedCornerInside = projected.Select(value => value.z > 0f
+                    && value.x >= 0f
+                    && value.x <= 1f
+                    && value.y >= 0f
+                    && value.y <= 1f)
+                .ToArray();
+            result.fullyInsideFrustum = projectedCornerInside.All(value => value);
+            result.fullyOutsideFrustum = !anyRendererIntersects
+                && projectedCornerInside.All(value => !value);
+            result.partiallyClipped = !result.fullyInsideFrustum
+                && !result.fullyOutsideFrustum;
+
+            Vector3[] inFront = projected.Where(value => value.z > 0f).ToArray();
+            if (inFront.Length == 0)
+            {
+                return result;
+            }
+
+            float minimumX = inFront.Min(value => value.x);
+            float maximumX = inFront.Max(value => value.x);
+            float minimumY = inFront.Min(value => value.y);
+            float maximumY = inFront.Max(value => value.y);
+            result.bodyHeightRatio = Mathf.Max(0f, maximumY - minimumY);
+            result.pixelExtent = new Vector2(
+                Mathf.Max(0f, maximumX - minimumX) * camera.pixelWidth,
+                result.bodyHeightRatio * camera.pixelHeight);
+            result.safeViewport = result.fullyInsideFrustum
+                && result.viewport.z > 0f
+                && result.viewport.x >= 0.03f
+                && result.viewport.x <= 0.97f
+                && result.viewport.y >= 0.03f
+                && result.viewport.y <= 0.97f
+                && result.pixelExtent.x >= 8f
+                && result.pixelExtent.y >= 8f;
+            return result;
+        }
+
+        private static bool IsExplicitBodyMeshName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return false;
             }
 
-            float minimumX = visible.Min(value => value.x);
-            float maximumX = visible.Max(value => value.x);
-            float minimumY = visible.Min(value => value.y);
-            float maximumY = visible.Max(value => value.y);
-            pixelExtent = new Vector2(
-                Mathf.Max(0f, maximumX - minimumX) * camera.pixelWidth,
-                Mathf.Max(0f, maximumY - minimumY) * camera.pixelHeight);
-            return viewport.z > 0f
-                && viewport.x >= 0.03f
-                && viewport.x <= 0.97f
-                && viewport.y >= 0.03f
-                && viewport.y <= 0.97f
-                && maximumX > 0f
-                && minimumX < 1f
-                && maximumY > 0f
-                && minimumY < 1f
-                && pixelExtent.x >= 8f
-                && pixelExtent.y >= 8f;
+            return new[] { "Body", "Character", "Model", "Mesh", "Weapon", "Wing" }
+                .Any(token => value.IndexOf(
+                    token,
+                    StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static bool ContainsForbiddenInternalObjectiveToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            return new[]
+                {
+                    "SummonSlot", "boss curtain", "Build EN", "ARCHON PROXY", "LV."
+                }
+                .Any(token => value.IndexOf(
+                    token,
+                    StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        private static GameObject FindNamedGameObject(Transform root, string objectName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            Transform[] values = root.GetComponentsInChildren<Transform>(true)
+                .Where(value => value != null
+                    && string.Equals(value.name, objectName, StringComparison.Ordinal))
+                .ToArray();
+            return values.Length == 1 ? values[0].gameObject : null;
+        }
+
+        private struct ProjectedBodyEvidence
+        {
+            public bool safeViewport;
+            public bool fullyInsideFrustum;
+            public bool fullyOutsideFrustum;
+            public bool partiallyClipped;
+            public float bodyHeightRatio;
+            public Vector3 viewport;
+            public Vector2 pixelExtent;
         }
     }
 }

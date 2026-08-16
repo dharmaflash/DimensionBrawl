@@ -38,6 +38,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private MonoBehaviour sessionOverlayBehaviour;
         [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
         [SerializeField] private bool useSingleSummonPresentation;
+        [SerializeField] private string bossDisplayName = "AKAZA";
 
         [Header("Combat State")]
         [FormerlySerializedAs("pocketReviewOwner")]
@@ -227,6 +228,7 @@ namespace DimensionBrawl.UI
                 return;
             }
 
+            hudPresenter.SetBossName(bossDisplayName);
             SyncBossHudVisibility();
             UpdateAimReticleReadout();
             UpdateHealthReadouts();

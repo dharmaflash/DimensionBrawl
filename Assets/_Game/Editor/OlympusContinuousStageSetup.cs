@@ -9,7 +9,10 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using UnityEngine.Timeline;
 
 namespace DimensionBrawl.Editor
 {
@@ -36,6 +39,12 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/UI/Transitions/PF_UI_SceneEntryNoticeOverlay.prefab";
         private const string InputActionsPath = "Assets/InputSystem_Actions.inputactions";
         private const string PlayerInputActionMapId = "df70fa95-8a34-4494-b137-73ab6b9c7d37";
+        internal const string StationBossTerminalFinisherTimelinePath =
+            "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable";
+        internal const string StationBossTerminalFinisherCameraClipPath =
+            "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim";
+        private const string StationBossTerminalFinisherCameraTrackName =
+            "Boss Terminal Finisher Camera";
 
         private const string SharedMapName = "OlympusCorridorStageMap";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
@@ -51,6 +60,22 @@ namespace DimensionBrawl.Editor
             + "OlympusCorridor_CombatReadAnchors/Add_RightLaneAnchor";
         private const string ResultAdaptersName = "OlympusStation_ResultAdapters";
         private const string EntryGuideName = "OlympusStation_EntryGuide";
+        internal const string StationBossTerminalFinisherCameraRigName =
+            "OlympusStation_BossTerminalFinisherCameraRig";
+        internal const string StationTerminalBoundaryVisualName =
+            "OlympusStation_NoCrossCenterLine";
+        internal const string StationPocketClearMarkerName =
+            "BossBarrageLaneReview_PocketClearMarker";
+        internal const string StationBossDisplayName = "AKAZA";
+        internal const float StationBossTerminalFinisherDurationSeconds = 2.6f;
+        internal const float StationBossTerminalFinisherSettleSeconds = 0.14f;
+        internal const float StationBossTerminalFinisherFieldOfView = 46f;
+        internal static readonly Vector3 StationBossTerminalFinisherStartLocalPosition =
+            new(0f, 2.42f, 12.15f);
+        internal static readonly Vector3 StationBossTerminalFinisherSettleLocalPosition =
+            new(0f, 2.35f, 12.40f);
+        internal static readonly Vector3 StationBossTerminalFinisherLookTarget =
+            new(0f, 2.10f, 0f);
         private const string StairTraversalSupportName =
             "OlympusCorridor_IntroStairTraversalSupport";
         private const string UpperLandingTraversalSupportName =
@@ -889,6 +914,43 @@ namespace DimensionBrawl.Editor
                 .objectReferenceValue as CombatHealth;
             Require(bossHealth != null,
                 "Station aftermath authoring requires the canonical boss health subject.");
+            GameObject clearMarker = FindRequiredSceneObject(
+                scene,
+                StationPocketClearMarkerName);
+            clearMarker.SetActive(false);
+            SerializedProperty clearMarkerReference = serializedBoss.FindProperty("clearMarker");
+            Require(clearMarkerReference != null,
+                "Station boss encounter is missing its clearMarker authoring field.");
+            clearMarkerReference.objectReferenceValue = null;
+            serializedBoss.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject terminalBoundaryVisual = FindRequiredSceneObject(
+                scene,
+                StationTerminalBoundaryVisualName);
+            terminalBoundaryVisual.SetActive(true);
+
+            BossBarrageLaneReviewCombatHudBinder hudBinder =
+                FindSingleSceneComponent<BossBarrageLaneReviewCombatHudBinder>(scene);
+            var serializedHudBinder = new SerializedObject(hudBinder);
+            SerializedProperty bossDisplayName = serializedHudBinder.FindProperty("bossDisplayName");
+            Require(bossDisplayName != null,
+                "Station combat HUD binder is missing its bossDisplayName authoring field.");
+            bossDisplayName.stringValue = StationBossDisplayName;
+            serializedHudBinder.ApplyModifiedPropertiesWithoutUndo();
+
+            Require(cameraCueDriver.CameraController != null,
+                "Station finisher authoring requires the canonical action camera controller.");
+            Camera gameplayCamera = cameraCueDriver.CameraController.GetComponent<Camera>();
+            Require(gameplayCamera != null,
+                "Station finisher authoring requires the canonical gameplay Camera component.");
+            FinisherCameraTimelineBindings finisherTimeline =
+                EnsureStationBossTerminalFinisherTimeline();
+            OlympusStationBossTerminalFinisherCameraController finisherCameraController =
+                ConfigureStationBossTerminalFinisherCamera(
+                    scene,
+                    bossHealth.transform,
+                    gameplayCamera,
+                    finisherTimeline);
             BossBarrageVisualCueDriver visualCueDriver =
                 bossHealth.GetComponent<BossBarrageVisualCueDriver>();
             PlayerActionController action = movement.GetComponent<PlayerActionController>();
@@ -927,10 +989,18 @@ namespace DimensionBrawl.Editor
             var serializedAftermath = new SerializedObject(aftermath);
             serializedAftermath.FindProperty("bossHealth").objectReferenceValue = bossHealth;
             serializedAftermath.FindProperty("cameraCueDriver").objectReferenceValue = cameraCueDriver;
+            serializedAftermath.FindProperty("finisherCameraController").objectReferenceValue =
+                finisherCameraController;
             serializedAftermath.FindProperty("actionCinematicCueDirector").objectReferenceValue =
                 actionCinematicCueDirector;
             serializedAftermath.FindProperty("visualCueDriver").objectReferenceValue = visualCueDriver;
-            serializedAftermath.FindProperty("aftermathDurationSeconds").floatValue = 2.6f;
+            SerializedProperty terminalBoundaryVisualRoot =
+                serializedAftermath.FindProperty("terminalBoundaryVisualRoot");
+            Require(terminalBoundaryVisualRoot != null,
+                "Station aftermath presenter is missing its terminalBoundaryVisualRoot authoring field.");
+            terminalBoundaryVisualRoot.objectReferenceValue = terminalBoundaryVisual;
+            serializedAftermath.FindProperty("aftermathDurationSeconds").floatValue =
+                StationBossTerminalFinisherDurationSeconds;
             serializedAftermath.FindProperty("unattachedResultLeaseTimeoutSeconds").floatValue = 2f;
             serializedAftermath.FindProperty("initialHitStopRecoveryGraceSeconds").floatValue = 0.35f;
             serializedAftermath.FindProperty("playerMovement").objectReferenceValue = movement;
@@ -984,6 +1054,535 @@ namespace DimensionBrawl.Editor
                 "Boss visual driver is missing its authored bossDeathPulseScale field.");
             bossDeathPulseScale.floatValue = 0.42f;
             serializedVisual.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static FinisherCameraTimelineBindings
+            EnsureStationBossTerminalFinisherTimeline()
+        {
+            Require(
+                AssetDatabase.IsValidFolder("Assets/_Game/DesignData/Timelines/Cinematics"),
+                "Station finisher authoring folder is missing.");
+
+            AnimationClip cameraClip =
+                AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                    StationBossTerminalFinisherCameraClipPath);
+            if (cameraClip == null)
+            {
+                cameraClip = new AnimationClip();
+                AssetDatabase.CreateAsset(
+                    cameraClip,
+                    StationBossTerminalFinisherCameraClipPath);
+            }
+
+            cameraClip.name = "DB_Anim_OlympusStationBossTerminalFinisherCamera";
+            cameraClip.frameRate = 60f;
+            cameraClip.wrapMode = WrapMode.Once;
+            cameraClip.ClearCurves();
+
+            Quaternion startRotation = Quaternion.LookRotation(
+                StationBossTerminalFinisherLookTarget
+                    - StationBossTerminalFinisherStartLocalPosition,
+                Vector3.up);
+            Quaternion settleRotation = Quaternion.LookRotation(
+                StationBossTerminalFinisherLookTarget
+                    - StationBossTerminalFinisherSettleLocalPosition,
+                Vector3.up);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalPosition.x",
+                0f,
+                StationBossTerminalFinisherStartLocalPosition.x,
+                StationBossTerminalFinisherSettleSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.x,
+                StationBossTerminalFinisherDurationSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.x);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalPosition.y",
+                0f,
+                StationBossTerminalFinisherStartLocalPosition.y,
+                StationBossTerminalFinisherSettleSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.y,
+                StationBossTerminalFinisherDurationSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.y);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalPosition.z",
+                0f,
+                StationBossTerminalFinisherStartLocalPosition.z,
+                StationBossTerminalFinisherSettleSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.z,
+                StationBossTerminalFinisherDurationSeconds,
+                StationBossTerminalFinisherSettleLocalPosition.z);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalRotation.x",
+                0f,
+                startRotation.x,
+                StationBossTerminalFinisherSettleSeconds,
+                settleRotation.x,
+                StationBossTerminalFinisherDurationSeconds,
+                settleRotation.x);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalRotation.y",
+                0f,
+                startRotation.y,
+                StationBossTerminalFinisherSettleSeconds,
+                settleRotation.y,
+                StationBossTerminalFinisherDurationSeconds,
+                settleRotation.y);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalRotation.z",
+                0f,
+                startRotation.z,
+                StationBossTerminalFinisherSettleSeconds,
+                settleRotation.z,
+                StationBossTerminalFinisherDurationSeconds,
+                settleRotation.z);
+            SetLocalTransformCurve(
+                cameraClip,
+                "m_LocalRotation.w",
+                0f,
+                startRotation.w,
+                StationBossTerminalFinisherSettleSeconds,
+                settleRotation.w,
+                StationBossTerminalFinisherDurationSeconds,
+                settleRotation.w);
+            cameraClip.EnsureQuaternionContinuity();
+            SaveAsset(cameraClip);
+
+            TimelineAsset timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(
+                StationBossTerminalFinisherTimelinePath);
+            if (timeline != null
+                && TryGetExactStationBossTerminalFinisherTimeline(
+                    timeline,
+                    cameraClip,
+                    out AnimationTrack exactCameraTrack))
+            {
+                return new FinisherCameraTimelineBindings(
+                    timeline,
+                    exactCameraTrack);
+            }
+
+            if (timeline == null)
+            {
+                timeline = ScriptableObject.CreateInstance<TimelineAsset>();
+                AssetDatabase.CreateAsset(
+                    timeline,
+                    StationBossTerminalFinisherTimelinePath);
+            }
+
+            timeline.name = "DB_Timeline_OlympusStationBossTerminalFinisher";
+            timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
+            timeline.fixedDuration = StationBossTerminalFinisherDurationSeconds;
+            timeline.editorSettings.frameRate = 60f;
+
+            AnimationTrack cameraTrack = null;
+            var existingTracks = new List<TrackAsset>(timeline.GetRootTracks());
+            for (int i = 0; i < existingTracks.Count; i++)
+            {
+                TrackAsset existingTrack = existingTracks[i];
+                if (cameraTrack == null
+                    && existingTrack is AnimationTrack existingAnimationTrack
+                    && string.Equals(
+                        existingAnimationTrack.name,
+                        StationBossTerminalFinisherCameraTrackName,
+                        StringComparison.Ordinal))
+                {
+                    cameraTrack = existingAnimationTrack;
+                    continue;
+                }
+
+                timeline.DeleteTrack(existingTrack);
+            }
+
+            if (cameraTrack == null)
+            {
+                cameraTrack = timeline.CreateTrack<AnimationTrack>(
+                    StationBossTerminalFinisherCameraTrackName);
+            }
+
+            var childTracks = new List<TrackAsset>(cameraTrack.GetChildTracks());
+            for (int i = 0; i < childTracks.Count; i++)
+            {
+                timeline.DeleteTrack(childTracks[i]);
+            }
+
+            cameraTrack.name = StationBossTerminalFinisherCameraTrackName;
+            cameraTrack.locked = false;
+            cameraTrack.muted = false;
+            cameraTrack.trackOffset = TrackOffset.Auto;
+            var serializedTrack = new SerializedObject(cameraTrack);
+            SerializedProperty applyOffsets = serializedTrack.FindProperty("m_ApplyOffsets");
+            if (applyOffsets != null)
+            {
+                applyOffsets.boolValue = false;
+                serializedTrack.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            TimelineClip timelineClip = null;
+            var existingClips = new List<TimelineClip>(cameraTrack.GetClips());
+            for (int i = 0; i < existingClips.Count; i++)
+            {
+                TimelineClip existingClip = existingClips[i];
+                if (timelineClip == null
+                    && existingClip.asset is AnimationPlayableAsset)
+                {
+                    timelineClip = existingClip;
+                    continue;
+                }
+
+                timeline.DeleteClip(existingClip);
+            }
+
+            if (timelineClip == null)
+            {
+                timelineClip = cameraTrack.CreateClip(cameraClip);
+            }
+
+            timelineClip.displayName = "Boss Terminal Camera 0.00-2.60";
+            timelineClip.start = 0d;
+            timelineClip.clipIn = 0d;
+            timelineClip.duration = StationBossTerminalFinisherDurationSeconds;
+            timelineClip.timeScale = 1d;
+            timelineClip.easeInDuration = 0d;
+            timelineClip.easeOutDuration = 0d;
+            SetTimelineClipExtrapolation(
+                timelineClip,
+                TimelineClip.ClipExtrapolation.None,
+                TimelineClip.ClipExtrapolation.Hold);
+            Require(
+                timelineClip.asset is AnimationPlayableAsset,
+                "Station finisher Timeline did not create an AnimationPlayableAsset.");
+            var playable = (AnimationPlayableAsset)timelineClip.asset;
+            playable.name = $"AnimationPlayableAsset of {cameraClip.name}";
+            playable.clip = cameraClip;
+            playable.position = Vector3.zero;
+            playable.rotation = Quaternion.identity;
+            playable.removeStartOffset = false;
+            playable.applyFootIK = false;
+            playable.loop = AnimationPlayableAsset.LoopMode.Off;
+            playable.useTrackMatchFields = false;
+
+            EditorUtility.SetDirty(playable);
+            EditorUtility.SetDirty(cameraTrack);
+            SaveAsset(timeline);
+            return new FinisherCameraTimelineBindings(
+                timeline,
+                cameraTrack);
+        }
+
+        private static bool TryGetExactStationBossTerminalFinisherTimeline(
+            TimelineAsset timeline,
+            AnimationClip cameraClip,
+            out AnimationTrack cameraTrack)
+        {
+            cameraTrack = null;
+            if (timeline == null
+                || cameraClip == null
+                || !string.Equals(
+                    timeline.name,
+                    "DB_Timeline_OlympusStationBossTerminalFinisher",
+                    StringComparison.Ordinal)
+                || timeline.durationMode != TimelineAsset.DurationMode.FixedLength
+                || !ApproximatelyEqual(
+                    timeline.fixedDuration,
+                    StationBossTerminalFinisherDurationSeconds)
+                || !ApproximatelyEqual(timeline.editorSettings.frameRate, 60d))
+            {
+                return false;
+            }
+
+            var rootTracks = new List<TrackAsset>(timeline.GetRootTracks());
+            if (rootTracks.Count != 1
+                || rootTracks[0] is not AnimationTrack exactTrack
+                || !string.Equals(
+                    exactTrack.name,
+                    StationBossTerminalFinisherCameraTrackName,
+                    StringComparison.Ordinal)
+                || exactTrack.locked
+                || exactTrack.muted
+                || exactTrack.trackOffset != TrackOffset.Auto)
+            {
+                return false;
+            }
+
+            var childTracks = new List<TrackAsset>(exactTrack.GetChildTracks());
+            if (childTracks.Count != 0)
+            {
+                return false;
+            }
+
+            var serializedTrack = new SerializedObject(exactTrack);
+            SerializedProperty applyOffsets =
+                serializedTrack.FindProperty("m_ApplyOffsets");
+            if (applyOffsets == null || applyOffsets.boolValue)
+            {
+                return false;
+            }
+
+            var clips = new List<TimelineClip>(exactTrack.GetClips());
+            if (clips.Count != 1)
+            {
+                return false;
+            }
+
+            TimelineClip timelineClip = clips[0];
+            if (timelineClip.asset is not AnimationPlayableAsset playable
+                || !string.Equals(
+                    timelineClip.displayName,
+                    "Boss Terminal Camera 0.00-2.60",
+                    StringComparison.Ordinal)
+                || !ApproximatelyEqual(timelineClip.start, 0d)
+                || !ApproximatelyEqual(timelineClip.clipIn, 0d)
+                || !ApproximatelyEqual(
+                    timelineClip.duration,
+                    StationBossTerminalFinisherDurationSeconds)
+                || !ApproximatelyEqual(timelineClip.timeScale, 1d)
+                || !ApproximatelyEqual(timelineClip.easeInDuration, 0d)
+                || !ApproximatelyEqual(timelineClip.easeOutDuration, 0d)
+                || timelineClip.preExtrapolationMode
+                    != TimelineClip.ClipExtrapolation.None
+                || timelineClip.postExtrapolationMode
+                    != TimelineClip.ClipExtrapolation.Hold
+                || !string.Equals(
+                    playable.name,
+                    $"AnimationPlayableAsset of {cameraClip.name}",
+                    StringComparison.Ordinal)
+                || !ReferenceEquals(playable.clip, cameraClip)
+                || playable.position != Vector3.zero
+                || playable.rotation != Quaternion.identity
+                || playable.removeStartOffset
+                || playable.applyFootIK
+                || playable.loop != AnimationPlayableAsset.LoopMode.Off
+                || playable.useTrackMatchFields)
+            {
+                return false;
+            }
+
+            cameraTrack = exactTrack;
+            return true;
+        }
+
+        private static bool ApproximatelyEqual(double left, double right)
+        {
+            return Math.Abs(left - right) <= 0.0001d;
+        }
+
+        private static OlympusStationBossTerminalFinisherCameraController
+            ConfigureStationBossTerminalFinisherCamera(
+                Scene scene,
+                Transform stableBossRoot,
+                Camera gameplayCamera,
+                FinisherCameraTimelineBindings timeline)
+        {
+            Require(stableBossRoot != null,
+                "Station finisher camera requires the stable canonical boss root.");
+            Require(gameplayCamera != null,
+                "Station finisher camera requires the canonical gameplay Camera.");
+
+            GameObject rig = FindSceneObject(
+                scene,
+                StationBossTerminalFinisherCameraRigName);
+            if (rig == null)
+            {
+                rig = new GameObject(StationBossTerminalFinisherCameraRigName);
+                SceneManager.MoveGameObjectToScene(rig, scene);
+            }
+
+            rig.name = StationBossTerminalFinisherCameraRigName;
+            rig.tag = "Untagged";
+            rig.SetActive(true);
+            rig.transform.SetParent(stableBossRoot, worldPositionStays: false);
+            rig.transform.localScale = Vector3.one;
+            rig.transform.localPosition = StationBossTerminalFinisherStartLocalPosition;
+            rig.transform.localRotation = Quaternion.LookRotation(
+                StationBossTerminalFinisherLookTarget
+                    - StationBossTerminalFinisherStartLocalPosition,
+                Vector3.up);
+
+            AudioListener[] listeners = rig.GetComponentsInChildren<AudioListener>(true);
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                UnityEngine.Object.DestroyImmediate(listeners[i]);
+            }
+
+            Animator animator = rig.GetComponent<Animator>() ?? rig.AddComponent<Animator>();
+            animator.runtimeAnimatorController = null;
+            animator.avatar = null;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+            animator.enabled = true;
+
+            Camera finisherCamera = rig.GetComponent<Camera>() ?? rig.AddComponent<Camera>();
+            finisherCamera.CopyFrom(gameplayCamera);
+            finisherCamera.fieldOfView = StationBossTerminalFinisherFieldOfView;
+            finisherCamera.enabled = false;
+
+            UniversalAdditionalCameraData finisherCameraData =
+                rig.GetComponent<UniversalAdditionalCameraData>()
+                ?? rig.AddComponent<UniversalAdditionalCameraData>();
+            UniversalAdditionalCameraData gameplayCameraData =
+                gameplayCamera.GetComponent<UniversalAdditionalCameraData>();
+            if (gameplayCameraData != null)
+            {
+                EditorUtility.CopySerialized(gameplayCameraData, finisherCameraData);
+            }
+
+            finisherCameraData.renderPostProcessing = true;
+            finisherCameraData.antialiasing =
+                AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            finisherCameraData.antialiasingQuality = AntialiasingQuality.High;
+
+            PlayableDirector director =
+                rig.GetComponent<PlayableDirector>() ?? rig.AddComponent<PlayableDirector>();
+            director.playableAsset = timeline.Asset;
+            director.playOnAwake = false;
+            director.extrapolationMode = DirectorWrapMode.Hold;
+            director.timeUpdateMode = DirectorUpdateMode.Manual;
+            EnsureSingleDirectorGenericBinding(
+                director,
+                timeline.CameraTrack,
+                animator);
+            director.RebuildGraph();
+            director.time = 0d;
+            director.Evaluate();
+            Physics.SyncTransforms();
+
+            OlympusStationBossTerminalFinisherCameraController[] controllers =
+                FindSceneComponents<OlympusStationBossTerminalFinisherCameraController>(scene);
+            OlympusStationBossTerminalFinisherCameraController controller =
+                rig.GetComponent<OlympusStationBossTerminalFinisherCameraController>()
+                ?? rig.AddComponent<OlympusStationBossTerminalFinisherCameraController>();
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                if (controllers[i] != controller)
+                {
+                    UnityEngine.Object.DestroyImmediate(controllers[i]);
+                }
+            }
+
+            Require(
+                controller.Configure(
+                    director,
+                    timeline.Asset,
+                    gameplayCamera,
+                    finisherCamera),
+                "Station finisher camera controller rejected its authored references.");
+            Require(controller.ValidateConfiguration(out string validationError),
+                validationError);
+
+            EditorUtility.SetDirty(animator);
+            EditorUtility.SetDirty(finisherCamera);
+            EditorUtility.SetDirty(finisherCameraData);
+            EditorUtility.SetDirty(director);
+            EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
+        private static void EnsureSingleDirectorGenericBinding(
+            PlayableDirector director,
+            TrackAsset source,
+            UnityEngine.Object target)
+        {
+            Require(director != null,
+                "Station finisher binding requires a PlayableDirector.");
+            Require(source != null,
+                "Station finisher binding requires the current Timeline output track.");
+            Require(target != null,
+                "Station finisher binding requires a non-null target.");
+
+            var serializedDirector = new SerializedObject(director);
+            SerializedProperty sceneBindings =
+                serializedDirector.FindProperty("m_SceneBindings");
+            Require(
+                sceneBindings != null && sceneBindings.isArray,
+                "Station finisher PlayableDirector has no serialized scene-binding table.");
+
+            bool alreadyExact = sceneBindings.arraySize == 1;
+            if (alreadyExact)
+            {
+                SerializedProperty row = sceneBindings.GetArrayElementAtIndex(0);
+                UnityEngine.Object serializedSource =
+                    row.FindPropertyRelative("key")?.objectReferenceValue;
+                UnityEngine.Object serializedTarget =
+                    row.FindPropertyRelative("value")?.objectReferenceValue;
+                alreadyExact = ReferenceEquals(serializedSource, source)
+                    && ReferenceEquals(serializedTarget, target);
+            }
+
+            if (!alreadyExact)
+            {
+                sceneBindings.arraySize = 0;
+                serializedDirector.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            director.SetGenericBinding(source, target);
+            serializedDirector.Update();
+            sceneBindings = serializedDirector.FindProperty("m_SceneBindings");
+            Require(
+                sceneBindings != null && sceneBindings.isArray
+                    && sceneBindings.arraySize == 1,
+                "Station finisher PlayableDirector must serialize exactly one current output binding.");
+
+            SerializedProperty exactRow = sceneBindings.GetArrayElementAtIndex(0);
+            UnityEngine.Object exactSource =
+                exactRow.FindPropertyRelative("key")?.objectReferenceValue;
+            UnityEngine.Object exactTarget =
+                exactRow.FindPropertyRelative("value")?.objectReferenceValue;
+            Require(
+                ReferenceEquals(exactSource, source)
+                    && ReferenceEquals(exactTarget, target),
+                "Station finisher PlayableDirector binding must target the current Timeline output and Animator.");
+        }
+
+        private static void SetLocalTransformCurve(
+            AnimationClip clip,
+            string propertyName,
+            float startTime,
+            float startValue,
+            float settleTime,
+            float settleValue,
+            float endTime,
+            float endValue)
+        {
+            var curve = new AnimationCurve(
+                new Keyframe(startTime, startValue),
+                new Keyframe(settleTime, settleValue),
+                new Keyframe(endTime, endValue));
+            for (int i = 0; i < curve.length; i++)
+            {
+                AnimationUtility.SetKeyLeftTangentMode(
+                    curve,
+                    i,
+                    AnimationUtility.TangentMode.Linear);
+                AnimationUtility.SetKeyRightTangentMode(
+                    curve,
+                    i,
+                    AnimationUtility.TangentMode.Linear);
+            }
+
+            AnimationUtility.SetEditorCurve(
+                clip,
+                EditorCurveBinding.FloatCurve(string.Empty, typeof(Transform), propertyName),
+                curve);
+        }
+
+        private static void SetTimelineClipExtrapolation(
+            TimelineClip clip,
+            TimelineClip.ClipExtrapolation preExtrapolation,
+            TimelineClip.ClipExtrapolation postExtrapolation)
+        {
+            const System.Reflection.BindingFlags Flags =
+                System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.NonPublic;
+            typeof(TimelineClip).GetField("m_PreExtrapolationMode", Flags)
+                ?.SetValue(clip, preExtrapolation);
+            typeof(TimelineClip).GetField("m_PostExtrapolationMode", Flags)
+                ?.SetValue(clip, postExtrapolation);
         }
 
         private static InputActionReference LoadInputActionReference(
@@ -1224,6 +1823,20 @@ namespace DimensionBrawl.Editor
             }
 
             return results.ToArray();
+        }
+
+        private readonly struct FinisherCameraTimelineBindings
+        {
+            public FinisherCameraTimelineBindings(
+                TimelineAsset asset,
+                AnimationTrack cameraTrack)
+            {
+                Asset = asset;
+                CameraTrack = cameraTrack;
+            }
+
+            public TimelineAsset Asset { get; }
+            public AnimationTrack CameraTrack { get; }
         }
 
         private static void SaveAsset(UnityEngine.Object asset)

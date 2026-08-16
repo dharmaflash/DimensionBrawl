@@ -7,6 +7,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Tests
@@ -64,13 +65,22 @@ namespace DimensionBrawl.Tests
         public void AftermathUsesExactlyOneHundredFiftySixPresentationClockSamples()
         {
             GameObject gateObject = new GameObject("ManualClockAftermathGate");
+            FinisherCameraFixture cameraFixture = null;
+            OlympusStationBossTerminalAftermathPresenter aftermath = null;
             IEnumerator routine = null;
             int imminentCount = 0;
             int completedCount = 0;
             try
             {
-                OlympusStationBossTerminalAftermathPresenter aftermath =
+                aftermath =
                     gateObject.AddComponent<OlympusStationBossTerminalAftermathPresenter>();
+                cameraFixture = new FinisherCameraFixture();
+                SetField(aftermath, "finisherCameraController", cameraFixture.Controller);
+                Assert.That(
+                    cameraFixture.Controller.TryAcquire(aftermath, out _),
+                    Is.True,
+                    cameraFixture.Controller.LastError);
+                SetProperty(aftermath, nameof(aftermath.FinisherCameraSucceeded), true);
                 aftermath.AftermathHandoffImminent += () => imminentCount++;
                 aftermath.AftermathCompleted += () => completedCount++;
                 SetField(aftermath, "started", true);
@@ -112,12 +122,250 @@ namespace DimensionBrawl.Tests
                         Is.EqualTo(2.6f).Within(0.00001f));
                 }
 
+                Assert.That(cameraFixture.Controller.SampleCount, Is.EqualTo(156));
+                Assert.That(cameraFixture.Controller.HasReachedTerminalSample, Is.True);
+                Assert.That(cameraFixture.Director.time, Is.EqualTo(2.6d).Within(0.0001d));
                 Assert.That(PresentationClock.IsManuallyDriven, Is.False);
             }
             finally
             {
                 (routine as IDisposable)?.Dispose();
+                if (aftermath != null)
+                {
+                    aftermath.CancelAndRelease("manual aftermath test cleanup");
+                }
+
+                cameraFixture?.Dispose();
                 UnityEngine.Object.DestroyImmediate(gateObject);
+            }
+        }
+
+        [Test]
+        public void FinisherCameraHardAcquireEvaluatesTimelineBeforeExclusiveSwitch()
+        {
+            using (FinisherCameraFixture fixture = new FinisherCameraFixture())
+            {
+                Assert.That(
+                    fixture.FinisherCamera.GetComponentsInChildren<AudioListener>(true),
+                    Is.Empty);
+                Assert.That(
+                    fixture.Timeline.duration,
+                    Is.EqualTo(
+                        OlympusStationBossTerminalFinisherCameraController
+                            .RequiredTimelineDurationSeconds)
+                        .Within(0.0001d));
+                Assert.That(fixture.Controller.ValidateConfiguration(out string error),
+                    Is.True,
+                    error);
+
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out int version),
+                    Is.True,
+                    fixture.Controller.LastError);
+                Assert.That(version, Is.EqualTo(1));
+                Assert.That(fixture.Controller.RequestVersion, Is.EqualTo(1));
+                Assert.That(fixture.Controller.AcquireCount, Is.EqualTo(1));
+                Assert.That(fixture.Director.timeUpdateMode,
+                    Is.EqualTo(DirectorUpdateMode.Manual));
+                Assert.That(fixture.Director.time, Is.EqualTo(0d).Within(0.0001d));
+                Assert.That(fixture.GameplayCamera.enabled, Is.False);
+                Assert.That(fixture.FinisherCamera.enabled, Is.True);
+                Assert.That(fixture.Controller.ActiveCamera,
+                    Is.SameAs(fixture.FinisherCamera));
+
+                Assert.That(
+                    fixture.Controller.TryAcquire(
+                        fixture.Owner,
+                        out int idempotentVersion),
+                    Is.True);
+                Assert.That(idempotentVersion, Is.EqualTo(version));
+                Assert.That(fixture.Controller.AcquireCount, Is.EqualTo(1));
+
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.ForeignOwner, out int foreignVersion),
+                    Is.False);
+                Assert.That(foreignVersion, Is.EqualTo(version));
+                Assert.That(fixture.Controller.IsOwnedBy(fixture.Owner), Is.True);
+                Assert.That(fixture.Controller.IsOwnedBy(fixture.ForeignOwner), Is.False);
+                Assert.That(fixture.GameplayCamera.enabled, Is.False);
+                Assert.That(fixture.FinisherCamera.enabled, Is.True);
+
+                Assert.That(
+                    fixture.Controller.CancelAndRestore(fixture.Owner, "test cancellation"),
+                    Is.True);
+                Assert.That(fixture.Controller.IsLeaseActive, Is.False);
+                Assert.That(fixture.Controller.ReleaseCount, Is.EqualTo(1));
+                Assert.That(fixture.Controller.WasInterrupted, Is.True);
+                Assert.That(fixture.Controller.LastError, Does.Contain("test cancellation"));
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.FinisherCamera.enabled, Is.False);
+                Assert.That(fixture.Director.timeUpdateMode,
+                    Is.EqualTo(DirectorUpdateMode.GameTime));
+                Assert.That(fixture.Director.time, Is.Zero.Within(0.0001d));
+            }
+        }
+
+        [Test]
+        public void FinisherCameraRejectsAnyDedicatedCameraAudioListener()
+        {
+            using (FinisherCameraFixture fixture = new FinisherCameraFixture())
+            {
+                AudioListener forbiddenListener =
+                    fixture.FinisherCamera.gameObject.AddComponent<AudioListener>();
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out _),
+                    Is.False);
+                Assert.That(fixture.Controller.LastError, Does.Contain("AudioListener"));
+                Assert.That(fixture.Controller.AcquireCount, Is.Zero);
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.FinisherCamera.enabled, Is.False);
+
+                UnityEngine.Object.DestroyImmediate(forbiddenListener);
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out _),
+                    Is.True,
+                    fixture.Controller.LastError);
+            }
+        }
+
+        [Test]
+        public void FinisherTimelineManualSamplingIgnoresPointOneEightTimeScale()
+        {
+            float previousTimeScale = Time.timeScale;
+            using (FinisherCameraFixture fixture = new FinisherCameraFixture())
+            {
+                try
+                {
+                    Time.timeScale = 0.18f;
+                    Assert.That(
+                        fixture.Controller.TryAcquire(fixture.Owner, out _),
+                        Is.True,
+                        fixture.Controller.LastError);
+
+                    using (PresentationClock.ManualLease lease =
+                        PresentationClock.AcquireManual(this, 60))
+                    {
+                        for (int frame = 1; frame <= 156; frame++)
+                        {
+                            lease.SetFrame(frame);
+                            Assert.That(
+                                fixture.Controller.Sample(
+                                    fixture.Owner,
+                                    PresentationClock.UnscaledTime),
+                                Is.True,
+                                $"frame={frame}; {fixture.Controller.LastError}");
+                        }
+                    }
+
+                    Assert.That(fixture.Controller.SampleCount, Is.EqualTo(156));
+                    Assert.That(fixture.Controller.HasReachedTerminalSample, Is.True);
+                    Assert.That(
+                        fixture.Controller.LastSampledSeconds,
+                        Is.EqualTo(2.6d).Within(0.0001d));
+                    Assert.That(fixture.Director.time, Is.EqualTo(2.6d).Within(0.0001d));
+                    Assert.That(Time.timeScale, Is.EqualTo(0.18f).Within(0.0001f));
+                    Assert.That(PresentationClock.IsManuallyDriven, Is.False);
+                }
+                finally
+                {
+                    Time.timeScale = previousTimeScale;
+                }
+            }
+        }
+
+        [Test]
+        public void ResultCoverReleaseRestoresOnTwentyEighthPresentationClockSample()
+        {
+            using (FinisherCameraFixture fixture = new FinisherCameraFixture())
+            {
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out _),
+                    Is.True,
+                    fixture.Controller.LastError);
+                Assert.That(fixture.Controller.Sample(fixture.Owner, 2.6f), Is.True);
+                Assert.That(
+                    fixture.Controller.ScheduleReleaseAfterResultCover(fixture.Owner),
+                    Is.True,
+                    fixture.Controller.LastError);
+
+                MethodInfo update =
+                    typeof(OlympusStationBossTerminalFinisherCameraController).GetMethod(
+                        "Update",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(update, Is.Not.Null);
+                using (PresentationClock.ManualLease lease =
+                    PresentationClock.AcquireManual(this, 60))
+                {
+                    for (int frame = 1; frame <= 27; frame++)
+                    {
+                        lease.SetFrame(frame);
+                        update.Invoke(fixture.Controller, null);
+                        Assert.That(fixture.Controller.IsLeaseActive, Is.True,
+                            $"frame={frame}");
+                    }
+
+                    lease.SetFrame(28);
+                    update.Invoke(fixture.Controller, null);
+                }
+
+                Assert.That(fixture.Controller.IsLeaseActive, Is.False);
+                Assert.That(fixture.Controller.ResultCoverReleaseSampleCount, Is.EqualTo(28));
+                Assert.That(
+                    fixture.Controller.ResultCoverReleaseElapsedSeconds,
+                    Is.EqualTo(28f / 60f).Within(0.0001f));
+                Assert.That(fixture.Controller.ReleaseCount, Is.EqualTo(1));
+                Assert.That(fixture.Controller.WasInterrupted, Is.False);
+                Assert.That(fixture.Controller.LastError, Is.Empty);
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.FinisherCamera.enabled, Is.False);
+                Assert.That(fixture.Controller.ActiveCamera,
+                    Is.SameAs(fixture.GameplayCamera));
+                Assert.That(fixture.Director.timeUpdateMode,
+                    Is.EqualTo(DirectorUpdateMode.GameTime));
+                Assert.That(fixture.Director.time, Is.Zero.Within(0.0001d));
+                Assert.That(PresentationClock.IsManuallyDriven, Is.False);
+            }
+        }
+
+        [Test]
+        public void CancelAndDisableRestoreOnlyStillOwnedCameraAndDirectorValues()
+        {
+            using (FinisherCameraFixture fixture = new FinisherCameraFixture())
+            {
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out _),
+                    Is.True,
+                    fixture.Controller.LastError);
+
+                fixture.GameplayCamera.enabled = true;
+                fixture.FinisherCamera.enabled = false;
+                fixture.Director.time = 1.25d;
+                fixture.Director.timeUpdateMode = DirectorUpdateMode.UnscaledGameTime;
+                Assert.That(
+                    fixture.Controller.CancelAndRestore(fixture.Owner, "value-owned cancel"),
+                    Is.True);
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.FinisherCamera.enabled, Is.False);
+                Assert.That(fixture.Director.time, Is.EqualTo(1.25d).Within(0.0001d));
+                Assert.That(fixture.Director.timeUpdateMode,
+                    Is.EqualTo(DirectorUpdateMode.UnscaledGameTime));
+
+                Assert.That(
+                    fixture.Controller.TryAcquire(fixture.Owner, out int secondVersion),
+                    Is.True,
+                    fixture.Controller.LastError);
+                Assert.That(secondVersion, Is.EqualTo(2));
+                Assert.That(fixture.Director.time, Is.Zero.Within(0.0001d));
+                fixture.Controller.enabled = false;
+
+                Assert.That(fixture.Controller.IsLeaseActive, Is.False);
+                Assert.That(fixture.Controller.ReleaseCount, Is.EqualTo(2));
+                Assert.That(fixture.Controller.WasInterrupted, Is.True);
+                Assert.That(fixture.GameplayCamera.enabled, Is.True);
+                Assert.That(fixture.FinisherCamera.enabled, Is.False);
+                Assert.That(fixture.Director.time, Is.EqualTo(1.25d).Within(0.0001d));
+                Assert.That(fixture.Director.timeUpdateMode,
+                    Is.EqualTo(DirectorUpdateMode.UnscaledGameTime));
             }
         }
 
@@ -387,6 +635,8 @@ namespace DimensionBrawl.Tests
             GameObject playerObject = new GameObject("AftermathFaultPlayer");
             GameObject bossObject = new GameObject("AftermathFaultBoss");
             GameObject gateObject = new GameObject("AftermathFaultGate");
+            GameObject terminalBoundaryVisual =
+                new GameObject("AftermathFaultTerminalBoundaryVisual");
             playerObject.SetActive(false);
             bossObject.SetActive(false);
             gateObject.SetActive(false);
@@ -422,6 +672,10 @@ namespace DimensionBrawl.Tests
                 SetField(aftermath, "playerSummonSlot3Action", summon3);
                 SetField(aftermath, "playerRangedBasicAttackAction", ranged);
                 SetField(aftermath, "playerCombatModeController", combatMode);
+                SetField(
+                    aftermath,
+                    "terminalBoundaryVisualRoot",
+                    terminalBoundaryVisual);
 
                 playerObject.SetActive(true);
                 bossObject.SetActive(true);
@@ -459,6 +713,8 @@ namespace DimensionBrawl.Tests
                 Assert.That(aftermath.IsStarted, Is.True);
                 Assert.That(aftermath.BeginCount, Is.EqualTo(1));
                 Assert.That(aftermath.InputLeaseFullyAcquired, Is.True);
+                Assert.That(aftermath.TerminalBoundaryVisualHidden, Is.True);
+                Assert.That(terminalBoundaryVisual.activeSelf, Is.False);
                 Assert.That(aftermath.LastQualityWarning, Does.Contain("listener failed safely"));
                 Assert.That(
                     movement.CinematicMoveInputLockSources.HasFlag(
@@ -469,6 +725,11 @@ namespace DimensionBrawl.Tests
 
                 Assert.That(aftermath.IsCancelled, Is.True);
                 Assert.That(aftermath.InputLeaseActive, Is.False);
+                Assert.That(aftermath.TerminalBoundaryVisualHidden, Is.False);
+                Assert.That(
+                    terminalBoundaryVisual.activeSelf,
+                    Is.True,
+                    "A failed result handoff must restore the still-owned gameplay boundary visual.");
                 Assert.That(
                     movement.CinematicMoveInputLockSources.HasFlag(
                         PlayerInputLockSource.BossTerminalAftermath),
@@ -509,7 +770,167 @@ namespace DimensionBrawl.Tests
                 UnityEngine.Object.DestroyImmediate(gateObject);
                 UnityEngine.Object.DestroyImmediate(bossObject);
                 UnityEngine.Object.DestroyImmediate(playerObject);
+                UnityEngine.Object.DestroyImmediate(terminalBoundaryVisual);
             }
+        }
+
+        private sealed class FinisherCameraFixture : IDisposable
+        {
+            private readonly GameObject controllerObject;
+            private readonly GameObject gameplayCameraObject;
+            private readonly GameObject finisherCameraObject;
+            private readonly GameObject timelineBindingObject;
+            private readonly UnityEngine.Object timelineTrack;
+            private readonly UnityEngine.Object timelineClipAsset;
+
+            public FinisherCameraFixture()
+            {
+                controllerObject = new GameObject("RuntimeStationFinisherController");
+                gameplayCameraObject = new GameObject("RuntimeStationGameplayCamera");
+                finisherCameraObject = new GameObject("RuntimeStationFinisherCamera");
+                timelineBindingObject = new GameObject("RuntimeStationFinisherTimelineBinding");
+                Owner = new GameObject("RuntimeStationFinisherOwner");
+                ForeignOwner = new GameObject("RuntimeStationFinisherForeignOwner");
+
+                GameplayCamera = gameplayCameraObject.AddComponent<Camera>();
+                FinisherCamera = finisherCameraObject.AddComponent<Camera>();
+                GameplayCamera.enabled = true;
+                FinisherCamera.enabled = false;
+
+                Director = controllerObject.AddComponent<PlayableDirector>();
+                Director.playOnAwake = false;
+                Director.timeUpdateMode = DirectorUpdateMode.GameTime;
+                Timeline = CreateRuntimeTimeline(
+                    out timelineTrack,
+                    out timelineClipAsset);
+                Director.playableAsset = Timeline;
+                Director.SetGenericBinding(timelineTrack, timelineBindingObject);
+
+                Controller = controllerObject.AddComponent<
+                    OlympusStationBossTerminalFinisherCameraController>();
+                SetField(Controller, "finisherDirector", Director);
+                SetField(Controller, "finisherTimeline", Timeline);
+                SetField(Controller, "gameplayCamera", GameplayCamera);
+                SetField(Controller, "finisherCamera", FinisherCamera);
+                SetField(
+                    Controller,
+                    "resultCoverReleaseSeconds",
+                    OlympusStationBossTerminalFinisherCameraController
+                        .RequiredResultCoverReleaseSeconds);
+            }
+
+            public OlympusStationBossTerminalFinisherCameraController Controller { get; }
+            public PlayableDirector Director { get; }
+            public PlayableAsset Timeline { get; }
+            public Camera GameplayCamera { get; }
+            public Camera FinisherCamera { get; }
+            public GameObject Owner { get; }
+            public GameObject ForeignOwner { get; }
+
+            public void Dispose()
+            {
+                if (Controller != null
+                    && Owner != null
+                    && Controller.IsOwnedBy(Owner))
+                {
+                    Controller.CancelAndRestore(Owner, "test fixture disposal");
+                }
+
+                UnityEngine.Object.DestroyImmediate(controllerObject);
+                UnityEngine.Object.DestroyImmediate(gameplayCameraObject);
+                UnityEngine.Object.DestroyImmediate(finisherCameraObject);
+                UnityEngine.Object.DestroyImmediate(timelineBindingObject);
+                UnityEngine.Object.DestroyImmediate(Owner);
+                UnityEngine.Object.DestroyImmediate(ForeignOwner);
+                if (timelineClipAsset != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(timelineClipAsset);
+                }
+
+                if (timelineTrack != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(timelineTrack);
+                }
+
+                UnityEngine.Object.DestroyImmediate(Timeline);
+            }
+
+            private static PlayableAsset CreateRuntimeTimeline(
+                out UnityEngine.Object track,
+                out UnityEngine.Object clipAsset)
+            {
+                Type timelineType = Type.GetType(
+                    "UnityEngine.Timeline.TimelineAsset, Unity.Timeline",
+                    throwOnError: true);
+                Type activationTrackType = Type.GetType(
+                    "UnityEngine.Timeline.ActivationTrack, Unity.Timeline",
+                    throwOnError: true);
+                ScriptableObject timelineObject =
+                    ScriptableObject.CreateInstance(timelineType);
+                timelineObject.name = "RuntimeStationBossTerminalFinisherTimeline";
+
+                MethodInfo createTrack = null;
+                MethodInfo[] timelineMethods = timelineType.GetMethods(
+                    BindingFlags.Instance | BindingFlags.Public);
+                for (int index = 0; index < timelineMethods.Length; index++)
+                {
+                    MethodInfo candidate = timelineMethods[index];
+                    ParameterInfo[] parameters = candidate.GetParameters();
+                    if (candidate.Name == "CreateTrack"
+                        && !candidate.IsGenericMethod
+                        && parameters.Length == 3
+                        && parameters[0].ParameterType == typeof(Type))
+                    {
+                        createTrack = candidate;
+                        break;
+                    }
+                }
+
+                Assert.That(createTrack, Is.Not.Null);
+                object trackObject = createTrack.Invoke(
+                    timelineObject,
+                    new object[]
+                    {
+                        activationTrackType,
+                        null,
+                        "RuntimeFinisherCameraActivationTrack",
+                    });
+                Assert.That(trackObject, Is.Not.Null);
+                track = trackObject as UnityEngine.Object;
+                Assert.That(track, Is.Not.Null);
+
+                MethodInfo createDefaultClip = trackObject.GetType().GetMethod(
+                    "CreateDefaultClip",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.That(createDefaultClip, Is.Not.Null);
+                object timelineClip = createDefaultClip.Invoke(trackObject, null);
+                Assert.That(timelineClip, Is.Not.Null);
+                PropertyInfo startProperty = timelineClip.GetType().GetProperty("start");
+                PropertyInfo durationProperty = timelineClip.GetType().GetProperty("duration");
+                PropertyInfo assetProperty = timelineClip.GetType().GetProperty("asset");
+                Assert.That(startProperty, Is.Not.Null);
+                Assert.That(durationProperty, Is.Not.Null);
+                Assert.That(assetProperty, Is.Not.Null);
+                startProperty.SetValue(timelineClip, 0d);
+                durationProperty.SetValue(
+                    timelineClip,
+                    OlympusStationBossTerminalFinisherCameraController
+                        .RequiredTimelineDurationSeconds);
+                clipAsset = assetProperty.GetValue(timelineClip) as UnityEngine.Object;
+                Assert.That(clipAsset, Is.Not.Null);
+                return (PlayableAsset)timelineObject;
+            }
+        }
+
+        private static void SetProperty<T>(object target, string propertyName, T value)
+        {
+            PropertyInfo property = target.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            Assert.That(property, Is.Not.Null, $"Missing test property {propertyName}.");
+            MethodInfo setter = property.GetSetMethod(nonPublic: true);
+            Assert.That(setter, Is.Not.Null, $"Missing test setter {propertyName}.");
+            setter.Invoke(target, new object[] { value });
         }
 
         private static void SetField<T>(object target, string fieldName, T value)

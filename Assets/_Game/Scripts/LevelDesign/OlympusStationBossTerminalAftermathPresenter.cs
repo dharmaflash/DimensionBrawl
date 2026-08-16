@@ -20,8 +20,11 @@ namespace DimensionBrawl.LevelDesign
 
         [Header("Presentation Owners")]
         [SerializeField] private BossBarrageCameraCueDriver cameraCueDriver;
+        [SerializeField] private OlympusStationBossTerminalFinisherCameraController
+            finisherCameraController;
         [SerializeField] private ActionCinematicCueDirector actionCinematicCueDirector;
         [SerializeField] private BossBarrageVisualCueDriver visualCueDriver;
+        [SerializeField] private GameObject terminalBoundaryVisualRoot;
         [SerializeField, Min(0.1f)] private float aftermathDurationSeconds = 2.6f;
         [SerializeField, Min(0.1f)] private float unattachedResultLeaseTimeoutSeconds = 2f;
         [SerializeField, Min(0f)] private float initialHitStopRecoveryGraceSeconds = 0.35f;
@@ -56,6 +59,9 @@ namespace DimensionBrawl.LevelDesign
         private bool playerSummon3LeaseHeld;
         private bool playerRangedLeaseHeld;
         private bool playerCombatModeLeaseHeld;
+        private bool terminalBoundaryVisualLeaseActive;
+        private bool terminalBoundaryVisualWasActive;
+        private bool terminalBoundaryVisualWritten;
         private float elapsedUnscaledSeconds;
         private float startedRealtimeSinceStartup = -1f;
         private float resultAttachedRealtimeSinceStartup = -1f;
@@ -65,8 +71,11 @@ namespace DimensionBrawl.LevelDesign
         private int completeCount;
 
         public CombatHealth BossHealth => bossHealth;
+        public OlympusStationBossTerminalFinisherCameraController FinisherCameraController =>
+            finisherCameraController;
         public ActionCinematicCueDirector ActionCinematicCueDirector =>
             actionCinematicCueDirector;
+        public GameObject TerminalBoundaryVisualRoot => terminalBoundaryVisualRoot;
         public float AftermathDurationSeconds => Mathf.Max(0.1f, aftermathDurationSeconds);
         public float ElapsedUnscaledSeconds => elapsedUnscaledSeconds;
         public float StartedRealtimeSinceStartup => startedRealtimeSinceStartup;
@@ -97,6 +106,12 @@ namespace DimensionBrawl.LevelDesign
         public string LastError { get; private set; } = string.Empty;
         public string LastQualityWarning { get; private set; } = string.Empty;
         public bool CameraCueSucceeded { get; private set; }
+        public bool FinisherCameraSucceeded { get; private set; }
+        public bool FinisherCameraReleaseScheduled { get; private set; }
+        public bool FinisherCameraInterrupted { get; private set; }
+        public bool FallbackCameraCueSucceeded { get; private set; }
+        public bool TerminalBoundaryVisualHidden { get; private set; }
+        public int FinisherCameraRequestVersion { get; private set; } = -1;
         public bool CinematicTakeoverSucceeded { get; private set; }
         public bool CinematicOwnedStateCleanupSucceeded { get; private set; }
         public bool CinematicStopRequestSucceeded { get; private set; }
@@ -127,7 +142,11 @@ namespace DimensionBrawl.LevelDesign
                 aftermathRoutine = null;
             }
 
-            if (started && (!complete || inputLeaseActive))
+            if (started
+                && (!complete
+                    || inputLeaseActive
+                    || IsFinisherCameraLeaseOwned()
+                    || terminalBoundaryVisualLeaseActive))
             {
                 CancelAndRelease("The Station boss-terminal aftermath owner was disabled before result handoff.");
             }
@@ -194,6 +213,8 @@ namespace DimensionBrawl.LevelDesign
         /// </summary>
         public void ReleaseInputLeaseForResultSurface()
         {
+            ScheduleFinisherCameraReleaseAfterResultCover();
+            CommitTerminalBoundaryVisualForResultSurface();
             if (!inputLeaseActive)
             {
                 return;
@@ -241,7 +262,11 @@ namespace DimensionBrawl.LevelDesign
         /// </summary>
         public void CancelAndRelease(string reason)
         {
-            if (complete && !inputLeaseActive && !cancelled)
+            if (complete
+                && !inputLeaseActive
+                && !cancelled
+                && !IsFinisherCameraLeaseOwned()
+                && !terminalBoundaryVisualLeaseActive)
             {
                 return;
             }
@@ -269,6 +294,8 @@ namespace DimensionBrawl.LevelDesign
                 aftermathRoutine = null;
             }
 
+            CancelFinisherCameraImmediately(reason);
+            RestoreTerminalBoundaryVisual();
             ReleaseInputLeaseForResultSurface();
         }
 
@@ -352,6 +379,12 @@ namespace DimensionBrawl.LevelDesign
             LastError = string.Empty;
             LastQualityWarning = string.Empty;
             CameraCueSucceeded = false;
+            FinisherCameraSucceeded = false;
+            FinisherCameraReleaseScheduled = false;
+            FinisherCameraInterrupted = false;
+            FallbackCameraCueSucceeded = false;
+            TerminalBoundaryVisualHidden = false;
+            FinisherCameraRequestVersion = -1;
             CinematicTakeoverSucceeded = false;
             CinematicOwnedStateCleanupSucceeded = false;
             CinematicStopRequestSucceeded = false;
@@ -365,6 +398,8 @@ namespace DimensionBrawl.LevelDesign
                     "The authored Station aftermath could not acquire all eight input-owner leases.");
                 return;
             }
+
+            HideTerminalBoundaryVisual();
 
             try
             {
@@ -398,21 +433,17 @@ namespace DimensionBrawl.LevelDesign
                     "The action cinematic camera stream was secured by suppression after its explicit stop request failed safely.");
             }
 
-            try
+            TryAcquireFinisherCamera();
+            if (!FinisherCameraSucceeded)
             {
-                CameraCueSucceeded = CinematicTakeoverSucceeded
-                    && cameraCueDriver != null
-                    && cameraCueDriver.TryRequestBossDeathCue(out _);
+                TryRequestFallbackCameraCue();
             }
-            catch (Exception exception)
-            {
-                RecordQualityWarning(
-                    $"The authored boss-death camera cue threw safely: {exception.Message}");
-            }
+
+            CameraCueSucceeded = FinisherCameraSucceeded || FallbackCameraCueSucceeded;
 
             if (!CameraCueSucceeded)
             {
-                RecordQualityWarning("The authored boss-death camera cue was unavailable.");
+                RecordQualityWarning("The authored boss-death camera streams were unavailable.");
             }
 
             try
@@ -464,6 +495,7 @@ namespace DimensionBrawl.LevelDesign
                     0f,
                     PresentationClock.UnscaledDeltaTime);
                 elapsedUnscaledSeconds = Mathf.Min(duration, elapsedUnscaledSeconds + deltaTime);
+                SampleFinisherCamera(elapsedUnscaledSeconds);
                 ObserveAuthoredTimeScale();
                 if (elapsedUnscaledSeconds
                     + Mathf.Max(0.00001f, deltaTime)
@@ -505,14 +537,34 @@ namespace DimensionBrawl.LevelDesign
 
             SignalHandoffImminent();
 
-            if (CameraCueSucceeded
+            if (FinisherCameraSucceeded
+                && (finisherCameraController == null
+                    || !finisherCameraController.IsOwnedBy(this)
+                    || finisherCameraController.WasInterrupted))
+            {
+                FinisherCameraSucceeded = false;
+                FinisherCameraInterrupted = true;
+                CameraCueSucceeded = FallbackCameraCueSucceeded;
+                RecordQualityWarning(
+                    "The authored Station finisher camera was interrupted before the exact 2.6s result handoff.");
+            }
+            else if (FinisherCameraSucceeded
+                && !finisherCameraController.HasReachedTerminalSample)
+            {
+                FinisherCameraSucceeded = false;
+                CameraCueSucceeded = FallbackCameraCueSucceeded;
+                RecordQualityWarning(
+                    "The authored Station finisher Timeline did not receive its exact 2.6s terminal sample.");
+            }
+
+            if (FallbackCameraCueSucceeded
                 && cameraCueDriver != null
                 && cameraCueDriver.BossDeathCueWasInterrupted)
             {
                 RecordQualityWarning(
                     "The authored boss-death camera cue was interrupted before the exact 2.6s result handoff.");
             }
-            else if (CameraCueSucceeded
+            else if (FallbackCameraCueSucceeded
                 && cameraCueDriver != null
                 && !cameraCueDriver.IsBossDeathCueComplete)
             {
@@ -537,6 +589,256 @@ namespace DimensionBrawl.LevelDesign
             handoffImminent = true;
             handoffImminentCount++;
             InvokeSafely(AftermathHandoffImminent, "handoff-imminent");
+        }
+
+        private void TryAcquireFinisherCamera()
+        {
+            if (!CinematicTakeoverSucceeded)
+            {
+                RecordQualityWarning(
+                    "The Station finisher camera did not acquire because the action-cinematic stream was not secured.");
+                return;
+            }
+
+            if (finisherCameraController == null)
+            {
+                RecordQualityWarning("The authored Station finisher camera owner is missing.");
+                return;
+            }
+
+            try
+            {
+                FinisherCameraSucceeded = finisherCameraController.TryAcquire(
+                    this,
+                    out int requestVersion);
+                FinisherCameraRequestVersion = FinisherCameraSucceeded
+                    ? requestVersion
+                    : -1;
+            }
+            catch (Exception exception)
+            {
+                FinisherCameraSucceeded = false;
+                RecordQualityWarning(
+                    $"The authored Station finisher camera threw safely: {exception.Message}");
+            }
+
+            if (!FinisherCameraSucceeded)
+            {
+                string detail = finisherCameraController.LastError;
+                RecordQualityWarning(string.IsNullOrWhiteSpace(detail)
+                    ? "The authored Station finisher camera was unavailable."
+                    : $"The authored Station finisher camera was unavailable: {detail}");
+            }
+        }
+
+        private void TryRequestFallbackCameraCue()
+        {
+            try
+            {
+                FallbackCameraCueSucceeded = CinematicTakeoverSucceeded
+                    && cameraCueDriver != null
+                    && cameraCueDriver.TryRequestBossDeathCue(out _);
+            }
+            catch (Exception exception)
+            {
+                FallbackCameraCueSucceeded = false;
+                RecordQualityWarning(
+                    $"The fallback boss-death camera cue threw safely: {exception.Message}");
+            }
+
+            if (!FallbackCameraCueSucceeded)
+            {
+                RecordQualityWarning("The fallback boss-death camera cue was unavailable.");
+            }
+        }
+
+        private void SampleFinisherCamera(float elapsedSeconds)
+        {
+            if (!FinisherCameraSucceeded || finisherCameraController == null)
+            {
+                return;
+            }
+
+            bool sampled;
+            try
+            {
+                sampled = finisherCameraController.Sample(this, elapsedSeconds);
+            }
+            catch (Exception exception)
+            {
+                sampled = false;
+                RecordQualityWarning(
+                    $"The Station finisher Timeline sample threw safely: {exception.Message}");
+                CancelFinisherCameraImmediately(
+                    "The Station finisher Timeline sample could not continue safely.");
+            }
+
+            if (sampled)
+            {
+                return;
+            }
+
+            FinisherCameraSucceeded = false;
+            FinisherCameraInterrupted = true;
+            CameraCueSucceeded = FallbackCameraCueSucceeded;
+            string detail = finisherCameraController.LastError;
+            RecordQualityWarning(string.IsNullOrWhiteSpace(detail)
+                ? "The Station finisher Timeline sampling was interrupted."
+                : $"The Station finisher Timeline sampling was interrupted: {detail}");
+        }
+
+        private void ScheduleFinisherCameraReleaseAfterResultCover()
+        {
+            if (FinisherCameraReleaseScheduled
+                || finisherCameraController == null
+                || !finisherCameraController.IsOwnedBy(this))
+            {
+                return;
+            }
+
+            try
+            {
+                FinisherCameraReleaseScheduled =
+                    finisherCameraController.ScheduleReleaseAfterResultCover(this);
+            }
+            catch (Exception exception)
+            {
+                RecordQualityWarning(
+                    $"The Station finisher result-cover release threw safely: {exception.Message}");
+            }
+
+            if (FinisherCameraReleaseScheduled)
+            {
+                return;
+            }
+
+            FinisherCameraSucceeded = false;
+            FinisherCameraInterrupted = true;
+            CameraCueSucceeded = FallbackCameraCueSucceeded;
+            CancelFinisherCameraImmediately(
+                "The Station finisher result-cover release could not be scheduled safely.");
+        }
+
+        private void CancelFinisherCameraImmediately(string reason)
+        {
+            if (finisherCameraController == null
+                || !finisherCameraController.IsOwnedBy(this))
+            {
+                return;
+            }
+
+            try
+            {
+                if (finisherCameraController.CancelAndRestore(this, reason))
+                {
+                    FinisherCameraInterrupted = true;
+                }
+            }
+            catch (Exception exception)
+            {
+                RecordError(
+                    $"Could not restore the Station finisher camera safely: {exception.Message}");
+            }
+        }
+
+        private bool IsFinisherCameraLeaseOwned()
+        {
+            try
+            {
+                return finisherCameraController != null
+                    && finisherCameraController.IsOwnedBy(this);
+            }
+            catch (Exception exception)
+            {
+                RecordError(
+                    $"Could not inspect the Station finisher camera lease safely: {exception.Message}");
+                return false;
+            }
+        }
+
+        private void HideTerminalBoundaryVisual()
+        {
+            terminalBoundaryVisualLeaseActive = false;
+            terminalBoundaryVisualWritten = false;
+            TerminalBoundaryVisualHidden = false;
+            if (terminalBoundaryVisualRoot == null)
+            {
+                RecordQualityWarning(
+                    "The Station terminal boundary visual root is missing.");
+                return;
+            }
+
+            try
+            {
+                terminalBoundaryVisualWasActive =
+                    terminalBoundaryVisualRoot.activeSelf;
+                terminalBoundaryVisualLeaseActive = true;
+                if (terminalBoundaryVisualWasActive)
+                {
+                    terminalBoundaryVisualRoot.SetActive(false);
+                    terminalBoundaryVisualWritten = true;
+                }
+
+                TerminalBoundaryVisualHidden =
+                    !terminalBoundaryVisualRoot.activeSelf;
+                if (!TerminalBoundaryVisualHidden)
+                {
+                    RecordQualityWarning(
+                        "The Station terminal boundary visual did not hide at boss Died.");
+                }
+            }
+            catch (Exception exception)
+            {
+                terminalBoundaryVisualLeaseActive = false;
+                terminalBoundaryVisualWritten = false;
+                RecordQualityWarning(
+                    $"The Station terminal boundary visual could not hide safely: {exception.Message}");
+            }
+        }
+
+        private void RestoreTerminalBoundaryVisual()
+        {
+            if (!terminalBoundaryVisualLeaseActive)
+            {
+                return;
+            }
+
+            try
+            {
+                if (terminalBoundaryVisualRoot != null
+                    && terminalBoundaryVisualWritten
+                    && !terminalBoundaryVisualRoot.activeSelf)
+                {
+                    terminalBoundaryVisualRoot.SetActive(
+                        terminalBoundaryVisualWasActive);
+                }
+
+                TerminalBoundaryVisualHidden = terminalBoundaryVisualRoot != null
+                    && !terminalBoundaryVisualRoot.activeSelf;
+            }
+            catch (Exception exception)
+            {
+                RecordError(
+                    $"Could not restore the Station terminal boundary visual safely: {exception.Message}");
+            }
+            finally
+            {
+                terminalBoundaryVisualLeaseActive = false;
+                terminalBoundaryVisualWritten = false;
+            }
+        }
+
+        private void CommitTerminalBoundaryVisualForResultSurface()
+        {
+            if (!terminalBoundaryVisualLeaseActive)
+            {
+                return;
+            }
+
+            TerminalBoundaryVisualHidden = terminalBoundaryVisualRoot != null
+                && !terminalBoundaryVisualRoot.activeSelf;
+            terminalBoundaryVisualLeaseActive = false;
+            terminalBoundaryVisualWritten = false;
         }
 
         private void AcquireInputLease()

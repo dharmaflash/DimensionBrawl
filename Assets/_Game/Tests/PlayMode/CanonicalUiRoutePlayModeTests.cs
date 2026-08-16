@@ -1644,6 +1644,20 @@ namespace DimensionBrawl.Tests
                 {
                     observedConfiguredEntrance = true;
                     Assert.That(presenter.IsConfigured, Is.True, presenter.LastActionError);
+                    Scene resultScene = presenter.gameObject.scene;
+                    GameObject canonicalClearIcon = FindSceneObject(
+                        resultScene,
+                        "Stage_Clear_UI_0000s_0000_StageClear_Icon");
+                    GameObject redundantClearText = FindSceneObject(
+                        resultScene,
+                        "Stage_Clear_UI_0000s_0001_Claer!_Text");
+                    Assert.That(canonicalClearIcon, Is.Not.Null);
+                    Assert.That(canonicalClearIcon.activeSelf, Is.True);
+                    Assert.That(redundantClearText, Is.Not.Null);
+                    Assert.That(
+                        redundantClearText.activeSelf,
+                        Is.False,
+                        "The opaque placeholder image must stay hidden while the canonical CLEAR icon remains visible.");
                     Assert.That(presenter.EntranceStartStateApplied, Is.True);
                     Assert.That(presenter.EntranceStarted, Is.True);
                     Assert.That(presenter.IsEntrancePlaying, Is.True);
@@ -3237,10 +3251,36 @@ namespace DimensionBrawl.Tests
                 Assert.That(stageClearOverlay.IsShown, Is.True);
                 Assert.That(stageClearOverlay.IsWorldFrozenForResult, Is.False);
                 Assert.That(aftermath.CameraCueSucceeded, Is.True, aftermath.LastQualityWarning);
-                Assert.That(deathCamera.BossDeathCueRequestCount, Is.EqualTo(1));
-                Assert.That(deathCamera.BossDeathCameraCueVersion, Is.GreaterThanOrEqualTo(0));
-                Assert.That(deathCamera.BossDeathCueWasInterrupted, Is.False);
-                int bossDeathCameraVersion = deathCamera.BossDeathCameraCueVersion;
+                Assert.That(aftermath.FinisherCameraSucceeded, Is.True,
+                    aftermath.LastQualityWarning);
+                Assert.That(aftermath.FallbackCameraCueSucceeded, Is.False,
+                    "The additive death cue is fallback-only once the authored Timeline cut succeeds.");
+                Assert.That(deathCamera.BossDeathCueRequestCount, Is.Zero);
+                OlympusStationBossTerminalFinisherCameraController finisherCamera =
+                    aftermath.FinisherCameraController;
+                Assert.That(finisherCamera, Is.Not.Null);
+                Assert.That(finisherCamera.IsOwnedBy(aftermath), Is.True);
+                Assert.That(finisherCamera.RequestVersion,
+                    Is.EqualTo(aftermath.FinisherCameraRequestVersion));
+                Assert.That(finisherCamera.AcquireCount, Is.EqualTo(1));
+                Assert.That(finisherCamera.GameplayCamera.enabled, Is.False);
+                Assert.That(finisherCamera.FinisherCamera.enabled, Is.True);
+                Assert.That(finisherCamera.ActiveCamera,
+                    Is.SameAs(finisherCamera.FinisherCamera));
+                Assert.That(finisherCamera.WasInterrupted, Is.False);
+                Assert.That(aftermath.TerminalBoundaryVisualHidden, Is.True);
+                Assert.That(aftermath.TerminalBoundaryVisualRoot, Is.Not.Null);
+                Assert.That(aftermath.TerminalBoundaryVisualRoot.activeSelf, Is.False);
+                GameObject clearMarker = FindSceneObject(
+                    stationScene,
+                    "BossBarrageLaneReview_PocketClearMarker");
+                Assert.That(clearMarker, Is.Not.Null);
+                Assert.That(
+                    clearMarker.activeSelf,
+                    Is.False,
+                    "The inspectable PocketClear marker is not a player-facing terminal visual.");
+                int actionCameraVersionAtFinisherCut =
+                    deathCamera.CameraController.CueRequestVersion;
                 Assert.That(aftermath.VisualAudioCueSucceeded, Is.True, aftermath.LastQualityWarning);
                 Assert.That(deathVisual.BossDeathCueId, Is.EqualTo(CombatVfxCueId.EnemyDeath));
                 Assert.That(deathVisual.BossDeathWorldVfxCueRequestCount, Is.EqualTo(1));
@@ -3287,8 +3327,12 @@ namespace DimensionBrawl.Tests
                     Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
                     Assert.That(
                         deathCamera.CameraController.CueRequestVersion,
-                        Is.EqualTo(bossDeathCameraVersion),
-                        "No action or cinematic camera request may replace the death-anchored cue during the bridge.");
+                        Is.EqualTo(actionCameraVersionAtFinisherCut),
+                        "No late action/cinematic request may mutate the dormant gameplay camera stream during the finisher cut.");
+                    Assert.That(finisherCamera.IsOwnedBy(aftermath), Is.True);
+                    Assert.That(finisherCamera.FinisherCamera.enabled, Is.True);
+                    Assert.That(finisherCamera.GameplayCamera.enabled, Is.False);
+                    Assert.That(finisherCamera.WasInterrupted, Is.False);
                     Assert.That(
                         SceneManager.GetSceneByName(StageClearSceneName).isLoaded,
                         Is.False,
@@ -3389,6 +3433,26 @@ namespace DimensionBrawl.Tests
                 Assert.That(aftermath.CompletedSuccessfully, Is.True, aftermath.LastError);
                 Assert.That(aftermath.CompleteCount, Is.EqualTo(1));
                 Assert.That(aftermath.InputLeaseActive, Is.False);
+                OlympusStationBossTerminalFinisherCameraController finisherCamera =
+                    aftermath.FinisherCameraController;
+                Assert.That(finisherCamera, Is.Not.Null);
+                Assert.That(aftermath.FinisherCameraReleaseScheduled, Is.True);
+                Assert.That(finisherCamera.IsLeaseActive, Is.False);
+                Assert.That(finisherCamera.ReleaseCount, Is.EqualTo(1));
+                Assert.That(
+                    finisherCamera.ResultCoverReleaseElapsedSeconds,
+                    Is.GreaterThanOrEqualTo(
+                        OlympusStationBossTerminalFinisherCameraController
+                            .RequiredResultCoverReleaseSeconds - 0.0001f));
+                Assert.That(finisherCamera.HasReachedTerminalSample, Is.True);
+                Assert.That(finisherCamera.WasInterrupted, Is.False);
+                Assert.That(finisherCamera.GameplayCamera.enabled, Is.True);
+                Assert.That(finisherCamera.FinisherCamera.enabled, Is.False);
+                Assert.That(finisherCamera.ActiveCamera,
+                    Is.SameAs(finisherCamera.GameplayCamera));
+                Assert.That(aftermath.FallbackCameraCueSucceeded, Is.False);
+                Assert.That(aftermath.TerminalBoundaryVisualHidden, Is.True);
+                Assert.That(aftermath.TerminalBoundaryVisualRoot.activeSelf, Is.False);
                 BossBarrageCameraCueDriver deathCamera =
                     RequireSingleSceneComponent<BossBarrageCameraCueDriver>(stationScene);
                 ActionCameraCueDriver actionCameraCues =
@@ -3396,10 +3460,10 @@ namespace DimensionBrawl.Tests
                 ActionCinematicCueDirector actionCinematic =
                     RequireSingleSceneComponent<ActionCinematicCueDirector>(stationScene);
                 Assert.That(
-                    deathCamera.BossDeathCueWasInterrupted,
-                    Is.False,
-                    $"deathVersion={deathCamera.BossDeathCameraCueVersion}, "
-                    + $"currentVersion={deathCamera.CameraController.CueRequestVersion}, "
+                    deathCamera.BossDeathCueRequestCount,
+                    Is.Zero,
+                    $"finisherVersion={finisherCamera.RequestVersion}, "
+                    + $"currentActionVersion={deathCamera.CameraController.CueRequestVersion}, "
                     + $"pocketClear={actionCameraCues.PocketClearCueRequestCount}, "
                     + $"pocketFail={actionCameraCues.PocketFailCueRequestCount}, "
                     + $"counterWave={actionCameraCues.CounterWaveCueRequestCount}, "
@@ -3409,7 +3473,6 @@ namespace DimensionBrawl.Tests
                     + $"lastCinematic={actionCinematic.LastPlayedKind}/{actionCinematic.LastPlayedCueId}, "
                     + $"cinematicPlayCount={actionCinematic.TotalPlayCount}, "
                     + $"summonBlockOpportunity={actionCameraCues.SummonBlockOpportunityCueRequestCount}.");
-                Assert.That(deathCamera.IsBossDeathCueComplete, Is.True);
                 Assert.That(
                     aftermath.AttachedResultDigest,
                     Is.EqualTo(factSummary.ResultSummaryDigest));

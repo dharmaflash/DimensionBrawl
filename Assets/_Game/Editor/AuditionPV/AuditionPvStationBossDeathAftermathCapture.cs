@@ -13,6 +13,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace DimensionBrawl.Editor.AuditionPV
 {
@@ -50,9 +51,21 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string Bl10FileName =
             "BL10_AKAZA_BOSS_DEATH_IMPACT__HUDON__t01.033333.png";
         internal const string Bl11FileName =
-            "BL11_AKAZA_BOSS_DEATH_AFTERMATH__HUDON__t01.933333.png";
+            "BL11_AKAZA_BOSS_DEATH_AFTERMATH__HUDOFF__t01.933333.png";
         internal const string Bl12FileName =
-            "BL12_OLYMPUS_STATION_CLEAR_RESULT__HUDON__t04.100000.png";
+            "BL12_OLYMPUS_STATION_CLEAR_RESULT__AUTHOREDRESULT__t04.100000.png";
+
+        internal const string ExpectedPlayerFacingKoObjective =
+            "소환 에너지를 충전하세요";
+        internal const string ExpectedBossDisplayName = "AKAZA";
+        internal const string PocketClearMarkerObjectName =
+            "BossBarrageLaneReview_PocketClearMarker";
+        internal const string TerminalBoundaryVisualObjectName =
+            "OlympusStation_NoCrossCenterLine";
+        internal const string RedundantClearTextObjectName =
+            "Stage_Clear_UI_0000s_0001_Claer!_Text";
+        internal const string RealClearIconObjectName =
+            "Stage_Clear_UI_0000s_0000_StageClear_Icon";
 
         internal const int FirstFrame = 0;
         internal const int LastFrame = 359;
@@ -60,9 +73,12 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int FireFrame = 1;
         internal const int ImpactFrame = 62;
         internal const int AftermathHeroFrame = 116;
+        internal const int FinisherStabilityFrame = 181;
         internal const int DeathHoldProofFrame = 129;
         internal const int ResultRequestFrame = 218;
         internal const int InteractiveResultFrame = 246;
+        internal const int ExpectedFinisherTimelineSampleCount = 156;
+        internal const int ExpectedResultCoverReleaseSampleCount = 28;
         internal const int DeterministicRandomSeed = 0x4808;
         internal const float PreparedBossHealth = 12f;
         internal const float AuthoredProjectileDamage = 12f;
@@ -165,8 +181,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + "TrySkipTransition reach Phase2; a second strictly non-lethal setup hit leaves 12 HP. "
                     + "Logical f1 calls only PlayerRangedBasicAttackAction.TryFire. The authored 12-damage, "
                     + "24m/s pooled LaneActionProjectile naturally impacts at f62, producing real Died, "
-                    + "BossTerminal clear, the 2.6s unscaled aftermath, freeze/result request f218, and "
-                    + "interactive committed result f246. BL10=f62, BL11=f116, BL12=f246 byte-exact."
+                    + "BossTerminal clear and a unique hard cut from the causal gameplay handle (f0..f61) "
+                    + "to the dedicated authored finisher camera at f62. The 2.6s unscaled aftermath ends "
+                    + "at f218; result-cover release restores gameplay camera at f246 with the committed "
+                    + "result interactive. BL10=f62 HUD-on, BL11=f116 HUD-off, and BL12=f246 "
+                    + "authored-result are byte-exact. f0..f61 are not approved hero footage."
             };
         }
 
@@ -191,9 +210,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 shotId = ShotId,
                 sourceFrame = sourceFrame,
                 fileName = fileName,
-                hudMode = sourceFrame < ResultRequestFrame
+                hudMode = sourceFrame == ImpactFrame
                     ? "hud-on"
-                    : "authored-result",
+                    : sourceFrame == AftermathHeroFrame
+                        ? "hud-off"
+                        : "authored-result",
                 status = "captured"
             };
         }
@@ -229,6 +250,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 CaptureScriptPath,
                 "Assets/_Game/Scripts/Combat/CombatHealth.cs",
                 "Assets/_Game/Scripts/Combat/CombatEncounterController.cs",
+                "Assets/_Game/Scripts/Combat/BossBarrageEncounterController.cs",
                 "Assets/_Game/Scripts/Combat/EncounterTerminalResolutionCoordinator.cs",
                 "Assets/_Game/Scripts/Combat/LaneActionProjectile.cs",
                 "Assets/_Game/Scripts/LevelDesign/StageRunRuntime.cs",
@@ -238,6 +260,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/LevelDesign/OlympusCorridorCombatFlowController.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStationAkazaPhase2FlowController.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStationBossTerminalAftermathPresenter.cs",
+                "Assets/_Game/Scripts/LevelDesign/FrontlineWaveStageProfile.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStationCombatResultPresenter.cs",
                 "Assets/_Game/Scripts/LevelDesign/OlympusStageClearOverlay.cs",
                 "Assets/_Game/Scripts/Player/PlayerRangedBasicAttackAction.cs",
@@ -245,6 +268,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/Player/PlayerLockTargetController.cs",
                 "Assets/_Game/Scripts/Player/PlayerInputLockSource.cs",
                 "Assets/_Game/Scripts/Presentation/BossBarrageCameraCueDriver.cs",
+                "Assets/_Game/Scripts/Presentation/OlympusStationBossTerminalFinisherCameraController.cs",
                 "Assets/_Game/Scripts/Presentation/BossBarrageVisualCueDriver.cs",
                 "Assets/_Game/Scripts/Presentation/AkazaPhase2CombatMotionDriver.cs",
                 "Assets/_Game/Scripts/Presentation/PresentationClock.cs",
@@ -254,7 +278,19 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.Signals.cs",
                 "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.Bindings.cs",
                 "Assets/_Game/Scripts/UI/StageClear/StageClearScreenPresenter.cs",
+                "Assets/_Game/UI/CombatHud/CombatHudPresenter.cs",
+                "Assets/_Game/UI/CombatHud/BossBarrageLaneReviewCombatHudBinder.cs",
+                "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab",
+                "Assets/_Game/UI/CombatHud/PF_UI_CombatHud_CelestialTarget_Staging.prefab",
+                "Assets/_Game/UI/CombatHud/PF_UI_CombatHud_CelestialV2_Staging.prefab",
+                "Assets/_Game/Editor/OlympusContinuousStageSetup.cs",
+                "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs",
+                "Assets/_Game/Editor/CombatHud/CombatHudCelestialTargetPrefabAssembler.cs",
+                "Assets/_Game/Editor/CombatHud/CombatHudCelestialV2PrefabAssembler.cs",
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable",
+                "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim",
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset",
+                "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset",
                 "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller",
                 PlayerRangedProjectilePrefabPath
             };
@@ -447,6 +483,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private StageRunContext runContext;
         private OlympusStationAkazaPhase2FlowController phaseFlow;
         private CombatEncounterController encounter;
+        private BossBarrageEncounterController bossBarrageEncounter;
         private CombatHealth playerHealth;
         private CombatHealth bossHealth;
         private PlayerMovementController movement;
@@ -464,12 +501,18 @@ namespace DimensionBrawl.Editor.AuditionPV
         private OlympusStationCombatResultPresenter resultPresenter;
         private OlympusStageClearOverlay overlay;
         private BossBarrageCameraCueDriver deathCamera;
+        private OlympusStationBossTerminalFinisherCameraController finisherCamera;
         private BossBarrageVisualCueDriver deathVisual;
         private AkazaPhase2CombatMotionDriver deathMotion;
         private ActionCinematicCueDirector cinematic;
         private UISceneTransitionHandoffOwner transitionOwner;
         private GameObject captureOwnedTransitionRoot;
         private CanvasGroup combatHud;
+        private Text objectiveText;
+        private Text bossNameText;
+        private GameObject pocketClearMarker;
+        private Transform playerRendererRoot;
+        private Transform bossRendererRoot;
         private ICombatEntryGuideGate entryGuide;
         private LaneActionProjectile firedProjectile;
         private StageClearScreenPresenter clearPresenter;
@@ -540,6 +583,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         private bool allEightLocksReleasedAtResult;
         private bool deathStateAtAftermathHero;
         private bool bossDeathUsedPhaseTwoAnchorAtImpact;
+        private bool pocketClearMarkerReferenceUnbound;
+        private bool exclusiveCameraScheduleExact = true;
+        private int previousExclusiveCameraRole = -1;
+        private int cameraRoleTransitionCount;
+        private int firstFinisherCameraFrame = -1;
+        private int firstGameplayCameraRestoreFrame = -1;
+        private bool finisherTerminalHoldExactAt218;
+        private bool finisherReleaseExactAt246;
         private long terminalResolutionRunGeneration;
         private long terminalResolutionRootAdmissionSequence;
         private long terminalResolutionEpoch;
@@ -579,12 +630,30 @@ namespace DimensionBrawl.Editor.AuditionPV
         public Exception CleanupFailure => cleanupFailure;
         public int CurrentFrame => currentFrame;
         public int LastPresentedFrame { get; private set; } = -1;
-        public Camera GameplayCamera => deathCamera != null
-            ? deathCamera.CameraController?.GetComponent<Camera>()
-            : null;
-        public Transform PlayerRendererRoot => movement != null ? movement.transform : null;
-        public Transform BossRendererRoot => bossHealth != null ? bossHealth.transform : null;
+        public Camera GameplayCamera => finisherCamera != null
+            ? finisherCamera.GameplayCamera
+            : deathCamera != null
+                ? deathCamera.CameraController?.GetComponent<Camera>()
+                : null;
+        public Camera FinisherCamera => finisherCamera?.FinisherCamera;
+        public Transform CombatHudRoot => combatHud != null ? combatHud.transform : null;
+        public bool CombatHudVisible => combatHud != null
+            && combatHud.gameObject.activeInHierarchy
+            && combatHud.alpha > 0.01f;
+        public Transform PlayerRendererRoot => playerRendererRoot;
+        public Transform BossRendererRoot => bossRendererRoot;
         public StageClearScreenPresenter ClearPresenter => clearPresenter;
+        public GameObject PocketClearMarker => pocketClearMarker;
+        public GameObject TerminalBoundaryVisualRoot =>
+            aftermath?.TerminalBoundaryVisualRoot;
+        public string ObjectiveTextValue => objectiveText != null
+            ? objectiveText.text
+            : string.Empty;
+        public string BossNameTextValue => bossNameText != null
+            ? bossNameText.text
+            : string.Empty;
+        public bool PocketClearMarkerReferenceUnbound =>
+            pocketClearMarkerReferenceUnbound;
 
         public string RunId { get; private set; } = string.Empty;
         public string PlayableStageId { get; private set; } = string.Empty;
@@ -719,6 +788,46 @@ namespace DimensionBrawl.Editor.AuditionPV
             deathVisual?.BossDeathProfileAudioSourceDelta ?? -1;
         public bool BossDeathUsesPhaseTwoAnchor =>
             bossDeathUsedPhaseTwoAnchorAtImpact;
+        public bool ExclusiveCameraScheduleExact => exclusiveCameraScheduleExact;
+        public int CameraRoleTransitionCount => cameraRoleTransitionCount;
+        public int FirstFinisherCameraFrame => firstFinisherCameraFrame;
+        public int FirstGameplayCameraRestoreFrame => firstGameplayCameraRestoreFrame;
+        public bool FinisherTerminalHoldExactAt218 =>
+            finisherTerminalHoldExactAt218;
+        public bool FinisherReleaseExactAt246 => finisherReleaseExactAt246;
+        public bool FinisherCameraSucceeded => aftermath != null
+            && aftermath.FinisherCameraSucceeded;
+        public bool FinisherCameraReleaseScheduled => aftermath != null
+            && aftermath.FinisherCameraReleaseScheduled;
+        public bool FinisherCameraInterrupted => aftermath == null
+            || aftermath.FinisherCameraInterrupted
+            || finisherCamera == null
+            || finisherCamera.WasInterrupted;
+        public bool FallbackCameraCueSucceeded => aftermath != null
+            && aftermath.FallbackCameraCueSucceeded;
+        public int FinisherCameraRequestVersion =>
+            aftermath?.FinisherCameraRequestVersion ?? -1;
+        public int FinisherCameraAcquireCount => finisherCamera?.AcquireCount ?? -1;
+        public int FinisherCameraReleaseCount => finisherCamera?.ReleaseCount ?? -1;
+        public int FinisherCameraControllerRequestVersion =>
+            finisherCamera?.RequestVersion ?? -1;
+        public int FinisherCameraSampleCount => finisherCamera?.SampleCount ?? -1;
+        public int FinisherCameraResultCoverReleaseSampleCount =>
+            finisherCamera?.ResultCoverReleaseSampleCount ?? -1;
+        public double FinisherCameraLastSampledSeconds =>
+            finisherCamera?.LastSampledSeconds ?? -1d;
+        public float FinisherCameraResultCoverReleaseElapsedSeconds =>
+            finisherCamera?.ResultCoverReleaseElapsedSeconds ?? -1f;
+        public bool FinisherCameraReachedTerminalSample => finisherCamera != null
+            && finisherCamera.HasReachedTerminalSample;
+        public bool FinisherCameraLeaseReleased => finisherCamera != null
+            && !finisherCamera.IsLeaseActive;
+        public bool FinisherCameraGameplayRestored => finisherCamera != null
+            && finisherCamera.GameplayCamera != null
+            && finisherCamera.GameplayCamera.enabled;
+        public bool FinisherCameraDisabledAtResult => finisherCamera != null
+            && finisherCamera.FinisherCamera != null
+            && !finisherCamera.FinisherCamera.enabled;
         public int DeathMotionRequestCount => deathMotion?.DeathRequestCount ?? -1;
         public bool MotionIsDead => deathMotion != null && deathMotion.IsDead;
         public bool MotionAttacksStopped => deathMotion != null && deathMotion.AttacksStopped;
@@ -1553,12 +1662,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             phaseFlow = RequireSingleSceneComponent<
                 OlympusStationAkazaPhase2FlowController>(station);
             encounter = RequireSingleSceneComponent<CombatEncounterController>(station);
+            bossBarrageEncounter = RequireSingleSceneComponent<
+                BossBarrageEncounterController>(station);
             aftermath = RequireSingleSceneComponent<
                 OlympusStationBossTerminalAftermathPresenter>(station);
             resultPresenter = RequireSingleSceneComponent<
                 OlympusStationCombatResultPresenter>(station);
             overlay = RequireSingleSceneComponent<OlympusStageClearOverlay>(station);
             deathCamera = RequireSingleSceneComponent<BossBarrageCameraCueDriver>(station);
+            finisherCamera = RequireSingleSceneComponent<
+                OlympusStationBossTerminalFinisherCameraController>(station);
             deathVisual = RequireSingleSceneComponent<BossBarrageVisualCueDriver>(station);
             deathMotion = RequireSingleSceneComponent<AkazaPhase2CombatMotionDriver>(station);
             cinematic = RequireSingleSceneComponent<ActionCinematicCueDirector>(station);
@@ -1578,6 +1691,34 @@ namespace DimensionBrawl.Editor.AuditionPV
                 ?.SummonPressureAction;
             bossPressurePosition = phaseFlow.PressurePositionController;
             combatHud = phaseFlow.CombatHudCanvasGroup;
+            Animator[] playerAnimators = movement != null
+                ? movement.GetComponentsInChildren<Animator>(true)
+                    .Where(value => value != null
+                        && value.GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                            .Length > 0)
+                    .ToArray()
+                : Array.Empty<Animator>();
+            playerRendererRoot = playerAnimators.Length == 1
+                ? playerAnimators[0].transform
+                : null;
+            bossRendererRoot = deathMotion.Animator != null
+                ? deathMotion.Animator.transform
+                : null;
+            objectiveText = FindSingleNamedComponent<Text>(
+                combatHud != null ? combatHud.transform : null,
+                "Objective");
+            bossNameText = FindSingleNamedComponent<Text>(
+                combatHud != null ? combatHud.transform : null,
+                "BossNameText");
+            pocketClearMarker = FindSingleNamedGameObject(
+                station,
+                AuditionPvStationBossDeathAftermathCapture
+                    .PocketClearMarkerObjectName);
+            SerializedProperty clearMarkerProperty = new SerializedObject(
+                    bossBarrageEncounter)
+                .FindProperty("clearMarker");
+            pocketClearMarkerReferenceUnbound = clearMarkerProperty != null
+                && clearMarkerProperty.objectReferenceValue == null;
             entryGuide = FindSingleSceneInterface<ICombatEntryGuideGate>(station);
 
             if (playerHealth == null
@@ -1592,11 +1733,29 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || combatMode == null
                 || lockTarget == null
                 || bossPressureAction == null
+                || bossBarrageEncounter == null
                 || bossPressurePosition == null
                 || bossPressurePosition.MovedTransform == null
                 || combatHud == null
+                || playerRendererRoot == null
+                || bossRendererRoot == null
+                || objectiveText == null
+                || bossNameText == null
+                || pocketClearMarker == null
+                || !pocketClearMarkerReferenceUnbound
+                || pocketClearMarker.activeSelf
                 || entryGuide == null
                 || aftermath.BossHealth != bossHealth
+                || aftermath.FinisherCameraController != finisherCamera
+                || aftermath.TerminalBoundaryVisualRoot == null
+                || !string.Equals(
+                    aftermath.TerminalBoundaryVisualRoot.name,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .TerminalBoundaryVisualObjectName,
+                    StringComparison.Ordinal)
+                || finisherCamera.GameplayCamera
+                    != deathCamera.CameraController?.GetComponent<Camera>()
+                || finisherCamera.FinisherCamera == null
                 || aftermath.ActionCinematicCueDirector != cinematic
                 || encounter.EnemyHealth != bossHealth
                 || !encounter.UsesCoordinatedTerminalResolution
@@ -2312,6 +2471,8 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ObserveFrameState()
         {
+            ObserveExclusiveCameraSchedule();
+
             if (currentFrame
                 < AuditionPvStationBossDeathAftermathCapture.ImpactFrame)
             {
@@ -2444,6 +2605,22 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 allEightLocksReleasedAtResult = ExactAllEightInputLocks(false)
                     && !aftermath.InputLeaseActive;
+                finisherTerminalHoldExactAt218 = finisherCamera != null
+                    && finisherCamera.IsLeaseActive
+                    && finisherCamera.HasReachedTerminalSample
+                    && finisherCamera.SampleCount
+                        == AuditionPvStationBossDeathAftermathCapture
+                            .ExpectedFinisherTimelineSampleCount
+                    && Math.Abs(
+                        finisherCamera.LastSampledSeconds
+                        - OlympusStationBossTerminalFinisherCameraController
+                            .RequiredTimelineDurationSeconds) <= 0.0001d
+                    && finisherCamera.IsResultCoverReleaseScheduled
+                    && finisherCamera.ResultCoverReleaseSampleCount == 0
+                    && FinisherCamera != null
+                    && FinisherCamera.isActiveAndEnabled
+                    && GameplayCamera != null
+                    && !GameplayCamera.enabled;
             }
 
             if (currentFrame
@@ -2457,8 +2634,60 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && group.interactable
                     && group.blocksRaycasts;
                 HudYieldedAtResult = !combatHud.gameObject.activeInHierarchy;
+                finisherReleaseExactAt246 = finisherCamera != null
+                    && !finisherCamera.IsLeaseActive
+                    && finisherCamera.ReleaseCount == 1
+                    && finisherCamera.ResultCoverReleaseSampleCount
+                        == AuditionPvStationBossDeathAftermathCapture
+                            .ExpectedResultCoverReleaseSampleCount
+                    && GameplayCamera != null
+                    && GameplayCamera.isActiveAndEnabled
+                    && FinisherCamera != null
+                    && !FinisherCamera.enabled;
                 CaptureTerminalFactsAndResultIdentity();
             }
+        }
+
+        private void ObserveExclusiveCameraSchedule()
+        {
+            Camera gameplay = GameplayCamera;
+            Camera finisher = FinisherCamera;
+            bool gameplayActive = gameplay != null
+                && gameplay.gameObject.activeInHierarchy
+                && gameplay.isActiveAndEnabled;
+            bool finisherActive = finisher != null
+                && finisher.gameObject.activeInHierarchy
+                && finisher.isActiveAndEnabled;
+            int role = gameplayActive == finisherActive
+                ? -1
+                : finisherActive ? 1 : 0;
+
+            int expectedRole = currentFrame
+                    >= AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                && currentFrame
+                    < AuditionPvStationBossDeathAftermathCapture.InteractiveResultFrame
+                ? 1
+                : 0;
+            exclusiveCameraScheduleExact &= role == expectedRole;
+
+            if (previousExclusiveCameraRole >= 0
+                && role >= 0
+                && role != previousExclusiveCameraRole)
+            {
+                cameraRoleTransitionCount++;
+                if (role == 1 && firstFinisherCameraFrame < 0)
+                {
+                    firstFinisherCameraFrame = currentFrame;
+                }
+                else if (role == 0
+                    && firstFinisherCameraFrame >= 0
+                    && firstGameplayCameraRestoreFrame < 0)
+                {
+                    firstGameplayCameraRestoreFrame = currentFrame;
+                }
+            }
+
+            previousExclusiveCameraRole = role;
         }
 
         private bool ExactAllEightInputLocks(bool expected)
@@ -2631,9 +2860,50 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || aftermath.InputLeaseActive
                 || !aftermath.ScaleOneObserved
                 || aftermath.ScaleOneViolationRecorded
-                || !deathCamera.IsBossDeathCueComplete
+                || !exclusiveCameraScheduleExact
+                || cameraRoleTransitionCount != 2
+                || firstFinisherCameraFrame
+                    != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                || firstGameplayCameraRestoreFrame
+                    != AuditionPvStationBossDeathAftermathCapture
+                        .InteractiveResultFrame
+                || !finisherTerminalHoldExactAt218
+                || !finisherReleaseExactAt246
+                || !aftermath.FinisherCameraSucceeded
+                || !aftermath.FinisherCameraReleaseScheduled
+                || aftermath.FinisherCameraInterrupted
+                || aftermath.FallbackCameraCueSucceeded
+                || aftermath.FinisherCameraRequestVersion != 1
+                || finisherCamera.AcquireCount != 1
+                || finisherCamera.ReleaseCount != 1
+                || finisherCamera.RequestVersion
+                    != aftermath.FinisherCameraRequestVersion
+                || finisherCamera.SampleCount
+                    != AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedFinisherTimelineSampleCount
+                || finisherCamera.ResultCoverReleaseSampleCount
+                    != AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedResultCoverReleaseSampleCount
+                || Math.Abs(
+                    finisherCamera.LastSampledSeconds
+                    - OlympusStationBossTerminalFinisherCameraController
+                        .RequiredTimelineDurationSeconds) > 0.0001d
+                || Mathf.Abs(
+                    finisherCamera.ResultCoverReleaseElapsedSeconds
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .ExpectedResultCoverReleaseSampleCount
+                        / (float)AuditionPvCaptureContract.Fps) > 0.0001f
+                || !finisherCamera.HasReachedTerminalSample
+                || finisherCamera.WasInterrupted
+                || finisherCamera.IsLeaseActive
+                || finisherCamera.FinisherCamera == null
+                || finisherCamera.FinisherCamera.enabled
+                || finisherCamera.GameplayCamera == null
+                || !finisherCamera.GameplayCamera.enabled
+                || deathCamera.BossDeathCueRequestCount != 0
+                || deathCamera.BossDeathCameraCueVersion != -1
                 || deathCamera.BossDeathCueWasInterrupted
-                || deathCamera.BossDeathCueRequestCount != 1
+                || deathCamera.IsBossDeathCueComplete
                 || deathVisual.BossDeathWorldVfxCueRequestCount != 1
                 || deathVisual.BossDeathProfileAudioSourceDelta <= 0
                 || !BossDeathUsesPhaseTwoAnchor
@@ -2651,6 +2921,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !HudWasActiveAtFire
                 || !HudWasActiveAtImpact
                 || !HudYieldedAtResult
+                || !pocketClearMarkerReferenceUnbound
+                || pocketClearMarker == null
+                || pocketClearMarker.activeSelf
+                || aftermath.TerminalBoundaryVisualRoot == null
+                || aftermath.TerminalBoundaryVisualRoot.activeSelf
+                || !aftermath.TerminalBoundaryVisualHidden
                 || !overlay.IsShown
                 || !overlay.IsWorldFrozenForResult
                 || Time.timeScale != 0f
@@ -2910,6 +3186,41 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             return values[0];
+        }
+
+        private static T FindSingleNamedComponent<T>(Transform root, string objectName)
+            where T : Component
+        {
+            if (root == null || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            T[] values = root.GetComponentsInChildren<T>(true)
+                .Where(value => value != null
+                    && string.Equals(
+                        value.gameObject.name,
+                        objectName,
+                        StringComparison.Ordinal))
+                .ToArray();
+            return values.Length == 1 ? values[0] : null;
+        }
+
+        private static GameObject FindSingleNamedGameObject(Scene scene, string objectName)
+        {
+            if (!scene.IsValid() || !scene.isLoaded
+                || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            GameObject[] values = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                .Where(value => value != null
+                    && string.Equals(value.name, objectName, StringComparison.Ordinal))
+                .Select(value => value.gameObject)
+                .ToArray();
+            return values.Length == 1 ? values[0] : null;
         }
 
         private static T[] FindSceneComponents<T>(Scene scene)

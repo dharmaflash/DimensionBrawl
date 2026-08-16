@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
@@ -10,7 +11,10 @@ using IsekaiBrawl.Gameplay;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using UnityEngine.Timeline;
 using UnityEngine.UI;
 
 namespace DimensionBrawl.Editor
@@ -329,6 +333,10 @@ namespace DimensionBrawl.Editor
                 Object.FindObjectsByType<ActionCinematicCueDirector>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
+            OlympusStationBossTerminalFinisherCameraController[] finisherCameraControllers =
+                Object.FindObjectsByType<OlympusStationBossTerminalFinisherCameraController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
             bool hasExactSubjects = bossEncounters.Length == 1
                 && movements.Length == 1
                 && cameraDrivers.Length == 1
@@ -354,6 +362,9 @@ namespace DimensionBrawl.Editor
                 && visualDriver != null
                 && serializedAftermath.FindProperty("bossHealth")?.objectReferenceValue == bossHealth
                 && serializedAftermath.FindProperty("cameraCueDriver")?.objectReferenceValue == cameraDrivers[0]
+                && finisherCameraControllers.Length == 1
+                && serializedAftermath.FindProperty("finisherCameraController")?.objectReferenceValue
+                    == finisherCameraControllers[0]
                 && serializedAftermath.FindProperty("actionCinematicCueDirector")?.objectReferenceValue
                     == cinematicDirectors[0]
                 && cinematicDirectors[0].CameraController == cameraDrivers[0].CameraController
@@ -371,6 +382,32 @@ namespace DimensionBrawl.Editor
                     == movement.GetComponent<PlayerRangedBasicAttackAction>()
                 && serializedAftermath.FindProperty("playerCombatModeController")?.objectReferenceValue
                     == movement.GetComponent<PlayerCombatModeController>();
+
+            Transform clearMarker = FindSceneTransform(
+                SceneManager.GetActiveScene(),
+                OlympusContinuousStageSetup.StationPocketClearMarkerName);
+            Transform terminalBoundaryVisual = FindSceneTransform(
+                SceneManager.GetActiveScene(),
+                OlympusContinuousStageSetup.StationTerminalBoundaryVisualName);
+            BossBarrageLaneReviewCombatHudBinder[] hudBinders =
+                Object.FindObjectsByType<BossBarrageLaneReviewCombatHudBinder>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            bool exactProductCleanup = hasExactSubjects
+                && clearMarker != null
+                && !clearMarker.gameObject.activeSelf
+                && new SerializedObject(bossEncounters[0]).FindProperty("clearMarker")
+                    ?.objectReferenceValue == null
+                && terminalBoundaryVisual != null
+                && terminalBoundaryVisual.gameObject.activeSelf
+                && serializedAftermath.FindProperty("terminalBoundaryVisualRoot")
+                    ?.objectReferenceValue == terminalBoundaryVisual.gameObject
+                && hudBinders.Length == 1
+                && string.Equals(
+                    new SerializedObject(hudBinders[0]).FindProperty("bossDisplayName")
+                        ?.stringValue,
+                    OlympusContinuousStageSetup.StationBossDisplayName,
+                    System.StringComparison.Ordinal);
             bool exactTiming = Approximately(
                     serializedAftermath.FindProperty("aftermathDurationSeconds")?.floatValue ?? -1f,
                     2.6f)
@@ -383,16 +420,24 @@ namespace DimensionBrawl.Editor
             report.AppendLine($"- Station aftermath result/overlay owners: {(exactGateOwners ? "exact" : "invalid")}");
             report.AppendLine($"- Station aftermath source/camera takeover/input references: {(exactReferences ? "exact" : "invalid")}");
             report.AppendLine($"- Station aftermath timing (2.6/2.0/0.35): {(exactTiming ? "exact" : "invalid")}");
-            if (!exactGateOwners || !exactReferences || !exactTiming)
+            report.AppendLine($"- Station terminal product cleanup/boss label: {(exactProductCleanup ? "exact" : "invalid")}");
+            if (!exactGateOwners || !exactReferences || !exactTiming || !exactProductCleanup)
             {
                 report.AddIssue(
-                    $"{expectation.ScenePath}: Station aftermath gate must keep its exact result/overlay owners, action-camera takeover, boss presentation sources, eight player input owners, and authored timing.");
+                    $"{expectation.ScenePath}: Station aftermath gate must keep its exact result/overlay owners, action-camera takeover, finisher camera, boss presentation sources, eight player input owners, terminal visual cleanup, AKAZA label, and authored timing.");
             }
 
             if (!hasExactSubjects)
             {
                 return;
             }
+
+            CheckStationBossTerminalFinisherCamera(
+                expectation,
+                aftermath,
+                bossHealth,
+                cameraDrivers[0],
+                report);
 
             SerializedObject serializedCamera = new(cameraDrivers[0]);
             SerializedProperty deathCamera = serializedCamera.FindProperty("bossDeathCue");
@@ -426,6 +471,254 @@ namespace DimensionBrawl.Editor
                 report.AddIssue(
                     $"{expectation.ScenePath}: Station boss-death camera and VFX/audio authoring drifted from the reviewed contract.");
             }
+        }
+
+        private static void CheckStationBossTerminalFinisherCamera(
+            SceneExpectation expectation,
+            OlympusStationBossTerminalAftermathPresenter aftermath,
+            CombatHealth bossHealth,
+            BossBarrageCameraCueDriver cameraCueDriver,
+            ReportBuilder report)
+        {
+            OlympusStationBossTerminalFinisherCameraController[] controllers =
+                Object.FindObjectsByType<OlympusStationBossTerminalFinisherCameraController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            report.AppendLine(
+                $"- {nameof(OlympusStationBossTerminalFinisherCameraController)} count: {controllers.Length}");
+            if (controllers.Length != 1)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: expected exactly one authored Station boss-terminal finisher camera, found {controllers.Length}.");
+                return;
+            }
+
+            OlympusStationBossTerminalFinisherCameraController controller = controllers[0];
+            PlayableDirector director = controller.FinisherDirector;
+            TimelineAsset timeline = controller.FinisherTimeline;
+            Camera gameplayCamera = controller.GameplayCamera;
+            Camera finisherCamera = controller.FinisherCamera;
+            Animator animator = controller.GetComponent<Animator>();
+            bool exactOwner = aftermath.FinisherCameraController == controller
+                && bossHealth != null
+                && controller.gameObject.name
+                    == OlympusContinuousStageSetup.StationBossTerminalFinisherCameraRigName
+                && controller.transform.parent == bossHealth.transform
+                && animator != null
+                && animator.enabled
+                && animator.runtimeAnimatorController == null
+                && animator.cullingMode == AnimatorCullingMode.AlwaysAnimate
+                && animator.updateMode == AnimatorUpdateMode.UnscaledTime;
+
+            bool exactCameraComponents = gameplayCamera != null
+                && finisherCamera != null
+                && cameraCueDriver.CameraController != null
+                && gameplayCamera == cameraCueDriver.CameraController.GetComponent<Camera>()
+                && gameplayCamera != finisherCamera
+                && gameplayCamera.gameObject.activeInHierarchy
+                && finisherCamera.gameObject.activeInHierarchy
+                && gameplayCamera.enabled
+                && !finisherCamera.enabled
+                && finisherCamera.transform == controller.transform
+                && Approximately(
+                    finisherCamera.fieldOfView,
+                    OlympusContinuousStageSetup.StationBossTerminalFinisherFieldOfView)
+                && finisherCamera.GetComponentsInChildren<AudioListener>(true).Length == 0;
+            UniversalAdditionalCameraData cameraData = finisherCamera != null
+                ? finisherCamera.GetComponent<UniversalAdditionalCameraData>()
+                : null;
+            exactCameraComponents = exactCameraComponents
+                && cameraData != null
+                && cameraData.renderPostProcessing
+                && cameraData.antialiasing
+                    == AntialiasingMode.SubpixelMorphologicalAntiAliasing
+                && cameraData.antialiasingQuality == AntialiasingQuality.High;
+
+            bool exactTimeline = director != null
+                && timeline != null
+                && director.playableAsset == timeline
+                && !director.playOnAwake
+                && director.extrapolationMode == DirectorWrapMode.Hold
+                && director.timeUpdateMode == DirectorUpdateMode.Manual
+                && director.state != PlayState.Playing
+                && timeline.durationMode == TimelineAsset.DurationMode.FixedLength
+                && System.Math.Abs(
+                    timeline.fixedDuration
+                        - OlympusStationBossTerminalFinisherCameraController
+                            .RequiredTimelineDurationSeconds) <= 0.0001d
+                && System.Math.Abs(
+                    timeline.duration
+                        - OlympusStationBossTerminalFinisherCameraController
+                            .RequiredTimelineDurationSeconds) <= 0.0001d
+                && System.Math.Abs(timeline.editorSettings.frameRate - 60d) <= 0.0001d
+                && AssetDatabase.GetAssetPath(timeline)
+                    == OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherTimelinePath
+                && Approximately(
+                    controller.ResultCoverReleaseSeconds,
+                    OlympusStationBossTerminalFinisherCameraController
+                        .RequiredResultCoverReleaseSeconds);
+
+            var rootTracks = timeline != null
+                ? new List<TrackAsset>(timeline.GetRootTracks())
+                : new List<TrackAsset>();
+            AnimationTrack cameraTrack = rootTracks.Count == 1
+                ? rootTracks[0] as AnimationTrack
+                : null;
+            var clips = cameraTrack != null
+                ? new List<TimelineClip>(cameraTrack.GetClips())
+                : new List<TimelineClip>();
+            TimelineClip timelineClip = clips.Count == 1 ? clips[0] : null;
+            AnimationPlayableAsset playable = timelineClip?.asset as AnimationPlayableAsset;
+            AnimationClip cameraClip = playable?.clip;
+            exactTimeline = exactTimeline
+                && cameraTrack != null
+                && cameraTrack.trackOffset == TrackOffset.Auto
+                && director.GetGenericBinding(cameraTrack) == animator
+                && timelineClip != null
+                && System.Math.Abs(timelineClip.start) <= 0.0001d
+                && System.Math.Abs(timelineClip.clipIn) <= 0.0001d
+                && System.Math.Abs(
+                    timelineClip.duration
+                        - OlympusStationBossTerminalFinisherCameraController
+                            .RequiredTimelineDurationSeconds) <= 0.0001d
+                && System.Math.Abs(timelineClip.timeScale - 1d) <= 0.0001d
+                && timelineClip.preExtrapolationMode
+                    == TimelineClip.ClipExtrapolation.None
+                && timelineClip.postExtrapolationMode
+                    == TimelineClip.ClipExtrapolation.Hold
+                && playable != null
+                && !playable.removeStartOffset
+                && !playable.applyFootIK
+                && playable.loop == AnimationPlayableAsset.LoopMode.Off
+                && !playable.useTrackMatchFields
+                && cameraClip != null
+                && AssetDatabase.GetAssetPath(cameraClip)
+                    == OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherCameraClipPath
+                && Approximately(cameraClip.frameRate, 60f)
+                && Approximately(
+                    cameraClip.length,
+                    OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherDurationSeconds)
+                && HasExactStationFinisherCameraCurves(cameraClip);
+
+            Quaternion expectedStartRotation = Quaternion.LookRotation(
+                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget
+                    - OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherStartLocalPosition,
+                Vector3.up);
+            bool exactInitialPose = controller.transform.localPosition
+                    == OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherStartLocalPosition
+                && Quaternion.Angle(
+                    controller.transform.localRotation,
+                    expectedStartRotation) <= 0.01f;
+            bool configurationValid = controller.ValidateConfiguration(
+                out string configurationError);
+
+            report.AppendLine(
+                $"- Station finisher stable boss-root owner: {(exactOwner ? "exact" : "invalid")}");
+            report.AppendLine(
+                $"- Station finisher exclusive Camera/FOV46/no-listener: {(exactCameraComponents ? "exact" : "invalid")}");
+            report.AppendLine(
+                $"- Station finisher manual Timeline 2.6s + terminal hold: {(exactTimeline ? "exact" : "invalid")}");
+            report.AppendLine(
+                $"- Station finisher authored t=0 pose: {(exactInitialPose ? "exact" : "invalid")}");
+            report.AppendLine(
+                $"- Station finisher controller configuration: {(configurationValid ? "exact" : configurationError)}");
+            if (!exactOwner
+                || !exactCameraComponents
+                || !exactTimeline
+                || !exactInitialPose
+                || !configurationValid)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: Station boss-terminal finisher must retain its stable boss-root local rig, exact FOV46 Camera cut, 2.6s manually sampled Timeline with terminal hold, zero AudioListeners, and 0.46s result-cover release.");
+            }
+        }
+
+        private static bool HasExactStationFinisherCameraCurves(AnimationClip clip)
+        {
+            EditorCurveBinding[] bindings = AnimationUtility.GetCurveBindings(clip);
+            string[] expectedProperties =
+            {
+                "m_LocalPosition.x",
+                "m_LocalPosition.y",
+                "m_LocalPosition.z",
+                "m_LocalRotation.x",
+                "m_LocalRotation.y",
+                "m_LocalRotation.z",
+                "m_LocalRotation.w",
+            };
+            if (bindings.Length != expectedProperties.Length
+                || bindings.Any(binding => binding.type != typeof(Transform)
+                    || !string.IsNullOrEmpty(binding.path))
+                || !bindings.Select(binding => binding.propertyName)
+                    .OrderBy(value => value, System.StringComparer.Ordinal)
+                    .SequenceEqual(expectedProperties.OrderBy(
+                        value => value,
+                        System.StringComparer.Ordinal)))
+            {
+                return false;
+            }
+
+            Vector3 start = OlympusContinuousStageSetup
+                .StationBossTerminalFinisherStartLocalPosition;
+            Vector3 settle = OlympusContinuousStageSetup
+                .StationBossTerminalFinisherSettleLocalPosition;
+            Quaternion startRotation = Quaternion.LookRotation(
+                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget - start,
+                Vector3.up);
+            Quaternion settleRotation = Quaternion.LookRotation(
+                OlympusContinuousStageSetup.StationBossTerminalFinisherLookTarget - settle,
+                Vector3.up);
+            return HasExactStationFinisherCurve(
+                    clip, "m_LocalPosition.x", start.x, settle.x)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalPosition.y", start.y, settle.y)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalPosition.z", start.z, settle.z)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalRotation.x", startRotation.x, settleRotation.x)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalRotation.y", startRotation.y, settleRotation.y)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalRotation.z", startRotation.z, settleRotation.z)
+                && HasExactStationFinisherCurve(
+                    clip, "m_LocalRotation.w", startRotation.w, settleRotation.w);
+        }
+
+        private static bool HasExactStationFinisherCurve(
+            AnimationClip clip,
+            string propertyName,
+            float startValue,
+            float settleValue)
+        {
+            AnimationCurve curve = AnimationUtility.GetEditorCurve(
+                clip,
+                EditorCurveBinding.FloatCurve(
+                    string.Empty,
+                    typeof(Transform),
+                    propertyName));
+            if (curve == null || curve.length != 3)
+            {
+                return false;
+            }
+
+            Keyframe[] keys = curve.keys;
+            return Approximately(keys[0].time, 0f)
+                && Approximately(keys[0].value, startValue)
+                && Approximately(
+                    keys[1].time,
+                    OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherSettleSeconds)
+                && Approximately(keys[1].value, settleValue)
+                && Approximately(
+                    keys[2].time,
+                    OlympusContinuousStageSetup
+                        .StationBossTerminalFinisherDurationSeconds)
+                && Approximately(keys[2].value, settleValue);
         }
 
         private static bool Approximately(float left, float right)
