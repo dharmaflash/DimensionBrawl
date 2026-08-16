@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using IsekaiBrawl.Gameplay;
@@ -274,6 +275,162 @@ namespace DimensionBrawl.Editor
                 report.AddIssue(
                     $"{expectation.ScenePath}: Station result presenter must use authored encounter, clear-overlay, and fail-surface references.");
             }
+
+            CheckStationBossAftermathOwnership(
+                expectation,
+                presenters[0],
+                stageClearOverlay?.objectReferenceValue as OlympusStageClearOverlay,
+                report);
+        }
+
+        private static void CheckStationBossAftermathOwnership(
+            SceneExpectation expectation,
+            OlympusStationCombatResultPresenter resultPresenter,
+            OlympusStageClearOverlay stageClearOverlay,
+            ReportBuilder report)
+        {
+            OlympusStationBossTerminalAftermathPresenter[] aftermaths =
+                Object.FindObjectsByType<OlympusStationBossTerminalAftermathPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            report.AppendLine(
+                $"- {nameof(OlympusStationBossTerminalAftermathPresenter)} count: {aftermaths.Length}");
+            if (aftermaths.Length != 1)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: expected exactly one authored Station boss-terminal aftermath gate, found {aftermaths.Length}.");
+                return;
+            }
+
+            OlympusStationBossTerminalAftermathPresenter aftermath = aftermaths[0];
+            SerializedObject serializedAftermath = new(aftermath);
+            SerializedObject serializedResult = new(resultPresenter);
+            SerializedObject serializedOverlay = stageClearOverlay != null
+                ? new SerializedObject(stageClearOverlay)
+                : null;
+            bool exactGateOwners = serializedResult.FindProperty("bossTerminalAftermath")
+                    ?.objectReferenceValue == aftermath
+                && serializedOverlay?.FindProperty("bossTerminalAftermath")
+                    ?.objectReferenceValue == aftermath;
+
+            BossBarrageEncounterController[] bossEncounters =
+                Object.FindObjectsByType<BossBarrageEncounterController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            PlayerMovementController[] movements =
+                Object.FindObjectsByType<PlayerMovementController>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            BossBarrageCameraCueDriver[] cameraDrivers =
+                Object.FindObjectsByType<BossBarrageCameraCueDriver>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            ActionCinematicCueDirector[] cinematicDirectors =
+                Object.FindObjectsByType<ActionCinematicCueDirector>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            bool hasExactSubjects = bossEncounters.Length == 1
+                && movements.Length == 1
+                && cameraDrivers.Length == 1
+                && cinematicDirectors.Length == 1;
+            CombatHealth bossHealth = hasExactSubjects
+                ? new SerializedObject(bossEncounters[0]).FindProperty("bossHealth")
+                    ?.objectReferenceValue as CombatHealth
+                : null;
+            PlayerMovementController movement = hasExactSubjects ? movements[0] : null;
+            BossBarrageVisualCueDriver visualDriver =
+                bossHealth != null ? bossHealth.GetComponent<BossBarrageVisualCueDriver>() : null;
+            PlayerSupportSummonSlotAction[] supports = movement != null
+                ? movement.GetComponents<PlayerSupportSummonSlotAction>()
+                : System.Array.Empty<PlayerSupportSummonSlotAction>();
+            PlayerSupportSummonSlotAction summon2 = System.Array.Find(
+                supports,
+                candidate => candidate != null && candidate.SlotActionName == "SummonSlot2");
+            PlayerSupportSummonSlotAction summon3 = System.Array.Find(
+                supports,
+                candidate => candidate != null && candidate.SlotActionName == "SummonSlot3");
+
+            bool exactReferences = hasExactSubjects
+                && visualDriver != null
+                && serializedAftermath.FindProperty("bossHealth")?.objectReferenceValue == bossHealth
+                && serializedAftermath.FindProperty("cameraCueDriver")?.objectReferenceValue == cameraDrivers[0]
+                && serializedAftermath.FindProperty("actionCinematicCueDirector")?.objectReferenceValue
+                    == cinematicDirectors[0]
+                && cinematicDirectors[0].CameraController == cameraDrivers[0].CameraController
+                && serializedAftermath.FindProperty("visualCueDriver")?.objectReferenceValue == visualDriver
+                && serializedAftermath.FindProperty("playerMovement")?.objectReferenceValue == movement
+                && serializedAftermath.FindProperty("playerActionController")?.objectReferenceValue
+                    == movement.GetComponent<PlayerActionController>()
+                && serializedAftermath.FindProperty("playerSkill1Action")?.objectReferenceValue
+                    == movement.GetComponent<PlayerSkill1Action>()
+                && serializedAftermath.FindProperty("playerSummonSlot1Action")?.objectReferenceValue
+                    == movement.GetComponent<PlayerSummonSlot1Action>()
+                && serializedAftermath.FindProperty("playerSummonSlot2Action")?.objectReferenceValue == summon2
+                && serializedAftermath.FindProperty("playerSummonSlot3Action")?.objectReferenceValue == summon3
+                && serializedAftermath.FindProperty("playerRangedBasicAttackAction")?.objectReferenceValue
+                    == movement.GetComponent<PlayerRangedBasicAttackAction>()
+                && serializedAftermath.FindProperty("playerCombatModeController")?.objectReferenceValue
+                    == movement.GetComponent<PlayerCombatModeController>();
+            bool exactTiming = Approximately(
+                    serializedAftermath.FindProperty("aftermathDurationSeconds")?.floatValue ?? -1f,
+                    2.6f)
+                && Approximately(
+                    serializedAftermath.FindProperty("unattachedResultLeaseTimeoutSeconds")?.floatValue ?? -1f,
+                    2f)
+                && Approximately(
+                    serializedAftermath.FindProperty("initialHitStopRecoveryGraceSeconds")?.floatValue ?? -1f,
+                    0.35f);
+            report.AppendLine($"- Station aftermath result/overlay owners: {(exactGateOwners ? "exact" : "invalid")}");
+            report.AppendLine($"- Station aftermath source/camera takeover/input references: {(exactReferences ? "exact" : "invalid")}");
+            report.AppendLine($"- Station aftermath timing (2.6/2.0/0.35): {(exactTiming ? "exact" : "invalid")}");
+            if (!exactGateOwners || !exactReferences || !exactTiming)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: Station aftermath gate must keep its exact result/overlay owners, action-camera takeover, boss presentation sources, eight player input owners, and authored timing.");
+            }
+
+            if (!hasExactSubjects)
+            {
+                return;
+            }
+
+            SerializedObject serializedCamera = new(cameraDrivers[0]);
+            SerializedProperty deathCamera = serializedCamera.FindProperty("bossDeathCue");
+            bool exactCamera = deathCamera != null
+                && deathCamera.FindPropertyRelative("enabled")?.boolValue == true
+                && Approximately(
+                    deathCamera.FindPropertyRelative("durationSeconds")?.floatValue ?? -1f,
+                    1.65f)
+                && Approximately(
+                    serializedCamera.FindProperty("bossDeathCueReleaseSeconds")?.floatValue ?? -1f,
+                    0.35f);
+            SerializedObject serializedVisual = visualDriver != null
+                ? new SerializedObject(visualDriver)
+                : null;
+            bool exactVisual = serializedVisual != null
+                && serializedVisual.FindProperty("bossDeathCueId")?.intValue
+                    == (int)CombatVfxCueId.EnemyDeath
+                && Approximately(
+                    serializedVisual.FindProperty("bossDeathCueIntensity")?.floatValue ?? -1f,
+                    1.15f)
+                && Approximately(
+                    serializedVisual.FindProperty("bossDeathAudioIntensity")?.floatValue ?? -1f,
+                    1f)
+                && Approximately(
+                    serializedVisual.FindProperty("bossDeathPulseScale")?.floatValue ?? -1f,
+                    0.42f);
+            report.AppendLine($"- Station boss-death camera envelope: {(exactCamera ? "exact" : "invalid")}");
+            report.AppendLine($"- Station boss-death VFX/audio cue: {(exactVisual ? "exact" : "invalid")}");
+            if (!exactCamera || !exactVisual)
+            {
+                report.AddIssue(
+                    $"{expectation.ScenePath}: Station boss-death camera and VFX/audio authoring drifted from the reviewed contract.");
+            }
+        }
+
+        private static bool Approximately(float left, float right)
+        {
+            return Mathf.Abs(left - right) <= 0.0001f;
         }
 
         private static void CheckCanonicalBossVisual(SceneExpectation expectation, ReportBuilder report)

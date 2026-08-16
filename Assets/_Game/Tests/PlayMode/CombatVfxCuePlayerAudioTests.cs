@@ -26,6 +26,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_02.wav",
             "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_03.wav",
         };
+        private static readonly string[] EnemyDeathClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Enemy/DB_SFX_EnemyHit_Final_01.mp3",
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Enemy/DB_SFX_EnemyHit_Final_02.mp3",
+        };
         private const string BossBarrageProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string BossBarrageMissileFlyLoopClipPath =
@@ -297,7 +302,6 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EnemyHit);
-            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EnemyDeath);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerDamaged);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerCritical);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteShieldSignal);
@@ -308,6 +312,60 @@ namespace DimensionBrawl.Tests
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketCleared);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupMissed);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketFailed);
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyDeathCueUsesExactFinalBankAndStartsProfileAudio()
+        {
+            CombatVfxCueProfile profile =
+                AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
+            Assert.IsTrue(profile.TryGetCue(CombatVfxCueId.EnemyDeath, out CombatVfxCue cue));
+            Assert.AreEqual(EnemyDeathClipPaths.Length, cue.AudioClipCount);
+            Assert.GreaterOrEqual(cue.PrewarmCount, 1);
+            for (int i = 0; i < EnemyDeathClipPaths.Length; i++)
+            {
+                Assert.AreEqual(
+                    EnemyDeathClipPaths[i],
+                    AssetDatabase.GetAssetPath(cue.GetAudioClip(i)).Replace('\\', '/'));
+            }
+
+            Assert.That(cue.AudioBaseVolume, Is.EqualTo(0.52f).Within(0.0001f));
+            Assert.That(cue.AudioMinimumPitch, Is.EqualTo(0.96f).Within(0.0001f));
+            Assert.That(cue.AudioMaximumPitch, Is.EqualTo(1.02f).Within(0.0001f));
+            Assert.That(cue.AudioMinimumVolumeMultiplier, Is.EqualTo(0.94f).Within(0.0001f));
+            Assert.That(cue.AudioMaximumVolumeMultiplier, Is.EqualTo(1.04f).Within(0.0001f));
+            Assert.That(cue.AudioSpatialBlend, Is.EqualTo(0.12f).Within(0.0001f));
+            Assert.That(cue.AudioMinDistance, Is.EqualTo(8f).Within(0.0001f));
+            Assert.That(cue.AudioMaxDistance, Is.EqualTo(42f).Within(0.0001f));
+            Assert.AreEqual(40, cue.AudioPriority);
+
+            GameObject owner = new GameObject("EnemyDeathProfileAudioRuntimeProof");
+            try
+            {
+                AddAudioListenerIfMissing(owner);
+                CombatVfxCuePlayer cuePlayer = owner.AddComponent<CombatVfxCuePlayer>();
+                SetObjectReference(cuePlayer, "profile", profile);
+                int before = cuePlayer.ActiveProfileAudioSourceCount;
+
+                bool handled = cuePlayer.PlayCue(
+                    CombatVfxCueId.EnemyDeath,
+                    owner.transform,
+                    Vector3.forward,
+                    1f,
+                    1f);
+
+                Assert.IsTrue(handled, "EnemyDeath must be accepted by the reviewed profile.");
+                Assert.Greater(
+                    cuePlayer.ActiveProfileAudioSourceCount,
+                    before,
+                    "A silent authored cue must not pass the boss-death runtime proof.");
+                yield return null;
+            }
+            finally
+            {
+                Object.Destroy(owner);
+            }
         }
 
         [Test]

@@ -4,6 +4,8 @@ namespace DimensionBrawl.Presentation
 {
     public sealed partial class ActionCinematicCueDirector
     {
+        private float lastAppliedTimeScale = 1f;
+
         private void ApplyTimeScale(float timeScale)
         {
             if (!hasStoredTimeScale)
@@ -12,7 +14,8 @@ namespace DimensionBrawl.Presentation
                 hasStoredTimeScale = true;
             }
 
-            Time.timeScale = Mathf.Clamp(timeScale, 0.05f, 1f);
+            lastAppliedTimeScale = Mathf.Clamp(timeScale, 0.05f, 1f);
+            Time.timeScale = lastAppliedTimeScale;
         }
 
         private float TickTimeScaleTimer(float timer, float deltaTime)
@@ -38,8 +41,19 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            Time.timeScale = storedTimeScale;
+            // Time scale is shared global state. Restore only while the value is
+            // still the one this director authored; an external lethal hit-stop
+            // may have taken ownership after the cinematic began.
+            bool stillOwnsCurrentValue = Mathf.Approximately(
+                Time.timeScale,
+                lastAppliedTimeScale);
+            float restoreValue = storedTimeScale;
             hasStoredTimeScale = false;
+            lastAppliedTimeScale = 1f;
+            if (stillOwnsCurrentValue)
+            {
+                Time.timeScale = restoreValue;
+            }
         }
     }
 }

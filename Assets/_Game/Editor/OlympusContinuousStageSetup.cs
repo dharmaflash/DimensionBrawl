@@ -546,6 +546,8 @@ namespace DimensionBrawl.Editor
                 "Station entry guide prefab is missing its runtime bridge.");
             entryGuide.SetActive(true);
 
+            ConfigureStationBossTerminalAftermath(stationScene);
+
             Require(
                 FindSingleSceneComponent<OlympusStationCombatIntroTutorialBridge>(stationScene) != null,
                 "Station scene must retain exactly one canonical entry guide.");
@@ -558,6 +560,9 @@ namespace DimensionBrawl.Editor
             Require(
                 FindSingleSceneComponent<OlympusStationRunFactCollector>(stationScene) != null,
                 "Station scene is missing its run fact collector.");
+            Require(
+                FindSingleSceneComponent<OlympusStationBossTerminalAftermathPresenter>(stationScene) != null,
+                "Station scene is missing its boss-terminal aftermath gate.");
 
             EditorSceneManager.MarkSceneDirty(stationScene);
             Require(
@@ -862,6 +867,123 @@ namespace DimensionBrawl.Editor
             var serializedLockTarget = new SerializedObject(lockTarget);
             serializedLockTarget.FindProperty("keyboardFocusKey").intValue = (int)Key.T;
             serializedLockTarget.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureStationBossTerminalAftermath(Scene scene)
+        {
+            OlympusStationCombatResultPresenter resultPresenter =
+                FindSingleSceneComponent<OlympusStationCombatResultPresenter>(scene);
+            OlympusStageClearOverlay stageClearOverlay =
+                FindSingleSceneComponent<OlympusStageClearOverlay>(scene);
+            BossBarrageEncounterController bossEncounter =
+                FindSingleSceneComponent<BossBarrageEncounterController>(scene);
+            PlayerMovementController movement =
+                FindSingleSceneComponent<PlayerMovementController>(scene);
+            BossBarrageCameraCueDriver cameraCueDriver =
+                FindSingleSceneComponent<BossBarrageCameraCueDriver>(scene);
+            ActionCinematicCueDirector actionCinematicCueDirector =
+                FindSingleSceneComponent<ActionCinematicCueDirector>(scene);
+
+            var serializedBoss = new SerializedObject(bossEncounter);
+            CombatHealth bossHealth = serializedBoss.FindProperty("bossHealth")
+                .objectReferenceValue as CombatHealth;
+            Require(bossHealth != null,
+                "Station aftermath authoring requires the canonical boss health subject.");
+            BossBarrageVisualCueDriver visualCueDriver =
+                bossHealth.GetComponent<BossBarrageVisualCueDriver>();
+            PlayerActionController action = movement.GetComponent<PlayerActionController>();
+            PlayerSkill1Action skill1 = movement.GetComponent<PlayerSkill1Action>();
+            PlayerSummonSlot1Action summon1 = movement.GetComponent<PlayerSummonSlot1Action>();
+            PlayerRangedBasicAttackAction ranged =
+                movement.GetComponent<PlayerRangedBasicAttackAction>();
+            PlayerCombatModeController combatMode =
+                movement.GetComponent<PlayerCombatModeController>();
+            PlayerSupportSummonSlotAction[] supports =
+                movement.GetComponents<PlayerSupportSummonSlotAction>();
+            PlayerSupportSummonSlotAction summon2 = Array.Find(
+                supports,
+                candidate => candidate != null
+                    && string.Equals(candidate.SlotActionName, "SummonSlot2", StringComparison.Ordinal));
+            PlayerSupportSummonSlotAction summon3 = Array.Find(
+                supports,
+                candidate => candidate != null
+                    && string.Equals(candidate.SlotActionName, "SummonSlot3", StringComparison.Ordinal));
+            Require(
+                cameraCueDriver != null
+                    && actionCinematicCueDirector != null
+                    && visualCueDriver != null
+                    && action != null
+                    && skill1 != null
+                    && summon1 != null
+                    && summon2 != null
+                    && summon3 != null
+                    && ranged != null
+                    && combatMode != null,
+                "Station aftermath authoring requires its action/death camera owners, VFX, and exact eight player input owners.");
+
+            OlympusStationBossTerminalAftermathPresenter aftermath =
+                resultPresenter.GetComponent<OlympusStationBossTerminalAftermathPresenter>()
+                ?? resultPresenter.gameObject.AddComponent<OlympusStationBossTerminalAftermathPresenter>();
+            var serializedAftermath = new SerializedObject(aftermath);
+            serializedAftermath.FindProperty("bossHealth").objectReferenceValue = bossHealth;
+            serializedAftermath.FindProperty("cameraCueDriver").objectReferenceValue = cameraCueDriver;
+            serializedAftermath.FindProperty("actionCinematicCueDirector").objectReferenceValue =
+                actionCinematicCueDirector;
+            serializedAftermath.FindProperty("visualCueDriver").objectReferenceValue = visualCueDriver;
+            serializedAftermath.FindProperty("aftermathDurationSeconds").floatValue = 2.6f;
+            serializedAftermath.FindProperty("unattachedResultLeaseTimeoutSeconds").floatValue = 2f;
+            serializedAftermath.FindProperty("initialHitStopRecoveryGraceSeconds").floatValue = 0.35f;
+            serializedAftermath.FindProperty("playerMovement").objectReferenceValue = movement;
+            serializedAftermath.FindProperty("playerActionController").objectReferenceValue = action;
+            serializedAftermath.FindProperty("playerSkill1Action").objectReferenceValue = skill1;
+            serializedAftermath.FindProperty("playerSummonSlot1Action").objectReferenceValue = summon1;
+            serializedAftermath.FindProperty("playerSummonSlot2Action").objectReferenceValue = summon2;
+            serializedAftermath.FindProperty("playerSummonSlot3Action").objectReferenceValue = summon3;
+            serializedAftermath.FindProperty("playerRangedBasicAttackAction").objectReferenceValue = ranged;
+            serializedAftermath.FindProperty("playerCombatModeController").objectReferenceValue = combatMode;
+            serializedAftermath.ApplyModifiedPropertiesWithoutUndo();
+
+            var serializedOverlay = new SerializedObject(stageClearOverlay);
+            serializedOverlay.FindProperty("bossTerminalAftermath").objectReferenceValue = aftermath;
+            serializedOverlay.FindProperty("bossTerminalAftermathWaitSlackSeconds").floatValue = 0.5f;
+            serializedOverlay.ApplyModifiedPropertiesWithoutUndo();
+
+            var serializedResultPresenter = new SerializedObject(resultPresenter);
+            serializedResultPresenter.FindProperty("bossTerminalAftermath").objectReferenceValue = aftermath;
+            serializedResultPresenter.ApplyModifiedPropertiesWithoutUndo();
+
+            var serializedCamera = new SerializedObject(cameraCueDriver);
+            SerializedProperty bossDeathCue = serializedCamera.FindProperty("bossDeathCue");
+            Require(bossDeathCue != null,
+                "Boss camera driver is missing its authored bossDeathCue field.");
+            bossDeathCue.FindPropertyRelative("enabled").boolValue = true;
+            bossDeathCue.FindPropertyRelative("localOffset").vector3Value =
+                new Vector3(0f, 0.08f, 0.18f);
+            bossDeathCue.FindPropertyRelative("planarDirectionOffset").floatValue = 0.08f;
+            bossDeathCue.FindPropertyRelative("fieldOfViewDelta").floatValue = -3.5f;
+            bossDeathCue.FindPropertyRelative("cameraDistanceDelta").floatValue = -0.35f;
+            bossDeathCue.FindPropertyRelative("focusHeightDelta").floatValue = 0.18f;
+            bossDeathCue.FindPropertyRelative("durationSeconds").floatValue = 1.65f;
+            bossDeathCue.FindPropertyRelative("finisherScale").floatValue = 1f;
+            serializedCamera.FindProperty("bossDeathCueReleaseSeconds").floatValue = 0.35f;
+            serializedCamera.FindProperty("bossDeathImpactShakeSeconds").floatValue = 0.14f;
+            serializedCamera.FindProperty("bossDeathImpactPositionAmplitude").floatValue = 0.018f;
+            serializedCamera.FindProperty("bossDeathImpactEulerAmplitude").floatValue = 0.11f;
+            serializedCamera.ApplyModifiedPropertiesWithoutUndo();
+
+            var serializedVisual = new SerializedObject(visualCueDriver);
+            serializedVisual.FindProperty("bossDeathCueId").intValue =
+                (int)CombatVfxCueId.EnemyDeath;
+            serializedVisual.FindProperty("bossDeathCueIntensity").floatValue = 1.15f;
+            serializedVisual.FindProperty("bossDeathAudioIntensity").floatValue = 1f;
+            serializedVisual.FindProperty("bossDeathFlashColor").colorValue = Color.white;
+            serializedVisual.FindProperty("bossDeathFlashSeconds").floatValue = 0.35f;
+            SerializedProperty bossDeathPulseScale =
+                serializedVisual.FindProperty("bossDeathPulseScale");
+            Require(bossDeathPulseScale != null,
+                "Boss visual driver is missing its authored bossDeathPulseScale field.");
+            bossDeathPulseScale.floatValue = 0.42f;
+            serializedVisual.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static InputActionReference LoadInputActionReference(

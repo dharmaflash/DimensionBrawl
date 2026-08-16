@@ -104,6 +104,24 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.35f
         };
 
+        [Header("Boss Terminal Death")]
+        [Tooltip("Full-strength boss-death composition before the bounded result-bridge release.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue bossDeathCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.08f, 0.18f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = -3.5f,
+            cameraDistanceDelta = -0.35f,
+            focusHeightDelta = 0.18f,
+            durationSeconds = 1.65f,
+            finisherScale = 1f
+        };
+        [SerializeField, Min(0.01f)] private float bossDeathCueReleaseSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float bossDeathImpactShakeSeconds = 0.14f;
+        [SerializeField, Min(0f)] private float bossDeathImpactPositionAmplitude = 0.018f;
+        [SerializeField, Min(0f)] private float bossDeathImpactEulerAmplitude = 0.11f;
+
         private bool subscribed;
         private bool pressureActionSubscribed;
         private int windupCueRequestCount;
@@ -115,6 +133,9 @@ namespace DimensionBrawl.Presentation
         private int lastPressureActionTier;
         private string activePatternWindupOverrideId;
         private int activePatternWindupCameraCueVersion = -1;
+        private bool bossDeathCueRequested;
+        private int bossDeathCueRequestCount;
+        private int bossDeathCameraCueVersion = -1;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
@@ -128,6 +149,15 @@ namespace DimensionBrawl.Presentation
         public string ActivePatternWindupOverrideId => activePatternWindupOverrideId;
         public BossPressureActionKind LastPressureActionKind => lastPressureActionKind;
         public int LastPressureActionTier => lastPressureActionTier;
+        public int BossDeathCueRequestCount => bossDeathCueRequestCount;
+        public int BossDeathCameraCueVersion => bossDeathCameraCueVersion;
+        public bool BossDeathCueWasInterrupted => bossDeathCueRequested
+            && cameraController != null
+            && cameraController.CueRequestVersion != bossDeathCameraCueVersion;
+        public bool IsBossDeathCueComplete => bossDeathCueRequested
+            && cameraController != null
+            && cameraController.CueRequestVersion == bossDeathCameraCueVersion
+            && !cameraController.HasActiveCue;
 
         public void Configure(
             BossBarrageEmitter newEmitter,
@@ -152,6 +182,47 @@ namespace DimensionBrawl.Presentation
                 ? (PatternWindupCueOverride[])overrides.Clone()
                 : Array.Empty<PatternWindupCueOverride>();
             ClearActivePatternWindupOverride();
+        }
+
+        /// <summary>
+        /// Requests the authored final-kill composition once. Outcome ownership
+        /// remains with the caller; this driver only adapts it to the camera.
+        /// </summary>
+        public bool TryRequestBossDeathCue(out int requestVersion)
+        {
+            requestVersion = bossDeathCameraCueVersion;
+            if (bossDeathCueRequested)
+            {
+                return true;
+            }
+
+            Vector3 bossDirection = ResolveBossDirection(bossBarrageEmitter);
+            if (!RequestCue(
+                    bossDeathCue,
+                    bossDirection,
+                    1f,
+                    sustainAtFullWeight: true,
+                    sustainedReleaseSeconds: bossDeathCueReleaseSeconds))
+            {
+                return false;
+            }
+
+            if (bossDeathImpactShakeSeconds > 0f
+                && (bossDeathImpactPositionAmplitude > 0f || bossDeathImpactEulerAmplitude > 0f))
+            {
+                cameraController.RequestMicroShake(
+                    bossDeathImpactShakeSeconds,
+                    bossDeathImpactPositionAmplitude,
+                    bossDeathImpactEulerAmplitude,
+                    bossDirection,
+                    22f);
+            }
+
+            bossDeathCueRequested = true;
+            bossDeathCueRequestCount++;
+            bossDeathCameraCueVersion = cameraController.CueRequestVersion;
+            requestVersion = bossDeathCameraCueVersion;
+            return true;
         }
 
         private void Awake()
@@ -231,7 +302,8 @@ namespace DimensionBrawl.Presentation
             ActionCameraCueProfile.CameraCue cue,
             Vector3 planarDirection,
             float scale,
-            bool sustainAtFullWeight = false)
+            bool sustainAtFullWeight = false,
+            float sustainedReleaseSeconds = -1f)
         {
             if (!cue.enabled || cameraController == null)
             {
@@ -249,10 +321,13 @@ namespace DimensionBrawl.Presentation
             float clampedScale = Mathf.Max(0f, scale);
             if (sustainAtFullWeight)
             {
+                float releaseSeconds = sustainedReleaseSeconds > 0f
+                    ? sustainedReleaseSeconds
+                    : patternWindupCueReleaseSeconds;
                 cameraController.RequestSustainedCue(
                     offset * clampedScale,
                     cue.durationSeconds,
-                    patternWindupCueReleaseSeconds,
+                    releaseSeconds,
                     cue.fieldOfViewDelta * clampedScale,
                     cue.cameraDistanceDelta * clampedScale,
                     cue.focusHeightDelta * clampedScale);

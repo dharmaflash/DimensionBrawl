@@ -2604,7 +2604,7 @@ namespace DimensionBrawl.Tests
             InvokePrivate(summonSlot1, "NotifySummonPressureBlocked", 2);
             yield return new WaitForSecondsRealtime(0.06f);
 
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             OlympusStationCombatResultPresenter presenter =
                 RequireSingleSceneComponent<OlympusStationCombatResultPresenter>(station);
             float resultDeadline = Time.realtimeSinceStartup + 4f;
@@ -2678,7 +2678,7 @@ namespace DimensionBrawl.Tests
             Assert.That(collector.GuideState, Is.Not.EqualTo(CombatEntryGuideState.Released));
 
             enemyHealth.SetInvulnerableUntil(0f);
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             Assert.That(encounter.HasTerminalResolution, Is.True);
             Assert.That(
                 StageRunRuntime.TryCommitTerminalResolution(
@@ -2722,7 +2722,7 @@ namespace DimensionBrawl.Tests
                 new Regex("Canonical terminal commit rejected:.*different committed comparison value"));
 
             Time.timeScale = 1f;
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             yield return null;
             yield return null;
 
@@ -2765,7 +2765,7 @@ namespace DimensionBrawl.Tests
                 new Regex("Canonical terminal commit rejected:.*invalid schema or required field"));
 
             Time.timeScale = 1f;
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             yield return null;
             yield return null;
 
@@ -3190,7 +3190,7 @@ namespace DimensionBrawl.Tests
                 throw new InvalidOperationException("injected route final snapshot failure"));
             try
             {
-                Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+                yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             }
             finally
             {
@@ -3235,7 +3235,7 @@ namespace DimensionBrawl.Tests
                 RequireSingleSceneComponent<OlympusStationCombatResultPresenter>(station);
             InvokePrivate(presenter, "UnsubscribeEncounter");
             CombatHealth enemyHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
             Assert.That(encounter.HasTerminalResolution, Is.True);
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.StationActive));
 
@@ -3851,6 +3851,10 @@ namespace DimensionBrawl.Tests
             CombatHealth enemyHealth = ReadPrivateField<CombatHealth>(encounter, "enemyHealth");
             OlympusStationCombatResultPresenter presenter =
                 RequireSingleSceneComponent<OlympusStationCombatResultPresenter>(station);
+            OlympusStationBossTerminalAftermathPresenter aftermath =
+                RequireSingleSceneComponent<OlympusStationBossTerminalAftermathPresenter>(station);
+            OlympusStageClearOverlay overlay =
+                RequireSingleSceneComponent<OlympusStageClearOverlay>(station);
             string decisionPath =
                 StageRunRuntime.GetResultCommitDecisionPathForTests(context.Identity.RunId);
             StageRunRuntime.InjectTransientResultDecisionIoFailuresForTests(
@@ -3858,18 +3862,22 @@ namespace DimensionBrawl.Tests
                 readFailureCount);
 
             Time.timeScale = 1f;
-            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            yield return ApplyCanonicalStationBossLethalDamage(station, enemyHealth);
 
             Assert.That(context.LifecycleState, Is.EqualTo(StageRunLifecycleState.CommitRecoveryPending));
             Assert.That(context.CommittedSummary, Is.Null);
             Assert.That(presenter.CommittedSummary, Is.Null);
+            Assert.That(aftermath.IsStarted, Is.True);
+            Assert.That(aftermath.InputLeaseFullyAcquired, Is.True, aftermath.LastError);
+            Assert.That(aftermath.InputLeaseActive, Is.True);
+            Assert.That(aftermath.IsResultAttached, Is.False);
             Assert.That(SceneManager.GetSceneByName("UI_StageClear").isLoaded, Is.False);
             Assert.That(
                 System.IO.File.Exists(decisionPath),
                 Is.EqualTo(decisionExistsAfterInitialAttempt));
             StageRunRuntime.ClearResultCommitMemoryCacheForTests();
 
-            float deadline = Time.realtimeSinceStartup + 4f;
+            float deadline = Time.realtimeSinceStartup + 8f;
             while (presenter.CommittedSummary == null
                 || context.LifecycleState != StageRunLifecycleState.Presented
                 || !SceneManager.GetSceneByName("UI_StageClear").isLoaded)
@@ -3895,6 +3903,18 @@ namespace DimensionBrawl.Tests
             Assert.That(context.CommitReceipt.SummaryCommittedAtSequence, Is.EqualTo(1));
             Assert.That(System.IO.File.Exists(decisionPath), Is.True);
             Assert.That(context.AbortRecord, Is.Null);
+            Assert.That(aftermath.IsResultAttached, Is.True);
+            Assert.That(aftermath.IsComplete, Is.True);
+            Assert.That(aftermath.CompletedSuccessfully, Is.True, aftermath.LastError);
+            Assert.That(aftermath.InputLeaseActive, Is.False);
+            Assert.That(
+                aftermath.AttachedResultDigest,
+                Is.EqualTo(presenter.CommittedSummary.ResultSummaryDigest));
+            Assert.That(overlay.ResultSummary, Is.SameAs(presenter.CommittedSummary));
+            StageClearScreenPresenter resultSurface =
+                RequireSingleSceneComponent<StageClearScreenPresenter>(
+                    SceneManager.GetSceneByName("UI_StageClear"));
+            Assert.That(resultSurface.ResultSummary, Is.SameAs(presenter.CommittedSummary));
         }
 
         private static void AssertCurrentSchemaClosureRows(StageRunAbortRecord abortRecord)
@@ -3955,6 +3975,62 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.DamageOnly,
                 CombatControlLockPolicy.None));
+        }
+
+        private static IEnumerator ApplyCanonicalStationBossLethalDamage(
+            Scene station,
+            CombatHealth enemyHealth)
+        {
+            OlympusStationAkazaPhase2FlowController phaseFlow =
+                RequireSingleSceneComponent<OlympusStationAkazaPhase2FlowController>(station);
+            Assert.That(
+                phaseFlow.CurrentPhase,
+                Is.EqualTo(OlympusStationAkazaPhase2FlowController.Phase.Phase1));
+            Assert.That(enemyHealth.IsAlive, Is.True);
+
+            float thresholdHealth = enemyHealth.MaxHealth * phaseFlow.PhaseThreshold01;
+            float thresholdDamage = Mathf.Max(
+                0.01f,
+                enemyHealth.CurrentHealth - thresholdHealth + 0.01f);
+            Assert.That(
+                enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    thresholdDamage,
+                    enemyHealth.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.DamageOnly,
+                    CombatControlLockPolicy.None)),
+                Is.True);
+            Assert.That(
+                phaseFlow.CurrentPhase,
+                Is.EqualTo(OlympusStationAkazaPhase2FlowController.Phase.Transitioning));
+            Assert.That(phaseFlow.TransitionStartCount, Is.EqualTo(1));
+            Assert.That(phaseFlow.TransitionCompletionCount, Is.Zero);
+            Assert.That(enemyHealth.IsAlive, Is.True);
+            Assert.That(phaseFlow.TrySkipTransition(), Is.True);
+            float phaseTwoDeadline = Time.realtimeSinceStartup + 5f;
+            while (phaseFlow.CurrentPhase
+                    != OlympusStationAkazaPhase2FlowController.Phase.Phase2
+                || phaseFlow.TransitionCompletionCount != 1)
+            {
+                Assert.Less(
+                    Time.realtimeSinceStartup,
+                    phaseTwoDeadline,
+                    "Timed out waiting for the skipped transition to commit canonical Phase2.");
+                yield return null;
+            }
+
+            Assert.That(
+                phaseFlow.CurrentPhase,
+                Is.EqualTo(OlympusStationAkazaPhase2FlowController.Phase.Phase2));
+            Assert.That(phaseFlow.TransitionStartCount, Is.EqualTo(1));
+            Assert.That(phaseFlow.TransitionCompletionCount, Is.EqualTo(1));
+            Assert.That(phaseFlow.PhaseTwoApplied, Is.True);
+
+            Assert.That(ApplyLethalDamage(enemyHealth, DamageTeam.Player), Is.True);
+            Assert.That(enemyHealth.IsAlive, Is.False);
         }
 
         private static void InvokePrivate(object target, string methodName, params object[] arguments)

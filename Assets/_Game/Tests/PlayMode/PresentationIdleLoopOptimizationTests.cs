@@ -82,6 +82,10 @@ namespace DimensionBrawl.Tests
                 typeof(DimensionBrawl.LevelDesign.OlympusStageClearOverlay).GetMethod("Update", flags),
                 "Stage clear presentation should run only after the canonical flow signals completion.");
             Assert.IsNull(
+                typeof(DimensionBrawl.LevelDesign.OlympusStationBossTerminalAftermathPresenter)
+                    .GetMethod("Update", flags),
+                "Boss-terminal aftermath should tick only while its finite death bridge is active.");
+            Assert.IsNull(
                 typeof(OlympusTutorialOverlayPresenter).GetMethod("Update", flags),
                 "Tutorial overlay animation should run only while a finite transition is active.");
             Assert.IsNull(

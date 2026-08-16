@@ -566,6 +566,10 @@ namespace DimensionBrawl.Tests
                     .All(state => state.motion == holdClip),
                 Is.True,
                 "Hit/death states keep the stable deployed pose for the procedural reaction owner.");
+            Assert.That(
+                authoredStates.Single(state => state.name == "Death").transitions,
+                Is.Empty,
+                "Death must be terminal so the boss cannot return to Hover during the aftermath bridge.");
 
             PlayableAsset timeline = RequireAsset<PlayableAsset>(MasterTimelinePath);
             Assert.That(

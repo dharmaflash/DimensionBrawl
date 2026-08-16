@@ -401,19 +401,21 @@ MonoBehaviour:
     localEulerOffset: {x: 0, y: 0, z: 0}
     localScale: {x: 1.25, y: 1, z: 1.25}
     lifetimeSeconds: 0.82
-    prewarmCount: 0
+    prewarmCount: 1
     parentToAnchor: 0
     alignForwardToDirection: 0
-    audioClips: []
-    audioBaseVolume: 0
-    audioMinimumPitch: 0
-    audioMaximumPitch: 0
-    audioMinimumVolumeMultiplier: 0
-    audioMaximumVolumeMultiplier: 0
-    audioSpatialBlend: 0
-    audioMinDistance: 0
-    audioMaxDistance: 0
-    audioPriority: 0
+    audioClips:
+    - {fileID: 8300000, guid: e1e6a807134c9884bb52e0b71a93d5cd, type: 3}
+    - {fileID: 8300000, guid: 31562cf0256c1e045b3768b6227c8f1e, type: 3}
+    audioBaseVolume: 0.52
+    audioMinimumPitch: 0.96
+    audioMaximumPitch: 1.02
+    audioMinimumVolumeMultiplier: 0.94
+    audioMaximumVolumeMultiplier: 1.04
+    audioSpatialBlend: 0.12
+    audioMinDistance: 8
+    audioMaxDistance: 42
+    audioPriority: 40
   - cueId: 7
     prefab: {fileID: 5420902348688501287, guid: 224c0a8c6be3c4441826de22c6c3d53b, type: 3}
     localPositionOffset: {x: 0, y: 0.1, z: 0}

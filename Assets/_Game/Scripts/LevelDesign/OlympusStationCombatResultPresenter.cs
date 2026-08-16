@@ -10,6 +10,7 @@ namespace DimensionBrawl.LevelDesign
     {
         [SerializeField] private CombatEncounterController encounter;
         [SerializeField] private OlympusStageClearOverlay stageClearOverlay;
+        [SerializeField] private OlympusStationBossTerminalAftermathPresenter bossTerminalAftermath;
         [SerializeField] private MonoBehaviour resultSurfaceBehaviour;
         [SerializeField] private OlympusStationRunFactCollector factCollector;
 
@@ -25,6 +26,7 @@ namespace DimensionBrawl.LevelDesign
         public StageRunResultCommitReceipt CommitReceipt { get; private set; }
         public int CommitRecoveryAttemptCount { get; private set; }
         public string LastCommitError { get; private set; } = string.Empty;
+        public string LastPresentationWarning { get; private set; } = string.Empty;
 
         private void OnEnable()
         {
@@ -48,6 +50,7 @@ namespace DimensionBrawl.LevelDesign
 
         private void OnDisable()
         {
+            CancelAftermathIfOwned("The Station result presenter was disabled before result handoff completed.");
             if (hasStarted
                 && HasCanonicalStageRun
                 && StageRunRuntime.TryAbortFromStationAdapterLoss(
@@ -81,10 +84,14 @@ namespace DimensionBrawl.LevelDesign
             }
 
             UnsubscribeEncounter();
-            if (encounter == null || stageClearOverlay == null || ResultSurface == null)
+            if (encounter == null
+                || stageClearOverlay == null
+                || ResultSurface == null
+                || (useCanonicalTerminal && bossTerminalAftermath == null))
             {
+                CancelAftermathIfOwned("The Station result presenter is missing an authored result dependency.");
                 Debug.LogError(
-                    $"[{nameof(OlympusStationCombatResultPresenter)}] Missing authored encounter, result surface, or stage-clear overlay.",
+                    $"[{nameof(OlympusStationCombatResultPresenter)}] Missing authored encounter, result surface, stage-clear overlay, or canonical aftermath gate.",
                     this);
                 return;
             }
@@ -153,6 +160,9 @@ namespace DimensionBrawl.LevelDesign
                     entryError = factCollector != null
                         ? factCollector.LastFactError
                         : "Station run fact collector is missing.";
+                    CancelAftermathIfOwned(
+                        "The Station run fact collector could not bind to the canonical run: "
+                        + entryError);
                 }
             }
 
@@ -161,22 +171,63 @@ namespace DimensionBrawl.LevelDesign
 
         private void HandleEncounterWon()
         {
-            ResultSurface?.DismissForStageClear();
-            stageClearOverlay.Show();
+            try
+            {
+                ResultSurface?.DismissForStageClear();
+                string error = stageClearOverlay != null
+                    ? string.Empty
+                    : "The legacy Station stage-clear overlay is missing.";
+                bool shown = stageClearOverlay != null
+                    && stageClearOverlay.TryShow(null, out error);
+                if (!shown)
+                {
+                    CancelAftermathIfOwned(
+                        "The legacy Station result overlay rejected clear presentation: " + error);
+                }
+            }
+            catch (System.Exception exception)
+            {
+                CancelAftermathNoThrow(
+                    "The legacy Station result presentation threw safely: " + exception.Message,
+                    exception);
+            }
         }
 
         private void HandleEncounterFailed()
         {
-            ResultSurface?.ShowFailure();
+            try
+            {
+                ResultSurface?.ShowFailure();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
         }
 
         private void HandleCanonicalTerminalResolved(EncounterTerminalResolution resolution)
+        {
+            try
+            {
+                HandleCanonicalTerminalResolvedCore(resolution);
+            }
+            catch (System.Exception exception)
+            {
+                CancelAftermathNoThrow(
+                    "The canonical terminal result callback threw safely: " + exception.Message,
+                    exception);
+            }
+        }
+
+        private void HandleCanonicalTerminalResolvedCore(EncounterTerminalResolution resolution)
         {
             if (factCollector == null || !factCollector.PrepareForTerminal())
             {
                 LastCommitError = factCollector != null
                     ? factCollector.LastFactError
                     : "Station run fact collector is missing.";
+                CancelAftermathIfOwned(
+                    "Canonical terminal fact preparation failed: " + LastCommitError);
                 Debug.LogError(
                     $"[{nameof(OlympusStationCombatResultPresenter)}] Canonical terminal fact seal preparation rejected: {LastCommitError}",
                     this);
@@ -200,6 +251,7 @@ namespace DimensionBrawl.LevelDesign
                     return;
                 }
 
+                CancelAftermathIfOwned("Canonical terminal result commit failed: " + error);
                 Debug.LogError(
                     $"[{nameof(OlympusStationCombatResultPresenter)}] Canonical terminal commit rejected: {error}",
                     this);
@@ -211,7 +263,25 @@ namespace DimensionBrawl.LevelDesign
 
         private void HandleCanonicalDiagnosticAborted(EncounterTerminalDiagnostic diagnostic)
         {
+            try
+            {
+                HandleCanonicalDiagnosticAbortedCore(diagnostic);
+            }
+            catch (System.Exception exception)
+            {
+                CancelAftermathNoThrow(
+                    "The canonical terminal diagnostic callback threw safely: "
+                    + exception.Message,
+                    exception);
+            }
+        }
+
+        private void HandleCanonicalDiagnosticAbortedCore(EncounterTerminalDiagnostic diagnostic)
+        {
             LastCommitError = diagnostic.Message;
+            CancelAftermathIfOwned(
+                "The canonical terminal coordinator aborted before result handoff: "
+                + diagnostic.Message);
             if (!StageRunRuntime.TryAbortFromCoordinatorDiagnostic(
                     encounter,
                     diagnostic,
@@ -235,10 +305,28 @@ namespace DimensionBrawl.LevelDesign
             {
                 CommitRecoveryAttemptCount++;
                 yield return new WaitForSecondsRealtime(0.1f * (attempt + 1));
-                if (StageRunRuntime.TryRecoverPendingResultCommit(
-                    out StageRunResultSummary summary,
-                    out StageRunResultCommitReceipt receipt,
-                    out string error))
+                StageRunResultSummary summary;
+                StageRunResultCommitReceipt receipt;
+                string error;
+                bool recovered;
+                try
+                {
+                    recovered = StageRunRuntime.TryRecoverPendingResultCommit(
+                        out summary,
+                        out receipt,
+                        out error);
+                }
+                catch (System.Exception exception)
+                {
+                    LastCommitError =
+                        "Durable result commit recovery threw safely: " + exception.Message;
+                    CancelAftermathIfOwned(LastCommitError);
+                    commitRecoveryRoutine = null;
+                    Debug.LogException(exception, this);
+                    yield break;
+                }
+
+                if (recovered)
                 {
                     commitRecoveryRoutine = null;
                     PublishCommittedResult(summary, receipt);
@@ -256,6 +344,8 @@ namespace DimensionBrawl.LevelDesign
             Debug.LogError(
                 $"[{nameof(OlympusStationCombatResultPresenter)}] Durable result commit remains unavailable: {LastCommitError}",
                 this);
+            CancelAftermathIfOwned(
+                "Durable result commit recovery was exhausted: " + LastCommitError);
             commitRecoveryRoutine = null;
         }
 
@@ -263,11 +353,90 @@ namespace DimensionBrawl.LevelDesign
             StageRunResultSummary summary,
             StageRunResultCommitReceipt receipt)
         {
+            try
+            {
+                PublishCommittedResultCore(summary, receipt);
+            }
+            catch (System.Exception exception)
+            {
+                CancelAftermathNoThrow(
+                    "The durable canonical result presentation threw safely: " + exception.Message,
+                    exception);
+            }
+        }
+
+        private void PublishCommittedResultCore(
+            StageRunResultSummary summary,
+            StageRunResultCommitReceipt receipt)
+        {
+            // Seal durable truth before invoking presentation collaborators. A
+            // later UI fault must never make a successful commit look absent.
             LastCommitError = string.Empty;
+            LastPresentationWarning = string.Empty;
             CommittedSummary = summary;
             CommitReceipt = receipt;
-            ResultSurface?.DismissForStageClear();
-            stageClearOverlay.Show(summary);
+
+            try
+            {
+                ResultSurface?.DismissForStageClear();
+            }
+            catch (System.Exception exception)
+            {
+                LastPresentationWarning =
+                    "The combat result surface could not dismiss, but the durable result remains committed: "
+                    + exception.Message;
+                Debug.LogException(exception, this);
+            }
+
+            string presentationError = stageClearOverlay != null
+                ? string.Empty
+                : "The canonical Station stage-clear overlay is missing.";
+            bool shown = stageClearOverlay != null
+                && bossTerminalAftermath != null
+                && stageClearOverlay.TryShow(summary, out presentationError);
+            if (shown)
+            {
+                return;
+            }
+
+            LastCommitError =
+                "The committed result could not attach to the authored result overlay: "
+                + presentationError;
+            CancelAftermathIfOwned(LastCommitError);
+            Debug.LogError(
+                $"[{nameof(OlympusStationCombatResultPresenter)}] {LastCommitError}",
+                this);
+        }
+
+        private void CancelAftermathIfOwned(string reason)
+        {
+            if (bossTerminalAftermath != null
+                && bossTerminalAftermath.IsStarted
+                && (bossTerminalAftermath.IsRunning || bossTerminalAftermath.InputLeaseActive))
+            {
+                bossTerminalAftermath.CancelAndRelease(reason);
+            }
+        }
+
+        private void CancelAftermathNoThrow(string reason, System.Exception exception)
+        {
+            try
+            {
+                LastCommitError = reason;
+                CancelAftermathIfOwned(reason);
+                Debug.LogException(exception, this);
+            }
+            catch (System.Exception cleanupException)
+            {
+                try
+                {
+                    Debug.LogException(cleanupException, this);
+                }
+                catch
+                {
+                    // Never escape into CombatEncounterController terminal mutation.
+                }
+            }
         }
     }
 }

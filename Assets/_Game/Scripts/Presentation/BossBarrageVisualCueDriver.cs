@@ -164,6 +164,14 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color damageFlashEmissionColor = new Color(1f, 0.48f, 0.24f, 1f);
         [SerializeField, Min(0.01f)] private float damageFlashSeconds = 0.14f;
 
+        [Header("Boss Terminal Death")]
+        [SerializeField] private CombatVfxCueId bossDeathCueId = CombatVfxCueId.EnemyDeath;
+        [SerializeField, Min(0f)] private float bossDeathCueIntensity = 1.15f;
+        [SerializeField, Min(0f)] private float bossDeathAudioIntensity = 1f;
+        [SerializeField] private Color bossDeathFlashColor = Color.white;
+        [SerializeField, Min(0.01f)] private float bossDeathFlashSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float bossDeathPulseScale = 0.42f;
+
         [Header("Pattern Cues")]
         [SerializeField] private PatternAnimationCue[] patternCues = Array.Empty<PatternAnimationCue>();
 
@@ -200,6 +208,11 @@ namespace DimensionBrawl.Presentation
         private float lastFollowupHitReactionDamage;
         private string lastFollowupHitReactionRequestedTrigger = string.Empty;
         private string lastFollowupHitReactionResolvedTrigger = string.Empty;
+        private bool bossDeathCueRequested;
+        private int bossDeathWorldVfxCueRequestCount;
+        private int bossDeathProfileAudioSourceDelta;
+        private Transform lastBossDeathCueAnchor;
+        private Vector3 lastBossDeathCueWorldPosition;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
@@ -237,6 +250,11 @@ namespace DimensionBrawl.Presentation
         public float LastFollowupHitReactionDamage => lastFollowupHitReactionDamage;
         public string LastFollowupHitReactionRequestedTrigger => lastFollowupHitReactionRequestedTrigger;
         public string LastFollowupHitReactionResolvedTrigger => lastFollowupHitReactionResolvedTrigger;
+        public CombatVfxCueId BossDeathCueId => bossDeathCueId;
+        public int BossDeathWorldVfxCueRequestCount => bossDeathWorldVfxCueRequestCount;
+        public int BossDeathProfileAudioSourceDelta => bossDeathProfileAudioSourceDelta;
+        public Transform LastBossDeathCueAnchor => lastBossDeathCueAnchor;
+        public Vector3 LastBossDeathCueWorldPosition => lastBossDeathCueWorldPosition;
 
         public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
         {
@@ -306,6 +324,48 @@ namespace DimensionBrawl.Presentation
             pressureActionCues = newPressureActionCues != null
                 ? (PressureActionCue[])newPressureActionCues.Clone()
                 : Array.Empty<PressureActionCue>();
+        }
+
+        /// <summary>
+        /// Plays the authored boss-death flash plus shared EnemyDeath VFX/audio
+        /// once. The terminal outcome remains owned by the caller.
+        /// </summary>
+        public bool TryPlayBossDeathCue()
+        {
+            if (bossDeathCueRequested)
+            {
+                return true;
+            }
+
+            if (cuePlayer == null)
+            {
+                return false;
+            }
+
+            StartCue(bossDeathFlashColor, bossDeathFlashSeconds, bossDeathPulseScale);
+            damageFlashTimer = Mathf.Max(damageFlashTimer, bossDeathFlashSeconds);
+            ApplyDamageFlash(bossDeathFlashColor, bossDeathFlashColor * 1.4f);
+
+            int audioBefore = cuePlayer.ActiveProfileAudioSourceCount;
+            Transform bossBodyAnchor = pulseRoot != null ? pulseRoot : transform;
+            if (!PlayWorldVfx(
+                    bossDeathCueId,
+                    1,
+                    bossDeathCueIntensity,
+                    bossDeathAudioIntensity,
+                    bossBodyAnchor))
+            {
+                return false;
+            }
+
+            bossDeathCueRequested = true;
+            bossDeathWorldVfxCueRequestCount++;
+            lastBossDeathCueAnchor = bossBodyAnchor;
+            lastBossDeathCueWorldPosition = bossBodyAnchor.position;
+            bossDeathProfileAudioSourceDelta = Mathf.Max(
+                0,
+                cuePlayer.ActiveProfileAudioSourceCount - audioBefore);
+            return bossDeathProfileAudioSourceDelta > 0;
         }
 
         public void RequestFollowupHitReaction(int tier, float damage)
@@ -1061,16 +1121,28 @@ namespace DimensionBrawl.Presentation
             return cue.UseWorldVfxCueOverride ? cue.ReleaseWorldCueId : releaseCueId;
         }
 
-        private bool PlayWorldVfx(CombatVfxCueId cueId, int tier, float baseIntensity)
+        private bool PlayWorldVfx(
+            CombatVfxCueId cueId,
+            int tier,
+            float baseIntensity,
+            float audioIntensity = -1f,
+            Transform anchorOverride = null)
         {
             if (cuePlayer == null)
             {
                 return false;
             }
 
-            Transform anchor = VfxAnchor != null ? VfxAnchor : transform;
+            Transform anchor = anchorOverride != null
+                ? anchorOverride
+                : VfxAnchor != null ? VfxAnchor : transform;
             float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
-            return cuePlayer.PlayCue(cueId, anchor, ResolveWorldVfxDirection(anchor), Mathf.Max(0f, intensity));
+            return cuePlayer.PlayCue(
+                cueId,
+                anchor,
+                ResolveWorldVfxDirection(anchor),
+                Mathf.Max(0f, intensity),
+                audioIntensity);
         }
 
         private Vector3 ResolveWorldVfxDirection(Transform anchor)

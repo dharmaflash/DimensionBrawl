@@ -5,6 +5,8 @@ using System.IO;
 using System.Reflection;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
 using DimensionBrawl.UI;
 using DimensionBrawl.UI.StageClear;
 using NUnit.Framework;
@@ -2984,10 +2986,51 @@ namespace DimensionBrawl.Tests
             CollectionAssert.AreEqual(durableDecisionBytes, File.ReadAllBytes(decisionPath));
         }
 
+        [UnityTest]
+        public IEnumerator CanonicalStationBossAftermathRestoresScaleWithoutCancellingSuccess()
+        {
+            PlayerMovementController movement = null;
+            yield return LoadCanonicalStationTerminalAndWaitForResultSurface(
+                StageRouteOutcome.Clear,
+                beforeTerminal: stationScene =>
+                {
+                    movement = RequireSingleSceneComponent<PlayerMovementController>(stationScene);
+                    movement.SetCinematicMoveInputLocked(
+                        PlayerInputLockSource.EditorVerification,
+                        true);
+                });
+
+            Scene stationScene = SceneManager.GetActiveScene();
+            OlympusStationBossTerminalAftermathPresenter aftermath =
+                RequireSingleSceneComponent<OlympusStationBossTerminalAftermathPresenter>(stationScene);
+            OlympusStageClearOverlay overlay =
+                RequireSingleSceneComponent<OlympusStageClearOverlay>(stationScene);
+            Assert.That(Time.timeScale, Is.Zero);
+            Assert.That(aftermath.CompletedSuccessfully, Is.True, aftermath.LastError);
+            Assert.That(
+                movement.CinematicMoveInputLockSources.HasFlag(
+                    PlayerInputLockSource.EditorVerification),
+                Is.True,
+                "Releasing the aftermath bit must preserve a foreign input owner.");
+            Assert.That(
+                movement.CinematicMoveInputLockSources.HasFlag(
+                    PlayerInputLockSource.BossTerminalAftermath),
+                Is.False);
+
+            overlay.enabled = false;
+            yield return null;
+
+            Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(aftermath.CompletedSuccessfully, Is.True, aftermath.LastError);
+            Assert.That(aftermath.IsCancelled, Is.False);
+            movement.SetCinematicMoveInputLocked(PlayerInputLockSource.EditorVerification, false);
+        }
+
         private static IEnumerator LoadCanonicalStationTerminalAndWaitForResultSurface(
             StageRouteOutcome outcome,
             Action<StageRunContext> afterAdmission = null,
-            Action<StageClearScreenPresenter> afterResultConfigured = null)
+            Action<StageClearScreenPresenter> afterResultConfigured = null,
+            Action<Scene> beforeTerminal = null)
         {
             Time.timeScale = 1f;
             StageRunRuntime.ResetForTests();
@@ -3043,8 +3086,13 @@ namespace DimensionBrawl.Tests
             yield return ReleaseStationEntryGuide(stationScene);
             yield return new WaitForSecondsRealtime(0.05f);
             Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+            beforeTerminal?.Invoke(stationScene);
 
             CombatEncounterController encounter = RequireSingleSceneComponent<CombatEncounterController>(stationScene);
+            OlympusStationBossTerminalAftermathPresenter aftermath =
+                RequireSingleSceneComponent<OlympusStationBossTerminalAftermathPresenter>(stationScene);
+            OlympusStageClearOverlay stageClearOverlay =
+                RequireSingleSceneComponent<OlympusStageClearOverlay>(stationScene);
             CombatHealth terminalHealth = outcome == StageRouteOutcome.Clear
                 ? ReadPrivateField<CombatHealth>(encounter, "enemyHealth")
                 : ReadPrivateField<CombatHealth>(encounter, "playerHealth");
@@ -3067,17 +3115,223 @@ namespace DimensionBrawl.Tests
                 $"Station encounter was not running before victory injection. "
                 + $"Won={encounter.IsWon}, Failed={encounter.IsFailed}, Faulted={encounter.IsFaulted}, "
                 + $"Diagnostic={encounter.Diagnostic.Reason}: {encounter.Diagnostic.Message}");
-            Assert.That(
-                terminalHealth.TryApplyDamage(new DamageInfo(
-                    null,
-                    sourceTeam,
-                    terminalHealth.MaxHealth + 1f,
-                    terminalHealth.transform.position,
-                    Vector3.forward,
-                    0f,
-                    DamageResponsePolicy.DamageOnly,
-                    CombatControlLockPolicy.None)),
-                Is.True);
+            int bossDiedCount = 0;
+            if (outcome == StageRouteOutcome.Clear)
+            {
+                OlympusStationAkazaPhase2FlowController phaseFlow =
+                    RequireSingleSceneComponent<OlympusStationAkazaPhase2FlowController>(stationScene);
+                BossBarrageCameraCueDriver deathCamera =
+                    RequireSingleSceneComponent<BossBarrageCameraCueDriver>(stationScene);
+                ActionCameraCueDriver actionCameraCues =
+                    RequireSingleSceneComponent<ActionCameraCueDriver>(stationScene);
+                ActionCinematicCueDirector actionCinematic =
+                    RequireSingleSceneComponent<ActionCinematicCueDirector>(stationScene);
+                BossBarrageVisualCueDriver deathVisual =
+                    RequireSingleSceneComponent<BossBarrageVisualCueDriver>(stationScene);
+                AkazaPhase2CombatMotionDriver deathMotion =
+                    RequireSingleSceneComponent<AkazaPhase2CombatMotionDriver>(stationScene);
+                float thresholdHealth = terminalHealth.MaxHealth * phaseFlow.PhaseThreshold01;
+                float transitionDamage = Mathf.Max(
+                    0.01f,
+                    terminalHealth.CurrentHealth - thresholdHealth + 0.01f);
+                Assert.That(
+                    terminalHealth.TryApplyDamage(new DamageInfo(
+                        null,
+                        sourceTeam,
+                        transitionDamage,
+                        terminalHealth.transform.position,
+                        Vector3.forward,
+                        0f,
+                        DamageResponsePolicy.DamageOnly,
+                        CombatControlLockPolicy.None)),
+                    Is.True);
+                Assert.That(
+                    phaseFlow.CurrentPhase,
+                    Is.EqualTo(OlympusStationAkazaPhase2FlowController.Phase.Transitioning));
+                Assert.That(phaseFlow.TransitionStartCount, Is.EqualTo(1));
+                Assert.That(phaseFlow.TransitionCompletionCount, Is.Zero);
+                Assert.That(terminalHealth.IsAlive, Is.True);
+                Assert.That(phaseFlow.TrySkipTransition(), Is.True);
+                float phaseTwoDeadline = Time.realtimeSinceStartup + 5f;
+                while (phaseFlow.CurrentPhase
+                        != OlympusStationAkazaPhase2FlowController.Phase.Phase2
+                    || phaseFlow.TransitionCompletionCount != 1)
+                {
+                    Assert.Less(
+                        Time.realtimeSinceStartup,
+                        phaseTwoDeadline,
+                        "Timed out waiting for the skipped transition to commit canonical Phase2.");
+                    yield return null;
+                }
+
+                Assert.That(
+                    phaseFlow.CurrentPhase,
+                    Is.EqualTo(OlympusStationAkazaPhase2FlowController.Phase.Phase2));
+                Assert.That(phaseFlow.TransitionStartCount, Is.EqualTo(1));
+                Assert.That(phaseFlow.TransitionCompletionCount, Is.EqualTo(1));
+                Assert.That(phaseFlow.PhaseTwoApplied, Is.True);
+                Assert.That(aftermath.ActionCinematicCueDirector, Is.SameAs(actionCinematic));
+                Assert.That(actionCinematic.IsPlaying, Is.True);
+                Assert.That(
+                    actionCinematic.LastPlayedKind,
+                    Is.EqualTo(ActionCinematicCueProfile.CueKind.SummonEmpower));
+                Assert.That(actionCinematic.LastPlayedCueId, Is.EqualTo("summon_empower_transfer_micro"));
+                Assert.That(actionCinematic.TotalPlayCount, Is.GreaterThan(0));
+                Assert.That(actionCameraCues.SummonBlockOpportunityCueRequestCount, Is.GreaterThan(0));
+                int cinematicPlayCountBeforeDeath = actionCinematic.TotalPlayCount;
+
+                terminalHealth.Died += () => bossDiedCount++;
+                // Exercise the real lethal-hit-stop handoff invariant: Died may
+                // observe the existing bounded 0.18 scale, then scale must settle
+                // to one while the gate continues on its unscaled clock.
+                Time.timeScale = 0.18f;
+                Assert.That(
+                    terminalHealth.TryApplyDamage(new DamageInfo(
+                        null,
+                        sourceTeam,
+                        terminalHealth.CurrentHealth + 1f,
+                        terminalHealth.transform.position,
+                        Vector3.forward,
+                        0f,
+                        DamageResponsePolicy.DamageOnly,
+                        CombatControlLockPolicy.None)),
+                    Is.True);
+                Assert.That(Time.timeScale, Is.EqualTo(0.18f).Within(0.0001f));
+                Assert.That(bossDiedCount, Is.EqualTo(1));
+                Assert.That(aftermath.IsStarted, Is.True);
+                Assert.That(aftermath.BeginCount, Is.EqualTo(1));
+                Assert.That(aftermath.InputLeaseFullyAcquired, Is.True, aftermath.LastError);
+                Assert.That(aftermath.InputLeaseActive, Is.True);
+                Assert.That(aftermath.CinematicTakeoverSucceeded, Is.True, aftermath.LastQualityWarning);
+                Assert.That(aftermath.CinematicStopRequestSucceeded, Is.True, aftermath.LastQualityWarning);
+                Assert.That(
+                    aftermath.CinematicOwnedStateCleanupSucceeded,
+                    Is.True,
+                    aftermath.LastQualityWarning);
+                Assert.That(actionCinematic.TerminalPlaybackSuppressed, Is.True);
+                Assert.That(actionCinematic.TerminalCameraStreamSecured, Is.True);
+                Assert.That(actionCinematic.BossTerminalCancellationCount, Is.EqualTo(1));
+                Assert.That(actionCinematic.LastBossTerminalCancellationStoppedActiveCue, Is.True);
+                Assert.That(actionCinematic.IsPlaying, Is.False);
+                Assert.That(actionCinematic.HasOwnedTimeScaleLease, Is.False);
+                Assert.That(
+                    phaseFlow.PlayerMovement.CinematicMoveInputLockSources.HasFlag(
+                        PlayerInputLockSource.CinematicCue),
+                    Is.False,
+                    "Terminal takeover must release only the stale SummonEmpower CinematicCue bit.");
+                Assert.That(
+                    phaseFlow.PlayerMovement.CinematicMoveInputLockSources.HasFlag(
+                        PlayerInputLockSource.BossTerminalAftermath),
+                    Is.True);
+                Assert.That(
+                    actionCinematic.TryPlay(ActionCinematicCueProfile.CueKind.PocketClear, 3),
+                    Is.False,
+                    "Late encounter presentation callbacks must not re-enter the camera stream after boss Died.");
+                Assert.That(actionCinematic.TotalPlayCount, Is.EqualTo(cinematicPlayCountBeforeDeath));
+                Assert.That(aftermath.IsResultAttached, Is.True);
+                Assert.That(
+                    aftermath.StartedRealtimeSinceStartup,
+                    Is.LessThanOrEqualTo(aftermath.ResultAttachedRealtimeSinceStartup));
+                Assert.That(resultPresenter.CommittedSummary, Is.Not.Null);
+                Assert.That(aftermath.IsRunning, Is.True);
+                Assert.That(stageClearOverlay.IsShown, Is.True);
+                Assert.That(stageClearOverlay.IsWorldFrozenForResult, Is.False);
+                Assert.That(aftermath.CameraCueSucceeded, Is.True, aftermath.LastQualityWarning);
+                Assert.That(deathCamera.BossDeathCueRequestCount, Is.EqualTo(1));
+                Assert.That(deathCamera.BossDeathCameraCueVersion, Is.GreaterThanOrEqualTo(0));
+                Assert.That(deathCamera.BossDeathCueWasInterrupted, Is.False);
+                int bossDeathCameraVersion = deathCamera.BossDeathCameraCueVersion;
+                Assert.That(aftermath.VisualAudioCueSucceeded, Is.True, aftermath.LastQualityWarning);
+                Assert.That(deathVisual.BossDeathCueId, Is.EqualTo(CombatVfxCueId.EnemyDeath));
+                Assert.That(deathVisual.BossDeathWorldVfxCueRequestCount, Is.EqualTo(1));
+                Assert.That(deathVisual.BossDeathProfileAudioSourceDelta, Is.GreaterThan(0));
+                Assert.That(deathVisual.LastBossDeathCueAnchor, Is.SameAs(deathVisual.PulseRoot));
+                Assert.That(
+                    Vector3.Distance(
+                        deathVisual.LastBossDeathCueWorldPosition,
+                        deathVisual.PulseRoot.position),
+                    Is.LessThan(0.001f),
+                    "Boss death VFX/audio must originate from the current Phase2 body anchor.");
+                Assert.That(deathMotion.DeathRequestCount, Is.EqualTo(1));
+                Assert.That(phaseFlow.PlayerMovement.IsCinematicMoveInputLocked, Is.True);
+                Assert.That(phaseFlow.PlayerActionController.IsCinematicInputLocked, Is.True);
+                Assert.That(phaseFlow.PlayerRangedBasicAttackAction.IsCinematicInputLocked, Is.True);
+                Assert.That(
+                    phaseFlow.PlayerMovement.GetComponent<PlayerSkill1Action>().IsCinematicInputLocked,
+                    Is.True);
+                Assert.That(
+                    phaseFlow.PlayerMovement.GetComponent<PlayerSummonSlot1Action>().IsCinematicInputLocked,
+                    Is.True);
+                PlayerSupportSummonSlotAction[] supportOwners =
+                    phaseFlow.PlayerMovement.GetComponents<PlayerSupportSummonSlotAction>();
+                Assert.That(supportOwners.Length, Is.EqualTo(2));
+                Assert.That(supportOwners[0].IsCinematicInputLocked, Is.True);
+                Assert.That(supportOwners[1].IsCinematicInputLocked, Is.True);
+                Assert.That(
+                    phaseFlow.PlayerMovement.GetComponent<PlayerCombatModeController>()
+                        .IsCinematicInputLocked,
+                    Is.True);
+                Assert.That(
+                    SceneManager.GetSceneByName(StageClearSceneName).isLoaded,
+                    Is.False,
+                    "The result UI must not publish before the death-anchored bridge completes.");
+
+                yield return new WaitForSecondsRealtime(0.08f);
+                Time.timeScale = 1f;
+                bool deathStateHeldPastOnePointOneSeconds = false;
+                bool deathCameraVersionHeldPastPointSevenSeconds = false;
+                while (aftermath.ElapsedUnscaledSeconds
+                    < aftermath.AftermathDurationSeconds - 0.05f)
+                {
+                    Assert.That(stageClearOverlay.IsWorldFrozenForResult, Is.False);
+                    Assert.That(Time.timeScale, Is.EqualTo(1f).Within(0.0001f));
+                    Assert.That(
+                        deathCamera.CameraController.CueRequestVersion,
+                        Is.EqualTo(bossDeathCameraVersion),
+                        "No action or cinematic camera request may replace the death-anchored cue during the bridge.");
+                    Assert.That(
+                        SceneManager.GetSceneByName(StageClearSceneName).isLoaded,
+                        Is.False,
+                        "The result UI must remain absent throughout the authored 2.6s bridge.");
+                    if (!deathStateHeldPastOnePointOneSeconds
+                        && aftermath.ElapsedUnscaledSeconds >= 1.1f)
+                    {
+                        Assert.That(
+                            deathVisual.Animator.GetCurrentAnimatorStateInfo(0).IsName("Death"),
+                            Is.True,
+                            "The terminal Death state must not transition back to Hover.");
+                        deathStateHeldPastOnePointOneSeconds = true;
+                    }
+                    if (!deathCameraVersionHeldPastPointSevenSeconds
+                        && aftermath.ElapsedUnscaledSeconds >= 0.7f)
+                    {
+                        deathCameraVersionHeldPastPointSevenSeconds = true;
+                    }
+
+                    yield return null;
+                }
+
+                Assert.That(aftermath.ScaleOneObserved, Is.True);
+                Assert.That(aftermath.ScaleOneViolationRecorded, Is.False, aftermath.LastError);
+                Assert.That(deathStateHeldPastOnePointOneSeconds, Is.True);
+                Assert.That(deathCameraVersionHeldPastPointSevenSeconds, Is.True);
+            }
+            else
+            {
+                Assert.That(
+                    terminalHealth.TryApplyDamage(new DamageInfo(
+                        null,
+                        sourceTeam,
+                        terminalHealth.MaxHealth + 1f,
+                        terminalHealth.transform.position,
+                        Vector3.forward,
+                        0f,
+                        DamageResponsePolicy.DamageOnly,
+                        CombatControlLockPolicy.None)),
+                    Is.True);
+                Assert.That(aftermath.IsStarted, Is.False);
+                Assert.That(aftermath.BeginCount, Is.Zero);
+            }
             Assert.That(encounter.IsWon, Is.EqualTo(outcome == StageRouteOutcome.Clear));
             Assert.That(encounter.IsFailed, Is.EqualTo(outcome == StageRouteOutcome.Fail));
 
@@ -3127,6 +3381,46 @@ namespace DimensionBrawl.Tests
             Assert.That(resultPresenter.CommittedSummary, Is.Not.Null);
             Assert.That(resultPresenter.CommittedSummary.Outcome, Is.EqualTo(outcome));
             StageRunResultSummary factSummary = resultPresenter.CommittedSummary;
+            if (outcome == StageRouteOutcome.Clear)
+            {
+                Assert.That(stageClearOverlay.ResultSummary, Is.SameAs(factSummary));
+                Assert.That(presenter.ResultSummary, Is.SameAs(factSummary));
+                Assert.That(aftermath.IsComplete, Is.True);
+                Assert.That(aftermath.CompletedSuccessfully, Is.True, aftermath.LastError);
+                Assert.That(aftermath.CompleteCount, Is.EqualTo(1));
+                Assert.That(aftermath.InputLeaseActive, Is.False);
+                BossBarrageCameraCueDriver deathCamera =
+                    RequireSingleSceneComponent<BossBarrageCameraCueDriver>(stationScene);
+                ActionCameraCueDriver actionCameraCues =
+                    RequireSingleSceneComponent<ActionCameraCueDriver>(stationScene);
+                ActionCinematicCueDirector actionCinematic =
+                    RequireSingleSceneComponent<ActionCinematicCueDirector>(stationScene);
+                Assert.That(
+                    deathCamera.BossDeathCueWasInterrupted,
+                    Is.False,
+                    $"deathVersion={deathCamera.BossDeathCameraCueVersion}, "
+                    + $"currentVersion={deathCamera.CameraController.CueRequestVersion}, "
+                    + $"pocketClear={actionCameraCues.PocketClearCueRequestCount}, "
+                    + $"pocketFail={actionCameraCues.PocketFailCueRequestCount}, "
+                    + $"counterWave={actionCameraCues.CounterWaveCueRequestCount}, "
+                    + $"counterStabilized={actionCameraCues.CounterWaveStabilizedCueRequestCount}, "
+                    + $"cinematicPlaying={actionCinematic.IsPlaying}, "
+                    + $"cinematicSuppressed={actionCinematic.TerminalPlaybackSuppressed}, "
+                    + $"lastCinematic={actionCinematic.LastPlayedKind}/{actionCinematic.LastPlayedCueId}, "
+                    + $"cinematicPlayCount={actionCinematic.TotalPlayCount}, "
+                    + $"summonBlockOpportunity={actionCameraCues.SummonBlockOpportunityCueRequestCount}.");
+                Assert.That(deathCamera.IsBossDeathCueComplete, Is.True);
+                Assert.That(
+                    aftermath.AttachedResultDigest,
+                    Is.EqualTo(factSummary.ResultSummaryDigest));
+                Assert.That(
+                    stageClearOverlay.PresentedResultDigest,
+                    Is.EqualTo(factSummary.ResultSummaryDigest));
+                Assert.That(
+                    aftermath.CompletedRealtimeSinceStartup
+                        - aftermath.StartedRealtimeSinceStartup,
+                    Is.GreaterThanOrEqualTo(2.55f));
+            }
             Assert.That(factSummary.OutcomeFact, Is.Not.Null);
             Assert.That(
                 factSummary.OutcomeFact.OutcomeDisposition,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using DimensionBrawl.Player;
 using UnityEngine;
@@ -38,6 +39,12 @@ namespace DimensionBrawl.Presentation
         private float storedTimeScale = 1f;
         private bool movementLockActive;
         private bool inputLockActive;
+        private bool terminalPlaybackSuppressed;
+        private bool terminalCameraStreamSecured;
+        private bool lastBossTerminalOwnedStateCleanupSucceeded = true;
+        private bool lastBossTerminalStopRequestSucceeded = true;
+        private int bossTerminalCancellationCount;
+        private bool lastBossTerminalCancellationStoppedActiveCue;
         private int totalPlayCount;
         private int totalSignalCount;
         private int animatorTriggerRequestCount;
@@ -66,6 +73,16 @@ namespace DimensionBrawl.Presentation
         public bool HasActiveMovementLock => movementLockActive;
         public bool HasActiveInputLock => inputLockActive;
         public bool IsPlaying => activeRoutine != null;
+        public bool TerminalPlaybackSuppressed => terminalPlaybackSuppressed;
+        public bool TerminalCameraStreamSecured => terminalCameraStreamSecured;
+        public bool LastBossTerminalOwnedStateCleanupSucceeded =>
+            lastBossTerminalOwnedStateCleanupSucceeded;
+        public bool LastBossTerminalStopRequestSucceeded =>
+            lastBossTerminalStopRequestSucceeded;
+        public int BossTerminalCancellationCount => bossTerminalCancellationCount;
+        public bool LastBossTerminalCancellationStoppedActiveCue =>
+            lastBossTerminalCancellationStoppedActiveCue;
+        public bool HasOwnedTimeScaleLease => hasStoredTimeScale;
         public int TotalPlayCount => totalPlayCount;
         public int TotalSignalCount => totalSignalCount;
         public int AnimatorTriggerRequestCount => animatorTriggerRequestCount;
@@ -137,7 +154,8 @@ namespace DimensionBrawl.Presentation
 
         public bool TryPlay(ActionCinematicCueProfile.CueKind kind, int tier, Vector3 planarDirection)
         {
-            if (!allowCuePlayback
+            if (terminalPlaybackSuppressed
+                || !allowCuePlayback
                 || !isActiveAndEnabled
                 || cueProfile == null
                 || cameraController == null
@@ -172,6 +190,85 @@ namespace DimensionBrawl.Presentation
             return true;
         }
 
+        /// <summary>
+        /// Gives the canonical boss-terminal presentation exclusive ownership of
+        /// the action-camera cue stream. This stops an in-flight multi-shot cue,
+        /// suppresses late encounter callbacks, and releases only state owned by
+        /// <see cref="PlayerInputLockSource.CinematicCue"/>. It deliberately does
+        /// not disable this component or overwrite a time scale changed by another
+        /// owner (for example the lethal hit-stop that precedes boss Died).
+        /// </summary>
+        /// <returns>
+        /// True when future camera writes from this director are suppressed. Input,
+        /// time-scale, and explicit-stop diagnostics are exposed separately.
+        /// </returns>
+        public bool CancelForBossTerminalAftermath()
+        {
+            bool stopRequestSucceeded = true;
+            bool stoppedActiveCue = false;
+
+            if (!terminalPlaybackSuppressed)
+            {
+                terminalPlaybackSuppressed = true;
+                bossTerminalCancellationCount++;
+            }
+
+            if (activeRoutine != null)
+            {
+                try
+                {
+                    StopCoroutine(activeRoutine);
+                    activeRoutine = null;
+                    stoppedActiveCue = true;
+                }
+                catch (Exception exception)
+                {
+                    stopRequestSucceeded = false;
+                    Debug.LogException(exception, this);
+                }
+            }
+            lastBossTerminalCancellationStoppedActiveCue |= stoppedActiveCue;
+
+            activePriority = 0;
+            activeCanBeInterrupted = true;
+            frameEndTime = 0f;
+            frameDuration = 0f;
+
+            bool ownedStateCleanupSucceeded = TryReleaseTerminalOwnedState(
+                ReleaseMovementLock,
+                "movement input lease");
+            ownedStateCleanupSucceeded &= TryReleaseTerminalOwnedState(
+                ReleaseInputLock,
+                "action input leases");
+            ownedStateCleanupSucceeded &= TryReleaseTerminalOwnedState(
+                RestoreTimeScale,
+                "time-scale lease");
+            lastBossTerminalStopRequestSucceeded = stopRequestSucceeded;
+            lastBossTerminalOwnedStateCleanupSucceeded = ownedStateCleanupSucceeded;
+
+            // PlaySequence observes terminalPlaybackSuppressed before every later
+            // shot. Even if Unity rejects the explicit StopCoroutine request, the
+            // surviving iterator cannot write another camera cue.
+            terminalCameraStreamSecured = terminalPlaybackSuppressed;
+            return terminalCameraStreamSecured;
+        }
+
+        private bool TryReleaseTerminalOwnedState(Action release, string label)
+        {
+            try
+            {
+                release();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    $"{name} could not release its CinematicCue {label} during boss-terminal takeover: {exception}",
+                    this);
+                return false;
+            }
+        }
+
         private void RecordPlayedCueKind(
             ActionCinematicCueProfile.CueKind kind,
             int tier,
@@ -204,6 +301,12 @@ namespace DimensionBrawl.Presentation
             int tier,
             Vector3 planarDirection)
         {
+            if (terminalPlaybackSuppressed)
+            {
+                activeRoutine = null;
+                yield break;
+            }
+
             float movementLockTimer = Mathf.Max(0f, sequence.movementLockSeconds);
             float inputLockTimer = Mathf.Max(0f, sequence.inputLockSeconds);
 
@@ -229,6 +332,11 @@ namespace DimensionBrawl.Presentation
 
             for (int i = 0; i < sequence.shots.Length; i++)
             {
+                if (terminalPlaybackSuppressed)
+                {
+                    break;
+                }
+
                 ActionCinematicCueProfile.CameraShot shot = sequence.shots[i];
                 if (shot.enabled)
                 {
@@ -239,6 +347,11 @@ namespace DimensionBrawl.Presentation
                 float elapsed = 0f;
                 while (elapsed < waitSeconds)
                 {
+                    if (terminalPlaybackSuppressed)
+                    {
+                        break;
+                    }
+
                     float deltaTime = useUnscaledClock ? Time.unscaledDeltaTime : Time.deltaTime;
                     elapsed += deltaTime;
                     sequenceElapsed += deltaTime;
@@ -247,6 +360,11 @@ namespace DimensionBrawl.Presentation
                     inputLockTimer = TickInputLockTimer(inputLockTimer, deltaTime);
                     DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
                     yield return null;
+                }
+
+                if (terminalPlaybackSuppressed)
+                {
+                    break;
                 }
             }
 

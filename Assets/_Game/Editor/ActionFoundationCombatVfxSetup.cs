@@ -38,6 +38,11 @@ namespace DimensionBrawl.Editor
         private const string PerfectDodgeWorldFxShaderPath = ShaderRoot + "/DB_PerfectDodgeWorldFx.shader";
         private const string PerfectDodgeAfterimageShaderPath = ShaderRoot + "/DB_PerfectDodgeAfterimage.shader";
         private const string CombatCueAudioRoot = "Assets/_Game/Art/Audio/SFX/CombatCues";
+        private static readonly string[] EnemyDeathClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Enemy/DB_SFX_EnemyHit_Final_01.mp3",
+            "Assets/_Game/Art/Audio/SFX/HitFeedback/Enemy/DB_SFX_EnemyHit_Final_02.mp3"
+        };
         private const string ImportedGunshotAudioRoot =
             "Assets/_Imported/AssetStore/Gun Sounds Pack Vol 1/Gun Shot";
         private const string ImportedActionRpgSfxCombatRoot =
@@ -584,6 +589,7 @@ namespace DimensionBrawl.Editor
             ConfigureCombatVfxCueProfile(profile, prefabs);
             ApplyMissileShieldCueProfileAudio(profile);
             ActionFoundationHitFeedbackSfxSetup.ApplyMasterHitFeedbackCueAudioToProfile();
+            ApplyEnemyDeathCueProfileAudio(profile);
             return profile;
         }
 
@@ -1119,7 +1125,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyHit, prefabs.EnemyHit, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.32f, false, true),
-                new CueDefinition(CombatVfxCueId.EnemyDeath, prefabs.EnemyDeath, new Vector3(0f, 0.05f, 0f), Vector3.zero, new Vector3(1.25f, 1f, 1.25f), 0.82f, false, false),
+                new CueDefinition(CombatVfxCueId.EnemyDeath, prefabs.EnemyDeath, new Vector3(0f, 0.05f, 0f), Vector3.zero, new Vector3(1.25f, 1f, 1.25f), 0.82f, false, false, 1),
                 new CueDefinition(CombatVfxCueId.EliteSignal, prefabs.EliteShield, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.65f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishWindup, prefabs.ClosePunishWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.52f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishActive, prefabs.ClosePunishActive, new Vector3(0f, 0f, 0.75f), Vector3.zero, Vector3.one, 0.28f, false, true),
@@ -1186,6 +1192,34 @@ namespace DimensionBrawl.Editor
                 3f,
                 28f,
                 126);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ApplyEnemyDeathCueProfileAudio(CombatVfxCueProfile profile)
+        {
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = RequireProperty(serializedObject, "cues");
+            SerializedProperty cue = FindCueProperty(cues, CombatVfxCueId.EnemyDeath);
+            if (cue == null)
+            {
+                throw new InvalidOperationException(
+                    $"{CombatVfxCueProfilePath} is missing {CombatVfxCueId.EnemyDeath}.");
+            }
+
+            SetCueProfileAudio(
+                cue,
+                EnemyDeathClipPaths,
+                0.52f,
+                0.96f,
+                1.02f,
+                0.94f,
+                1.04f,
+                0.12f,
+                8f,
+                42f,
+                40);
+            cue.FindPropertyRelative("prewarmCount").intValue = 1;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
         }
@@ -4587,7 +4621,7 @@ namespace DimensionBrawl.Editor
             SetRelativeVector3(cue, "localEulerOffset", definition.LocalEulerOffset);
             SetRelativeVector3(cue, "localScale", definition.LocalScale);
             SetRelativeFloat(cue, "lifetimeSeconds", definition.LifetimeSeconds);
-            SetRelativeInt(cue, "prewarmCount", 0);
+            SetRelativeInt(cue, "prewarmCount", definition.PrewarmCount);
             SetRelativeBool(cue, "parentToAnchor", definition.ParentToAnchor);
             SetRelativeBool(cue, "alignForwardToDirection", definition.AlignForwardToDirection);
         }
@@ -4833,7 +4867,8 @@ namespace DimensionBrawl.Editor
                 Vector3 localScale,
                 float lifetimeSeconds,
                 bool parentToAnchor,
-                bool alignForwardToDirection)
+                bool alignForwardToDirection,
+                int prewarmCount = 0)
             {
                 CueId = cueId;
                 Prefab = prefab;
@@ -4843,6 +4878,7 @@ namespace DimensionBrawl.Editor
                 LifetimeSeconds = lifetimeSeconds;
                 ParentToAnchor = parentToAnchor;
                 AlignForwardToDirection = alignForwardToDirection;
+                PrewarmCount = Mathf.Max(0, prewarmCount);
             }
 
             public CombatVfxCueId CueId { get; }
@@ -4853,6 +4889,7 @@ namespace DimensionBrawl.Editor
             public float LifetimeSeconds { get; }
             public bool ParentToAnchor { get; }
             public bool AlignForwardToDirection { get; }
+            public int PrewarmCount { get; }
         }
 
         private struct CombatCuePrefabs

@@ -785,6 +785,9 @@ namespace DimensionBrawl.Editor
             AnimatorState linePressure = states.FirstOrDefault(state => state.name == "LinePressure");
             AnimatorState fanPressure = states.FirstOrDefault(state => state.name == "FanPressure");
             AnimatorState heavyCrush = states.FirstOrDefault(state => state.name == "HeavyCrush");
+            AnimatorState[] deathStates = states
+                .Where(state => state.name == "Death")
+                .ToArray();
             if (hover == null
                 || hover.motion != hold
                 || linePressure == null
@@ -793,11 +796,14 @@ namespace DimensionBrawl.Editor
                 || fanPressure.motion != heavyRelease
                 || heavyCrush == null
                 || heavyCrush.motion != heavyRelease
+                || deathStates.Length != 1
+                || deathStates[0].transitions.Length != 0
                 || assignedCount == 0)
             {
                 throw new InvalidOperationException(
                     "Phase-two controller must preserve the C34 hold in Hover and use the "
-                    + "authored C27 six-wing release for barrage attack states.");
+                    + "authored C27 six-wing release for barrage attack states, with one "
+                    + "terminal Death state that has no outgoing transitions.");
             }
 
             EditorUtility.SetDirty(controller);

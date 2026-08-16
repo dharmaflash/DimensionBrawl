@@ -31,10 +31,14 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0f)] private float combatHudExitSeconds = 0.42f;
         [SerializeField, Min(0f)] private float postBossDefeatHoldSeconds = 1.1f;
         [SerializeField, Min(0f)] private float hudExitSlidePixels = 128f;
+        [SerializeField] private OlympusStationBossTerminalAftermathPresenter bossTerminalAftermath;
+        [SerializeField, Min(0.1f)] private float bossTerminalAftermathWaitSlackSeconds = 0.5f;
 
         private Coroutine stageClearRoutine;
         private bool shown;
         private bool combatLocked;
+        private bool worldTimeScaleFrozen;
+        private bool aftermathGateAttached;
         private float previousTimeScale = 1f;
         private StageRunResultSummary resultSummary;
         private string presentedResultDigest = string.Empty;
@@ -46,6 +50,12 @@ namespace DimensionBrawl.LevelDesign
             : string.Empty;
         public string PresentedResultDigest => presentedResultDigest;
         public string LastPresentationError { get; private set; } = string.Empty;
+        public string LastAftermathError { get; private set; } = string.Empty;
+        public bool IsCombatPreparedForResult => combatLocked;
+        public bool IsWorldFrozenForResult => worldTimeScaleFrozen;
+        public bool IsWaitingForBossTerminalAftermath => aftermathGateAttached
+            && bossTerminalAftermath != null
+            && !bossTerminalAftermath.IsComplete;
 
         public event Action<StageRunResultSummary> PresentationSucceeded;
         public event Action<StageRunResultSummary, string> PresentationFailed;
@@ -55,7 +65,12 @@ namespace DimensionBrawl.LevelDesign
             bool presentationWasPending = shown
                 && resultSummary != null
                 && string.IsNullOrEmpty(presentedResultDigest);
-            stageClearRoutine = null;
+            if (stageClearRoutine != null)
+            {
+                StopCoroutine(stageClearRoutine);
+                stageClearRoutine = null;
+            }
+
             if (presentationWasPending)
             {
                 FailPresentation(
@@ -63,6 +78,7 @@ namespace DimensionBrawl.LevelDesign
                     logAsError: false);
             }
 
+            CancelAftermathAndRelease("The result overlay was disabled before terminal handoff cleanup.");
             RestoreCombatTimeScale();
         }
 
@@ -96,28 +112,176 @@ namespace DimensionBrawl.LevelDesign
                 return false;
             }
 
+            if (!isActiveAndEnabled)
+            {
+                error = "The result overlay is not active and enabled.";
+                LastPresentationError = error;
+                CancelAftermathAndRelease(error);
+                return false;
+            }
+
             resultSummary = summary;
             presentedResultDigest = string.Empty;
             LastPresentationError = string.Empty;
+            LastAftermathError = string.Empty;
             shown = true;
-            LockCombatAfterClear();
-            if (isActiveAndEnabled)
+            aftermathGateAttached = false;
+            bool useBossTerminalAftermath = IsBossTerminalClear(summary)
+                && bossTerminalAftermath != null;
+            if (useBossTerminalAftermath
+                && !bossTerminalAftermath.TryAttachResult(summary, out string aftermathError))
             {
-                stageClearRoutine = StartCoroutine(ShowAuthoredStageClearSceneRoutine());
-                return true;
+                shown = false;
+                error = "The authored Station boss-terminal aftermath rejected result attachment: "
+                    + aftermathError;
+                LastPresentationError = error;
+                LastAftermathError = aftermathError;
+                CancelAftermathAndRelease(error);
+                return false;
             }
 
-            shown = false;
-            error = "The result overlay is not active and enabled.";
-            LastPresentationError = error;
-            return false;
+            aftermathGateAttached = useBossTerminalAftermath;
+            try
+            {
+                PrepareCombatAfterClear();
+                if (!aftermathGateAttached)
+                {
+                    FreezeWorldForResult();
+                }
+
+                stageClearRoutine = StartCoroutine(
+                    RunPresentationSafely(aftermathGateAttached));
+                return true;
+            }
+            catch (Exception exception)
+            {
+                shown = false;
+                error = "The result overlay could not start safely: " + exception.Message;
+                LastPresentationError = error;
+                CancelAftermathAndRelease(error);
+                RestoreCombatTimeScale();
+                return false;
+            }
         }
 
-        private IEnumerator ShowAuthoredStageClearSceneRoutine()
+        private IEnumerator RunPresentationSafely(bool waitForBossTerminalAftermath)
+        {
+            var stack = new Stack<IEnumerator>();
+            stack.Push(ShowAuthoredStageClearSceneRoutine(waitForBossTerminalAftermath));
+            while (stack.Count > 0)
+            {
+                IEnumerator current = stack.Peek();
+                bool moved;
+                object yielded;
+                try
+                {
+                    moved = current.MoveNext();
+                    yielded = moved ? current.Current : null;
+                }
+                catch (Exception exception)
+                {
+                    DisposeRoutineStackSafely(stack);
+                    FailPresentation(
+                        "The authored result presentation failed safely: " + exception.Message);
+                    yield break;
+                }
+
+                if (!moved)
+                {
+                    stack.Pop();
+                    DisposeRoutineSafely(current);
+                    continue;
+                }
+
+                if (yielded is IEnumerator nested)
+                {
+                    stack.Push(nested);
+                    continue;
+                }
+
+                yield return yielded;
+            }
+        }
+
+        private static void DisposeRoutineStackSafely(Stack<IEnumerator> stack)
+        {
+            while (stack.Count > 0)
+            {
+                DisposeRoutineSafely(stack.Pop());
+            }
+        }
+
+        private static void DisposeRoutineSafely(IEnumerator routine)
+        {
+            if (routine is not IDisposable disposable)
+            {
+                return;
+            }
+
+            try
+            {
+                disposable.Dispose();
+            }
+            catch
+            {
+                // Cleanup must never mask the presentation failure boundary.
+            }
+        }
+
+        private IEnumerator ShowAuthoredStageClearSceneRoutine(bool waitForBossTerminalAftermath)
         {
             yield return PlayCombatHudExitRoutine();
 
-            if (postBossDefeatHoldSeconds > 0f)
+            if (waitForBossTerminalAftermath)
+            {
+                float remaining = bossTerminalAftermath != null
+                    ? Mathf.Max(
+                        0f,
+                        bossTerminalAftermath.AftermathDurationSeconds
+                            - bossTerminalAftermath.ElapsedUnscaledSeconds)
+                    : 0f;
+                float aftermathTimeoutAt = Time.realtimeSinceStartup
+                    + remaining
+                    + Mathf.Max(0.1f, bossTerminalAftermathWaitSlackSeconds);
+                while (bossTerminalAftermath != null
+                    && !bossTerminalAftermath.IsComplete
+                    && !bossTerminalAftermath.IsCancelled)
+                {
+                    if (Time.realtimeSinceStartup > aftermathTimeoutAt)
+                    {
+                        FailPresentation("The authored Station boss-terminal aftermath timed out.");
+                        yield break;
+                    }
+
+                    yield return null;
+                }
+
+                if (bossTerminalAftermath == null
+                    || bossTerminalAftermath.IsCancelled
+                    || !bossTerminalAftermath.CompletedSuccessfully)
+                {
+                    LastAftermathError = bossTerminalAftermath != null
+                        ? bossTerminalAftermath.LastError
+                        : "The authored Station boss-terminal aftermath owner was lost.";
+                    FailPresentation(
+                        "The authored Station boss-terminal aftermath did not complete successfully: "
+                        + LastAftermathError);
+                    yield break;
+                }
+
+                FreezeWorldForResult();
+                bossTerminalAftermath.ReleaseInputLeaseForResultSurface();
+                if (bossTerminalAftermath.InputLeaseActive)
+                {
+                    LastAftermathError = bossTerminalAftermath.LastError;
+                    FailPresentation(
+                        "The authored Station boss-terminal aftermath input lease did not release exactly.");
+                    yield break;
+                }
+
+                aftermathGateAttached = false;
+            }
+            else if (postBossDefeatHoldSeconds > 0f)
             {
                 yield return new WaitForSecondsRealtime(postBossDefeatHoldSeconds);
             }
@@ -175,12 +339,14 @@ namespace DimensionBrawl.LevelDesign
             presentedResultDigest = resultSummary?.ResultSummaryDigest ?? string.Empty;
             LastPresentationError = string.Empty;
             stageClearRoutine = null;
-            PresentationSucceeded?.Invoke(resultSummary);
+            InvokePresentationSucceededSafely(resultSummary);
         }
 
         private void FailPresentation(string error, bool logAsError = true)
         {
             LastPresentationError = error ?? string.Empty;
+            CancelAftermathAndRelease(LastPresentationError);
+            RestoreCombatTimeScale();
             shown = false;
             presentedResultDigest = string.Empty;
             stageClearRoutine = null;
@@ -196,7 +362,53 @@ namespace DimensionBrawl.LevelDesign
                     $"[{nameof(OlympusStageClearOverlay)}] {LastPresentationError}",
                     this);
             }
-            PresentationFailed?.Invoke(resultSummary, LastPresentationError);
+            InvokePresentationFailedSafely(resultSummary, LastPresentationError);
+        }
+
+        private void InvokePresentationSucceededSafely(StageRunResultSummary summary)
+        {
+            Action<StageRunResultSummary> callback = PresentationSucceeded;
+            if (callback == null)
+            {
+                return;
+            }
+
+            Delegate[] listeners = callback.GetInvocationList();
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                try
+                {
+                    ((Action<StageRunResultSummary>)listeners[i]).Invoke(summary);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
+        }
+
+        private void InvokePresentationFailedSafely(
+            StageRunResultSummary summary,
+            string error)
+        {
+            Action<StageRunResultSummary, string> callback = PresentationFailed;
+            if (callback == null)
+            {
+                return;
+            }
+
+            Delegate[] listeners = callback.GetInvocationList();
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                try
+                {
+                    ((Action<StageRunResultSummary, string>)listeners[i]).Invoke(summary, error);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
         }
 
         private IEnumerator PlayCombatHudExitRoutine()
@@ -375,7 +587,7 @@ namespace DimensionBrawl.LevelDesign
             }
         }
 
-        private void LockCombatAfterClear()
+        private void PrepareCombatAfterClear()
         {
             if (combatLocked)
             {
@@ -383,14 +595,32 @@ namespace DimensionBrawl.LevelDesign
             }
 
             combatLocked = true;
-            previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f;
 
             CombatHealth playerHealth = FindHealthByTeam(DamageTeam.Player);
             playerHealth?.SetInvulnerableUntil(Time.time + 3600f);
             DismissCombatSessionOverlays();
             DisableEncounterFailureHooks();
             StopHostileCombat();
+        }
+
+        private void FreezeWorldForResult()
+        {
+            if (!combatLocked)
+            {
+                PrepareCombatAfterClear();
+            }
+
+            if (worldTimeScaleFrozen)
+            {
+                return;
+            }
+
+            // The aftermath gate intentionally permits the lethal hit-stop to
+            // settle before it validates scale 1. Snapshot only when this
+            // overlay actually takes scale ownership, never at terminal commit.
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            worldTimeScaleFrozen = true;
         }
 
         private void RestoreCombatTimeScale()
@@ -400,12 +630,35 @@ namespace DimensionBrawl.LevelDesign
                 return;
             }
 
-            if (Mathf.Approximately(Time.timeScale, 0f))
+            if (worldTimeScaleFrozen && Mathf.Approximately(Time.timeScale, 0f))
             {
                 Time.timeScale = previousTimeScale;
             }
 
+            worldTimeScaleFrozen = false;
             combatLocked = false;
+        }
+
+        private void CancelAftermathAndRelease(string reason)
+        {
+            if (bossTerminalAftermath != null
+                && bossTerminalAftermath.IsStarted
+                && (!bossTerminalAftermath.IsComplete
+                    || bossTerminalAftermath.InputLeaseActive))
+            {
+                bossTerminalAftermath.CancelAndRelease(reason);
+            }
+
+            aftermathGateAttached = false;
+        }
+
+        private static bool IsBossTerminalClear(StageRunResultSummary summary)
+        {
+            return summary != null
+                && summary.Outcome == StageRouteOutcome.Clear
+                && summary.OutcomeFact != null
+                && summary.OutcomeFact.OutcomeDisposition == StageOutcomeDisposition.Clear
+                && summary.OutcomeFact.ClearReason == StageClearReason.BossTerminal;
         }
 
         private static CombatHealth FindHealthByTeam(DamageTeam team)

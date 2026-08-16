@@ -227,7 +227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   target: {fileID: 4001}
   threat: {fileID: 1932639514}
@@ -249,6 +249,7 @@ MonoBehaviour:
   orbitInputDeadZone: 0.08
   threatBias: 0
   maxThreatFocusOffset: 0.75
+  threatFocusAffectsCameraPosition: 1
   maxLeadFromPlayerSpeed: 0
   defaultCueSeconds: 0.24
   maxCueOffset: 0.55
@@ -299,7 +300,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraCueDriver
   actionController: {fileID: 4005}
   movement: {fileID: 4004}
@@ -632,6 +633,19 @@ MonoBehaviour:
     focusHeightDelta: 0.03
     durationSeconds: 0.26
     finisherScale: 1.35
+  bossDeathCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.08, z: 0.18}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: -3.5
+    cameraDistanceDelta: -0.35
+    focusHeightDelta: 0.18
+    durationSeconds: 1.65
+    finisherScale: 1
+  bossDeathCueReleaseSeconds: 0.35
+  bossDeathImpactShakeSeconds: 0.14
+  bossDeathImpactPositionAmplitude: 0.018
+  bossDeathImpactEulerAmplitude: 0.11
 --- !u!1 &2000
 GameObject:
   m_ObjectHideFlags: 0
@@ -93695,6 +93709,7 @@ GameObject:
   - component: {fileID: 615080644}
   - component: {fileID: 615080647}
   - component: {fileID: 615080646}
+  - component: {fileID: 615080648}
   m_Layer: 0
   m_Name: OlympusStation_CombatResultPresenter
   m_TagString: Untagged
@@ -93716,6 +93731,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationCombatResultPresenter
   encounter: {fileID: 6002}
   stageClearOverlay: {fileID: 615080646}
+  bossTerminalAftermath: {fileID: 615080648}
   resultSurfaceBehaviour: {fileID: 185071497}
   factCollector: {fileID: 615080647}
 --- !u!4 &615080645
@@ -93749,6 +93765,8 @@ MonoBehaviour:
   combatHudExitSeconds: 0.42
   postBossDefeatHoldSeconds: 1.1
   hudExitSlidePixels: 128
+  bossTerminalAftermath: {fileID: 615080648}
+  bossTerminalAftermathWaitSlackSeconds: 0.5
 --- !u!114 &615080647
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -93771,6 +93789,33 @@ MonoBehaviour:
   - {fileID: 4015}
   bossEncounter: {fileID: 439529094}
   resultSurfaceBehaviour: {fileID: 185071497}
+--- !u!114 &615080648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 615080643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70f8f2a6a16b4d6f9048c91b736e5b2a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusStationBossTerminalAftermathPresenter
+  bossHealth: {fileID: 1932639513}
+  cameraCueDriver: {fileID: 1012}
+  actionCinematicCueDirector: {fileID: 1008}
+  visualCueDriver: {fileID: 1932639520}
+  aftermathDurationSeconds: 2.6
+  unattachedResultLeaseTimeoutSeconds: 2
+  initialHitStopRecoveryGraceSeconds: 0.35
+  playerMovement: {fileID: 4004}
+  playerActionController: {fileID: 4005}
+  playerSkill1Action: {fileID: 4018}
+  playerSummonSlot1Action: {fileID: 4017}
+  playerSummonSlot2Action: {fileID: 4016}
+  playerSummonSlot3Action: {fileID: 4015}
+  playerRangedBasicAttackAction: {fileID: 4012}
+  playerCombatModeController: {fileID: 4014}
 --- !u!1 &615510746
 GameObject:
   m_ObjectHideFlags: 0
@@ -280197,6 +280242,12 @@ MonoBehaviour:
   damageFlashColor: {r: 1, g: 0.18, b: 0.08, a: 1}
   damageFlashEmissionColor: {r: 1, g: 0.48, b: 0.24, a: 1}
   damageFlashSeconds: 0.14
+  bossDeathCueId: 6
+  bossDeathCueIntensity: 1.15
+  bossDeathAudioIntensity: 1
+  bossDeathFlashColor: {r: 1, g: 1, b: 1, a: 1}
+  bossDeathFlashSeconds: 0.35
+  bossDeathPulseScale: 0.42
   patternCues:
   - patternId: NeedleLock
     windupTrigger: EliteAuraBuffer
