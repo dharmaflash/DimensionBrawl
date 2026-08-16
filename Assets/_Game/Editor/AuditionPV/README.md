@@ -88,6 +88,60 @@ fresh Station scene, and never saves product-scene state. On success or failure 
 Recorder, releases gameplay/presentation leases, exits Play Mode, and reopens the Station scene
 clean before writing the final result or exiting the unattended Editor.
 
+### G08 Olympus Station boss death aftermath
+
+- Menu: `DimensionBrawl/Audition PV/Capture G08 Station Boss Death Aftermath Golden Source`
+- Unattended GUI method:
+  `DimensionBrawl.Editor.AuditionPV.AuditionPvStationBossDeathAftermathGoldenRunner.RunBatchCapture`
+- Exact invocation:
+  `Unity.exe -projectPath C:/Git/DimensionBrawl -executeMethod DimensionBrawl.Editor.AuditionPV.AuditionPvStationBossDeathAftermathGoldenRunner.RunBatchCapture -noaudio -logFile C:/tmp/DimensionBrawl-G08-GoldenCapture.log`
+- Do not pass `-batchmode`, `-quit`, or `-nographics`. This is an asynchronous, graphics-capable
+  Recorder session; the runner requests its own bounded exit only after edit-mode finalization.
+- EditMode filter:
+  `DimensionBrawl.Editor.AuditionPV.Tests.AuditionPvStationBossDeathAftermathGoldenTests`
+
+The shot begins from a clean fresh Corridor scene. Product gameplay completes the tutorial, owns
+the route and single-load seals, and dispatches its real `UITransitionHandoffService` transition.
+The capture observes the pending handoff token and proves the dedicated Station
+`FromHandoffPending` entry and terminal receipt chain; it does not reseal the run or call a scene
+load API. The Station entry guide must reach `Released`. Pre-roll uses public, strictly non-lethal
+damage for the Phase 1 threshold, public `TrySkipTransition`, a bounded Phase 2 wait, and a second
+strictly non-lethal hit that leaves the boss at exactly 12 HP.
+
+Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
+frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps
+raw `1..360` to logical `f0..f359`, exactly 360 QHD60 frames. During logical recording the director
+issues exactly one gameplay action: public `PlayerRangedBasicAttackAction.TryFire` at `f1`. The same
+authored 12-damage, 24 m/s pooled projectile must move naturally and produce its physical impact,
+one boss `Died`, and one `BossTerminal` clear at `f62`. Direct lethal damage/impact, boss-health
+mutation, projectile pose or velocity writes, `PlayDeath`, cue calls, overlay calls, and result
+publication are forbidden in the logical shot.
+
+The death-anchored product aftermath must acquire all eight distinct
+`BossTerminalAftermath` input leases at `f62`, preserve scale-one presentation after bounded lethal
+hit-stop, and run its real camera, Phase 2-anchored VFX, non-silent death audio, and death motion.
+The death animator remains terminal through the aftermath hero checkpoint. Product completion,
+lease release, world freeze, result request, and result scene arrival are exact at `f218`; no early
+freeze or result is allowed. The committed canonical facts and result summary must remain the same
+instances presented by both overlay and result screen, which is fully interactive and stable at
+`f246`.
+
+Baselines are byte-exact logical-frame copies: BL10=`f62` death impact, BL11=`f116` aftermath hero,
+and BL12=`f246` interactive result. The package also requires the 360-frame SHA-256 ledger, QHD
+decode/dimension checks, black/magenta health, independent impact/aftermath/result pixel deltas,
+result-surface color evidence, renderer-bounds/frustum pixel extent, exact Git/Unity/Recorder/URP
+and dependency provenance, and exhaustive scene/global/input/event/Recorder restoration.
+
+Pixel calibration is deliberately fail-closed while `PixelCalibrationLocked` is `false`. The first
+honest clean same-HEAD take must validate all non-pixel runtime proof and preserve measured pixel
+telemetry in `g08_capture_failure.json`, while publishing no manifest, baselines, success runtime
+proof, or canonical frame ledger. An independent review must pin justified thresholds and their
+boundary-negative tests before changing the sentinel to `true`. Only then can a new clean take
+publish success artifacts. `capture_manifest.json` is the final fallible write and the immutable
+terminal commit record; a valid committed manifest wins stale runner or terminal-fault state.
+Failure cleanup is best-effort across every owned success artifact and records any cleanup fault in
+the atomic failure artifact.
+
 ## Validation
 
 - Menu: `DimensionBrawl/Audition PV/Validate Capture Foundation`
