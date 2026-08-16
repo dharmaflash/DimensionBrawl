@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using UnityEngine;
@@ -33,6 +34,10 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0.01f)] private float pulseSpeed = 10f;
 
         private MaterialPropertyBlock propertyBlock;
+        private readonly Dictionary<Renderer, Material[]> originalMarkerMaterials =
+            new Dictionary<Renderer, Material[]>();
+        private readonly Dictionary<Renderer, Material[]> runtimeMarkerMaterials =
+            new Dictionary<Renderer, Material[]>();
         private Vector2[] previewBuffer = System.Array.Empty<Vector2>();
         private bool subscribed;
         private float releaseFlashTimer;
@@ -70,6 +75,7 @@ namespace DimensionBrawl.Presentation
         {
             StopRefreshRoutine();
             Unsubscribe();
+            ReleaseRuntimeMarkerMaterials();
             bossBarrageEmitter = newEmitter;
             laneSpace = newLaneSpace;
             markerRoot = newMarkerRoot;
@@ -153,6 +159,14 @@ namespace DimensionBrawl.Presentation
             StopRefreshRoutine();
             Unsubscribe();
             HideMarkers();
+            ReleaseRuntimeMarkerMaterials();
+        }
+
+        private void OnDestroy()
+        {
+            StopRefreshRoutine();
+            Unsubscribe();
+            ReleaseRuntimeMarkerMaterials();
         }
 
         private IEnumerator RefreshWhileVisible()
@@ -293,7 +307,111 @@ namespace DimensionBrawl.Presentation
             propertyBlock.SetColor(ColorId, color);
             propertyBlock.SetColor(EmissionColorId, color * 1.2f);
             markerRenderer.SetPropertyBlock(propertyBlock);
+            ApplyRuntimeMaterialColor(markerRenderer, color);
             lastMarkerColor = color;
+        }
+
+        private void ApplyRuntimeMaterialColor(Renderer markerRenderer, Color color)
+        {
+            Material[] materials = GetOrCreateRuntimeMarkerMaterials(markerRenderer);
+            Color emission = color * 1.2f;
+            emission.a = color.a;
+            for (int index = 0; index < materials.Length; index++)
+            {
+                Material material = materials[index];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                if (material.HasProperty(BaseColorId))
+                {
+                    material.SetColor(BaseColorId, color);
+                }
+
+                if (material.HasProperty(ColorId))
+                {
+                    material.SetColor(ColorId, color);
+                }
+
+                if (material.HasProperty(EmissionColorId))
+                {
+                    material.SetColor(EmissionColorId, emission);
+                }
+            }
+        }
+
+        private Material[] GetOrCreateRuntimeMarkerMaterials(Renderer markerRenderer)
+        {
+            if (runtimeMarkerMaterials.TryGetValue(
+                    markerRenderer,
+                    out Material[] existing))
+            {
+                return existing;
+            }
+
+            Material[] originals = markerRenderer.sharedMaterials;
+            Material[] runtime = new Material[originals.Length];
+            for (int index = 0; index < originals.Length; index++)
+            {
+                Material original = originals[index];
+                if (original == null)
+                {
+                    continue;
+                }
+
+                runtime[index] = new Material(original)
+                {
+                    name = original.name + " (Boss Barrage Telegraph Runtime)",
+                    hideFlags = HideFlags.DontSave
+                };
+            }
+
+            originalMarkerMaterials.Add(markerRenderer, originals);
+            runtimeMarkerMaterials.Add(markerRenderer, runtime);
+            markerRenderer.sharedMaterials = runtime;
+            return runtime;
+        }
+
+        private void ReleaseRuntimeMarkerMaterials()
+        {
+            foreach (KeyValuePair<Renderer, Material[]> pair in runtimeMarkerMaterials)
+            {
+                Renderer markerRenderer = pair.Key;
+                if (markerRenderer != null)
+                {
+                    if (originalMarkerMaterials.TryGetValue(
+                            markerRenderer,
+                            out Material[] originals))
+                    {
+                        markerRenderer.sharedMaterials = originals;
+                    }
+
+                    markerRenderer.SetPropertyBlock(null);
+                }
+
+                Material[] runtime = pair.Value;
+                for (int index = 0; index < runtime.Length; index++)
+                {
+                    Material material = runtime[index];
+                    if (material == null)
+                    {
+                        continue;
+                    }
+
+                    if (Application.isPlaying)
+                    {
+                        Destroy(material);
+                    }
+                    else
+                    {
+                        DestroyImmediate(material);
+                    }
+                }
+            }
+
+            runtimeMarkerMaterials.Clear();
+            originalMarkerMaterials.Clear();
         }
 
         private Renderer ResolveRenderer(int index)

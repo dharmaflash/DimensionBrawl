@@ -174,6 +174,83 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void TelegraphPresenter_AppliesProfileColorToOwnedRuntimeMaterialAndRestoresAsset()
+        {
+            BossBarragePatternProfile curtain = Load<BossBarragePatternProfile>(
+                AuditionPvStationPhase2PatternRelayCapture.CurtainProfilePath);
+            Material authoredMaterial = Load<Material>(
+                "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageIncomingTelegraph.mat");
+            var root = new GameObject("g07-telegraph-material-fixture");
+            var tracked = new GameObject("tracked-player");
+            tracked.transform.SetParent(root.transform, false);
+            var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            marker.name = "marker";
+            marker.transform.SetParent(root.transform, false);
+            marker.SetActive(false);
+            MeshRenderer markerRenderer = marker.GetComponent<MeshRenderer>();
+            markerRenderer.sharedMaterial = authoredMaterial;
+            BossBarrageLaneTelegraphPresenter presenter = null;
+            try
+            {
+                SummonLaneSpace lane = root.AddComponent<SummonLaneSpace>();
+                BossBarrageEmitter emitter = root.AddComponent<BossBarrageEmitter>();
+                var serialized = new SerializedObject(emitter);
+                serialized.FindProperty("laneSpace").objectReferenceValue = lane;
+                serialized.FindProperty("trackedPlayer").objectReferenceValue =
+                    tracked.transform;
+                serialized.FindProperty("patternProfile").objectReferenceValue = curtain;
+                SerializedProperty sequence = serialized.FindProperty("patternSequence");
+                sequence.arraySize = 1;
+                sequence.GetArrayElementAtIndex(0).objectReferenceValue = curtain;
+                serialized.FindProperty("wavesPerPattern").intValue = 1;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                presenter = root.AddComponent<BossBarrageLaneTelegraphPresenter>();
+                presenter.Configure(
+                    emitter,
+                    lane,
+                    root.transform,
+                    new[] { marker.transform },
+                    new Renderer[] { markerRenderer });
+                emitter.SetFiringEnabled(true);
+                for (int frame = 0; frame <= 10; frame++)
+                {
+                    emitter.Tick(1f / 60f);
+                }
+
+                Assert.That(presenter.VisiblePattern, Is.SameAs(curtain));
+                Assert.That(presenter.VisibleMarkerCount, Is.EqualTo(1));
+                Material runtimeMaterial = markerRenderer.sharedMaterial;
+                Assert.That(runtimeMaterial, Is.Not.SameAs(authoredMaterial));
+                Assert.That(runtimeMaterial.hideFlags & HideFlags.DontSave,
+                    Is.EqualTo(HideFlags.DontSave));
+                AssertRgb(runtimeMaterial.GetColor("_BaseColor"), 0.16f, 1f, 0.66f);
+                Material firstRuntimeMaterial = runtimeMaterial;
+                presenter.RefreshNow();
+                Assert.That(markerRenderer.sharedMaterial,
+                    Is.SameAs(firstRuntimeMaterial),
+                    "Repeated refreshes must reuse the owned runtime material.");
+
+                presenter.Configure(
+                    null,
+                    null,
+                    root.transform,
+                    Array.Empty<Transform>(),
+                    Array.Empty<Renderer>());
+                Assert.That(markerRenderer.sharedMaterial, Is.SameAs(authoredMaterial));
+            }
+            finally
+            {
+                if (presenter != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(presenter);
+                }
+
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void SceneAndAssets_HaveExactIndependentIdentitiesAndBindings()
         {
             const string ExpectedProjectilePath =
