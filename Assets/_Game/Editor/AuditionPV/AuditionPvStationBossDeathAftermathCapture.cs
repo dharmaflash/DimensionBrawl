@@ -95,6 +95,48 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int PhaseTwoSettleFrames = 90;
         internal const int PostRecordingSettleFrameBudget = 30;
 
+        internal static Vector2 ResolveCameraRelativeTutorialMoveInput(
+            Vector3 playerPosition,
+            Vector3 targetPosition,
+            Camera movementCamera)
+        {
+            if (movementCamera == null
+                || !float.IsFinite(playerPosition.x)
+                || !float.IsFinite(playerPosition.y)
+                || !float.IsFinite(playerPosition.z)
+                || !float.IsFinite(targetPosition.x)
+                || !float.IsFinite(targetPosition.y)
+                || !float.IsFinite(targetPosition.z))
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetPosition));
+            }
+
+            Vector3 desiredDirection = Vector3.ProjectOnPlane(
+                targetPosition - playerPosition,
+                Vector3.up);
+            Vector3 cameraForward = Vector3.ProjectOnPlane(
+                movementCamera.transform.forward,
+                Vector3.up);
+            Vector3 cameraRight = Vector3.ProjectOnPlane(
+                movementCamera.transform.right,
+                Vector3.up);
+            if (desiredDirection.sqrMagnitude <= 0.0001f
+                || cameraForward.sqrMagnitude <= 0.0001f
+                || cameraRight.sqrMagnitude <= 0.0001f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetPosition));
+            }
+
+            desiredDirection.Normalize();
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+            return Vector2.ClampMagnitude(
+                new Vector2(
+                    Vector3.Dot(desiredDirection, cameraRight),
+                    Vector3.Dot(desiredDirection, cameraForward)),
+                1f);
+        }
+
         internal static int PredictNaturalImpactFrame(float sweepDistance)
         {
             if (!float.IsFinite(sweepDistance) || sweepDistance <= 0f)
@@ -1420,6 +1462,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                 PlayerCombatModeController>(corridor);
             PlayerLockTargetController corridorLockTarget = RequireSingleSceneComponent<
                 PlayerLockTargetController>(corridor);
+            OlympusCorridorCombatFlowController corridorFlow =
+                RequireSingleSceneComponent<OlympusCorridorCombatFlowController>(corridor);
+            Transform stairTriggerCenter = new SerializedObject(corridorFlow)
+                .FindProperty("stairTriggerCenter")?.objectReferenceValue as Transform;
+            Camera movementCamera = new SerializedObject(corridorMovement)
+                .FindProperty("referenceCamera")?.objectReferenceValue as Camera;
+            if (stairTriggerCenter == null
+                || stairTriggerCenter.gameObject.scene != corridor
+                || movementCamera == null
+                || movementCamera.gameObject.scene != corridor)
+            {
+                throw new InvalidOperationException(
+                    "G08 Corridor tutorial move requires the exact authored stair target and movement camera.");
+            }
 
             double deadline = Time.realtimeSinceStartupAsDouble + 45d;
             yield return WaitForTutorialWindow(tutorial, "Melee", deadline);
@@ -1431,10 +1487,38 @@ namespace DimensionBrawl.Editor.AuditionPV
             yield return WaitForTutorialStepToAdvance(tutorial, "Melee", deadline);
 
             yield return WaitForTutorialWindow(tutorial, "Move", deadline);
-            corridorMovement.SetMoveInput(Vector2.up);
+            Vector3 moveStartPosition = corridorMovement.transform.position;
             try
             {
-                yield return WaitForTutorialStepToAdvance(tutorial, "Move", deadline);
+                while (string.Equals(
+                        tutorial.CurrentStepId,
+                        "Move",
+                        StringComparison.Ordinal)
+                    && !tutorial.IsCompleted
+                    && Time.realtimeSinceStartupAsDouble < deadline)
+                {
+                    Vector2 moveInput = AuditionPvStationBossDeathAftermathCapture
+                        .ResolveCameraRelativeTutorialMoveInput(
+                            corridorMovement.transform.position,
+                            stairTriggerCenter.position,
+                            movementCamera);
+                    corridorMovement.SetMoveInput(moveInput);
+                    yield return null;
+                }
+
+                if (string.Equals(
+                    tutorial.CurrentStepId,
+                    "Move",
+                    StringComparison.Ordinal))
+                {
+                    float movedDistance = Vector3.ProjectOnPlane(
+                        corridorMovement.transform.position - moveStartPosition,
+                        Vector3.up).magnitude;
+                    throw new TimeoutException(
+                        "G08 public Corridor tutorial action did not advance Move: "
+                        + $"moved={movedDistance:0.000}m, "
+                        + $"targetDistance={Vector3.ProjectOnPlane(stairTriggerCenter.position - corridorMovement.transform.position, Vector3.up).magnitude:0.000}m.");
+                }
             }
             finally
             {

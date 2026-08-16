@@ -422,6 +422,12 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Not.Contain("TrySealCurrentSegmentForSingleLoad"));
             Assert.That(source, Does.Not.Contain("SetExternalAimPreviewHeld"));
             Assert.That(source, Does.Contain("SetFireHeld(true)"));
+            Assert.That(source, Does.Not.Contain("SetMoveInput(Vector2.up)"));
+            Assert.That(source, Does.Contain("FindProperty(\"stairTriggerCenter\")"));
+            Assert.That(source, Does.Contain("FindProperty(\"referenceCamera\")"));
+            Assert.That(source, Does.Contain(
+                ".ResolveCameraRelativeTutorialMoveInput("));
+            Assert.That(source, Does.Contain("corridorMovement.SetMoveInput(moveInput);"));
             Assert.That(source, Does.Contain("PendingHandoffToken"));
             Assert.That(source, Does.Contain("TrySkipTransition()"));
             Assert.That(source, Does.Contain("ApplyStrictlyNonlethalSetupDamage"));
@@ -443,6 +449,45 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Not.Contain(".SetPositionAndRotation("));
             Assert.That(source, Does.Not.Contain("TryApplyImpact("));
             Assert.That(source, Does.Not.Contain("ResolveImpact("));
+        }
+
+        [Test]
+        public void CorridorTutorialMoveInput_UsesTheAuthoredCameraBasis()
+        {
+            var cameraRoot = new GameObject("G08_TutorialMoveCamera");
+            Camera movementCamera = cameraRoot.AddComponent<Camera>();
+            try
+            {
+                cameraRoot.transform.rotation = Quaternion.LookRotation(
+                    Vector3.right,
+                    Vector3.up);
+
+                Vector2 cameraForward = AuditionPvStationBossDeathAftermathCapture
+                    .ResolveCameraRelativeTutorialMoveInput(
+                        Vector3.zero,
+                        Vector3.right * 4f,
+                        movementCamera);
+                Vector2 cameraLeft = AuditionPvStationBossDeathAftermathCapture
+                    .ResolveCameraRelativeTutorialMoveInput(
+                        Vector3.zero,
+                        Vector3.forward * 4f,
+                        movementCamera);
+
+                Assert.That(cameraForward.x, Is.Zero.Within(0.0001f));
+                Assert.That(cameraForward.y, Is.EqualTo(1f).Within(0.0001f));
+                Assert.That(cameraLeft.x, Is.EqualTo(-1f).Within(0.0001f));
+                Assert.That(cameraLeft.y, Is.Zero.Within(0.0001f));
+                Assert.Throws<ArgumentOutOfRangeException>(() =>
+                    AuditionPvStationBossDeathAftermathCapture
+                        .ResolveCameraRelativeTutorialMoveInput(
+                            Vector3.zero,
+                            Vector3.zero,
+                            movementCamera));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraRoot);
+            }
         }
 
         [Test]
