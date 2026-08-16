@@ -65,6 +65,28 @@ namespace DimensionBrawl.Editor.AuditionPV
             "e44e24e74c31f9ad6b6b1e0e6ef903ee10f7181cce5fd22afca0e1eda5defa9a";
         internal const string PixelCalibrationReconstructedLedgerSha256 =
             "66577dd2934bae05f50c9812026d5e46e98f9de45de23c3c00393e1196d24de1";
+        internal const string VisualCompositionAcceptanceCaptureId =
+            "20260816t130338z_g08-station-boss-death-aftermath_gd4c70fbbe697_clean";
+        internal const string VisualCompositionAcceptanceHeadSha =
+            "d4c70fbbe697da1a16ad505533cb15ba6c7b4357";
+        internal const string VisualCompositionAcceptanceFailureSha256 =
+            "7367b22719da895f74dcb1ad4b18b6a0b434eabe5291af2236bfe991c958834c";
+        internal const string VisualCompositionAcceptanceReconstructedLedgerSha256 =
+            "83a51984a5403863a36dc09ce3bcedc9f68e211abba970a96bc5d24cab1483e9";
+        internal const string VisualCompositionAcceptanceCaptureStartProvenanceSha256 =
+            "df07decc27241d4e3adf305b9aa03a543452ac6bafbce5f045b540e8d36d967c";
+        internal const double VisualCompositionAcceptanceF62BodyHeightRatio =
+            0.30446988344192507d;
+        internal const double VisualCompositionAcceptanceF116BodyMaxExtentRatio =
+            0.2547542154788971d;
+        internal const double VisualCompositionAcceptanceF181BodyMaxExtentRatio =
+            0.25421980023384097d;
+        internal const double VisualCompositionAcceptanceImpactToHeroAxisDeltaDegrees =
+            61.78799404763924d;
+        internal const double VisualCompositionAcceptanceImpactToHoldAxisDeltaDegrees =
+            61.84057514229713d;
+        internal const double VisualCompositionAcceptanceTerminalAxisHoldDriftDegrees =
+            0.05258109465662268d;
 
         internal const int ImpactDeltaFromFrame = 61;
         internal const int ImpactDeltaToFrame = 62;
@@ -91,7 +113,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             new(256, 180, 2048, 1080);
 
         // Locked from the independently reviewed same-HEAD runtime/pixel-calibration
-        // take above; visual acceptance remains pending.
+        // take above; visual composition is independently locked below.
         // Observed: black/magenta/max-magenta=0, healthy=100%; impact
         // 13.542403/.299323; death evolution 30.489848/.549518; first visible
         // result appearance f218->f221 8.468069/.328385; visible entrance
@@ -115,10 +137,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int MinimumResultBlueSamples = 60000;
         internal static readonly bool PixelCalibrationLocked = true;
 
-        // The first take after the authored finisher-camera/visual-truth change is
-        // intentionally telemetry-only. A human must inspect that exact clean take
-        // before this publication sentinel can be locked.
-        internal static readonly bool VisualCompositionAcceptanceLocked = false;
+        // Locked after independent QHD review of the exact clean take pinned above.
+        // Those pins are the immutable approval provenance; each later clean take
+        // must independently pass the live runtime, pixel, and composition gates.
+        // Observed tight body extents were f62=.304470, f116=.254754, and
+        // f181=.254220. In the validator's screen-height-equivalent coordinates,
+        // the projected hip-to-head axis changed 61.79 degrees into the collapse
+        // and drifted only .053 degrees through the terminal hold.
+        internal static readonly bool VisualCompositionAcceptanceLocked = true;
         internal const float MinimumFinisherBossBodyHeightRatio = 0.25f;
         internal const float MaximumFinisherBossBodyHeightRatio = 0.40f;
         internal const float MinimumTerminalBossBodyMaxExtentRatio = 0.25f;
@@ -623,8 +649,17 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         internal static void ValidateRuntimeProofForPublication(RuntimeProof proof)
         {
+            ValidateRuntimeProofForPublication(
+                proof,
+                VisualCompositionAcceptanceLocked);
+        }
+
+        internal static void ValidateRuntimeProofForPublication(
+            RuntimeProof proof,
+            bool visualCompositionAcceptanceLocked)
+        {
             ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof);
-            if (!VisualCompositionAcceptanceLocked)
+            if (!visualCompositionAcceptanceLocked)
             {
                 throw new G08VisualCompositionAcceptanceRequiredException(
                     "G08 authored finisher composition is not visually accepted. Review the "
@@ -2614,6 +2649,27 @@ namespace DimensionBrawl.Editor.AuditionPV
             string authorizedRoot,
             Action<string> deleteFile = null)
         {
+            WriteFailureArtifactForRoot(
+                outputDirectory,
+                phase,
+                exception,
+                proof,
+                state,
+                authorizedRoot,
+                VisualCompositionAcceptanceLocked,
+                deleteFile);
+        }
+
+        internal static void WriteFailureArtifactForRoot(
+            string outputDirectory,
+            string phase,
+            Exception exception,
+            RuntimeProof proof,
+            PersistedRunnerState state,
+            string authorizedRoot,
+            bool visualCompositionAcceptanceLocked,
+            Action<string> deleteFile)
+        {
             ValidatePersistedStateLayoutForRoot(state, authorizedRoot);
             ValidateCanonicalCaptureLocationForRoot(
                 outputDirectory,
@@ -2662,7 +2718,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 pixelCalibrationLocked = PixelCalibrationLocked,
                 calibrationRequired = exception is G08PixelCalibrationRequiredException,
                 visualCompositionAcceptanceLocked =
-                    VisualCompositionAcceptanceLocked,
+                    visualCompositionAcceptanceLocked,
                 visualCompositionAcceptanceRequired =
                     exception is G08VisualCompositionAcceptanceRequiredException,
                 successArtifactCleanupFailure = cleanupFailure,

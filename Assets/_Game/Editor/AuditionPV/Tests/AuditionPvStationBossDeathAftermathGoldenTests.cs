@@ -1207,14 +1207,62 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void VisualCompositionAcceptance_FailsClosedAfterCompleteTelemetryValidation()
+        public void VisualCompositionAcceptance_IsLockedToReviewedCleanTake()
         {
             AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
                 CreateValidProof();
             Assert.That(
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .VisualCompositionAcceptanceLocked,
-                Is.False);
+                Is.True);
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceCaptureId,
+                Is.EqualTo(
+                    "20260816t130338z_g08-station-boss-death-aftermath_gd4c70fbbe697_clean"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceHeadSha,
+                Is.EqualTo("d4c70fbbe697da1a16ad505533cb15ba6c7b4357"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceFailureSha256,
+                Is.EqualTo(
+                    "7367b22719da895f74dcb1ad4b18b6a0b434eabe5291af2236bfe991c958834c"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceReconstructedLedgerSha256,
+                Is.EqualTo(
+                    "83a51984a5403863a36dc09ce3bcedc9f68e211abba970a96bc5d24cab1483e9"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceCaptureStartProvenanceSha256,
+                Is.EqualTo(
+                    "df07decc27241d4e3adf305b9aa03a543452ac6bafbce5f045b540e8d36d967c"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceF62BodyHeightRatio,
+                Is.EqualTo(0.30446988344192507d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceF116BodyMaxExtentRatio,
+                Is.EqualTo(0.2547542154788971d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceF181BodyMaxExtentRatio,
+                Is.EqualTo(0.25421980023384097d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceImpactToHeroAxisDeltaDegrees,
+                Is.EqualTo(61.78799404763924d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceImpactToHoldAxisDeltaDegrees,
+                Is.EqualTo(61.84057514229713d));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .VisualCompositionAcceptanceTerminalAxisHoldDriftDegrees,
+                Is.EqualTo(0.05258109465662268d));
             Assert.That(
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .CompositionEvidenceFrames,
@@ -1279,10 +1327,25 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.DoesNotThrow(() =>
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof));
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofForPublication(proof));
+        }
+
+        [Test]
+        public void VisualCompositionAcceptance_UnlockedBranchStillFailsClosed()
+        {
+            AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
+                CreateValidProof();
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforeVisualCompositionAcceptance(proof));
             Assert.Throws<AuditionPvStationBossDeathAftermathGoldenRunner
                 .G08VisualCompositionAcceptanceRequiredException>(() =>
                     AuditionPvStationBossDeathAftermathGoldenRunner
-                        .ValidateRuntimeProofForPublication(proof));
+                        .ValidateRuntimeProofForPublication(
+                            proof,
+                            visualCompositionAcceptanceLocked: false));
         }
 
         [Test]
@@ -1613,7 +1676,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void VisualAcceptanceFirstTake_WritesCompositionTelemetryAndNoSuccessArtifacts()
+        public void UnlockedVisualAcceptanceFailureBranch_WritesTelemetryAndNoSuccessArtifacts()
         {
             string root = NewTempRoot("g08-visual-acceptance");
             const string CaptureId = "g08-finisher-visual-first-take";
@@ -1641,7 +1704,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     AuditionPvStationBossDeathAftermathGoldenRunner
                         .G08VisualCompositionAcceptanceRequiredException>(() =>
                             AuditionPvStationBossDeathAftermathGoldenRunner
-                                .ValidateRuntimeProofForPublication(proof));
+                                .ValidateRuntimeProofForPublication(
+                                    proof,
+                                    visualCompositionAcceptanceLocked: false));
                 AuditionPvStationBossDeathAftermathGoldenRunner
                     .WriteFailureArtifactForRoot(
                         output,
@@ -1649,7 +1714,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         exception,
                         proof,
                         state,
-                        root);
+                        root,
+                        visualCompositionAcceptanceLocked: false,
+                        deleteFile: null);
 
                 CalibrationFailureProbe artifact = JsonUtility.FromJson<
                     CalibrationFailureProbe>(File.ReadAllText(Path.Combine(

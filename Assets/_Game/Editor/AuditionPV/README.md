@@ -173,8 +173,8 @@ The bounded product change behind this acceptance contract is exact: Akaza termi
 wing fold `52°`, and wing yaw `20°`. The dedicated FOV `44°` finisher camera starts at
 `(0,1.45,5.35)` looking at `(0,-0.40,0)`, then settles at `(0,1.40,5.60)` looking at
 `(0,-0.78,0)`. These authored values are setup/test pins; publication still depends on the runtime
-baked-geometry and projected-axis proof below, and the visual sentinel remains false until a new
-exact take is independently reviewed.
+baked-geometry and projected-axis proof below. The visual sentinel is locked only to the exact
+independently reviewed take recorded below.
 
 Composition telemetry is the exact ordered set `f61/f62/f116/f181/f246`. Core-body acceptance is
 computed from baked vertices of exactly
@@ -210,15 +210,29 @@ it published no manifest, baselines, success proof, or canonical ledger. Its cla
 `runtime/pixel calibration take; visual acceptance pending`; the historical `_clean` output-name
 suffix does not make it a clean or approved golden.
 
-`VisualCompositionAcceptanceLocked` is intentionally `false` for the first clean take after the
-finisher-camera and visual-truth change. That take is visual-acceptance calibration-only: it must
-complete the canonical runtime, pixel analysis, five-frame composition telemetry, finisher request/
-sample/terminal/release proof, and provenance checks, then fail with the dedicated visual-acceptance
-exception. Its failure package may retain raw/logical frames, runner state, and telemetry, but must
-contain no manifest, baselines, runtime success proof, or canonical ledger. Only independent review
-of that exact take may justify locking the sentinel and running a separate publishable golden take.
+`VisualCompositionAcceptanceLocked` is locked from the independently reviewed exact take
+`20260816t130338z_g08-station-boss-death-aftermath_gd4c70fbbe697_clean` at Git
+`d4c70fbbe697da1a16ad505533cb15ba6c7b4357`. Its intentional visual-acceptance failure SHA-256 is
+`7367b22719da895f74dcb1ad4b18b6a0b434eabe5291af2236bfe991c958834c`; the independently
+reconstructed 360-frame ledger is
+`83a51984a5403863a36dc09ce3bcedc9f68e211abba970a96bc5d24cab1483e9`, and its capture-start
+engine/dependency provenance is
+`df07decc27241d4e3adf305b9aa03a543452ac6bafbce5f045b540e8d36d967c`. It completed canonical
+runtime, pixel analysis, five-frame composition telemetry, finisher request/sample/terminal/release
+proof, and cleanup, then failed only with the dedicated visual-acceptance exception. Its retained
+failure package is exactly 360 logical QHD frames, one QHD warm-up, state, and failure telemetry;
+manifest, baselines, runtime success proof, and canonical ledger are absent. Independent QHD review
+accepted the unique f61-to-f62 hard cut, tight body extents f62=`0.304470`, f116=`0.254754`, and
+f181=`0.254220`, the validator-aligned `61.79`-degree collapse with `0.053`-degree terminal hold
+drift, authored HUD, marker, and NoCross cleanup, and the real interactive result surface. A
+separate clean-HEAD run is still
+required to publish the golden package after this lock. These identifiers and hashes are immutable
+approval provenance, not an equality requirement for later PNG bytes: every publish run must still
+independently pass the same live runtime, pixel, composition, cleanup, and provenance validators.
 
-The reviewed measurements were black/magenta/max-frame-magenta=`0/0/0`, healthy=`100%`, impact
+The reviewed pixel-calibration measurements reconstructed from the earlier
+`20260816t084414z_g08-station-boss-death-aftermath_g174d6862472a_clean` take were
+black/magenta/max-frame-magenta=`0/0/0`, healthy=`100%`, impact
 `13.542403/.299323`, death evolution `30.489848/.549518`, first visible result appearance
 `f218->f221=8.468069/.328385`, and visible entrance
 `f221->f246=35.305295/.852348`. The fixed raw-bottom result ROI
