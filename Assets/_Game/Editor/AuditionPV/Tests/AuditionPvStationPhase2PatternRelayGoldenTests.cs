@@ -23,6 +23,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.LastFrame, Is.EqualTo(419));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount, Is.EqualTo(420));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.PhaseTwoSettleFrames, Is.EqualTo(90));
+            Assert.That(
+                AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget,
+                Is.EqualTo(120));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainMoveFirstFrame, Is.EqualTo(17));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainMoveLastFrame, Is.EqualTo(46));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainStopFrame, Is.EqualTo(47));
@@ -281,6 +284,31 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Assert.That(visual.CuePlayer, Is.Not.Null);
                 Assert.That(visual.CuePlayer.Profile,
                     Is.SameAs(Load<CombatVfxCueProfile>(ExpectedVfxPath)));
+                BossBarrageLaneTelegraphPresenter telegraph = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        BossBarrageLaneTelegraphPresenter>(true))
+                    .Single(candidate => candidate.BossBarrageEmitter == emitter);
+                Assert.That(telegraph.gameObject.activeSelf, Is.True);
+                Assert.That(telegraph.enabled, Is.True);
+
+                const string CorridorScenePath =
+                    "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+                Scene corridor = SceneManager.GetSceneByPath(CorridorScenePath);
+                if (!corridor.IsValid() || !corridor.isLoaded)
+                {
+                    corridor = EditorSceneManager.OpenScene(
+                        CorridorScenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                BossBarrageLaneTelegraphPresenter corridorTelegraph = corridor
+                    .GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        BossBarrageLaneTelegraphPresenter>(true))
+                    .Single(candidate => candidate.gameObject.name
+                        == "BossBarrageLaneReview_BossBarrageTelegraphMarkers");
+                Assert.That(corridorTelegraph.gameObject.activeSelf, Is.True);
+                Assert.That(corridorTelegraph.enabled, Is.True);
             }
             finally
             {

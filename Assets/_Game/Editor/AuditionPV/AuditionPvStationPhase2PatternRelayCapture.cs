@@ -114,6 +114,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int HoverMoveLastFrame = 406;
         internal const int HoverStopFrame = 407;
         internal const int PhaseTwoSettleFrames = 90;
+        internal const int PostRecordingSettleFrameBudget = 120;
         internal const int CurtainProjectileCount = 7;
         internal const int HoverProjectileCount = 4;
         internal const float MinimumCurtainRiskDecrease = 0.12f;
@@ -1072,19 +1073,22 @@ namespace DimensionBrawl.Editor.AuditionPV
                 RecordCleanupFailure(exception);
             }
 
-            double started = Time.realtimeSinceStartupAsDouble;
+            int settleStartFrame = Mathf.Max(0, LastPresentedFrame);
             while (HasActivePresentationCue()
-                && Time.realtimeSinceStartupAsDouble - started
-                    <= PostRecordingSettleTimeoutSeconds)
+                && postRecordingSettleFrames
+                    < AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget)
             {
                 postRecordingSettleFrames++;
+                presentationClockLease?.SetFrame(
+                    settleStartFrame + postRecordingSettleFrames);
                 yield return null;
             }
 
-            postRecordingSettleSeconds = (float)Math.Max(
-                0d,
-                Time.realtimeSinceStartupAsDouble - started);
+            postRecordingSettleSeconds = postRecordingSettleFrames
+                / (float)AuditionPvCaptureContract.Fps;
             if (HasActivePresentationCue()
+                || postRecordingSettleFrames
+                    > AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget
                 || postRecordingSettleSeconds > PostRecordingSettleTimeoutSeconds)
             {
                 var timeout = new TimeoutException(
