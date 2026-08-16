@@ -114,7 +114,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int HoverMoveLastFrame = 406;
         internal const int HoverStopFrame = 407;
         internal const int PhaseTwoSettleFrames = 90;
-        internal const int PostRecordingSettleFrameBudget = 120;
+        internal const int PostRecordingSettleFrameBudget = 240;
         internal const int CurtainProjectileCount = 7;
         internal const int HoverProjectileCount = 4;
         internal const float MinimumCurtainRiskDecrease = 0.12f;
@@ -501,7 +501,9 @@ namespace DimensionBrawl.Editor.AuditionPV
     public sealed class AuditionPvStationPhase2PatternRelayDirector : MonoBehaviour
     {
         private const double PhaseTwoPreparationTimeoutSeconds = 15d;
-        private const double PostRecordingSettleTimeoutSeconds = 2d;
+        private const double PostRecordingSettleTimeoutSeconds =
+            AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget
+            / (double)AuditionPvCaptureContract.Fps;
         private const float Tolerance = 0.001f;
         private readonly Vector2[] hoverPreview = new Vector2[16];
 
@@ -1092,7 +1094,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || postRecordingSettleSeconds > PostRecordingSettleTimeoutSeconds)
             {
                 var timeout = new TimeoutException(
-                    "G07 product presentation did not settle within two unrecorded seconds.");
+                    "G07 product presentation did not settle within the exact four-second "
+                    + "unrecorded frame budget. "
+                    + BuildActivePresentationDiagnostics());
                 firstFailure = CombineExceptions(firstFailure, timeout);
                 RecordCleanupFailure(timeout);
             }
@@ -2210,6 +2214,27 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && (cameraCue.CameraController.HasActiveCue
                         || cameraCue.CameraController.HasActiveMicroShake)
                 || motion != null && motion.IsHeavyReleaseActive;
+        }
+
+        private string BuildActivePresentationDiagnostics()
+        {
+            return "visual=" + (visualCue != null && visualCue.IsCueActive)
+                + ", scheduledVfx=" + (visualCue != null && visualCue.CuePlayer != null
+                    ? visualCue.CuePlayer.ScheduledCueReleaseCount
+                    : -1)
+                + ", activeAudio=" + (visualCue != null && visualCue.CuePlayer != null
+                    ? visualCue.CuePlayer.ActiveProfileAudioSourceCount
+                    : -1)
+                + ", telegraphRefreshing=" + (telegraph != null && telegraph.IsRefreshing)
+                + ", telegraphMarkers=" + (telegraph != null ? telegraph.VisibleMarkerCount : -1)
+                + ", cameraCue=" + (cameraCue != null
+                    && cameraCue.CameraController != null
+                    && cameraCue.CameraController.HasActiveCue)
+                + ", cameraShake=" + (cameraCue != null
+                    && cameraCue.CameraController != null
+                    && cameraCue.CameraController.HasActiveMicroShake)
+                + ", heavyRelease=" + (motion != null && motion.IsHeavyReleaseActive)
+                + ".";
         }
 
         private void AdvanceEmitterAuthoredSequenceToZero()

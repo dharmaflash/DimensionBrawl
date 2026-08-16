@@ -25,7 +25,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.PhaseTwoSettleFrames, Is.EqualTo(90));
             Assert.That(
                 AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget,
-                Is.EqualTo(120));
+                Is.EqualTo(240));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainMoveFirstFrame, Is.EqualTo(17));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainMoveLastFrame, Is.EqualTo(46));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainStopFrame, Is.EqualTo(47));
@@ -290,6 +290,27 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     .Single(candidate => candidate.BossBarrageEmitter == emitter);
                 Assert.That(telegraph.gameObject.activeSelf, Is.True);
                 Assert.That(telegraph.enabled, Is.True);
+                BossBarrageCameraCueDriver cameraCue = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        BossBarrageCameraCueDriver>(true))
+                    .Single(candidate => new SerializedObject(candidate)
+                        .FindProperty("bossBarrageEmitter").objectReferenceValue == emitter);
+                SerializedProperty cameraOverrides = new SerializedObject(cameraCue)
+                    .FindProperty("patternWindupCueOverrides");
+                SerializedProperty crushNetOverride = Enumerable.Range(
+                        0,
+                        cameraOverrides.arraySize)
+                    .Select(cameraOverrides.GetArrayElementAtIndex)
+                    .Single(value => value.FindPropertyRelative("patternId").stringValue
+                        == "AkazaCrushNet");
+                float crushNetCameraSeconds = crushNetOverride
+                    .FindPropertyRelative("cue")
+                    .FindPropertyRelative("durationSeconds")
+                    .floatValue;
+                Assert.That(crushNetCameraSeconds, Is.EqualTo(3.2f));
+                Assert.That(
+                    AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget,
+                    Is.GreaterThan(Mathf.CeilToInt(crushNetCameraSeconds * 60f)));
 
                 const string CorridorScenePath =
                     "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
@@ -1141,6 +1162,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 cameraStateRestored = true,
                 hudStateRestored = true,
                 globalStateRestored = true,
+                postRecordingSettleFrames = 30,
                 postRecordingSettleSeconds = 0.5f,
                 stationScenePath = AuditionPvStationPhase2PatternRelayCapture.StationScenePath,
                 stationSceneSha256 = Sha('f'),

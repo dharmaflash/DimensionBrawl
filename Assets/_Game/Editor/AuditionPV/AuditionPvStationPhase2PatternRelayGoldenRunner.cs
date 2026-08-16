@@ -763,8 +763,17 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !proof.cameraStateRestored
                 || !proof.hudStateRestored
                 || !proof.globalStateRestored
+                || proof.postRecordingSettleFrames < 0
+                || proof.postRecordingSettleFrames
+                    > AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget
                 || proof.postRecordingSettleSeconds < 0f
-                || proof.postRecordingSettleSeconds > 2f
+                || proof.postRecordingSettleSeconds
+                    > AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget
+                        / (float)AuditionPvCaptureContract.Fps
+                || Mathf.Abs(
+                    proof.postRecordingSettleSeconds
+                    - proof.postRecordingSettleFrames
+                        / (float)AuditionPvCaptureContract.Fps) > 0.000001f
                 || !string.Equals(
                     proof.stationScenePath,
                     AuditionPvStationPhase2PatternRelayCapture.StationScenePath,
