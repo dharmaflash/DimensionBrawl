@@ -1,10 +1,12 @@
 using System;
+using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace DimensionBrawl.Tests
 {
@@ -14,6 +16,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller";
         private const string HoverLancePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_Phase2_AkazaHoverLance.asset";
+        private const string MotionDriverScriptPath =
+            "Assets/_Game/Scripts/Presentation/AkazaPhase2CombatMotionDriver.cs";
 
         [Test]
         public void MotionDriverRunsAfterTheArenaTransformScheduler()
@@ -26,6 +30,67 @@ namespace DimensionBrawl.Tests
                 executionOrder.order,
                 Is.GreaterThan(10000),
                 "Root recoil and death settle must layer after the arena bob scheduler.");
+
+            MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(
+                MotionDriverScriptPath);
+            Assert.That(script, Is.Not.Null);
+            Assert.That(
+                MonoImporter.GetExecutionOrder(script),
+                Is.EqualTo(executionOrder.order),
+                "The imported script order must not override the authored post-scheduler order.");
+        }
+
+        [UnityTest]
+        public IEnumerator ActualLateUpdateOrder_PreservesDeathOverlayAfterArenaScheduler()
+        {
+            using var fixture = new MotionFixture(includeCombat: false);
+            ActionFoundationArenaTransformMotion arenaMotion =
+                fixture.MotionRoot.gameObject.AddComponent<
+                    ActionFoundationArenaTransformMotion>();
+            arenaMotion.Configure(
+                Vector3.zero,
+                Vector3.up,
+                0.28f,
+                0.2f,
+                0f,
+                lockLocalRotation: true,
+                lockLocalScale: true);
+            fixture.Driver.CaptureOriginalPose();
+            Vector3 authoredRootPosition = fixture.MotionRoot.localPosition;
+            Quaternion authoredRootRotation = fixture.MotionRoot.localRotation;
+            fixture.Driver.PlayDeath();
+
+            using (PresentationClock.ManualLease lease =
+                PresentationClock.AcquireManual(this, 60))
+            {
+                for (int frame = 1; frame <= 55; frame++)
+                {
+                    lease.SetFrame(frame);
+                    yield return null;
+                }
+            }
+
+            Quaternion deathRotation = Quaternion.Euler(
+                AkazaPhase2CombatMotionDriver.RequiredDeathPitchDegrees,
+                0f,
+                AkazaPhase2CombatMotionDriver.RequiredDeathRollDegrees);
+            Vector3 deathPivot = Vector3.up
+                * AkazaPhase2CombatMotionDriver.RequiredDeathPivotLocalHeight;
+            Vector3 expectedPosition = authoredRootPosition
+                + authoredRootRotation * (deathPivot - deathRotation * deathPivot)
+                + Vector3.down * AkazaPhase2CombatMotionDriver.RequiredDeathDropDistance
+                + Vector3.back * AkazaPhase2CombatMotionDriver.RequiredDeathBackDistance;
+            Quaternion expectedRotation = authoredRootRotation * deathRotation;
+
+            Assert.That(fixture.Driver.DeathProgress01, Is.EqualTo(1f));
+            Assert.That(
+                Vector3.Distance(fixture.MotionRoot.localPosition, expectedPosition),
+                Is.LessThan(0.0001f),
+                "The arena scheduler must not replace the terminal death position.");
+            Assert.That(
+                Quaternion.Angle(fixture.MotionRoot.localRotation, expectedRotation),
+                Is.LessThan(0.01f),
+                "The arena scheduler must not replace the terminal death rotation.");
         }
 
         [Test]
