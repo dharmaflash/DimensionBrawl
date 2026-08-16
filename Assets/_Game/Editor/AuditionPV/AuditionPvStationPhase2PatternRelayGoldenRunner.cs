@@ -462,7 +462,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = area.xMin; x < area.xMax; x += sampleStride)
                 {
-                    int index = y * width + x;
+                    int index = RawIndexFromBottomLeft(x, y, width, height);
                     Color32 left = before[index];
                     Color32 right = after[index];
                     int red = Math.Abs(left.r - right.r);
@@ -519,7 +519,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += sampleStride)
                 {
-                    Color32 pixel = pixels[y * width + x];
+                    Color32 pixel = pixels[
+                        RawIndexFromBottomLeft(x, y, width, height)];
                     if (IsCurtainGreen(pixel))
                     {
                         metrics.curtainGreenSampleCount++;
@@ -584,6 +585,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             EvaluateHudFrame(
                 pixels,
                 width,
+                height,
                 roi,
                 sampleStride,
                 out int pink,
@@ -916,30 +918,66 @@ namespace DimensionBrawl.Editor.AuditionPV
             int expectedFrame,
             int expectedMarkers)
         {
+            bool markerArrayExact = evidence?.markers != null
+                && evidence.markers.Length == expectedMarkers;
+            bool allMarkerBoundsFoundAndInFront = markerArrayExact
+                && evidence.markers.All(marker => marker != null
+                    && marker.rendererBoundsFound
+                    && marker.centerInFront);
+            bool anyMarkerIntersects = markerArrayExact
+                && evidence.markers.Any(marker => marker != null
+                    && marker.rendererBoundsFound
+                    && marker.frustumIntersects
+                    && marker.pixelWidth > 0
+                    && marker.pixelHeight > 0);
+            bool allMarkersIntersect = markerArrayExact
+                && evidence.markers.All(marker => marker != null
+                    && marker.rendererBoundsFound
+                    && marker.frustumIntersects);
+            bool allIntersectionFlagExact = markerArrayExact
+                && evidence.allMarkerRenderersIntersectFrustum
+                    == allMarkersIntersect;
             if (evidence == null
                 || evidence.logicalFrame != expectedFrame
                 || !evidence.cameraActiveAndEnabled
                 || !evidence.cameraPerspective
                 || !evidence.cameraFullRect
                 || !evidence.cameraTargetTextureNull
+                || evidence.player == null
                 || !evidence.player.safeViewport
+                || evidence.boss == null
                 || !evidence.boss.safeViewport
                 || evidence.visibleMarkerCount != expectedMarkers
                 || evidence.visibleMarkerRendererCount != expectedMarkers
                 || !evidence.markerBoundsIntersectFrustum
-                || !evidence.allMarkerRenderersIntersectFrustum
-                || evidence.markers == null
-                || evidence.markers.Length != expectedMarkers
-                || evidence.markers.Any(marker => marker == null
-                    || !marker.rendererBoundsFound
-                    || !marker.frustumIntersects
-                    || marker.pixelWidth <= 0
-                    || marker.pixelHeight <= 0)
+                || !markerArrayExact
+                || !allMarkerBoundsFoundAndInFront
+                || !anyMarkerIntersects
+                || !allIntersectionFlagExact
                 || evidence.markerPixelWidth <= 0
                 || evidence.markerPixelHeight <= 0)
             {
                 throw new InvalidOperationException(
-                    "G07 safe-frame render evidence failed at f" + expectedFrame + ".");
+                    "G07 safe-frame render evidence failed at f" + expectedFrame
+                    + ": actualFrame=" + (evidence?.logicalFrame ?? -1)
+                    + ", camera=" + (evidence != null
+                        && evidence.cameraActiveAndEnabled
+                        && evidence.cameraPerspective
+                        && evidence.cameraFullRect
+                        && evidence.cameraTargetTextureNull)
+                    + ", playerSafe=" + (evidence?.player?.safeViewport ?? false)
+                    + ", bossSafe=" + (evidence?.boss?.safeViewport ?? false)
+                    + ", visible=" + (evidence?.visibleMarkerCount ?? -1)
+                    + "/" + expectedMarkers
+                    + ", renderers=" + (evidence?.visibleMarkerRendererCount ?? -1)
+                    + "/" + expectedMarkers
+                    + ", aggregateIntersects="
+                    + (evidence?.markerBoundsIntersectFrustum ?? false)
+                    + ", anyMarkerIntersects=" + anyMarkerIntersects
+                    + ", allBoundsFoundAndInFront="
+                    + allMarkerBoundsFoundAndInFront
+                    + ", allFlagExact=" + allIntersectionFlagExact
+                    + ".");
             }
         }
 
@@ -1677,7 +1715,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
                     AnalyzeSequenceFrame(pixels, texture.width, texture.height, sequence);
-                    AnalyzeHudFrame(pixels, texture.width, HudRawBottomLeftRoi, hud);
+                    AnalyzeHudFrame(
+                        pixels,
+                        texture.width,
+                        texture.height,
+                        HudRawBottomLeftRoi,
+                        hud);
                     if (selectedSet.Contains(frame))
                     {
                         selected[frame] = pixels.ToArray();
@@ -1890,6 +1933,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private static void AnalyzeHudFrame(
             NativeArray<Color32> pixels,
             int width,
+            int height,
             RectInt roi,
             HudVisualMetrics aggregate)
         {
@@ -1902,7 +1946,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += 4)
                 {
-                    Color32 pixel = pixels[y * width + x];
+                    Color32 pixel = pixels[
+                        RawIndexFromBottomLeft(x, y, width, height)];
                     int luma = Luma(pixel);
                     if (pixel.r >= 140
                         && pixel.r - pixel.g >= 15
@@ -1957,6 +2002,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private static void EvaluateHudFrame(
             Color32[] pixels,
             int width,
+            int height,
             RectInt roi,
             int stride,
             out int pink,
@@ -1973,7 +2019,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 for (int x = roi.xMin; x < roi.xMax; x += stride)
                 {
-                    Color32 pixel = pixels[y * width + x];
+                    Color32 pixel = pixels[
+                        RawIndexFromBottomLeft(x, y, width, height)];
                     int luma = Luma(pixel);
                     if (pixel.r >= 140
                         && pixel.r - pixel.g >= 15
@@ -2003,6 +2050,18 @@ namespace DimensionBrawl.Editor.AuditionPV
         private static int Luma(Color32 pixel)
         {
             return (pixel.r * 54 + pixel.g * 183 + pixel.b * 19) >> 8;
+        }
+
+        private static int RawIndexFromBottomLeft(
+            int x,
+            int y,
+            int width,
+            int height)
+        {
+            // ImageConversion.LoadImage exposes PNG storage rows top-down via
+            // GetRawTextureData, while camera/viewport RectInt evidence uses
+            // Unity's bottom-left presentation coordinates.
+            return (height - 1 - y) * width + x;
         }
 
         private static void ValidateRoi(RectInt roi, int width, int height)

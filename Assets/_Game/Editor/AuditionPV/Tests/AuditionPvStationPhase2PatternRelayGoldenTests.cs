@@ -573,7 +573,17 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.frame417Sha256 = proof.bl09Sha256);
             AssertMutation(proof => proof.curtainFireMarkerColor = Color.red);
             AssertMutation(proof => proof.renderEvents[4].finalHeroComposition = false);
-            AssertMutation(proof => proof.renderEvents[1].markers[0].frustumIntersects = false);
+            AssertMutation(proof =>
+            {
+                var renderEvent = proof.renderEvents[1];
+                foreach (var marker in renderEvent.markers)
+                {
+                    marker.frustumIntersects = false;
+                }
+
+                renderEvent.markerBoundsIntersectFrustum = false;
+                renderEvent.allMarkerRenderersIntersectFrustum = false;
+            });
         }
 
         [Test]
@@ -598,11 +608,19 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Color32[] before = Enumerable.Repeat(new Color32(0, 0, 0, 255), 16)
                 .ToArray();
             Color32[] after = before.ToArray();
-            after[5] = new Color32(30, 30, 30, 255);
+            // Raw PNG rows are top-down. Presentation coordinate (1, 1) in a
+            // 4x4 image is raw index 9, not the tempting unflipped index 5.
+            after[(4 - 1 - 1) * 4 + 1] = new Color32(30, 30, 30, 255);
             var delta = AuditionPvStationPhase2PatternRelayGoldenRunner
                 .EvaluateFrameDelta(before, after, 4, 4, new RectInt(1, 1, 1, 1));
             Assert.That(delta.sampleCount, Is.EqualTo(1));
             Assert.That(delta.changedSampleCount, Is.EqualTo(1));
+            after = before.ToArray();
+            after[1 * 4 + 1] = new Color32(30, 30, 30, 255);
+            delta = AuditionPvStationPhase2PatternRelayGoldenRunner
+                .EvaluateFrameDelta(before, after, 4, 4, new RectInt(1, 1, 1, 1));
+            Assert.That(delta.changedSampleCount, Is.Zero,
+                "A vertically mirrored raw-row mutation must be outside the bottom-left ROI.");
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 AuditionPvStationPhase2PatternRelayGoldenRunner.EvaluateFrameDelta(
                     before, after, 4, 4, new RectInt(4, 0, 1, 1)));
@@ -651,6 +669,86 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.Throws<InvalidOperationException>(() =>
                 AuditionPvStationPhase2PatternRelayGoldenRunner.ValidateHudMetrics(
                     independentlyObservedG06Hud));
+        }
+
+        [Test]
+        public void PixelRoiHelpers_MapTopDownRawRowsToBottomLeftPresentationCoordinates()
+        {
+            const int width = 4;
+            const int height = 4;
+            int RawIndex(int x, int bottomY) =>
+                (height - 1 - bottomY) * width + x;
+
+            Color32[] hud = Enumerable.Repeat(
+                new Color32(100, 100, 100, 255), width * height).ToArray();
+            for (int rawIndex = 0; rawIndex < width * 2; rawIndex++)
+            {
+                hud[rawIndex] = new Color32(255, 0, 0, 255);
+            }
+
+            hud[RawIndex(0, 0)] = new Color32(200, 100, 100, 255);
+            hud[RawIndex(1, 0)] = new Color32(10, 10, 10, 255);
+            hud[RawIndex(0, 1)] = new Color32(240, 240, 240, 255);
+            hud[RawIndex(1, 1)] = new Color32(100, 100, 100, 255);
+            var hudMetrics = AuditionPvStationPhase2PatternRelayGoldenRunner
+                .EvaluateHudRoi(hud, width, height, new RectInt(0, 0, 2, 2), 1);
+            Assert.That(hudMetrics.minimumFramePinkSamples, Is.EqualTo(1));
+            Assert.That(hudMetrics.minimumFrameDarkSamples, Is.EqualTo(1));
+            Assert.That(hudMetrics.minimumFrameBrightSamples, Is.EqualTo(1));
+            Assert.That(hudMetrics.minimumFrameMeanLuma, Is.EqualTo(117.75d));
+
+            Color32[] pattern = Enumerable.Repeat(
+                new Color32(100, 100, 100, 255), width * height).ToArray();
+            for (int rawIndex = 0; rawIndex < width * 2; rawIndex++)
+            {
+                pattern[rawIndex] = rawIndex % 2 == 0
+                    ? new Color32(146, 170, 162, 255)
+                    : new Color32(125, 170, 180, 255);
+            }
+
+            pattern[RawIndex(0, 0)] = new Color32(146, 170, 162, 255);
+            pattern[RawIndex(1, 0)] = new Color32(125, 170, 180, 255);
+            var colors = AuditionPvStationPhase2PatternRelayGoldenRunner
+                .EvaluatePatternColors(
+                    pattern, width, height, new RectInt(0, 0, 2, 2), 1);
+            Assert.That(colors.sampleCount, Is.EqualTo(4));
+            Assert.That(colors.curtainGreenSampleCount, Is.EqualTo(1));
+            Assert.That(colors.hoverCyanSampleCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void RuntimeProof_AllowsPartialMarkerIntersectionButRejectsZeroIntersection()
+        {
+            var partial = CreateValidProof();
+            for (int index = 1;
+                index < partial.renderEvents[0].markers.Length;
+                index++)
+            {
+                partial.renderEvents[0].markers[index].frustumIntersects = false;
+            }
+
+            partial.renderEvents[0].allMarkerRenderersIntersectFrustum = false;
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(partial));
+
+            var inconsistent = CreateValidProof();
+            inconsistent.renderEvents[0].markers[0].frustumIntersects = false;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(inconsistent));
+
+            var absent = CreateValidProof();
+            foreach (var marker in absent.renderEvents[0].markers)
+            {
+                marker.frustumIntersects = false;
+            }
+
+            absent.renderEvents[0].markerBoundsIntersectFrustum = false;
+            absent.renderEvents[0].allMarkerRenderersIntersectFrustum = false;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(absent));
         }
 
 
