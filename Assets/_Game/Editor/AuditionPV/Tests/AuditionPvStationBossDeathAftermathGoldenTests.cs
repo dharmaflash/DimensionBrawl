@@ -281,6 +281,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         "DB_AkazaPhase2Combined_FaceHairDetail"
                     }));
                 Assert.That(core.Distinct().Count(), Is.EqualTo(2));
+                Assert.That(
+                    AuditionPvStationBossDeathAftermathDirector
+                        .HasExactBossCoreRendererAuthoring(core),
+                    Is.True);
+                Assert.That(core.All(value => !value.gameObject.activeInHierarchy),
+                    Is.True,
+                    "The exact body renderers remain beneath the intentionally inactive Phase2 root before product activation.");
                 foreach (SkinnedMeshRenderer renderer in core)
                 {
                     Assert.That(renderer.enabled, Is.True,

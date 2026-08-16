@@ -1847,11 +1847,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || combatHud == null
                 || playerRendererRoot == null
                 || bossRendererRoot == null
-                || bossCoreBodyRenderers.Length != 2
-                || bossCoreBodyRenderers.Any(value => value == null
-                    || !value.enabled
-                    || value.forceRenderingOff
-                    || !value.gameObject.activeInHierarchy)
+                || !HasExactBossCoreRendererAuthoring(bossCoreBodyRenderers)
                 || bossCoreAxisHips == null
                 || bossCoreAxisHead == null
                 || bossCoreAxisHips == bossCoreAxisHead
@@ -3365,6 +3361,29 @@ namespace DimensionBrawl.Editor.AuditionPV
                 hips = hipsMatches[0];
                 head = headMatches[0];
             }
+        }
+
+        internal static bool HasExactBossCoreRendererAuthoring(
+            SkinnedMeshRenderer[] renderers)
+        {
+            return renderers != null
+                && renderers.Length == 2
+                && renderers[0] != null
+                && renderers[1] != null
+                && renderers[0] != renderers[1]
+                && string.Equals(
+                    renderers[0].gameObject.name,
+                    BossCoreBodySilhouetteObjectName,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    renderers[1].gameObject.name,
+                    BossCoreFaceHairDetailObjectName,
+                    StringComparison.Ordinal)
+                && renderers.All(value => value.enabled
+                    && !value.forceRenderingOff
+                    && value.gameObject.activeSelf
+                    && value.sharedMesh != null
+                    && value.sharedMesh.vertexCount > 0);
         }
 
         private static T FindSingleNamedComponent<T>(Transform root, string objectName)
