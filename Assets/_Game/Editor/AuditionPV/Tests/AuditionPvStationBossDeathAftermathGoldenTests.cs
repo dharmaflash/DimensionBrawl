@@ -40,6 +40,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(12f));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileSpeed,
                 Is.EqualTo(24f));
+            Assert.That(AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius,
+                Is.EqualTo(0.31f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture.PredictNaturalImpactFrame(
+                    AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance),
+                Is.EqualTo(62));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.FrameTimeSeconds(359),
                 Is.EqualTo(359f / 60f).Within(0.000001f));
             Assert.That(AuditionPvStationBossDeathAftermathGoldenRunner.RawWarmupFrame,
@@ -115,6 +122,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("PendingHandoffToken"));
             Assert.That(source, Does.Contain("TrySkipTransition()"));
             Assert.That(source, Does.Contain("ApplyStrictlyNonlethalSetupDamage"));
+            Assert.That(source, Does.Contain("DismissActivePressureSummons()"));
+            Assert.That(source, Does.Contain(
+                "bossPressurePosition.SetMovementEnabled(false);"));
+            Assert.That(source, Does.Contain(
+                "bossPressurePosition.SetMovementEnabled(savedBossPressureMovementEnabled);"));
+            Assert.That(source, Does.Contain("BeginAuthoredPlanarStep("));
+            Assert.That(source, Does.Contain("Physics.SphereCastNonAlloc("));
             Assert.That(Count(source, "bossHealth.TryApplyDamage(damage)"),
                 Is.EqualTo(1));
             Assert.That(source, Does.Not.Contain("projectile.transform.position ="));
@@ -126,6 +140,124 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Not.Contain(".SetPositionAndRotation("));
             Assert.That(source, Does.Not.Contain("TryApplyImpact("));
             Assert.That(source, Does.Not.Contain("ResolveImpact("));
+        }
+
+        [Test]
+        public void NaturalImpactCalibration_UsesPublicPreRollAndCentersOnlyF62()
+        {
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(24f),
+                Is.EqualTo(61));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(24.0001f),
+                Is.EqualTo(62));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(24.3999f),
+                Is.EqualTo(62));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(24.4001f),
+                Is.EqualTo(63));
+
+            string source = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathCapture.CaptureScriptPath);
+            int dismissal = source.IndexOf(
+                "DismissActivePressureSummons()",
+                StringComparison.Ordinal);
+            int movementHold = source.IndexOf(
+                "AcquireBossPressureMovementHold();",
+                StringComparison.Ordinal);
+            int publicStep = source.IndexOf(
+                "movement.BeginAuthoredPlanarStep(",
+                StringComparison.Ordinal);
+            int preparationCall = source.IndexOf(
+                "yield return PrepareNaturalBossImpactOwnership();",
+                StringComparison.Ordinal);
+            int shotArm = source.IndexOf(
+                "public void BeginShotForRecorder()",
+                StringComparison.Ordinal);
+            Assert.That(movementHold, Is.GreaterThanOrEqualTo(0));
+            Assert.That(dismissal, Is.GreaterThan(movementHold));
+            Assert.That(publicStep, Is.GreaterThan(dismissal));
+            Assert.That(preparationCall, Is.GreaterThanOrEqualTo(0));
+            Assert.That(shotArm, Is.GreaterThan(preparationCall));
+            Assert.That(source, Does.Contain(
+                "ObserveBossPoseThroughImpact(atPhysicalImpact: true);"));
+            Assert.That(source, Does.Contain(
+                "maximumBossRotationDriftThroughImpact"));
+        }
+
+        [Test]
+        public void EditorResumeWatchdog_WaitsThroughUpdatingThenRunsWhenIdle()
+        {
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .DetermineResumeWatchdogAction(
+                        ownedSession: true,
+                        isPlayingOrWillChangePlaymode: false,
+                        isCompiling: false,
+                        isUpdating: true),
+                Is.EqualTo(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResumeWatchdogAction.KeepWaiting));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .DetermineResumeWatchdogAction(
+                        ownedSession: true,
+                        isPlayingOrWillChangePlaymode: true,
+                        isCompiling: false,
+                        isUpdating: false),
+                Is.EqualTo(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResumeWatchdogAction.KeepWaiting));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .DetermineResumeWatchdogAction(
+                        ownedSession: true,
+                        isPlayingOrWillChangePlaymode: false,
+                        isCompiling: true,
+                        isUpdating: false),
+                Is.EqualTo(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResumeWatchdogAction.KeepWaiting));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .DetermineResumeWatchdogAction(
+                        ownedSession: true,
+                        isPlayingOrWillChangePlaymode: false,
+                        isCompiling: false,
+                        isUpdating: false),
+                Is.EqualTo(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResumeWatchdogAction.Run));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .DetermineResumeWatchdogAction(
+                        ownedSession: false,
+                        isPlayingOrWillChangePlaymode: false,
+                        isCompiling: false,
+                        isUpdating: false),
+                Is.EqualTo(AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ResumeWatchdogAction.Unregister));
+
+            string source = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathGoldenRunner.RunnerScriptPath);
+            Assert.That(source, Does.Contain(
+                "EditorApplication.update += ResumeOwnedSessionWatchdog"));
+            Assert.That(source, Does.Contain(
+                "change == PlayModeStateChange.ExitingPlayMode"));
+            int notify = source.IndexOf(
+                "internal static void NotifyPlayModeFinished",
+                StringComparison.Ordinal);
+            int watchdog = source.IndexOf(
+                "EnsureResumeWatchdog();",
+                notify,
+                StringComparison.Ordinal);
+            int requestEditMode = source.IndexOf(
+                "EditorApplication.isPlaying = false;",
+                notify,
+                StringComparison.Ordinal);
+            Assert.That(watchdog, Is.GreaterThan(notify));
+            Assert.That(requestEditMode, Is.GreaterThan(watchdog));
         }
 
         [Test]
@@ -889,6 +1021,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.fireFrame = 2);
             AssertRuntimeMutation(value => value.projectileImpactFrame = 61);
             AssertRuntimeMutation(value => value.bossDiedFrame = 63);
+            AssertRuntimeMutation(value => value.pressureScreensBeforeDismiss = 0);
+            AssertRuntimeMutation(value => value.pressureScreensAfterDismiss = 1);
+            AssertRuntimeMutation(value => value.predictedNaturalImpactFrame = 63);
+            AssertRuntimeMutation(value => value.predictedBossSweepDistance = 24.5f);
+            AssertRuntimeMutation(value => value.bossPressureMovementWasEnabled = false);
+            AssertRuntimeMutation(value => value.bossPressureMovementHoldAcquired = false);
+            AssertRuntimeMutation(value => value.bossPoseStableThroughImpact = false);
+            AssertRuntimeMutation(value => value.bossPositionAtImpact += Vector3.right);
+            AssertRuntimeMutation(value =>
+                value.maximumBossRotationDriftThroughImpact = 0.01f);
             AssertRuntimeMutation(value => value.aftermathCompletedFrame = 217);
             AssertRuntimeMutation(value => value.inputLeaseReleasedFrame = 219);
             AssertRuntimeMutation(value => value.firstFreezeFrame = 217);
@@ -904,6 +1046,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.resultSummarySameInstance = false);
             AssertRuntimeMutation(value => value.presentedSummarySameInstance = false);
             AssertRuntimeMutation(value => value.eventsReleased = false);
+            AssertRuntimeMutation(value => value.bossPressureMovementRestored = false);
             AssertRuntimeMutation(value => value.editModeGlobalCleanupExact = false);
             AssertRuntimeMutation(value => value.renderEvidence[0].bossPixelExtent =
                 new Vector2(7f, 20f));
@@ -956,6 +1099,19 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 phaseTwoApplied = true,
                 preparedHealth = 12f,
                 bossHealthBeforeShot = 12f,
+                pressureScreensBeforeDismiss = 1,
+                pressureSummonsDismissed = 1,
+                pressureScreensAfterDismiss = 0,
+                predictedBossSweepDistance = 24.2f,
+                predictedNaturalImpactFrame = 62,
+                preShotPlayerPlanarStepDistance = 1.2f,
+                bossPressureMovementWasEnabled = true,
+                bossPressureMovementHoldAcquired = true,
+                bossPoseStableThroughImpact = true,
+                bossPositionAtShotArm = new Vector3(0f, 1f, 16f),
+                bossPositionAtImpact = new Vector3(0f, 1f, 16f),
+                maximumBossPositionDriftThroughImpact = 0f,
+                maximumBossRotationDriftThroughImpact = 0f,
                 fireFrame = 1,
                 projectileFiredFrame = 1,
                 bossDiedFrame = 62,
@@ -1031,6 +1187,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 eventsReleased = true,
                 presentationClockReleased = true,
                 cadenceReleased = true,
+                bossPressureMovementRestored = true,
                 transitionCaptureStateReleased = true,
                 globalCaptureStateRestored = true,
                 editModeSceneCleanupExact = true,

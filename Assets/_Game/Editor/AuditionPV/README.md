@@ -108,6 +108,12 @@ load API. The Station entry guide must reach `Released`. Pre-roll uses public, s
 damage for the Phase 1 threshold, public `TrySkipTransition`, a bounded Phase 2 wait, and a second
 strictly non-lethal hit that leaves the boss at exactly 12 HP.
 
+Before Recorder arm, capture ownership dismisses the already-active Phase 2 pressure curtain through
+its public product API, stores the exact `BossPressurePositionController.MovementEnabled` value, and
+uses public `SetMovementEnabled(false)` while a read-only physical sphere sweep centers the player by
+an authored public movement step. The boss `MovedTransform` position and rotation must remain exact
+from shot arm through the real impact, and success/failure cleanup restores the saved movement value.
+
 Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
 frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps
 raw `1..360` to logical `f0..f359`, exactly 360 QHD60 frames. During logical recording the director
@@ -141,6 +147,11 @@ publish success artifacts. `capture_manifest.json` is the final fallible write a
 terminal commit record; a valid committed manifest wins stale runner or terminal-fault state.
 Failure cleanup is best-effort across every owned success artifact and records any cleanup fault in
 the atomic failure artifact.
+
+Edit-mode finalization is guarded by both `delayCall` and a persistent `EditorApplication.update`
+watchdog. Import/update/play-mode transitions remain bounded waits; once the Editor is idle the
+watchdog cancels any stale delayed callback and resumes the owned session directly, so failure
+artifact publication and unattended exit cannot be lost to an `isUpdating` requeue.
 
 ## Validation
 

@@ -99,6 +99,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             "dimension-brawl.audition-pv.capture-failure.v1";
 
         private static bool resumeScheduled;
+        private static bool resumeWatchdogRegistered;
         private static bool finalizing;
         private static AuditionPvStationBossDeathAftermathGoldenRunnerBehaviour
             activeBehaviour;
@@ -570,10 +571,40 @@ namespace DimensionBrawl.Editor.AuditionPV
                     - AuditionPvStationBossDeathAftermathCapture.PreparedBossHealth) > 0.001f
                 || Mathf.Abs(
                     proof.bossHealthBeforeShot
-                    - AuditionPvStationBossDeathAftermathCapture.PreparedBossHealth) > 0.001f)
+                    - AuditionPvStationBossDeathAftermathCapture.PreparedBossHealth) > 0.001f
+                || proof.pressureScreensBeforeDismiss <= 0
+                || proof.pressureSummonsDismissed
+                    < proof.pressureScreensBeforeDismiss
+                || proof.pressureScreensAfterDismiss != 0
+                || !float.IsFinite(proof.predictedBossSweepDistance)
+                || Mathf.Abs(
+                    proof.predictedBossSweepDistance
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance)
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactDistanceTolerance
+                || proof.predictedNaturalImpactFrame
+                    != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                || !float.IsFinite(proof.preShotPlayerPlanarStepDistance)
+                || proof.preShotPlayerPlanarStepDistance <= 0.25f
+                || proof.preShotPlayerPlanarStepDistance > 3f
+                || !proof.bossPressureMovementWasEnabled
+                || !proof.bossPressureMovementHoldAcquired
+                || !proof.bossPoseStableThroughImpact
+                || !IsFinite(proof.bossPositionAtShotArm)
+                || !IsFinite(proof.bossPositionAtImpact)
+                || Vector3.Distance(
+                    proof.bossPositionAtShotArm,
+                    proof.bossPositionAtImpact) > 0.001f
+                || !float.IsFinite(proof.maximumBossPositionDriftThroughImpact)
+                || proof.maximumBossPositionDriftThroughImpact < 0f
+                || proof.maximumBossPositionDriftThroughImpact > 0.001f
+                || !float.IsFinite(proof.maximumBossRotationDriftThroughImpact)
+                || proof.maximumBossRotationDriftThroughImpact < 0f
+                || proof.maximumBossRotationDriftThroughImpact > 0.001f)
             {
                 throw new InvalidOperationException(
-                    "G08 real Phase1-to-Phase2/HP12 setup proof is incomplete.");
+                    "G08 real Phase1-to-Phase2/HP12/unobstructed stationary-boss natural-impact setup proof is incomplete.");
             }
 
             if (proof.fireFrame != 1
@@ -677,6 +708,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !proof.eventsReleased
                 || !proof.presentationClockReleased
                 || !proof.cadenceReleased
+                || !proof.bossPressureMovementRestored
                 || !proof.transitionCaptureStateReleased
                 || !proof.globalCaptureStateRestored
                 || !proof.editModeSceneCleanupExact
@@ -884,6 +916,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 SessionState.SetString(SessionCaptureIdKey, output.captureId);
                 SessionState.SetBool(SessionBatchKey, batchMode);
                 SessionState.SetBool(SessionActiveKey, true);
+                ScheduleResume();
                 EditorSceneManager.OpenScene(
                     AuditionPvStationBossDeathAftermathCapture.CorridorScenePath,
                     OpenSceneMode.Single);
@@ -920,6 +953,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             if (IsOwnedSession()
                 && (change == PlayModeStateChange.EnteredPlayMode
+                    || change == PlayModeStateChange.ExitingPlayMode
                     || change == PlayModeStateChange.EnteredEditMode))
             {
                 ScheduleResume();
@@ -928,6 +962,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private static void ScheduleResume()
         {
+            EnsureResumeWatchdog();
             if (resumeScheduled)
             {
                 return;
@@ -935,6 +970,62 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             resumeScheduled = true;
             EditorApplication.delayCall += ResumeOwnedSession;
+        }
+
+        private static void EnsureResumeWatchdog()
+        {
+            if (resumeWatchdogRegistered)
+            {
+                return;
+            }
+
+            resumeWatchdogRegistered = true;
+            EditorApplication.update -= ResumeOwnedSessionWatchdog;
+            EditorApplication.update += ResumeOwnedSessionWatchdog;
+        }
+
+        private static void ResumeOwnedSessionWatchdog()
+        {
+            ResumeWatchdogAction action = DetermineResumeWatchdogAction(
+                IsOwnedSession(),
+                EditorApplication.isPlayingOrWillChangePlaymode,
+                EditorApplication.isCompiling,
+                EditorApplication.isUpdating);
+            if (action == ResumeWatchdogAction.KeepWaiting)
+            {
+                return;
+            }
+
+            EditorApplication.update -= ResumeOwnedSessionWatchdog;
+            resumeWatchdogRegistered = false;
+            if (action == ResumeWatchdogAction.Unregister)
+            {
+                return;
+            }
+
+            // A delayCall requeued from inside Unity's updating pass can be
+            // discarded when that pass clears its current queue while leaving
+            // resumeScheduled true.  The update watchdog owns the fallback and
+            // cancels any still-live duplicate before running directly.
+            EditorApplication.delayCall -= ResumeOwnedSession;
+            resumeScheduled = false;
+            ResumeOwnedSession();
+        }
+
+        internal static ResumeWatchdogAction DetermineResumeWatchdogAction(
+            bool ownedSession,
+            bool isPlayingOrWillChangePlaymode,
+            bool isCompiling,
+            bool isUpdating)
+        {
+            if (!ownedSession)
+            {
+                return ResumeWatchdogAction.Unregister;
+            }
+
+            return isPlayingOrWillChangePlaymode || isCompiling || isUpdating
+                ? ResumeWatchdogAction.KeepWaiting
+                : ResumeWatchdogAction.Run;
         }
 
         private static void ResumeOwnedSession()
@@ -1180,6 +1271,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
             finally
             {
+                EnsureResumeWatchdog();
                 activeBehaviour = null;
                 EditorApplication.isPlaying = false;
             }
@@ -2407,6 +2499,10 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private static void ClearSession()
         {
+            EditorApplication.delayCall -= ResumeOwnedSession;
+            EditorApplication.update -= ResumeOwnedSessionWatchdog;
+            resumeScheduled = false;
+            resumeWatchdogRegistered = false;
             SessionState.EraseBool(SessionActiveKey);
             SessionState.EraseString(SessionStatePathKey);
             SessionState.EraseString(SessionOwnerKey);
@@ -2874,6 +2970,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             TerminalFault
         }
 
+        internal enum ResumeWatchdogAction
+        {
+            Unregister,
+            KeepWaiting,
+            Run
+        }
+
         internal sealed class G08PixelCalibrationRequiredException
             : InvalidOperationException
         {
@@ -2942,6 +3045,19 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool phaseTwoApplied;
             public float preparedHealth;
             public float bossHealthBeforeShot;
+            public int pressureScreensBeforeDismiss;
+            public int pressureSummonsDismissed;
+            public int pressureScreensAfterDismiss = -1;
+            public float predictedBossSweepDistance;
+            public int predictedNaturalImpactFrame = -1;
+            public float preShotPlayerPlanarStepDistance;
+            public bool bossPressureMovementWasEnabled;
+            public bool bossPressureMovementHoldAcquired;
+            public bool bossPoseStableThroughImpact;
+            public Vector3 bossPositionAtShotArm;
+            public Vector3 bossPositionAtImpact;
+            public float maximumBossPositionDriftThroughImpact;
+            public float maximumBossRotationDriftThroughImpact;
 
             public int fireFrame = -1;
             public int projectileFiredFrame = -1;
@@ -3024,6 +3140,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool eventsReleased;
             public bool presentationClockReleased;
             public bool cadenceReleased;
+            public bool bossPressureMovementRestored;
             public bool transitionCaptureStateReleased;
             public bool globalCaptureStateRestored;
             public bool editModeSceneCleanupExact;
@@ -3387,6 +3504,29 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.phaseTwoApplied = director.PhaseTwoApplied;
                 proof.preparedHealth = director.PreparedHealthObserved;
                 proof.bossHealthBeforeShot = director.BossHealthBeforeShot;
+                proof.pressureScreensBeforeDismiss =
+                    director.PressureScreensBeforeDismiss;
+                proof.pressureSummonsDismissed = director.PressureSummonsDismissed;
+                proof.pressureScreensAfterDismiss =
+                    director.PressureScreensAfterDismiss;
+                proof.predictedBossSweepDistance =
+                    director.PredictedBossSweepDistance;
+                proof.predictedNaturalImpactFrame =
+                    director.PredictedNaturalImpactFrame;
+                proof.preShotPlayerPlanarStepDistance =
+                    director.PreShotPlayerPlanarStepDistance;
+                proof.bossPressureMovementWasEnabled =
+                    director.BossPressureMovementWasEnabled;
+                proof.bossPressureMovementHoldAcquired =
+                    director.BossPressureMovementHoldAcquired;
+                proof.bossPoseStableThroughImpact =
+                    director.BossPoseStableThroughImpact;
+                proof.bossPositionAtShotArm = director.BossPositionAtShotArm;
+                proof.bossPositionAtImpact = director.BossPositionAtImpact;
+                proof.maximumBossPositionDriftThroughImpact =
+                    director.MaximumBossPositionDriftThroughImpact;
+                proof.maximumBossRotationDriftThroughImpact =
+                    director.MaximumBossRotationDriftThroughImpact;
 
                 proof.fireFrame = director.FireFrame;
                 proof.projectileFiredFrame = director.ProjectileFiredFrame;
@@ -3580,6 +3720,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     proof.presentationClockReleased =
                         director.PresentationClockReleased;
                     proof.cadenceReleased = director.CadenceReleased;
+                    proof.bossPressureMovementRestored =
+                        director.BossPressureMovementRestored;
                     proof.transitionCaptureStateReleased =
                         director.TransitionCaptureStateReleased;
                     proof.globalCaptureStateRestored =

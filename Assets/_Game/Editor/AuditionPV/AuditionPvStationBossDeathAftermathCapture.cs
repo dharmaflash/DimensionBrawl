@@ -63,8 +63,23 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const float PreparedBossHealth = 12f;
         internal const float AuthoredProjectileDamage = 12f;
         internal const float AuthoredProjectileSpeed = 24f;
+        internal const float AuthoredProjectileRadius = 0.31f;
+        internal const float NaturalImpactTargetDistance = 24.2f;
+        internal const float NaturalImpactDistanceTolerance = 0.12f;
         internal const int PhaseTwoSettleFrames = 90;
         internal const int PostRecordingSettleFrameBudget = 30;
+
+        internal static int PredictNaturalImpactFrame(float sweepDistance)
+        {
+            if (!float.IsFinite(sweepDistance) || sweepDistance <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sweepDistance));
+            }
+
+            float travelPerFrame = AuthoredProjectileSpeed
+                / AuditionPvCaptureContract.Fps;
+            return FireFrame + Mathf.CeilToInt(sweepDistance / travelPerFrame);
+        }
 
         internal static AuditionPvShotManifestEntry CreateShotManifestEntry()
         {
@@ -374,6 +389,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             Array.Empty<PlayerSupportSummonSlotAction>();
         private PlayerCombatModeController combatMode;
         private PlayerLockTargetController lockTarget;
+        private BossSummonPressureAction bossPressureAction;
+        private BossPressurePositionController bossPressurePosition;
         private OlympusStationBossTerminalAftermathPresenter aftermath;
         private OlympusStationCombatResultPresenter resultPresenter;
         private OlympusStageClearOverlay overlay;
@@ -435,6 +452,17 @@ namespace DimensionBrawl.Editor.AuditionPV
         private int aftermathCompletedFrame = -1;
         private int inputLeaseReleasedFrame = -1;
         private int deathStateHeldFrame = -1;
+        private int pressureScreensBeforeDismiss;
+        private int pressureSummonsDismissed;
+        private int pressureScreensAfterDismiss = -1;
+        private int predictedNaturalImpactFrame = -1;
+        private bool bossPressureMovementOwnershipAcquired;
+        private bool bossPressureMovementLeaseActive;
+        private bool savedBossPressureMovementEnabled;
+        private bool bossPressureMovementHeldForShot;
+        private bool bossPressureMovementRestoredExactly;
+        private bool bossPoseTrackingArmed;
+        private bool bossPoseStableThroughImpact;
         private bool physicalProjectileObservedActiveBeforeImpact;
         private bool projectileMovedBeforeImpact;
         private bool noEarlyFreeze = true;
@@ -446,10 +474,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         private Vector3 projectilePositionAtFrame61;
         private Vector3 projectileImpactPoint;
         private Vector3 projectileImpactDirection;
+        private Vector3 bossPositionAtShotArm;
+        private Vector3 bossPositionAtImpact;
+        private Quaternion bossRotationAtShotArm = Quaternion.identity;
+        private Quaternion bossRotationAtImpact = Quaternion.identity;
         private int projectileInstanceId;
         private float bossHealthBeforeShot;
+        private float predictedBossSweepDistance;
+        private float preShotPlayerPlanarStepDistance;
+        private float maximumBossPositionDriftThroughImpact;
+        private float maximumBossRotationDriftThroughImpact;
         private float minimumObservedTimeScale = float.PositiveInfinity;
         private float maximumObservedTimeScale = float.NegativeInfinity;
+        private readonly RaycastHit[] naturalImpactSweepHits = new RaycastHit[32];
 
         public event Action<int> FramePresented;
 
@@ -529,6 +566,28 @@ namespace DimensionBrawl.Editor.AuditionPV
         public bool AllEightLocksReleasedAtResult => allEightLocksReleasedAtResult;
         public bool DeathStateAtAftermathHero => deathStateAtAftermathHero;
         public float BossHealthBeforeShot => bossHealthBeforeShot;
+        public int PressureScreensBeforeDismiss => pressureScreensBeforeDismiss;
+        public int PressureSummonsDismissed => pressureSummonsDismissed;
+        public int PressureScreensAfterDismiss => pressureScreensAfterDismiss;
+        public float PredictedBossSweepDistance => predictedBossSweepDistance;
+        public int PredictedNaturalImpactFrame => predictedNaturalImpactFrame;
+        public float PreShotPlayerPlanarStepDistance =>
+            preShotPlayerPlanarStepDistance;
+        public bool BossPressureMovementWasEnabled =>
+            savedBossPressureMovementEnabled;
+        public bool BossPressureMovementHoldAcquired =>
+            bossPressureMovementOwnershipAcquired
+            && bossPressureMovementLeaseActive
+            && bossPressureMovementHeldForShot
+            && bossPressurePosition != null
+            && !bossPressurePosition.MovementEnabled;
+        public bool BossPoseStableThroughImpact => bossPoseStableThroughImpact;
+        public Vector3 BossPositionAtShotArm => bossPositionAtShotArm;
+        public Vector3 BossPositionAtImpact => bossPositionAtImpact;
+        public float MaximumBossPositionDriftThroughImpact =>
+            maximumBossPositionDriftThroughImpact;
+        public float MaximumBossRotationDriftThroughImpact =>
+            maximumBossRotationDriftThroughImpact;
         public float MinimumObservedTimeScale => minimumObservedTimeScale;
         public float MaximumObservedTimeScale => maximumObservedTimeScale;
         public bool StateRestored => stateRestored;
@@ -537,6 +596,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             && !PresentationClock.IsManuallyDriven;
         public bool CadenceReleased => stateRestored
             && BossCombatCadenceScheduler.ExternalSuspensionCount == 0;
+        public bool BossPressureMovementRestored => stateRestored
+            && !bossPressureMovementLeaseActive
+            && (!bossPressureMovementOwnershipAcquired
+                || (bossPressureMovementRestoredExactly
+                    && bossPressurePosition != null
+                    && bossPressurePosition.MovementEnabled
+                        == savedBossPressureMovementEnabled));
         public bool TransitionCaptureStateReleased => stateRestored
             && !transitionEventsSubscribed
             && captureOwnedTransitionRoot == null;
@@ -636,6 +702,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     yield return WaitForNextPlayerFrame();
                 }
 
+                yield return PrepareNaturalBossImpactOwnership();
                 ValidateReadyForShot();
                 IsPrepared = true;
                 succeeded = true;
@@ -673,7 +740,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G08 Recorder padding is not active at logical f0.");
             }
 
+            RevalidateNaturalBossImpactAtShotArm();
             ValidateReadyForShot();
+            ArmBossPoseStabilityProof();
             presentationClockLease.SetFrame(0);
             currentFrame = AuditionPvStationBossDeathAftermathCapture.FirstFrame;
             IsRunning = true;
@@ -830,6 +899,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     presentationClockLease = null;
                 });
                 CaptureFailure(ref failure, () => lockTarget?.ClearHardLock());
+                CaptureFailure(ref failure, RestoreBossPressureMovementHold);
                 CaptureFailure(ref failure, () =>
                 {
                     if (captureOwnedTransitionRoot != null)
@@ -881,6 +951,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (!EventsReleased
                 || !PresentationClockReleased
                 || !CadenceReleased
+                || !BossPressureMovementRestored
                 || !TransitionCaptureStateReleased
                 || !GlobalCaptureStateRestored)
             {
@@ -1411,6 +1482,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 ?? Array.Empty<PlayerSupportSummonSlotAction>();
             combatMode = movement?.GetComponent<PlayerCombatModeController>();
             lockTarget = movement?.GetComponent<PlayerLockTargetController>();
+            bossPressureAction = phaseFlow.PressureActionDirector
+                ?.SummonPressureAction;
+            bossPressurePosition = phaseFlow.PressurePositionController;
             combatHud = phaseFlow.CombatHudCanvasGroup;
             entryGuide = FindSingleSceneInterface<ICombatEntryGuideGate>(station);
 
@@ -1425,6 +1499,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || support.Any(value => value == null)
                 || combatMode == null
                 || lockTarget == null
+                || bossPressureAction == null
+                || bossPressurePosition == null
+                || bossPressurePosition.MovedTransform == null
                 || combatHud == null
                 || entryGuide == null
                 || aftermath.BossHealth != bossHealth
@@ -1606,6 +1683,302 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        private IEnumerator PrepareNaturalBossImpactOwnership()
+        {
+            AcquireBossPressureMovementHold();
+
+            // BeginPhaseTwoAtSummonBlock intentionally opens a hostile pressure
+            // curtain.  External cadence suspension freezes that already-active
+            // curtain in place, so it must be handed off through the product's
+            // public cinematic-dismissal API before the one recorded projectile.
+            pressureScreensBeforeDismiss = bossPressureAction.ActivePressureScreenCount;
+            pressureSummonsDismissed = bossPressureAction.DismissActivePressureSummons();
+            Physics.SyncTransforms();
+            pressureScreensAfterDismiss = bossPressureAction.ActivePressureScreenCount;
+            if (pressureScreensBeforeDismiss <= 0
+                || pressureSummonsDismissed <= 0
+                || pressureScreensAfterDismiss != 0)
+            {
+                throw new InvalidOperationException(
+                    "G08 could not acquire an unobstructed shot lane from the authored Phase2 pressure curtain.");
+            }
+
+            Transform fireOrigin = ResolveAuthoredPlayerFireOrigin();
+            Vector3 playerStart = movement.transform.position;
+            int preparationClockFrame =
+                AuditionPvStationBossDeathAftermathCapture.PhaseTwoSettleFrames;
+            const int MaximumAdjustments = 3;
+            const int StepSettleFrames = 24;
+            const float StepSeconds = 0.2f;
+            const float MaximumStepMeters = 3f;
+
+            for (int attempt = 0; attempt <= MaximumAdjustments; attempt++)
+            {
+                predictedBossSweepDistance = MeasureNaturalBossSweepDistance(
+                    fireOrigin);
+                predictedNaturalImpactFrame =
+                    AuditionPvStationBossDeathAftermathCapture
+                        .PredictNaturalImpactFrame(predictedBossSweepDistance);
+                float targetDelta = predictedBossSweepDistance
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance;
+                bool centeredInExactFrame = predictedNaturalImpactFrame
+                        == AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                    && Mathf.Abs(targetDelta)
+                        <= AuditionPvStationBossDeathAftermathCapture
+                            .NaturalImpactDistanceTolerance;
+                if (centeredInExactFrame)
+                {
+                    break;
+                }
+
+                if (attempt == MaximumAdjustments
+                    || Mathf.Abs(targetDelta) > MaximumStepMeters)
+                {
+                    throw new InvalidOperationException(
+                        $"G08 public pre-roll could not center the natural boss sweep at f62: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}.");
+                }
+
+                Vector3 towardBoss = Vector3.ProjectOnPlane(
+                    bossHealth.transform.position - movement.transform.position,
+                    Vector3.up);
+                if (towardBoss.sqrMagnitude <= 0.0001f)
+                {
+                    throw new InvalidOperationException(
+                        "G08 cannot resolve a planar public player step toward the boss.");
+                }
+
+                Vector3 stepDirection = targetDelta >= 0f
+                    ? towardBoss.normalized
+                    : -towardBoss.normalized;
+                movement.BeginAuthoredPlanarStep(
+                    stepDirection,
+                    Mathf.Abs(targetDelta),
+                    StepSeconds);
+                for (int frame = 0; frame < StepSettleFrames; frame++)
+                {
+                    presentationClockLease.SetFrame(preparationClockFrame++);
+                    yield return WaitForNextPlayerFrame();
+                }
+
+                movement.SetMoveInput(Vector2.zero);
+                Physics.SyncTransforms();
+            }
+
+            for (int frame = 0; frame < 6; frame++)
+            {
+                presentationClockLease.SetFrame(preparationClockFrame++);
+                yield return WaitForNextPlayerFrame();
+            }
+
+            Physics.SyncTransforms();
+            predictedBossSweepDistance = MeasureNaturalBossSweepDistance(fireOrigin);
+            predictedNaturalImpactFrame =
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(predictedBossSweepDistance);
+            preShotPlayerPlanarStepDistance = Vector3.ProjectOnPlane(
+                movement.transform.position - playerStart,
+                Vector3.up).magnitude;
+            if (predictedNaturalImpactFrame
+                    != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                || Mathf.Abs(
+                    predictedBossSweepDistance
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance)
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactDistanceTolerance
+                || preShotPlayerPlanarStepDistance <= 0.25f
+                || preShotPlayerPlanarStepDistance > MaximumStepMeters)
+            {
+                throw new InvalidOperationException(
+                    $"G08 natural-impact calibration was not stable at shot arm: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}, publicStep={preShotPlayerPlanarStepDistance:0.000}.");
+            }
+        }
+
+        private void AcquireBossPressureMovementHold()
+        {
+            if (bossPressureMovementOwnershipAcquired
+                || bossPressureMovementLeaseActive
+                || bossPressurePosition == null
+                || bossPressurePosition.MovedTransform == null)
+            {
+                throw new InvalidOperationException(
+                    "G08 boss-pressure movement ownership could not be acquired exactly once.");
+            }
+
+            savedBossPressureMovementEnabled = bossPressurePosition.MovementEnabled;
+            bossPressureMovementOwnershipAcquired = true;
+            bossPressureMovementLeaseActive = true;
+            bossPressureMovementRestoredExactly = false;
+            bossPressurePosition.SetMovementEnabled(false);
+            bossPressureMovementHeldForShot = !bossPressurePosition.MovementEnabled;
+            if (!savedBossPressureMovementEnabled || !bossPressureMovementHeldForShot)
+            {
+                throw new InvalidOperationException(
+                    "G08 canonical Phase2 boss movement was not enabled before the capture-owned hold, or the public hold was rejected.");
+            }
+        }
+
+        private void RestoreBossPressureMovementHold()
+        {
+            if (!bossPressureMovementLeaseActive)
+            {
+                return;
+            }
+
+            if (bossPressurePosition == null)
+            {
+                throw new InvalidOperationException(
+                    "G08 cannot restore the capture-owned boss movement hold because its exact owner was destroyed.");
+            }
+
+            bossPressurePosition.SetMovementEnabled(savedBossPressureMovementEnabled);
+            if (bossPressurePosition.MovementEnabled
+                != savedBossPressureMovementEnabled)
+            {
+                throw new InvalidOperationException(
+                    "G08 boss-pressure movement state did not restore to its exact pre-capture value.");
+            }
+
+            bossPressureMovementLeaseActive = false;
+            bossPressureMovementRestoredExactly = true;
+        }
+
+        private Transform ResolveAuthoredPlayerFireOrigin()
+        {
+            Transform[] candidates = movement
+                .GetComponentsInChildren<Transform>(includeInactive: true)
+                .Where(value => value != null
+                    && value.gameObject.activeInHierarchy
+                    && string.Equals(value.name, "Muzzle", StringComparison.Ordinal))
+                .ToArray();
+            if (candidates.Length != 1)
+            {
+                throw new InvalidOperationException(
+                    $"G08 requires one active authored player Muzzle; found {candidates.Length}.");
+            }
+
+            return candidates[0];
+        }
+
+        private float MeasureNaturalBossSweepDistance(Transform fireOrigin)
+        {
+            if (fireOrigin == null
+                || !ranged.TryGetAimPreviewDirection(out Vector3 direction)
+                || direction.sqrMagnitude <= 0.0001f)
+            {
+                throw new InvalidOperationException(
+                    "G08 public ranged aim preview is unavailable for natural-impact calibration.");
+            }
+
+            Physics.SyncTransforms();
+            int hitCount = Physics.SphereCastNonAlloc(
+                fireOrigin.position,
+                AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius,
+                direction.normalized,
+                naturalImpactSweepHits,
+                64f,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+            if (hitCount >= naturalImpactSweepHits.Length)
+            {
+                throw new InvalidOperationException(
+                    "G08 natural-impact sweep overflowed its fail-closed hit buffer.");
+            }
+
+            float nearestBossDistance = float.PositiveInfinity;
+            for (int index = 0; index < hitCount; index++)
+            {
+                RaycastHit hit = naturalImpactSweepHits[index];
+                if (hit.collider != null
+                    && CombatHealth.ResolveFromCollider(hit.collider) == bossHealth)
+                {
+                    nearestBossDistance = Mathf.Min(
+                        nearestBossDistance,
+                        hit.distance);
+                }
+            }
+
+            if (!float.IsFinite(nearestBossDistance))
+            {
+                throw new InvalidOperationException(
+                    "G08 public aim preview does not physically sweep the authored boss collider.");
+            }
+
+            return nearestBossDistance;
+        }
+
+        private void RevalidateNaturalBossImpactAtShotArm()
+        {
+            predictedBossSweepDistance = MeasureNaturalBossSweepDistance(
+                ResolveAuthoredPlayerFireOrigin());
+            predictedNaturalImpactFrame =
+                AuditionPvStationBossDeathAftermathCapture
+                    .PredictNaturalImpactFrame(predictedBossSweepDistance);
+        }
+
+        private void ArmBossPoseStabilityProof()
+        {
+            Transform movedBoss = bossPressurePosition?.MovedTransform;
+            if (movedBoss == null
+                || !bossPressureMovementOwnershipAcquired
+                || !bossPressureMovementLeaseActive
+                || bossPressurePosition.MovementEnabled)
+            {
+                throw new InvalidOperationException(
+                    "G08 cannot arm the boss-pose proof without its capture-owned public movement hold.");
+            }
+
+            bossPositionAtShotArm = movedBoss.position;
+            bossRotationAtShotArm = movedBoss.rotation;
+            bossPositionAtImpact = Vector3.zero;
+            bossRotationAtImpact = Quaternion.identity;
+            maximumBossPositionDriftThroughImpact = 0f;
+            maximumBossRotationDriftThroughImpact = 0f;
+            bossPoseStableThroughImpact = true;
+            bossPoseTrackingArmed = true;
+        }
+
+        private void ObserveBossPoseThroughImpact(bool atPhysicalImpact)
+        {
+            if (!bossPoseTrackingArmed)
+            {
+                bossPoseStableThroughImpact = false;
+                return;
+            }
+
+            Transform movedBoss = bossPressurePosition?.MovedTransform;
+            if (movedBoss == null)
+            {
+                bossPoseStableThroughImpact = false;
+                return;
+            }
+
+            float positionDrift = Vector3.Distance(
+                movedBoss.position,
+                bossPositionAtShotArm);
+            float rotationDrift = Quaternion.Angle(
+                movedBoss.rotation,
+                bossRotationAtShotArm);
+            maximumBossPositionDriftThroughImpact = Mathf.Max(
+                maximumBossPositionDriftThroughImpact,
+                positionDrift);
+            maximumBossRotationDriftThroughImpact = Mathf.Max(
+                maximumBossRotationDriftThroughImpact,
+                rotationDrift);
+            bossPoseStableThroughImpact &= bossPressureMovementLeaseActive
+                && !bossPressurePosition.MovementEnabled
+                && positionDrift <= Tolerance
+                && rotationDrift <= Tolerance;
+
+            if (atPhysicalImpact)
+            {
+                bossPositionAtImpact = movedBoss.position;
+                bossRotationAtImpact = movedBoss.rotation;
+                bossPoseTrackingArmed = false;
+            }
+        }
+
         private void SubscribeShotEvents()
         {
             ranged.RangedFireStarted += HandleRangedFireStarted;
@@ -1685,6 +2058,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     > Tolerance
                 || ranged.ActiveProjectileCount != 0
                 || !ranged.IsFireReady
+                || movement.HasMoveInput
                 || ranged.IsCinematicInputLocked
                 || movement.IsCinematicMoveInputLocked
                 || action.IsCinematicInputLocked
@@ -1694,6 +2068,23 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || combatMode.IsCinematicInputLocked
                 || aftermath.IsStarted
                 || overlay.IsShown
+                || pressureScreensBeforeDismiss <= 0
+                || pressureSummonsDismissed <= 0
+                || pressureScreensAfterDismiss != 0
+                || bossPressureAction.ActivePressureScreenCount != 0
+                || !bossPressureMovementOwnershipAcquired
+                || !bossPressureMovementLeaseActive
+                || !savedBossPressureMovementEnabled
+                || !bossPressureMovementHeldForShot
+                || bossPressurePosition.MovementEnabled
+                || predictedNaturalImpactFrame
+                    != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                || Mathf.Abs(
+                    predictedBossSweepDistance
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance)
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactDistanceTolerance
                 || Time.timeScale != 1f
                 || !BossCombatCadenceScheduler.IsExternallySuspended
                 || BossCombatCadenceScheduler.ExternalSuspensionCount != 1)
@@ -1707,6 +2098,12 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ObserveFrameState()
         {
+            if (currentFrame
+                < AuditionPvStationBossDeathAftermathCapture.ImpactFrame)
+            {
+                ObserveBossPoseThroughImpact(atPhysicalImpact: false);
+            }
+
             if (currentFrame
                 < AuditionPvStationBossDeathAftermathCapture.ResultRequestFrame)
             {
@@ -1957,6 +2354,30 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || aftermathStartedCount != 1
                 || aftermathCompletedCount != 1
                 || overlayPresentationSucceededCount != 1
+                || pressureScreensBeforeDismiss <= 0
+                || pressureSummonsDismissed <= 0
+                || pressureScreensAfterDismiss != 0
+                || !bossPressureMovementOwnershipAcquired
+                || !bossPressureMovementLeaseActive
+                || !savedBossPressureMovementEnabled
+                || !bossPressureMovementHeldForShot
+                || bossPressurePosition.MovementEnabled
+                || !bossPoseStableThroughImpact
+                || bossPoseTrackingArmed
+                || Vector3.Distance(
+                    bossPositionAtShotArm,
+                    bossPositionAtImpact) > Tolerance
+                || maximumBossPositionDriftThroughImpact > Tolerance
+                || maximumBossRotationDriftThroughImpact > Tolerance
+                || predictedNaturalImpactFrame
+                    != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
+                || Mathf.Abs(
+                    predictedBossSweepDistance
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactTargetDistance)
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .NaturalImpactDistanceTolerance
+                || preShotPlayerPlanarStepDistance <= 0.25f
                 || projectileInstanceId == 0
                 || !physicalProjectileObservedActiveBeforeImpact
                 || !projectileMovedBeforeImpact
@@ -2042,12 +2463,27 @@ namespace DimensionBrawl.Editor.AuditionPV
                 projectileFiredCount++;
                 projectileFiredFrame = currentFrame;
                 projectileFiredSequence = ++eventSequence;
+                SphereCollider sphere = projectile != null
+                    ? projectile.GetComponent<SphereCollider>()
+                    : null;
+                Vector3 sphereScale = sphere != null
+                    ? sphere.transform.lossyScale
+                    : Vector3.zero;
+                float worldRadius = sphere != null
+                    ? sphere.radius * Mathf.Max(
+                        Mathf.Abs(sphereScale.x),
+                        Mathf.Abs(sphereScale.y),
+                        Mathf.Abs(sphereScale.z))
+                    : 0f;
                 if (projectile == null
                     || firedProjectile != null
                     || projectile.SourceHealth != playerHealth
                     || projectile.SourceTeam != DamageTeam.Player
                     || Mathf.Abs(projectile.Damage
                         - AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileDamage)
+                        > Tolerance
+                    || Mathf.Abs(worldRadius
+                        - AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius)
                         > Tolerance
                     || !projectile.IsActive)
                 {
@@ -2075,6 +2511,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 projectileImpactSequence = ++eventSequence;
                 projectileImpactPoint = impactPoint;
                 projectileImpactDirection = direction;
+                ObserveBossPoseThroughImpact(atPhysicalImpact: true);
                 if (projectile == null
                     || projectile != firedProjectile
                     || projectile.GetInstanceID() != projectileInstanceId
