@@ -572,10 +572,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || Mathf.Abs(
                     proof.bossHealthBeforeShot
                     - AuditionPvStationBossDeathAftermathCapture.PreparedBossHealth) > 0.001f
-                || proof.pressureScreensBeforeDismiss <= 0
-                || proof.pressureSummonsDismissed
-                    < proof.pressureScreensBeforeDismiss
+                || proof.pressureScreensBeforeDismiss < 0
+                || proof.pressureSummonsDismissed < 0
                 || proof.pressureScreensAfterDismiss != 0
+                || (proof.pressureScreensBeforeDismiss > 0
+                    && proof.pressureSummonsDismissed
+                        < proof.pressureScreensBeforeDismiss)
                 || !float.IsFinite(proof.predictedBossSweepDistance)
                 || Mathf.Abs(
                     proof.predictedBossSweepDistance
@@ -604,7 +606,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.maximumBossRotationDriftThroughImpact > 0.001f)
             {
                 throw new InvalidOperationException(
-                    "G08 real Phase1-to-Phase2/HP12/unobstructed stationary-boss natural-impact setup proof is incomplete.");
+                    "G08 real Phase1-to-Phase2/HP12/unobstructed stationary-boss natural-impact setup proof is incomplete: "
+                    + $"pressureBefore={proof.pressureScreensBeforeDismiss}, "
+                    + $"pressureDismissed={proof.pressureSummonsDismissed}, "
+                    + $"pressureAfter={proof.pressureScreensAfterDismiss}.");
             }
 
             if (proof.fireFrame != 1
@@ -3223,6 +3228,324 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
     }
 
+    /// <summary>
+    /// Flattens only managed iterator nesting so every MoveNext/Current/Dispose
+    /// exception returns to the G08 transaction owner. Unity-native waits remain
+    /// yielded to the engine with their original scheduling semantics.
+    /// </summary>
+    internal sealed class G08GuardedIteratorDriver
+    {
+        private readonly Stack<IEnumerator> iterators = new Stack<IEnumerator>();
+        private bool terminal;
+
+        internal G08GuardedIteratorDriver(IEnumerator root)
+        {
+            iterators.Push(root ?? throw new ArgumentNullException(nameof(root)));
+        }
+
+        internal int Depth => iterators.Count;
+
+        internal bool TryMoveNext(out object yielded, out Exception failure)
+        {
+            yielded = null;
+            failure = null;
+            if (terminal)
+            {
+                return false;
+            }
+
+            while (iterators.Count > 0)
+            {
+                IEnumerator current = iterators.Peek();
+                bool moved;
+                object value = null;
+                try
+                {
+                    moved = current.MoveNext();
+                    if (moved)
+                    {
+                        value = current.Current;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    failure = Combine(exception, DisposeRemaining());
+                    return false;
+                }
+
+                if (!moved)
+                {
+                    iterators.Pop();
+                    Exception disposeFailure = DisposeOne(current);
+                    if (disposeFailure != null)
+                    {
+                        failure = Combine(disposeFailure, DisposeRemaining());
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if (value is IEnumerator nested
+                    && !(value is CustomYieldInstruction))
+                {
+                    if (ContainsReference(nested))
+                    {
+                        failure = Combine(
+                            new InvalidOperationException(
+                                "G08 nested iterator graph contained a reference cycle."),
+                            DisposeRemaining());
+                        return false;
+                    }
+
+                    iterators.Push(nested);
+                    continue;
+                }
+
+                yielded = value;
+                return true;
+            }
+
+            terminal = true;
+            return false;
+        }
+
+        internal Exception DisposeRemaining()
+        {
+            Exception failure = null;
+            while (iterators.Count > 0)
+            {
+                failure = Combine(failure, DisposeOne(iterators.Pop()));
+            }
+
+            terminal = true;
+            return failure;
+        }
+
+        private bool ContainsReference(IEnumerator candidate)
+        {
+            foreach (IEnumerator iterator in iterators)
+            {
+                if (ReferenceEquals(iterator, candidate))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Exception DisposeOne(IEnumerator iterator)
+        {
+            try
+            {
+                (iterator as IDisposable)?.Dispose();
+                return null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }
+
+        private static Exception Combine(Exception first, Exception next)
+        {
+            if (first == null)
+            {
+                return next;
+            }
+
+            if (next == null || ReferenceEquals(first, next))
+            {
+                return first;
+            }
+
+            return new AggregateException(first, next);
+        }
+    }
+
+    /// <summary>
+    /// Owns the exact core-proof-cleanup-proof-notify transaction used by the
+    /// PlayMode runner. All managed iterator faults are converted into one
+    /// terminal failure value, cleanup always runs, and notification is invoked
+    /// exactly once after both proof hooks.
+    /// </summary>
+    internal static class G08GuardedCoroutineTransaction
+    {
+        internal static IEnumerator Run(
+            IEnumerator core,
+            Func<Exception> captureCoreProof,
+            Func<IEnumerator> cleanupFactory,
+            Func<Exception> captureCleanupProof,
+            Action<Exception> notify)
+        {
+            Exception failure = null;
+            G08GuardedIteratorDriver coreDriver = TryCreateDriver(
+                core,
+                "core",
+                out Exception coreCreationFailure);
+            failure = Combine(failure, coreCreationFailure);
+            while (failure == null && coreDriver != null)
+            {
+                bool moved = coreDriver.TryMoveNext(
+                    out object yielded,
+                    out Exception iteratorFailure);
+                failure = Combine(failure, iteratorFailure);
+                if (!moved)
+                {
+                    break;
+                }
+
+                yield return yielded;
+            }
+
+            failure = Combine(
+                failure,
+                coreDriver?.DisposeRemaining());
+            failure = Combine(
+                failure,
+                InvokeProofHook(captureCoreProof, "core proof"));
+
+            IEnumerator cleanup = InvokeCleanupFactory(
+                cleanupFactory,
+                out Exception cleanupCreationFailure);
+            failure = Combine(failure, cleanupCreationFailure);
+            G08GuardedIteratorDriver cleanupDriver = null;
+            Exception cleanupDriverFailure = null;
+            if (cleanupCreationFailure == null)
+            {
+                cleanupDriver = TryCreateDriver(
+                    cleanup,
+                    "cleanup",
+                    out cleanupDriverFailure);
+            }
+
+            failure = Combine(failure, cleanupDriverFailure);
+            while (cleanupDriver != null)
+            {
+                bool moved = cleanupDriver.TryMoveNext(
+                    out object yielded,
+                    out Exception iteratorFailure);
+                failure = Combine(failure, iteratorFailure);
+                if (!moved)
+                {
+                    break;
+                }
+
+                yield return yielded;
+            }
+
+            failure = Combine(
+                failure,
+                cleanupDriver?.DisposeRemaining());
+            failure = Combine(
+                failure,
+                InvokeProofHook(captureCleanupProof, "cleanup proof"));
+            InvokeNotifyOnce(notify, failure);
+        }
+
+        private static G08GuardedIteratorDriver TryCreateDriver(
+            IEnumerator iterator,
+            string label,
+            out Exception failure)
+        {
+            try
+            {
+                if (iterator == null)
+                {
+                    throw new InvalidOperationException(
+                        $"G08 guarded {label} iterator was null.");
+                }
+
+                failure = null;
+                return new G08GuardedIteratorDriver(iterator);
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                return null;
+            }
+        }
+
+        private static IEnumerator InvokeCleanupFactory(
+            Func<IEnumerator> cleanupFactory,
+            out Exception failure)
+        {
+            try
+            {
+                if (cleanupFactory == null)
+                {
+                    throw new InvalidOperationException(
+                        "G08 guarded cleanup factory was null.");
+                }
+
+                IEnumerator cleanup = cleanupFactory();
+                failure = null;
+                return cleanup;
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                return null;
+            }
+        }
+
+        private static Exception InvokeProofHook(
+            Func<Exception> proofHook,
+            string label)
+        {
+            try
+            {
+                if (proofHook == null)
+                {
+                    return new InvalidOperationException(
+                        $"G08 guarded {label} hook was null.");
+                }
+
+                return proofHook();
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        }
+
+        private static void InvokeNotifyOnce(
+            Action<Exception> notify,
+            Exception failure)
+        {
+            try
+            {
+                if (notify == null)
+                {
+                    throw new InvalidOperationException(
+                        "G08 guarded terminal notification callback was null.");
+                }
+
+                notify(failure);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(Combine(failure, exception));
+            }
+        }
+
+        private static Exception Combine(Exception first, Exception next)
+        {
+            if (first == null)
+            {
+                return next;
+            }
+
+            if (next == null || ReferenceEquals(first, next))
+            {
+                return first;
+            }
+
+            return new AggregateException(first, next);
+        }
+    }
+
     [DefaultExecutionOrder(-32500)]
     public sealed class AuditionPvStationBossDeathAftermathGoldenRunnerBehaviour
         : MonoBehaviour
@@ -3286,64 +3609,12 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private IEnumerator RunGuarded()
         {
-            Exception failure = null;
-            IEnumerator core = RunCore();
-            while (failure == null)
-            {
-                bool moved;
-                object yielded;
-                try
-                {
-                    moved = core.MoveNext();
-                    yielded = moved ? core.Current : null;
-                }
-                catch (Exception exception)
-                {
-                    failure = exception;
-                    break;
-                }
-
-                if (!moved)
-                {
-                    break;
-                }
-
-                yield return yielded;
-            }
-
-            failure = Combine(failure, CaptureDirectorProof());
-            IEnumerator cleanup = CleanupAfterRecorder();
-            while (true)
-            {
-                bool moved;
-                object yielded;
-                try
-                {
-                    moved = cleanup.MoveNext();
-                    yielded = moved ? cleanup.Current : null;
-                }
-                catch (Exception exception)
-                {
-                    failure = Combine(failure, exception);
-                    break;
-                }
-
-                if (!moved)
-                {
-                    break;
-                }
-
-                yield return yielded;
-            }
-
-            failure = Combine(failure, CaptureCleanupProof());
-            if (director != null && director.CleanupFailure != null)
-            {
-                proof.cleanupFailure = director.CleanupFailure.ToString();
-                failure = Combine(failure, director.CleanupFailure);
-            }
-
-            NotifyFinished(failure);
+            return G08GuardedCoroutineTransaction.Run(
+                RunCore(),
+                CaptureDirectorProof,
+                CleanupAfterRecorder,
+                CaptureCleanupProof,
+                NotifyFinished);
         }
 
         private IEnumerator RunCore()
@@ -3355,11 +3626,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvStationBossDeathAftermathRenderProbe>();
             renderProbe.Configure(director);
 
-            IEnumerator preparation = director.PrepareFreshProductState();
-            while (preparation.MoveNext())
-            {
-                yield return preparation.Current;
-            }
+            yield return director.PrepareFreshProductState();
 
             if (!director.IsPrepared)
             {
@@ -3637,80 +3904,64 @@ namespace DimensionBrawl.Editor.AuditionPV
             cleaningUp = true;
             armLogicalFrameZero = false;
             Exception failure = null;
-            if (director != null)
-            {
-                director.FramePresented -= HandleFramePresented;
-            }
-
             try
             {
-                if (recorderController != null && recorderController.IsRecording())
-                {
-                    recorderController.StopRecording();
-                }
-            }
-            catch (Exception exception)
-            {
-                failure = Combine(failure, exception);
-            }
-
-            recorderController = null;
-            if (director != null)
-            {
-                IEnumerator restoration = null;
                 try
                 {
-                    restoration = director.RestoreAfterRecording();
+                    if (director != null)
+                    {
+                        director.FramePresented -= HandleFramePresented;
+                    }
                 }
                 catch (Exception exception)
                 {
                     failure = Combine(failure, exception);
                 }
 
-                while (restoration != null)
+                try
                 {
-                    bool moved;
-                    object yielded;
-                    try
+                    if (recorderController != null
+                        && recorderController.IsRecording())
                     {
-                        moved = restoration.MoveNext();
-                        yielded = moved ? restoration.Current : null;
+                        recorderController.StopRecording();
                     }
-                    catch (Exception exception)
-                    {
-                        failure = Combine(failure, exception);
-                        break;
-                    }
+                }
+                catch (Exception exception)
+                {
+                    failure = Combine(failure, exception);
+                }
 
-                    if (!moved)
-                    {
-                        break;
-                    }
-
-                    yield return yielded;
+                recorderController = null;
+                if (director != null)
+                {
+                    yield return director.RestoreAfterRecording();
                 }
             }
+            finally
+            {
+                try
+                {
+                    recorderSettings?.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    failure = Combine(failure, exception);
+                }
 
-            try
-            {
-                recorderSettings?.Dispose();
-            }
-            catch (Exception exception)
-            {
-                failure = Combine(failure, exception);
-            }
-
-            recorderSettings = null;
-            if (failure != null)
-            {
-                throw new InvalidOperationException(
-                    "G08 Recorder/director/settings cleanup encountered an error.",
-                    failure);
+                recorderSettings = null;
+                recorderController = null;
+                if (failure != null)
+                {
+                    throw new InvalidOperationException(
+                        "G08 Recorder/director/settings cleanup encountered an error.",
+                        failure);
+                }
             }
         }
 
         private Exception CaptureCleanupProof()
         {
+            Exception failure = null;
             try
             {
                 if (director != null)
@@ -3727,13 +3978,26 @@ namespace DimensionBrawl.Editor.AuditionPV
                     proof.globalCaptureStateRestored =
                         director.GlobalCaptureStateRestored;
                 }
-
-                return null;
             }
             catch (Exception exception)
             {
-                return exception;
+                failure = Combine(failure, exception);
             }
+
+            try
+            {
+                if (director != null && director.CleanupFailure != null)
+                {
+                    proof.cleanupFailure = director.CleanupFailure.ToString();
+                    failure = Combine(failure, director.CleanupFailure);
+                }
+            }
+            catch (Exception exception)
+            {
+                failure = Combine(failure, exception);
+            }
+
+            return failure;
         }
 
         private void NotifyFinished(Exception failure)

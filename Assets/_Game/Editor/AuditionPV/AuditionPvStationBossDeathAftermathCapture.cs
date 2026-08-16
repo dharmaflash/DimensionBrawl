@@ -1687,20 +1687,25 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             AcquireBossPressureMovementHold();
 
-            // BeginPhaseTwoAtSummonBlock intentionally opens a hostile pressure
-            // curtain.  External cadence suspension freezes that already-active
-            // curtain in place, so it must be handed off through the product's
-            // public cinematic-dismissal API before the one recorded projectile.
+            // A Phase2 handoff may still own a hostile pressure actor. The public
+            // cinematic-dismissal API is intentionally idempotent: zero active
+            // screens is already unobstructed, while any observed screen must be
+            // removed before the one recorded projectile.
             pressureScreensBeforeDismiss = bossPressureAction.ActivePressureScreenCount;
             pressureSummonsDismissed = bossPressureAction.DismissActivePressureSummons();
             Physics.SyncTransforms();
             pressureScreensAfterDismiss = bossPressureAction.ActivePressureScreenCount;
-            if (pressureScreensBeforeDismiss <= 0
-                || pressureSummonsDismissed <= 0
-                || pressureScreensAfterDismiss != 0)
+            if (pressureScreensBeforeDismiss < 0
+                || pressureSummonsDismissed < 0
+                || pressureScreensAfterDismiss != 0
+                || (pressureScreensBeforeDismiss > 0
+                    && pressureSummonsDismissed < pressureScreensBeforeDismiss))
             {
                 throw new InvalidOperationException(
-                    "G08 could not acquire an unobstructed shot lane from the authored Phase2 pressure curtain.");
+                    "G08 could not prove an unobstructed authored Phase2 shot lane: "
+                    + $"before={pressureScreensBeforeDismiss}, "
+                    + $"dismissed={pressureSummonsDismissed}, "
+                    + $"after={pressureScreensAfterDismiss}.");
             }
 
             Transform fireOrigin = ResolveAuthoredPlayerFireOrigin();
@@ -2068,9 +2073,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || combatMode.IsCinematicInputLocked
                 || aftermath.IsStarted
                 || overlay.IsShown
-                || pressureScreensBeforeDismiss <= 0
-                || pressureSummonsDismissed <= 0
+                || pressureScreensBeforeDismiss < 0
+                || pressureSummonsDismissed < 0
                 || pressureScreensAfterDismiss != 0
+                || (pressureScreensBeforeDismiss > 0
+                    && pressureSummonsDismissed < pressureScreensBeforeDismiss)
                 || bossPressureAction.ActivePressureScreenCount != 0
                 || !bossPressureMovementOwnershipAcquired
                 || !bossPressureMovementLeaseActive
@@ -2090,7 +2097,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || BossCombatCadenceScheduler.ExternalSuspensionCount != 1)
             {
                 throw new InvalidOperationException(
-                    "G08 canonical Station Phase2/HP12/projectile/input/time baseline is not exact.");
+                    "G08 canonical Station Phase2/HP12/projectile/input/time baseline is not exact: "
+                    + $"pressureBefore={pressureScreensBeforeDismiss}, "
+                    + $"pressureDismissed={pressureSummonsDismissed}, "
+                    + $"pressureAfter={pressureScreensAfterDismiss}.");
             }
 
             bossHealthBeforeShot = bossHealth.CurrentHealth;
@@ -2354,9 +2364,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || aftermathStartedCount != 1
                 || aftermathCompletedCount != 1
                 || overlayPresentationSucceededCount != 1
-                || pressureScreensBeforeDismiss <= 0
-                || pressureSummonsDismissed <= 0
+                || pressureScreensBeforeDismiss < 0
+                || pressureSummonsDismissed < 0
                 || pressureScreensAfterDismiss != 0
+                || (pressureScreensBeforeDismiss > 0
+                    && pressureSummonsDismissed < pressureScreensBeforeDismiss)
                 || !bossPressureMovementOwnershipAcquired
                 || !bossPressureMovementLeaseActive
                 || !savedBossPressureMovementEnabled
@@ -2389,7 +2401,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || terminalResolvedSequence <= projectileFiredSequence)
             {
                 throw new InvalidOperationException(
-                    "G08 physical projectile identity, flight, impact, death, or exact-once event chain failed.");
+                    "G08 physical projectile identity, flight, impact, death, or exact-once event chain failed: "
+                    + $"pressureBefore={pressureScreensBeforeDismiss}, "
+                    + $"pressureDismissed={pressureSummonsDismissed}, "
+                    + $"pressureAfter={pressureScreensAfterDismiss}.");
             }
 
             if (!NoEarlyFreeze

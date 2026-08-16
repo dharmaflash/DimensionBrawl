@@ -108,11 +108,13 @@ load API. The Station entry guide must reach `Released`. Pre-roll uses public, s
 damage for the Phase 1 threshold, public `TrySkipTransition`, a bounded Phase 2 wait, and a second
 strictly non-lethal hit that leaves the boss at exactly 12 HP.
 
-Before Recorder arm, capture ownership dismisses the already-active Phase 2 pressure curtain through
-its public product API, stores the exact `BossPressurePositionController.MovementEnabled` value, and
-uses public `SetMovementEnabled(false)` while a read-only physical sphere sweep centers the player by
-an authored public movement step. The boss `MovedTransform` position and rotation must remain exact
-from shot arm through the real impact, and success/failure cleanup restores the saved movement value.
+Before Recorder arm, capture ownership idempotently dismisses any active Phase 2 pressure actor
+through its public product API; zero screens is a valid already-unobstructed state, while any observed
+screen must be removed and the actual before/dismissed/after counts remain in runtime proof. Capture
+then stores the exact `BossPressurePositionController.MovementEnabled` value and uses public
+`SetMovementEnabled(false)` while a read-only physical sphere sweep centers the player by an authored
+public movement step. The boss `MovedTransform` position and rotation must remain exact from shot arm
+through the real impact, and success/failure cleanup restores the saved movement value.
 
 Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
 frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps
@@ -152,6 +154,10 @@ Edit-mode finalization is guarded by both `delayCall` and a persistent `EditorAp
 watchdog. Import/update/play-mode transitions remain bounded waits; once the Editor is idle the
 watchdog cancels any stale delayed callback and resumes the owned session directly, so failure
 artifact publication and unattended exit cannot be lost to an `isUpdating` requeue.
+The PlayMode transaction also recursively drives managed nested `IEnumerator` values itself while
+leaving Unity-native waits intact. A nested preparation or cleanup exception therefore disposes every
+active iterator, runs capture restoration and Recorder cleanup, records the failure, and reaches the
+same bounded EditMode finalization/exit path.
 
 ## Validation
 

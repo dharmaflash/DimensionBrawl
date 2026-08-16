@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -188,6 +189,132 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "ObserveBossPoseThroughImpact(atPhysicalImpact: true);"));
             Assert.That(source, Does.Contain(
                 "maximumBossRotationDriftThroughImpact"));
+            Assert.That(source, Does.Contain(
+                "$\"before={pressureScreensBeforeDismiss}, \""));
+
+            AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof proof =
+                CreateValidProof();
+            Assert.That(proof.pressureScreensBeforeDismiss, Is.Zero);
+            Assert.That(proof.pressureSummonsDismissed, Is.Zero);
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(proof));
+            proof.pressureScreensBeforeDismiss = 2;
+            proof.pressureSummonsDismissed = 2;
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationBossDeathAftermathGoldenRunner
+                    .ValidateRuntimeProofBeforePixelCalibration(proof));
+        }
+
+        [Test]
+        public void GuardedTransaction_AggregatesDepthTwoMoveAndDisposeFaultsThenCleansAndNotifiesOnce()
+        {
+            int rootDisposed = 0;
+            int middleDisposed = 0;
+            int leafDisposed = 0;
+            var leaf = new ThrowingMoveNextAndDisposeIterator(
+                () => leafDisposed++);
+            bool coreProofCaptured = false;
+            bool cleanupProofCaptured = false;
+            bool cleanupCompleted = false;
+            int cleanupDisposed = 0;
+            int notifyCount = 0;
+            int sequence = 0;
+            int coreProofOrder = 0;
+            int cleanupCompleteOrder = 0;
+            int cleanupProofOrder = 0;
+            int notifyOrder = 0;
+            Exception notifiedFailure = null;
+            IEnumerator transaction = G08GuardedCoroutineTransaction.Run(
+                ThrowingIteratorRoot(
+                    () => rootDisposed++,
+                    () => middleDisposed++,
+                    leaf),
+                () =>
+                {
+                    coreProofCaptured = true;
+                    coreProofOrder = ++sequence;
+                    return null;
+                },
+                () => CleanupIteratorRoot(
+                    () =>
+                    {
+                        cleanupCompleted = true;
+                        cleanupCompleteOrder = ++sequence;
+                    },
+                    () => cleanupDisposed++),
+                () =>
+                {
+                    cleanupProofCaptured = true;
+                    cleanupProofOrder = ++sequence;
+                    return null;
+                },
+                failure =>
+                {
+                    notifyCount++;
+                    notifyOrder = ++sequence;
+                    notifiedFailure = failure;
+                });
+
+            int yieldedCount = 0;
+            while (transaction.MoveNext())
+            {
+                Assert.That(transaction.Current, Is.Null);
+                yieldedCount++;
+            }
+
+            Assert.That(yieldedCount, Is.EqualTo(2));
+            Assert.That(notifiedFailure, Is.Not.Null);
+            Assert.That(notifiedFailure, Is.TypeOf<AggregateException>());
+            string[] failureMessages = ((AggregateException)notifiedFailure)
+                .Flatten()
+                .InnerExceptions
+                .Select(value => value.Message)
+                .ToArray();
+            Assert.That(failureMessages, Does.Contain(
+                "depth-two-move-sentinel"));
+            Assert.That(failureMessages, Does.Contain(
+                "depth-two-dispose-sentinel"));
+            Assert.That(rootDisposed, Is.EqualTo(1));
+            Assert.That(middleDisposed, Is.EqualTo(1));
+            Assert.That(leafDisposed, Is.EqualTo(1));
+            Assert.That(coreProofCaptured, Is.True);
+            Assert.That(cleanupCompleted, Is.True);
+            Assert.That(cleanupDisposed, Is.EqualTo(2));
+            Assert.That(cleanupProofCaptured, Is.True);
+            Assert.That(notifyCount, Is.EqualTo(1));
+            Assert.That(coreProofOrder, Is.LessThan(cleanupCompleteOrder));
+            Assert.That(cleanupCompleteOrder, Is.LessThan(cleanupProofOrder));
+            Assert.That(cleanupProofOrder, Is.LessThan(notifyOrder));
+
+            string source = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathGoldenRunner.RunnerScriptPath);
+            Assert.That(source, Does.Contain(
+                "return G08GuardedCoroutineTransaction.Run("));
+            Assert.That(source, Does.Contain(
+                "yield return director.PrepareFreshProductState();"));
+            Assert.That(source, Does.Contain(
+                "CleanupAfterRecorder,"));
+            Assert.That(source, Does.Contain(
+                "CaptureCleanupProof,"));
+            Assert.That(source, Does.Contain(
+                "NotifyFinished);"));
+            Assert.That(source, Does.Contain("value is IEnumerator nested"));
+            Assert.That(source, Does.Contain(
+                "!(value is CustomYieldInstruction)"));
+
+            string captureSource = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathCapture.CaptureScriptPath);
+            Assert.That(captureSource, Does.Contain(
+                "yield return EnterCanonicalStation();"));
+            Assert.That(captureSource, Does.Contain(
+                "yield return ReleaseEntryGuide();"));
+            Assert.That(captureSource, Does.Contain(
+                "yield return PreparePhaseTwoAndHealth();"));
+            Assert.That(captureSource, Does.Contain(
+                "yield return PrepareNaturalBossImpactOwnership();"));
+            Assert.That(source, Does.Contain(
+                "yield return director.RestoreAfterRecording();"));
         }
 
         [Test]
@@ -1021,7 +1148,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.fireFrame = 2);
             AssertRuntimeMutation(value => value.projectileImpactFrame = 61);
             AssertRuntimeMutation(value => value.bossDiedFrame = 63);
-            AssertRuntimeMutation(value => value.pressureScreensBeforeDismiss = 0);
+            AssertRuntimeMutation(value => value.pressureScreensBeforeDismiss = -1);
+            AssertRuntimeMutation(value => value.pressureSummonsDismissed = -1);
+            AssertRuntimeMutation(value =>
+            {
+                value.pressureScreensBeforeDismiss = 2;
+                value.pressureSummonsDismissed = 1;
+            });
             AssertRuntimeMutation(value => value.pressureScreensAfterDismiss = 1);
             AssertRuntimeMutation(value => value.predictedNaturalImpactFrame = 63);
             AssertRuntimeMutation(value => value.predictedBossSweepDistance = 24.5f);
@@ -1063,6 +1196,111 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     .ValidateRuntimeProofBeforePixelCalibration(proof));
         }
 
+        private static IEnumerator ThrowingIteratorRoot(
+            Action onDispose,
+            Action onMiddleDispose,
+            IEnumerator leaf)
+        {
+            try
+            {
+                yield return ThrowingIteratorMiddle(
+                    onMiddleDispose,
+                    leaf);
+            }
+            finally
+            {
+                onDispose?.Invoke();
+            }
+        }
+
+        private static IEnumerator ThrowingIteratorMiddle(
+            Action onDispose,
+            IEnumerator leaf)
+        {
+            try
+            {
+                yield return leaf;
+            }
+            finally
+            {
+                onDispose?.Invoke();
+            }
+        }
+
+        private sealed class ThrowingMoveNextAndDisposeIterator
+            : IEnumerator, IDisposable
+        {
+            private readonly Action onDispose;
+            private bool yielded;
+            private bool disposed;
+
+            internal ThrowingMoveNextAndDisposeIterator(Action onDispose)
+            {
+                this.onDispose = onDispose;
+            }
+
+            public object Current => null;
+
+            public bool MoveNext()
+            {
+                if (!yielded)
+                {
+                    yielded = true;
+                    return true;
+                }
+
+                throw new InvalidOperationException(
+                    "depth-two-move-sentinel");
+            }
+
+            public void Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            public void Dispose()
+            {
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                onDispose?.Invoke();
+                throw new InvalidOperationException(
+                    "depth-two-dispose-sentinel");
+            }
+        }
+
+        private static IEnumerator CleanupIteratorRoot(
+            Action onComplete,
+            Action onDispose)
+        {
+            try
+            {
+                yield return CleanupIteratorLeaf(onComplete, onDispose);
+            }
+            finally
+            {
+                onDispose?.Invoke();
+            }
+        }
+
+        private static IEnumerator CleanupIteratorLeaf(
+            Action onComplete,
+            Action onDispose)
+        {
+            try
+            {
+                yield return null;
+                onComplete?.Invoke();
+            }
+            finally
+            {
+                onDispose?.Invoke();
+            }
+        }
+
         private static AuditionPvStationBossDeathAftermathGoldenRunner.RuntimeProof
             CreateValidProof()
         {
@@ -1099,8 +1337,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 phaseTwoApplied = true,
                 preparedHealth = 12f,
                 bossHealthBeforeShot = 12f,
-                pressureScreensBeforeDismiss = 1,
-                pressureSummonsDismissed = 1,
+                pressureScreensBeforeDismiss = 0,
+                pressureSummonsDismissed = 0,
                 pressureScreensAfterDismiss = 0,
                 predictedBossSweepDistance = 24.2f,
                 predictedNaturalImpactFrame = 62,
