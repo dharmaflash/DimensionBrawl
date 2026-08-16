@@ -589,7 +589,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                     != AuditionPvStationBossDeathAftermathCapture.ImpactFrame
                 || !float.IsFinite(proof.preShotPlayerPlanarStepDistance)
                 || proof.preShotPlayerPlanarStepDistance <= 0.25f
-                || proof.preShotPlayerPlanarStepDistance > 3f
+                || proof.preShotPlayerPlanarStepDistance
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .MaximumNaturalImpactTotalStepMeters
                 || !proof.bossPressureMovementWasEnabled
                 || !proof.bossPressureMovementHoldAcquired
                 || !proof.bossPoseStableThroughImpact

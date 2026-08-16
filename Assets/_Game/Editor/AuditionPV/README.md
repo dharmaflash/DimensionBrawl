@@ -113,8 +113,10 @@ through its public product API; zero screens is a valid already-unobstructed sta
 screen must be removed and the actual before/dismissed/after counts remain in runtime proof. Capture
 then stores the exact `BossPressurePositionController.MovementEnabled` value and uses public
 `SetMovementEnabled(false)` while a read-only physical sphere sweep centers the player by an authored
-public movement step. The boss `MovedTransform` position and rotation must remain exact from shot arm
-through the real impact, and success/failure cleanup restores the saved movement value.
+public movement step. Each adjustment is capped at 3 m, the actual sweep is remeasured after every
+settle, and both cumulative requested movement and final planar displacement are capped at 4 m. The
+boss `MovedTransform` position and rotation must remain exact from shot arm through the real impact,
+and success/failure cleanup restores the saved movement value.
 
 Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
 frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps

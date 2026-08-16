@@ -66,6 +66,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const float AuthoredProjectileRadius = 0.31f;
         internal const float NaturalImpactTargetDistance = 24.2f;
         internal const float NaturalImpactDistanceTolerance = 0.12f;
+        internal const float MaximumNaturalImpactAdjustmentStepMeters = 3f;
+        internal const float MaximumNaturalImpactTotalStepMeters = 4f;
+        internal const int MaximumNaturalImpactAdjustmentSteps = 3;
         internal const int PhaseTwoSettleFrames = 90;
         internal const int PostRecordingSettleFrameBudget = 30;
 
@@ -79,6 +82,30 @@ namespace DimensionBrawl.Editor.AuditionPV
             float travelPerFrame = AuthoredProjectileSpeed
                 / AuditionPvCaptureContract.Fps;
             return FireFrame + Mathf.CeilToInt(sweepDistance / travelPerFrame);
+        }
+
+        internal static float ResolveNaturalImpactAdjustmentStep(
+            float targetDelta,
+            float cumulativeRequestedDistance)
+        {
+            if (!float.IsFinite(targetDelta)
+                || !float.IsFinite(cumulativeRequestedDistance)
+                || cumulativeRequestedDistance < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetDelta));
+            }
+
+            float requestedDistance = Mathf.Abs(targetDelta);
+            if (cumulativeRequestedDistance + requestedDistance
+                > MaximumNaturalImpactTotalStepMeters)
+            {
+                throw new ArgumentOutOfRangeException(nameof(targetDelta));
+            }
+
+            return Mathf.Clamp(
+                targetDelta,
+                -MaximumNaturalImpactAdjustmentStepMeters,
+                MaximumNaturalImpactAdjustmentStepMeters);
         }
 
         internal static AuditionPvShotManifestEntry CreateShotManifestEntry()
@@ -1712,12 +1739,14 @@ namespace DimensionBrawl.Editor.AuditionPV
             Vector3 playerStart = movement.transform.position;
             int preparationClockFrame =
                 AuditionPvStationBossDeathAftermathCapture.PhaseTwoSettleFrames;
-            const int MaximumAdjustments = 3;
             const int StepSettleFrames = 24;
             const float StepSeconds = 0.2f;
-            const float MaximumStepMeters = 3f;
+            float cumulativeRequestedStepDistance = 0f;
 
-            for (int attempt = 0; attempt <= MaximumAdjustments; attempt++)
+            for (int attempt = 0;
+                 attempt <= AuditionPvStationBossDeathAftermathCapture
+                     .MaximumNaturalImpactAdjustmentSteps;
+                 attempt++)
             {
                 predictedBossSweepDistance = MeasureNaturalBossSweepDistance(
                     fireOrigin);
@@ -1737,11 +1766,26 @@ namespace DimensionBrawl.Editor.AuditionPV
                     break;
                 }
 
-                if (attempt == MaximumAdjustments
-                    || Mathf.Abs(targetDelta) > MaximumStepMeters)
+                if (attempt == AuditionPvStationBossDeathAftermathCapture
+                        .MaximumNaturalImpactAdjustmentSteps)
                 {
                     throw new InvalidOperationException(
-                        $"G08 public pre-roll could not center the natural boss sweep at f62: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}.");
+                        $"G08 public pre-roll could not center the natural boss sweep at f62 within {AuditionPvStationBossDeathAftermathCapture.MaximumNaturalImpactAdjustmentSteps} bounded steps: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}, requested={cumulativeRequestedStepDistance:0.000}.");
+                }
+
+                float signedStep;
+                try
+                {
+                    signedStep = AuditionPvStationBossDeathAftermathCapture
+                        .ResolveNaturalImpactAdjustmentStep(
+                            targetDelta,
+                            cumulativeRequestedStepDistance);
+                }
+                catch (ArgumentOutOfRangeException exception)
+                {
+                    throw new InvalidOperationException(
+                        $"G08 public pre-roll requires more than the bounded {AuditionPvStationBossDeathAftermathCapture.MaximumNaturalImpactTotalStepMeters:0.000}m total player adjustment: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}, targetDelta={targetDelta:0.000}, requested={cumulativeRequestedStepDistance:0.000}.",
+                        exception);
                 }
 
                 Vector3 towardBoss = Vector3.ProjectOnPlane(
@@ -1753,13 +1797,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                         "G08 cannot resolve a planar public player step toward the boss.");
                 }
 
-                Vector3 stepDirection = targetDelta >= 0f
+                Vector3 stepDirection = signedStep >= 0f
                     ? towardBoss.normalized
                     : -towardBoss.normalized;
+                float stepDistance = Mathf.Abs(signedStep);
                 movement.BeginAuthoredPlanarStep(
                     stepDirection,
-                    Mathf.Abs(targetDelta),
+                    stepDistance,
                     StepSeconds);
+                cumulativeRequestedStepDistance += stepDistance;
                 for (int frame = 0; frame < StepSettleFrames; frame++)
                 {
                     presentationClockLease.SetFrame(preparationClockFrame++);
@@ -1793,10 +1839,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     > AuditionPvStationBossDeathAftermathCapture
                         .NaturalImpactDistanceTolerance
                 || preShotPlayerPlanarStepDistance <= 0.25f
-                || preShotPlayerPlanarStepDistance > MaximumStepMeters)
+                || preShotPlayerPlanarStepDistance
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .MaximumNaturalImpactTotalStepMeters
+                || cumulativeRequestedStepDistance <= 0.25f
+                || cumulativeRequestedStepDistance
+                    > AuditionPvStationBossDeathAftermathCapture
+                        .MaximumNaturalImpactTotalStepMeters)
             {
                 throw new InvalidOperationException(
-                    $"G08 natural-impact calibration was not stable at shot arm: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}, publicStep={preShotPlayerPlanarStepDistance:0.000}.");
+                    $"G08 natural-impact calibration was not stable at shot arm: distance={predictedBossSweepDistance:0.000}, predictedFrame={predictedNaturalImpactFrame}, publicStep={preShotPlayerPlanarStepDistance:0.000}, requested={cumulativeRequestedStepDistance:0.000}.");
             }
         }
 

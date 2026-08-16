@@ -162,6 +162,21 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 AuditionPvStationBossDeathAftermathCapture
                     .PredictNaturalImpactFrame(24.4001f),
                 Is.EqualTo(63));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveNaturalImpactAdjustmentStep(-3.305f, 0f),
+                Is.EqualTo(-3f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveNaturalImpactAdjustmentStep(-0.305f, 3f),
+                Is.EqualTo(-0.305f).Within(0.000001f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveNaturalImpactAdjustmentStep(2.25f, 0f),
+                Is.EqualTo(2.25f));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveNaturalImpactAdjustmentStep(-1.01f, 3f));
 
             string source = ReadProjectFile(
                 AuditionPvStationBossDeathAftermathCapture.CaptureScriptPath);
@@ -187,6 +202,45 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(shotArm, Is.GreaterThan(preparationCall));
             Assert.That(source, Does.Contain(
                 "ObserveBossPoseThroughImpact(atPhysicalImpact: true);"));
+
+            int calibrationStart = source.IndexOf(
+                "private IEnumerator PrepareNaturalBossImpactOwnership()",
+                StringComparison.Ordinal);
+            int calibrationEnd = source.IndexOf(
+                "private void AcquireBossPressureMovementHold()",
+                calibrationStart,
+                StringComparison.Ordinal);
+            Assert.That(calibrationStart, Is.GreaterThanOrEqualTo(0));
+            Assert.That(calibrationEnd, Is.GreaterThan(calibrationStart));
+            string calibration = source.Substring(
+                calibrationStart,
+                calibrationEnd - calibrationStart);
+            Assert.That(
+                Count(calibration, "ResolveNaturalImpactAdjustmentStep("),
+                Is.EqualTo(1));
+            Assert.That(
+                Count(calibration, "movement.BeginAuthoredPlanarStep("),
+                Is.EqualTo(1));
+            Assert.That(calibration, Does.Contain(
+                "cumulativeRequestedStepDistance += stepDistance;"));
+            int boundStepCall = calibration.IndexOf(
+                "movement.BeginAuthoredPlanarStep(",
+                StringComparison.Ordinal);
+            int boundStepDistance = calibration.IndexOf(
+                "stepDistance,",
+                boundStepCall,
+                StringComparison.Ordinal);
+            int boundStepDuration = calibration.IndexOf(
+                "StepSeconds);",
+                boundStepCall,
+                StringComparison.Ordinal);
+            Assert.That(boundStepDistance, Is.GreaterThan(boundStepCall));
+            Assert.That(boundStepDuration, Is.GreaterThan(boundStepDistance));
+            Assert.That(calibration, Does.Not.Contain(
+                "movement.transform.position ="));
+            Assert.That(calibration, Does.Not.Contain(".MovePosition("));
+            Assert.That(calibration, Does.Not.Contain(
+                ".SetPositionAndRotation("));
             Assert.That(source, Does.Contain(
                 "maximumBossRotationDriftThroughImpact"));
             Assert.That(source, Does.Contain(
@@ -1158,6 +1212,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertRuntimeMutation(value => value.pressureScreensAfterDismiss = 1);
             AssertRuntimeMutation(value => value.predictedNaturalImpactFrame = 63);
             AssertRuntimeMutation(value => value.predictedBossSweepDistance = 24.5f);
+            AssertRuntimeMutation(value =>
+                value.preShotPlayerPlanarStepDistance =
+                    AuditionPvStationBossDeathAftermathCapture
+                        .MaximumNaturalImpactTotalStepMeters + 0.001f);
             AssertRuntimeMutation(value => value.bossPressureMovementWasEnabled = false);
             AssertRuntimeMutation(value => value.bossPressureMovementHoldAcquired = false);
             AssertRuntimeMutation(value => value.bossPoseStableThroughImpact = false);
