@@ -42,6 +42,11 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int RawLastShotFrame = 420;
         internal const int ExpectedRawFrameCount = 421;
         internal const string ExpectedUnityVersion = "6000.3.5f2";
+        internal const string ExpectedUnityVersionWithRevision =
+            "6000.3.5f2 (3fa8bc678cb0)";
+        internal const string ExpectedUrpPackageVersion = "17.3.0";
+        internal const string ExpectedRenderPipelineAssetPath =
+            "Assets/Settings/PC_RPAsset.asset";
         internal const string ExpectedCurtainProfileGuid =
             "031a4022a43b0d94da2839f6c10ba846";
         internal const string ExpectedHoverProfileGuid =
@@ -60,18 +65,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int MinimumHudBrightSamples = 830;
         internal const double MinimumHudMeanLuma = 140d;
         internal const double MaximumHudMeanLuma = 170d;
-        // The first honest G07 take is deliberately non-publishing. Its dynamic
-        // boss-windup and marker/boss release ROI measurements establish these
-        // floors; only then may this switch and the positive minima be frozen
-        // with negative fixtures. Until that calibration, metrics are preserved
-        // in the sole failure artifact and no manifest can be written.
-        internal static readonly bool PatternPixelCalibrationLocked = false;
-        internal const long MinimumCurtainGreenSamples = 0;
-        internal const long MinimumHoverCyanSamples = 0;
-        internal const double MinimumCurtainLocalizedFireMeanAbsoluteRgb = 0d;
-        internal const double MinimumHoverLocalizedFireMeanAbsoluteRgb = 0d;
-        internal const double MinimumCurtainFireOverQuietMeanMargin = 0d;
-        internal const double MinimumHoverFireOverQuietMeanMargin = 0d;
+        // Locked from two independent clean 2ad27978 takes:
+        // 20260816t013248z: Curtain green 72, Hover cyan 31, fire means
+        // 4.853380/8.683188 and fire-over-quiet margins 3.888452/4.285788.
+        // 20260816t014116z: Curtain green 80, Hover cyan 31, fire means
+        // 4.891451/6.589592 and margins 3.911660/2.083720. The floors below
+        // retain explicit headroom beneath every observed same-commit minimum.
+        internal static readonly bool PatternPixelCalibrationLocked = true;
+        internal const long MinimumCurtainGreenSamples = 60;
+        internal const long MinimumHoverCyanSamples = 24;
+        internal const double MinimumCurtainLocalizedFireMeanAbsoluteRgb = 4.4d;
+        internal const double MinimumHoverLocalizedFireMeanAbsoluteRgb = 6d;
+        internal const double MinimumCurtainFireOverQuietMeanMargin = 3.5d;
+        internal const double MinimumHoverFireOverQuietMeanMargin = 1.8d;
         internal const int PatternWindupColorRoiPadding = 24;
         // Independent clean G06 QHD HUD-on capture (manifest SHA prefix
         // 2f6d7c) measured this raw-bottom ROI across all 360 frames:
@@ -179,6 +185,40 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidOperationException(
                     "G07 requires a headful asynchronous Editor: remove -batchmode, -quit, and -nographics.");
+            }
+        }
+
+        internal static void ValidateExactEngineProvenance(
+            string unityVersion,
+            string unityVersionWithRevision,
+            string recorderPackageVersion,
+            string urpPackageVersion,
+            string activeRenderPipelineAssetPath)
+        {
+            if (!string.Equals(
+                    unityVersion,
+                    ExpectedUnityVersion,
+                    StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(unityVersionWithRevision)
+                || !string.Equals(
+                    unityVersionWithRevision,
+                    ExpectedUnityVersionWithRevision,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    recorderPackageVersion,
+                    AuditionPvCaptureContract.RecorderPackageVersion,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    urpPackageVersion,
+                    ExpectedUrpPackageVersion,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    activeRenderPipelineAssetPath,
+                    ExpectedRenderPipelineAssetPath,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "G07 requires the exact authored Unity, Recorder, URP, and render-pipeline provenance.");
             }
         }
 
@@ -863,13 +903,34 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         internal static void ValidateCalibratedPatternPixelEvidence(RuntimeProof proof)
         {
-            if (!PatternPixelCalibrationLocked
-                || MinimumCurtainGreenSamples <= 0
-                || MinimumHoverCyanSamples <= 0
-                || MinimumCurtainLocalizedFireMeanAbsoluteRgb <= 0d
-                || MinimumHoverLocalizedFireMeanAbsoluteRgb <= 0d
-                || MinimumCurtainFireOverQuietMeanMargin <= 0d
-                || MinimumHoverFireOverQuietMeanMargin <= 0d)
+            ValidatePatternPixelEvidence(
+                proof,
+                PatternPixelCalibrationLocked,
+                MinimumCurtainGreenSamples,
+                MinimumHoverCyanSamples,
+                MinimumCurtainLocalizedFireMeanAbsoluteRgb,
+                MinimumHoverLocalizedFireMeanAbsoluteRgb,
+                MinimumCurtainFireOverQuietMeanMargin,
+                MinimumHoverFireOverQuietMeanMargin);
+        }
+
+        internal static void ValidatePatternPixelEvidence(
+            RuntimeProof proof,
+            bool calibrationLocked,
+            long minimumCurtainGreenSamples,
+            long minimumHoverCyanSamples,
+            double minimumCurtainFireMean,
+            double minimumHoverFireMean,
+            double minimumCurtainFireOverQuietMargin,
+            double minimumHoverFireOverQuietMargin)
+        {
+            if (!calibrationLocked
+                || minimumCurtainGreenSamples <= 0
+                || minimumHoverCyanSamples <= 0
+                || minimumCurtainFireMean <= 0d
+                || minimumHoverFireMean <= 0d
+                || minimumCurtainFireOverQuietMargin <= 0d
+                || minimumHoverFireOverQuietMargin <= 0d)
             {
                 throw new InvalidOperationException(
                     "G07 CalibrationRequired: first honest take retained dynamic Curtain/Hover color and localized fire metrics; freeze measured fail-closed minima and negative fixtures before publishing a manifest.");
@@ -877,24 +938,24 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             if (proof?.curtainWindupColors == null
                 || proof.curtainWindupColors.curtainGreenSampleCount
-                    < MinimumCurtainGreenSamples
+                    < minimumCurtainGreenSamples
                 || proof.hoverWindupColors == null
                 || proof.hoverWindupColors.hoverCyanSampleCount
-                    < MinimumHoverCyanSamples
+                    < minimumHoverCyanSamples
                 || proof.curtainFireDelta == null
                 || proof.curtainFireDelta.meanAbsoluteRgb
-                    < MinimumCurtainLocalizedFireMeanAbsoluteRgb
+                    < minimumCurtainFireMean
                 || proof.hoverFireDelta == null
                 || proof.hoverFireDelta.meanAbsoluteRgb
-                    < MinimumHoverLocalizedFireMeanAbsoluteRgb
+                    < minimumHoverFireMean
                 || proof.curtainQuietDelta == null
                 || proof.curtainFireDelta.meanAbsoluteRgb
                     - proof.curtainQuietDelta.meanAbsoluteRgb
-                    < MinimumCurtainFireOverQuietMeanMargin
+                    < minimumCurtainFireOverQuietMargin
                 || proof.hoverQuietDelta == null
                 || proof.hoverFireDelta.meanAbsoluteRgb
                     - proof.hoverQuietDelta.meanAbsoluteRgb
-                    < MinimumHoverFireOverQuietMeanMargin)
+                    < minimumHoverFireOverQuietMargin)
             {
                 throw new InvalidOperationException(
                     "G07 calibrated dynamic-ROI color or localized fire boundary gate failed.");
@@ -1052,15 +1113,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             AuditionPvEngineSnapshot engine = AuditionPvEnvironmentProbe.ReadEngineSnapshot();
-            if (!string.Equals(
-                    engine.recorderPackageVersion,
-                    AuditionPvCaptureContract.RecorderPackageVersion,
-                    StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    "G07 requires Unity Recorder "
-                    + AuditionPvCaptureContract.RecorderPackageVersion + ".");
-            }
+            ValidateExactEngineProvenance(
+                engine.unityVersion,
+                engine.unityVersionWithRevision,
+                engine.recorderPackageVersion,
+                engine.urpPackageVersion,
+                engine.activeRenderPipelineAssetPath);
 
             string[] dependencyPaths = CollectCaptureDependencyPaths();
             AuditionPvDependencyHash[] hashes =
@@ -2231,6 +2289,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvCaptureManifest roundTrip =
                 JsonUtility.FromJson<AuditionPvCaptureManifest>(json);
             AuditionPvCaptureManifestWriter.Validate(roundTrip);
+            ValidateExactEngineProvenance(
+                roundTrip.unityVersion,
+                roundTrip.unityVersionWithRevision,
+                roundTrip.recorderPackageVersion,
+                roundTrip.urpPackageVersion,
+                roundTrip.activeRenderPipelineAssetPath);
             AuditionPvShotManifestEntry shot = roundTrip.shots.Single();
             AuditionPvBaselineManifestEntry bl08 = roundTrip.baselines.Single(value =>
                 value.id == "bl08");
@@ -2842,88 +2906,108 @@ namespace DimensionBrawl.Editor.AuditionPV
                 return;
             }
 
+            AuditionPvGitSnapshot failureGit;
             try
             {
-                if (state == null
-                    || !PathsEqual(state.outputRoot, AuditionPvCaptureContract.OutputRoot))
+                failureGit = AuditionPvEnvironmentProbe.ReadGitSnapshot();
+            }
+            catch (Exception gitFailure)
+            {
+                failureGit = new AuditionPvGitSnapshot
                 {
-                    throw new InvalidDataException(
-                        "G07 failure artifact requires trusted canonical session identity.");
-                }
+                    probeSucceeded = false,
+                    probeError = gitFailure.ToString()
+                };
+            }
 
-                ValidateCanonicalCaptureLocationForRoot(
+            try
+            {
+                WriteFailureArtifactForRoot(
                     outputDirectory,
-                    state.captureId,
-                    AuditionPvCaptureContract.OutputRoot);
-                if (!PathsEqual(outputDirectory, state.outputDirectory))
-                {
-                    throw new InvalidDataException(
-                        "G07 failure artifact output differs from runner state.");
-                }
-            }
-            catch (Exception containmentFailure)
-            {
-                Debug.LogException(containmentFailure);
-                return;
-            }
-
-            try
-            {
-                if (state != null && IsValidCommittedManifest(state))
-                {
-                    return;
-                }
-
-                string successArtifactCleanupFailure =
-                    DeleteUncommittedSuccessArtifacts(outputDirectory, state);
-
-                AuditionPvGitSnapshot failureGit;
-                try
-                {
-                    failureGit = AuditionPvEnvironmentProbe.ReadGitSnapshot();
-                }
-                catch (Exception gitFailure)
-                {
-                    failureGit = new AuditionPvGitSnapshot
-                    {
-                        probeSucceeded = false,
-                        probeError = gitFailure.ToString()
-                    };
-                }
-
-                string failure = Path.Combine(outputDirectory, FailureFileName);
-                if (!File.Exists(failure))
-                {
-                    WriteJsonNew(failure, new FailureArtifact
-                    {
-                        schema = FailureSchema,
-                        createdAtUtc = DateTime.UtcNow.ToString("O"),
-                        phase = phase ?? string.Empty,
-                        exception = exception?.ToString() ?? string.Empty,
-                        captureId = state?.captureId ?? string.Empty,
-                        outputDirectory = outputDirectory.Replace('\\', '/'),
-                        startGitCommitSha = state?.gitCommitSha ?? string.Empty,
-                        startGitBranch = state?.gitBranch ?? string.Empty,
-                        startGitDirty = state != null && state.gitWorktreeDirty,
-                        startGitDirtyHashSha256 = state?.gitDirtyHashSha256
-                            ?? string.Empty,
-                        failureGit = failureGit,
-                        engine = state?.engine,
-                        dependencyHashesAtStart = state?.dependencyHashesAtStart
-                            ?? Array.Empty<AuditionPvDependencyHash>(),
-                        retainedArtifacts =
-                            "Failure-only: raw/logical frames, runner state, and measurement telemetry are retained; manifest, canonical baselines, and success runtime-proof artifact are absent.",
-                        pixelCalibrationLocked = PatternPixelCalibrationLocked,
-                        successArtifactCleanupFailure =
-                            successArtifactCleanupFailure,
-                        runtime = proof
-                    });
-                }
+                    phase,
+                    exception,
+                    proof,
+                    state,
+                    AuditionPvCaptureContract.OutputRoot,
+                    failureGit,
+                    PatternPixelCalibrationLocked);
             }
             catch (Exception writeFailure)
             {
                 Debug.LogException(writeFailure);
             }
+        }
+
+        internal static void WriteFailureArtifactForRoot(
+            string outputDirectory,
+            string phase,
+            Exception exception,
+            RuntimeProof proof,
+            PersistedRunnerState state,
+            string authorizedRoot,
+            AuditionPvGitSnapshot failureGit,
+            bool pixelCalibrationLocked)
+        {
+            if (state == null
+                || !PathsEqual(state.outputRoot, authorizedRoot))
+            {
+                throw new InvalidDataException(
+                    "G07 failure artifact requires trusted canonical session identity.");
+            }
+
+            ValidateCanonicalCaptureLocationForRoot(
+                outputDirectory,
+                state.captureId,
+                authorizedRoot);
+            if (!PathsEqual(outputDirectory, state.outputDirectory))
+            {
+                throw new InvalidDataException(
+                    "G07 failure artifact output differs from runner state.");
+            }
+
+            if (IsValidCommittedManifestAt(
+                outputDirectory,
+                state.captureId,
+                state,
+                authorizedRoot))
+            {
+                return;
+            }
+
+            string successArtifactCleanupFailure =
+                DeleteUncommittedSuccessArtifactsForRoot(
+                    outputDirectory,
+                    state,
+                    authorizedRoot);
+            string failure = Path.Combine(outputDirectory, FailureFileName);
+            if (File.Exists(failure))
+            {
+                return;
+            }
+
+            WriteJsonNew(failure, new FailureArtifact
+            {
+                schema = FailureSchema,
+                createdAtUtc = DateTime.UtcNow.ToString("O"),
+                phase = phase ?? string.Empty,
+                exception = exception?.ToString() ?? string.Empty,
+                captureId = state.captureId ?? string.Empty,
+                outputDirectory = outputDirectory.Replace('\\', '/'),
+                startGitCommitSha = state.gitCommitSha ?? string.Empty,
+                startGitBranch = state.gitBranch ?? string.Empty,
+                startGitDirty = state.gitWorktreeDirty,
+                startGitDirtyHashSha256 = state.gitDirtyHashSha256
+                    ?? string.Empty,
+                failureGit = failureGit,
+                engine = state.engine,
+                dependencyHashesAtStart = state.dependencyHashesAtStart
+                    ?? Array.Empty<AuditionPvDependencyHash>(),
+                retainedArtifacts =
+                    "Failure-only: raw/logical frames, runner state, and measurement telemetry are retained; manifest, canonical baselines, and success runtime-proof artifact are absent.",
+                pixelCalibrationLocked = pixelCalibrationLocked,
+                successArtifactCleanupFailure = successArtifactCleanupFailure,
+                runtime = proof
+            });
         }
 
         private static bool IsValidCommittedManifest(PersistedRunnerState state)
@@ -3162,6 +3246,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "Committed G07 timestamp/hash-algorithm provenance is not canonical.");
             }
 
+            ValidateExactEngineProvenance(
+                manifest.unityVersion,
+                manifest.unityVersionWithRevision,
+                manifest.recorderPackageVersion,
+                manifest.urpPackageVersion,
+                manifest.activeRenderPipelineAssetPath);
             if (manifest.gitWorktreeDirty
                 || string.IsNullOrWhiteSpace(manifest.gitBranch)
                 || !string.Equals(
@@ -3173,22 +3263,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || manifest.gitCommitSha.Length != 40
                 || manifest.gitCommitSha.Any(character =>
                     !(character >= '0' && character <= '9'
-                        || character >= 'a' && character <= 'f'))
-                || !string.Equals(
-                    manifest.unityVersion,
-                    ExpectedUnityVersion,
-                    StringComparison.Ordinal)
-                || string.IsNullOrWhiteSpace(manifest.unityVersionWithRevision)
-                || !manifest.unityVersionWithRevision.StartsWith(
-                    ExpectedUnityVersion + " (",
-                    StringComparison.Ordinal)
-                || !string.Equals(
-                    manifest.recorderPackageVersion,
-                    AuditionPvCaptureContract.RecorderPackageVersion,
-                    StringComparison.Ordinal))
+                        || character >= 'a' && character <= 'f')))
             {
                 throw new InvalidOperationException(
-                    "Committed G07 clean Git or exact engine provenance is invalid.");
+                    "Committed G07 clean Git provenance is invalid.");
             }
 
             var byPath = recorded.ToDictionary(

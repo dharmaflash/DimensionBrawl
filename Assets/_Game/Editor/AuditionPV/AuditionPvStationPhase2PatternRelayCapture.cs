@@ -317,24 +317,29 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         internal static AuditionPvStationPhase2PatternRelayOutput ReserveNewOutputForRoot(
             string outputRoot,
-            string outputId)
+            string outputId,
+            Action<string> createBaselineDirectory = null,
+            Func<string, AuditionPvRecorderSettingsBundle> createRecorderSettings = null)
         {
             string outputDirectory =
                 AuditionPvOutputPaths.CreateUniqueOutputDirectory(outputRoot, outputId);
+            string captureId = new DirectoryInfo(outputDirectory).Name;
             string baselineDirectory = Path.Combine(
                 outputDirectory,
                 BaselinesFolderName);
-            Directory.CreateDirectory(baselineDirectory);
             AuditionPvRecorderSettingsBundle recorderSettings = null;
             try
             {
-                recorderSettings =
-                    AuditionPvRecorderSettingsFactory.CreateLosslessPngSequence(
+                (createBaselineDirectory ?? (path => Directory.CreateDirectory(path)))(
+                    baselineDirectory);
+                recorderSettings = createRecorderSettings != null
+                    ? createRecorderSettings(outputDirectory)
+                    : AuditionPvRecorderSettingsFactory.CreateLosslessPngSequence(
                         outputDirectory,
                         ShotId);
                 AuditionPvRecorderSettingsFactory.Validate(recorderSettings);
                 return new AuditionPvStationPhase2PatternRelayOutput(
-                    new DirectoryInfo(outputDirectory).Name,
+                    captureId,
                     outputDirectory,
                     baselineDirectory,
                     recorderSettings);
@@ -355,7 +360,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     CleanupFailedReservationForRoot(
                         outputRoot,
-                        outputId,
+                        captureId,
                         outputDirectory);
                 }
                 catch (Exception exception)

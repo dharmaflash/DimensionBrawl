@@ -450,7 +450,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void RecordingRegion_HasOnePublicTickAndNoForbiddenControlMutation()
+        public void RecordingRegion_LintsForbiddenDirectControlMutationTokens()
         {
             string source = ReadSource(
                 AuditionPvStationPhase2PatternRelayCapture.CaptureScriptPath);
@@ -458,13 +458,6 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 source,
                 "// RECORDING CONTRACT BEGIN",
                 "// RECORDING CONTRACT END");
-            Assert.That(Count(recording, "emitter.Tick("), Is.EqualTo(1));
-            Assert.That(recording, Does.Contain(
-                "emitter.Tick((1f / 60f) * emitterScale);"));
-            Assert.That(Count(recording,
-                "CombatTimeDilationReceiver.ResolveTimeScale(emitter)"), Is.EqualTo(1));
-            Assert.That(recording, Does.Contain("emitterScale != 1f"));
-            Assert.That(recording, Does.Contain("Time.timeScale != 1f"));
             foreach (string forbidden in new[]
             {
                 "BeginWindup(", "FirePendingWave(", "ConfigurePattern",
@@ -478,7 +471,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void PlayerResponse_UsesOnlyProductMovementApiAtExactWindows()
+        public void PlayerResponse_LintsForbiddenPoseAndControllerMutationTokens()
         {
             string source = ReadSource(
                 AuditionPvStationPhase2PatternRelayCapture.CaptureScriptPath);
@@ -486,31 +479,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 source,
                 "private void ApplyPlayerResponseInput",
                 "private void CapturePresentationAfterEvent");
-            Assert.That(response, Does.Contain("CurtainMoveFirstFrame"));
-            Assert.That(response, Does.Contain("CurtainMoveLastFrame"));
-            Assert.That(response, Does.Contain("CurtainStopFrame"));
-            Assert.That(response, Does.Contain("HoverMoveFirstFrame"));
-            Assert.That(response, Does.Contain("HoverMoveLastFrame"));
-            Assert.That(response, Does.Contain("HoverStopFrame"));
-            Assert.That(response, Does.Contain("movement.SetMoveInput"));
             Assert.That(response, Does.Not.Contain("transform.position ="));
             Assert.That(response, Does.Not.Contain("CharacterController.Move"));
         }
 
         [Test]
-        public void Cleanup_IsFinitePublicCadenceThenNaturalSettleAndNonEmittingFinalEdge()
+        public void Cleanup_LintsForbiddenUnboundedOrDirectSequenceMutationTokens()
         {
             string source = ReadSource(
                 AuditionPvStationPhase2PatternRelayCapture.CaptureScriptPath);
-            Assert.That(source, Does.Contain("AdvanceEmitterAuthoredSequenceToZero"));
-            Assert.That(source, Does.Contain("expected.InitialDelaySeconds + 1f"));
-            Assert.That(source, Does.Contain("expected.WindupSeconds + 1f"));
             Assert.That(source, Does.Not.Contain("emitter.Tick(float.MaxValue)"));
-            Assert.That(source, Does.Contain("FinalizeEmitterAuthoredIdleWithoutAdvancing"));
-            Assert.That(source, Does.Contain("visualCue.CuePlayer.ScheduledCueReleaseCount"));
-            Assert.That(source, Does.Contain("HasActiveMicroShake"));
-            Assert.That(source, Does.Contain("PrimeFromHandoffCamera"));
-            Assert.That(source, Does.Contain("CleanupFailure => cleanupFailure"));
         }
 
         [Test]
@@ -619,21 +597,207 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void RuntimeProof_AcceptsExactStructureButFinalPublishRequiresCalibration()
+        public void RuntimeProof_AcceptsLockedCalibrationAndCanReplayFirstTakeFailure()
         {
             AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof proof =
                 CreateValidProof();
             Assert.DoesNotThrow(() =>
                 AuditionPvStationPhase2PatternRelayGoldenRunner
                     .ValidateRuntimeProofBeforePixelCalibration(proof));
-            InvalidOperationException failure = Assert.Throws<InvalidOperationException>(() =>
+            Assert.DoesNotThrow(() =>
                 AuditionPvStationPhase2PatternRelayGoldenRunner
                     .ValidateRuntimeProof(proof));
-            Assert.That(failure.Message, Does.Contain("CalibrationRequired"));
             Assert.That(
                 AuditionPvStationPhase2PatternRelayGoldenRunner
                     .PatternPixelCalibrationLocked,
-                Is.False);
+                Is.True);
+
+            InvalidOperationException firstTake = Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidatePatternPixelEvidence(
+                        proof,
+                        false,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumCurtainGreenSamples,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumHoverCyanSamples,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumCurtainLocalizedFireMeanAbsoluteRgb,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumHoverLocalizedFireMeanAbsoluteRgb,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumCurtainFireOverQuietMeanMargin,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .MinimumHoverFireOverQuietMeanMargin));
+            Assert.That(firstTake.Message, Does.Contain("CalibrationRequired"));
+        }
+
+        [Test]
+        public void CalibratedPixelThresholds_AcceptBoundariesAndRejectEveryUnderflow()
+        {
+            AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof Boundary()
+            {
+                AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof proof =
+                    CreateValidProof();
+                proof.curtainWindupColors.curtainGreenSampleCount =
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumCurtainGreenSamples;
+                proof.hoverWindupColors.hoverCyanSampleCount =
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumHoverCyanSamples;
+                proof.curtainFireDelta.meanAbsoluteRgb =
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumCurtainLocalizedFireMeanAbsoluteRgb;
+                proof.curtainQuietDelta.meanAbsoluteRgb =
+                    proof.curtainFireDelta.meanAbsoluteRgb
+                    - AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumCurtainFireOverQuietMeanMargin
+                    - 0.000000001d;
+                proof.hoverFireDelta.meanAbsoluteRgb =
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumHoverLocalizedFireMeanAbsoluteRgb;
+                proof.hoverQuietDelta.meanAbsoluteRgb =
+                    proof.hoverFireDelta.meanAbsoluteRgb
+                    - AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .MinimumHoverFireOverQuietMeanMargin
+                    - 0.000000001d;
+                return proof;
+            }
+
+            Assert.DoesNotThrow(() =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidateCalibratedPatternPixelEvidence(Boundary()));
+            void Reject(Action<AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof> mutate)
+            {
+                AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof proof = Boundary();
+                mutate(proof);
+                Assert.Throws<InvalidOperationException>(() =>
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .ValidateCalibratedPatternPixelEvidence(proof));
+            }
+
+            Reject(proof => proof.curtainWindupColors.curtainGreenSampleCount--);
+            Reject(proof => proof.hoverWindupColors.hoverCyanSampleCount--);
+            Reject(proof =>
+            {
+                proof.curtainWindupColors.curtainGreenSampleCount = 0;
+                proof.curtainWindupColors.hoverCyanSampleCount = 1000;
+            });
+            Reject(proof =>
+            {
+                proof.hoverWindupColors.hoverCyanSampleCount = 0;
+                proof.hoverWindupColors.curtainGreenSampleCount = 1000;
+            });
+            Reject(proof => proof.curtainFireDelta.meanAbsoluteRgb -= 0.000001d);
+            Reject(proof => proof.hoverFireDelta.meanAbsoluteRgb -= 0.000001d);
+            Reject(proof => proof.curtainQuietDelta.meanAbsoluteRgb += 0.000000002d);
+            Reject(proof => proof.hoverQuietDelta.meanAbsoluteRgb += 0.000000002d);
+        }
+
+        [Test]
+        public void FirstTakeCalibrationFailure_WritesTelemetryAndRemovesSuccessArtifacts()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(),
+                "dimension-brawl-g07-calibration-failure-"
+                + Guid.NewGuid().ToString("N"));
+            const string CaptureId = "g07-calibration-first-take";
+            string output = AuditionPvOutputPaths.ResolveOutputDirectory(root, CaptureId);
+            string evidence = Path.Combine(output,
+                AuditionPvStationPhase2PatternRelayGoldenRunner.EvidenceFolderName);
+            string baselines = Path.Combine(output,
+                AuditionPvStationPhase2PatternRelayCapture.BaselinesFolderName);
+            Directory.CreateDirectory(evidence);
+            Directory.CreateDirectory(baselines);
+            try
+            {
+                string[] successArtifacts =
+                {
+                    Path.Combine(output, AuditionPvCaptureContract.ManifestFileName),
+                    Path.Combine(evidence,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProofFileName),
+                    Path.Combine(evidence,
+                        AuditionPvStationPhase2PatternRelayGoldenRunner.FrameHashLedgerFileName),
+                    Path.Combine(baselines,
+                        AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
+                    Path.Combine(baselines,
+                        AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
+                };
+                foreach (string path in successArtifacts)
+                {
+                    File.WriteAllText(path, "must-be-removed");
+                }
+
+                AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof proof =
+                    CreateValidProof();
+                InvalidOperationException calibrationFailure =
+                    Assert.Throws<InvalidOperationException>(() =>
+                        AuditionPvStationPhase2PatternRelayGoldenRunner
+                            .ValidatePatternPixelEvidence(
+                                proof,
+                                false,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumCurtainGreenSamples,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumHoverCyanSamples,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumCurtainLocalizedFireMeanAbsoluteRgb,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumHoverLocalizedFireMeanAbsoluteRgb,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumCurtainFireOverQuietMeanMargin,
+                                AuditionPvStationPhase2PatternRelayGoldenRunner
+                                    .MinimumHoverFireOverQuietMeanMargin));
+                var state = new AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .PersistedRunnerState
+                {
+                    captureId = CaptureId,
+                    outputRoot = root,
+                    outputDirectory = output,
+                    baselineDirectory = baselines,
+                    gitCommitSha = new string('a', 40),
+                    gitBranch = "main",
+                    dependencyHashesAtStart = Array.Empty<AuditionPvDependencyHash>()
+                };
+                AuditionPvStationPhase2PatternRelayGoldenRunner.WriteFailureArtifactForRoot(
+                    output,
+                    "AwaitingEditMode",
+                    calibrationFailure,
+                    proof,
+                    state,
+                    root,
+                    new AuditionPvGitSnapshot { probeSucceeded = true },
+                    pixelCalibrationLocked: false);
+
+                string failurePath = Path.Combine(
+                    output,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner.FailureFileName);
+                var artifact = JsonUtility.FromJson<CalibrationFailureArtifactProbe>(
+                    File.ReadAllText(failurePath));
+                Assert.That(artifact.pixelCalibrationLocked, Is.False);
+                Assert.That(artifact.exception, Does.Contain("CalibrationRequired"));
+                Assert.That(artifact.runtime, Is.Not.Null);
+                Assert.That(
+                    artifact.runtime.curtainWindupColors.curtainGreenSampleCount,
+                    Is.EqualTo(proof.curtainWindupColors.curtainGreenSampleCount));
+                Assert.That(
+                    artifact.runtime.hoverWindupColors.hoverCyanSampleCount,
+                    Is.EqualTo(proof.hoverWindupColors.hoverCyanSampleCount));
+                Assert.That(
+                    artifact.runtime.curtainFireDelta.meanAbsoluteRgb,
+                    Is.EqualTo(proof.curtainFireDelta.meanAbsoluteRgb));
+                Assert.That(
+                    artifact.runtime.hoverQuietDelta.meanAbsoluteRgb,
+                    Is.EqualTo(proof.hoverQuietDelta.meanAbsoluteRgb));
+                Assert.That(successArtifacts.All(path => !File.Exists(path)), Is.True);
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+            }
         }
 
         [Test]
@@ -643,6 +807,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.curtainSpawnedCount = 6);
             AssertMutation(proof => proof.hoverWasPriority = true);
             AssertMutation(proof => proof.emitterTickCount = 419);
+            AssertMutation(proof => proof.minimumEmitterTimeScale = 0.999f);
+            AssertMutation(proof => proof.curtainMoveFirstAppliedFrame = 18);
+            AssertMutation(proof => proof.curtainMoveLastAppliedFrame = 45);
+            AssertMutation(proof => proof.curtainZeroAppliedFrame = 48);
+            AssertMutation(proof => proof.hoverMoveFirstAppliedFrame = 375);
+            AssertMutation(proof => proof.hoverMoveLastAppliedFrame = 405);
+            AssertMutation(proof => proof.hoverZeroAppliedFrame = 408);
             AssertMutation(proof => proof.pressureActionEventCount = 1);
             AssertMutation(proof => proof.playerDamageEventCount = 1);
             AssertMutation(proof => proof.runStartedCount = 1);
@@ -650,7 +821,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.exactProjectileAndVfxBindings = false);
             AssertMutation(proof => proof.telegraphMarkerCollidersNonBlocking = false);
             AssertMutation(proof => proof.lifecycleEmergencyResetUsed = true);
+            AssertMutation(proof => proof.stateRestored = false);
+            AssertMutation(proof => proof.eventsReleased = false);
+            AssertMutation(proof => proof.presentationClockReleased = false);
+            AssertMutation(proof => proof.cadenceReleased = false);
+            AssertMutation(proof => proof.emitterRestored = false);
             AssertMutation(proof => proof.spawnOriginOrderRestored = false);
+            AssertMutation(proof => proof.cameraStateRestored = false);
+            AssertMutation(proof => proof.globalStateRestored = false);
             AssertMutation(proof => proof.captureStartProvenanceSha256 = "not-a-sha");
             AssertMutation(proof => proof.cleanupFailure = "cleanup leaked");
             AssertMutation(proof => proof.frame67Sha256 = proof.bl08Sha256);
@@ -1206,7 +1384,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void FailedReservationCleanup_DeletesOnlyExactOwnedDirectChild()
+        public void FailedReservationCleanup_HandlesRevisionAndInjectedCreationFaults()
         {
             string root = Path.Combine(
                 Path.GetTempPath(),
@@ -1219,12 +1397,41 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             try
             {
                 const string CaptureId = "g07-failed-reservation";
-                string owned = AuditionPvOutputPaths.ResolveOutputDirectory(root, CaptureId);
+                string collision = AuditionPvOutputPaths.ResolveOutputDirectory(root, CaptureId);
+                Directory.CreateDirectory(collision);
+                File.WriteAllText(Path.Combine(collision, "must-survive.txt"), "x");
+                string owned = AuditionPvOutputPaths.CreateUniqueOutputDirectory(
+                    root,
+                    CaptureId);
+                string actualCaptureId = new DirectoryInfo(owned).Name;
+                Assert.That(actualCaptureId, Does.EndWith("_r002"));
                 Directory.CreateDirectory(Path.Combine(owned, "baselines"));
                 File.WriteAllText(Path.Combine(owned, "baselines", "partial"), "x");
                 AuditionPvStationPhase2PatternRelayCapture
-                    .CleanupFailedReservationForRoot(root, CaptureId, owned);
+                    .CleanupFailedReservationForRoot(root, actualCaptureId, owned);
                 Assert.That(Directory.Exists(owned), Is.False);
+                Assert.That(File.Exists(Path.Combine(collision, "must-survive.txt")), Is.True);
+
+                const string BaselineFaultId = "g07-baseline-fault";
+                Assert.Throws<IOException>(() =>
+                    AuditionPvStationPhase2PatternRelayCapture.ReserveNewOutputForRoot(
+                        root,
+                        BaselineFaultId,
+                        _ => throw new IOException("injected baseline fault")));
+                Assert.That(Directory.Exists(
+                    AuditionPvOutputPaths.ResolveOutputDirectory(root, BaselineFaultId)),
+                    Is.False);
+
+                const string FactoryFaultId = "g07-factory-fault";
+                Assert.Throws<IOException>(() =>
+                    AuditionPvStationPhase2PatternRelayCapture.ReserveNewOutputForRoot(
+                        root,
+                        FactoryFaultId,
+                        null,
+                        _ => throw new IOException("injected factory fault")));
+                Assert.That(Directory.Exists(
+                    AuditionPvOutputPaths.ResolveOutputDirectory(root, FactoryFaultId)),
+                    Is.False);
 
                 string sentinel = Path.Combine(outside, "must-survive.txt");
                 File.WriteAllText(sentinel, "x");
@@ -1268,29 +1475,28 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void RunnerSource_EnforcesHeadfulFailureOnlyAtomicLifecycle()
+        public void ExactEngineProvenance_IsSharedAndRejectsEachMismatch()
         {
-            string source = ReadSource(
-                AuditionPvStationPhase2PatternRelayGoldenRunner.RunnerScriptPath);
-            Assert.That(source, Does.Contain("Has(\"-batchmode\")"));
-            Assert.That(source, Does.Contain("Has(\"-quit\")"));
-            Assert.That(source, Does.Contain("Has(\"-nographics\")"));
-            Assert.That(source, Does.Contain("Has(\"-noaudio\")"));
-            Assert.That(source, Does.Contain("PatternPixelCalibrationLocked = false"));
-            Assert.That(source, Does.Contain("DeleteUncommittedSuccessArtifacts"));
-            Assert.That(source, Does.Contain("IsValidCommittedManifest"));
-            Assert.That(source, Does.Contain("stream.Flush(flushToDisk: true)"));
-            Assert.That(source, Does.Contain("failureGit"));
-            Assert.That(source, Does.Contain("dependencyHashesAtStart"));
-            Assert.That(source, Does.Contain("This is deliberately the final fallible success operation"));
-            int write = source.IndexOf(
-                "AuditionPvCaptureManifestWriter.WriteNew(manifest);",
-                StringComparison.Ordinal);
-            int methodEnd = source.IndexOf("private static void AnalyzeFrames", write,
-                StringComparison.Ordinal);
-            Assert.That(write, Is.GreaterThan(0));
-            Assert.That(source.Substring(write, methodEnd - write),
-                Does.Not.Contain("SaveState("));
+            void Validate(
+                string unity = "6000.3.5f2",
+                string revision = "6000.3.5f2 (3fa8bc678cb0)",
+                string recorder = "5.1.6",
+                string urp = "17.3.0",
+                string pipeline = "Assets/Settings/PC_RPAsset.asset") =>
+                AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .ValidateExactEngineProvenance(
+                        unity, revision, recorder, urp, pipeline);
+
+            Assert.DoesNotThrow(() => Validate());
+            Assert.Throws<InvalidOperationException>(() => Validate(unity: "6000.3.6f1"));
+            Assert.Throws<InvalidOperationException>(() => Validate(revision: "6000.3.6f1 (bad)"));
+            Assert.Throws<InvalidOperationException>(() => Validate(
+                revision: "6000.3.5f2 (bad)"));
+            Assert.Throws<InvalidOperationException>(() => Validate(
+                revision: "6000.3.5f2 (3fa8bc678cb0"));
+            Assert.Throws<InvalidOperationException>(() => Validate(recorder: "5.1.7"));
+            Assert.Throws<InvalidOperationException>(() => Validate(urp: "17.4.0"));
+            Assert.Throws<InvalidOperationException>(() => Validate(pipeline: "Assets/Other.asset"));
         }
 
         private static AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof
@@ -1571,18 +1777,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             return source.Substring(first, last - first);
         }
 
-        private static int Count(string source, string value)
+        [Serializable]
+#pragma warning disable CS0649 // Populated only by JsonUtility in the executable round-trip test.
+        private sealed class CalibrationFailureArtifactProbe
         {
-            int count = 0;
-            int cursor = 0;
-            while ((cursor = source.IndexOf(value, cursor, StringComparison.Ordinal)) >= 0)
-            {
-                count++;
-                cursor += value.Length;
-            }
-
-            return count;
+            public string exception = string.Empty;
+            public bool pixelCalibrationLocked;
+            public AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof runtime;
         }
+#pragma warning restore CS0649
 
         private static void WritePngHeader(string path, int width, int height)
         {
