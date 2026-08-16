@@ -563,6 +563,23 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G08 canonical Corridor/UI-handoff/Station receipt proof is incomplete.");
             }
 
+            float recomputedProjectileWorldRadius;
+            try
+            {
+                recomputedProjectileWorldRadius =
+                    AuditionPvStationBossDeathAftermathCapture
+                        .ResolveConfiguredProjectileWorldRadius(
+                            proof.projectileConfiguredLocalRadius,
+                            proof.projectilePrefabLocalScale,
+                            proof.projectileRootLossyScale);
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "G08 physical projectile geometry proof is invalid.",
+                    exception);
+            }
+
             if (proof.phaseTransitionStartCount != 1
                 || proof.phaseTransitionCompletionCount != 1
                 || !proof.phaseTwoApplied
@@ -592,6 +609,61 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.preShotPlayerPlanarStepDistance
                     > AuditionPvStationBossDeathAftermathCapture
                         .MaximumNaturalImpactTotalStepMeters
+                || !string.Equals(
+                    proof.projectilePrefabAssetPath,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .PlayerRangedProjectilePrefabPath,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    proof.projectilePrefabAssetGuid,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .PlayerRangedProjectilePrefabGuid,
+                    StringComparison.Ordinal)
+                || !float.IsFinite(proof.projectileConfiguredLocalRadius)
+                || Mathf.Abs(
+                    proof.projectileConfiguredLocalRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileRadius) > 0.000001f
+                || !IsFinite(proof.projectilePrefabLocalScale)
+                || Vector3.Distance(
+                    proof.projectilePrefabLocalScale,
+                    Vector3.one
+                        * AuditionPvStationBossDeathAftermathCapture
+                            .AuthoredProjectilePrefabScale) > 0.000001f
+                || !IsFinite(proof.projectileRootLossyScale)
+                || Vector3.Distance(
+                    proof.projectileRootLossyScale,
+                    Vector3.one
+                        * AuditionPvStationBossDeathAftermathCapture
+                            .AuthoredProjectileRootScale) > 0.000001f
+                || !float.IsFinite(proof.projectileConfiguredWorldRadius)
+                || proof.projectileConfiguredWorldRadius <= 0f
+                || Mathf.Abs(
+                    proof.projectileConfiguredWorldRadius
+                    - recomputedProjectileWorldRadius) > 0.000001f
+                || Mathf.Abs(
+                    proof.projectileConfiguredWorldRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileWorldRadius) > 0.000001f
+                || !float.IsFinite(proof.projectileObservedLocalRadius)
+                || Mathf.Abs(
+                    proof.projectileObservedLocalRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileRadius) > 0.000001f
+                || !IsFinite(proof.projectileObservedLossyScale)
+                || Vector3.Distance(
+                    proof.projectileObservedLossyScale,
+                    Vector3.one
+                        * AuditionPvStationBossDeathAftermathCapture
+                            .AuthoredProjectilePrefabScale) > 0.000001f
+                || !float.IsFinite(proof.projectileObservedWorldRadius)
+                || Mathf.Abs(
+                    proof.projectileObservedWorldRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileWorldRadius) > 0.000001f
+                || Mathf.Abs(
+                    proof.projectileObservedWorldRadius
+                    - proof.projectileConfiguredWorldRadius) > 0.000001f
                 || !proof.bossPressureMovementWasEnabled
                 || !proof.bossPressureMovementHoldAcquired
                 || !proof.bossPoseStableThroughImpact
@@ -3058,6 +3130,15 @@ namespace DimensionBrawl.Editor.AuditionPV
             public float predictedBossSweepDistance;
             public int predictedNaturalImpactFrame = -1;
             public float preShotPlayerPlanarStepDistance;
+            public float projectileConfiguredLocalRadius;
+            public float projectileConfiguredWorldRadius;
+            public Vector3 projectilePrefabLocalScale;
+            public Vector3 projectileRootLossyScale;
+            public string projectilePrefabAssetPath = string.Empty;
+            public string projectilePrefabAssetGuid = string.Empty;
+            public float projectileObservedLocalRadius;
+            public float projectileObservedWorldRadius;
+            public Vector3 projectileObservedLossyScale;
             public bool bossPressureMovementWasEnabled;
             public bool bossPressureMovementHoldAcquired;
             public bool bossPoseStableThroughImpact;
@@ -3784,6 +3865,24 @@ namespace DimensionBrawl.Editor.AuditionPV
                     director.PredictedNaturalImpactFrame;
                 proof.preShotPlayerPlanarStepDistance =
                     director.PreShotPlayerPlanarStepDistance;
+                proof.projectileConfiguredLocalRadius =
+                    director.ProjectileConfiguredLocalRadius;
+                proof.projectileConfiguredWorldRadius =
+                    director.ProjectileConfiguredWorldRadius;
+                proof.projectilePrefabLocalScale =
+                    director.ProjectilePrefabLocalScale;
+                proof.projectileRootLossyScale =
+                    director.ProjectileRootLossyScale;
+                proof.projectilePrefabAssetPath =
+                    director.ProjectilePrefabAssetPath;
+                proof.projectilePrefabAssetGuid =
+                    director.ProjectilePrefabAssetGuid;
+                proof.projectileObservedLocalRadius =
+                    director.ProjectileObservedLocalRadius;
+                proof.projectileObservedWorldRadius =
+                    director.ProjectileObservedWorldRadius;
+                proof.projectileObservedLossyScale =
+                    director.ProjectileObservedLossyScale;
                 proof.bossPressureMovementWasEnabled =
                     director.BossPressureMovementWasEnabled;
                 proof.bossPressureMovementHoldAcquired =

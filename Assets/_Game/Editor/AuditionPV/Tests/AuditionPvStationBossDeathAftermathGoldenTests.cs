@@ -2,7 +2,10 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using DimensionBrawl.Combat;
+using DimensionBrawl.Player;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace DimensionBrawl.Editor.AuditionPV.Tests
@@ -43,6 +46,48 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Is.EqualTo(24f));
             Assert.That(AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius,
                 Is.EqualTo(0.31f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PlayerRangedProjectilePrefabPath,
+                Is.EqualTo(
+                    "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab"));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PlayerRangedProjectilePrefabGuid,
+                Is.EqualTo("404ed7d823e769c45871b221fe7e3c95"));
+            GameObject projectilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab");
+            Assert.That(projectilePrefab, Is.Not.Null);
+            Assert.That(AssetDatabase.GetAssetPath(projectilePrefab), Is.EqualTo(
+                "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab"));
+            Assert.That(AssetDatabase.AssetPathToGUID(
+                AssetDatabase.GetAssetPath(projectilePrefab)), Is.EqualTo(
+                "404ed7d823e769c45871b221fe7e3c95"));
+            Assert.That(projectilePrefab.transform.localScale,
+                Is.EqualTo(new Vector3(0.28f, 0.28f, 0.28f)));
+            LaneActionProjectile projectile = projectilePrefab
+                .GetComponent<LaneActionProjectile>();
+            SphereCollider projectileCollider = projectilePrefab
+                .GetComponent<SphereCollider>();
+            Assert.That(projectile, Is.Not.Null);
+            Assert.That(projectileCollider, Is.Not.Null);
+            Assert.That(projectile.gameObject, Is.SameAs(projectilePrefab));
+            Assert.That(projectileCollider.gameObject, Is.SameAs(projectilePrefab));
+            Assert.That(typeof(PlayerRangedBasicAttackAction).GetProperty(
+                "ConfiguredProjectilePrefab"), Is.Not.Null);
+            Assert.That(typeof(PlayerRangedBasicAttackAction).GetProperty(
+                "ConfiguredProjectileRadius"), Is.Not.Null);
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveConfiguredProjectileWorldRadius(
+                        0.31f,
+                        projectilePrefab.transform.localScale,
+                        Vector3.one),
+                Is.EqualTo(0.0868f).Within(0.000001f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .AuthoredProjectileWorldRadius,
+                Is.EqualTo(0.0868f));
             Assert.That(
                 AuditionPvStationBossDeathAftermathCapture.PredictNaturalImpactFrame(
                     AuditionPvStationBossDeathAftermathCapture
@@ -177,6 +222,19 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 AuditionPvStationBossDeathAftermathCapture
                     .ResolveNaturalImpactAdjustmentStep(-1.01f, 3f));
+            Assert.That(
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveConfiguredProjectileWorldRadius(
+                        0.31f,
+                        new Vector3(0.28f, 0.28f, 0.28f),
+                        Vector3.one),
+                Is.EqualTo(0.0868f).Within(0.000001f));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveConfiguredProjectileWorldRadius(
+                        0f,
+                        Vector3.one,
+                        Vector3.one));
 
             string source = ReadProjectFile(
                 AuditionPvStationBossDeathAftermathCapture.CaptureScriptPath);
@@ -241,6 +299,20 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(calibration, Does.Not.Contain(".MovePosition("));
             Assert.That(calibration, Does.Not.Contain(
                 ".SetPositionAndRotation("));
+            Assert.That(source, Does.Contain(
+                "AssetDatabase.LoadAssetAtPath<GameObject>("));
+            Assert.That(source, Does.Contain(
+                ".PlayerRangedProjectilePrefabPath);"));
+            Assert.That(source, Does.Contain(
+                "ranged.ConfiguredProjectilePrefab"));
+            Assert.That(source, Does.Contain(
+                "ranged.ConfiguredProjectileRadius"));
+            Assert.That(source, Does.Contain(
+                "projectileConfiguredWorldRadius,"));
+            Assert.That(source, Does.Contain(
+                "Mathf.Abs(localRadius"));
+            Assert.That(source, Does.Contain(
+                "Mathf.Abs(worldRadius"));
             Assert.That(source, Does.Contain(
                 "maximumBossRotationDriftThroughImpact"));
             Assert.That(source, Does.Contain(
@@ -1216,6 +1288,53 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 value.preShotPlayerPlanarStepDistance =
                     AuditionPvStationBossDeathAftermathCapture
                         .MaximumNaturalImpactTotalStepMeters + 0.001f);
+            AssertRuntimeMutation(value =>
+                value.projectileConfiguredLocalRadius = 0.32f);
+            AssertRuntimeMutation(value =>
+                value.projectileConfiguredWorldRadius = 0f);
+            AssertRuntimeMutation(value =>
+                value.projectilePrefabAssetPath =
+                    "Assets/_Game/Prefabs/Combat/PF_Unrelated.prefab");
+            AssertRuntimeMutation(value =>
+                value.projectilePrefabAssetGuid =
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            AssertRuntimeMutation(value =>
+                value.projectilePrefabLocalScale =
+                    new Vector3(0.29f, 0.28f, 0.28f));
+            AssertRuntimeMutation(value =>
+                value.projectileRootLossyScale =
+                    new Vector3(2f, 1f, 1f));
+            AssertRuntimeMutation(value =>
+                value.projectileObservedLocalRadius = float.NaN);
+            AssertRuntimeMutation(value =>
+                value.projectileObservedWorldRadius = float.NaN);
+            AssertRuntimeMutation(value =>
+                value.projectileObservedLossyScale =
+                    new Vector3(float.NaN, 0.28f, 0.28f));
+            AssertRuntimeMutation(value =>
+            {
+                value.projectilePrefabLocalScale =
+                    new Vector3(0.29f, 0.29f, 0.29f);
+                value.projectileConfiguredWorldRadius = 0.0899f;
+                value.projectileObservedLossyScale =
+                    new Vector3(0.29f, 0.29f, 0.29f);
+                value.projectileObservedWorldRadius = 0.0899f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.projectileRootLossyScale = new Vector3(2f, 2f, 2f);
+                value.projectileConfiguredWorldRadius = 0.1736f;
+                value.projectileObservedLossyScale =
+                    new Vector3(0.56f, 0.56f, 0.56f);
+                value.projectileObservedWorldRadius = 0.1736f;
+            });
+            AssertRuntimeMutation(value =>
+            {
+                value.projectilePrefabAssetPath =
+                    "Assets/_Game/Prefabs/Combat/PF_Unrelated.prefab";
+                value.projectilePrefabAssetGuid =
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            });
             AssertRuntimeMutation(value => value.bossPressureMovementWasEnabled = false);
             AssertRuntimeMutation(value => value.bossPressureMovementHoldAcquired = false);
             AssertRuntimeMutation(value => value.bossPoseStableThroughImpact = false);
@@ -1401,6 +1520,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 predictedBossSweepDistance = 24.2f,
                 predictedNaturalImpactFrame = 62,
                 preShotPlayerPlanarStepDistance = 1.2f,
+                projectileConfiguredLocalRadius = 0.31f,
+                projectileConfiguredWorldRadius = 0.0868f,
+                projectilePrefabLocalScale = new Vector3(0.28f, 0.28f, 0.28f),
+                projectileRootLossyScale = Vector3.one,
+                projectilePrefabAssetPath =
+                    "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab",
+                projectilePrefabAssetGuid =
+                    "404ed7d823e769c45871b221fe7e3c95",
+                projectileObservedLocalRadius = 0.31f,
+                projectileObservedWorldRadius = 0.0868f,
+                projectileObservedLossyScale =
+                    new Vector3(0.28f, 0.28f, 0.28f),
                 bossPressureMovementWasEnabled = true,
                 bossPressureMovementHoldAcquired = true,
                 bossPoseStableThroughImpact = true,

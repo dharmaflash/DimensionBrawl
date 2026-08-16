@@ -34,6 +34,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             "Assets/_Game/Scenes/UI/UI_StageClear.unity";
         internal const string TransitionOverlayPrefabPath =
             "Assets/_Game/UI/Transitions/PF_UI_TransitionOverlay.prefab";
+        internal const string PlayerRangedProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
+        internal const string PlayerRangedProjectilePrefabGuid =
+            "404ed7d823e769c45871b221fe7e3c95";
         internal const string StageClearSceneName = "UI_StageClear";
         internal const string StationEntryConditionId = "corridor.tutorial.completed";
         internal const string CaptureScriptPath =
@@ -64,6 +68,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const float AuthoredProjectileDamage = 12f;
         internal const float AuthoredProjectileSpeed = 24f;
         internal const float AuthoredProjectileRadius = 0.31f;
+        internal const float AuthoredProjectilePrefabScale = 0.28f;
+        internal const float AuthoredProjectileRootScale = 1f;
+        internal const float AuthoredProjectileWorldRadius = 0.0868f;
         internal const float NaturalImpactTargetDistance = 24.2f;
         internal const float NaturalImpactDistanceTolerance = 0.12f;
         internal const float MaximumNaturalImpactAdjustmentStepMeters = 3f;
@@ -106,6 +113,39 @@ namespace DimensionBrawl.Editor.AuditionPV
                 targetDelta,
                 -MaximumNaturalImpactAdjustmentStepMeters,
                 MaximumNaturalImpactAdjustmentStepMeters);
+        }
+
+        internal static float ResolveConfiguredProjectileWorldRadius(
+            float configuredLocalRadius,
+            Vector3 prefabLocalScale,
+            Vector3 projectileRootLossyScale)
+        {
+            if (!float.IsFinite(configuredLocalRadius)
+                || configuredLocalRadius <= 0f
+                || !float.IsFinite(prefabLocalScale.x)
+                || !float.IsFinite(prefabLocalScale.y)
+                || !float.IsFinite(prefabLocalScale.z)
+                || !float.IsFinite(projectileRootLossyScale.x)
+                || !float.IsFinite(projectileRootLossyScale.y)
+                || !float.IsFinite(projectileRootLossyScale.z))
+            {
+                throw new ArgumentOutOfRangeException(nameof(configuredLocalRadius));
+            }
+
+            Vector3 worldScale = Vector3.Scale(
+                prefabLocalScale,
+                projectileRootLossyScale);
+            float maximumScale = Mathf.Max(
+                Mathf.Abs(worldScale.x),
+                Mathf.Abs(worldScale.y),
+                Mathf.Abs(worldScale.z));
+            float worldRadius = configuredLocalRadius * maximumScale;
+            if (!float.IsFinite(worldRadius) || worldRadius <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(prefabLocalScale));
+            }
+
+            return worldRadius;
         }
 
         internal static AuditionPvShotManifestEntry CreateShotManifestEntry()
@@ -214,7 +254,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Scripts/UI/StageClear/StageClearScreenPresenter.cs",
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset",
                 "Assets/_Game/Art/Characters/Bosses/Akaza/Animations/DB_Akaza_Phase2Boss.controller",
-                "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab"
+                PlayerRangedProjectilePrefabPath
             };
         }
 
@@ -509,6 +549,15 @@ namespace DimensionBrawl.Editor.AuditionPV
         private float bossHealthBeforeShot;
         private float predictedBossSweepDistance;
         private float preShotPlayerPlanarStepDistance;
+        private float projectileConfiguredLocalRadius;
+        private float projectileConfiguredWorldRadius;
+        private Vector3 projectilePrefabLocalScale;
+        private Vector3 projectileRootLossyScale;
+        private string projectilePrefabAssetPath = string.Empty;
+        private string projectilePrefabAssetGuid = string.Empty;
+        private float projectileObservedLocalRadius;
+        private float projectileObservedWorldRadius;
+        private Vector3 projectileObservedLossyScale;
         private float maximumBossPositionDriftThroughImpact;
         private float maximumBossRotationDriftThroughImpact;
         private float minimumObservedTimeScale = float.PositiveInfinity;
@@ -600,6 +649,20 @@ namespace DimensionBrawl.Editor.AuditionPV
         public int PredictedNaturalImpactFrame => predictedNaturalImpactFrame;
         public float PreShotPlayerPlanarStepDistance =>
             preShotPlayerPlanarStepDistance;
+        public float ProjectileConfiguredLocalRadius =>
+            projectileConfiguredLocalRadius;
+        public float ProjectileConfiguredWorldRadius =>
+            projectileConfiguredWorldRadius;
+        public Vector3 ProjectilePrefabLocalScale => projectilePrefabLocalScale;
+        public Vector3 ProjectileRootLossyScale => projectileRootLossyScale;
+        public string ProjectilePrefabAssetPath => projectilePrefabAssetPath;
+        public string ProjectilePrefabAssetGuid => projectilePrefabAssetGuid;
+        public float ProjectileObservedLocalRadius =>
+            projectileObservedLocalRadius;
+        public float ProjectileObservedWorldRadius =>
+            projectileObservedWorldRadius;
+        public Vector3 ProjectileObservedLossyScale =>
+            projectileObservedLossyScale;
         public bool BossPressureMovementWasEnabled =>
             savedBossPressureMovementEnabled;
         public bool BossPressureMovementHoldAcquired =>
@@ -1713,6 +1776,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private IEnumerator PrepareNaturalBossImpactOwnership()
         {
             AcquireBossPressureMovementHold();
+            ResolveAuthoredProjectileGeometry();
 
             // A Phase2 handoff may still own a hostile pressure actor. The public
             // cinematic-dismissal API is intentionally idempotent: zero active
@@ -1918,11 +1982,97 @@ namespace DimensionBrawl.Editor.AuditionPV
             return candidates[0];
         }
 
+        private void ResolveAuthoredProjectileGeometry()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                AuditionPvStationBossDeathAftermathCapture
+                    .PlayerRangedProjectilePrefabPath);
+            LaneActionProjectile projectile = prefab != null
+                ? prefab.GetComponent<LaneActionProjectile>()
+                : null;
+            SphereCollider sphere = prefab != null
+                ? prefab.GetComponent<SphereCollider>()
+                : null;
+            Transform projectileRoot = ranged != null
+                ? ranged.ProjectileRoot
+                : null;
+            LaneActionProjectile actionConfiguredPrefab = ranged != null
+                ? ranged.ConfiguredProjectilePrefab
+                : null;
+            float actionConfiguredRadius = ranged != null
+                ? ranged.ConfiguredProjectileRadius
+                : 0f;
+            if (prefab == null
+                || projectile == null
+                || sphere == null
+                || projectile.gameObject != prefab
+                || sphere.gameObject != prefab
+                || !sphere.enabled
+                || !sphere.isTrigger
+                || projectileRoot == null
+                || actionConfiguredPrefab != projectile
+                || !float.IsFinite(actionConfiguredRadius)
+                || Mathf.Abs(
+                    actionConfiguredRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileRadius) > 0.000001f)
+            {
+                throw new InvalidOperationException(
+                    "G08 could not resolve the exact authored ranged projectile root geometry.");
+            }
+
+            projectileConfiguredLocalRadius = actionConfiguredRadius;
+            projectilePrefabLocalScale = prefab.transform.localScale;
+            projectileRootLossyScale = projectileRoot.lossyScale;
+            projectilePrefabAssetPath = AssetDatabase.GetAssetPath(
+                actionConfiguredPrefab);
+            projectilePrefabAssetGuid = AssetDatabase.AssetPathToGUID(
+                projectilePrefabAssetPath);
+            projectileConfiguredWorldRadius =
+                AuditionPvStationBossDeathAftermathCapture
+                    .ResolveConfiguredProjectileWorldRadius(
+                        projectileConfiguredLocalRadius,
+                        projectilePrefabLocalScale,
+                        projectileRootLossyScale);
+            Vector3 expectedPrefabScale = Vector3.one
+                * AuditionPvStationBossDeathAftermathCapture
+                    .AuthoredProjectilePrefabScale;
+            Vector3 expectedRootScale = Vector3.one
+                * AuditionPvStationBossDeathAftermathCapture
+                    .AuthoredProjectileRootScale;
+            if (!string.Equals(
+                    projectilePrefabAssetPath,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .PlayerRangedProjectilePrefabPath,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    projectilePrefabAssetGuid,
+                    AuditionPvStationBossDeathAftermathCapture
+                        .PlayerRangedProjectilePrefabGuid,
+                    StringComparison.Ordinal)
+                || Vector3.Distance(
+                    projectilePrefabLocalScale,
+                    expectedPrefabScale) > 0.000001f
+                || Vector3.Distance(
+                    projectileRootLossyScale,
+                    expectedRootScale) > 0.000001f
+                || Mathf.Abs(
+                    projectileConfiguredWorldRadius
+                    - AuditionPvStationBossDeathAftermathCapture
+                        .AuthoredProjectileWorldRadius) > 0.000001f)
+            {
+                throw new InvalidOperationException(
+                    "G08 authored ranged projectile asset identity or physical scale drifted.");
+            }
+        }
+
         private float MeasureNaturalBossSweepDistance(Transform fireOrigin)
         {
             if (fireOrigin == null
                 || !ranged.TryGetAimPreviewDirection(out Vector3 direction)
-                || direction.sqrMagnitude <= 0.0001f)
+                || direction.sqrMagnitude <= 0.0001f
+                || !float.IsFinite(projectileConfiguredWorldRadius)
+                || projectileConfiguredWorldRadius <= 0f)
             {
                 throw new InvalidOperationException(
                     "G08 public ranged aim preview is unavailable for natural-impact calibration.");
@@ -1931,7 +2081,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             Physics.SyncTransforms();
             int hitCount = Physics.SphereCastNonAlloc(
                 fireOrigin.position,
-                AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius,
+                projectileConfiguredWorldRadius,
                 direction.normalized,
                 naturalImpactSweepHits,
                 64f,
@@ -2542,6 +2692,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                         Mathf.Abs(sphereScale.y),
                         Mathf.Abs(sphereScale.z))
                     : 0f;
+                float localRadius = sphere != null ? sphere.radius : 0f;
+                projectileObservedLocalRadius = localRadius;
+                projectileObservedWorldRadius = worldRadius;
+                projectileObservedLossyScale = sphereScale;
                 if (projectile == null
                     || firedProjectile != null
                     || projectile.SourceHealth != playerHealth
@@ -2549,13 +2703,28 @@ namespace DimensionBrawl.Editor.AuditionPV
                     || Mathf.Abs(projectile.Damage
                         - AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileDamage)
                         > Tolerance
+                    || !float.IsFinite(localRadius)
+                    || !float.IsFinite(worldRadius)
+                    || !float.IsFinite(sphereScale.x)
+                    || !float.IsFinite(sphereScale.y)
+                    || !float.IsFinite(sphereScale.z)
+                    || Mathf.Abs(localRadius
+                        - projectileConfiguredLocalRadius) > Tolerance
                     || Mathf.Abs(worldRadius
-                        - AuditionPvStationBossDeathAftermathCapture.AuthoredProjectileRadius)
+                        - projectileConfiguredWorldRadius)
                         > Tolerance
                     || !projectile.IsActive)
                 {
                     throw new InvalidOperationException(
-                        "G08 RangedProjectileFired did not expose the one authored physical 12-damage projectile.");
+                        "G08 RangedProjectileFired did not expose the one authored physical 12-damage projectile: "
+                        + $"null={projectile == null}, duplicate={firedProjectile != null}, "
+                        + $"sourceMatch={projectile != null && projectile.SourceHealth == playerHealth}, "
+                        + $"team={(projectile != null ? projectile.SourceTeam.ToString() : "null")}, "
+                        + $"damage={(projectile != null ? projectile.Damage : -1f):0.000}, "
+                        + $"configuredPrefab='{projectilePrefabAssetPath}', configuredGuid='{projectilePrefabAssetGuid}', "
+                        + $"localRadius={localRadius:0.000000}, expectedLocal={projectileConfiguredLocalRadius:0.000000}, "
+                        + $"worldRadius={worldRadius:0.000000}, expectedWorld={projectileConfiguredWorldRadius:0.000000}, "
+                        + $"active={projectile != null && projectile.IsActive}.");
                 }
 
                 firedProjectile = projectile;

@@ -174,6 +174,9 @@ namespace DimensionBrawl.Player
         public Vector2 AimInput => aimInput;
         public Transform FireOrigin => fireOrigin;
         public Transform ProjectileRoot => projectileRoot;
+        public LaneActionProjectile ConfiguredProjectilePrefab =>
+            ResolveProjectilePrefab();
+        public float ConfiguredProjectileRadius => projectileRadius;
         public Vector3 LastResolvedFireDirection { get; private set; } = Vector3.forward;
         public bool HasLockTarget => lockTargetController != null && lockTargetController.HasLockTarget;
         public CombatHealth LockTargetHealth => lockTargetController != null ? lockTargetController.CurrentTargetHealth : null;

@@ -115,8 +115,12 @@ then stores the exact `BossPressurePositionController.MovementEnabled` value and
 `SetMovementEnabled(false)` while a read-only physical sphere sweep centers the player by an authored
 public movement step. Each adjustment is capped at 3 m, the actual sweep is remeasured after every
 settle, and both cumulative requested movement and final planar displacement are capped at 4 m. The
-boss `MovedTransform` position and rotation must remain exact from shot arm through the real impact,
-and success/failure cleanup restores the saved movement value.
+read-only sweep uses the configured collider radius after applying the authored projectile prefab and
+pool-root scales; the firing action's configured AimBolt prefab path/GUID, local `0.31` radius,
+authored `0.28` prefab scale, pool-root scale, and event-observed physical world radius are proved
+independently.
+The boss `MovedTransform` position and rotation must remain exact from shot arm through the real
+impact, and success/failure cleanup restores the saved movement value.
 
 Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
 frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps
