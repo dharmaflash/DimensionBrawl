@@ -129,6 +129,28 @@ namespace DimensionBrawl.Editor.AuditionPV
             EditorUtility.RevealInFinder(result.outputPath);
         }
 
+        public static void RunBatch()
+        {
+            try
+            {
+                AuditionPvEndCardPlaceholderResult result = Produce(
+                    ResolveProjectRoot(),
+                    AuditionPvSixtySecondGateManifestValidator.ProductionGraphicsRoot);
+                Debug.Log(
+                    "[AuditionPvEndCardPlaceholderProducer] BATCH_PASS: "
+                    + result.outputPath
+                    + " sha256="
+                    + result.outputSha256);
+                EditorApplication.Exit(0);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                Debug.LogError("[AuditionPvEndCardPlaceholderProducer] BATCH_FAIL");
+                EditorApplication.Exit(1);
+            }
+        }
+
         internal static AuditionPvEndCardPlaceholderResult Produce(
             string projectRoot,
             string graphicsRoot)
