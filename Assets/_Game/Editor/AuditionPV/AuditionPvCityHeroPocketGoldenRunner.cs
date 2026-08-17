@@ -2976,6 +2976,7 @@ namespace DimensionBrawl.Editor.AuditionPV
     public sealed class AuditionPvCityHeroPocketGoldenRunnerBehaviour : MonoBehaviour
     {
         private const double ShotTimeoutSeconds = 180d;
+        private static readonly WaitForEndOfFrame EndOfFrameYield = new();
 
         private string statePath;
         private string outputDirectory;
@@ -2994,6 +2995,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private bool notified;
         private bool recorderCleaned;
         private bool finalizingSequence;
+        private readonly AuditionPvRecordedPostHandleTimeFreeze
+            recordedPostHandleTimeFreeze = new();
         private int directorRestoreCallCount;
         private int directorDestroyCallCount;
         private int nextPresentedFrame;
@@ -3017,14 +3020,23 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void Update()
         {
-            if (!armLogicalFrameZero || beganLogicalShot || updateFailure != null)
+            if (updateFailure != null)
             {
                 return;
             }
 
-            armLogicalFrameZero = false;
             try
             {
+                if (recordedPostHandleTimeFreeze.IsOwned)
+                {
+                    recordedPostHandleTimeFreeze.AssertHeld();
+                }
+                if (!armLogicalFrameZero || beganLogicalShot)
+                {
+                    return;
+                }
+
+                armLogicalFrameZero = false;
                 if (Time.timeScale <= 0f)
                 {
                     throw new InvalidOperationException(
@@ -3116,6 +3128,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     AuditionPvCityShot previous =
                         AuditionPvCityHeroPocketGoldenRunner.ShotOrder[index - 1];
+                    ReleaseRecordedPostHandleFreeze();
                     MarkNoDirectorCleanupBeforeContinuation(previous);
                     IEnumerator continuation = director.PrepareContinuationShot(shot);
                     while (true)
@@ -3252,7 +3265,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 && director.Failure == null
                 && Time.realtimeSinceStartupAsDouble < deadline)
             {
-                yield return null;
+                // Resume after the terminal rail LateUpdate so the posthandle can
+                // freeze before the next frame's FixedUpdate or product Update.
+                yield return EndOfFrameYield;
             }
 
             if (director.Failure != null)
@@ -3270,15 +3285,36 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + AuditionPvCityHeroPocketGoldenRunner.ShotId(shot) + ".");
             }
 
+            AcquireRecordedPostHandleFreeze();
+            if (updateFailure != null)
+            {
+                throw new InvalidOperationException(
+                    "City recorded posthandle freeze failed.",
+                    updateFailure);
+            }
+            if (!recordedPostHandleTimeFreeze.IsOwned)
+            {
+                throw new InvalidOperationException(
+                    "City terminal product state was not frozen before the recorded "
+                    + "posthandle began.");
+            }
+
             // Keep the completed product/camera state alive while Recorder writes
             // the full 180-frame posthandle. Cleanup and same-session continuation
             // cannot begin until the inclusive raw interval auto-stops.
             while (recorderController.IsRecording()
+                && updateFailure == null
                 && Time.realtimeSinceStartupAsDouble < deadline)
             {
                 yield return null;
             }
 
+            if (updateFailure != null)
+            {
+                throw new InvalidOperationException(
+                    "City recorded posthandle freeze was lost.",
+                    updateFailure);
+            }
             activeProof.recorderAutoStoppedAfterLastFrame =
                 !recorderController.IsRecording();
             if (!activeProof.recorderAutoStoppedAfterLastFrame)
@@ -3301,6 +3337,13 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ResetActiveShot(AuditionPvCityShot shot)
         {
+            if (recordedPostHandleTimeFreeze.IsOwned)
+            {
+                throw new InvalidOperationException(
+                    "A City shot cannot reset while the recorded posthandle freeze "
+                    + "is owned.");
+            }
+
             activeProof = new AuditionPvCityHeroPocketGoldenRunner.ShotRecorderProof
             {
                 shotId = AuditionPvCityHeroPocketGoldenRunner.ShotId(shot),
@@ -3328,6 +3371,37 @@ namespace DimensionBrawl.Editor.AuditionPV
                     - 1f / AuditionPvCaptureContract.Fps) <= 0.00001f;
             activeProof.presentedFrameCount++;
             nextPresentedFrame++;
+        }
+
+        private void AcquireRecordedPostHandleFreeze()
+        {
+            if (recordedPostHandleTimeFreeze.IsOwned)
+            {
+                recordedPostHandleTimeFreeze.AssertHeld();
+                return;
+            }
+            if (director == null || !director.IsComplete)
+            {
+                throw new InvalidOperationException(
+                    "The City recorded posthandle freeze requires a completed "
+                    + "product shot.");
+            }
+            if (recorderController == null || !recorderController.IsRecording())
+            {
+                throw new InvalidOperationException(
+                    "Recorder stopped before the City terminal posthandle freeze "
+                    + "could be acquired.");
+            }
+
+            // The logical wait resumes at EndOfFrame after the rail seals its final
+            // LateUpdate. Acquiring here prevents any next-frame physics, reload,
+            // encounter, camera, or HUD product tick.
+            recordedPostHandleTimeFreeze.Acquire();
+        }
+
+        private void ReleaseRecordedPostHandleFreeze()
+        {
+            recordedPostHandleTimeFreeze.Release();
         }
 
         private Exception CleanupRecorderSession()
@@ -3425,7 +3499,10 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             finalizingSequence = true;
             bool directorStateRestoredAtSequenceEnd = false;
-            Exception firstFailure = CleanupRecorderSession();
+            Exception firstFailure = null;
+            CaptureFailure(ref firstFailure, ReleaseRecordedPostHandleFreeze);
+            Exception recorderCleanupFailure = CleanupRecorderSession();
+            firstFailure ??= recorderCleanupFailure;
             CaptureFailure(ref firstFailure, () =>
             {
                 if (director == null)
@@ -3525,6 +3602,76 @@ namespace DimensionBrawl.Editor.AuditionPV
             catch (Exception exception)
             {
                 firstFailure ??= exception;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Owns the isolated capture runner's temporary global-time freeze. Recorder
+    /// frame-interval capture and coroutines continue to advance while scaled
+    /// gameplay, camera, and UI product ticks remain at the sealed terminal frame.
+    /// </summary>
+    internal sealed class AuditionPvRecordedPostHandleTimeFreeze
+    {
+        private float restoreTimeScale;
+
+        internal bool IsOwned { get; private set; }
+
+        internal void Acquire()
+        {
+            if (IsOwned)
+            {
+                AssertHeld();
+                return;
+            }
+            if (Time.timeScale <= 0f)
+            {
+                throw new InvalidOperationException(
+                    "The City recorded posthandle cannot acquire over paused time.");
+            }
+
+            restoreTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            IsOwned = true;
+            try
+            {
+                AssertHeld();
+            }
+            catch
+            {
+                IsOwned = false;
+                Time.timeScale = restoreTimeScale;
+                restoreTimeScale = 0f;
+                throw;
+            }
+        }
+
+        internal void AssertHeld()
+        {
+            if (!IsOwned || !Mathf.Approximately(Time.timeScale, 0f))
+            {
+                throw new InvalidOperationException(
+                    "The City recorded posthandle lost its global-time freeze.");
+            }
+        }
+
+        internal void Release()
+        {
+            if (!IsOwned)
+            {
+                return;
+            }
+
+            float capturedTimeScale = restoreTimeScale;
+            bool stillHeld = Mathf.Approximately(Time.timeScale, 0f);
+            IsOwned = false;
+            restoreTimeScale = 0f;
+            Time.timeScale = capturedTimeScale;
+            if (!stillHeld)
+            {
+                throw new InvalidOperationException(
+                    "The City recorded posthandle freeze was externally replaced "
+                    + "before release. The captured time scale was restored.");
             }
         }
     }

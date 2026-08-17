@@ -118,6 +118,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain(
                 "while (recorderController.IsRecording()"));
             Assert.That(source, Does.Contain(
+                "yield return EndOfFrameYield;"));
+            Assert.That(source, Does.Contain(
+                "AcquireRecordedPostHandleFreeze();"));
+            Assert.That(source, Does.Contain(
+                "recordedPostHandleTimeFreeze.Acquire();"));
+            Assert.That(source, Does.Match(
+                @"ReleaseRecordedPostHandleFreeze\(\);\s*"
+                + @"MarkNoDirectorCleanupBeforeContinuation\(previous\);\s*"
+                + @"IEnumerator continuation = director\.PrepareContinuationShot\(shot\);"));
+            Assert.That(source, Does.Contain(
+                "CaptureFailure(ref firstFailure, ReleaseRecordedPostHandleFreeze);"));
+            Assert.That(source, Does.Contain(
                 "WriteGateEvidenceArtifacts("));
             Assert.That(source, Does.Contain(
                 "shot-authorship/"));
@@ -217,6 +229,58 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 StringComparison.Ordinal);
             Assert.That(preflight, Is.GreaterThanOrEqualTo(0));
             Assert.That(reserve, Is.GreaterThan(preflight));
+        }
+
+        [Test]
+        public void RecordedPostHandleTimeFreeze_RestoresExactScaleAndReleasesIdempotently()
+        {
+            float originalTimeScale = Time.timeScale;
+            var freeze = new AuditionPvRecordedPostHandleTimeFreeze();
+            try
+            {
+                Time.timeScale = 0.37f;
+                freeze.Acquire();
+
+                Assert.That(freeze.IsOwned, Is.True);
+                Assert.That(Time.timeScale, Is.Zero.Within(0.0001f));
+                Assert.DoesNotThrow(freeze.AssertHeld);
+                Assert.DoesNotThrow(freeze.Acquire);
+
+                freeze.Release();
+
+                Assert.That(freeze.IsOwned, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(0.37f).Within(0.0001f));
+                Assert.DoesNotThrow(freeze.Release);
+            }
+            finally
+            {
+                freeze.Release();
+                Time.timeScale = originalTimeScale;
+            }
+        }
+
+        [Test]
+        public void RecordedPostHandleTimeFreeze_LostOwnershipFailsAfterRestoringScale()
+        {
+            float originalTimeScale = Time.timeScale;
+            var freeze = new AuditionPvRecordedPostHandleTimeFreeze();
+            try
+            {
+                Time.timeScale = 0.43f;
+                freeze.Acquire();
+                Time.timeScale = 0.81f;
+
+                Assert.Throws<InvalidOperationException>(freeze.AssertHeld);
+                Assert.Throws<InvalidOperationException>(freeze.Release);
+                Assert.That(freeze.IsOwned, Is.False);
+                Assert.That(Time.timeScale, Is.EqualTo(0.43f).Within(0.0001f));
+                Assert.DoesNotThrow(freeze.Release);
+            }
+            finally
+            {
+                freeze.Release();
+                Time.timeScale = originalTimeScale;
+            }
         }
 
         [Test]
