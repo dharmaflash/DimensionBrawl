@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
@@ -88,6 +89,426 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             };
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 AuditionPvRuntimeWorkloadCaptureSession.Open(config));
+        }
+
+        [Test]
+        public void RuntimeSpool_G04FullCardinalityCarryForwardFitsBothBoundedSpools()
+        {
+            string[] rendererIds = Enumerable.Range(
+                    0,
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxStableIdsPerInventory)
+                .Select(index => "UnityEngine.MeshRenderer/global/" +
+                                 index.ToString("D4") + "/" + new string('r', 96))
+                .ToArray();
+            string[] materialIds = Enumerable.Range(
+                    0,
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxStableIdsPerInventory)
+                .Select(index => "UnityEngine.MeshRenderer/global/" +
+                                 index.ToString("D4") + "/slot/0/material/" +
+                                 new string('a', 32) + "/" + index.ToString("D4") + "/" +
+                                 new string('m', 96))
+                .ToArray();
+            string rendererHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("renderers", rendererIds);
+            string materialHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("material-slots", materialIds);
+            string[] canvasIds = { "UnityEngine.Canvas/global/canvas-001" };
+            string[] hudIds = { "UnityEngine.CanvasRenderer/global/hud-001" };
+            string canvasHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("canvases", canvasIds);
+            string hudHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("hud-renderers", hudIds);
+            var generalEncoder = new AuditionPvRuntimeWorkloadCarryForwardEncoder();
+            var cleanEncoder = new AuditionPvRuntimeWorkloadCarryForwardEncoder();
+            long generalBytes = 0;
+            long cleanBytes = 0;
+            long firstGeneralLineBytes = 0;
+            long maximumGeneralRepeatBytes = 0;
+            long maximumCleanRepeatBytes = 0;
+            const int G04FrameCount = 598;
+
+            AuditionPvRuntimeFrameWorkload Frame(int sourceFrame) => new()
+            {
+                sourceFrame = sourceFrame,
+                inspectedRendererCount = rendererIds.LongLength,
+                inspectedMaterialSlotCount = materialIds.LongLength,
+                rendererStableIds = rendererIds,
+                materialSlotStableIds = materialIds,
+                rendererInventorySha256 = rendererHash,
+                materialInventorySha256 = materialHash,
+                inspectedCanvasCount = canvasIds.LongLength,
+                inspectedHudRendererCount = hudIds.LongLength,
+                inspectedDrawCommandCount = rendererIds.LongLength + hudIds.LongLength,
+                canvasStableIds = canvasIds,
+                hudRendererStableIds = hudIds,
+                canvasInventorySha256 = canvasHash,
+                hudInventorySha256 = hudHash
+            };
+
+            for (int sourceFrame = 0; sourceFrame < G04FrameCount; sourceFrame++)
+            {
+                AuditionPvRuntimeFrameWorkload general = Frame(sourceFrame);
+                generalEncoder.Compress(general, false);
+                long generalLineBytes = Encoding.UTF8.GetByteCount(
+                    JsonUtility.ToJson(general, false)) + 1L;
+                AuditionPvRuntimeWorkloadCaptureSession.RequireWithinBudget(
+                    generalLineBytes,
+                    generalBytes,
+                    "g04",
+                    sourceFrame,
+                    sourceFrame);
+                generalBytes += generalLineBytes;
+
+                AuditionPvRuntimeFrameWorkload clean = Frame(sourceFrame);
+                cleanEncoder.Compress(clean, true);
+                long cleanLineBytes = Encoding.UTF8.GetByteCount(
+                    JsonUtility.ToJson(clean, false)) + 1L;
+                AuditionPvRuntimeWorkloadCaptureSession.RequireWithinBudget(
+                    cleanLineBytes,
+                    cleanBytes,
+                    "g04-clean",
+                    sourceFrame,
+                    sourceFrame);
+                cleanBytes += cleanLineBytes;
+
+                if (sourceFrame == 0)
+                {
+                    firstGeneralLineBytes = generalLineBytes;
+                    Assert.That(general.rendererStableIds.Length,
+                        Is.EqualTo(rendererIds.Length));
+                    Assert.That(clean.rendererStableIds.Length,
+                        Is.EqualTo(rendererIds.Length));
+                }
+                else
+                {
+                    maximumGeneralRepeatBytes = Math.Max(
+                        maximumGeneralRepeatBytes,
+                        generalLineBytes);
+                    maximumCleanRepeatBytes = Math.Max(
+                        maximumCleanRepeatBytes,
+                        cleanLineBytes);
+                    Assert.That(general.rendererStableIds, Is.Empty);
+                    Assert.That(general.materialSlotStableIds, Is.Empty);
+                    Assert.That(clean.rendererStableIds, Is.Empty);
+                    Assert.That(clean.materialSlotStableIds, Is.Empty);
+                    Assert.That(clean.canvasStableIds, Is.Empty);
+                    Assert.That(clean.hudRendererStableIds, Is.Empty);
+                }
+            }
+
+            Assert.That(firstGeneralLineBytes, Is.GreaterThan(512L * 1024L),
+                "The regression must exercise the G04 failure's former 512 KiB row ceiling.");
+            Assert.That(firstGeneralLineBytes,
+                Is.LessThanOrEqualTo(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes));
+            Assert.That(generalBytes,
+                Is.LessThanOrEqualTo(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes));
+            Assert.That(cleanBytes,
+                Is.LessThanOrEqualTo(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes));
+
+            int[] familyFrameCounts = { 240, 420, 300, 598, 720, 600, 720, 780, 720 };
+            long maximumRepeatBytes = Math.Max(
+                maximumGeneralRepeatBytes,
+                maximumCleanRepeatBytes);
+            foreach (int frameCount in familyFrameCounts)
+            {
+                long constantInventorySpoolBytes = checked(
+                    firstGeneralLineBytes + (frameCount - 1L) * maximumRepeatBytes);
+                Assert.That(frameCount,
+                    Is.LessThanOrEqualTo(
+                        AuditionPvRuntimeWorkloadCaptureSession.MaxRangeFrames));
+                Assert.That(constantInventorySpoolBytes,
+                    Is.LessThanOrEqualTo(
+                        AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes));
+            }
+        }
+
+        [Test]
+        public void RuntimeSpool_FixedLineAndAggregateUpperBoundsRemainFailClosed()
+        {
+            Assert.DoesNotThrow(() =>
+                AuditionPvRuntimeWorkloadCaptureSession.RequireWithinBudget(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes,
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes -
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes,
+                    "g04",
+                    597,
+                    597));
+            InvalidDataException line = Assert.Throws<InvalidDataException>(() =>
+                AuditionPvRuntimeWorkloadCaptureSession.RequireWithinBudget(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes + 1L,
+                    0,
+                    "g04",
+                    0,
+                    0));
+            Assert.That(line.Message, Does.Contain("shot=g04"));
+            Assert.That(line.Message, Does.Contain("lineBytes="));
+
+            InvalidDataException spool = Assert.Throws<InvalidDataException>(() =>
+                AuditionPvRuntimeWorkloadCaptureSession.RequireWithinBudget(
+                    1,
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes,
+                    "g04-clean",
+                    597,
+                    597));
+            Assert.That(spool.Message, Does.Contain("shot=g04-clean"));
+            Assert.That(spool.Message, Does.Contain("maxSpoolBytes="));
+        }
+
+        [Test]
+        public void RuntimeSpoolReader_RejectsNoNewlineInputBeforeUnboundedReadLineAllocation()
+        {
+            const int TestLineLimit = 1024;
+            byte[] exactBytes = Encoding.UTF8.GetBytes(
+                new string('x', TestLineLimit - 1) + "\n");
+            using (var exactStream = new MemoryStream(exactBytes))
+            using (var exactReader = new StreamReader(
+                       exactStream,
+                       new UTF8Encoding(false, true),
+                       false,
+                       128,
+                       false))
+            {
+                Assert.That(AuditionPvSixtySecondEvidenceProducer
+                    .ReadRuntimeWorkloadLineCapped(exactReader, TestLineLimit)?.Length,
+                    Is.EqualTo(TestLineLimit - 1));
+            }
+
+            byte[] oversizedBytes = Encoding.UTF8.GetBytes(
+                new string('x', TestLineLimit + 1));
+            using var oversizedStream = new MemoryStream(oversizedBytes);
+            using var oversizedReader = new StreamReader(
+                oversizedStream,
+                new UTF8Encoding(false, true),
+                false,
+                128,
+                false);
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvSixtySecondEvidenceProducer.ReadRuntimeWorkloadLineCapped(
+                    oversizedReader,
+                    TestLineLimit));
+        }
+
+        [Test]
+        public void RuntimeSpool_OneIdCombatChurnUsesBoundedDeltasAcrossLongestFamily()
+        {
+            const int InventoryCount = 4096;
+            const int LongestFamilyFrameCount = 780;
+            string[] baseRenderers = Enumerable.Range(0, InventoryCount)
+                .Select(index => "renderer/global/" + index.ToString("D4") + "/" +
+                                 new string('r', 96))
+                .ToArray();
+            string[] alternateRenderers = baseRenderers.Take(InventoryCount - 1)
+                .Concat(new[] { "renderer/global/zzzz/" + new string('z', 96) })
+                .ToArray();
+            string[] materials = { "material/guid-a/1" };
+            string baseHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("renderers", baseRenderers);
+            string alternateHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("renderers", alternateRenderers);
+            string materialHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("material-slots", materials);
+            var encoder = new AuditionPvRuntimeWorkloadCarryForwardEncoder();
+            var validationState = new AuditionPvSixtySecondGateManifestValidator
+                .RuntimeWorkloadValidationState();
+            long artifactFrameBytes = 0;
+
+            for (int sourceFrame = 0;
+                 sourceFrame < LongestFamilyFrameCount;
+                 sourceFrame++)
+            {
+                bool alternate = (sourceFrame & 1) != 0;
+                string[] currentRenderers = alternate
+                    ? alternateRenderers
+                    : baseRenderers;
+                string currentHash = alternate ? alternateHash : baseHash;
+                var frame = new AuditionPvRuntimeFrameWorkload
+                {
+                    sourceFrame = sourceFrame,
+                    inspectedRendererCount = currentRenderers.LongLength,
+                    inspectedMaterialSlotCount = materials.LongLength,
+                    rendererStableIds = currentRenderers,
+                    materialSlotStableIds = materials,
+                    rendererInventorySha256 = currentHash,
+                    materialInventorySha256 = materialHash,
+                    inspectedDrawCommandCount = currentRenderers.LongLength
+                };
+                encoder.Compress(frame, false);
+                string line = JsonUtility.ToJson(frame, false);
+                long lineBytes = Encoding.UTF8.GetByteCount(line) + 1L;
+                artifactFrameBytes = checked(artifactFrameBytes + lineBytes);
+                var entry = new AuditionPvSelectedFrameScanEntry
+                {
+                    sourceFrame = sourceFrame,
+                    inspectedRendererCount = currentRenderers.LongLength,
+                    inspectedMaterialSlotCount = materials.LongLength,
+                    rendererInventorySha256 = currentHash,
+                    materialInventorySha256 = materialHash
+                };
+                Assert.That(AuditionPvSixtySecondGateManifestValidator
+                    .RuntimeWorkloadFrameMatches(
+                        "renderer-material-scan",
+                        frame,
+                        entry,
+                        string.Empty,
+                        validationState), Is.True);
+
+                if (sourceFrame == 0)
+                {
+                    Assert.That(frame.rendererStableIds.Length,
+                        Is.EqualTo(InventoryCount));
+                }
+                else
+                {
+                    Assert.That(frame.rendererStableIds, Is.Empty);
+                    Assert.That(frame.rendererAddedStableIds.Length, Is.EqualTo(1));
+                    Assert.That(frame.rendererRemovedStableIds.Length, Is.EqualTo(1));
+                    Assert.That(frame.materialSlotStableIds, Is.Empty);
+                    Assert.That(encoder.LastFrameIncludedDelta, Is.True);
+                }
+            }
+
+            Assert.That(artifactFrameBytes,
+                Is.LessThan(AuditionPvSixtySecondEvidenceProducer.MaxJsonBytes),
+                "Realistic one-renderer spawn/despawn churn must stay below the pinned JSON cap.");
+            Assert.That(artifactFrameBytes,
+                Is.LessThanOrEqualTo(
+                    AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes));
+        }
+
+        [Test]
+        public void RuntimeRangeWriter_MidRangeDeltaRehydratesAnchorAndMovesClosedFile()
+        {
+            string[] renderersA = { "renderer/global/a", "renderer/global/b" };
+            string[] renderersB = { "renderer/global/a", "renderer/global/c" };
+            string[] renderersC = { "renderer/global/a", "renderer/global/d" };
+            string[] materials = { "material/guid-a/1" };
+            string materialHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("material-slots", materials);
+            var encoder = new AuditionPvRuntimeWorkloadCarryForwardEncoder();
+            var rows = new string[3];
+            string[][] inventories = { renderersA, renderersB, renderersC };
+            string[] rendererHashes = inventories.Select(ids =>
+                    AuditionPvSixtySecondGateManifestValidator
+                        .StableInventorySha256("renderers", ids))
+                .ToArray();
+            long maximumLineBytes = 0;
+            int snapshotFrames = 0;
+            int deltaFrames = 0;
+            for (int sourceFrame = 0; sourceFrame < rows.Length; sourceFrame++)
+            {
+                var frame = new AuditionPvRuntimeFrameWorkload
+                {
+                    sourceFrame = sourceFrame,
+                    inspectedRendererCount = inventories[sourceFrame].LongLength,
+                    inspectedMaterialSlotCount = materials.LongLength,
+                    rendererStableIds = inventories[sourceFrame],
+                    materialSlotStableIds = materials,
+                    rendererInventorySha256 = rendererHashes[sourceFrame],
+                    materialInventorySha256 = materialHash,
+                    inspectedDrawCommandCount = inventories[sourceFrame].LongLength
+                };
+                encoder.Compress(frame, false);
+                if (encoder.LastFrameIncludedFullSnapshot) snapshotFrames++;
+                if (encoder.LastFrameIncludedDelta) deltaFrames++;
+                rows[sourceFrame] = JsonUtility.ToJson(frame, false);
+                maximumLineBytes = Math.Max(
+                    maximumLineBytes,
+                    Encoding.UTF8.GetByteCount(rows[sourceFrame]) + 1L);
+            }
+            string spoolPath = Path.Combine(root, "frames.ndjson");
+            File.WriteAllText(
+                spoolPath,
+                string.Join("\n", rows) + "\n",
+                new UTF8Encoding(false));
+            var seal = new AuditionPvRuntimeWorkloadCaptureSeal
+            {
+                schemaVersion = AuditionPvRuntimeWorkloadCaptureSession.SealSchema,
+                captureId = "capture-a",
+                sourceShotId = "g04",
+                sourceRangeStartFrame = 0,
+                sourceRangeEndFrame = 2,
+                frameCount = 3,
+                framesPath = spoolPath.Replace('\\', '/'),
+                framesSha256 = AuditionPvSha256.FileHash(spoolPath),
+                framesUtf8Bytes = new FileInfo(spoolPath).Length,
+                maxFrameLineUtf8Bytes = maximumLineBytes,
+                inventorySnapshotFrameCount = snapshotFrames,
+                inventoryDeltaFrameCount = deltaFrames,
+                tool = nameof(AuditionPvRuntimeWorkloadCaptureSession),
+                toolVersion = AuditionPvRuntimeWorkloadCaptureSession.ToolVersion,
+                completedAtUtc = "2026-08-17T00:00:00.0000000Z"
+            };
+            var request = new AuditionPvSixtySecondEvidenceRequest
+            {
+                sourceRangeStartFrame = 1,
+                sourceRangeEndFrame = 2,
+                selectStartFrame = 1,
+                selectEndFrame = 2
+            };
+            var capture = new AuditionPvCaptureManifest { captureId = "capture-a" };
+            var shot = new AuditionPvShotManifestEntry { id = "g04" };
+            Type producer = typeof(AuditionPvSixtySecondEvidenceProducer);
+            Type validatedType = producer.GetNestedType(
+                "ValidatedRequest",
+                BindingFlags.NonPublic);
+            Type runtimeType = producer.GetNestedType("RuntimeFacts", BindingFlags.NonPublic);
+            Assert.That(validatedType, Is.Not.Null);
+            Assert.That(runtimeType, Is.Not.Null);
+            object validated = Activator.CreateInstance(validatedType, true);
+            object runtime = Activator.CreateInstance(runtimeType, true);
+            void SetField(object target, string name, object value) => target.GetType()
+                .GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                ?.SetValue(target, value);
+            SetField(validated, "request", request);
+            SetField(validated, "capture", capture);
+            SetField(validated, "shot", shot);
+            SetField(validated, "captureCoreSha256", new string('a', 64));
+            SetField(runtime, "seal", seal);
+            SetField(runtime, "framesPath", spoolPath);
+            MethodInfo writer = producer.GetMethod(
+                "WriteRuntimeWorkloadArtifact",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(writer, Is.Not.Null);
+            string outputPath = Path.Combine(root, "midrange_runtime_workload.json");
+            try
+            {
+                writer.Invoke(null, new object[]
+                {
+                    outputPath,
+                    validated,
+                    runtime,
+                    new string('b', 64),
+                    new string('c', 64),
+                    "renderer-material-scan",
+                    new AuditionPvPinnedArtifact(),
+                    "2026-08-17T00:00:00.0000000Z"
+                });
+            }
+            catch (TargetInvocationException exception)
+            {
+                throw exception.InnerException ?? exception;
+            }
+
+            Assert.That(File.Exists(outputPath), Is.True,
+                "The FileShare.None stream must be closed before the Windows atomic move.");
+            AuditionPvRuntimeWorkloadArtifact artifact = JsonUtility.FromJson<
+                AuditionPvRuntimeWorkloadArtifact>(File.ReadAllText(outputPath));
+            Assert.That(artifact.frames.Length, Is.EqualTo(2));
+            Assert.That(artifact.frames[0].sourceFrame, Is.EqualTo(1));
+            Assert.That(artifact.frames[0].rendererStableIds,
+                Is.EqualTo(renderersB),
+                "A mid-range artifact must begin with a self-contained full anchor.");
+            Assert.That(artifact.frames[0].rendererAddedStableIds, Is.Empty);
+            Assert.That(artifact.frames[0].rendererRemovedStableIds, Is.Empty);
+            Assert.That(artifact.frames[1].sourceFrame, Is.EqualTo(2));
+            Assert.That(artifact.frames[1].rendererStableIds, Is.Empty);
+            Assert.That(artifact.frames[1].rendererAddedStableIds,
+                Is.EqualTo(new[] { "renderer/global/d" }));
+            Assert.That(artifact.frames[1].rendererRemovedStableIds,
+                Is.EqualTo(new[] { "renderer/global/c" }));
         }
 
         [Test]

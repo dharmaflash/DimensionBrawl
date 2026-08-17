@@ -1115,10 +1115,107 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(AuditionPvSixtySecondGateManifestValidator.RuntimeWorkloadFramesMatch(
                 "hud-layer-absent", new[] { workload }, new[] { frame },
                 "scene-contract-no-hud"), Is.True);
+            string[] unexpectedCanvasIds = { "canvas/global/unexpected" };
+            string unexpectedCanvasHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("canvases", unexpectedCanvasIds);
+            workload.inspectedCanvasCount = 1;
+            workload.canvasStableIds = unexpectedCanvasIds;
+            workload.canvasInventorySha256 = unexpectedCanvasHash;
+            frame.inspectedCanvasCount = 1;
+            frame.canvasInventorySha256 = unexpectedCanvasHash;
+            Assert.That(AuditionPvSixtySecondGateManifestValidator.RuntimeWorkloadFramesMatch(
+                "hud-layer-absent", new[] { workload }, new[] { frame },
+                "scene-contract-no-hud"), Is.False,
+                "A scene-no-HUD contract requires exact-empty canvas and HUD inventories.");
+            workload.inspectedCanvasCount = 0;
+            workload.canvasStableIds = Array.Empty<string>();
+            workload.canvasInventorySha256 = emptyCanvasHash;
+            frame.inspectedCanvasCount = 0;
+            frame.canvasInventorySha256 = emptyCanvasHash;
             workload.inspectedDrawCommandCount = 0;
             Assert.That(AuditionPvSixtySecondGateManifestValidator.RuntimeWorkloadFramesMatch(
                 "hud-layer-absent", new[] { workload }, new[] { frame },
                 "scene-contract-no-hud"), Is.False);
+        }
+
+        [Test]
+        public void RuntimeWorkloadCarryForward_RequiresAFullFirstSnapshotAndExactIdentity()
+        {
+            string[] rendererIds = { "renderer/global/001", "renderer/global/002" };
+            string[] materialIds = { "material/guid-a/1", "material/guid-b/2" };
+            string rendererHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("renderers", rendererIds);
+            string materialHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("material-slots", materialIds);
+            var full = new AuditionPvRuntimeFrameWorkload
+            {
+                sourceFrame = 0,
+                inspectedRendererCount = rendererIds.Length,
+                inspectedMaterialSlotCount = materialIds.Length,
+                rendererStableIds = rendererIds,
+                materialSlotStableIds = materialIds,
+                rendererInventorySha256 = rendererHash,
+                materialInventorySha256 = materialHash
+            };
+            var repeated = new AuditionPvRuntimeFrameWorkload
+            {
+                sourceFrame = 1,
+                inspectedRendererCount = rendererIds.Length,
+                inspectedMaterialSlotCount = materialIds.Length,
+                rendererStableIds = Array.Empty<string>(),
+                materialSlotStableIds = Array.Empty<string>(),
+                rendererInventorySha256 = rendererHash,
+                materialInventorySha256 = materialHash
+            };
+            AuditionPvSelectedFrameScanEntry Entry(
+                int sourceFrame,
+                long rendererCount,
+                long materialCount,
+                string rendererSha,
+                string materialSha) => new()
+            {
+                sourceFrame = sourceFrame,
+                inspectedRendererCount = rendererCount,
+                inspectedMaterialSlotCount = materialCount,
+                rendererInventorySha256 = rendererSha,
+                materialInventorySha256 = materialSha
+            };
+            var fullEntry = Entry(0, 2, 2, rendererHash, materialHash);
+            var repeatedEntry = Entry(1, 2, 2, rendererHash, materialHash);
+
+            Assert.That(AuditionPvSixtySecondGateManifestValidator
+                .RuntimeWorkloadFramesMatch(
+                    "renderer-material-scan",
+                    new[] { full, repeated },
+                    new[] { fullEntry, repeatedEntry }), Is.True);
+            Assert.That(AuditionPvSixtySecondGateManifestValidator
+                .RuntimeWorkloadFramesMatch(
+                    "renderer-material-scan",
+                    new[] { repeated },
+                    new[] { repeatedEntry }), Is.False,
+                "A selected range must begin with a self-contained full snapshot.");
+
+            string[] changedRendererIds = { "renderer/global/003" };
+            string changedRendererHash = AuditionPvSixtySecondGateManifestValidator
+                .StableInventorySha256("renderers", changedRendererIds);
+            repeated.rendererInventorySha256 = changedRendererHash;
+            repeatedEntry.rendererInventorySha256 = changedRendererHash;
+            Assert.That(AuditionPvSixtySecondGateManifestValidator
+                .RuntimeWorkloadFramesMatch(
+                    "renderer-material-scan",
+                    new[] { full, repeated },
+                    new[] { fullEntry, repeatedEntry }), Is.False,
+                "A changed hash cannot carry forward the prior stable-ID snapshot.");
+
+            repeated.rendererStableIds = changedRendererIds;
+            repeated.inspectedRendererCount = changedRendererIds.Length;
+            repeatedEntry.inspectedRendererCount = changedRendererIds.Length;
+            Assert.That(AuditionPvSixtySecondGateManifestValidator
+                .RuntimeWorkloadFramesMatch(
+                    "renderer-material-scan",
+                    new[] { full, repeated },
+                    new[] { fullEntry, repeatedEntry }), Is.True,
+                "A changed inventory remains valid when the row carries its complete snapshot.");
         }
 
         [Test]

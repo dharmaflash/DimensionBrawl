@@ -37,7 +37,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string FrameScanLedgerSchema =
             "dimension-brawl.audition-pv.selected-frame-scan-ledger.v2";
         internal const string RuntimeWorkloadSchema =
-            "dimension-brawl.audition-pv.capture-runtime-workload.v2";
+            "dimension-brawl.audition-pv.capture-runtime-workload.v3";
         internal const string SceneNoHudContractSchema =
             "dimension-brawl.audition-pv.scene-no-hud-contract.v1";
         internal const string ShotAuthorshipSchema =
@@ -2117,49 +2117,240 @@ namespace DimensionBrawl.Editor.AuditionPV
             values ??= Array.Empty<AuditionPvRuntimeFrameWorkload>();
             frames ??= Array.Empty<AuditionPvSelectedFrameScanEntry>();
             if (values.Length != frames.Length || values.Length == 0) return false;
+            var state = new RuntimeWorkloadValidationState();
             for (int index = 0; index < values.Length; index++)
             {
-                AuditionPvRuntimeFrameWorkload value = values[index];
-                AuditionPvSelectedFrameScanEntry frame = frames[index];
-                if (value == null || frame == null || value.sourceFrame != frame.sourceFrame)
-                    return false;
-                if (id == "renderer-material-scan")
-                {
-                    if (!StableInventoryValid("renderers", value.rendererStableIds,
-                            value.inspectedRendererCount, value.rendererInventorySha256, false) ||
-                        !StableInventoryValid("material-slots", value.materialSlotStableIds,
-                            value.inspectedMaterialSlotCount, value.materialInventorySha256, false) ||
-                        value.nullMaterialCount != 0 || value.errorMaterialCount != 0 ||
-                        frame.inspectedRendererCount != value.inspectedRendererCount ||
-                        frame.inspectedMaterialSlotCount != value.inspectedMaterialSlotCount ||
-                        frame.rendererInventorySha256 != value.rendererInventorySha256 ||
-                        frame.materialInventorySha256 != value.materialInventorySha256 ||
-                        frame.nullMaterialCount != value.nullMaterialCount ||
-                        frame.errorMaterialCount != value.errorMaterialCount) return false;
-                }
-                else
-                {
-                    bool authored = hudEvidenceMode == "hud-authored-and-excluded";
-                    bool sceneNoHud = hudEvidenceMode == "scene-contract-no-hud";
-                    if (!authored && !sceneNoHud || value.inspectedDrawCommandCount <= 0 ||
-                        value.visibleUiElementCount != 0 ||
-                        !StableInventoryValid("canvases", value.canvasStableIds,
-                            value.inspectedCanvasCount, value.canvasInventorySha256, sceneNoHud) ||
-                        !StableInventoryValid("hud-renderers", value.hudRendererStableIds,
-                            value.inspectedHudRendererCount, value.hudInventorySha256, sceneNoHud) ||
-                        authored && (value.inspectedCanvasCount <= 0 ||
-                                     value.inspectedHudRendererCount <= 0) ||
-                        sceneNoHud && value.inspectedHudRendererCount != 0 ||
-                        frame.inspectedCanvasCount != value.inspectedCanvasCount ||
-                        frame.inspectedHudRendererCount != value.inspectedHudRendererCount ||
-                        frame.inspectedDrawCommandCount != value.inspectedDrawCommandCount ||
-                        frame.visibleUiElementCount != value.visibleUiElementCount ||
-                        frame.canvasInventorySha256 != value.canvasInventorySha256 ||
-                        frame.hudInventorySha256 != value.hudInventorySha256 ||
-                        !frame.rendererHudLayerExcluded) return false;
-                }
+                if (!RuntimeWorkloadFrameMatches(
+                        id,
+                        values[index],
+                        frames[index],
+                        hudEvidenceMode,
+                        state)) return false;
             }
             return true;
+        }
+
+        internal static bool RuntimeWorkloadFrameMatches(
+            string id,
+            AuditionPvRuntimeFrameWorkload value,
+            AuditionPvSelectedFrameScanEntry frame,
+            string hudEvidenceMode,
+            RuntimeWorkloadValidationState state)
+        {
+            if (value == null || frame == null || state == null ||
+                value.sourceFrame != frame.sourceFrame) return false;
+            if (id == "renderer-material-scan")
+            {
+                return StableInventoryCarryForwardValid(
+                           "renderers",
+                           value.rendererStableIds,
+                           value.rendererAddedStableIds,
+                           value.rendererRemovedStableIds,
+                           value.inspectedRendererCount,
+                           value.rendererInventorySha256,
+                           false,
+                           state.renderers) &&
+                       StableInventoryCarryForwardValid(
+                           "material-slots",
+                           value.materialSlotStableIds,
+                           value.materialSlotAddedStableIds,
+                           value.materialSlotRemovedStableIds,
+                           value.inspectedMaterialSlotCount,
+                           value.materialInventorySha256,
+                           false,
+                           state.materialSlots) &&
+                       value.nullMaterialCount == 0 && value.errorMaterialCount == 0 &&
+                       frame.inspectedRendererCount == value.inspectedRendererCount &&
+                       frame.inspectedMaterialSlotCount == value.inspectedMaterialSlotCount &&
+                       frame.rendererInventorySha256 == value.rendererInventorySha256 &&
+                       frame.materialInventorySha256 == value.materialInventorySha256 &&
+                       frame.nullMaterialCount == value.nullMaterialCount &&
+                       frame.errorMaterialCount == value.errorMaterialCount;
+            }
+
+            bool authored = hudEvidenceMode == "hud-authored-and-excluded";
+            bool sceneNoHud = hudEvidenceMode == "scene-contract-no-hud";
+            return (authored || sceneNoHud) && value.inspectedDrawCommandCount > 0 &&
+                   value.visibleUiElementCount == 0 &&
+                   StableInventoryCarryForwardValid(
+                       "canvases",
+                       value.canvasStableIds,
+                       value.canvasAddedStableIds,
+                       value.canvasRemovedStableIds,
+                       value.inspectedCanvasCount,
+                       value.canvasInventorySha256,
+                       sceneNoHud,
+                       state.canvases) &&
+                   StableInventoryCarryForwardValid(
+                       "hud-renderers",
+                       value.hudRendererStableIds,
+                       value.hudRendererAddedStableIds,
+                       value.hudRendererRemovedStableIds,
+                       value.inspectedHudRendererCount,
+                       value.hudInventorySha256,
+                       sceneNoHud,
+                       state.hudRenderers) &&
+                   (!authored || value.inspectedCanvasCount > 0 &&
+                    value.inspectedHudRendererCount > 0) &&
+                   (!sceneNoHud || value.inspectedCanvasCount == 0 &&
+                    value.inspectedHudRendererCount == 0) &&
+                   frame.inspectedCanvasCount == value.inspectedCanvasCount &&
+                   frame.inspectedHudRendererCount == value.inspectedHudRendererCount &&
+                   frame.inspectedDrawCommandCount == value.inspectedDrawCommandCount &&
+                   frame.visibleUiElementCount == value.visibleUiElementCount &&
+                   frame.canvasInventorySha256 == value.canvasInventorySha256 &&
+                   frame.hudInventorySha256 == value.hudInventorySha256 &&
+                   frame.rendererHudLayerExcluded;
+        }
+
+        internal sealed class RuntimeWorkloadValidationState
+        {
+            internal readonly RuntimeInventoryIdentity renderers = new();
+            internal readonly RuntimeInventoryIdentity materialSlots = new();
+            internal readonly RuntimeInventoryIdentity canvases = new();
+            internal readonly RuntimeInventoryIdentity hudRenderers = new();
+        }
+
+        internal sealed class RuntimeInventoryIdentity
+        {
+            internal bool hasFullSnapshot;
+            internal long count;
+            internal string sha256 = string.Empty;
+            internal string[] stableIds = Array.Empty<string>();
+        }
+
+        private static bool StableInventoryCarryForwardValid(
+            string domain,
+            string[] ids,
+            string[] addedIds,
+            string[] removedIds,
+            long declaredCount,
+            string declaredSha256,
+            bool allowEmpty,
+            RuntimeInventoryIdentity state)
+        {
+            ids ??= Array.Empty<string>();
+            addedIds ??= Array.Empty<string>();
+            removedIds ??= Array.Empty<string>();
+            bool hasDelta = addedIds.Length > 0 || removedIds.Length > 0;
+            if (hasDelta)
+            {
+                if (ids.Length != 0 || !state.hasFullSnapshot ||
+                    !SortedUniqueInventoryDelta(addedIds) ||
+                    !SortedUniqueInventoryDelta(removedIds) ||
+                    addedIds.Length > 4096 || removedIds.Length > 4096 ||
+                    addedIds.Intersect(removedIds, StringComparer.Ordinal).Any())
+                    return false;
+                string[] resolved = ApplyInventoryDelta(
+                    state.stableIds,
+                    addedIds,
+                    removedIds);
+                if (resolved == null || !StableInventoryValid(
+                        domain,
+                        resolved,
+                        declaredCount,
+                        declaredSha256,
+                        allowEmpty)) return false;
+                state.hasFullSnapshot = true;
+                state.count = declaredCount;
+                state.sha256 = declaredSha256;
+                state.stableIds = resolved;
+                return true;
+            }
+
+            bool emptyIsFullSnapshot = allowEmpty && declaredCount == 0;
+            if (ids.Length == 0 && !emptyIsFullSnapshot)
+            {
+                return state.hasFullSnapshot && state.count == declaredCount &&
+                       string.Equals(
+                           state.sha256,
+                           declaredSha256,
+                           StringComparison.Ordinal);
+            }
+
+            if (!StableInventoryValid(
+                    domain,
+                    ids,
+                    declaredCount,
+                    declaredSha256,
+                    allowEmpty)) return false;
+            state.hasFullSnapshot = true;
+            state.count = declaredCount;
+            state.sha256 = declaredSha256;
+            state.stableIds = ids;
+            return true;
+        }
+
+        private static bool SortedUniqueInventoryDelta(string[] values)
+        {
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (string.IsNullOrWhiteSpace(values[index]) ||
+                    index > 0 && string.CompareOrdinal(values[index - 1], values[index]) >= 0)
+                    return false;
+            }
+            return true;
+        }
+
+        private static string[] ApplyInventoryDelta(
+            string[] previous,
+            string[] added,
+            string[] removed)
+        {
+            previous ??= Array.Empty<string>();
+            int survivorCount = previous.Length - removed.Length;
+            int resolvedCount = survivorCount + added.Length;
+            if (survivorCount < 0 || resolvedCount > 4096) return null;
+            var survivors = new string[survivorCount];
+            int previousIndex = 0;
+            int removedIndex = 0;
+            int survivorIndex = 0;
+            while (previousIndex < previous.Length)
+            {
+                if (removedIndex < removed.Length)
+                {
+                    int comparison = string.CompareOrdinal(
+                        previous[previousIndex],
+                        removed[removedIndex]);
+                    if (comparison > 0) return null;
+                    if (comparison == 0)
+                    {
+                        previousIndex++;
+                        removedIndex++;
+                        continue;
+                    }
+                }
+                if (survivorIndex >= survivors.Length) return null;
+                survivors[survivorIndex++] = previous[previousIndex++];
+            }
+            if (removedIndex != removed.Length || survivorIndex != survivors.Length)
+                return null;
+
+            var resolved = new string[resolvedCount];
+            int addedIndex = 0;
+            survivorIndex = 0;
+            int resolvedIndex = 0;
+            while (survivorIndex < survivors.Length || addedIndex < added.Length)
+            {
+                if (survivorIndex >= survivors.Length)
+                {
+                    resolved[resolvedIndex++] = added[addedIndex++];
+                    continue;
+                }
+                if (addedIndex >= added.Length)
+                {
+                    resolved[resolvedIndex++] = survivors[survivorIndex++];
+                    continue;
+                }
+                int comparison = string.CompareOrdinal(
+                    survivors[survivorIndex],
+                    added[addedIndex]);
+                if (comparison == 0) return null;
+                resolved[resolvedIndex++] = comparison < 0
+                    ? survivors[survivorIndex++]
+                    : added[addedIndex++];
+            }
+            return resolvedIndex == resolved.Length ? resolved : null;
         }
 
         private static bool StableInventoryValid(string domain, string[] ids, long declaredCount,
@@ -4573,6 +4764,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         public long nullMaterialCount, errorMaterialCount;
         public string[] canvasStableIds = Array.Empty<string>(), hudRendererStableIds = Array.Empty<string>();
         public string[] rendererStableIds = Array.Empty<string>(), materialSlotStableIds = Array.Empty<string>();
+        public string[] canvasAddedStableIds = Array.Empty<string>(), canvasRemovedStableIds = Array.Empty<string>();
+        public string[] hudRendererAddedStableIds = Array.Empty<string>(), hudRendererRemovedStableIds = Array.Empty<string>();
+        public string[] rendererAddedStableIds = Array.Empty<string>(), rendererRemovedStableIds = Array.Empty<string>();
+        public string[] materialSlotAddedStableIds = Array.Empty<string>(), materialSlotRemovedStableIds = Array.Empty<string>();
         public string canvasInventorySha256 = string.Empty, hudInventorySha256 = string.Empty;
         public string rendererInventorySha256 = string.Empty;
         public string materialInventorySha256 = string.Empty;

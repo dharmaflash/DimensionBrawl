@@ -18,12 +18,15 @@ namespace DimensionBrawl.Editor.AuditionPV
     internal sealed class AuditionPvRuntimeWorkloadCaptureSession : IDisposable
     {
         internal const string SealSchema =
-            "dimension-brawl.audition-pv.capture-runtime-workload-spool-seal.v1";
-        internal const string ToolVersion = "1";
+            "dimension-brawl.audition-pv.capture-runtime-workload-spool-seal.v2";
+        internal const string ToolVersion = "2";
         internal const int MaxRangeFrames = 4096;
         internal const int MaxStableIdsPerInventory = 4096;
-        internal const int MaxFrameLineUtf8Bytes = 512 * 1024;
-        internal const long MaxSpoolUtf8Bytes = 24L * 1024L * 1024L;
+        // A full snapshot for a 4,096-renderer/4,096-material scene can legitimately exceed
+        // 512 KiB. Only the first frame carries complete stable-ID inventories; changed frames
+        // carry sorted add/remove deltas, while unchanged frames carry only counts and hashes.
+        internal const int MaxFrameLineUtf8Bytes = 16 * 1024 * 1024;
+        internal const long MaxSpoolUtf8Bytes = 256L * 1024L * 1024L;
         internal const string HudAuthoredAndExcluded = "hud-authored-and-excluded";
         internal const string SceneContractNoHud = "scene-contract-no-hud";
 
@@ -31,9 +34,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         private readonly string framesPath;
         private readonly string sealPath;
         private readonly StreamWriter writer;
+        private readonly AuditionPvRuntimeWorkloadCarryForwardEncoder carryForwardEncoder =
+            new();
         private int nextSourceFrame;
         private int capturedFrameCount;
         private long writtenUtf8Bytes;
+        private long maxFrameLineUtf8Bytes;
+        private int inventorySnapshotFrameCount;
+        private int inventoryDeltaFrameCount;
         private string resolvedHudEvidenceMode = string.Empty;
         private long inspectedObjectCount;
         private bool completed;
@@ -161,19 +169,48 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
             }
 
+            carryForwardEncoder.Compress(frame, config.captureHudEvidence);
             string json = JsonUtility.ToJson(frame, false);
             int lineBytes = Encoding.UTF8.GetByteCount(json) + 1;
-            if (lineBytes > MaxFrameLineUtf8Bytes ||
-                writtenUtf8Bytes + lineBytes > MaxSpoolUtf8Bytes)
-            {
-                throw new InvalidDataException(
-                    "Runtime workload spool exceeded its fixed low-memory evidence budget.");
-            }
+            RequireWithinBudget(
+                lineBytes,
+                writtenUtf8Bytes,
+                config.sourceShotId,
+                sourceFrame,
+                capturedFrameCount);
+            maxFrameLineUtf8Bytes = Math.Max(maxFrameLineUtf8Bytes, lineBytes);
+            if (carryForwardEncoder.LastFrameIncludedFullSnapshot)
+                inventorySnapshotFrameCount++;
+            if (carryForwardEncoder.LastFrameIncludedDelta)
+                inventoryDeltaFrameCount++;
 
             writer.WriteLine(json);
             writtenUtf8Bytes += lineBytes;
             capturedFrameCount++;
             nextSourceFrame = checked(sourceFrame + 1);
+        }
+
+        internal static void RequireWithinBudget(
+            long lineBytes,
+            long writtenBytes,
+            string sourceShotId,
+            int sourceFrame,
+            int capturedCount)
+        {
+            if (lineBytes <= 0 || lineBytes > MaxFrameLineUtf8Bytes)
+                throw new InvalidDataException(
+                    $"Runtime workload row exceeded its fixed byte limit: " +
+                    $"shot={sourceShotId}; sourceFrame={sourceFrame}; " +
+                    $"lineBytes={lineBytes}; maxLineBytes={MaxFrameLineUtf8Bytes}; " +
+                    $"writtenBytes={writtenBytes}; capturedCount={capturedCount}.");
+            if (writtenBytes < 0 || writtenBytes > MaxSpoolUtf8Bytes ||
+                lineBytes > MaxSpoolUtf8Bytes - writtenBytes)
+                throw new InvalidDataException(
+                    $"Runtime workload spool exceeded its fixed byte limit: " +
+                    $"shot={sourceShotId}; sourceFrame={sourceFrame}; " +
+                    $"lineBytes={lineBytes}; maxLineBytes={MaxFrameLineUtf8Bytes}; " +
+                    $"writtenBytes={writtenBytes}; maxSpoolBytes={MaxSpoolUtf8Bytes}; " +
+                    $"capturedCount={capturedCount}.");
         }
 
         internal string Complete()
@@ -194,6 +231,12 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             writer.Flush();
             writer.Dispose();
+            long framesUtf8Bytes = new FileInfo(framesPath).Length;
+            if (framesUtf8Bytes != writtenUtf8Bytes || framesUtf8Bytes <= 0 ||
+                framesUtf8Bytes > MaxSpoolUtf8Bytes || maxFrameLineUtf8Bytes <= 0 ||
+                inventorySnapshotFrameCount <= 0)
+                throw new InvalidDataException(
+                    "Runtime workload spool byte/compression accounting drifted before seal.");
             string framesSha256 = AuditionPvSha256.FileHash(framesPath);
             var seal = new AuditionPvRuntimeWorkloadCaptureSeal
             {
@@ -205,7 +248,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 frameCount = capturedFrameCount,
                 framesPath = Full(framesPath).Replace('\\', '/'),
                 framesSha256 = framesSha256,
-                framesUtf8Bytes = new FileInfo(framesPath).Length,
+                framesUtf8Bytes = framesUtf8Bytes,
+                maxFrameLineUtf8Bytes = maxFrameLineUtf8Bytes,
+                inventorySnapshotFrameCount = inventorySnapshotFrameCount,
+                inventoryDeltaFrameCount = inventoryDeltaFrameCount,
                 hudEvidenceMode = config.captureHudEvidence
                     ? resolvedHudEvidenceMode
                     : string.Empty,
@@ -322,12 +368,196 @@ namespace DimensionBrawl.Editor.AuditionPV
         public string framesPath = string.Empty;
         public string framesSha256 = string.Empty;
         public long framesUtf8Bytes;
+        public long maxFrameLineUtf8Bytes;
+        public int inventorySnapshotFrameCount;
+        public int inventoryDeltaFrameCount;
         public string hudEvidenceMode = string.Empty;
         public long inspectedObjectCount;
         public long authoredHudComponentCount = -1;
         public string tool = string.Empty;
         public string toolVersion = string.Empty;
         public string completedAtUtc = string.Empty;
+    }
+
+    /// <summary>
+    /// Converts complete probe inventories into a streaming snapshot/delta representation.
+    /// It retains one bounded prior inventory per domain, never a frame history or PNG, so
+    /// capture memory remains independent of source-frame count.
+    /// </summary>
+    internal sealed class AuditionPvRuntimeWorkloadCarryForwardEncoder
+    {
+        private readonly InventoryIdentity renderer = new();
+        private readonly InventoryIdentity material = new();
+        private readonly InventoryIdentity canvas = new();
+        private readonly InventoryIdentity hud = new();
+
+        internal bool LastFrameIncludedFullSnapshot { get; private set; }
+        internal bool LastFrameIncludedDelta { get; private set; }
+
+        internal void Compress(AuditionPvRuntimeFrameWorkload frame, bool captureHudEvidence)
+        {
+            if (frame == null) throw new ArgumentNullException(nameof(frame));
+            LastFrameIncludedFullSnapshot = false;
+            LastFrameIncludedDelta = false;
+            CompressInventory(
+                frame.rendererStableIds,
+                frame.inspectedRendererCount,
+                frame.rendererInventorySha256,
+                false,
+                "renderer",
+                renderer,
+                out frame.rendererStableIds,
+                out frame.rendererAddedStableIds,
+                out frame.rendererRemovedStableIds);
+            CompressInventory(
+                frame.materialSlotStableIds,
+                frame.inspectedMaterialSlotCount,
+                frame.materialInventorySha256,
+                false,
+                "material-slot",
+                material,
+                out frame.materialSlotStableIds,
+                out frame.materialSlotAddedStableIds,
+                out frame.materialSlotRemovedStableIds);
+            if (!captureHudEvidence) return;
+            CompressInventory(
+                frame.canvasStableIds,
+                frame.inspectedCanvasCount,
+                frame.canvasInventorySha256,
+                true,
+                "canvas",
+                canvas,
+                out frame.canvasStableIds,
+                out frame.canvasAddedStableIds,
+                out frame.canvasRemovedStableIds);
+            CompressInventory(
+                frame.hudRendererStableIds,
+                frame.inspectedHudRendererCount,
+                frame.hudInventorySha256,
+                true,
+                "hud-renderer",
+                hud,
+                out frame.hudRendererStableIds,
+                out frame.hudRendererAddedStableIds,
+                out frame.hudRendererRemovedStableIds);
+        }
+
+        private void CompressInventory(
+            string[] stableIds,
+            long declaredCount,
+            string declaredSha256,
+            bool allowEmpty,
+            string label,
+            InventoryIdentity previous,
+            out string[] snapshotIds,
+            out string[] addedIds,
+            out string[] removedIds)
+        {
+            stableIds ??= Array.Empty<string>();
+            if (declaredCount != stableIds.LongLength ||
+                stableIds.Length > AuditionPvRuntimeWorkloadCaptureSession
+                    .MaxStableIdsPerInventory ||
+                !allowEmpty && stableIds.Length == 0 ||
+                !AuditionPvSha256.IsSha256(declaredSha256) ||
+                !SortedUnique(stableIds))
+                throw new InvalidDataException(
+                    "Runtime workload probe returned an invalid " + label + " snapshot.");
+
+            snapshotIds = Array.Empty<string>();
+            addedIds = Array.Empty<string>();
+            removedIds = Array.Empty<string>();
+            if (!previous.hasSnapshot)
+            {
+                snapshotIds = stableIds;
+                Set(previous, stableIds, declaredCount, declaredSha256);
+                LastFrameIncludedFullSnapshot = true;
+                return;
+            }
+
+            bool unchanged = previous.hasSnapshot && previous.count == declaredCount &&
+                             string.Equals(
+                                 previous.sha256,
+                                 declaredSha256,
+                                 StringComparison.Ordinal);
+            if (unchanged) return;
+
+            Diff(previous.stableIds, stableIds, out addedIds, out removedIds);
+            if (addedIds.Length == 0 && removedIds.Length == 0)
+                throw new InvalidDataException(
+                    "Runtime workload inventory identity changed without a stable-ID delta.");
+            Set(previous, stableIds, declaredCount, declaredSha256);
+            LastFrameIncludedDelta = true;
+        }
+
+        private static void Set(
+            InventoryIdentity target,
+            string[] ids,
+            long count,
+            string sha256)
+        {
+            target.hasSnapshot = true;
+            target.stableIds = ids;
+            target.count = count;
+            target.sha256 = sha256;
+        }
+
+        private static bool SortedUnique(string[] values)
+        {
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (string.IsNullOrWhiteSpace(values[index]) ||
+                    index > 0 && string.CompareOrdinal(values[index - 1], values[index]) >= 0)
+                    return false;
+            }
+            return true;
+        }
+
+        private static void Diff(
+            string[] previous,
+            string[] current,
+            out string[] added,
+            out string[] removed)
+        {
+            var addedValues = new List<string>();
+            var removedValues = new List<string>();
+            int previousIndex = 0;
+            int currentIndex = 0;
+            while (previousIndex < previous.Length || currentIndex < current.Length)
+            {
+                if (previousIndex >= previous.Length)
+                {
+                    addedValues.Add(current[currentIndex++]);
+                    continue;
+                }
+                if (currentIndex >= current.Length)
+                {
+                    removedValues.Add(previous[previousIndex++]);
+                    continue;
+                }
+                int comparison = string.CompareOrdinal(
+                    previous[previousIndex],
+                    current[currentIndex]);
+                if (comparison == 0)
+                {
+                    previousIndex++;
+                    currentIndex++;
+                }
+                else if (comparison < 0)
+                    removedValues.Add(previous[previousIndex++]);
+                else
+                    addedValues.Add(current[currentIndex++]);
+            }
+            added = addedValues.ToArray();
+            removed = removedValues.ToArray();
+        }
+
+        private sealed class InventoryIdentity
+        {
+            internal bool hasSnapshot;
+            internal long count;
+            internal string sha256 = string.Empty;
+            internal string[] stableIds = Array.Empty<string>();
+        }
     }
 
     internal static class AuditionPvRuntimeWorkloadProbe

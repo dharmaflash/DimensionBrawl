@@ -21,7 +21,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             "dimension-brawl.audition-pv.take-review-skeleton.v1";
         internal const string FilmstripSkeletonSchema =
             "dimension-brawl.audition-pv.temporal-filmstrip-skeleton.v1";
-        internal const string ToolVersion = "1";
+        internal const string ToolVersion = "2";
         internal const string AutomatedTestSuite = "AuditionPvSixtySecondEvidence";
         internal const long MaxJsonBytes = 32L * 1024L * 1024L;
         internal const long MaxPngBytes = 32L * 1024L * 1024L;
@@ -452,6 +452,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             string temporary = path + ".tmp-" + Guid.NewGuid().ToString("N");
             try
             {
+                // The hash/replace phase must run after FileShare.None has been released.
+                {
                 using var stream = new FileStream(
                     temporary,
                     FileMode.CreateNew,
@@ -485,6 +487,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     writer.WriteLine(sha256 + "  " + relative);
                 }
                 writer.Flush();
+                }
                 if (File.Exists(path))
                 {
                     if (AuditionPvSha256.FileHash(path) != AuditionPvSha256.FileHash(temporary))
@@ -665,6 +668,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 seal.framesUtf8Bytes <= 0 ||
                 seal.framesUtf8Bytes >
                 AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes ||
+                !RuntimeSealCompressionMetricsValid(seal) ||
                 string.IsNullOrWhiteSpace(seal.tool) ||
                 string.IsNullOrWhiteSpace(seal.toolVersion) ||
                 !Utc(seal.completedAtUtc))
@@ -673,8 +677,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             RequireUnder(framesPath, value.captureDirectory, "runtime workload frames");
             RejectReparseChain(framesPath);
             var framesFile = new FileInfo(framesPath);
-            if (!framesFile.Exists || framesFile.Length != seal.framesUtf8Bytes ||
-                AuditionPvSha256.FileHash(framesPath) != seal.framesSha256)
+            if (!framesFile.Exists || framesFile.Length != seal.framesUtf8Bytes)
                 throw new InvalidDataException("Runtime workload spool bytes drifted after capture.");
             if (value.request.cleanPlate)
             {
@@ -698,29 +701,34 @@ namespace DimensionBrawl.Editor.AuditionPV
                 : null;
             long nulls = 0;
             long errors = 0;
-            using var stream = new FileStream(
-                framesPath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                64 * 1024,
-                FileOptions.SequentialScan);
+            using var stream = OpenVerifiedRuntimeSpool(framesPath, seal);
             using var reader = new StreamReader(
                 stream,
                 new UTF8Encoding(false, true),
                 false,
                 64 * 1024,
                 false);
+            var runtimeValidationState =
+                new AuditionPvSixtySecondGateManifestValidator
+                    .RuntimeWorkloadValidationState();
             int sealedIndex = 0;
             int selectedIndex = 0;
-            while (!reader.EndOfStream)
+            long observedMaxFrameLineUtf8Bytes = 0;
+            int observedSnapshotFrameCount = 0;
+            int observedDeltaFrameCount = 0;
+            while (true)
             {
-                string line = reader.ReadLine();
+                string line = ReadRuntimeWorkloadLineCapped(reader);
+                if (line == null) break;
                 if (string.IsNullOrWhiteSpace(line))
                     throw new InvalidDataException("Runtime workload spool contains a blank row.");
-                if (Encoding.UTF8.GetByteCount(line) + 1 >
+                long lineBytes = Encoding.UTF8.GetByteCount(line) + 1L;
+                if (lineBytes >
                     AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes)
                     throw new InvalidDataException("Runtime workload row exceeds its byte limit.");
+                observedMaxFrameLineUtf8Bytes = Math.Max(
+                    observedMaxFrameLineUtf8Bytes,
+                    lineBytes);
                 if (sealedIndex >= seal.frameCount)
                     throw new InvalidDataException("Runtime workload spool has excess rows.");
                 AuditionPvRuntimeFrameWorkload frame =
@@ -729,6 +737,46 @@ namespace DimensionBrawl.Editor.AuditionPV
                     seal.sourceRangeStartFrame + sealedIndex);
                 if (frame == null || frame.sourceFrame != expectedSourceFrame)
                     throw new InvalidDataException("Runtime workload source-frame order drifted.");
+                if (RuntimeFrameHasFullInventorySnapshot(frame))
+                    observedSnapshotFrameCount++;
+                if (RuntimeFrameHasInventoryDelta(frame))
+                    observedDeltaFrameCount++;
+
+                var validationEntry = new AuditionPvSelectedFrameScanEntry
+                {
+                    sourceFrame = frame.sourceFrame,
+                    inspectedRendererCount = frame.inspectedRendererCount,
+                    inspectedMaterialSlotCount = frame.inspectedMaterialSlotCount,
+                    rendererInventorySha256 = frame.rendererInventorySha256,
+                    materialInventorySha256 = frame.materialInventorySha256,
+                    nullMaterialCount = frame.nullMaterialCount,
+                    errorMaterialCount = frame.errorMaterialCount,
+                    inspectedCanvasCount = frame.inspectedCanvasCount,
+                    inspectedHudRendererCount = frame.inspectedHudRendererCount,
+                    inspectedDrawCommandCount = frame.inspectedDrawCommandCount,
+                    visibleUiElementCount = frame.visibleUiElementCount,
+                    canvasInventorySha256 = frame.canvasInventorySha256,
+                    hudInventorySha256 = frame.hudInventorySha256,
+                    rendererHudLayerExcluded = true
+                };
+                if (!AuditionPvSixtySecondGateManifestValidator
+                        .RuntimeWorkloadFrameMatches(
+                            "renderer-material-scan",
+                            frame,
+                            validationEntry,
+                            string.Empty,
+                            runtimeValidationState) ||
+                    value.request.cleanPlate &&
+                    !AuditionPvSixtySecondGateManifestValidator
+                        .RuntimeWorkloadFrameMatches(
+                            "hud-layer-absent",
+                            frame,
+                            validationEntry,
+                            seal.hudEvidenceMode,
+                            runtimeValidationState))
+                    throw new InvalidDataException(
+                        $"Runtime workload carry-forward inventory is invalid at " +
+                        $"f{frame.sourceFrame}.");
 
                 sealedIndex++;
                 if (frame.nullMaterialCount != 0 || frame.errorMaterialCount != 0 ||
@@ -760,12 +808,6 @@ namespace DimensionBrawl.Editor.AuditionPV
                     nullMaterialCount = frame.nullMaterialCount,
                     errorMaterialCount = frame.errorMaterialCount
                 };
-                if (!AuditionPvSixtySecondGateManifestValidator.RuntimeWorkloadFramesMatch(
-                        "renderer-material-scan",
-                        new[] { frame },
-                        new[] { rendererEntry }))
-                    throw new InvalidDataException(
-                        $"Renderer/material runtime inventory is invalid at f{frame.sourceFrame}.");
                 rendererEntries.Add(rendererEntry);
                 nulls = checked(nulls + frame.nullMaterialCount);
                 errors = checked(errors + frame.errorMaterialCount);
@@ -786,13 +828,6 @@ namespace DimensionBrawl.Editor.AuditionPV
                         hudInventorySha256 = frame.hudInventorySha256,
                         rendererHudLayerExcluded = true
                     };
-                    if (!AuditionPvSixtySecondGateManifestValidator.RuntimeWorkloadFramesMatch(
-                            "hud-layer-absent",
-                            new[] { frame },
-                            new[] { hudEntry },
-                            seal.hudEvidenceMode))
-                        throw new InvalidDataException(
-                            $"HUD runtime inventory is invalid at f{frame.sourceFrame}.");
                     hudEntries.Add(hudEntry);
                 }
                 selectedIndex++;
@@ -801,6 +836,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 selectedIndex != physicalFrames.Count || nulls != 0 || errors != 0)
                 throw new InvalidDataException(
                     "Runtime renderer/material range is incomplete or contains error material slots.");
+            if (observedMaxFrameLineUtf8Bytes != seal.maxFrameLineUtf8Bytes ||
+                observedSnapshotFrameCount != seal.inventorySnapshotFrameCount ||
+                observedDeltaFrameCount != seal.inventoryDeltaFrameCount)
+                throw new InvalidDataException(
+                    "Runtime workload compression metrics drifted from their capture-time seal.");
+            reader.DiscardBufferedData();
+            VerifyRuntimeSpoolHandle(stream, seal);
 
             return new RuntimeFacts
             {
@@ -829,17 +871,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                 !AuditionPvSha256.IsSha256(seal.framesSha256) ||
                 seal.framesUtf8Bytes <= 0 ||
                 seal.framesUtf8Bytes >
-                AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes)
+                AuditionPvRuntimeWorkloadCaptureSession.MaxSpoolUtf8Bytes ||
+                !RuntimeSealCompressionMetricsValid(seal))
                 throw new InvalidDataException(
                     "Runtime workload capture seal is absent, partial, or range-mismatched.");
             string framesPath = Full(seal.framesPath);
             RequireUnder(framesPath, value.captureDirectory, "runtime workload frames");
             RejectReparseChain(framesPath);
             var file = new FileInfo(framesPath);
-            if (!file.Exists || file.Length != seal.framesUtf8Bytes ||
-                AuditionPvSha256.FileHash(framesPath) != seal.framesSha256)
+            if (!file.Exists || file.Length != seal.framesUtf8Bytes)
                 throw new InvalidDataException(
                     "Runtime workload spool is not the exact capture-time sealed byte stream.");
+            using FileStream verified = OpenVerifiedRuntimeSpool(framesPath, seal);
         }
 
         internal static bool RuntimeSealCoversRange(
@@ -857,6 +900,112 @@ namespace DimensionBrawl.Editor.AuditionPV
                 seal.frameCount == sealedCount &&
                 request.sourceRangeStartFrame >= seal.sourceRangeStartFrame &&
                 request.sourceRangeEndFrame <= seal.sourceRangeEndFrame;
+        }
+
+        private static bool RuntimeSealCompressionMetricsValid(
+            AuditionPvRuntimeWorkloadCaptureSeal seal) =>
+            seal != null && seal.maxFrameLineUtf8Bytes > 0 &&
+            seal.maxFrameLineUtf8Bytes <=
+            AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes &&
+            seal.maxFrameLineUtf8Bytes <= seal.framesUtf8Bytes &&
+            seal.inventorySnapshotFrameCount > 0 &&
+            seal.inventorySnapshotFrameCount <= seal.frameCount &&
+            seal.inventoryDeltaFrameCount >= 0 &&
+            seal.inventoryDeltaFrameCount <= seal.frameCount;
+
+        private static bool RuntimeFrameHasFullInventorySnapshot(
+            AuditionPvRuntimeFrameWorkload frame) => frame != null &&
+            ((frame.rendererStableIds?.Length ?? 0) > 0 ||
+             (frame.materialSlotStableIds?.Length ?? 0) > 0 ||
+             (frame.canvasStableIds?.Length ?? 0) > 0 ||
+             (frame.hudRendererStableIds?.Length ?? 0) > 0);
+
+        private static bool RuntimeFrameHasInventoryDelta(
+            AuditionPvRuntimeFrameWorkload frame) => frame != null &&
+            ((frame.rendererAddedStableIds?.Length ?? 0) > 0 ||
+             (frame.rendererRemovedStableIds?.Length ?? 0) > 0 ||
+             (frame.materialSlotAddedStableIds?.Length ?? 0) > 0 ||
+             (frame.materialSlotRemovedStableIds?.Length ?? 0) > 0 ||
+             (frame.canvasAddedStableIds?.Length ?? 0) > 0 ||
+             (frame.canvasRemovedStableIds?.Length ?? 0) > 0 ||
+             (frame.hudRendererAddedStableIds?.Length ?? 0) > 0 ||
+             (frame.hudRendererRemovedStableIds?.Length ?? 0) > 0);
+
+        internal static string ReadRuntimeWorkloadLineCapped(
+            StreamReader reader,
+            int maxLineUtf8Bytes =
+                AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes)
+        {
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
+            if (maxLineUtf8Bytes <= 0 || maxLineUtf8Bytes >
+                AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes)
+                throw new ArgumentOutOfRangeException(nameof(maxLineUtf8Bytes));
+            if (reader.Peek() < 0) return null;
+            var builder = new StringBuilder(Math.Min(64 * 1024, maxLineUtf8Bytes));
+            while (true)
+            {
+                int value = reader.Read();
+                if (value < 0) break;
+                char character = (char)value;
+                if (character == '\n') break;
+                if (character == '\r')
+                {
+                    if (reader.Peek() == '\n') reader.Read();
+                    break;
+                }
+                builder.Append(character);
+                if (builder.Length > maxLineUtf8Bytes)
+                    throw new InvalidDataException(
+                        "Runtime workload row exceeded its character allocation limit.");
+            }
+            string line = builder.ToString();
+            if (Encoding.UTF8.GetByteCount(line) + 1 > maxLineUtf8Bytes)
+                throw new InvalidDataException(
+                    "Runtime workload row exceeded its UTF-8 byte limit.");
+            return line;
+        }
+
+        private static FileStream OpenVerifiedRuntimeSpool(
+            string path,
+            AuditionPvRuntimeWorkloadCaptureSeal seal)
+        {
+            if (seal == null) throw new ArgumentNullException(nameof(seal));
+            var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                64 * 1024,
+                FileOptions.SequentialScan);
+            try
+            {
+                VerifyRuntimeSpoolHandle(stream, seal);
+                return stream;
+            }
+            catch
+            {
+                stream.Dispose();
+                throw;
+            }
+        }
+
+        private static void VerifyRuntimeSpoolHandle(
+            FileStream stream,
+            AuditionPvRuntimeWorkloadCaptureSeal seal)
+        {
+            if (stream == null || seal == null || !stream.CanRead || !stream.CanSeek)
+                throw new InvalidDataException("Runtime workload spool handle is invalid.");
+            stream.Position = 0;
+            if (stream.Length != seal.framesUtf8Bytes)
+                throw new InvalidDataException(
+                    "Runtime workload spool length drifted from its capture-time seal.");
+            string sha256;
+            using (SHA256 algorithm = SHA256.Create())
+                sha256 = LowerHex(algorithm.ComputeHash(stream));
+            if (!string.Equals(sha256, seal.framesSha256, StringComparison.Ordinal))
+                throw new InvalidDataException(
+                    "Runtime workload spool hash drifted from its capture-time seal.");
+            stream.Position = 0;
         }
 
         private static void AddSimpleChecks(
@@ -1246,6 +1395,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             string temporary = outputPath + ".tmp-" + Guid.NewGuid().ToString("N");
             try
             {
+                // Keep the using declarations inside a nested scope so FileShare.None is
+                // released before the immutable artifact is atomically moved into place.
+                {
                 long written = 0;
                 using var targetStream = new FileStream(
                     temporary,
@@ -1264,27 +1416,27 @@ namespace DimensionBrawl.Editor.AuditionPV
                 };
                 writer.Write(prefix);
                 written += Encoding.UTF8.GetByteCount(prefix);
-                using var sourceStream = new FileStream(
+                using var sourceStream = OpenVerifiedRuntimeSpool(
                     runtime.framesPath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    64 * 1024,
-                    FileOptions.SequentialScan);
+                    runtime.seal);
                 using var reader = new StreamReader(
                     sourceStream,
                     new UTF8Encoding(false, true),
                     false,
                     64 * 1024,
                     false);
+                bool rendererArtifact = checkId == "renderer-material-scan";
+                bool hudArtifact = checkId == "hud-layer-absent";
+                var validationState =
+                    new AuditionPvSixtySecondGateManifestValidator
+                        .RuntimeWorkloadValidationState();
                 int sealedIndex = 0;
                 int writtenFrameCount = 0;
-                while (!reader.EndOfStream)
+                while (true)
                 {
-                    string line = reader.ReadLine();
-                    if (string.IsNullOrWhiteSpace(line) ||
-                        Encoding.UTF8.GetByteCount(line) + 1 >
-                        AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes)
+                    string line = ReadRuntimeWorkloadLineCapped(reader);
+                    if (line == null) break;
+                    if (string.IsNullOrWhiteSpace(line))
                         throw new InvalidDataException(
                             "Runtime workload spool row is invalid while deriving a range artifact.");
                     AuditionPvRuntimeFrameWorkload frame =
@@ -1294,17 +1446,89 @@ namespace DimensionBrawl.Editor.AuditionPV
                     if (frame == null || frame.sourceFrame != expectedSourceFrame)
                         throw new InvalidDataException(
                             "Runtime workload spool order drifted while deriving a range artifact.");
+                    var validationEntry = new AuditionPvSelectedFrameScanEntry
+                    {
+                        sourceFrame = frame.sourceFrame,
+                        inspectedRendererCount = frame.inspectedRendererCount,
+                        inspectedMaterialSlotCount = frame.inspectedMaterialSlotCount,
+                        rendererInventorySha256 = frame.rendererInventorySha256,
+                        materialInventorySha256 = frame.materialInventorySha256,
+                        nullMaterialCount = frame.nullMaterialCount,
+                        errorMaterialCount = frame.errorMaterialCount,
+                        inspectedCanvasCount = frame.inspectedCanvasCount,
+                        inspectedHudRendererCount = frame.inspectedHudRendererCount,
+                        inspectedDrawCommandCount = frame.inspectedDrawCommandCount,
+                        visibleUiElementCount = frame.visibleUiElementCount,
+                        canvasInventorySha256 = frame.canvasInventorySha256,
+                        hudInventorySha256 = frame.hudInventorySha256,
+                        rendererHudLayerExcluded = true
+                    };
+                    if (!AuditionPvSixtySecondGateManifestValidator
+                            .RuntimeWorkloadFrameMatches(
+                                checkId,
+                                frame,
+                                validationEntry,
+                                hudArtifact ? runtime.seal.hudEvidenceMode : string.Empty,
+                                validationState))
+                        throw new InvalidDataException(
+                            "Runtime workload carry-forward row is invalid while deriving " +
+                            "a range artifact.");
                     sealedIndex++;
                     if (frame.sourceFrame < value.request.sourceRangeStartFrame ||
                         frame.sourceFrame > value.request.sourceRangeEndFrame)
                         continue;
+                    bool firstWrittenFrame = writtenFrameCount == 0;
+                    if (rendererArtifact)
+                    {
+                        if (firstWrittenFrame)
+                        {
+                            frame.rendererStableIds = validationState.renderers.stableIds;
+                            frame.materialSlotStableIds =
+                                validationState.materialSlots.stableIds;
+                            frame.rendererAddedStableIds = Array.Empty<string>();
+                            frame.rendererRemovedStableIds = Array.Empty<string>();
+                            frame.materialSlotAddedStableIds = Array.Empty<string>();
+                            frame.materialSlotRemovedStableIds = Array.Empty<string>();
+                        }
+                        frame.canvasStableIds = Array.Empty<string>();
+                        frame.hudRendererStableIds = Array.Empty<string>();
+                        frame.canvasAddedStableIds = Array.Empty<string>();
+                        frame.canvasRemovedStableIds = Array.Empty<string>();
+                        frame.hudRendererAddedStableIds = Array.Empty<string>();
+                        frame.hudRendererRemovedStableIds = Array.Empty<string>();
+                    }
+                    else
+                    {
+                        if (firstWrittenFrame)
+                        {
+                            frame.canvasStableIds = validationState.canvases.stableIds;
+                            frame.hudRendererStableIds =
+                                validationState.hudRenderers.stableIds;
+                            frame.canvasAddedStableIds = Array.Empty<string>();
+                            frame.canvasRemovedStableIds = Array.Empty<string>();
+                            frame.hudRendererAddedStableIds = Array.Empty<string>();
+                            frame.hudRendererRemovedStableIds = Array.Empty<string>();
+                        }
+                        frame.rendererStableIds = Array.Empty<string>();
+                        frame.materialSlotStableIds = Array.Empty<string>();
+                        frame.rendererAddedStableIds = Array.Empty<string>();
+                        frame.rendererRemovedStableIds = Array.Empty<string>();
+                        frame.materialSlotAddedStableIds = Array.Empty<string>();
+                        frame.materialSlotRemovedStableIds = Array.Empty<string>();
+                    }
+                    string outputLine = JsonUtility.ToJson(frame, false);
+                    int outputLineBytes = Encoding.UTF8.GetByteCount(outputLine);
+                    if (outputLineBytes + 1 >
+                        AuditionPvRuntimeWorkloadCaptureSession.MaxFrameLineUtf8Bytes)
+                        throw new InvalidDataException(
+                            "Runtime workload output row exceeds its byte limit.");
                     if (writtenFrameCount++ > 0)
                     {
                         writer.Write(',');
                         written++;
                     }
-                    writer.Write(line);
-                    written += Encoding.UTF8.GetByteCount(line ?? string.Empty);
+                    writer.Write(outputLine);
+                    written += outputLineBytes;
                     if (written > MaxJsonBytes)
                         throw new InvalidDataException(
                             "Runtime workload artifact exceeds the Gate JSON byte limit.");
@@ -1316,6 +1540,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     writtenFrameCount != expectedFrameCount)
                     throw new InvalidDataException(
                         "Runtime workload range derivation was incomplete.");
+                reader.DiscardBufferedData();
+                VerifyRuntimeSpoolHandle(sourceStream, runtime.seal);
                 writer.Write(']');
                 writer.Write(suffix);
                 writer.Write('\n');
@@ -1323,6 +1549,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 if (targetStream.Length > MaxJsonBytes)
                     throw new InvalidDataException(
                         "Runtime workload artifact exceeds the Gate JSON byte limit.");
+                }
                 File.Move(temporary, outputPath);
             }
             finally
