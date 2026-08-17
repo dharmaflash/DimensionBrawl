@@ -611,24 +611,85 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void MergeCaptureTests_AllowsSameGateNameForDistinctRangeArtifacts()
+        public void MergeCaptureTests_AllowsArtifactlessFactsAndTwoExactRangesForSameShot()
         {
-            string firstPath = WriteArtifact("first.json", "first");
-            string secondPath = WriteArtifact("second.json", "second");
-            AuditionPvTestResult first = Passed("resolution", firstPath);
-            AuditionPvTestResult second = Passed("resolution", secondPath);
-            var bundle = new AuditionPvSixtySecondEvidenceBundle
-                { testResults = new[] { second } };
+            var captureFact = new AuditionPvTestResult
+            {
+                suite = "G04Capture",
+                name = "exact-camera-cut",
+                status = "passed",
+                artifactPath = string.Empty
+            };
+            AuditionPvSixtySecondEvidenceBundle first = ExactRangeBundle(
+                "g04",
+                0,
+                479,
+                "first");
+            AuditionPvSixtySecondEvidenceBundle second = ExactRangeBundle(
+                "g04",
+                60,
+                539,
+                "second");
 
             AuditionPvTestResult[] merged = AuditionPvSixtySecondEvidenceProducer
-                .MergeCaptureTestResults(new[] { first }, bundle);
+                .MergeCaptureTestResults(new[] { captureFact }, first);
+            merged = AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
+                merged,
+                second);
 
-            Assert.That(merged.Length, Is.EqualTo(2));
-            Assert.That(merged.Select(value => value.name),
-                Is.EqualTo(new[] { "resolution", "resolution" }));
+            Assert.That(first.testResults.Length, Is.EqualTo(7));
+            Assert.That(second.testResults.Length, Is.EqualTo(7));
+            Assert.That(merged.Length, Is.EqualTo(15));
+            Assert.That(merged.Count(value => value.name == "resolution"), Is.EqualTo(2));
+            Assert.That(first.testResults.All(value =>
+                value.details.Contains("source-shot=g04; source-range=0-479;",
+                    StringComparison.Ordinal)), Is.True);
+            Assert.That(second.testResults.All(value =>
+                value.details.Contains("source-shot=g04; source-range=60-539;",
+                    StringComparison.Ordinal)), Is.True);
             Assert.Throws<InvalidDataException>(() =>
                 AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
-                    new[] { second }, bundle));
+                    merged,
+                    second));
+            captureFact.artifactPath = " ";
+            Assert.Throws<InvalidDataException>(() =>
+                AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
+                    new[] { captureFact },
+                    first));
+        }
+
+        [Test]
+        public void MergeCaptureTests_CleanPlateKeepsSevenCoreChecksAndExactHudRange()
+        {
+            AuditionPvSixtySecondEvidenceBundle clean = ExactRangeBundle(
+                "g04-clean",
+                60,
+                539,
+                "clean",
+                includeHudChecks: true);
+
+            AuditionPvTestResult[] merged = AuditionPvSixtySecondEvidenceProducer
+                .MergeCaptureTestResults(Array.Empty<AuditionPvTestResult>(), clean);
+
+            Assert.That(merged.Length, Is.EqualTo(9));
+            Assert.That(merged.Take(7).Select(value => value.name), Is.EqualTo(new[]
+            {
+                "contact-sheet",
+                "missing-frame",
+                "resolution",
+                "error-magenta",
+                "rec709",
+                "renderer-material-scan/runtime-workload",
+                "renderer-material-scan"
+            }));
+            Assert.That(merged.Skip(7).Select(value => value.name), Is.EqualTo(new[]
+            {
+                "hud-layer-absent/runtime-workload",
+                "hud-layer-absent"
+            }));
+            Assert.That(merged.All(value =>
+                value.details.Contains("source-shot=g04-clean; source-range=60-539;",
+                    StringComparison.Ordinal)), Is.True);
         }
 
         [Test]
@@ -697,8 +758,48 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         private string WriteArtifact(string name, string content)
         {
             string path = Path.Combine(root, name);
+            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? root);
             File.WriteAllText(path, content, new UTF8Encoding(false));
             return path;
+        }
+
+        private AuditionPvSixtySecondEvidenceBundle ExactRangeBundle(
+            string shotId,
+            int sourceStart,
+            int sourceEnd,
+            string directory,
+            bool includeHudChecks = false)
+        {
+            string[] names =
+            {
+                "contact-sheet",
+                "missing-frame",
+                "resolution",
+                "error-magenta",
+                "rec709",
+                "renderer-material-scan/runtime-workload",
+                "renderer-material-scan"
+            };
+            if (includeHudChecks)
+            {
+                names = names.Concat(new[]
+                {
+                    "hud-layer-absent/runtime-workload",
+                    "hud-layer-absent"
+                }).ToArray();
+            }
+
+            AuditionPvTestResult[] tests = names.Select((name, index) =>
+            {
+                string path = WriteArtifact(
+                    Path.Combine(directory, index.ToString("D2") + ".json"),
+                    shotId + ":" + sourceStart + "-" + sourceEnd + ":" + name);
+                AuditionPvTestResult result = Passed(name, path);
+                result.details += "; source-shot=" + shotId + "; source-range=" +
+                                  sourceStart + "-" + sourceEnd + ";";
+                return result;
+            }).ToArray();
+            return new AuditionPvSixtySecondEvidenceBundle { testResults = tests };
         }
 
         private static AuditionPvTestResult Passed(string name, string path)

@@ -218,6 +218,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvSixtySecondEvidenceBundle bundle)
         {
             if (bundle == null) throw new ArgumentNullException(nameof(bundle));
+            ValidateUniquePassedTests(bundle.testResults);
             AuditionPvTestResult[] merged = (existing ?? Array.Empty<AuditionPvTestResult>())
                 .Concat(bundle.testResults ?? Array.Empty<AuditionPvTestResult>())
                 .ToArray();
@@ -225,14 +226,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             foreach (AuditionPvTestResult result in merged)
             {
                 if (result == null || string.IsNullOrWhiteSpace(result.suite) ||
-                    string.IsNullOrWhiteSpace(result.name) ||
-                    string.IsNullOrWhiteSpace(result.artifactPath) ||
+                    string.IsNullOrWhiteSpace(result.name))
+                    throw new InvalidDataException(
+                        "Capture test results contain a null or exact-duplicate artifact identity.");
+                if (result.artifactPath == string.Empty) continue;
+                if (string.IsNullOrWhiteSpace(result.artifactPath) ||
                     !identities.Add(result.suite + "\0" + result.name + "\0" +
                                     Full(result.artifactPath)))
                     throw new InvalidDataException(
                         "Capture test results contain a null or exact-duplicate artifact identity.");
             }
-            ValidateUniquePassedTests(bundle.testResults);
             return merged;
         }
 
