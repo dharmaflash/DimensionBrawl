@@ -2455,7 +2455,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.recorderCaptureDeltaTimeAtLogicalFrameZero =
                     Time.captureDeltaTime;
                 proof.recorderPaddingActiveAtLogicalFrameZero =
-                    Time.captureDeltaTime > minimumDelta
+                    Time.captureDeltaTime >= minimumDelta
                     && Time.captureDeltaTime < minimumDelta + 0.001f;
                 if (!proof.recorderPaddingActiveAtLogicalFrameZero)
                 {

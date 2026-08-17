@@ -954,7 +954,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             float captureDelta =
                 artifact.runtime.recorderCaptureDeltaTimeAtLogicalFrameZero;
             float minimumDelta = 1f / AuditionPvCaptureContract.Fps;
-            if (captureDelta <= minimumDelta ||
+            if (captureDelta < minimumDelta ||
                 captureDelta >= minimumDelta + 0.001f ||
                 Math.Abs(artifact.runtime.hudEnergyMaxMana - 300f) > 0.001f)
             {

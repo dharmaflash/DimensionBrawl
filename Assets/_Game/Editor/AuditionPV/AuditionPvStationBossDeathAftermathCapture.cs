@@ -1065,7 +1065,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             float minimum = 1f / AuditionPvCaptureContract.Fps;
-            if (Time.captureDeltaTime <= minimum
+            if (Time.captureDeltaTime < minimum
                 || Time.captureDeltaTime >= minimum + 0.001f)
             {
                 throw new InvalidOperationException(
