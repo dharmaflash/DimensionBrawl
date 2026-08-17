@@ -38,8 +38,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             "recorder_warmup_raw_frame_0000.png";
         internal const int RawWarmupFrame = 0;
         internal const int RawFirstShotFrame = 1;
-        internal const int RawLastShotFrame = 360;
-        internal const int ExpectedRawFrameCount = 361;
+        internal const int RawLastShotFrame =
+            AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount;
+        internal const int ExpectedRawFrameCount = RawLastShotFrame + 1;
 
         private const string SessionActiveKey =
             "DimensionBrawl.AuditionPV.G06GoldenRunner.Active";
@@ -317,7 +318,8 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         /// <summary>
         /// Preserves Recorder's resolution warm-up frame as evidence and maps
-        /// raw 1..360 to logical 0..359 through a collision-free staging folder.
+        /// raw 1..720 to canonical source 0..719 through a collision-free
+        /// staging folder. Logical f0..f359 occupy source f180..f539.
         /// </summary>
         internal static string RemapRawFrames(
             string frameDirectory,
@@ -358,15 +360,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                     WarmupEvidenceFileName);
                 MoveNew(warmupSource, warmupEvidence);
 
-                for (int logicalFrame =
+                for (int sourceFrame =
                          AuditionPvStationPhase2SummonCounterCapture.FirstFrame;
-                    logicalFrame <=
+                    sourceFrame <=
                          AuditionPvStationPhase2SummonCounterCapture.LastFrame;
-                    logicalFrame++)
+                    sourceFrame++)
                 {
                     string fileName =
                         AuditionPvStationPhase2SummonCounterCapture.FrameFileName(
-                            logicalFrame);
+                            sourceFrame);
                     MoveNew(
                         Path.Combine(stagingDirectory, fileName),
                         Path.Combine(normalizedFrameDirectory, fileName));
@@ -896,6 +898,21 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.warmupEvidenceSha256 = AuditionPvSha256.FileHash(warmupPath);
 
             CopyBaselines(state, frameDirectory);
+            string frameHashLedgerPath = Path.Combine(
+                evidenceDirectory,
+                AuditionPvStationPhase2SummonCounterCapture
+                    .FrameHashLedgerFileName);
+            string frameHashLedger =
+                AuditionPvStationPhase2SummonCounterCapture
+                    .BuildFrameHashLedger(frameDirectory);
+            WriteTextNew(frameHashLedgerPath, frameHashLedger);
+            AuditionPvStationPhase2SummonCounterCapture
+                .ValidateFrameHashLedger(
+                    frameHashLedgerPath,
+                    frameHashLedger);
+            proof.frameHashLedgerPath = frameHashLedgerPath.Replace('\\', '/');
+            proof.frameHashLedgerEntryCount =
+                AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount;
             AuditionPvGitSnapshot gitAtEnd = AuditionPvEnvironmentProbe.ReadGitSnapshot();
             ValidateStableGitSnapshot(CreateGitSnapshot(state), gitAtEnd);
             string[] dependencyPathsAtEnd = CollectCaptureDependencyPaths();
@@ -931,13 +948,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 schema = RuntimeProofSchema,
                 captureId = state.captureId,
                 mapping =
-                    "Recorder raw0 is preserved warm-up evidence; raw1..raw360 map to logical f0..f359.",
+                    "Recorder raw0 is preserved warm-up evidence; raw1..raw720 map to canonical source f0..f719; logical f0..f359 map to source f180..f539.",
                 productScreenProfile =
                     "authored product profile used unchanged: enabled=true, domain=.14, "
                     + "invert=.015, edge=.18, glitch=.03, duration=.42s.",
                 summonCounterContract =
-                    "authored Slot1 cost=200, full EN 300->100, tier=2, "
-                    + "screen intercept=1, automatic counter damage=29.44.",
+                    "authored Slot1 cost=200, EN 300->100, tier=2, screen intercept=1, "
+                    + "encounter followup pulse 100->300, HUD Skill1 tier=3 to EN 0, "
+                    + "actual LaserSweep hit then FollowupHit/Ultimate playcount +2, "
+                    + "automatic counter damage=29.44.",
                 runtime = proof
             });
 
@@ -945,28 +964,73 @@ namespace DimensionBrawl.Editor.AuditionPV
                 state.startedAtUtc,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind).ToUniversalTime();
-            AuditionPvTestResult[] results = CreateTestResults(
+            AuditionPvShotManifestEntry[] shots =
+            {
+                AuditionPvStationPhase2SummonCounterCapture
+                    .CreateShotManifestEntry()
+            };
+            AuditionPvBaselineManifestEntry[] baselines =
+                AuditionPvStationPhase2SummonCounterCapture
+                    .CreateBaselineManifestEntries();
+            AuditionPvCaptureManifest captureCoreManifest =
+                AuditionPvCaptureManifestFactory.CreateForRoot(
+                    state.captureId,
+                    state.outputRoot,
+                    state.outputDirectory,
+                    shots,
+                    baselines,
+                    Array.Empty<AuditionPvTestResult>(),
+                    createdAtUtc: startedAtUtc,
+                    gitSnapshot: CreateGitSnapshot(state),
+                    engineSnapshot: RestoreEngine(state.engine),
+                    dependencyHashSnapshot: state.dependencyHashesAtStart);
+            string captureCoreSha256 =
+                AuditionPvSixtySecondGateManifestValidator
+                    .CaptureCoreSha256(captureCoreManifest);
+            if (!AuditionPvSha256.IsSha256(captureCoreSha256))
+            {
+                throw new InvalidDataException(
+                    "G06 could not create its immutable Gate capture-core identity.");
+            }
+
+            AuditionPvTestResult[] ordinaryResults = CreateTestResults(
                 state,
                 proof,
                 proofPath,
                 startedAtUtc);
+            AuditionPvTestResult[] gateResults = WriteGateEvidenceArtifacts(
+                state,
+                proof,
+                proofPath,
+                frameHashLedgerPath,
+                evidenceDirectory,
+                captureCoreSha256,
+                startedAtUtc);
+            AuditionPvTestResult[] results = ordinaryResults
+                .Concat(gateResults)
+                .ToArray();
             AuditionPvCaptureManifest manifest =
                 AuditionPvCaptureManifestFactory.CreateForRoot(
                     state.captureId,
                     state.outputRoot,
                     state.outputDirectory,
-                    new[]
-                    {
-                        AuditionPvStationPhase2SummonCounterCapture
-                            .CreateShotManifestEntry()
-                    },
-                    AuditionPvStationPhase2SummonCounterCapture
-                        .CreateBaselineManifestEntries(),
+                    shots,
+                    baselines,
                     results,
                     createdAtUtc: startedAtUtc,
                     gitSnapshot: CreateGitSnapshot(state),
                     engineSnapshot: RestoreEngine(state.engine),
                     dependencyHashSnapshot: state.dependencyHashesAtStart);
+            if (!string.Equals(
+                    captureCoreSha256,
+                    AuditionPvSixtySecondGateManifestValidator
+                        .CaptureCoreSha256(manifest),
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G06 Gate evidence changed its immutable capture-core identity.");
+            }
+
             string manifestPath = AuditionPvCaptureManifestWriter.WriteNew(manifest);
             ValidateManifestRoundTrip(manifestPath, state.captureId);
 
@@ -979,9 +1043,11 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             if (!proof.directorCompleted
                 || proof.lastLogicalFrame
-                    != AuditionPvStationPhase2SummonCounterCapture.LastFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .LogicalLastFrame
                 || proof.presentedFrameCount
-                    != AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .LogicalExpectedFrameCount
                 || !proof.presentedFramesExact
                 || !proof.presentationClockExact
                 || proof.perfectDodgeCount != 1
@@ -1008,7 +1074,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || Mathf.Abs(
                     proof.hudEnergyMana
                         - AuditionPvStationPhase2SummonCounterCapture
-                            .AuthoredEnergyAfterUse) > 0.001f
+                            .AuthoredEnergyAfterSkill1) > 0.001f
                 || Mathf.Abs(
                     proof.summonEnergyBeforeUse - proof.hudEnergyMaxMana)
                     > 0.001f
@@ -1020,6 +1086,24 @@ namespace DimensionBrawl.Editor.AuditionPV
                     != AuditionPvStationPhase2SummonCounterCapture
                         .AuthoredSummonTier
                 || proof.summonUseCountDelta != 1
+                || Mathf.Abs(
+                    proof.interceptEnergyBeforePulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterUse) > 0.001f
+                || Mathf.Abs(
+                    proof.interceptEnergyAfterPulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > 0.001f
+                || !proof.encounterFollowupPulseTraversed
+                || !proof.followupWindowActiveAfterIntercept
+                || !proof.encounterGrantedSummonFollowupEnergy
+                || Mathf.Abs(
+                    proof.encounterSummonFollowupEnergyPulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > 0.001f
+                || proof.encounterLastSummonPressureBreakTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSummonTier
                 || proof.summonInterceptCountDelta != 1
                 || proof.summonUsedEventCount != 1
                 || proof.summonBlockedEventCount != 1
@@ -1062,9 +1146,65 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || Mathf.Abs(
                     proof.bossCounterHealthDelta
                         - proof.authoredCounterDamage) > 0.001f
+                || proof.skill1UsedEventCount != 1
+                || proof.skill1UsedFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || proof.skill1UsedTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || proof.skill1UseCountDelta != 1
+                || Mathf.Abs(
+                    proof.skill1EnergyBeforeRequest
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > 0.001f
+                || Mathf.Abs(
+                    proof.skill1EnergyAfterRequest
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterSkill1) > 0.001f
+                || !proof.hudSkill1RequestTraversed
+                || !proof.laserSweepActiveAfterHudRequest
+                || !proof.laserSweepInactiveAfterPostHandle
+                || proof.summonFollowupHitEventCount != 1
+                || proof.summonFollowupHitFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || proof.summonFollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    proof.summonFollowupHitDamage
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredTierThreeLaserDamage) > 0.001f
+                || !proof.encounterUsedSkill1DuringSummonFollowup
+                || !proof.encounterSkill1FollowupHitConfirmed
+                || proof.encounterHighestSkill1FollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || proof.cinematicPlayCountDeltaAtSkill1 != 2
+                || proof.cinematicFollowupPlayCountDeltaAtSkill1 != 1
+                || !proof.cinematicFollowupThenUltimateExact
                 || !proof.fixedDeltaTimeExact
                 || !proof.recorderAutoStoppedAfterLastFrame
                 || proof.recorderWarmupEndOfFrameCount != 2
+                || proof.recorderPreHandleEndOfFrameCount
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .HandleFrameCount
+                || proof.canonicalSourceFrameCount
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .ExpectedFrameCount
+                || proof.logicalFirstSourceFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .SelectStartFrame
+                || proof.logicalLastSourceFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .SelectEndFrame
+                || proof.recordedPreHandleFrameCount
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .HandleFrameCount
+                || proof.recordedPostHandleFrameCount
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .HandleFrameCount
                 || !proof.recorderPaddingActiveAtLogicalFrameZero
                 || !proof.stateRestored
                 || !proof.screenProfileRestored
@@ -1073,13 +1213,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !proof.captureHudStateRestored
                 || !proof.captureEventsReleased
                 || !proof.captureSummonArtifactsReleased
+                || !proof.captureSkillArtifactsReleased
                 || !proof.bossCompositionRestored
                 || !proof.presentationClockReleased
                 || proof.cadenceSuspensionCountAfterRestore != 0)
             {
                 throw new InvalidOperationException(
                     "G06 runtime proof does not satisfy the exact gameplay, real Slot1 "
-                    + "intercept/counter, Recorder, HUD, boss composition, screen, or "
+                    + "intercept/counter, encounter pulse, HUD Skill1/LaserSweep/cinematic, "
+                    + "recorded handles, Recorder, boss composition, screen, or "
                     + "restoration contract.");
             }
         }
@@ -1257,7 +1399,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             string beforePath = Path.Combine(
                 frameDirectory,
                 AuditionPvStationPhase2SummonCounterCapture.FrameFileName(
-                    AuditionPvStationPhase2SummonCounterCapture.ImpactFrame));
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .LogicalToSourceFrame(
+                            AuditionPvStationPhase2SummonCounterCapture
+                                .ImpactFrame)));
             string afterPath = Path.Combine(
                 frameDirectory,
                 AuditionPvStationPhase2SummonCounterCapture.FrameFileName(
@@ -1285,7 +1430,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 frameDirectory,
                 AuditionPvStationPhase2SummonCounterCapture.FrameFileName(
                     AuditionPvStationPhase2SummonCounterCapture
-                        .ScreenObservationLastFrame));
+                        .LogicalToSourceFrame(
+                            AuditionPvStationPhase2SummonCounterCapture
+                                .ScreenObservationLastFrame)));
             string afterPath = Path.Combine(
                 frameDirectory,
                 AuditionPvStationPhase2SummonCounterCapture.FrameFileName(
@@ -1326,6 +1473,208 @@ namespace DimensionBrawl.Editor.AuditionPV
             return texture;
         }
 
+        private static AuditionPvTestResult[] WriteGateEvidenceArtifacts(
+            PersistedRunnerState state,
+            RuntimeProof proof,
+            string runtimeProofPath,
+            string frameHashLedgerPath,
+            string evidenceDirectory,
+            string captureCoreSha256,
+            DateTime startedAtUtc)
+        {
+            long duration = Math.Max(
+                0L,
+                (long)(DateTime.UtcNow - startedAtUtc).TotalMilliseconds);
+            string createdAtUtc = startedAtUtc.ToString(
+                "O",
+                CultureInfo.InvariantCulture);
+            string normalizedRuntimeProofPath =
+                Path.GetFullPath(runtimeProofPath).Replace('\\', '/');
+            string runtimeProofSha256 =
+                AuditionPvSha256.FileHash(runtimeProofPath);
+            string normalizedFrameLedgerPath =
+                Path.GetFullPath(frameHashLedgerPath).Replace('\\', '/');
+            string frameLedgerSha256 =
+                AuditionPvSha256.FileHash(frameHashLedgerPath);
+            var runtimePin = new AuditionPvPinnedArtifact
+            {
+                path = normalizedRuntimeProofPath,
+                sha256 = runtimeProofSha256
+            };
+            var ledgerPin = new AuditionPvPinnedArtifact
+            {
+                path = normalizedFrameLedgerPath,
+                sha256 = frameLedgerSha256
+            };
+
+            string authorshipPath = Path.Combine(
+                evidenceDirectory,
+                "g06_shot_authorship.json");
+            var authorship = new AuditionPvShotAuthorshipArtifact
+            {
+                schemaVersion =
+                    AuditionPvSixtySecondGateManifestValidator
+                        .ShotAuthorshipSchema,
+                sourceCaptureCoreSha256 = captureCoreSha256,
+                captureId = state.captureId,
+                sourceShotId =
+                    AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                cameraId =
+                    AuditionPvStationPhase2SummonCounterCapture.GateCameraId,
+                gameplayState =
+                    AuditionPvStationPhase2SummonCounterCapture.GateGameplayState,
+                deterministicSeed =
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .DeterministicRandomSeed,
+                timelineId =
+                    AuditionPvStationPhase2SummonCounterCapture.GateTimelineId,
+                runtimeProof = runtimePin,
+                tool = "G06GoldenRunner",
+                toolVersion = string.IsNullOrWhiteSpace(
+                    state.engine?.recorderPackageVersion)
+                    ? "1"
+                    : state.engine.recorderPackageVersion,
+                createdAtUtc = createdAtUtc
+            };
+            WriteJsonNew(authorshipPath, authorship);
+            string authorshipSha256 =
+                AuditionPvSha256.FileHash(authorshipPath);
+            var results = new List<AuditionPvTestResult>
+            {
+                Passed(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateEvidenceTestSuite,
+                    "shot-authorship/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    duration,
+                    $"artifact-sha256={authorshipSha256}; capture-core-sha256={captureCoreSha256}; exact-camera-state-seed-timeline=true",
+                    authorshipPath),
+                Passed(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateEvidenceTestSuite,
+                    "shot-authorship-runtime/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    duration,
+                    $"artifact-sha256={runtimeProofSha256}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                    runtimeProofPath)
+            };
+
+            string semanticDirectory = Path.Combine(
+                evidenceDirectory,
+                "semantic_beats");
+            foreach (GateSemanticBeatSpec spec in CreateGateSemanticBeatSpecs(proof))
+            {
+                string artifactPath = Path.Combine(
+                    semanticDirectory,
+                    spec.beatId + ".json");
+                var artifact = new GateSemanticBeatRuntimeArtifact
+                {
+                    schemaVersion =
+                        "dimension-brawl.audition-pv.g06-semantic-beat-runtime.v1",
+                    sourceCaptureCoreSha256 = captureCoreSha256,
+                    captureId = state.captureId,
+                    sourceShotId =
+                        AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    beatId = spec.beatId,
+                    runtimeFactKey = spec.beatId,
+                    sourceRangeStartFrame =
+                        AuditionPvStationPhase2SummonCounterCapture.FirstFrame,
+                    sourceRangeEndFrame =
+                        AuditionPvStationPhase2SummonCounterCapture.LastFrame,
+                    logicalFactStartFrame = spec.logicalStartFrame,
+                    logicalFactEndFrame = spec.logicalEndFrame,
+                    sourceFactStartFrame =
+                        AuditionPvStationPhase2SummonCounterCapture
+                            .LogicalToSourceFrame(spec.logicalStartFrame),
+                    sourceFactEndFrame =
+                        AuditionPvStationPhase2SummonCounterCapture
+                            .LogicalToSourceFrame(spec.logicalEndFrame),
+                    exactFacts = spec.exactFacts,
+                    runtimeProof = runtimePin,
+                    sourceFrameLedger = ledgerPin,
+                    producer = "G06GoldenRunner",
+                    createdAtUtc = createdAtUtc
+                };
+                WriteJsonNew(artifactPath, artifact);
+                string artifactSha256 =
+                    AuditionPvSha256.FileHash(artifactPath);
+                results.Add(Passed(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateEvidenceTestSuite,
+                    "semantic-beat/" + spec.beatId,
+                    duration,
+                    $"artifact-sha256={artifactSha256}; semantic-fact={spec.beatId}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                    artifactPath));
+            }
+
+            string[] expectedBeatIds =
+                AuditionPvStationPhase2SummonCounterCapture
+                    .GateSemanticBeatIds();
+            string[] actualBeatIds = results
+                .Where(result => result.name.StartsWith(
+                    "semantic-beat/",
+                    StringComparison.Ordinal))
+                .Select(result => result.name.Substring(
+                    "semantic-beat/".Length))
+                .ToArray();
+            if (!actualBeatIds.SequenceEqual(
+                    expectedBeatIds,
+                    StringComparer.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G06 Gate semantic-beat artifacts are incomplete or reordered.");
+            }
+
+            return results.ToArray();
+        }
+
+        private static GateSemanticBeatSpec[] CreateGateSemanticBeatSpecs(
+            RuntimeProof proof)
+        {
+            return new[]
+            {
+                new GateSemanticBeatSpec(
+                    "boss-pattern-1",
+                    AuditionPvStationPhase2SummonCounterCapture.BeginWindupFrame,
+                    AuditionPvStationPhase2SummonCounterCapture.ImpactFrame,
+                    $"actual-crushnet-projectiles={proof.firedProjectileCount}",
+                    $"impact-logical-frame={AuditionPvStationPhase2SummonCounterCapture.ImpactFrame}",
+                    $"boss-risk-fire={proof.bossRiskAtFireFrame.ToString("F3", CultureInfo.InvariantCulture)}"),
+                new GateSemanticBeatSpec(
+                    "olympus-hud-gameplay",
+                    AuditionPvStationPhase2SummonCounterCapture.LogicalFirstFrame,
+                    AuditionPvStationPhase2SummonCounterCapture.LogicalLastFrame,
+                    $"hud-ammo={proof.hudAmmo}/{proof.hudMagazineSize}",
+                    "hud-energy-chain=300>100>300>0",
+                    $"hud-renderable={proof.exactHudRenderable}"),
+                new GateSemanticBeatSpec(
+                    "perfect-dodge",
+                    AuditionPvStationPhase2SummonCounterCapture.QueueDodgeFrame,
+                    AuditionPvStationPhase2SummonCounterCapture.Bl06LogicalFrame,
+                    $"perfect-dodge-count={proof.perfectDodgeCount}",
+                    $"blocked-damage-count={proof.damageBlockedObservationCount}",
+                    $"player-health-unchanged={proof.playerHealthUnchanged}"),
+                new GateSemanticBeatSpec(
+                    "summon-defense",
+                    AuditionPvStationPhase2SummonCounterCapture.QueueSummonFrame,
+                    Mathf.Max(
+                        AuditionPvStationPhase2SummonCounterCapture.Bl07LogicalFrame,
+                        proof.bossCounterDamageFrame),
+                    $"summon-tier={proof.summonSpentTier}",
+                    $"screen-intercepts={proof.screenInterceptEventCount}",
+                    $"followup-pulse={proof.interceptEnergyBeforePulse.ToString("F0", CultureInfo.InvariantCulture)}>{proof.interceptEnergyAfterPulse.ToString("F0", CultureInfo.InvariantCulture)}",
+                    $"counter-damage={proof.bossCounterDamageAmount.ToString("F2", CultureInfo.InvariantCulture)}"),
+                new GateSemanticBeatSpec(
+                    "player-tier3-ultimate",
+                    AuditionPvStationPhase2SummonCounterCapture.RequestSkill1Frame,
+                    AuditionPvStationPhase2SummonCounterCapture.RequestSkill1Frame,
+                    $"skill-tier={proof.skill1UsedTier}",
+                    $"laser-damage={proof.summonFollowupHitDamage.ToString("F0", CultureInfo.InvariantCulture)}",
+                    $"cinematic-play-delta={proof.cinematicPlayCountDeltaAtSkill1}",
+                    "cinematic-order=SummonFollowupHit>UltimateCutIn")
+            };
+        }
+
         private static AuditionPvTestResult[] CreateTestResults(
             PersistedRunnerState state,
             RuntimeProof proof,
@@ -1339,9 +1688,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 Passed(
                     "recorder",
-                    "raw-warmup-and-logical-frame-mapping",
+                    "raw-warmup-canonical-source-and-recorded-handles",
                     duration,
-                    "Recorder 5.1.6 QHD60 raw 0..360 complete; raw0 preserved; raw1..360 mapped to logical 0..359; f359 flushed before stop.",
+                    "Recorder 5.1.6 QHD60 raw 0..720 complete; raw0 preserved; raw1..720 mapped to source 0..719; logical 0..359 occupies source 180..539 with real 180/180 handles.",
                     proof.warmupEvidencePath),
                 Passed(
                     "product-state",
@@ -1353,13 +1702,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + $"boss risk={proof.bossRiskAtFirstFrame:F3}/{proof.bossRiskAtFireFrame:F3}/{proof.bossRiskAtImpactFrame:F3}; "
                     + $"perfect={proof.perfectDodgeCount}; blocked={proof.damageBlockedObservationCount}; "
                     + $"summon tier={proof.summonSpentTier}, EN={proof.summonEnergyBeforeUse:F0}->{proof.summonEnergyAfterUse:F0}, "
+                    + $"pulse={proof.interceptEnergyBeforePulse:F0}->{proof.interceptEnergyAfterPulse:F0}, "
+                    + $"HUD Skill1 f{proof.skill1UsedFrame} tier={proof.skill1UsedTier}, EN={proof.skill1EnergyBeforeRequest:F0}->{proof.skill1EnergyAfterRequest:F0}, "
+                    + $"LaserSweep hit={proof.summonFollowupHitDamage:F0}, cues FollowupHit->Ultimate +{proof.cinematicPlayCountDeltaAtSkill1}, "
                     + $"counter={proof.bossCounterDamageAmount:F2}, HP unchanged={proof.playerHealthUnchanged}.",
                     proofPath),
                 Passed(
                     "render",
                     "png-hud-and-visual-sanity",
                     duration,
-                    $"360 exact 2560x1440 PNGs; black={proof.visualMetrics.blackRatio:P3}; magenta={proof.visualMetrics.magentaRatio:P3}; HUD f0 accents={proof.visualMetrics.frameZeroHudAccentSamples}.",
+                    $"720 exact 2560x1440 PNGs; black={proof.visualMetrics.blackRatio:P3}; magenta={proof.visualMetrics.magentaRatio:P3}; HUD source f0 accents={proof.visualMetrics.frameZeroHudAccentSamples}.",
                     Path.Combine(state.outputDirectory, "frames", AuditionPvStationPhase2SummonCounterCapture.ShotId).Replace('\\', '/')),
                 Passed(
                     "render",
@@ -1383,10 +1735,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     $"Clean Git HEAD and {state.dependencyHashesAtStart.Length} dependency hashes remained stable; Station SHA-256={state.stationSceneSha256AtStart}.",
                     proofPath),
                 Passed(
+                    "provenance",
+                    "canonical-frame-sha256-ledger",
+                    duration,
+                    $"{proof.frameHashLedgerEntryCount} canonical source-frame SHA-256 entries cover frames/g06/frame_0000.png..frame_0719.png.",
+                    proof.frameHashLedgerPath),
+                Passed(
                     "lifecycle",
                     "state-restored-and-product-scene-reopened",
                     duration,
-                    "Recorder stopped; fixedDelta, PresentationClock, input/events, summon artifacts, cadence, screen profile, and boss composition restored; "
+                    "Recorder stopped; fixedDelta, PresentationClock, input/events, summon/Skill1 artifacts, cadence, screen profile, and boss composition restored; "
                     + "Play Mode exited, and the unsaved product scene was reopened clean.",
                     proofPath)
             };
@@ -1425,20 +1783,56 @@ namespace DimensionBrawl.Editor.AuditionPV
                 value.id == "bl06");
             AuditionPvBaselineManifestEntry bl07 = manifest.baselines.Single(value =>
                 value.id == "bl07");
+            string[] expectedGateTestNames = new[]
+                {
+                    "shot-authorship/" +
+                        AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    "shot-authorship-runtime/" +
+                        AuditionPvStationPhase2SummonCounterCapture.ShotId
+                }
+                .Concat(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateSemanticBeatIds()
+                        .Select(beatId => "semantic-beat/" + beatId))
+                .ToArray();
+            bool gateTestsExact = expectedGateTestNames.All(expectedName =>
+                manifest.testResults.Count(result =>
+                    result != null
+                    && string.Equals(
+                        result.suite,
+                        AuditionPvStationPhase2SummonCounterCapture
+                            .GateEvidenceTestSuite,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        result.name,
+                        expectedName,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        result.status,
+                        "passed",
+                        StringComparison.Ordinal)
+                    && !string.IsNullOrWhiteSpace(result.artifactPath)
+                    && File.Exists(result.artifactPath)
+                    && result.details.Contains(
+                        "artifact-sha256=",
+                        StringComparison.Ordinal)) == 1);
             if (!string.Equals(manifest.captureId, captureId, StringComparison.Ordinal)
                 || shot.startFrame != 0
-                || shot.endFrame != 359
-                || shot.expectedFrameCount != 360
+                || shot.endFrame != 719
+                || shot.expectedFrameCount != 720
                 || !string.Equals(shot.hudMode, "hud-on", StringComparison.Ordinal)
-                || bl03.sourceFrame != 0
-                || bl06.sourceFrame != 189
-                || bl07.sourceFrame != 251
+                || bl03.sourceFrame != 180
+                || bl06.sourceFrame != 369
+                || bl07.sourceFrame != 431
                 || !shot.notes.Contains("QueueSummonSlot1 f222", StringComparison.Ordinal)
+                || !shot.notes.Contains("HUD RequestSkill1 f276", StringComparison.Ordinal)
+                || !shot.notes.Contains("source f180..f539", StringComparison.Ordinal)
                 || !shot.notes.Contains("automatic 29.44 counter", StringComparison.Ordinal)
                 || !shot.notes.Contains(".14/.015/.18/.03", StringComparison.Ordinal)
                 || !shot.notes.Contains(
                     "without a capture-time visual override",
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal)
+                || !gateTestsExact)
             {
                 throw new InvalidOperationException(
                     "G06 manifest did not round-trip its exact logical-frame, HUD, baseline, and product screen contract.");
@@ -1655,6 +2049,23 @@ namespace DimensionBrawl.Editor.AuditionPV
             stream.Flush(flushToDisk: true);
         }
 
+        private static void WriteTextNew(string path, string value)
+        {
+            string parent = Path.GetDirectoryName(path)
+                ?? throw new InvalidOperationException(
+                    "G06 text artifact has no parent.");
+            Directory.CreateDirectory(parent);
+            using var stream = new FileStream(
+                path,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None);
+            using var writer = new StreamWriter(stream, new UTF8Encoding(false));
+            writer.Write(value ?? string.Empty);
+            writer.Flush();
+            stream.Flush(flushToDisk: true);
+        }
+
         private static void TryWriteFailureArtifact(
             string outputDirectory,
             string phase,
@@ -1813,6 +2224,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             public float hudEnergyMaxMana = -1f;
             public float summonEnergyBeforeUse = -1f;
             public float summonEnergyAfterUse = -1f;
+            public float interceptEnergyBeforePulse = -1f;
+            public float interceptEnergyAfterPulse = -1f;
+            public bool encounterFollowupPulseTraversed;
+            public bool followupWindowActiveAfterIntercept;
+            public bool encounterGrantedSummonFollowupEnergy;
+            public float encounterSummonFollowupEnergyPulse = -1f;
+            public int encounterLastSummonPressureBreakTier;
             public int summonSpentTier;
             public int summonUseCountDelta;
             public int summonInterceptCountDelta;
@@ -1837,8 +2255,33 @@ namespace DimensionBrawl.Editor.AuditionPV
             public float authoredCounterDamage = -1f;
             public float bossCounterDamageAmount = -1f;
             public float bossCounterHealthDelta = -1f;
+            public int skill1UsedEventCount;
+            public int skill1UsedFrame = -1;
+            public int skill1UsedTier;
+            public int skill1UseCountDelta;
+            public float skill1EnergyBeforeRequest = -1f;
+            public float skill1EnergyAfterRequest = -1f;
+            public bool hudSkill1RequestTraversed;
+            public bool laserSweepActiveAfterHudRequest;
+            public bool laserSweepInactiveAfterPostHandle;
+            public int summonFollowupHitEventCount;
+            public int summonFollowupHitFrame = -1;
+            public int summonFollowupHitTier;
+            public float summonFollowupHitDamage = -1f;
+            public bool encounterUsedSkill1DuringSummonFollowup;
+            public bool encounterSkill1FollowupHitConfirmed;
+            public int encounterHighestSkill1FollowupHitTier;
+            public int cinematicPlayCountDeltaAtSkill1;
+            public int cinematicFollowupPlayCountDeltaAtSkill1;
+            public bool cinematicFollowupThenUltimateExact;
             public bool fixedDeltaTimeExact;
             public int recorderWarmupEndOfFrameCount;
+            public int recorderPreHandleEndOfFrameCount;
+            public int canonicalSourceFrameCount;
+            public int logicalFirstSourceFrame = -1;
+            public int logicalLastSourceFrame = -1;
+            public int recordedPreHandleFrameCount;
+            public int recordedPostHandleFrameCount;
             public bool recorderPaddingActiveAtLogicalFrameZero;
             public float recorderCaptureDeltaTimeAtLogicalFrameZero;
             public bool recorderAutoStoppedAfterLastFrame;
@@ -1849,11 +2292,14 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool captureHudStateRestored;
             public bool captureEventsReleased;
             public bool captureSummonArtifactsReleased;
+            public bool captureSkillArtifactsReleased;
             public bool bossCompositionRestored;
             public bool presentationClockReleased;
             public int cadenceSuspensionCountAfterRestore = -1;
             public string warmupEvidencePath = string.Empty;
             public string warmupEvidenceSha256 = string.Empty;
+            public string frameHashLedgerPath = string.Empty;
+            public int frameHashLedgerEntryCount;
             public SequenceVisualMetrics visualMetrics;
             public ScreenDeltaMetrics screenDelta;
             public ScreenDeltaMetrics counterDelta;
@@ -1895,6 +2341,48 @@ namespace DimensionBrawl.Editor.AuditionPV
             public RuntimeProof runtime;
         }
 
+        private sealed class GateSemanticBeatSpec
+        {
+            public GateSemanticBeatSpec(
+                string beatId,
+                int logicalStartFrame,
+                int logicalEndFrame,
+                params string[] exactFacts)
+            {
+                this.beatId = beatId;
+                this.logicalStartFrame = logicalStartFrame;
+                this.logicalEndFrame = logicalEndFrame;
+                this.exactFacts = exactFacts ?? Array.Empty<string>();
+            }
+
+            public readonly string beatId;
+            public readonly int logicalStartFrame;
+            public readonly int logicalEndFrame;
+            public readonly string[] exactFacts;
+        }
+
+        [Serializable]
+        private sealed class GateSemanticBeatRuntimeArtifact
+        {
+            public string schemaVersion = string.Empty;
+            public string sourceCaptureCoreSha256 = string.Empty;
+            public string captureId = string.Empty;
+            public string sourceShotId = string.Empty;
+            public string beatId = string.Empty;
+            public string runtimeFactKey = string.Empty;
+            public int sourceRangeStartFrame = -1;
+            public int sourceRangeEndFrame = -1;
+            public int logicalFactStartFrame = -1;
+            public int logicalFactEndFrame = -1;
+            public int sourceFactStartFrame = -1;
+            public int sourceFactEndFrame = -1;
+            public string[] exactFacts = Array.Empty<string>();
+            public AuditionPvPinnedArtifact runtimeProof = new();
+            public AuditionPvPinnedArtifact sourceFrameLedger = new();
+            public string producer = string.Empty;
+            public string createdAtUtc = string.Empty;
+        }
+
         [Serializable]
         private sealed class FailureArtifact
         {
@@ -1915,12 +2403,9 @@ namespace DimensionBrawl.Editor.AuditionPV
         : MonoBehaviour
     {
         // QHD lossless PNG encoding is intentionally allowed to run slower
-        // than presentation time.  The first clean 360-frame observation on
-        // the reference workstation produced 346 frames in 60 wall-clock
-        // seconds while every gameplay/proof predicate had already passed.
-        // Keep the semantic frame contract exact and give only the encoder
-        // enough wall-clock headroom to finish the remaining frames.
-        private const double ShotTimeoutSeconds = 90d;
+        // than presentation time. The canonical 720-frame source doubles the
+        // old logical interval with real 180-frame handles on both sides.
+        private const double ShotTimeoutSeconds = 210d;
 
         private string statePath;
         private string outputDirectory;
@@ -2065,6 +2550,31 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.recorderWarmupEndOfFrameCount = 1;
             yield return new WaitForEndOfFrame();
             proof.recorderWarmupEndOfFrameCount = 2;
+            for (int handleFrame = 0;
+                handleFrame
+                    < AuditionPvStationPhase2SummonCounterCapture.HandleFrameCount;
+                handleFrame++)
+            {
+                yield return new WaitForEndOfFrame();
+                proof.recorderPreHandleEndOfFrameCount++;
+            }
+
+            proof.canonicalSourceFrameCount =
+                AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount;
+            proof.logicalFirstSourceFrame =
+                AuditionPvStationPhase2SummonCounterCapture.SelectStartFrame;
+            proof.logicalLastSourceFrame =
+                AuditionPvStationPhase2SummonCounterCapture.SelectEndFrame;
+            proof.recordedPreHandleFrameCount =
+                proof.recorderPreHandleEndOfFrameCount;
+            if (!recorderController.IsRecording()
+                || director.IsRunning
+                || director.IsComplete)
+            {
+                throw new InvalidOperationException(
+                    "G06 did not record the complete prehandle before arming logical f0.");
+            }
+
             armLogicalFrameZero = true;
 
             double deadline = Time.realtimeSinceStartupAsDouble + ShotTimeoutSeconds;
@@ -2107,18 +2617,25 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G06 did not complete logical frames 0..359 before timeout.");
             }
 
-            // FramePresented is emitted in the director's LateUpdate, before the
-            // Recorder component requests the same rendered frame. One Update
-            // boundary lets raw360 (logical f359) finish at end-of-frame without
-            // permitting an additional Recorder LateUpdate request.
-            yield return null;
+            // Logical f359 occupies canonical source f539. Keep recording and
+            // let normal product coroutines advance for the complete 180-frame
+            // posthandle until Recorder auto-stops at inclusive raw f720.
+            while (recorderController.IsRecording()
+                && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+            }
+
             proof.recorderAutoStoppedAfterLastFrame =
                 !recorderController.IsRecording();
             if (!proof.recorderAutoStoppedAfterLastFrame)
             {
                 throw new InvalidOperationException(
-                    "Recorder did not auto-stop after inclusive raw frame 360 / logical f359.");
+                    "Recorder did not auto-stop after inclusive raw frame 720 / canonical source f719.");
             }
+
+            proof.recordedPostHandleFrameCount =
+                AuditionPvStationPhase2SummonCounterCapture.HandleFrameCount;
         }
 
         private void HandleFramePresented(int frameIndex)
@@ -2180,6 +2697,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                         director.SummonEnergyBeforeUse;
                     proof.summonEnergyAfterUse =
                         director.SummonEnergyAfterUse;
+                    proof.interceptEnergyBeforePulse =
+                        director.InterceptEnergyBeforePulse;
+                    proof.interceptEnergyAfterPulse =
+                        director.InterceptEnergyAfterPulse;
+                    proof.encounterFollowupPulseTraversed =
+                        director.EncounterFollowupPulseTraversed;
+                    proof.followupWindowActiveAfterIntercept =
+                        director.FollowupWindowActiveAfterIntercept;
+                    proof.encounterGrantedSummonFollowupEnergy =
+                        director.EncounterGrantedSummonFollowupEnergy;
+                    proof.encounterSummonFollowupEnergyPulse =
+                        director.EncounterSummonFollowupEnergyPulse;
+                    proof.encounterLastSummonPressureBreakTier =
+                        director.EncounterLastSummonPressureBreakTier;
                     proof.summonSpentTier = director.SummonSpentTier;
                     proof.summonUseCountDelta = director.SummonUseCountDelta;
                     proof.summonInterceptCountDelta =
@@ -2225,6 +2756,40 @@ namespace DimensionBrawl.Editor.AuditionPV
                         director.BossCounterDamageAmount;
                     proof.bossCounterHealthDelta =
                         director.BossCounterHealthDelta;
+                    proof.skill1UsedEventCount = director.Skill1UsedEventCount;
+                    proof.skill1UsedFrame = director.Skill1UsedFrame;
+                    proof.skill1UsedTier = director.Skill1UsedTier;
+                    proof.skill1UseCountDelta = director.Skill1UseCountDelta;
+                    proof.skill1EnergyBeforeRequest =
+                        director.Skill1EnergyBeforeRequest;
+                    proof.skill1EnergyAfterRequest =
+                        director.Skill1EnergyAfterRequest;
+                    proof.hudSkill1RequestTraversed =
+                        director.HudSkill1RequestTraversed;
+                    proof.laserSweepActiveAfterHudRequest =
+                        director.LaserSweepActiveAfterHudRequest;
+                    proof.laserSweepInactiveAfterPostHandle =
+                        director.LaserSweepInactiveAfterPostHandle;
+                    proof.summonFollowupHitEventCount =
+                        director.SummonFollowupHitEventCount;
+                    proof.summonFollowupHitFrame =
+                        director.SummonFollowupHitFrame;
+                    proof.summonFollowupHitTier =
+                        director.SummonFollowupHitTier;
+                    proof.summonFollowupHitDamage =
+                        director.SummonFollowupHitDamage;
+                    proof.encounterUsedSkill1DuringSummonFollowup =
+                        director.EncounterUsedSkill1DuringSummonFollowup;
+                    proof.encounterSkill1FollowupHitConfirmed =
+                        director.EncounterSkill1FollowupHitConfirmed;
+                    proof.encounterHighestSkill1FollowupHitTier =
+                        director.EncounterHighestSkill1FollowupHitTier;
+                    proof.cinematicPlayCountDeltaAtSkill1 =
+                        director.CinematicPlayCountDeltaAtSkill1;
+                    proof.cinematicFollowupPlayCountDeltaAtSkill1 =
+                        director.CinematicFollowupPlayCountDeltaAtSkill1;
+                    proof.cinematicFollowupThenUltimateExact =
+                        director.CinematicFollowupThenUltimateExact;
                     proof.fixedDeltaTimeExact = director.FixedDeltaTimeExact;
                 }
             });
@@ -2250,6 +2815,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                         director.CaptureEventsReleased;
                     proof.captureSummonArtifactsReleased =
                         director.CaptureSummonArtifactsReleased;
+                    proof.captureSkillArtifactsReleased =
+                        director.CaptureSkillArtifactsReleased;
                     proof.bossCompositionRestored = director.BossCompositionRestored;
                     director.FramePresented -= HandleFramePresented;
                 }

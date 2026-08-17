@@ -139,6 +139,125 @@ namespace DimensionBrawl.Tests
 
         [UnityTest]
         [Timeout(15000)]
+        public IEnumerator SceneInstanceSummonS1ExecutesThroughExistingHudSlotAndRuntimeRoots()
+        {
+            SummonEnergyLadder energy = RequireSingle<SummonEnergyLadder>();
+            PlayerSummonSlot1Action summon = RequireSingle<PlayerSummonSlot1Action>();
+            CombatEncounterController encounter = RequireSingle<CombatEncounterController>();
+            PlayerMovementController movement = RequireSingle<PlayerMovementController>();
+            PlayerRangedBasicAttackAction ranged =
+                RequireSingle<PlayerRangedBasicAttackAction>();
+            Component hudBinder = RequireSingle(ResolveHudType("OneRowCombatHudBinder"));
+            RectTransform summonButton = RequireRectTransform("SummonSlot1Button");
+            Button summonVisualButton = summonButton.GetComponent<Button>();
+            Component summonPointer = summonButton.GetComponent(
+                ResolveHudType("CombatHudPointerActionInput"));
+            SerializedObject serializedEnergy = new(energy);
+            SerializedObject serializedSummon = new(summon);
+
+            Assert.That(energy.gameObject, Is.SameAs(movement.gameObject),
+                "City summon energy must be a player-root scene-instance component.");
+            Assert.That(summon.gameObject, Is.SameAs(movement.gameObject),
+                "City summon S1 must be a player-root scene-instance component.");
+            Assert.That(serializedEnergy.FindProperty("laneSpace").objectReferenceValue,
+                Is.Null);
+            Assert.That(serializedEnergy.FindProperty("trackedPlayer").objectReferenceValue,
+                Is.SameAs(movement.transform));
+            Assert.That(serializedSummon.FindProperty("energyLadder").objectReferenceValue,
+                Is.SameAs(energy));
+            Assert.That(serializedSummon.FindProperty("sourceHealth").objectReferenceValue,
+                Is.SameAs(encounter.PlayerHealth));
+            Assert.That(serializedSummon.FindProperty("frontlineTargetHealth")
+                    .objectReferenceValue,
+                Is.SameAs(encounter.EnemyHealth));
+            Assert.That(serializedSummon.FindProperty("laneSpace").objectReferenceValue,
+                Is.Null);
+            Assert.That(serializedSummon.FindProperty("projectileRoot").objectReferenceValue,
+                Is.SameAs(ranged.ProjectileRoot));
+            Transform cueRoot = serializedSummon.FindProperty("cueRoot")
+                .objectReferenceValue as Transform;
+            Assert.That(cueRoot, Is.Not.Null);
+            Assert.That(cueRoot.name, Is.EqualTo("CityHeroPocketRuntime"));
+            Assert.That(serializedSummon.FindProperty("summonActorRoot")
+                    .objectReferenceValue,
+                Is.SameAs(cueRoot));
+            Assert.That(
+                AssetDatabase.GetAssetPath(
+                    serializedSummon.FindProperty("summonActionProfile")
+                        .objectReferenceValue),
+                Is.EqualTo(
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/" +
+                    "DB_SummonSlot1_ChargeBruiser.asset"));
+            Assert.That(summon.RequiredSummonMana, Is.EqualTo(200f).Within(0.0001f));
+            Assert.That(summon.SlotCooldownSeconds, Is.EqualTo(9.5f).Within(0.0001f));
+            Assert.That(new SerializedObject(hudBinder).FindProperty("summonSlot1Action")
+                    .objectReferenceValue,
+                Is.SameAs(summon));
+            Assert.That(summonVisualButton, Is.Not.Null);
+            Assert.That(summonVisualButton.IsInteractable(), Is.True);
+            Assert.That(summonPointer, Is.Not.Null);
+            Assert.That(GetPublicProperty<object>(summonPointer, "ActionId").ToString(),
+                Is.EqualTo("SummonSlot1"));
+            Assert.That(GetPublicProperty<bool>(summonPointer, "SendsHoldState"), Is.False);
+
+            energy.SetGainEnabled(false);
+            energy.ResetLadder();
+            energy.GrantCurrentTierEnergy(200f);
+            Assert.That(energy.CurrentMana, Is.EqualTo(200f).Within(0.0001f));
+            Assert.That(energy.AvailableTier, Is.EqualTo(2));
+
+            int usedCount = 0;
+            int spentTier = 0;
+            void ObserveSummonUsed(int tier)
+            {
+                usedCount++;
+                spentTier = tier;
+            }
+            summon.SummonSlot1Used += ObserveSummonUsed;
+            try
+            {
+                var pointer = new PointerEventData(EventSystem.current)
+                {
+                    button = PointerEventData.InputButton.Left,
+                    pointerId = -101,
+                    position = ScreenPoint(summonButton)
+                };
+                ExecuteEvents.Execute(
+                    summonButton.gameObject,
+                    pointer,
+                    ExecuteEvents.pointerDownHandler);
+                ExecuteEvents.Execute(
+                    summonButton.gameObject,
+                    pointer,
+                    ExecuteEvents.pointerUpHandler);
+                yield return null;
+
+                Assert.That(usedCount, Is.EqualTo(1),
+                    "The existing S1 HUD pointer did not execute the authored summon action.");
+                Assert.That(spentTier, Is.EqualTo(2));
+                Assert.That(summon.TotalUseCount, Is.EqualTo(1));
+                Assert.That(summon.LastSpentTier, Is.EqualTo(2));
+                Assert.That(summon.LastFiredProjectileCount, Is.GreaterThan(0));
+                Assert.That(energy.CurrentMana, Is.EqualTo(0f).Within(0.0001f));
+                Assert.That(summon.IsSlotOnCooldown, Is.True);
+
+                yield return new WaitForSeconds(0.35f);
+                Assert.That(summon.ActiveSummonActorCount, Is.EqualTo(1),
+                    "The existing ChargeBruiser actor did not enter through the runtime root.");
+                Assert.That(summon.LastSummonActorHasHealth, Is.True);
+            }
+            finally
+            {
+                summon.SummonSlot1Used -= ObserveSummonUsed;
+                summon.DismissActivePressureScreens();
+                summon.ClearSlotCooldown();
+                energy.ResetLadder();
+                energy.SetGainEnabled(true);
+            }
+        }
+
+        [UnityTest]
+        [Timeout(15000)]
         public IEnumerator RangedOnlyInoriMovesDodgesAndFiresThroughNativeBridge()
         {
             RifleGirlNativeGameplayAnimatorBridge bridge =

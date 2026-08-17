@@ -43,11 +43,21 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string StationEntryConditionId = "corridor.tutorial.completed";
         internal const string CaptureScriptPath =
             "Assets/_Game/Editor/AuditionPV/AuditionPvStationBossDeathAftermathCapture.cs";
+        internal const string SixtySecondGateManifestPath =
+            "Assets/_Game/Editor/AuditionPV/AuditionPvSixtySecondGateManifest.cs";
         internal const string ProductBaseCommit =
             "adc67879016100365d935c30e36849a145da1f81";
 
         internal const string ShotId = "g08";
         internal const string BaselinesFolderName = "baselines";
+        internal const string GateEvidenceTestSuite =
+            "AuditionPvSixtySecondEvidence";
+        internal const string GateCameraId =
+            "olympus-station-gameplay-to-authored-finisher-result";
+        internal const string GateGameplayState =
+            "akaza-phase2-boss-terminal-aftermath";
+        internal const string GateTimelineId =
+            "g08-product-clock-logical-000-359-v2";
         internal const string Bl10FileName =
             "BL10_AKAZA_BOSS_DEATH_IMPACT__HUDON__t01.033333.png";
         internal const string Bl11FileName =
@@ -67,9 +77,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string RealClearIconObjectName =
             "Stage_Clear_UI_0000s_0000_StageClear_Icon";
 
+        internal const int LogicalFirstFrame = 0;
+        internal const int LogicalLastFrame = 359;
+        internal const int LogicalExpectedFrameCount = 360;
+        internal const int HandleFrameCount = 180;
         internal const int FirstFrame = 0;
-        internal const int LastFrame = 359;
-        internal const int ExpectedFrameCount = 360;
+        internal const int SelectStartFrame = HandleFrameCount;
+        internal const int SelectEndFrame =
+            SelectStartFrame + LogicalExpectedFrameCount - 1;
+        internal const int LastFrame = SelectEndFrame + HandleFrameCount;
+        internal const int ExpectedFrameCount = LastFrame - FirstFrame + 1;
+        internal const int S090SelectLogicalStartFrame = 60;
+        internal const int S090SelectLogicalEndFrame = LogicalLastFrame;
+        internal const int S090SelectedFrameCount = 300;
         internal const int FireFrame = 1;
         internal const int ImpactFrame = 62;
         internal const int AftermathHeroFrame = 116;
@@ -217,17 +237,21 @@ namespace DimensionBrawl.Editor.AuditionPV
                 expectedFrameCount = ExpectedFrameCount,
                 hudMode = "hud-on-to-result",
                 notes =
-                    "Canonical CorridorActive run: SkipIntroCutscene, public tutorial-route seal, "
+                    "Canonical source f0..f719 with real 180-frame pre/post handles around "
+                    + "logical f0..f359 at source f180..f539. S090 selects source f240..f539 "
+                    + "(logical f60..f359) with 240/180-frame source handles. "
+                    + "Canonical CorridorActive run: SkipIntroCutscene, public tutorial-route seal, "
                     + "public single-load segment seal/handoff, dedicated Station FromHandoffPending receipt. "
                     + "Entry guide reaches Released; real non-lethal threshold damage and one public "
                     + "TrySkipTransition reach Phase2; a second strictly non-lethal setup hit leaves 12 HP. "
                     + "Logical f1 calls only PlayerRangedBasicAttackAction.TryFire. The authored 12-damage, "
                     + "24m/s pooled LaneActionProjectile naturally impacts at f62, producing real Died, "
-                    + "BossTerminal clear and a unique hard cut from the causal gameplay handle (f0..f61) "
-                    + "to the dedicated authored finisher camera at f62. The 2.6s unscaled aftermath ends "
-                    + "at f218; result-cover release restores gameplay camera at f246 with the committed "
-                    + "result interactive. BL10=f62 HUD-on, BL11=f116 HUD-off, and BL12=f246 "
-                    + "authored-result are byte-exact. f0..f61 are not approved hero footage."
+                    + "BossTerminal clear and a unique hard cut from logical f0..f61 causal gameplay "
+                    + "to the dedicated authored finisher camera at logical f62. The 2.6s unscaled "
+                    + "aftermath ends at logical f218; result-cover release restores gameplay camera "
+                    + "at logical f246 with the committed result interactive. BL10=source f242/logical "
+                    + "f62 HUD-on, BL11=source f296/logical f116 HUD-off, and BL12=source f426/logical "
+                    + "f246 authored-result are byte-exact. Logical f0..f59 are excluded from S090."
             };
         }
 
@@ -243,18 +267,19 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private static AuditionPvBaselineManifestEntry Baseline(
             string id,
-            int sourceFrame,
+            int logicalFrame,
             string fileName)
         {
+            int sourceFrame = LogicalToSourceFrame(logicalFrame);
             return new AuditionPvBaselineManifestEntry
             {
                 id = id,
                 shotId = ShotId,
                 sourceFrame = sourceFrame,
                 fileName = fileName,
-                hudMode = sourceFrame == ImpactFrame
+                hudMode = logicalFrame == ImpactFrame
                     ? "hud-on"
-                    : sourceFrame == AftermathHeroFrame
+                    : logicalFrame == AftermathHeroFrame
                         ? "hud-off"
                         : "authored-result",
                 status = "captured"
@@ -279,6 +304,54 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             return frameIndex / (float)AuditionPvCaptureContract.Fps;
+        }
+
+        internal static int LogicalToSourceFrame(int logicalFrame)
+        {
+            if (logicalFrame < LogicalFirstFrame || logicalFrame > LogicalLastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(logicalFrame));
+            }
+
+            return SelectStartFrame + logicalFrame;
+        }
+
+        internal static int SourceToLogicalFrame(int sourceFrame)
+        {
+            if (sourceFrame < FirstFrame || sourceFrame > LastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceFrame));
+            }
+
+            return sourceFrame >= SelectStartFrame && sourceFrame <= SelectEndFrame
+                ? sourceFrame - SelectStartFrame
+                : -1;
+        }
+
+        internal static string SourceFrameRole(int sourceFrame)
+        {
+            if (sourceFrame < FirstFrame || sourceFrame > LastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceFrame));
+            }
+
+            if (sourceFrame < SelectStartFrame)
+            {
+                return "prehandle";
+            }
+
+            return sourceFrame <= SelectEndFrame ? "logical" : "posthandle";
+        }
+
+        internal static int S090SelectStartFrame =>
+            LogicalToSourceFrame(S090SelectLogicalStartFrame);
+
+        internal static int S090SelectEndFrame =>
+            LogicalToSourceFrame(S090SelectLogicalEndFrame);
+
+        internal static string[] GateSemanticBeatIds()
+        {
+            return new[] { "boss-finisher", "boss-collapse", "aftermath" };
         }
 
         internal static string[] ExplicitProductDependencyPaths()
@@ -330,6 +403,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Editor/RuntimeSceneWiringReadinessReporter.cs",
                 "Assets/_Game/Editor/CombatHud/CombatHudCelestialTargetPrefabAssembler.cs",
                 "Assets/_Game/Editor/CombatHud/CombatHudCelestialV2PrefabAssembler.cs",
+                SixtySecondGateManifestPath,
                 "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_OlympusStationBossTerminalFinisher.playable",
                 "Assets/_Game/DesignData/Timelines/Cinematics/DB_Anim_OlympusStationBossTerminalFinisherCamera.anim",
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset",
@@ -1002,7 +1076,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             ValidateReadyForShot();
             ArmBossPoseStabilityProof();
             presentationClockLease.SetFrame(0);
-            currentFrame = AuditionPvStationBossDeathAftermathCapture.FirstFrame;
+            currentFrame = AuditionPvStationBossDeathAftermathCapture.LogicalFirstFrame;
             IsRunning = true;
         }
 
@@ -1056,7 +1130,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 ObserveFrameState();
                 if (currentFrame
-                    == AuditionPvStationBossDeathAftermathCapture.LastFrame)
+                    == AuditionPvStationBossDeathAftermathCapture.LogicalLastFrame)
                 {
                     ValidateCompletedShot();
                     IsRunning = false;

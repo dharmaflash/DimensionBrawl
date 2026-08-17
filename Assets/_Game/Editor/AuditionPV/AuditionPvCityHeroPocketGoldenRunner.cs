@@ -55,7 +55,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private const string RunnerSchema =
             "dimension-brawl.audition-pv.city-g01-g03-runner-state.v1";
         private const string RuntimeProofSchema =
-            "dimension-brawl.audition-pv.city-g01-g03-runtime-proof.v1";
+            "dimension-brawl.audition-pv.city-g01-g03-runtime-proof.v2";
         private const string FailureSchema =
             "dimension-brawl.audition-pv.capture-failure.v1";
         private const double MaximumSequenceBlackRatio = 0.90d;
@@ -121,7 +121,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         internal static int ExpectedRawFrameCount(AuditionPvCityShot shot)
         {
-            return AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot) + 1;
+            return AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot) + 1;
         }
 
         internal static int RawLastFrame(AuditionPvCityShot shot)
@@ -342,7 +342,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         /// <summary>
-        /// Moves raw0 to evidence and maps raw1..N to logical f0..f(N-1)
+        /// Moves raw0 to evidence and maps raw1..N to canonical source f0..f(N-1)
         /// through a unique sibling staging directory. Existing destinations
         /// are always a hard failure.
         /// </summary>
@@ -372,7 +372,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                         Path.Combine(normalizedFrames, RawFrameFileName(shot, raw)),
                         Path.Combine(
                             stagingDirectory,
-                            AuditionPvCityHeroPocketCapture.FrameFileName(
+                            AuditionPvCityHeroPocketCapture.SourceFrameFileName(
                                 shot,
                                 raw - RawFirstLogicalFrame)));
                 }
@@ -386,12 +386,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                         RawFrameFileName(shot, RawWarmupFrame)),
                     warmupEvidence);
 
-                for (int frame = AuditionPvCityHeroPocketCapture.FirstFrame;
-                    frame <= AuditionPvCityHeroPocketCapture.GetLastFrame(shot);
+                for (int frame = AuditionPvCityHeroPocketCapture.GetSourceFirstFrame(shot);
+                    frame <= AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot);
                     frame++)
                 {
                     string fileName =
-                        AuditionPvCityHeroPocketCapture.FrameFileName(shot, frame);
+                        AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, frame);
                     MoveNew(
                         Path.Combine(stagingDirectory, fileName),
                         Path.Combine(normalizedFrames, fileName));
@@ -420,14 +420,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 index => RawFrameFileName(shot, index));
         }
 
-        internal static void ValidateLogicalFrameSequence(
+        internal static void ValidateSourceFrameSequence(
             AuditionPvCityShot shot,
             string frameDirectory)
         {
             ValidateExactNamedSequence(
                 frameDirectory,
-                AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot),
-                index => AuditionPvCityHeroPocketCapture.FrameFileName(shot, index));
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot),
+                index => AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, index));
         }
 
         internal static SequenceVisualMetrics EvaluatePixels(
@@ -656,7 +656,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             SequenceVisualMetrics metrics)
         {
             int frameCount =
-                AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot);
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot);
             int minimumHealthy = frameCount * MinimumHealthyFramePercent / 100;
             if (metrics == null
                 || metrics.sampleCount <= 0
@@ -680,7 +680,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             switch (shot)
             {
                 case AuditionPvCityShot.G01:
-                    RequireHudOff(metrics, new[] { 0 });
+                    RequireHudOff(metrics, new[]
+                    {
+                        AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            AuditionPvCityShot.G01,
+                            0)
+                    });
                     ValidateScreenDelta(
                         "City G01 f0->f239",
                         metrics.primaryDelta,
@@ -688,7 +693,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                         0.05d);
                     break;
                 case AuditionPvCityShot.G02:
-                    RequireHudOn(metrics, new[] { 0, 120, 240, 419 });
+                    RequireHudOn(metrics, new[] { 0, 120, 240, 419 }
+                        .Select(frame =>
+                            AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                                AuditionPvCityShot.G02,
+                                frame))
+                        .ToArray());
                     ValidateScreenDelta(
                         "City G02 f0->f419",
                         metrics.primaryDelta,
@@ -702,7 +712,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                         0.05d);
                     break;
                 case AuditionPvCityShot.G03:
-                    RequireHudOff(metrics, new[] { 0 });
+                    RequireHudOff(metrics, new[]
+                    {
+                        AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            AuditionPvCityShot.G03,
+                            0)
+                    });
                     ValidateScreenDelta(
                         "City G03 f0->f276",
                         metrics.primaryDelta,
@@ -774,6 +789,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !TryParseShot(proof.shotId, out AuditionPvCityShot shot)
                 || proof.expectedRawFrameCount != ExpectedRawFrameCount(shot)
                 || proof.recorderWarmupEndOfFrameCount != 2
+                || proof.canonicalSourceFrameCount
+                    != AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot)
+                || proof.logicalFirstSourceFrame
+                    != AuditionPvCityHeroPocketCapture.GetSelectStartFrame(shot)
+                || proof.logicalLastSourceFrame
+                    != AuditionPvCityHeroPocketCapture.GetSelectEndFrame(shot)
+                || proof.recordedPreHandleFrameCount
+                    != AuditionPvCityHeroPocketCapture.HandleFrameCount
+                || proof.recordedPostHandleFrameCount
+                    != AuditionPvCityHeroPocketCapture.HandleFrameCount
                 || !proof.recorderPaddingActiveAtLogicalFrameZero
                 || !proof.recorderAutoStoppedAfterLastFrame
                 || proof.presentedFrameCount
@@ -811,6 +836,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 throw new InvalidOperationException(
                     "City capture requires a successful Git provenance probe: "
                     + git.probeError);
+            }
+            if (git.isDirty)
+            {
+                throw new InvalidOperationException(
+                    "City capture requires a clean Git worktree so every take "
+                    + "has an immutable product and evidence identity.");
             }
 
             AuditionPvEngineSnapshot engine = AuditionPvEnvironmentProbe.ReadEngineSnapshot();
@@ -1224,14 +1255,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                     warmupPath,
                     state.outputDirectory));
 
-                ValidateLogicalFrameSequence(shot, frameDirectory);
-                for (int frame = AuditionPvCityHeroPocketCapture.FirstFrame;
-                    frame <= AuditionPvCityHeroPocketCapture.GetLastFrame(shot);
+                ValidateSourceFrameSequence(shot, frameDirectory);
+                for (int frame = AuditionPvCityHeroPocketCapture.GetSourceFirstFrame(shot);
+                    frame <= AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot);
                     frame++)
                 {
                     string path = Path.Combine(
                         frameDirectory,
-                        AuditionPvCityHeroPocketCapture.FrameFileName(shot, frame));
+                        AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, frame));
                     ValidatePngFile(
                         path,
                         AuditionPvCaptureContract.Width,
@@ -1251,7 +1282,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             CopyBaselines(state, hashes);
             int expectedHashEntryCount = ShotOrder.Length
                 + ShotOrder.Sum(
-                    AuditionPvCityHeroPocketCapture.GetExpectedFrameCount)
+                    AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount)
                 + AuditionPvCityHeroPocketCapture
                     .CreateBaselineManifestEntries().Length;
             if (hashes.Count != expectedHashEntryCount)
@@ -1307,7 +1338,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 captureId = state.captureId,
                 mapping =
                     "Each shot preserves Recorder raw0 as warm-up evidence; "
-                    + "raw1..N map collision-free to logical f0..f(N-1).",
+                    + "raw1..N map collision-free to canonical source f0..f(N-1); "
+                    + "each logical shot is enclosed by recorded 180-frame pre/post handles.",
                 gameplay =
                     "The City director uses product inputs and damage only; G03 starts "
                     + "after natural Won and enters the authored trigger without a runner "
@@ -1325,12 +1357,43 @@ namespace DimensionBrawl.Editor.AuditionPV
                 state.startedAtUtc,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind).ToUniversalTime();
-            AuditionPvTestResult[] results = CreateTestResults(
+            AuditionPvTestResult[] ordinaryResults = CreateTestResults(
                 state,
                 visualMetrics.ToArray(),
                 proofPath,
                 hashPath,
                 startedAtUtc);
+            AuditionPvCaptureManifest captureCoreManifest =
+                AuditionPvCityHeroPocketCapture
+                .CreateFinalManifestForExistingOutput(
+                    state.captureId,
+                    state.outputRoot,
+                    state.outputDirectory,
+                    startedAtUtc,
+                    ordinaryResults,
+                    CreateGitSnapshot(state),
+                    RestoreEngine(state.engine),
+                    state.dependencyHashesAtStart);
+            string captureCoreSha256 =
+                AuditionPvSixtySecondGateManifestValidator.CaptureCoreSha256(
+                    captureCoreManifest);
+            if (!AuditionPvSha256.IsSha256(captureCoreSha256))
+            {
+                throw new InvalidDataException(
+                    "City capture could not create its immutable Gate capture-core identity.");
+            }
+
+            AuditionPvTestResult[] gateResults = WriteGateEvidenceArtifacts(
+                state,
+                evidenceDirectory,
+                proofPath,
+                hashPath,
+                visualMetrics.ToArray(),
+                captureCoreSha256,
+                startedAtUtc);
+            AuditionPvTestResult[] results = ordinaryResults
+                .Concat(gateResults)
+                .ToArray();
             AuditionPvCaptureManifest manifest =
                 AuditionPvCityHeroPocketCapture
                 .CreateFinalManifestForExistingOutput(
@@ -1342,6 +1405,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                     CreateGitSnapshot(state),
                     RestoreEngine(state.engine),
                     state.dependencyHashesAtStart);
+            if (!string.Equals(
+                    captureCoreSha256,
+                    AuditionPvSixtySecondGateManifestValidator.CaptureCoreSha256(
+                        manifest),
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "City Gate evidence changed its immutable capture-core identity.");
+            }
             string manifestPath = AuditionPvCaptureManifestWriter.WriteNew(manifest);
             ValidateManifestRoundTrip(manifestPath, state.captureId);
 
@@ -1545,7 +1617,7 @@ namespace DimensionBrawl.Editor.AuditionPV
 
                 string source = Path.Combine(
                     FrameDirectory(state.outputDirectory, shot),
-                    AuditionPvCityHeroPocketCapture.FrameFileName(
+                    AuditionPvCityHeroPocketCapture.SourceFrameFileName(
                         shot,
                         baseline.sourceFrame));
                 string destination = Path.Combine(
@@ -1577,14 +1649,25 @@ namespace DimensionBrawl.Editor.AuditionPV
                 shotId = ShotId(shot),
                 minimumSampledLuma = 255
             };
-            int first = AuditionPvCityHeroPocketCapture.FirstFrame;
-            int last = AuditionPvCityHeroPocketCapture.GetLastFrame(shot);
+            int first = AuditionPvCityHeroPocketCapture.GetSourceFirstFrame(shot);
+            int last = AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot);
             var decodedHashBuffer = new byte[64 * 1024];
             int[] hudProbeFrames = shot switch
             {
-                AuditionPvCityShot.G01 => new[] { 0 },
-                AuditionPvCityShot.G02 => new[] { 0, 120, 240, 419 },
-                AuditionPvCityShot.G03 => new[] { 0 },
+                AuditionPvCityShot.G01 => new[]
+                {
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 0)
+                },
+                AuditionPvCityShot.G02 => new[] { 0, 120, 240, 419 }
+                    .Select(frame =>
+                        AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot,
+                            frame))
+                    .ToArray(),
+                AuditionPvCityShot.G03 => new[]
+                {
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 0)
+                },
                 _ => throw new ArgumentOutOfRangeException(nameof(shot), shot, null)
             };
             var hudProbes = new List<HudProbeMetrics>(hudProbeFrames.Length);
@@ -1593,7 +1676,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 string path = Path.Combine(
                     frameDirectory,
-                    AuditionPvCityHeroPocketCapture.FrameFileName(shot, frame));
+                    AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, frame));
                 Texture2D texture = LoadPng(path);
                 try
                 {
@@ -1627,7 +1710,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                         });
                     }
 
-                    if (shot == AuditionPvCityShot.G03 && frame >= 276)
+                    int logicalFrame =
+                        AuditionPvCityHeroPocketCapture.SourceToLogicalFrame(
+                            shot,
+                            frame);
+                    if (shot == AuditionPvCityShot.G03 && logicalFrame >= 276)
                     {
                         aggregate.fullCoverFrameCount++;
                         aggregate.minimumFullCoverSampledLuma = Math.Min(
@@ -1662,18 +1749,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvCityShot.G01 => AnalyzeScreenDelta(
                     frameDirectory,
                     shot,
-                    0,
-                    239),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 0),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 239)),
                 AuditionPvCityShot.G02 => AnalyzeScreenDelta(
                     frameDirectory,
                     shot,
-                    0,
-                    419),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 0),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 419)),
                 AuditionPvCityShot.G03 => AnalyzeScreenDelta(
                     frameDirectory,
                     shot,
-                    0,
-                    276),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 0),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(shot, 276)),
                 _ => throw new ArgumentOutOfRangeException(nameof(shot), shot, null)
             };
             if (shot == AuditionPvCityShot.G02)
@@ -1681,8 +1768,12 @@ namespace DimensionBrawl.Editor.AuditionPV
                 aggregate.dodgeDelta = AnalyzeScreenDelta(
                     frameDirectory,
                     shot,
-                    G02DodgeVisualBeforeFrame,
-                    G02DodgeVisualAfterFrame);
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                        shot,
+                        G02DodgeVisualBeforeFrame),
+                    AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                        shot,
+                        G02DodgeVisualAfterFrame));
             }
 
             return aggregate;
@@ -1696,10 +1787,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         {
             Texture2D before = LoadPng(Path.Combine(
                 frameDirectory,
-                AuditionPvCityHeroPocketCapture.FrameFileName(shot, beforeFrame)));
+                AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, beforeFrame)));
             Texture2D after = LoadPng(Path.Combine(
                 frameDirectory,
-                AuditionPvCityHeroPocketCapture.FrameFileName(shot, afterFrame)));
+                AuditionPvCityHeroPocketCapture.SourceFrameFileName(shot, afterFrame)));
             try
             {
                 NativeArray<Color32> beforePixels =
@@ -1974,6 +2065,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 (long)(DateTime.UtcNow - startedAtUtc).TotalMilliseconds);
             int logicalFrames = ShotOrder.Sum(
                 AuditionPvCityHeroPocketCapture.GetExpectedFrameCount);
+            int sourceFrames = ShotOrder.Sum(
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount);
             int rawFrames = ShotOrder.Sum(ExpectedRawFrameCount);
             return new[]
             {
@@ -1982,7 +2075,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "three-raw-warmups-and-logical-frame-maps",
                     duration,
                     $"Recorder 5.1.6 QHD60 captured {rawFrames} raw PNGs; "
-                    + $"three raw0 warm-ups were preserved and {logicalFrames} "
+                    + $"three raw0 warm-ups were preserved, {sourceFrames} canonical "
+                    + $"source frames include 180/180 handles, and {logicalFrames} "
                     + "logical frames were mapped without overwrite.",
                     hashPath),
                 Passed(
@@ -2025,6 +2119,246 @@ namespace DimensionBrawl.Editor.AuditionPV
             };
         }
 
+        private static AuditionPvTestResult[] WriteGateEvidenceArtifacts(
+            PersistedRunnerState state,
+            string evidenceDirectory,
+            string runtimeProofPath,
+            string frameHashLedgerPath,
+            SequenceVisualMetrics[] visualMetrics,
+            string captureCoreSha256,
+            DateTime startedAtUtc)
+        {
+            long duration = Math.Max(
+                0L,
+                (long)(DateTime.UtcNow - startedAtUtc).TotalMilliseconds);
+            string createdAtUtc = startedAtUtc.ToString(
+                "O",
+                CultureInfo.InvariantCulture);
+            AuditionPvPinnedArtifact runtimePin = Pin(runtimeProofPath);
+            AuditionPvPinnedArtifact ledgerPin = Pin(frameHashLedgerPath);
+            var results = new List<AuditionPvTestResult>();
+            string semanticDirectory = Path.Combine(
+                evidenceDirectory,
+                "semantic_beats");
+            Directory.CreateDirectory(semanticDirectory);
+
+            foreach (AuditionPvCityShot shot in ShotOrder)
+            {
+                string sourceShotId = ShotId(shot);
+                string authorshipPath = Path.Combine(
+                    evidenceDirectory,
+                    sourceShotId + "_shot_authorship.json");
+                WriteJsonNew(authorshipPath, new AuditionPvShotAuthorshipArtifact
+                {
+                    schemaVersion = AuditionPvSixtySecondGateManifestValidator
+                        .ShotAuthorshipSchema,
+                    sourceCaptureCoreSha256 = captureCoreSha256,
+                    captureId = state.captureId,
+                    sourceShotId = sourceShotId,
+                    cameraId = AuditionPvCityHeroPocketCapture.GetGateCameraId(shot),
+                    gameplayState = AuditionPvCityHeroPocketCapture
+                        .GetGateGameplayState(shot),
+                    timelineId = AuditionPvCityHeroPocketCapture.GetGateTimelineId(shot),
+                    deterministicSeed = AuditionPvCityHeroPocketCapture
+                        .DeterministicRandomSeed,
+                    runtimeProof = runtimePin,
+                    tool = nameof(AuditionPvCityHeroPocketGoldenRunner),
+                    toolVersion = "2",
+                    createdAtUtc = createdAtUtc
+                });
+                string authorshipSha256 = AuditionPvSha256.FileHash(authorshipPath);
+                results.Add(GatePassed(
+                    "shot-authorship/" + sourceShotId,
+                    duration,
+                    $"artifact-sha256={authorshipSha256}; capture-core-sha256={captureCoreSha256}; exact-camera-state-seed-timeline=true",
+                    authorshipPath));
+                results.Add(GatePassed(
+                    "shot-authorship-runtime/" + sourceShotId,
+                    duration,
+                    $"artifact-sha256={runtimePin.sha256}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                    runtimeProofPath));
+
+                AuditionPvCityHeroPocketRuntimeProof runtime =
+                    (state.runtimeProofs ?? Array.Empty<AuditionPvCityHeroPocketRuntimeProof>())
+                    .Single(value => value != null
+                        && string.Equals(
+                            value.shotId,
+                            sourceShotId,
+                            StringComparison.Ordinal));
+                SequenceVisualMetrics visual =
+                    (visualMetrics ?? Array.Empty<SequenceVisualMetrics>())
+                    .Single(value => value != null
+                        && string.Equals(
+                            value.shotId,
+                            sourceShotId,
+                            StringComparison.Ordinal));
+                foreach (CitySemanticBeatSpec beat in
+                         CreateCitySemanticBeatSpecs(shot, runtime, visual))
+                {
+                    string artifactPath = Path.Combine(
+                        semanticDirectory,
+                        sourceShotId + "_" + beat.beatId + ".json");
+                    WriteJsonNew(artifactPath, new CitySemanticBeatRuntimeArtifact
+                    {
+                        schemaVersion =
+                            "dimension-brawl.audition-pv.city-semantic-beat-runtime.v1",
+                        sourceCaptureCoreSha256 = captureCoreSha256,
+                        captureId = state.captureId,
+                        sourceShotId = sourceShotId,
+                        beatId = beat.beatId,
+                        runtimeFactKey = beat.beatId,
+                        sourceRangeStartFrame =
+                            AuditionPvCityHeroPocketCapture.GetSourceFirstFrame(shot),
+                        sourceRangeEndFrame =
+                            AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot),
+                        sourceFactStartFrame =
+                            AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                                shot,
+                                beat.logicalStartFrame),
+                        sourceFactEndFrame =
+                            AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                                shot,
+                                beat.logicalEndFrame),
+                        exactFacts = beat.exactFacts,
+                        runtimeProof = runtimePin,
+                        sourceFrameLedger = ledgerPin,
+                        producer = nameof(AuditionPvCityHeroPocketGoldenRunner),
+                        createdAtUtc = createdAtUtc
+                    });
+                    string artifactSha256 = AuditionPvSha256.FileHash(artifactPath);
+                    results.Add(GatePassed(
+                        "semantic-beat/" + beat.beatId,
+                        duration,
+                        $"artifact-sha256={artifactSha256}; semantic-fact={beat.beatId}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                        artifactPath));
+                }
+            }
+
+            return results.ToArray();
+        }
+
+        private static CitySemanticBeatSpec[] CreateCitySemanticBeatSpecs(
+            AuditionPvCityShot shot,
+            AuditionPvCityHeroPocketRuntimeProof runtime,
+            SequenceVisualMetrics visual)
+        {
+            if (runtime == null || visual == null)
+            {
+                throw new InvalidDataException(
+                    "City semantic evidence requires runtime and visual proof.");
+            }
+
+            return shot switch
+            {
+                AuditionPvCityShot.G01 => new[]
+                {
+                    new CitySemanticBeatSpec(
+                        "city-alert",
+                        0,
+                        120,
+                        new[]
+                        {
+                            $"live-actors={runtime.g01MidgroundActorsObserved}",
+                            $"line-of-sight={runtime.g01PlayerEnemyLineOfSightClear}",
+                            "hud=off"
+                        }),
+                    new CitySemanticBeatSpec(
+                        "city-skyline",
+                        0,
+                        AuditionPvCityHeroPocketCapture.G01LastFrame,
+                        new[]
+                        {
+                            $"foreground={runtime.g01ForegroundDepthObserved}",
+                            $"background={runtime.g01BackgroundDepthObserved}",
+                            $"three-depth={runtime.g01ThreeDepthCompositionObserved}",
+                            $"screen-delta={visual.primaryDelta.changedSampleRatio.ToString("F6", CultureInfo.InvariantCulture)}"
+                        })
+                },
+                AuditionPvCityShot.G02 => new[]
+                {
+                    new CitySemanticBeatSpec(
+                        "city-movement",
+                        AuditionPvCityHeroPocketCapture.G02FirstMoveDownFrame,
+                        AuditionPvCityHeroPocketCapture.G02ThirdMoveUpFrame,
+                        new[]
+                        {
+                            $"path-length={runtime.g02PlayerPathLength.ToString("F4", CultureInfo.InvariantCulture)}",
+                            $"net-displacement={runtime.g02PlayerNetDisplacement.ToString("F4", CultureInfo.InvariantCulture)}",
+                            $"in-bounds={runtime.g02PlayerStayedInBounds}"
+                        }),
+                    new CitySemanticBeatSpec(
+                        "city-fire",
+                        AuditionPvCityHeroPocketCapture.G02FirstAttackDownFrame,
+                        AuditionPvCityHeroPocketCapture.G02AttackHoldUpFrame,
+                        new[]
+                        {
+                            $"projectiles={runtime.rangedProjectileFiredCount}",
+                            $"enemy-damage-events={runtime.enemyDamagedCount}",
+                            $"natural-won={runtime.naturalWonObserved}"
+                        }),
+                    new CitySemanticBeatSpec(
+                        "city-hud-gameplay",
+                        0,
+                        AuditionPvCityHeroPocketCapture.G02LastFrame,
+                        new[]
+                        {
+                            $"hud-probes={visual.hudProbes?.Length ?? 0}",
+                            $"pointer-schedule={runtime.g02PointerScheduleExact}",
+                            $"player-framing={runtime.g02PlayerFramingPassCount}/{runtime.g02PlayerFramingSampleCount}"
+                        })
+                },
+                AuditionPvCityShot.G03 => new[]
+                {
+                    new CitySemanticBeatSpec(
+                        "dimensional-anomaly",
+                        0,
+                        42,
+                        new[]
+                        {
+                            $"portal-frame={runtime.transitionPortalAuthoredLogicalFrame}",
+                            $"trigger-accepted={runtime.transitionTriggerAcceptedCount}",
+                            $"hud-hidden={runtime.hudHiddenBeforeLogicalFrameZero}"
+                        }),
+                    new CitySemanticBeatSpec(
+                        "dimension-rift-transition",
+                        0,
+                        AuditionPvCityHeroPocketCapture.G03LastFrame,
+                        new[]
+                        {
+                            $"transition-started={runtime.transitionStartedCount}",
+                            $"full-cover={runtime.transitionFullCoverCount}",
+                            $"exit-ready={runtime.transitionExitReadyCount}",
+                            $"clean-cover-frames={runtime.cleanCoverFrameCount}"
+                        })
+                },
+                _ => throw new ArgumentOutOfRangeException(nameof(shot), shot, null)
+            };
+        }
+
+        private static AuditionPvPinnedArtifact Pin(string path)
+        {
+            string fullPath = Path.GetFullPath(path).Replace('\\', '/');
+            return new AuditionPvPinnedArtifact
+            {
+                path = fullPath,
+                sha256 = AuditionPvSha256.FileHash(fullPath)
+            };
+        }
+
+        private static AuditionPvTestResult GatePassed(
+            string name,
+            long duration,
+            string details,
+            string artifactPath)
+        {
+            return Passed(
+                AuditionPvCityHeroPocketCapture.GateEvidenceTestSuite,
+                name,
+                duration,
+                details,
+                Path.GetFullPath(artifactPath));
+        }
+
         private static AuditionPvTestResult Passed(
             string suite,
             string name,
@@ -2065,14 +2399,52 @@ namespace DimensionBrawl.Editor.AuditionPV
                     value => string.Equals(value.id, id, StringComparison.Ordinal));
                 if (entry == null
                     || entry.startFrame
-                        != AuditionPvCityHeroPocketCapture.FirstFrame
+                        != AuditionPvCityHeroPocketCapture.GetSourceFirstFrame(shot)
                     || entry.endFrame
-                        != AuditionPvCityHeroPocketCapture.GetLastFrame(shot)
+                        != AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot)
                     || entry.expectedFrameCount
-                        != AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot))
+                        != AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot))
                 {
                     throw new InvalidOperationException(
                         "City manifest frame contract drifted for " + id + ".");
+                }
+            }
+
+            string captureCoreSha256 =
+                AuditionPvSixtySecondGateManifestValidator.CaptureCoreSha256(
+                    manifest);
+            var requiredGateResults = new List<string>();
+            foreach (AuditionPvCityShot shot in ShotOrder)
+            {
+                string id = ShotId(shot);
+                requiredGateResults.Add("shot-authorship/" + id);
+                requiredGateResults.Add("shot-authorship-runtime/" + id);
+                requiredGateResults.AddRange(
+                    AuditionPvCityHeroPocketCapture.GetGateSemanticBeatIds(shot)
+                        .Select(beat => "semantic-beat/" + beat));
+            }
+
+            foreach (string name in requiredGateResults)
+            {
+                AuditionPvTestResult result = manifest.testResults.SingleOrDefault(value =>
+                    value != null
+                    && value.suite
+                        == AuditionPvCityHeroPocketCapture.GateEvidenceTestSuite
+                    && value.name == name);
+                if (result == null
+                    || result.status != "passed"
+                    || string.IsNullOrWhiteSpace(result.artifactPath)
+                    || !File.Exists(result.artifactPath)
+                    || !result.details.Contains(
+                        "artifact-sha256="
+                        + AuditionPvSha256.FileHash(result.artifactPath),
+                        StringComparison.Ordinal)
+                    || !result.details.Contains(
+                        "capture-core-sha256=" + captureCoreSha256,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        "City manifest lost an exact Gate evidence result: " + name);
                 }
             }
         }
@@ -2461,6 +2833,11 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string shotId = string.Empty;
             public int expectedRawFrameCount;
             public int recorderWarmupEndOfFrameCount;
+            public int canonicalSourceFrameCount;
+            public int logicalFirstSourceFrame;
+            public int logicalLastSourceFrame;
+            public int recordedPreHandleFrameCount;
+            public int recordedPostHandleFrameCount;
             public bool recorderPaddingActiveAtLogicalFrameZero;
             public float recorderCaptureDeltaTimeAtLogicalFrameZero;
             public bool recorderAutoStoppedAfterLastFrame;
@@ -2521,6 +2898,46 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string relativePath = string.Empty;
             public long byteLength;
             public string sha256 = string.Empty;
+        }
+
+        private sealed class CitySemanticBeatSpec
+        {
+            public readonly string beatId;
+            public readonly int logicalStartFrame;
+            public readonly int logicalEndFrame;
+            public readonly string[] exactFacts;
+
+            public CitySemanticBeatSpec(
+                string newBeatId,
+                int newLogicalStartFrame,
+                int newLogicalEndFrame,
+                string[] newExactFacts)
+            {
+                beatId = newBeatId;
+                logicalStartFrame = newLogicalStartFrame;
+                logicalEndFrame = newLogicalEndFrame;
+                exactFacts = newExactFacts ?? Array.Empty<string>();
+            }
+        }
+
+        [Serializable]
+        private sealed class CitySemanticBeatRuntimeArtifact
+        {
+            public string schemaVersion = string.Empty;
+            public string sourceCaptureCoreSha256 = string.Empty;
+            public string captureId = string.Empty;
+            public string sourceShotId = string.Empty;
+            public string beatId = string.Empty;
+            public string runtimeFactKey = string.Empty;
+            public int sourceRangeStartFrame;
+            public int sourceRangeEndFrame;
+            public int sourceFactStartFrame;
+            public int sourceFactEndFrame;
+            public string[] exactFacts = Array.Empty<string>();
+            public AuditionPvPinnedArtifact runtimeProof = new();
+            public AuditionPvPinnedArtifact sourceFrameLedger = new();
+            public string producer = string.Empty;
+            public string createdAtUtc = string.Empty;
         }
 
         [Serializable]
@@ -2787,6 +3204,28 @@ namespace DimensionBrawl.Editor.AuditionPV
             activeProof.recorderWarmupEndOfFrameCount = 1;
             yield return new WaitForEndOfFrame();
             activeProof.recorderWarmupEndOfFrameCount = 2;
+            for (int handleFrame = 0;
+                handleFrame < AuditionPvCityHeroPocketCapture.HandleFrameCount;
+                handleFrame++)
+            {
+                yield return new WaitForEndOfFrame();
+                activeProof.recordedPreHandleFrameCount++;
+            }
+
+            activeProof.canonicalSourceFrameCount =
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot);
+            activeProof.logicalFirstSourceFrame =
+                AuditionPvCityHeroPocketCapture.GetSelectStartFrame(shot);
+            activeProof.logicalLastSourceFrame =
+                AuditionPvCityHeroPocketCapture.GetSelectEndFrame(shot);
+            if (!recorderController.IsRecording()
+                || director.IsRunning
+                || director.IsComplete)
+            {
+                throw new InvalidOperationException(
+                    "City did not record the complete prehandle before logical f0 for "
+                    + AuditionPvCityHeroPocketGoldenRunner.ShotId(shot) + ".");
+            }
             armLogicalFrameZero = true;
 
             double deadline = Time.realtimeSinceStartupAsDouble + ShotTimeoutSeconds;
@@ -2831,7 +3270,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + AuditionPvCityHeroPocketGoldenRunner.ShotId(shot) + ".");
             }
 
-            yield return null;
+            // Keep the completed product/camera state alive while Recorder writes
+            // the full 180-frame posthandle. Cleanup and same-session continuation
+            // cannot begin until the inclusive raw interval auto-stops.
+            while (recorderController.IsRecording()
+                && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+            }
+
             activeProof.recorderAutoStoppedAfterLastFrame =
                 !recorderController.IsRecording();
             if (!activeProof.recorderAutoStoppedAfterLastFrame)
@@ -2840,6 +3287,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "Recorder did not auto-stop after City "
                     + AuditionPvCityHeroPocketGoldenRunner.ShotId(shot) + ".");
             }
+            activeProof.recordedPostHandleFrameCount =
+                AuditionPvCityHeroPocketCapture.HandleFrameCount;
 
             Exception cleanupFailure = CleanupRecorderSession();
             if (cleanupFailure != null)

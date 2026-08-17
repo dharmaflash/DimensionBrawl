@@ -831,11 +831,28 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 RequireSingle<PlayerRangedBasicAttackAction>(playerRoot);
             PlayerLockTargetController lockTarget =
                 RequireSingle<PlayerLockTargetController>(playerRoot);
+            SummonEnergyLadder energy = RequireSingle<SummonEnergyLadder>(playerRoot);
+            PlayerSummonSlot1Action summon =
+                RequireSingle<PlayerSummonSlot1Action>(playerRoot);
+            CombatVfxCuePlayer combatVfx = RequireSingle<CombatVfxCuePlayer>(playerRoot);
             Animator playerAnimator = RequireSingle<Animator>(playerRoot);
             RifleGirlNativeGameplayAnimatorBridge nativeBridge =
                 RequireSingle<RifleGirlNativeGameplayAnimatorBridge>(playerRoot);
             Require(movement.LaneSpace == null,
                 "City player must not retain Station lane-space ownership.");
+            Require(CountSceneComponents<SummonLaneSpace>(scene) == 0,
+                "City scene may not add a Station summon lane-space.");
+            Require(playerRoot.GetComponentsInChildren<PlayerSupportSummonSlotAction>(true)
+                        .Length == 0
+                    && playerRoot.GetComponentsInChildren<PlayerSkill1Action>(true).Length == 0
+                    && playerRoot.GetComponentsInChildren<PlayerSkill1LaserSweepAction>(true)
+                        .Length == 0,
+                "City scene must keep S2/S3/Skill/Ultimate product routes unavailable.");
+            Require(energy.gameObject == playerRoot
+                    && summon.gameObject == playerRoot
+                    && PrefabUtility.GetCorrespondingObjectFromSource(energy) == null
+                    && PrefabUtility.GetCorrespondingObjectFromSource(summon) == null,
+                "City summon energy and S1 action must be scene-instance-only root overrides.");
             RequireSerializedObjectReference(movement, "animator", null,
                 "City movement must defer animation to the native RifleGirl bridge.");
             RequireSerializedObjectReference(action, "animator", null,
@@ -905,6 +922,86 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 ranged,
                 "projectilePrefabObject",
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab");
+
+            RequireSerializedObjectReference(energy, "laneSpace", null,
+                "City summon energy may not retain Station lane-space ownership.");
+            RequireSerializedObjectReference(energy, "trackedPlayer", playerRoot.transform,
+                "City summon energy lost its player tracking reference.");
+            RequireSerializedFloat(energy, "levelOneEnergy", 100f,
+                "City summon LV1 energy threshold drifted.");
+            RequireSerializedFloat(energy, "levelTwoEnergy", 100f,
+                "City summon LV2 energy threshold drifted.");
+            RequireSerializedFloat(energy, "levelThreeEnergy", 100f,
+                "City summon LV3 energy threshold drifted.");
+            RequireSerializedBool(energy, "gainEnabled", true,
+                "City summon energy gain must remain enabled.");
+
+            RequireSerializedObjectReference(summon, "summonAction", null,
+                "City summon S1 may not retain a keyboard/input-action asset.");
+            RequireSerializedBool(summon, "useKeyboardWhenActionMissing", false,
+                "City summon S1 regained the Station keyboard fallback.");
+            RequireSerializedObjectReference(summon, "energyLadder", energy,
+                "City summon S1 lost its scene-instance energy ladder.");
+            RequireSerializedObjectReference(summon, "sourceHealth", playerHealth,
+                "City summon S1 lost its player source health.");
+            RequireSerializedObjectReference(summon, "targetSelector", selector,
+                "City summon S1 lost its target selector.");
+            RequireSerializedObjectReference(summon, "frontlineTargetHealth", enemyHealth,
+                "City summon S1 lost its hostile frontline target.");
+            RequireSerializedObjectReference(summon, "laneSpace", null,
+                "City summon S1 may not retain Station lane-space ownership.");
+            RequireSerializedAssetPath(
+                summon,
+                "projectilePrefab",
+                CityHeroPocketSceneSetup.SummonSlot1ProjectilePrefabPath);
+            RequireSerializedAssetPath(
+                summon,
+                "projectilePrefabObject",
+                CityHeroPocketSceneSetup.SummonSlot1ProjectilePrefabPath);
+            RequireSerializedAssetPath(
+                summon,
+                "entryCuePrefab",
+                CityHeroPocketSceneSetup.SummonSlot1EntryCuePrefabPath);
+            RequireSerializedAssetPath(
+                summon,
+                "summonActorPrefab",
+                CityHeroPocketSceneSetup.SummonSlot1ActorPrefabPath);
+            RequireSerializedAssetPath(
+                summon,
+                "summonActorPrefabObject",
+                CityHeroPocketSceneSetup.SummonSlot1ActorPrefabPath);
+            RequireSerializedObjectReference(summon, "projectileRoot", ranged.ProjectileRoot,
+                "City summon S1 must reuse the existing player projectile root.");
+            RequireSerializedObjectReference(summon, "cueRoot", runtimeRoot.transform,
+                "City summon S1 cue must reuse the existing runtime root.");
+            RequireSerializedObjectReference(summon, "summonActorRoot", runtimeRoot.transform,
+                "City summon S1 actor must reuse the existing runtime root.");
+            RequireSerializedObjectReference(summon, "combatVfxCuePlayer", combatVfx,
+                "City summon S1 lost the existing player combat VFX cue player.");
+            RequireSerializedEnumValue(summon, "sourceTeam", (int)DamageTeam.AllySummon,
+                "City summon S1 source team drifted.");
+            RequireSerializedInteger(summon, "prewarmCount", 2,
+                "City summon S1 projectile prewarm drifted.");
+            RequireSerializedInteger(summon, "actorPrewarmCount", 1,
+                "City summon S1 actor prewarm drifted.");
+            RequireSerializedInteger(summon, "maxActiveSummonActors", 1,
+                "City summon S1 active-actor cap drifted.");
+            RequireSerializedFloat(summon, "entryForwardOffset", 1.35f,
+                "City summon S1 entry offset drifted.");
+            RequireSerializedFloat(summon, "summonActorSpawnDelaySeconds", 0.28f,
+                "City summon S1 actor delay drifted.");
+            RequireSerializedFloat(summon, "actorEntryCatchupSecondsPerMeter", 0.12f,
+                "City summon S1 actor catch-up tuning drifted.");
+            RequireSerializedFloat(summon, "useBlockedHintSeconds", 0.75f,
+                "City summon S1 blocked-hint duration drifted.");
+            RequireSerializedFloat(summon, "requiredSummonMana", 200f,
+                "City summon S1 mana cost drifted.");
+            RequireSerializedFloat(summon, "slotCooldownSeconds", 9.5f,
+                "City summon S1 cooldown drifted.");
+            RequireSerializedAssetPath(
+                summon,
+                "summonActionProfile",
+                CityHeroPocketSceneSetup.SummonSlot1ActionProfilePath);
 
             BasicSoldierEnemy soldier = RequireSingle<BasicSoldierEnemy>(enemyRoot);
             CombatTargetSensor sensor = RequireSingle<CombatTargetSensor>(enemyRoot);
@@ -1008,8 +1105,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 "City HUD binder lost its ranged-fire reference.");
             RequireSerializedObjectReference(hudBinder, "skill1Action", null,
                 "City HUD binder retained removed Skill1 ownership.");
-            RequireSerializedObjectReference(hudBinder, "summonSlot1Action", null,
-                "City HUD binder retained removed Summon1 ownership.");
+            RequireSerializedObjectReference(hudBinder, "summonSlot1Action", summon,
+                "City HUD binder lost scene-instance Summon1 ownership.");
             RequireSerializedObjectReference(hudBinder, "summonSlot2Action", null,
                 "City HUD binder retained removed Summon2 ownership.");
             RequireSerializedObjectReference(hudBinder, "summonSlot3Action", null,
@@ -1030,7 +1127,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 sendHoldState: false, interactable: true);
             RequireUnavailableHudAction(hudRoot, "Skill1Button");
             RequireUnavailableHudAction(hudRoot, "UltimateButton");
-            RequireUnavailableHudAction(hudRoot, "SummonSlot1Button");
+            RequireHudAction(hudRoot, "SummonSlot1Button", CombatHudActionId.SummonSlot1,
+                sendHoldState: false, interactable: true);
             RequireUnavailableHudAction(hudRoot, "SummonSlot2Button");
             RequireUnavailableHudAction(hudRoot, "SummonSlot3Button");
             ValidateAimDragArea(
@@ -1742,6 +1840,20 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             SerializedProperty property = serialized.FindProperty(propertyName);
             Require(property != null
                     && property.propertyType == SerializedPropertyType.Enum
+                    && property.intValue == expected,
+                message);
+        }
+
+        private static void RequireSerializedInteger(
+            UnityEngine.Object owner,
+            string propertyName,
+            int expected,
+            string message)
+        {
+            SerializedObject serialized = new(owner);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            Require(property != null
+                    && property.propertyType == SerializedPropertyType.Integer
                     && property.intValue == expected,
                 message);
         }

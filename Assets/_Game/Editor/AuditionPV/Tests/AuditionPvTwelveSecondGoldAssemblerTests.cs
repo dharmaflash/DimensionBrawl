@@ -33,8 +33,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             ["fixture-g04/g04/105"] = 7,
             ["fixture-g04/g04/165"] = 8,
             ["fixture-g04/g04/225"] = 9,
-            ["fixture-g06/g06/227"] = 10,
-            ["fixture-g06/g06/287"] = 11
+            ["fixture-g06/g06/407"] = 10,
+            ["fixture-g06/g06/467"] = 11
         };
 
         private static readonly object FixturePngLock = new();
@@ -90,7 +90,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     "g02:150..299",
                     "g03:195..299",
                     "g04:0..237",
-                    "g06:180..316"
+                    "g06:360..496"
                 }));
             Assert.That(
                 fixture.specification.segments[^1].shotId,
@@ -233,8 +233,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     "g04:105",
                     "g04:165",
                     "g04:225",
-                    "g06:227",
-                    "g06:287"
+                    "g06:407",
+                    "g06:467"
                 }));
             Assert.That(
                 manifest.contactSheet.cells.All(cell =>
@@ -1102,11 +1102,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             SourceCapture g06 = CreateCapture(
                 fixture,
                 "fixture-g06",
-                new[] { Shot("g06", 360, "hud-on") },
+                new[] { Shot("g06", 720, "hud-on") },
                 new[]
                 {
-                    Baseline("bl06", "g06", 189, "hud-on"),
-                    Baseline("bl07", "g06", 251, "hud-on")
+                    Baseline("bl06", "g06", 369, "hud-on"),
+                    Baseline("bl07", "g06", 431, "hud-on")
                 },
                 writeFrames);
 
@@ -1132,7 +1132,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     Segment("city-gameplay", 1, city, "g02", 150, 299),
                     Segment("dimension-transition", 2, city, "g03", 195, 299),
                     Segment("olympus-c33-c34", 3, g04, "g04", 0, 237),
-                    Segment("perfect-dodge-counter", 4, g06, "g06", 180, 316)
+                    Segment("perfect-dodge-counter", 4, g06, "g06", 360, 496)
                 }
             };
             return fixture;
@@ -1430,10 +1430,17 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 exactEnergyBinding = true,
                 hudAmmo = 12,
                 hudMagazineSize = 12,
-                hudEnergyMana = 100f,
+                hudEnergyMana = 0f,
                 hudEnergyMaxMana = 300f,
                 summonEnergyBeforeUse = 300f,
                 summonEnergyAfterUse = 100f,
+                interceptEnergyBeforePulse = 100f,
+                interceptEnergyAfterPulse = 300f,
+                encounterFollowupPulseTraversed = true,
+                followupWindowActiveAfterIntercept = true,
+                encounterGrantedSummonFollowupEnergy = true,
+                encounterSummonFollowupEnergyPulse = 300f,
+                encounterLastSummonPressureBreakTier = 2,
                 summonSpentTier = 2,
                 summonUseCountDelta = 1,
                 summonInterceptCountDelta = 1,
@@ -1458,8 +1465,33 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 authoredCounterDamage = 29.439999f,
                 bossCounterDamageAmount = 29.439999f,
                 bossCounterHealthDelta = 29.439999f,
+                skill1UsedEventCount = 1,
+                skill1UsedFrame = 276,
+                skill1UsedTier = 3,
+                skill1UseCountDelta = 1,
+                skill1EnergyBeforeRequest = 300f,
+                skill1EnergyAfterRequest = 0f,
+                hudSkill1RequestTraversed = true,
+                laserSweepActiveAfterHudRequest = true,
+                laserSweepInactiveAfterPostHandle = true,
+                summonFollowupHitEventCount = 1,
+                summonFollowupHitFrame = 276,
+                summonFollowupHitTier = 3,
+                summonFollowupHitDamage = 54f,
+                encounterUsedSkill1DuringSummonFollowup = true,
+                encounterSkill1FollowupHitConfirmed = true,
+                encounterHighestSkill1FollowupHitTier = 3,
+                cinematicPlayCountDeltaAtSkill1 = 2,
+                cinematicFollowupPlayCountDeltaAtSkill1 = 1,
+                cinematicFollowupThenUltimateExact = true,
                 fixedDeltaTimeExact = true,
                 recorderWarmupEndOfFrameCount = 2,
+                recorderPreHandleEndOfFrameCount = 180,
+                canonicalSourceFrameCount = 720,
+                logicalFirstSourceFrame = 180,
+                logicalLastSourceFrame = 539,
+                recordedPreHandleFrameCount = 180,
+                recordedPostHandleFrameCount = 180,
                 recorderPaddingActiveAtLogicalFrameZero = true,
                 recorderCaptureDeltaTimeAtLogicalFrameZero =
                     1f / AuditionPvCaptureContract.Fps + 0.0001f,
@@ -1471,16 +1503,17 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 captureHudStateRestored = true,
                 captureEventsReleased = true,
                 captureSummonArtifactsReleased = true,
+                captureSkillArtifactsReleased = true,
                 bossCompositionRestored = true,
                 presentationClockReleased = true,
                 cadenceSuspensionCountAfterRestore = 0,
                 visualMetrics = new AuditionPvStationPhase2SummonCounterGoldenRunner
                     .SequenceVisualMetrics
                 {
-                    sampleCount = 1296000,
-                    blackSampleCount = 12960,
-                    magentaSampleCount = 1296,
-                    healthyFrameCount = 360,
+                    sampleCount = 2592000,
+                    blackSampleCount = 25920,
+                    magentaSampleCount = 2592,
+                    healthyFrameCount = 720,
                     magentaAffectedFrameCount = 1,
                     blackRatio = 0.01d,
                     magentaRatio = 0.001d,
@@ -1571,6 +1604,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 captureDirectory,
                 AuditionPvTwelveSecondGoldAssembler.G06EvidenceFolderName);
             string baselineDirectory = Path.Combine(captureDirectory, "baselines");
+            string frameLedgerPath = Path.Combine(
+                evidenceDirectory,
+                AuditionPvStationPhase2SummonCounterCapture
+                    .FrameHashLedgerFileName);
+            Directory.CreateDirectory(evidenceDirectory);
+            File.WriteAllText(
+                frameLedgerPath,
+                "fixture canonical frame ledger\n",
+                new UTF8Encoding(false));
             string Artifact(string baselineId) => Path.Combine(
                 baselineDirectory,
                 baselines.Single(value => value.id == baselineId).fileName);
@@ -1590,11 +1632,11 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 };
             }
 
-            return new[]
+            var results = new List<AuditionPvTestResult>
             {
                 Passed(
                     "recorder",
-                    "raw-warmup-and-logical-frame-mapping",
+                    "raw-warmup-canonical-source-and-recorded-handles",
                     Path.Combine(
                         evidenceDirectory,
                         AuditionPvTwelveSecondGoldAssembler
@@ -1620,10 +1662,52 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     "git-dependencies-and-station-scene-stable",
                     runtimeProofPath),
                 Passed(
+                    "provenance",
+                    "canonical-frame-sha256-ledger",
+                    frameLedgerPath),
+                Passed(
                     "lifecycle",
                     "state-restored-and-product-scene-reopened",
                     runtimeProofPath)
             };
+
+            string[] gateNames = new[]
+                {
+                    "shot-authorship/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    "shot-authorship-runtime/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId
+                }
+                .Concat(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateSemanticBeatIds()
+                        .Select(beatId => "semantic-beat/" + beatId))
+                .ToArray();
+            string gateDirectory = Path.Combine(evidenceDirectory, "gate-fixture");
+            Directory.CreateDirectory(gateDirectory);
+            foreach (string gateName in gateNames)
+            {
+                string artifactPath = Path.Combine(
+                    gateDirectory,
+                    gateName.Replace('/', '_') + ".json");
+                File.WriteAllText(
+                    artifactPath,
+                    "{\"fixture\":true}\n",
+                    new UTF8Encoding(false));
+                string artifactSha256 = AuditionPvSha256.FileHash(artifactPath);
+                results.Add(new AuditionPvTestResult
+                {
+                    suite = AuditionPvStationPhase2SummonCounterCapture
+                        .GateEvidenceTestSuite,
+                    name = gateName,
+                    status = "passed",
+                    durationMilliseconds = 0,
+                    details = "artifact-sha256=" + artifactSha256,
+                    artifactPath = Normalize(artifactPath)
+                });
+            }
+
+            return results.ToArray();
         }
 
         private static AuditionPvTwelveSecondSegmentSpec Segment(

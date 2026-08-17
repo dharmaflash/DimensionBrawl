@@ -16,12 +16,22 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
     public sealed class AuditionPvStationPhase2PatternRelayGoldenTests
     {
         [Test]
-        public void Contract_IsIndependentExactSevenSecondG07()
+        public void Contract_PreservesExactSevenSecondLogicalG07InsideRealHandles()
         {
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.ShotId, Is.EqualTo("g07"));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalFirstFrame, Is.Zero);
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalLastFrame, Is.EqualTo(419));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalExpectedFrameCount,
+                Is.EqualTo(420));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.HandleFrameCount,
+                Is.EqualTo(180));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.FirstFrame, Is.Zero);
-            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LastFrame, Is.EqualTo(419));
-            Assert.That(AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount, Is.EqualTo(420));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SelectStartFrame,
+                Is.EqualTo(180));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SelectEndFrame,
+                Is.EqualTo(599));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LastFrame, Is.EqualTo(779));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount, Is.EqualTo(780));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.PhaseTwoSettleFrames, Is.EqualTo(90));
             Assert.That(
                 AuditionPvStationPhase2PatternRelayCapture.PostRecordingSettleFrameBudget,
@@ -36,12 +46,28 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.CurtainFireFrame, Is.EqualTo(68));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.HoverWindupFrame, Is.EqualTo(368));
             Assert.That(AuditionPvStationPhase2PatternRelayCapture.HoverFireFrame, Is.EqualTo(418));
-            Assert.That(AuditionPvStationPhase2PatternRelayCapture.FrameTimeSeconds(419),
-                Is.EqualTo(419f / 60f).Within(0.000001f));
-            Assert.That(AuditionPvStationPhase2PatternRelayCapture.FrameFileName(419),
-                Is.EqualTo("frame_0419.png"));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalToSourceFrame(0),
+                Is.EqualTo(180));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalToSourceFrame(68),
+                Is.EqualTo(248));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalToSourceFrame(418),
+                Is.EqualTo(598));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.LogicalToSourceFrame(419),
+                Is.EqualTo(599));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SourceToLogicalFrame(179),
+                Is.EqualTo(-1));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SourceToLogicalFrame(180),
+                Is.Zero);
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SourceToLogicalFrame(599),
+                Is.EqualTo(419));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.SourceToLogicalFrame(600),
+                Is.EqualTo(-1));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.FrameTimeSeconds(779),
+                Is.EqualTo(779f / 60f).Within(0.000001f));
+            Assert.That(AuditionPvStationPhase2PatternRelayCapture.FrameFileName(779),
+                Is.EqualTo("frame_0779.png"));
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(420));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(780));
         }
 
         [Test]
@@ -437,16 +463,149 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AuditionPvBaselineManifestEntry[] baselines =
                 AuditionPvStationPhase2PatternRelayCapture.CreateBaselineManifestEntries();
             Assert.That(shot.startFrame, Is.Zero);
-            Assert.That(shot.endFrame, Is.EqualTo(419));
-            Assert.That(shot.expectedFrameCount, Is.EqualTo(420));
+            Assert.That(shot.endFrame, Is.EqualTo(779));
+            Assert.That(shot.expectedFrameCount, Is.EqualTo(780));
             Assert.That(shot.hudMode, Is.EqualTo("hud-on"));
             Assert.That(shot.notes, Does.Contain("f419"));
+            Assert.That(shot.notes, Does.Contain("source f180..f599"));
+            Assert.That(shot.notes, Does.Contain("real 180-frame pre/post handles"));
             Assert.That(baselines.Select(value => value.sourceFrame),
-                Is.EqualTo(new[] { 68, 418 }));
+                Is.EqualTo(new[] { 248, 598 }));
             Assert.That(baselines[0].fileName, Is.EqualTo(
                 "BL08_AKAZA_PHASE2_SUMMON_CURTAIN__HUDON__t01.133333.png"));
             Assert.That(baselines[1].fileName, Is.EqualTo(
                 "BL09_AKAZA_PHASE2_HOVER_LANCE__HUDON__t06.966667.png"));
+        }
+
+        [Test]
+        public void GateEvidence_BindsExactAuthorshipRuntimeAndSemanticBeatSourceFacts()
+        {
+            Assert.That(
+                AuditionPvStationPhase2PatternRelayCapture.GateSemanticBeatIds(),
+                Is.EqualTo(new[] { "boss-pattern-2", "boss-pattern-3" }));
+            Assert.That(
+                AuditionPvStationPhase2PatternRelayCapture.GateEvidenceTestSuite,
+                Is.EqualTo("AuditionPvSixtySecondEvidence"));
+
+            string root = Path.Combine(
+                Path.GetTempPath(),
+                "dimension-brawl-g07-gate-" + Guid.NewGuid().ToString("N"));
+            string evidence = Path.Combine(root, "evidence");
+            Directory.CreateDirectory(evidence);
+            try
+            {
+                string runtimeProofPath = Path.Combine(
+                    evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .RuntimeProofFileName);
+                string frameLedgerPath = Path.Combine(
+                    evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .FrameHashLedgerFileName);
+                File.WriteAllText(runtimeProofPath, "runtime-proof");
+                File.WriteAllText(frameLedgerPath, "source-ledger");
+                string captureCoreSha256 = new string('a', 64);
+                var state = new AuditionPvStationPhase2PatternRelayGoldenRunner
+                    .PersistedRunnerState
+                {
+                    captureId = "g07-gate-fixture"
+                };
+                var method = typeof(AuditionPvStationPhase2PatternRelayGoldenRunner)
+                    .GetMethod(
+                        "WriteGateEvidenceArtifacts",
+                        System.Reflection.BindingFlags.Static
+                            | System.Reflection.BindingFlags.NonPublic);
+                Assert.That(method, Is.Not.Null);
+                var results = (AuditionPvTestResult[])method.Invoke(
+                    null,
+                    new object[]
+                    {
+                        state,
+                        CreateValidProof(),
+                        runtimeProofPath,
+                        frameLedgerPath,
+                        evidence,
+                        captureCoreSha256,
+                        DateTime.UtcNow
+                    });
+
+                Assert.That(results, Is.Not.Null);
+                Assert.That(results.Select(result => result.name), Is.EqualTo(new[]
+                {
+                    "shot-authorship/g07",
+                    "shot-authorship-runtime/g07",
+                    "semantic-beat/boss-pattern-2",
+                    "semantic-beat/boss-pattern-3"
+                }));
+                Assert.That(results.All(result =>
+                    result.suite == "AuditionPvSixtySecondEvidence"
+                    && result.status == "passed"
+                    && File.Exists(result.artifactPath)
+                    && result.details.Contains("artifact-sha256=", StringComparison.Ordinal)),
+                    Is.True);
+
+                AuditionPvTestResult authorshipResult = results.Single(result =>
+                    result.name == "shot-authorship/g07");
+                AuditionPvShotAuthorshipArtifact authorship =
+                    JsonUtility.FromJson<AuditionPvShotAuthorshipArtifact>(
+                        File.ReadAllText(authorshipResult.artifactPath));
+                Assert.That(authorship.schemaVersion, Is.EqualTo(
+                    AuditionPvSixtySecondGateManifestValidator
+                        .ShotAuthorshipSchema));
+                Assert.That(authorship.sourceCaptureCoreSha256,
+                    Is.EqualTo(captureCoreSha256));
+                Assert.That(authorship.captureId, Is.EqualTo(state.captureId));
+                Assert.That(authorship.sourceShotId, Is.EqualTo("g07"));
+                Assert.That(authorship.cameraId,
+                    Is.EqualTo("olympus-station-action-camera"));
+                Assert.That(authorship.gameplayState,
+                    Is.EqualTo("akaza-phase2-summon-curtain-hover-lance"));
+                Assert.That(authorship.deterministicSeed,
+                    Is.EqualTo(AuditionPvStationPhase2PatternRelayCapture
+                        .DeterministicRandomSeed));
+                Assert.That(authorship.timelineId,
+                    Is.EqualTo("g07-product-clock-logical-000-419-v2"));
+                Assert.That(authorship.runtimeProof.sha256,
+                    Is.EqualTo(AuditionPvSha256.FileHash(runtimeProofPath)));
+
+                GateSemanticBeatProbe curtain = ReadGateSemanticBeat(
+                    results,
+                    "boss-pattern-2");
+                AssertGateSemanticBeat(
+                    curtain,
+                    captureCoreSha256,
+                    10,
+                    68,
+                    190,
+                    248,
+                    "pattern=AkazaSummonCurtain",
+                    "priority=True",
+                    "projectiles=7",
+                    frameLedgerPath,
+                    runtimeProofPath);
+                GateSemanticBeatProbe hover = ReadGateSemanticBeat(
+                    results,
+                    "boss-pattern-3");
+                AssertGateSemanticBeat(
+                    hover,
+                    captureCoreSha256,
+                    368,
+                    418,
+                    548,
+                    598,
+                    "pattern=AkazaHoverLance",
+                    "priority=False",
+                    "projectiles=4",
+                    frameLedgerPath,
+                    runtimeProofPath);
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+            }
         }
 
         [Test]
@@ -492,7 +651,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
-        public void Runner_RawWarmupMapsExactlyToLogicalFrames()
+        public void Runner_RawWarmupMapsExactlyToCanonicalSourceFrames()
         {
             string root = Path.Combine(
                 Path.GetTempPath(),
@@ -502,7 +661,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Directory.CreateDirectory(frames);
             try
             {
-                for (int raw = 0; raw <= 420; raw++)
+                Assert.That(
+                    AuditionPvStationPhase2PatternRelayGoldenRunner.RawLastShotFrame,
+                    Is.EqualTo(780));
+                Assert.That(
+                    AuditionPvStationPhase2PatternRelayGoldenRunner.ExpectedRawFrameCount,
+                    Is.EqualTo(781));
+                for (int raw = 0;
+                    raw <= AuditionPvStationPhase2PatternRelayGoldenRunner.RawLastShotFrame;
+                    raw++)
                 {
                     File.WriteAllBytes(
                         Path.Combine(frames,
@@ -520,8 +687,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Assert.That(File.ReadAllBytes(warmup)[0], Is.Zero);
                 Assert.That(File.ReadAllBytes(Path.Combine(frames, "frame_0000.png"))[0],
                     Is.EqualTo(1));
-                Assert.That(File.ReadAllBytes(Path.Combine(frames, "frame_0419.png"))[0],
-                    Is.EqualTo((byte)(420 & 0xff)));
+                Assert.That(File.ReadAllBytes(Path.Combine(frames, "frame_0779.png"))[0],
+                    Is.EqualTo((byte)(780 & 0xff)));
             }
             finally
             {
@@ -711,20 +878,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Directory.CreateDirectory(baselines);
             try
             {
-                string[] successArtifacts =
-                {
-                    Path.Combine(output, AuditionPvCaptureContract.ManifestFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProofFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.FrameHashLedgerFileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
-                };
+                string[] successArtifacts = OwnedSuccessArtifactPaths(
+                    output,
+                    evidence,
+                    baselines);
                 foreach (string path in successArtifacts)
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
                     File.WriteAllText(path, "must-be-removed");
                 }
 
@@ -807,6 +967,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AssertMutation(proof => proof.curtainSpawnedCount = 6);
             AssertMutation(proof => proof.hoverWasPriority = true);
             AssertMutation(proof => proof.emitterTickCount = 419);
+            AssertMutation(proof => proof.recorderPreHandleEndOfFrameCount = 179);
+            AssertMutation(proof => proof.canonicalSourceFrameCount = 779);
+            AssertMutation(proof => proof.logicalFirstSourceFrame = 179);
+            AssertMutation(proof => proof.logicalLastSourceFrame = 598);
+            AssertMutation(proof => proof.recordedPreHandleFrameCount = 179);
+            AssertMutation(proof => proof.recordedPostHandleFrameCount = 179);
+            AssertMutation(proof => proof.frameHashLedgerEntryCount = 779);
+            AssertMutation(proof => proof.pixelSampleSourceFrames[0] = 9);
             AssertMutation(proof => proof.minimumEmitterTimeScale = 0.999f);
             AssertMutation(proof => proof.curtainMoveFirstAppliedFrame = 18);
             AssertMutation(proof => proof.curtainMoveLastAppliedFrame = 45);
@@ -894,7 +1062,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             var independentlyObservedG06Hud =
                 new AuditionPvStationPhase2PatternRelayGoldenRunner.HudVisualMetrics
             {
-                frameCount = 420,
+                frameCount = 780,
                 minimumFramePinkSamples = 569,
                 maximumFramePinkSamples = 622,
                 minimumFrameDarkSamples = 227,
@@ -1061,7 +1229,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 Directory.CreateDirectory(output);
                 string frames = Path.Combine(output, "frames", "g07");
                 Directory.CreateDirectory(frames);
-                for (int frame = 0; frame < 420; frame++)
+                for (int frame = 0;
+                    frame < AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
+                    frame++)
                 {
                     File.WriteAllText(Path.Combine(frames,
                         AuditionPvStationPhase2PatternRelayCapture.FrameFileName(frame)),
@@ -1073,6 +1243,14 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                         .BuildFrameHashLedger(frames);
                 string ledgerPath = Path.Combine(output, "ledger.sha256");
                 File.WriteAllText(ledgerPath, ledger);
+                string[] ledgerLines = ledger.Split(
+                    new[] { '\r', '\n' },
+                    StringSplitOptions.RemoveEmptyEntries);
+                Assert.That(ledgerLines.Length, Is.EqualTo(780));
+                Assert.That(ledgerLines[0], Does.EndWith(
+                    "  frames/g07/frame_0000.png"));
+                Assert.That(ledgerLines[779], Does.EndWith(
+                    "  frames/g07/frame_0779.png"));
                 Assert.DoesNotThrow(() =>
                     AuditionPvStationPhase2PatternRelayGoldenRunner
                         .ValidateFrameHashLedger(
@@ -1094,20 +1272,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 string outsideBl = Path.Combine(outsideRoot,
                     AuditionPvStationPhase2PatternRelayCapture.Bl08FileName);
                 File.WriteAllText(outsideBl, "must-survive");
-                string[] ownedSuccessArtifacts =
-                {
-                    Path.Combine(output, AuditionPvCaptureContract.ManifestFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProofFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.FrameHashLedgerFileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
-                };
+                string[] ownedSuccessArtifacts = OwnedSuccessArtifactPaths(
+                    output,
+                    evidence,
+                    baselines);
                 foreach (string owned in ownedSuccessArtifacts)
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(owned));
                     File.WriteAllText(owned, "owned");
                 }
 
@@ -1340,20 +1511,13 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Directory.CreateDirectory(baselines);
             try
             {
-                string[] successArtifacts =
-                {
-                    Path.Combine(output, AuditionPvCaptureContract.ManifestFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProofFileName),
-                    Path.Combine(evidence,
-                        AuditionPvStationPhase2PatternRelayGoldenRunner.FrameHashLedgerFileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
-                    Path.Combine(baselines,
-                        AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
-                };
+                string[] successArtifacts = OwnedSuccessArtifactPaths(
+                    output,
+                    evidence,
+                    baselines);
                 foreach (string artifact in successArtifacts)
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(artifact));
                     File.WriteAllText(artifact, "partial-success");
                 }
 
@@ -1457,6 +1621,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             {
                 AuditionPvStationPhase2PatternRelayCapture.StationScenePath,
                 AuditionPvStationPhase2PatternRelayCapture.CaptureScriptPath,
+                AuditionPvStationPhase2PatternRelayCapture.SixtySecondGateManifestPath,
                 AuditionPvStationPhase2PatternRelayGoldenRunner.RunnerScriptPath,
                 AuditionPvStationPhase2PatternRelayGoldenRunner.RunnerTestPath,
                 AuditionPvStationPhase2PatternRelayCapture.EmitterPath,
@@ -1569,6 +1734,12 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 exactHudAndBindings = true,
                 exactProjectileAndVfxBindings = true,
                 recorderWarmupEndOfFrameCount = 2,
+                recorderPreHandleEndOfFrameCount = 180,
+                canonicalSourceFrameCount = 780,
+                logicalFirstSourceFrame = 180,
+                logicalLastSourceFrame = 599,
+                recordedPreHandleFrameCount = 180,
+                recordedPostHandleFrameCount = 180,
                 recorderPaddingActiveAtLogicalFrameZero = true,
                 recorderAutoStoppedAfterLastFrame = true,
                 stateRestored = true,
@@ -1602,20 +1773,26 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 frame419Sha256 = Sha('e'),
                 frameHashLedgerPath = "C:/capture/evidence/frame_hashes.sha256",
                 frameHashLedgerSha256 = Sha('4'),
+                frameHashLedgerEntryCount = 780,
+                pixelSampleSourceFrames = new[]
+                {
+                    189, 190, 246, 247, 248,
+                    547, 548, 596, 597, 598, 599
+                },
                 bl08Sha256 = Sha('b'),
                 bl09Sha256 = Sha('d'),
                 visualMetrics = new AuditionPvStationPhase2PatternRelayGoldenRunner
                     .SequenceVisualMetrics
                 {
                     sampleCount = 100,
-                    healthyFrameCount = 420,
+                    healthyFrameCount = 780,
                     minimumSampledLuma = 0,
                     maximumSampledLuma = 255
                 },
                 hudMetrics = new AuditionPvStationPhase2PatternRelayGoldenRunner
                     .HudVisualMetrics
                 {
-                    frameCount = 420,
+                    frameCount = 780,
                     minimumFramePinkSamples = 540,
                     minimumFrameDarkSamples = 210,
                     minimumFrameBrightSamples = 830,
@@ -1662,6 +1839,90 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 ValidEvent(368, 4), ValidEvent(418, 4), ValidHero()
             };
             return proof;
+        }
+
+        private static GateSemanticBeatProbe ReadGateSemanticBeat(
+            IEnumerable<AuditionPvTestResult> results,
+            string beatId)
+        {
+            AuditionPvTestResult result = results.Single(value =>
+                value.name == "semantic-beat/" + beatId);
+            Assert.That(result.details, Does.Contain("semantic-fact=" + beatId));
+            return JsonUtility.FromJson<GateSemanticBeatProbe>(
+                File.ReadAllText(result.artifactPath));
+        }
+
+        private static string[] OwnedSuccessArtifactPaths(
+            string output,
+            string evidence,
+            string baselines)
+        {
+            return new[]
+            {
+                Path.Combine(output, AuditionPvCaptureContract.ManifestFileName),
+                Path.Combine(evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .RuntimeProofFileName),
+                Path.Combine(evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .FrameHashLedgerFileName),
+                Path.Combine(evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .GateShotAuthorshipFileName),
+                Path.Combine(
+                    evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .GateSemanticEvidenceFolderName,
+                    "boss-pattern-2.json"),
+                Path.Combine(
+                    evidence,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .GateSemanticEvidenceFolderName,
+                    "boss-pattern-3.json"),
+                Path.Combine(baselines,
+                    AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
+                Path.Combine(baselines,
+                    AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
+            };
+        }
+
+        private static void AssertGateSemanticBeat(
+            GateSemanticBeatProbe artifact,
+            string captureCoreSha256,
+            int logicalStartFrame,
+            int logicalEndFrame,
+            int sourceStartFrame,
+            int sourceEndFrame,
+            string patternFact,
+            string priorityFact,
+            string projectileFact,
+            string frameLedgerPath,
+            string runtimeProofPath)
+        {
+            Assert.That(artifact, Is.Not.Null);
+            Assert.That(artifact.schemaVersion, Is.EqualTo(
+                "dimension-brawl.audition-pv.g07-semantic-beat-runtime.v1"));
+            Assert.That(artifact.sourceCaptureCoreSha256,
+                Is.EqualTo(captureCoreSha256));
+            Assert.That(artifact.sourceShotId, Is.EqualTo("g07"));
+            Assert.That(artifact.runtimeFactKey, Is.EqualTo(artifact.beatId));
+            Assert.That(artifact.sourceRangeStartFrame, Is.Zero);
+            Assert.That(artifact.sourceRangeEndFrame, Is.EqualTo(779));
+            Assert.That(artifact.logicalFactStartFrame,
+                Is.EqualTo(logicalStartFrame));
+            Assert.That(artifact.logicalFactEndFrame,
+                Is.EqualTo(logicalEndFrame));
+            Assert.That(artifact.sourceFactStartFrame,
+                Is.EqualTo(sourceStartFrame));
+            Assert.That(artifact.sourceFactEndFrame,
+                Is.EqualTo(sourceEndFrame));
+            Assert.That(artifact.exactFacts, Does.Contain(patternFact));
+            Assert.That(artifact.exactFacts, Does.Contain(priorityFact));
+            Assert.That(artifact.exactFacts, Does.Contain(projectileFact));
+            Assert.That(artifact.runtimeProof.sha256,
+                Is.EqualTo(AuditionPvSha256.FileHash(runtimeProofPath)));
+            Assert.That(artifact.sourceFrameLedger.sha256,
+                Is.EqualTo(AuditionPvSha256.FileHash(frameLedgerPath)));
         }
 
         private static AuditionPvStationPhase2PatternRelayGoldenRunner.FrameDeltaMetrics
@@ -1784,6 +2045,26 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             public string exception = string.Empty;
             public bool pixelCalibrationLocked;
             public AuditionPvStationPhase2PatternRelayGoldenRunner.RuntimeProof runtime;
+        }
+
+        [Serializable]
+        private sealed class GateSemanticBeatProbe
+        {
+            public string schemaVersion = string.Empty;
+            public string sourceCaptureCoreSha256 = string.Empty;
+            public string captureId = string.Empty;
+            public string sourceShotId = string.Empty;
+            public string beatId = string.Empty;
+            public string runtimeFactKey = string.Empty;
+            public int sourceRangeStartFrame = -1;
+            public int sourceRangeEndFrame = -1;
+            public int logicalFactStartFrame = -1;
+            public int logicalFactEndFrame = -1;
+            public int sourceFactStartFrame = -1;
+            public int sourceFactEndFrame = -1;
+            public string[] exactFacts = Array.Empty<string>();
+            public AuditionPvPinnedArtifact runtimeProof = new();
+            public AuditionPvPinnedArtifact sourceFrameLedger = new();
         }
 #pragma warning restore CS0649
 

@@ -33,14 +33,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string StateFileName = "g07_runner_state.json";
         internal const string RuntimeProofFileName = "g07_runtime_proof.json";
         internal const string FrameHashLedgerFileName = "frame_hashes.sha256";
+        internal const string GateShotAuthorshipFileName =
+            "g07_shot_authorship.json";
+        internal const string GateSemanticEvidenceFolderName =
+            "semantic_beats";
         internal const string FailureFileName = "g07_capture_failure.json";
         internal const string EvidenceFolderName = "evidence";
         internal const string WarmupEvidenceFileName =
             "recorder_warmup_raw_frame_0000.png";
         internal const int RawWarmupFrame = 0;
         internal const int RawFirstShotFrame = 1;
-        internal const int RawLastShotFrame = 420;
-        internal const int ExpectedRawFrameCount = 421;
+        internal const int RawLastShotFrame =
+            AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
+        internal const int ExpectedRawFrameCount = RawLastShotFrame + 1;
         internal const string ExpectedUnityVersion = "6000.3.5f2";
         internal const string ExpectedUnityVersionWithRevision =
             "6000.3.5f2 (3fa8bc678cb0)";
@@ -435,12 +440,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 MoveNew(
                     Path.Combine(frames, RawFrameFileName(RawWarmupFrame)),
                     warmup);
-                for (int logical = 0;
-                    logical < AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
-                    logical++)
+                for (int sourceFrame =
+                         AuditionPvStationPhase2PatternRelayCapture.FirstFrame;
+                    sourceFrame <=
+                         AuditionPvStationPhase2PatternRelayCapture.LastFrame;
+                    sourceFrame++)
                 {
                     string name =
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(logical);
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            sourceFrame);
                     MoveNew(Path.Combine(staging, name), Path.Combine(frames, name));
                 }
 
@@ -701,6 +709,19 @@ namespace DimensionBrawl.Editor.AuditionPV
             ValidateRuntimeProofCore(proof, requirePixelCalibration: false);
         }
 
+        internal static int[] ExpectedPixelSampleSourceFrames()
+        {
+            int Source(int logicalFrame) =>
+                AuditionPvStationPhase2PatternRelayCapture
+                    .LogicalToSourceFrame(logicalFrame);
+            return new[]
+            {
+                Source(9), Source(10), Source(66), Source(67), Source(68),
+                Source(367), Source(368), Source(416), Source(417),
+                Source(418), Source(419)
+            };
+        }
+
         private static void ValidateRuntimeProofCore(
             RuntimeProof proof,
             bool requirePixelCalibration)
@@ -715,9 +736,11 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (proof == null
                 || !proof.directorCompleted
                 || proof.lastLogicalFrame
-                    != AuditionPvStationPhase2PatternRelayCapture.LastFrame
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalLastFrame
                 || proof.presentedFrameCount
-                    != AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalExpectedFrameCount
                 || !proof.presentedFramesExact
                 || !proof.presentationClockExact
                 || proof.transitionCompletedEventCount != 1
@@ -791,6 +814,24 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !string.IsNullOrEmpty(proof.cleanupFailure)
                 || !proof.recorderAutoStoppedAfterLastFrame
                 || proof.recorderWarmupEndOfFrameCount != 2
+                || proof.recorderPreHandleEndOfFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .HandleFrameCount
+                || proof.canonicalSourceFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .ExpectedFrameCount
+                || proof.logicalFirstSourceFrame
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .SelectStartFrame
+                || proof.logicalLastSourceFrame
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .SelectEndFrame
+                || proof.recordedPreHandleFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .HandleFrameCount
+                || proof.recordedPostHandleFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .HandleFrameCount
                 || !proof.recorderPaddingActiveAtLogicalFrameZero
                 || !proof.stateRestored
                 || !proof.eventsReleased
@@ -844,9 +885,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || proof.renderEvents == null
                 || !AuditionPvSha256.IsSha256(proof.frame419Sha256)
                 || !AuditionPvSha256.IsSha256(proof.frameHashLedgerSha256)
+                || proof.frameHashLedgerEntryCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .ExpectedFrameCount
                 || !proof.frameHashLedgerPath.EndsWith(
                     "/" + FrameHashLedgerFileName,
                     StringComparison.Ordinal)
+                || !(proof.pixelSampleSourceFrames ?? Array.Empty<int>())
+                    .SequenceEqual(ExpectedPixelSampleSourceFrames())
                 || proof.renderEvents.Length != 5)
             {
                 throw new InvalidOperationException(
@@ -1641,31 +1687,48 @@ namespace DimensionBrawl.Editor.AuditionPV
                 .Replace('\\', '/');
             proof.frameHashLedgerSha256 =
                 AuditionPvSha256.TextHash(frameHashLedger);
+            proof.frameHashLedgerEntryCount =
+                AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
+            proof.pixelSampleSourceFrames = ExpectedPixelSampleSourceFrames();
             proof.warmupEvidencePath = warmup.Replace('\\', '/');
             proof.warmupEvidenceSha256 = AuditionPvSha256.FileHash(warmup);
             proof.frame67Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(67)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalToSourceFrame(67))));
             proof.frame66Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(66)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalToSourceFrame(66))));
             proof.frame417Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(417)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalToSourceFrame(417))));
             proof.frame416Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(416)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalToSourceFrame(416))));
             proof.frame419Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(419)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalToSourceFrame(419))));
             // Source hashes are populated before the calibration gate, but the
             // canonical BL08/BL09 files remain absent on a first-take failure.
             proof.bl08Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(68)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .Bl08SourceFrame)));
             proof.bl09Sha256 = AuditionPvSha256.FileHash(Path.Combine(
                 frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(418)));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .Bl09SourceFrame)));
             AuditionPvGitSnapshot gitAtEnd =
                 AuditionPvEnvironmentProbe.ReadGitSnapshot();
             ValidateStableGitSnapshot(CreateGitSnapshot(state), gitAtEnd);
@@ -1728,7 +1791,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 schema = RuntimeProofSchema,
                 captureId = state.captureId,
                 mapping =
-                    "Recorder raw0 is preserved warm-up evidence; raw1..raw420 map to logical f0..f419.",
+                    "Recorder raw0 is preserved warm-up evidence; raw1..raw780 map to canonical source f0..f779; logical f0..f419 map to source f180..f599.",
                 cadence =
                     "Exactly one public BossBarrageEmitter.Tick((1/60)*exactScale1) per logical frame; observed events f10/f68/f368/f418.",
                 playerResponse =
@@ -1739,28 +1802,73 @@ namespace DimensionBrawl.Editor.AuditionPV
                 state.startedAtUtc,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.RoundtripKind).ToUniversalTime();
-            AuditionPvTestResult[] results = CreateTestResults(
+            AuditionPvShotManifestEntry[] shots =
+            {
+                AuditionPvStationPhase2PatternRelayCapture
+                    .CreateShotManifestEntry()
+            };
+            AuditionPvBaselineManifestEntry[] baselines =
+                AuditionPvStationPhase2PatternRelayCapture
+                    .CreateBaselineManifestEntries();
+            AuditionPvCaptureManifest captureCoreManifest =
+                AuditionPvCaptureManifestFactory.CreateForRoot(
+                    state.captureId,
+                    state.outputRoot,
+                    state.outputDirectory,
+                    shots,
+                    baselines,
+                    Array.Empty<AuditionPvTestResult>(),
+                    createdAtUtc: started,
+                    gitSnapshot: CreateGitSnapshot(state),
+                    engineSnapshot: RestoreEngine(state.engine),
+                    dependencyHashSnapshot: state.dependencyHashesAtStart);
+            string captureCoreSha256 =
+                AuditionPvSixtySecondGateManifestValidator
+                    .CaptureCoreSha256(captureCoreManifest);
+            if (!AuditionPvSha256.IsSha256(captureCoreSha256))
+            {
+                throw new InvalidDataException(
+                    "G07 could not create its immutable Gate capture-core identity.");
+            }
+
+            AuditionPvTestResult[] ordinaryResults = CreateTestResults(
                 state,
                 proof,
                 proofPath,
                 started);
+            AuditionPvTestResult[] gateResults = WriteGateEvidenceArtifacts(
+                state,
+                proof,
+                proofPath,
+                proof.frameHashLedgerPath,
+                evidence,
+                captureCoreSha256,
+                started);
+            AuditionPvTestResult[] results = ordinaryResults
+                .Concat(gateResults)
+                .ToArray();
             AuditionPvCaptureManifest manifest =
                 AuditionPvCaptureManifestFactory.CreateForRoot(
                     state.captureId,
                     state.outputRoot,
                     state.outputDirectory,
-                    new[]
-                    {
-                        AuditionPvStationPhase2PatternRelayCapture
-                            .CreateShotManifestEntry()
-                    },
-                    AuditionPvStationPhase2PatternRelayCapture
-                        .CreateBaselineManifestEntries(),
+                    shots,
+                    baselines,
                     results,
                     createdAtUtc: started,
                     gitSnapshot: CreateGitSnapshot(state),
                     engineSnapshot: RestoreEngine(state.engine),
                     dependencyHashSnapshot: state.dependencyHashesAtStart);
+            if (!string.Equals(
+                    captureCoreSha256,
+                    AuditionPvSixtySecondGateManifestValidator
+                        .CaptureCoreSha256(manifest),
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G07 Gate evidence changed its immutable capture-core identity.");
+            }
+
             ValidateManifestInMemory(manifest, state.captureId);
 
             // This is deliberately the final fallible success operation. No
@@ -1771,6 +1879,9 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private static void AnalyzeFrames(string frameDirectory, RuntimeProof proof)
         {
+            int Source(int logicalFrame) =>
+                AuditionPvStationPhase2PatternRelayCapture
+                    .LogicalToSourceFrame(logicalFrame);
             var sequence = new SequenceVisualMetrics
             {
                 minimumSampledLuma = 255
@@ -1789,8 +1900,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                 sampleStride = 4
             };
             var selected = new Dictionary<int, Color32[]>();
-            int[] selectedFrames =
-                { 9, 10, 66, 67, 68, 367, 368, 416, 417, 418 };
+            int[] selectedFrames = new[]
+                { 9, 10, 66, 67, 68, 367, 368, 416, 417, 418 }
+                .Select(Source)
+                .ToArray();
             var selectedSet = new HashSet<int>(selectedFrames);
             for (int frame = 0;
                 frame < AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
@@ -1824,7 +1937,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.visualMetrics = sequence;
             proof.hudMetrics = hud;
             proof.curtainWindupDelta = EvaluateFrameDelta(
-                selected[9], selected[10],
+                selected[Source(9)], selected[Source(10)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 sampleStride: 16);
@@ -1851,30 +1964,30 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height);
             proof.curtainFireDelta = EvaluateFrameDelta(
-                selected[67], selected[68],
+                selected[Source(67)], selected[Source(68)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 curtainFireRoi,
                 sampleStride: 4);
             proof.curtainQuietDelta = EvaluateFrameDelta(
-                selected[66], selected[67],
+                selected[Source(66)], selected[Source(67)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 curtainFireRoi,
                 sampleStride: 4);
             proof.hoverWindupDelta = EvaluateFrameDelta(
-                selected[367], selected[368],
+                selected[Source(367)], selected[Source(368)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 sampleStride: 16);
             proof.hoverFireDelta = EvaluateFrameDelta(
-                selected[417], selected[418],
+                selected[Source(417)], selected[Source(418)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 hoverFireRoi,
                 sampleStride: 4);
             proof.hoverQuietDelta = EvaluateFrameDelta(
-                selected[416], selected[417],
+                selected[Source(416)], selected[Source(417)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 hoverFireRoi,
@@ -1892,13 +2005,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height);
             proof.curtainWindupColors = EvaluatePatternColors(
-                selected[10],
+                selected[Source(10)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 curtainWindupColorRoi,
                 4);
             proof.hoverWindupColors = EvaluatePatternColors(
-                selected[368],
+                selected[Source(368)],
                 AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height,
                 hoverWindupColorRoi,
@@ -2245,7 +2358,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 Passed(
                     "recorder",
                     "raw-warmup-and-logical-remap",
-                    "Recorder 5.1.6 QHD60 raw0..420 exact; raw0 evidence; raw1..420 -> logical f0..f419.",
+                    "Recorder 5.1.6 QHD60 raw0..780 exact; raw0 evidence; raw1..780 -> source f0..f779; logical f0..f419 occupies source f180..f599 with real 180/180 handles.",
                     proof.warmupEvidencePath),
                 Passed(
                     "product-state",
@@ -2260,7 +2373,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 Passed(
                     "render",
                     "qhd-hud-windup-pattern-telemetry",
-                    $"420 QHD PNGs; black={proof.visualMetrics.blackRatio:P3}; magenta={proof.visualMetrics.magentaRatio:P3}; windup deltas={proof.curtainWindupDelta.meanAbsoluteRgb:F2}/{proof.hoverWindupDelta.meanAbsoluteRgb:F2}.",
+                    $"780 QHD PNGs; black={proof.visualMetrics.blackRatio:P3}; magenta={proof.visualMetrics.magentaRatio:P3}; windup deltas={proof.curtainWindupDelta.meanAbsoluteRgb:F2}/{proof.hoverWindupDelta.meanAbsoluteRgb:F2}.",
                     Path.Combine(state.outputDirectory, "frames", "g07")),
                 Passed(
                     "render",
@@ -2270,13 +2383,202 @@ namespace DimensionBrawl.Editor.AuditionPV
                 Passed(
                     "provenance",
                     "clean-git-dependencies-and-byte-baselines",
-                    $"{proof.dependencyHashCount} hashes stable; BL08/BL09 byte-exact; f67/f417 neighbor hashes retained.",
+                    $"{proof.dependencyHashCount} hashes stable; 780-entry source ledger; BL08/BL09 byte-exact at source f248/f598; logical f67/f417 neighbor hashes retained at source f247/f597.",
                     proofPath),
                 Passed(
                     "lifecycle",
                     "exhaustive-public-cleanup",
                     $"Unrecorded cue settle {proof.postRecordingSettleSeconds:F3}s; emitter/index/queue, poses, camera, HUD, globals, events, cadence and clock restored.",
                     proofPath)
+            };
+        }
+
+        private static AuditionPvTestResult[] WriteGateEvidenceArtifacts(
+            PersistedRunnerState state,
+            RuntimeProof proof,
+            string runtimeProofPath,
+            string frameHashLedgerPath,
+            string evidenceDirectory,
+            string captureCoreSha256,
+            DateTime startedAtUtc)
+        {
+            long duration = Math.Max(
+                0L,
+                (long)(DateTime.UtcNow - startedAtUtc).TotalMilliseconds);
+            string createdAtUtc = startedAtUtc.ToString(
+                "O",
+                CultureInfo.InvariantCulture);
+            string normalizedRuntimeProofPath =
+                Path.GetFullPath(runtimeProofPath).Replace('\\', '/');
+            string runtimeProofSha256 =
+                AuditionPvSha256.FileHash(runtimeProofPath);
+            string normalizedFrameLedgerPath =
+                Path.GetFullPath(frameHashLedgerPath).Replace('\\', '/');
+            string frameLedgerSha256 =
+                AuditionPvSha256.FileHash(frameHashLedgerPath);
+            var runtimePin = new AuditionPvPinnedArtifact
+            {
+                path = normalizedRuntimeProofPath,
+                sha256 = runtimeProofSha256
+            };
+            var ledgerPin = new AuditionPvPinnedArtifact
+            {
+                path = normalizedFrameLedgerPath,
+                sha256 = frameLedgerSha256
+            };
+
+            AuditionPvTestResult Passed(
+                string name,
+                string details,
+                string artifactPath) => new()
+            {
+                suite = AuditionPvStationPhase2PatternRelayCapture
+                    .GateEvidenceTestSuite,
+                name = name,
+                status = "passed",
+                durationMilliseconds = duration,
+                details = details,
+                artifactPath = artifactPath.Replace('\\', '/')
+            };
+
+            string authorshipPath = Path.Combine(
+                evidenceDirectory,
+                GateShotAuthorshipFileName);
+            var authorship = new AuditionPvShotAuthorshipArtifact
+            {
+                schemaVersion =
+                    AuditionPvSixtySecondGateManifestValidator
+                        .ShotAuthorshipSchema,
+                sourceCaptureCoreSha256 = captureCoreSha256,
+                captureId = state.captureId,
+                sourceShotId =
+                    AuditionPvStationPhase2PatternRelayCapture.ShotId,
+                cameraId =
+                    AuditionPvStationPhase2PatternRelayCapture.GateCameraId,
+                gameplayState =
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .GateGameplayState,
+                deterministicSeed =
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .DeterministicRandomSeed,
+                timelineId =
+                    AuditionPvStationPhase2PatternRelayCapture.GateTimelineId,
+                runtimeProof = runtimePin,
+                tool = "G07GoldenRunner",
+                toolVersion = string.IsNullOrWhiteSpace(
+                    state.engine?.recorderPackageVersion)
+                    ? "1"
+                    : state.engine.recorderPackageVersion,
+                createdAtUtc = createdAtUtc
+            };
+            WriteJsonNew(authorshipPath, authorship);
+            string authorshipSha256 =
+                AuditionPvSha256.FileHash(authorshipPath);
+            var results = new List<AuditionPvTestResult>
+            {
+                Passed(
+                    "shot-authorship/"
+                        + AuditionPvStationPhase2PatternRelayCapture.ShotId,
+                    $"artifact-sha256={authorshipSha256}; capture-core-sha256={captureCoreSha256}; exact-camera-state-seed-timeline=true",
+                    authorshipPath),
+                Passed(
+                    "shot-authorship-runtime/"
+                        + AuditionPvStationPhase2PatternRelayCapture.ShotId,
+                    $"artifact-sha256={runtimeProofSha256}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                    runtimeProofPath)
+            };
+
+            string semanticDirectory = Path.Combine(
+                evidenceDirectory,
+                GateSemanticEvidenceFolderName);
+            foreach (GateSemanticBeatSpec spec in
+                     CreateGateSemanticBeatSpecs(proof))
+            {
+                string artifactPath = Path.Combine(
+                    semanticDirectory,
+                    spec.beatId + ".json");
+                var artifact = new GateSemanticBeatRuntimeArtifact
+                {
+                    schemaVersion =
+                        "dimension-brawl.audition-pv.g07-semantic-beat-runtime.v1",
+                    sourceCaptureCoreSha256 = captureCoreSha256,
+                    captureId = state.captureId,
+                    sourceShotId =
+                        AuditionPvStationPhase2PatternRelayCapture.ShotId,
+                    beatId = spec.beatId,
+                    runtimeFactKey = spec.beatId,
+                    sourceRangeStartFrame =
+                        AuditionPvStationPhase2PatternRelayCapture.FirstFrame,
+                    sourceRangeEndFrame =
+                        AuditionPvStationPhase2PatternRelayCapture.LastFrame,
+                    logicalFactStartFrame = spec.logicalStartFrame,
+                    logicalFactEndFrame = spec.logicalEndFrame,
+                    sourceFactStartFrame =
+                        AuditionPvStationPhase2PatternRelayCapture
+                            .LogicalToSourceFrame(spec.logicalStartFrame),
+                    sourceFactEndFrame =
+                        AuditionPvStationPhase2PatternRelayCapture
+                            .LogicalToSourceFrame(spec.logicalEndFrame),
+                    exactFacts = spec.exactFacts,
+                    runtimeProof = runtimePin,
+                    sourceFrameLedger = ledgerPin,
+                    producer = "G07GoldenRunner",
+                    createdAtUtc = createdAtUtc
+                };
+                WriteJsonNew(artifactPath, artifact);
+                string artifactSha256 =
+                    AuditionPvSha256.FileHash(artifactPath);
+                results.Add(Passed(
+                    "semantic-beat/" + spec.beatId,
+                    $"artifact-sha256={artifactSha256}; semantic-fact={spec.beatId}; capture-core-sha256={captureCoreSha256}; exact-runtime=true",
+                    artifactPath));
+            }
+
+            string[] actualBeatIds = results
+                .Where(result => result.name.StartsWith(
+                    "semantic-beat/",
+                    StringComparison.Ordinal))
+                .Select(result => result.name.Substring(
+                    "semantic-beat/".Length))
+                .ToArray();
+            if (!actualBeatIds.SequenceEqual(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .GateSemanticBeatIds(),
+                    StringComparer.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G07 Gate semantic-beat artifacts are incomplete or reordered.");
+            }
+
+            return results.ToArray();
+        }
+
+        private static GateSemanticBeatSpec[] CreateGateSemanticBeatSpecs(
+            RuntimeProof proof)
+        {
+            return new[]
+            {
+                new GateSemanticBeatSpec(
+                    "boss-pattern-2",
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .CurtainWindupFrame,
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .CurtainFireFrame,
+                    $"pattern={proof.curtainFirePatternId}",
+                    $"priority={proof.curtainWasPriority}",
+                    $"projectiles={proof.curtainSpawnedCount}",
+                    $"windup-fire={proof.curtainWindupFrame}>{proof.curtainFireFrame}"),
+                new GateSemanticBeatSpec(
+                    "boss-pattern-3",
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .HoverWindupFrame,
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .HoverFireFrame,
+                    $"pattern={proof.hoverFirePatternId}",
+                    $"priority={proof.hoverWasPriority}",
+                    $"sequence-index-after={proof.hoverSequenceIndexAfterFire}",
+                    $"projectiles={proof.hoverSpawnedCount}",
+                    $"windup-fire={proof.hoverWindupFrame}>{proof.hoverFireFrame}")
             };
         }
 
@@ -2308,18 +2610,18 @@ namespace DimensionBrawl.Editor.AuditionPV
                     AuditionPvStationPhase2PatternRelayCapture.StationScenePath,
                     StringComparison.Ordinal)
                 || shot.startFrame != 0
-                || shot.endFrame != 419
-                || shot.expectedFrameCount != 420
+                || shot.endFrame != 779
+                || shot.expectedFrameCount != 780
                 || !string.Equals(shot.hudMode, "hud-on", StringComparison.Ordinal)
                 || roundTrip.baselines.Length != 2
-                || bl08.sourceFrame != 68
+                || bl08.sourceFrame != 248
                 || !string.Equals(bl08.shotId, "g07", StringComparison.Ordinal)
                 || !string.Equals(bl08.hudMode, "hud-on", StringComparison.Ordinal)
                 || !string.Equals(bl08.status, "captured", StringComparison.Ordinal)
                 || !string.Equals(bl08.fileName,
                     AuditionPvStationPhase2PatternRelayCapture.Bl08FileName,
                     StringComparison.Ordinal)
-                || bl09.sourceFrame != 418
+                || bl09.sourceFrame != 598
                 || !string.Equals(bl09.shotId, "g07", StringComparison.Ordinal)
                 || !string.Equals(bl09.hudMode, "hud-on", StringComparison.Ordinal)
                 || !string.Equals(bl09.status, "captured", StringComparison.Ordinal)
@@ -2329,6 +2631,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !shot.notes.Contains("windup f10/fire f68", StringComparison.Ordinal)
                 || !shot.notes.Contains("windup f368/fire f418", StringComparison.Ordinal)
                 || !shot.notes.Contains("f419", StringComparison.Ordinal)
+                || !shot.notes.Contains("source f180..f599", StringComparison.Ordinal)
                 || !shot.notes.Contains("SetMoveInput only", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
@@ -2360,10 +2663,26 @@ namespace DimensionBrawl.Editor.AuditionPV
                 ("provenance", "clean-git-dependencies-and-byte-baselines", proofPath),
                 ("lifecycle", "exhaustive-public-cleanup", proofPath)
             };
-            if (roundTrip.testResults.Length != expectedResults.Length)
+            string[] expectedGateTestNames = new[]
+                {
+                    "shot-authorship/"
+                        + AuditionPvStationPhase2PatternRelayCapture.ShotId,
+                    "shot-authorship-runtime/"
+                        + AuditionPvStationPhase2PatternRelayCapture.ShotId
+                }
+                .Concat(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .GateSemanticBeatIds()
+                        .Select(beatId => "semantic-beat/" + beatId))
+                .ToArray();
+            string captureCoreSha256 =
+                AuditionPvSixtySecondGateManifestValidator
+                    .CaptureCoreSha256(roundTrip);
+            if (roundTrip.testResults.Length
+                != expectedResults.Length + expectedGateTestNames.Length)
             {
                 throw new InvalidOperationException(
-                    "G07 manifest must contain the exact seven passing test records.");
+                    "G07 manifest must contain the exact ordinary and Gate passing test records.");
             }
 
             foreach ((string suite, string name, string artifact) expected in expectedResults)
@@ -2381,7 +2700,42 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     throw new InvalidOperationException(
                         "G07 manifest test result is missing, failed, or points at the wrong artifact: "
-                        + expected.name);
+                    + expected.name);
+                }
+            }
+
+            foreach (string expectedName in expectedGateTestNames)
+            {
+                AuditionPvTestResult[] matches = roundTrip.testResults
+                    .Where(result => result != null
+                        && string.Equals(
+                            result.suite,
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .GateEvidenceTestSuite,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            result.name,
+                            expectedName,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            result.status,
+                            "passed",
+                            StringComparison.Ordinal))
+                    .ToArray();
+                if (matches.Length != 1
+                    || string.IsNullOrWhiteSpace(matches[0].artifactPath)
+                    || !File.Exists(matches[0].artifactPath)
+                    || !matches[0].details.Contains(
+                        "artifact-sha256=" + AuditionPvSha256.FileHash(
+                            matches[0].artifactPath),
+                        StringComparison.Ordinal)
+                    || !matches[0].details.Contains(
+                        "capture-core-sha256=" + captureCoreSha256,
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "G07 Gate test result is missing, duplicated, or unpinned: "
+                        + expectedName);
                 }
             }
         }
@@ -2866,7 +3220,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 builder.Append(AuditionPvSha256.FileHash(
                         Path.Combine(frameDirectory, name)))
                     .Append("  ")
-                    .Append(name)
+                    .Append(
+                        AuditionPvStationPhase2PatternRelayCapture
+                            .FrameLedgerRelativePath(frame))
                     .Append('\n');
             }
 
@@ -2889,7 +3245,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "G07 canonical 420-frame SHA-256 ledger changed.");
+                    "G07 canonical 780-frame SHA-256 ledger changed.");
             }
         }
 
@@ -3098,7 +3454,10 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             string frames = Path.Combine(output, "frames", "g07");
             ValidateLogicalFrameSequence(frames);
-            for (int frame = 0; frame < 420; frame++)
+            for (int frame =
+                     AuditionPvStationPhase2PatternRelayCapture.FirstFrame;
+                frame <= AuditionPvStationPhase2PatternRelayCapture.LastFrame;
+                frame++)
             {
                 ValidatePngFile(
                     Path.Combine(frames,
@@ -3159,9 +3518,13 @@ namespace DimensionBrawl.Editor.AuditionPV
             ValidatePngFile(bl09, AuditionPvCaptureContract.Width,
                 AuditionPvCaptureContract.Height);
             string frame68 = Path.Combine(frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(68));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .Bl08SourceFrame));
             string frame418 = Path.Combine(frames,
-                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(418));
+                AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                    AuditionPvStationPhase2PatternRelayCapture
+                        .Bl09SourceFrame));
             if (!string.Equals(AuditionPvSha256.FileHash(warmup),
                     proof.warmupEvidenceSha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(frame68),
@@ -3173,19 +3536,29 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || !string.Equals(AuditionPvSha256.FileHash(bl09),
                     proof.bl09Sha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(Path.Combine(frames,
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(66))),
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .LogicalToSourceFrame(66)))),
                     proof.frame66Sha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(Path.Combine(frames,
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(67))),
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .LogicalToSourceFrame(67)))),
                     proof.frame67Sha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(Path.Combine(frames,
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(416))),
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .LogicalToSourceFrame(416)))),
                     proof.frame416Sha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(Path.Combine(frames,
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(417))),
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .LogicalToSourceFrame(417)))),
                     proof.frame417Sha256, StringComparison.Ordinal)
                 || !string.Equals(AuditionPvSha256.FileHash(Path.Combine(frames,
-                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(419))),
+                        AuditionPvStationPhase2PatternRelayCapture.FrameFileName(
+                            AuditionPvStationPhase2PatternRelayCapture
+                                .LogicalToSourceFrame(419)))),
                     proof.frame419Sha256, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
@@ -3481,13 +3854,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 return "Refused non-contained G07 baseline cleanup target.";
             }
 
-            string[] ownedSuccessArtifacts =
+            var ownedSuccessArtifacts = new List<string>
             {
                 Path.Combine(
                     outputDirectory,
                     AuditionPvCaptureContract.ManifestFileName),
                 Path.Combine(outputDirectory, EvidenceFolderName, RuntimeProofFileName),
                 Path.Combine(outputDirectory, EvidenceFolderName, FrameHashLedgerFileName),
+                Path.Combine(outputDirectory, EvidenceFolderName,
+                    GateShotAuthorshipFileName),
                 Path.Combine(
                     baselineRoot,
                     AuditionPvStationPhase2PatternRelayCapture.Bl08FileName),
@@ -3495,6 +3870,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                     baselineRoot,
                     AuditionPvStationPhase2PatternRelayCapture.Bl09FileName)
             };
+            ownedSuccessArtifacts.AddRange(
+                AuditionPvStationPhase2PatternRelayCapture
+                    .GateSemanticBeatIds()
+                    .Select(beatId => Path.Combine(
+                        outputDirectory,
+                        EvidenceFolderName,
+                        GateSemanticEvidenceFolderName,
+                        beatId + ".json")));
             Exception failure = null;
             foreach (string path in ownedSuccessArtifacts)
             {
@@ -3732,6 +4115,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             public bool lifecycleEmergencyResetUsed;
             public string cleanupFailure = string.Empty;
             public int recorderWarmupEndOfFrameCount;
+            public int recorderPreHandleEndOfFrameCount;
+            public int canonicalSourceFrameCount;
+            public int logicalFirstSourceFrame = -1;
+            public int logicalLastSourceFrame = -1;
+            public int recordedPreHandleFrameCount;
+            public int recordedPostHandleFrameCount;
             public bool recorderPaddingActiveAtLogicalFrameZero;
             public float recorderCaptureDeltaTimeAtLogicalFrameZero;
             public bool recorderAutoStoppedAfterLastFrame;
@@ -3767,6 +4156,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string frame419Sha256 = string.Empty;
             public string frameHashLedgerPath = string.Empty;
             public string frameHashLedgerSha256 = string.Empty;
+            public int frameHashLedgerEntryCount;
+            public int[] pixelSampleSourceFrames = Array.Empty<int>();
             public string bl08Sha256 = string.Empty;
             public string bl09Sha256 = string.Empty;
             public SequenceVisualMetrics visualMetrics;
@@ -3881,6 +4272,48 @@ namespace DimensionBrawl.Editor.AuditionPV
             public int markerPixelHeight;
         }
 
+        private sealed class GateSemanticBeatSpec
+        {
+            public GateSemanticBeatSpec(
+                string beatId,
+                int logicalStartFrame,
+                int logicalEndFrame,
+                params string[] exactFacts)
+            {
+                this.beatId = beatId;
+                this.logicalStartFrame = logicalStartFrame;
+                this.logicalEndFrame = logicalEndFrame;
+                this.exactFacts = exactFacts ?? Array.Empty<string>();
+            }
+
+            public readonly string beatId;
+            public readonly int logicalStartFrame;
+            public readonly int logicalEndFrame;
+            public readonly string[] exactFacts;
+        }
+
+        [Serializable]
+        private sealed class GateSemanticBeatRuntimeArtifact
+        {
+            public string schemaVersion = string.Empty;
+            public string sourceCaptureCoreSha256 = string.Empty;
+            public string captureId = string.Empty;
+            public string sourceShotId = string.Empty;
+            public string beatId = string.Empty;
+            public string runtimeFactKey = string.Empty;
+            public int sourceRangeStartFrame;
+            public int sourceRangeEndFrame;
+            public int logicalFactStartFrame;
+            public int logicalFactEndFrame;
+            public int sourceFactStartFrame;
+            public int sourceFactEndFrame;
+            public string[] exactFacts = Array.Empty<string>();
+            public AuditionPvPinnedArtifact runtimeProof = new();
+            public AuditionPvPinnedArtifact sourceFrameLedger = new();
+            public string producer = string.Empty;
+            public string createdAtUtc = string.Empty;
+        }
+
         [Serializable]
         private sealed class RuntimeProofArtifact
         {
@@ -3924,7 +4357,7 @@ namespace DimensionBrawl.Editor.AuditionPV
     public sealed class AuditionPvStationPhase2PatternRelayGoldenRunnerBehaviour
         : MonoBehaviour
     {
-        private const double ShotTimeoutSeconds = 150d;
+        private const double ShotTimeoutSeconds = 240d;
         private string statePath;
         private string outputDirectory;
         private AuditionPvStationPhase2PatternRelayGoldenRunner.PersistedRunnerState state;
@@ -4098,6 +4531,32 @@ namespace DimensionBrawl.Editor.AuditionPV
             proof.recorderWarmupEndOfFrameCount = 1;
             yield return new WaitForEndOfFrame();
             proof.recorderWarmupEndOfFrameCount = 2;
+            for (int handleFrame = 0;
+                handleFrame
+                    < AuditionPvStationPhase2PatternRelayCapture
+                        .HandleFrameCount;
+                handleFrame++)
+            {
+                yield return new WaitForEndOfFrame();
+                proof.recorderPreHandleEndOfFrameCount++;
+            }
+
+            proof.canonicalSourceFrameCount =
+                AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount;
+            proof.logicalFirstSourceFrame =
+                AuditionPvStationPhase2PatternRelayCapture.SelectStartFrame;
+            proof.logicalLastSourceFrame =
+                AuditionPvStationPhase2PatternRelayCapture.SelectEndFrame;
+            proof.recordedPreHandleFrameCount =
+                proof.recorderPreHandleEndOfFrameCount;
+            if (!recorderController.IsRecording()
+                || director.IsRunning
+                || director.IsComplete)
+            {
+                throw new InvalidOperationException(
+                    "G07 did not record the complete real prehandle before logical f0.");
+            }
+
             armLogicalFrameZero = true;
 
             double deadline = Time.realtimeSinceStartupAsDouble + ShotTimeoutSeconds;
@@ -4149,14 +4608,22 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G07 did not complete logical frames 0..419 before timeout.");
             }
 
-            yield return null;
+            while (recorderController.IsRecording()
+                && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                yield return null;
+            }
+
             proof.recorderAutoStoppedAfterLastFrame =
                 !recorderController.IsRecording();
             if (!proof.recorderAutoStoppedAfterLastFrame)
             {
                 throw new InvalidOperationException(
-                    "G07 Recorder did not auto-stop after raw420/logical f419.");
+                    "G07 Recorder did not auto-stop after raw780/canonical source f779.");
             }
+
+            proof.recordedPostHandleFrameCount =
+                AuditionPvStationPhase2PatternRelayCapture.HandleFrameCount;
         }
 
         private void HandleFramePresented(int frameIndex)

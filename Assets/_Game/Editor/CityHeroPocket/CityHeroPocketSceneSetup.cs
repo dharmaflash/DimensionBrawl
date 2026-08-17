@@ -84,6 +84,14 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_PlayerAction_BossBarrageLocalDefense.asset";
         private const string PlayerProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
+        public const string SummonSlot1ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset";
+        public const string SummonSlot1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        public const string SummonSlot1EntryCuePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
+        public const string SummonSlot1ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string EnemyPrefabPath =
             "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Ranged_RifleCrossfire.prefab";
         private const string HudPrefabPath =
@@ -413,6 +421,10 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             LoadRequired<RuntimeAnimatorController>(InoriAnimatorControllerPath);
             LoadRequired<PlayerActionProfile>(DodgeProfilePath);
             LoadRequired<GameObject>(PlayerProjectilePrefabPath);
+            LoadRequired<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
+            LoadRequired<GameObject>(SummonSlot1ProjectilePrefabPath);
+            LoadRequired<GameObject>(SummonSlot1EntryCuePrefabPath);
+            LoadRequired<GameObject>(SummonSlot1ActorPrefabPath);
             LoadRequired<GameObject>(EnemyPrefabPath);
             LoadRequired<GameObject>(HudPrefabPath);
             LoadRequired<GameObject>(ExitPortalPrefabPath);
@@ -929,6 +941,18 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 LoadRequired<RuntimeAnimatorController>(InoriAnimatorControllerPath);
             animator.applyRootMotion = false;
 
+            SummonEnergyLadder energy = root.AddComponent<SummonEnergyLadder>();
+            PlayerSummonSlot1Action summon = root.AddComponent<PlayerSummonSlot1Action>();
+            energy.ConfigureReferences(null, root.transform);
+            SerializedObject serializedEnergy = new(energy);
+            SetObject(serializedEnergy, "laneSpace", null);
+            SetObject(serializedEnergy, "trackedPlayer", root.transform);
+            SetFloat(serializedEnergy, "levelOneEnergy", 100f);
+            SetFloat(serializedEnergy, "levelTwoEnergy", 100f);
+            SetFloat(serializedEnergy, "levelThreeEnergy", 100f);
+            SetBool(serializedEnergy, "gainEnabled", true);
+            serializedEnergy.ApplyModifiedPropertiesWithoutUndo();
+
             return new PlayerPackage(
                 root,
                 RequireSingle<CombatHealth>(root),
@@ -939,6 +963,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 RequireSingle<PlayerRangedAimController>(root),
                 RequireSingle<PlayerRangedBasicAttackAction>(root),
                 RequireSingle<PlayerLockTargetController>(root),
+                energy,
+                summon,
                 animator);
         }
 
@@ -1068,7 +1094,60 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             SetObject(serializedRanged, "projectilePrefabObject", projectilePrefab);
             SetObject(serializedRanged, "projectileRoot", playerProjectiles);
             serializedRanged.ApplyModifiedPropertiesWithoutUndo();
-            GameObject runtimeOwner = enemyProjectiles.parent.gameObject;
+            Transform runtimeRoot = playerProjectiles.parent;
+            Require(runtimeRoot != null
+                    && ReferenceEquals(runtimeRoot, enemyProjectiles.parent)
+                    && string.Equals(runtimeRoot.name, RuntimeRootName, StringComparison.Ordinal),
+                "City projectile roots must share the existing runtime root.");
+
+            GameObject summonProjectileObject =
+                LoadRequired<GameObject>(SummonSlot1ProjectilePrefabPath);
+            LaneActionProjectile summonProjectile =
+                summonProjectileObject.GetComponent<LaneActionProjectile>();
+            Require(summonProjectile != null,
+                $"Summon projectile prefab has no {nameof(LaneActionProjectile)} root component.");
+            GameObject entryCue = LoadRequired<GameObject>(SummonSlot1EntryCuePrefabPath);
+            GameObject summonActorObject = LoadRequired<GameObject>(SummonSlot1ActorPrefabPath);
+            SummonFrontlineProxy summonActor =
+                summonActorObject.GetComponent<SummonFrontlineProxy>();
+            Require(summonActor != null,
+                $"Summon actor prefab has no {nameof(SummonFrontlineProxy)} root component.");
+            CombatVfxCuePlayer combatVfx = RequireSingle<CombatVfxCuePlayer>(player.Root);
+
+            player.Energy.ConfigureReferences(null, player.Root.transform);
+            player.Summon.ConfigureReferences(
+                player.Energy,
+                player.Health,
+                player.TargetSelector,
+                enemy.Health,
+                null,
+                summonProjectile,
+                entryCue,
+                playerProjectiles,
+                runtimeRoot,
+                summonActor,
+                runtimeRoot,
+                combatVfx);
+            player.Summon.ConfigureSummonActionProfile(
+                LoadRequired<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
+            player.Summon.ConfigureRequiredSummonMana(200f);
+            player.Summon.ConfigureSlotCooldown(9.5f);
+
+            SerializedObject serializedSummon = new(player.Summon);
+            SetObject(serializedSummon, "summonAction", null);
+            SetBool(serializedSummon, "useKeyboardWhenActionMissing", false);
+            RequireProperty(serializedSummon, "sourceTeam").intValue =
+                (int)DamageTeam.AllySummon;
+            RequireProperty(serializedSummon, "prewarmCount").intValue = 2;
+            RequireProperty(serializedSummon, "actorPrewarmCount").intValue = 1;
+            RequireProperty(serializedSummon, "maxActiveSummonActors").intValue = 1;
+            SetFloat(serializedSummon, "entryForwardOffset", 1.35f);
+            SetFloat(serializedSummon, "summonActorSpawnDelaySeconds", 0.28f);
+            SetFloat(serializedSummon, "actorEntryCatchupSecondsPerMeter", 0.12f);
+            SetFloat(serializedSummon, "useBlockedHintSeconds", 0.75f);
+            serializedSummon.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject runtimeOwner = runtimeRoot.gameObject;
             CityHeroPocketEnemyProjectileRootBinder binder =
                 runtimeOwner.AddComponent<CityHeroPocketEnemyProjectileRootBinder>();
             binder.Configure(enemy.ProjectileDriver, enemyProjectiles);
@@ -1304,10 +1383,15 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 "PauseButton",
                 CombatHudActionId.Pause,
                 sendHoldState: false);
+            ConfigurePointerAction(
+                hud.Root,
+                hud.Input,
+                "SummonSlot1Button",
+                CombatHudActionId.SummonSlot1,
+                sendHoldState: false);
 
             DisableUnavailableAction(hud.Root, "Skill1Button");
             DisableUnavailableAction(hud.Root, "UltimateButton");
-            DisableUnavailableAction(hud.Root, "SummonSlot1Button");
             DisableUnavailableAction(hud.Root, "SummonSlot2Button");
             DisableUnavailableAction(hud.Root, "SummonSlot3Button");
 
@@ -1322,7 +1406,9 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 player.Movement,
                 player.Action,
                 player.Mode,
-                player.Ranged);
+                player.Ranged,
+                skill: null,
+                summon1: player.Summon);
             RecordPrefabOverride(hud.Binder);
 
             SerializedObject serializedBinder = new(hud.Binder);
@@ -1954,6 +2040,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 PlayerRangedAimController aim,
                 PlayerRangedBasicAttackAction ranged,
                 PlayerLockTargetController lockTarget,
+                SummonEnergyLadder energy,
+                PlayerSummonSlot1Action summon,
                 Animator animator)
             {
                 Root = root;
@@ -1965,6 +2053,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 Aim = aim;
                 Ranged = ranged;
                 LockTarget = lockTarget;
+                Energy = energy;
+                Summon = summon;
                 Animator = animator;
             }
 
@@ -1977,6 +2067,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
             public PlayerRangedAimController Aim { get; }
             public PlayerRangedBasicAttackAction Ranged { get; }
             public PlayerLockTargetController LockTarget { get; }
+            public SummonEnergyLadder Energy { get; }
+            public PlayerSummonSlot1Action Summon { get; }
             public Animator Animator { get; }
         }
 

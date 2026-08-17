@@ -19,8 +19,9 @@ namespace DimensionBrawl.Editor.AuditionPV
     /// <summary>
     /// Capture contract and output integration for the deterministic G06 Station
     /// gameplay source. The product-state director below owns shot preparation;
-    /// Recorder orchestration can start after IsPrepared becomes true and stop
-    /// after IsComplete becomes true.
+    /// Recorder orchestration starts its prehandle after IsPrepared, places the
+    /// logical interval at source f180..f539, and keeps normal product updates
+    /// recording through the posthandle after IsComplete.
     /// </summary>
     public static class AuditionPvStationPhase2SummonCounterCapture
     {
@@ -84,18 +85,62 @@ namespace DimensionBrawl.Editor.AuditionPV
             "Assets/_Game/Art/Environment/OlympusCorridor/Profiles/DB_OlympusCorridor_PostProcess.asset";
         internal const string NoCrossWallPrefabPath =
             "Assets/_Game/Prefabs/VFX/Environment/PF_OlympusStation_NoCrossRedCubeZone.prefab";
+        internal const string BossEncounterPath =
+            "Assets/_Game/Scripts/Combat/BossBarrageEncounterController.cs";
+        internal const string FrontlineStageProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
+        internal const string SummonOpportunityProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonOpportunity_BossPressureBlock.asset";
+        internal const string PlayerSkill1ActionPath =
+            "Assets/_Game/Scripts/Player/PlayerSkill1Action.cs";
+        internal const string PlayerSkill1LaserSweepPath =
+            "Assets/_Game/Scripts/Player/PlayerSkill1LaserSweepAction.cs";
+        internal const string PlayerSkill1LaserSweepPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1_4SidesLaser_HOVL.prefab";
+        internal const string CombatHudInputBridgePath =
+            "Assets/_Game/UI/CombatHud/CombatHudInputBridge.cs";
+        internal const string CombatHudBinderPath =
+            "Assets/_Game/UI/CombatHud/BossBarrageLaneReviewCombatHudBinder.cs";
+        internal const string ActionCameraCueDriverPath =
+            "Assets/_Game/Scripts/Presentation/ActionCameraCueDriver.cs";
+        internal const string ActionCinematicCueDirectorPath =
+            "Assets/_Game/Scripts/Presentation/ActionCinematicCueDirector.cs";
+        internal const string ActionCinematicCueProfileScriptPath =
+            "Assets/_Game/Scripts/Presentation/ActionCinematicCueProfile.cs";
+        internal const string ActionCinematicCueProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ActionCinematicCues_ActionFoundation.asset";
+        internal const string BossBarragePocketCameraCueBridgePath =
+            "Assets/_Game/Scripts/Presentation/BossBarragePocketCameraCueBridge.cs";
+        internal const string SixtySecondGateManifestPath =
+            "Assets/_Game/Editor/AuditionPV/AuditionPvSixtySecondGateManifest.cs";
 
         internal const string ShotId = "g06";
         internal const string BaselinesFolderName = "baselines";
+        internal const string FrameHashLedgerFileName = "frame_hashes.sha256";
+        internal const string GateEvidenceTestSuite =
+            "AuditionPvSixtySecondEvidence";
+        internal const string GateCameraId =
+            "olympus-station-action-camera";
+        internal const string GateGameplayState =
+            "akaza-phase2-crushnet-dodge-summon-tier3";
+        internal const string GateTimelineId =
+            "g06-product-clock-logical-000-359-v2";
         internal const string Bl03FileName =
             "BL03_AKAZA_PHASE2_CRUSHNET__HUDON__t00.000000.png";
         internal const string Bl06FileName =
             "BL06_AKAZA_PHASE2_PERFECT_DODGE__HUDON__t03.150000.png";
         internal const string Bl07FileName =
             "BL07_AKAZA_PHASE2_SUMMON_COUNTER__HUDON__t04.183333.png";
+        internal const int LogicalFirstFrame = 0;
+        internal const int LogicalLastFrame = 359;
+        internal const int LogicalExpectedFrameCount = 360;
+        internal const int HandleFrameCount = 180;
         internal const int FirstFrame = 0;
-        internal const int LastFrame = 359;
-        internal const int ExpectedFrameCount = 360;
+        internal const int SelectStartFrame = HandleFrameCount;
+        internal const int SelectEndFrame =
+            SelectStartFrame + LogicalExpectedFrameCount - 1;
+        internal const int LastFrame = SelectEndFrame + HandleFrameCount;
+        internal const int ExpectedFrameCount = LastFrame - FirstFrame + 1;
         internal const int BeginWindupFrame = 1;
         internal const int FirePendingWaveFrame = 71;
         internal const int QueueDodgeFrame = 186;
@@ -106,21 +151,35 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int ScreenObservationFirstFrame = 239;
         internal const int ScreenObservationLastFrame = 249;
         internal const int RetainedProjectileInterceptFrame = 250;
+        internal const int ReleaseSkill1InputFrame = 275;
+        internal const int RequestSkill1Frame = 276;
+        internal const int RelockSkill1InputFrame = 277;
         internal const int CounterHitFirstFrame = 251;
-        internal const int CounterHitLastFrame = LastFrame;
-        internal const int Bl07SourceFrame = RetainedProjectileInterceptFrame + 1;
-        internal const int RecommendedSelectStartFrame = 180;
-        internal const int RecommendedSelectEndFrame = 316;
+        internal const int CounterHitLastFrame = LogicalLastFrame;
+        internal const int Bl07LogicalFrame = RetainedProjectileInterceptFrame + 1;
+        internal const int Bl07SourceFrame = SelectStartFrame + Bl07LogicalFrame;
+        internal const int RecommendedSelectLogicalStartFrame = 180;
+        internal const int RecommendedSelectLogicalEndFrame = 316;
+        internal const int RecommendedSelectStartFrame =
+            SelectStartFrame + RecommendedSelectLogicalStartFrame;
+        internal const int RecommendedSelectEndFrame =
+            SelectStartFrame + RecommendedSelectLogicalEndFrame;
         internal const int AuthoredSummonTier = 2;
         internal const float AuthoredSummonManaCost = 200f;
         internal const float AuthoredEnergyAfterUse = 100f;
+        internal const float AuthoredFollowupEnergyPulse = 300f;
+        internal const int AuthoredSkill1Tier = 3;
+        internal const float AuthoredTierThreeLaserDamage = 54f;
+        internal const float AuthoredEnergyAfterSkill1 = 0f;
         internal const float AuthoredCounterDamage = 29.439999f;
         internal const int PhaseTwoSettleFrames = 90;
-        internal const int Bl03SourceFrame = 0;
+        internal const int Bl03LogicalFrame = 0;
+        internal const int Bl03SourceFrame = SelectStartFrame + Bl03LogicalFrame;
         // The product presenter intentionally opens its screen-domain coroutine on
         // the frame after the real impact event. f188 remains the collision proof;
         // f189 is the first honest rendered screen-domain hero baseline.
-        internal const int Bl06SourceFrame = ImpactFrame + 1;
+        internal const int Bl06LogicalFrame = ImpactFrame + 1;
+        internal const int Bl06SourceFrame = SelectStartFrame + Bl06LogicalFrame;
         internal const int DeterministicRandomSeed = 0x4706;
         internal const float ProductScreenDomainAlpha = 0.14f;
         internal const float ProductScreenInvertAlpha = 0.015f;
@@ -140,11 +199,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 hudMode = "hud-on",
                 notes =
                     "Fresh Station product state. Actual threshold transition to Akaza Phase 2; "
+                    + "canonical source f0..f719 with recorded 180-frame pre/post handles "
+                    + "around logical f0..f359 at source f180..f539; "
                     + "90 fixed-60Hz Phase 2 camera/UI/animation settle frames; "
                     + "CrushNet BeginWindup f1, FirePendingWave f71, QueueDodge f186, "
                     + "real active projectile impact f188; screen-domain hero f189; "
                     + "authored Slot1 input release f221, public QueueSummonSlot1 f222, relock f223; "
                     + "unique tier-2 AllySummon pressure screen and retained CrushNet actual intercept f250; "
+                    + "public encounter pulse f250 restores EN 100->300; HUD RequestSkill1 f276 "
+                    + "spends tier 3 to EN 0 and drives actual LaserSweep, SummonFollowupHit, then UltimateCutIn; "
                     + "product automatic 29.44 counter projectile and exact boss CombatHealth.Damaged hit; "
                     + "the authored Station screen-domain profile (.14/.015/.18/.03, 0.42s) "
                     + "is used without a capture-time visual override; 2560x1440 PNG at 60fps."
@@ -197,6 +260,86 @@ namespace DimensionBrawl.Editor.AuditionPV
             return frameIndex / (float)AuditionPvCaptureContract.Fps;
         }
 
+        internal static int LogicalToSourceFrame(int logicalFrame)
+        {
+            ValidateLogicalFrameIndex(logicalFrame);
+            return SelectStartFrame + logicalFrame;
+        }
+
+        internal static int SourceToLogicalFrame(int sourceFrame)
+        {
+            ValidateFrameIndex(sourceFrame);
+            return sourceFrame >= SelectStartFrame && sourceFrame <= SelectEndFrame
+                ? sourceFrame - SelectStartFrame
+                : -1;
+        }
+
+        internal static string SourceFrameRole(int sourceFrame)
+        {
+            ValidateFrameIndex(sourceFrame);
+            if (sourceFrame < SelectStartFrame)
+            {
+                return "prehandle";
+            }
+
+            return sourceFrame <= SelectEndFrame ? "logical" : "posthandle";
+        }
+
+        internal static string FrameLedgerRelativePath(int sourceFrame)
+        {
+            ValidateFrameIndex(sourceFrame);
+            return $"frames/{ShotId}/{FrameFileName(sourceFrame)}";
+        }
+
+        internal static string BuildFrameHashLedger(string frameDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(frameDirectory))
+            {
+                throw new ArgumentException(
+                    "G06 frame directory is required.",
+                    nameof(frameDirectory));
+            }
+
+            var builder = new System.Text.StringBuilder(ExpectedFrameCount * 96);
+            for (int sourceFrame = FirstFrame;
+                sourceFrame <= LastFrame;
+                sourceFrame++)
+            {
+                string path = Path.Combine(
+                    frameDirectory,
+                    FrameFileName(sourceFrame));
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException(
+                        "G06 frame hash ledger source is missing.",
+                        path);
+                }
+
+                builder.Append(AuditionPvSha256.FileHash(path))
+                    .Append("  ")
+                    .Append(FrameLedgerRelativePath(sourceFrame))
+                    .Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        internal static void ValidateFrameHashLedger(
+            string ledgerPath,
+            string expectedLedger)
+        {
+            if (string.IsNullOrEmpty(expectedLedger)
+                || !File.Exists(ledgerPath)
+                || !string.Equals(
+                    File.ReadAllText(ledgerPath),
+                    expectedLedger,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G06 canonical frame SHA-256 ledger is missing or changed.");
+            }
+        }
+
         internal static string[] ExplicitProductDependencyPaths()
         {
             return new[]
@@ -230,7 +373,33 @@ namespace DimensionBrawl.Editor.AuditionPV
                 CombatVfxProfilePath,
                 PlayerCombatVfxDriverPath,
                 GameplayPostProcessPath,
-                NoCrossWallPrefabPath
+                NoCrossWallPrefabPath,
+                BossEncounterPath,
+                FrontlineStageProfilePath,
+                SummonOpportunityProfilePath,
+                PlayerSkill1ActionPath,
+                PlayerSkill1LaserSweepPath,
+                PlayerSkill1LaserSweepPrefabPath,
+                CombatHudInputBridgePath,
+                CombatHudBinderPath,
+                ActionCameraCueDriverPath,
+                ActionCinematicCueDirectorPath,
+                ActionCinematicCueProfileScriptPath,
+                ActionCinematicCueProfilePath,
+                BossBarragePocketCameraCueBridgePath,
+                SixtySecondGateManifestPath
+            };
+        }
+
+        internal static string[] GateSemanticBeatIds()
+        {
+            return new[]
+            {
+                "boss-pattern-1",
+                "olympus-hud-gameplay",
+                "perfect-dodge",
+                "summon-defense",
+                "player-tier3-ultimate"
             };
         }
 
@@ -370,6 +539,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 throw new ArgumentOutOfRangeException(nameof(frameIndex));
             }
         }
+
+        private static void ValidateLogicalFrameIndex(int logicalFrame)
+        {
+            if (logicalFrame < LogicalFirstFrame || logicalFrame > LogicalLastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(logicalFrame));
+            }
+        }
     }
 
     internal sealed class AuditionPvStationPhase2SummonCounterOutput : IDisposable
@@ -437,12 +614,16 @@ namespace DimensionBrawl.Editor.AuditionPV
         private PlayerActionController playerAction;
         private PlayerRangedBasicAttackAction playerRangedBasic;
         private PlayerSummonSlot1Action playerSummon;
+        private PlayerSkill1Action playerSkill1;
+        private PlayerSkill1LaserSweepAction playerSkill1LaserSweep;
+        private CombatHudInputBridge combatHudInputBridge;
         private SummonSlotActionProfile summonProfile;
         private SummonEnergyLadder energyLadder;
         private CombatHealth bossHealth;
         private Collider playerCollider;
         private ActionCameraController actionCamera;
         private ActionScreenCuePresenter actionScreen;
+        private ActionCinematicCueDirector actionCinematicCueDirector;
         private SceneEntryNoticeOverlay entryNotice;
         private OlympusCorridorTutorialDirector tutorial;
         private IDisposable cadenceSuspensionLease;
@@ -473,6 +654,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private float savedEnergyMana;
         private bool savedEnergyGainEnabled;
         private bool savedCaptureInputsUnlocked;
+        private bool savedLaserSweepEnabled;
         private bool savedBossCompositionValid;
         private bool savedBossMovementEnabled;
         private Vector3 savedBossPosition;
@@ -503,6 +685,26 @@ namespace DimensionBrawl.Editor.AuditionPV
         private int initialSummonUseCount;
         private int initialSummonInterceptCount;
         private float initialSummonEnergy;
+        private float summonEnergyAfterUse = -1f;
+        private float interceptEnergyBeforePulse = -1f;
+        private float interceptEnergyAfterPulse = -1f;
+        private bool encounterFollowupPulseTraversed;
+        private bool followupWindowActiveAfterIntercept;
+        private int initialSkill1UseCount;
+        private int skill1UsedEventCount;
+        private int skill1UsedFrame = -1;
+        private int skill1UsedTier;
+        private float skill1EnergyBeforeRequest = -1f;
+        private float skill1EnergyAfterRequest = -1f;
+        private int summonFollowupHitEventCount;
+        private int summonFollowupHitFrame = -1;
+        private int summonFollowupHitTier;
+        private float summonFollowupHitDamage = -1f;
+        private int cinematicPlayCountDeltaAtSkill1;
+        private int cinematicFollowupPlayCountDeltaAtSkill1;
+        private bool cinematicFollowupThenUltimateExact;
+        private bool hudSkill1RequestTraversed;
+        private bool laserSweepActiveAfterHudRequest;
         private float lastObservedBossHealth;
         private float authoredCounterDamage;
         private int summonUsedEventCount;
@@ -525,6 +727,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private bool actionEventsSubscribed;
         private bool healthEventsSubscribed;
         private bool summonActionEventsSubscribed;
+        private bool skill1ActionEventsSubscribed;
+        private bool summonFollowupEventsSubscribed;
         private bool bossDamageEventSubscribed;
         private bool pressureScreenEventSubscribed;
         private bool counterProjectileEventSubscribed;
@@ -589,7 +793,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             && playerRangedBasic != null
             && !playerRangedBasic.IsCinematicInputLocked
             && playerSummon != null
-            && !playerSummon.IsCinematicInputLocked;
+            && !playerSummon.IsCinematicInputLocked
+            && playerSkill1 != null
+            && !playerSkill1.IsCinematicInputLocked;
         public bool CaptureHudStateRestored => stateRestored
             && savedHudValid
             && combatHud != null
@@ -600,6 +806,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             && !actionEventsSubscribed
             && !healthEventsSubscribed
             && !summonActionEventsSubscribed
+            && !skill1ActionEventsSubscribed
+            && !summonFollowupEventsSubscribed
             && !bossDamageEventSubscribed
             && !pressureScreenEventSubscribed
             && !counterProjectileEventSubscribed;
@@ -610,6 +818,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             && playerSummon.ActiveProjectileCount == 0
             && playerSummon.ActivePressureScreenCount == 0
             && playerSummon.ActiveSummonActorCount == 0;
+        public bool CaptureSkillArtifactsReleased => stateRestored
+            && playerSkill1 != null
+            && !playerSkill1.IsCinematicInputLocked
+            && playerSkill1LaserSweep != null
+            && playerSkill1LaserSweep.enabled == savedLaserSweepEnabled
+            && !playerSkill1LaserSweep.HasActiveSweep;
         public bool BossCompositionRestored => stateRestored
             && savedBossCompositionValid
             && pressurePositionController != null
@@ -650,11 +864,28 @@ namespace DimensionBrawl.Editor.AuditionPV
                     && Mathf.Abs(
                         energyLadder.CurrentMana - energyLadder.MaxMana)
                         <= HealthTolerance
-                : energyLadder.AvailableTier == 1
+                : currentFrame
+                    < AuditionPvStationPhase2SummonCounterCapture
+                        .RetainedProjectileInterceptFrame
+                    ? energyLadder.AvailableTier == 1
+                        && Mathf.Abs(
+                            energyLadder.CurrentMana
+                                - AuditionPvStationPhase2SummonCounterCapture
+                                    .AuthoredEnergyAfterUse) <= HealthTolerance
+                    : currentFrame
+                        < AuditionPvStationPhase2SummonCounterCapture
+                            .RequestSkill1Frame
+                        ? energyLadder.IsCapped
+                            && energyLadder.AvailableTier == 3
+                            && Mathf.Abs(
+                                energyLadder.CurrentMana
+                                    - AuditionPvStationPhase2SummonCounterCapture
+                                        .AuthoredFollowupEnergyPulse) <= HealthTolerance
+                        : energyLadder.AvailableTier == 0
                     && Mathf.Abs(
                         energyLadder.CurrentMana
                             - AuditionPvStationPhase2SummonCounterCapture
-                                .AuthoredEnergyAfterUse) <= HealthTolerance);
+                                .AuthoredEnergyAfterSkill1) <= HealthTolerance);
         public bool UsesExactEnergyLadderBinding => energyLadder != null
             && energyLadder == encounter?.EnergyLadder;
         public int SummonUsedEventCount => summonUsedEventCount;
@@ -719,9 +950,52 @@ namespace DimensionBrawl.Editor.AuditionPV
             ? energyLadder.MaxMana
             : -1f;
         public float SummonEnergyBeforeUse => initialSummonEnergy;
-        public float SummonEnergyAfterUse => energyLadder != null
-            ? energyLadder.CurrentMana
+        public float SummonEnergyAfterUse => summonEnergyAfterUse;
+        public float InterceptEnergyBeforePulse => interceptEnergyBeforePulse;
+        public float InterceptEnergyAfterPulse => interceptEnergyAfterPulse;
+        public bool EncounterFollowupPulseTraversed =>
+            encounterFollowupPulseTraversed;
+        public bool FollowupWindowActiveAfterIntercept =>
+            followupWindowActiveAfterIntercept;
+        public bool EncounterGrantedSummonFollowupEnergy => encounter != null
+            && encounter.GrantedSummonFollowupEnergy;
+        public float EncounterSummonFollowupEnergyPulse => encounter != null
+            ? encounter.SummonFollowupEnergyPulse
             : -1f;
+        public int EncounterLastSummonPressureBreakTier => encounter != null
+            ? encounter.LastSummonPressureBreakTier
+            : 0;
+        public int Skill1UsedEventCount => skill1UsedEventCount;
+        public int Skill1UsedFrame => skill1UsedFrame;
+        public int Skill1UsedTier => skill1UsedTier;
+        public int Skill1UseCountDelta => playerSkill1 != null
+            ? playerSkill1.TotalUseCount - initialSkill1UseCount
+            : 0;
+        public float Skill1EnergyBeforeRequest => skill1EnergyBeforeRequest;
+        public float Skill1EnergyAfterRequest => skill1EnergyAfterRequest;
+        public bool HudSkill1RequestTraversed => hudSkill1RequestTraversed;
+        public bool LaserSweepActiveAfterHudRequest =>
+            laserSweepActiveAfterHudRequest;
+        public bool LaserSweepInactiveAfterPostHandle =>
+            playerSkill1LaserSweep != null
+            && !playerSkill1LaserSweep.HasActiveSweep;
+        public int SummonFollowupHitEventCount => summonFollowupHitEventCount;
+        public int SummonFollowupHitFrame => summonFollowupHitFrame;
+        public int SummonFollowupHitTier => summonFollowupHitTier;
+        public float SummonFollowupHitDamage => summonFollowupHitDamage;
+        public bool EncounterUsedSkill1DuringSummonFollowup => encounter != null
+            && encounter.UsedSkill1DuringSummonFollowup;
+        public bool EncounterSkill1FollowupHitConfirmed => encounter != null
+            && encounter.Skill1FollowupHitConfirmed;
+        public int EncounterHighestSkill1FollowupHitTier => encounter != null
+            ? encounter.HighestSkill1FollowupHitTier
+            : 0;
+        public int CinematicPlayCountDeltaAtSkill1 =>
+            cinematicPlayCountDeltaAtSkill1;
+        public int CinematicFollowupPlayCountDeltaAtSkill1 =>
+            cinematicFollowupPlayCountDeltaAtSkill1;
+        public bool CinematicFollowupThenUltimateExact =>
+            cinematicFollowupThenUltimateExact;
 
         public IEnumerator PrepareFreshProductState()
         {
@@ -872,21 +1146,28 @@ namespace DimensionBrawl.Editor.AuditionPV
                 this,
                 AuditionPvCaptureContract.Fps);
             presentationClockLease.SetFrame(
-                AuditionPvStationPhase2SummonCounterCapture.FirstFrame);
+                AuditionPvStationPhase2SummonCounterCapture.LogicalFirstFrame);
             initialCameraMicroShakeCount = actionCamera.MicroShakeRequestCount;
             initialPlayerHealth = playerHealth.CurrentHealth;
             initialSummonUseCount = playerSummon.TotalUseCount;
             initialSummonInterceptCount =
                 playerSummon.TotalPressureScreenInterceptCount;
             initialSummonEnergy = energyLadder.CurrentMana;
+            initialSkill1UseCount = playerSkill1.TotalUseCount;
             lastObservedBossHealth = bossHealth.CurrentHealth;
             playerSummon.SummonSlot1Used += HandleSummonSlot1Used;
             playerSummon.SummonPressureBlocked +=
                 HandleSummonPressureBlocked;
             bossHealth.Damaged += HandleBossDamaged;
+            playerSkill1.Skill1Used += HandleSkill1Used;
+            encounter.SummonFollowupHitConfirmed +=
+                HandleSummonFollowupHitConfirmed;
             summonActionEventsSubscribed = true;
+            skill1ActionEventsSubscribed = true;
+            summonFollowupEventsSubscribed = true;
             bossDamageEventSubscribed = true;
-            currentFrame = AuditionPvStationPhase2SummonCounterCapture.FirstFrame;
+            currentFrame = AuditionPvStationPhase2SummonCounterCapture
+                .LogicalFirstFrame;
             IsRunning = true;
         }
 
@@ -943,6 +1224,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                         PlayerInputLockSource.EditorVerification,
                         false));
                 CaptureRestoreFailure(ref firstFailure, () =>
+                    playerSkill1?.SetCinematicInputLocked(
+                        PlayerInputLockSource.EditorVerification,
+                        false));
+                CaptureRestoreFailure(ref firstFailure, () =>
                 {
                     if (playerHealth != null)
                     {
@@ -973,6 +1258,19 @@ namespace DimensionBrawl.Editor.AuditionPV
                         bossDamageEventSubscribed = false;
                     }
 
+                    if (playerSkill1 != null)
+                    {
+                        playerSkill1.Skill1Used -= HandleSkill1Used;
+                        skill1ActionEventsSubscribed = false;
+                    }
+
+                    if (encounter != null)
+                    {
+                        encounter.SummonFollowupHitConfirmed -=
+                            HandleSummonFollowupHitConfirmed;
+                        summonFollowupEventsSubscribed = false;
+                    }
+
                     if (pressureScreen != null)
                     {
                         pressureScreen.Intercepted -=
@@ -988,6 +1286,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                     }
 
                     DeactivateCaptureSummonArtifacts();
+                });
+                CaptureRestoreFailure(ref firstFailure, () =>
+                {
+                    if (playerSkill1LaserSweep == null)
+                    {
+                        return;
+                    }
+
+                    if (playerSkill1LaserSweep.HasActiveSweep)
+                    {
+                        playerSkill1LaserSweep.enabled = false;
+                    }
+
+                    playerSkill1LaserSweep.enabled = savedLaserSweepEnabled;
                 });
                 for (int index = 0; index < projectileLeases.Count; index++)
                 {
@@ -1172,11 +1484,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                         .RetainedProjectileInterceptFrame)
                 {
                     ApplyActualPressureScreenIntercept();
+                    AdvanceActualEncounterAfterIntercept();
                 }
 
                 ObserveCueState();
                 if (currentFrame
-                    == AuditionPvStationPhase2SummonCounterCapture.LastFrame)
+                    == AuditionPvStationPhase2SummonCounterCapture
+                        .LogicalLastFrame)
                 {
                     ValidateCompletedShot();
                     IsRunning = false;
@@ -1263,6 +1577,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                 .SingleOrDefault(candidate =>
                     candidate != null
                     && candidate.gameObject == playerHealth?.gameObject);
+            playerSkill1 = UnityEngine.Object.FindObjectsByType<
+                    PlayerSkill1Action>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None)
+                .SingleOrDefault(candidate =>
+                    candidate != null
+                    && candidate.gameObject == playerHealth?.gameObject);
+            playerSkill1LaserSweep = playerHealth != null
+                ? playerHealth.GetComponent<PlayerSkill1LaserSweepAction>()
+                : null;
+            combatHudInputBridge = combatHud != null
+                ? combatHud.GetComponentInChildren<CombatHudInputBridge>(
+                    includeInactive: true)
+                : null;
             energyLadder = encounter != null ? encounter.EnergyLadder : null;
             bossHealth = flow.BossHealth;
             summonProfile = AssetDatabase.LoadAssetAtPath<SummonSlotActionProfile>(
@@ -1278,6 +1606,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 FindObjectsInactive.Exclude);
             actionScreen = UnityEngine.Object.FindFirstObjectByType<ActionScreenCuePresenter>(
                 FindObjectsInactive.Exclude);
+            actionCinematicCueDirector = UnityEngine.Object.FindFirstObjectByType<
+                ActionCinematicCueDirector>(FindObjectsInactive.Exclude);
             entryNotice = UnityEngine.Object.FindFirstObjectByType<SceneEntryNoticeOverlay>(
                 FindObjectsInactive.Include);
             tutorial = UnityEngine.Object.FindFirstObjectByType<OlympusCorridorTutorialDirector>(
@@ -1303,6 +1633,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || playerAction == null
                 || playerRangedBasic == null
                 || playerSummon == null
+                || playerSkill1 == null
+                || playerSkill1LaserSweep == null
+                || combatHudInputBridge == null
                 || summonProfile == null
                 || energyLadder == null
                 || bossHealth == null
@@ -1310,7 +1643,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || crushNet == null
                 || phaseTwoOpening == null
                 || actionCamera == null
-                || actionScreen == null)
+                || actionScreen == null
+                || actionCinematicCueDirector == null)
             {
                 throw new InvalidOperationException(
                     "G06 could not resolve its exact Flow, HUD, player, pattern, camera, or screen bindings.");
@@ -1319,10 +1653,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (playerAction.gameObject != playerHealth.gameObject
                 || !playerAction.isActiveAndEnabled
                 || playerSummon.gameObject != playerHealth.gameObject
-                || !playerSummon.isActiveAndEnabled)
+                || !playerSummon.isActiveAndEnabled
+                || playerSkill1.gameObject != playerHealth.gameObject
+                || !playerSkill1.isActiveAndEnabled
+                || playerSkill1LaserSweep.gameObject != playerHealth.gameObject
+                || !playerSkill1LaserSweep.isActiveAndEnabled
+                || !combatHudInputBridge.isActiveAndEnabled
+                || !actionCinematicCueDirector.AllowCuePlayback)
             {
                 throw new InvalidOperationException(
-                    "The exact Flow player action and Slot1 action are not active on the exact Flow player health.");
+                    "The exact Flow player actions, HUD bridge, laser sweep, or cinematic cue product path is inactive.");
             }
 
             PlayerSummonSlot1Action.SummonTierSettings[] summonTiers =
@@ -1381,10 +1721,12 @@ namespace DimensionBrawl.Editor.AuditionPV
             savedFixedDeltaTime = Time.fixedDeltaTime;
             savedEnergyMana = energyLadder.CurrentMana;
             savedEnergyGainEnabled = energyLadder.CurrentEnergyPerSecond > 0f;
+            savedLaserSweepEnabled = playerSkill1LaserSweep.enabled;
             savedCaptureInputsUnlocked = !playerAction.IsCinematicInputLocked
                 && !playerMovement.IsCinematicMoveInputLocked
                 && !playerRangedBasic.IsCinematicInputLocked
-                && !playerSummon.IsCinematicInputLocked;
+                && !playerSummon.IsCinematicInputLocked
+                && !playerSkill1.IsCinematicInputLocked;
             if (!savedEnergyGainEnabled)
             {
                 throw new InvalidOperationException(
@@ -1394,7 +1736,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (!savedCaptureInputsUnlocked)
             {
                 throw new InvalidOperationException(
-                    "G06 requires a fresh Station baseline with action, movement, ranged, and Slot1 input unlocked.");
+                    "G06 requires a fresh Station baseline with action, movement, ranged, Slot1, and Skill1 input unlocked.");
             }
 
             if (!ProductScreenProfileActive)
@@ -1749,6 +2091,9 @@ namespace DimensionBrawl.Editor.AuditionPV
             playerSummon.SetCinematicInputLocked(
                 PlayerInputLockSource.EditorVerification,
                 true);
+            playerSkill1.SetCinematicInputLocked(
+                PlayerInputLockSource.EditorVerification,
+                true);
             playerAction.PerfectDodgeTriggered += HandlePerfectDodgeTriggered;
             playerAction.DodgeStarted += HandleDodgeStarted;
             playerHealth.DamageBlockedByInvulnerability +=
@@ -1835,6 +2180,31 @@ namespace DimensionBrawl.Editor.AuditionPV
                         PlayerInputLockSource.EditorVerification,
                         true);
                     break;
+
+                case AuditionPvStationPhase2SummonCounterCapture
+                    .ReleaseSkill1InputFrame:
+                    playerSkill1.SetCinematicInputLocked(
+                        PlayerInputLockSource.EditorVerification,
+                        false);
+                    if (playerSkill1.IsCinematicInputLocked)
+                    {
+                        throw new InvalidOperationException(
+                            "G06 f275 Skill1 remains locked after releasing the capture owner.");
+                    }
+
+                    break;
+
+                case AuditionPvStationPhase2SummonCounterCapture
+                    .RequestSkill1Frame:
+                    RequestActualSkill1ThroughHud();
+                    break;
+
+                case AuditionPvStationPhase2SummonCounterCapture
+                    .RelockSkill1InputFrame:
+                    playerSkill1.SetCinematicInputLocked(
+                        PlayerInputLockSource.EditorVerification,
+                        true);
+                    break;
             }
         }
 
@@ -1886,6 +2256,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             playerSummon.QueueSummonSlot1();
+            summonEnergyAfterUse = energyLadder.CurrentMana;
             if (summonUsedEventCount != 1
                 || playerSummon.TotalUseCount - initialSummonUseCount != 1
                 || playerSummon.LastSpentTier
@@ -1904,6 +2275,102 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + $"spentTier={playerSummon.LastSpentTier}, "
                     + $"energy={initialSummonEnergy:F3}->{energyLadder.CurrentMana:F3}, "
                     + $"availableTier={energyLadder.AvailableTier}.");
+            }
+        }
+
+        private void RequestActualSkill1ThroughHud()
+        {
+            if (playerSkill1.IsCinematicInputLocked
+                || !combatHudInputBridge.isActiveAndEnabled
+                || !encounterFollowupPulseTraversed
+                || !followupWindowActiveAfterIntercept
+                || !encounter.IsSummonFollowupWindowActive
+                || !encounter.GrantedSummonFollowupEnergy
+                || encounter.LastSummonPressureBreakTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSummonTier
+                || energyLadder.AvailableTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    energyLadder.CurrentMana
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > HealthTolerance)
+            {
+                throw new InvalidOperationException(
+                    "G06 f276 cannot enter the HUD Skill1 product path with the exact tier-3 followup state.");
+            }
+
+            skill1EnergyBeforeRequest = energyLadder.CurrentMana;
+            int cinematicPlayCountBefore =
+                actionCinematicCueDirector.TotalPlayCount;
+            int cinematicFollowupPlayCountBefore =
+                actionCinematicCueDirector.SummonFollowupHitPlayCount;
+            combatHudInputBridge.RequestSkill1();
+            hudSkill1RequestTraversed = true;
+            skill1EnergyAfterRequest = energyLadder.CurrentMana;
+            cinematicPlayCountDeltaAtSkill1 =
+                actionCinematicCueDirector.TotalPlayCount
+                - cinematicPlayCountBefore;
+            cinematicFollowupPlayCountDeltaAtSkill1 =
+                actionCinematicCueDirector.SummonFollowupHitPlayCount
+                - cinematicFollowupPlayCountBefore;
+            laserSweepActiveAfterHudRequest =
+                playerSkill1LaserSweep.HasActiveSweep;
+            cinematicFollowupThenUltimateExact =
+                cinematicPlayCountDeltaAtSkill1 == 2
+                && cinematicFollowupPlayCountDeltaAtSkill1 == 1
+                && actionCinematicCueDirector.LastPlayedKind
+                    == ActionCinematicCueProfile.CueKind.UltimateCutIn
+                && actionCinematicCueDirector.LastPlayedTier
+                    == AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier;
+
+            if (skill1UsedEventCount != 1
+                || skill1UsedFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || skill1UsedTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || playerSkill1.TotalUseCount - initialSkill1UseCount != 1
+                || playerSkill1.LastSpentTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    skill1EnergyAfterRequest
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterSkill1) > HealthTolerance
+                || !laserSweepActiveAfterHudRequest
+                || summonFollowupHitEventCount != 1
+                || summonFollowupHitFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || summonFollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    summonFollowupHitDamage
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredTierThreeLaserDamage) > HealthTolerance
+                || !encounter.UsedSkill1DuringSummonFollowup
+                || !encounter.Skill1FollowupHitConfirmed
+                || encounter.HighestSkill1FollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || !cinematicFollowupThenUltimateExact)
+            {
+                throw new InvalidOperationException(
+                    "G06 f276 failed HUD RequestSkill1 -> tier-3 LaserSweep -> "
+                    + "SummonFollowupHit -> UltimateCutIn product traversal: "
+                    + $"skill={skill1UsedEventCount}@{skill1UsedFrame}/t{skill1UsedTier}, "
+                    + $"uses={playerSkill1.TotalUseCount - initialSkill1UseCount}, "
+                    + $"energy={skill1EnergyBeforeRequest:F3}->{skill1EnergyAfterRequest:F3}, "
+                    + $"laser={laserSweepActiveAfterHudRequest}, "
+                    + $"hit={summonFollowupHitEventCount}@{summonFollowupHitFrame}/t{summonFollowupHitTier}/{summonFollowupHitDamage:F3}, "
+                    + $"plays={cinematicPlayCountDeltaAtSkill1}, "
+                    + $"followupPlays={cinematicFollowupPlayCountDeltaAtSkill1}, "
+                    + $"last={actionCinematicCueDirector.LastPlayedKind}/t{actionCinematicCueDirector.LastPlayedTier}.");
             }
         }
 
@@ -2191,6 +2658,64 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
+        private void AdvanceActualEncounterAfterIntercept()
+        {
+            if (!encounter.IsExternalCombatSuspended
+                || encounterFollowupPulseTraversed)
+            {
+                throw new InvalidOperationException(
+                    "G06 f250 encounter traversal requires one externally suspended product tick.");
+            }
+
+            interceptEnergyBeforePulse = energyLadder.CurrentMana;
+            encounter.SetExternalCombatSuspended(false);
+            try
+            {
+                // Tick(0) is the encounter's public product path for observing
+                // the real Slot1 use plus its real pressure-screen intercept.
+                // A zero delta records those actions and opens the followup
+                // without consuming any authored window duration.
+                encounter.Tick(0f);
+            }
+            finally
+            {
+                encounter.SetExternalCombatSuspended(true);
+            }
+
+            interceptEnergyAfterPulse = energyLadder.CurrentMana;
+            followupWindowActiveAfterIntercept =
+                encounter.IsSummonFollowupWindowActive;
+            encounterFollowupPulseTraversed = true;
+            if (!encounter.IsExternalCombatSuspended
+                || Mathf.Abs(
+                    interceptEnergyBeforePulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterUse) > HealthTolerance
+                || Mathf.Abs(
+                    interceptEnergyAfterPulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > HealthTolerance
+                || !encounter.GrantedSummonFollowupEnergy
+                || Mathf.Abs(
+                    encounter.SummonFollowupEnergyPulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > HealthTolerance
+                || encounter.LastSummonPressureBreakTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSummonTier
+                || !followupWindowActiveAfterIntercept)
+            {
+                throw new InvalidOperationException(
+                    "G06 f250 failed the actual encounter pressure-break energy pulse: "
+                    + $"energy={interceptEnergyBeforePulse:F3}->{interceptEnergyAfterPulse:F3}, "
+                    + $"granted={encounter.GrantedSummonFollowupEnergy}, "
+                    + $"pulse={encounter.SummonFollowupEnergyPulse:F3}, "
+                    + $"tier={encounter.LastSummonPressureBreakTier}, "
+                    + $"window={followupWindowActiveAfterIntercept}, "
+                    + $"suspended={encounter.IsExternalCombatSuspended}.");
+            }
+        }
+
         private bool IsExactCaptureOwnedRetainedProjectileSet(
             IReadOnlyList<BossBarrageProjectile> candidates)
         {
@@ -2292,7 +2817,8 @@ namespace DimensionBrawl.Editor.AuditionPV
 
         private void ObserveCueState()
         {
-            if (currentFrame == AuditionPvStationPhase2SummonCounterCapture.FirstFrame)
+            if (currentFrame
+                == AuditionPvStationPhase2SummonCounterCapture.LogicalFirstFrame)
             {
                 bossRiskAtFirstFrame = pressurePositionController.CurrentRisk01;
             }
@@ -2311,7 +2837,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 > initialCameraMicroShakeCount;
             sawScreenCue |= PerfectDodgeScreenDomainRuntime.HasActiveCue;
             if (currentFrame
-                == AuditionPvStationPhase2SummonCounterCapture.Bl06SourceFrame)
+                == AuditionPvStationPhase2SummonCounterCapture.Bl06LogicalFrame)
             {
                 screenCueActiveAtBaselineFrame =
                     PerfectDodgeScreenDomainRuntime.HasActiveCue;
@@ -2321,7 +2847,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private void ValidateCompletedShot()
         {
             if (currentFrame
-                    != AuditionPvStationPhase2SummonCounterCapture.LastFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .LogicalLastFrame
                 || perfectDodgeCount != 1
                 || !impactAppliedOrBlocked
                 || !preparationSafetyExpiredBeforeDodge
@@ -2358,6 +2885,57 @@ namespace DimensionBrawl.Editor.AuditionPV
                 || playerSummon.TotalUseCount - initialSummonUseCount != 1
                 || playerSummon.TotalPressureScreenInterceptCount
                         - initialSummonInterceptCount != 1
+                || !encounterFollowupPulseTraversed
+                || Mathf.Abs(
+                    interceptEnergyBeforePulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterUse) > HealthTolerance
+                || Mathf.Abs(
+                    interceptEnergyAfterPulse
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > HealthTolerance
+                || !encounter.GrantedSummonFollowupEnergy
+                || encounter.LastSummonPressureBreakTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSummonTier
+                || !hudSkill1RequestTraversed
+                || skill1UsedEventCount != 1
+                || skill1UsedFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || skill1UsedTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || playerSkill1.TotalUseCount - initialSkill1UseCount != 1
+                || playerSkill1.LastSpentTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    skill1EnergyBeforeRequest
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredFollowupEnergyPulse) > HealthTolerance
+                || Mathf.Abs(
+                    skill1EnergyAfterRequest
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredEnergyAfterSkill1) > HealthTolerance
+                || !laserSweepActiveAfterHudRequest
+                || summonFollowupHitEventCount != 1
+                || summonFollowupHitFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || summonFollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    summonFollowupHitDamage
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredTierThreeLaserDamage) > HealthTolerance
+                || !encounter.UsedSkill1DuringSummonFollowup
+                || !encounter.Skill1FollowupHitConfirmed
+                || encounter.HighestSkill1FollowupHitTier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || !cinematicFollowupThenUltimateExact
                 || retainedProjectileCountBeforeIntercept != 6
                 || !retainedProjectileIdentitySetExact
                 || !retainedProjectileImpactApplied
@@ -2398,6 +2976,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     + $"bossRisk={bossRiskAtFirstFrame:F3}/{bossRiskAtFireFrame:F3}/{bossRiskAtImpactFrame:F3}, "
                     + $"summonUsed={summonUsedEventCount}, blocked={summonBlockedEventCount}, "
                     + $"screen={screenInterceptEventCount}@{screenFirstObservedFrame}, "
+                    + $"pulse={interceptEnergyBeforePulse:F0}->{interceptEnergyAfterPulse:F0}/t{encounter.LastSummonPressureBreakTier}, "
+                    + $"skill={skill1UsedEventCount}@{skill1UsedFrame}/t{skill1UsedTier}, "
+                    + $"skillEN={skill1EnergyBeforeRequest:F0}->{skill1EnergyAfterRequest:F0}, "
+                    + $"laser={laserSweepActiveAfterHudRequest}, followup={summonFollowupHitEventCount}@{summonFollowupHitFrame}/t{summonFollowupHitTier}, "
+                    + $"cinematic={cinematicPlayCountDeltaAtSkill1}/{cinematicFollowupPlayCountDeltaAtSkill1}/{cinematicFollowupThenUltimateExact}, "
                     + $"retained={retainedProjectileCountBeforeIntercept}/{retainedProjectileImpactApplied}, "
                     + $"counterActiveAfter={activeCounterProjectileCountAfterIntercept}, "
                     + $"counterDamage={bossCounterDamageEventCount}/{counterProjectileDamageAppliedCount} "
@@ -2485,6 +3068,47 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             screenInterceptEventCount++;
+        }
+
+        private void HandleSkill1Used(int tier)
+        {
+            if (currentFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || tier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier)
+            {
+                throw new InvalidOperationException(
+                    $"G06 observed an out-of-contract Skill1 use at f{currentFrame}, tier {tier}.");
+            }
+
+            skill1UsedEventCount++;
+            skill1UsedFrame = currentFrame;
+            skill1UsedTier = tier;
+        }
+
+        private void HandleSummonFollowupHitConfirmed(int tier, float damage)
+        {
+            if (currentFrame
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .RequestSkill1Frame
+                || tier
+                    != AuditionPvStationPhase2SummonCounterCapture
+                        .AuthoredSkill1Tier
+                || Mathf.Abs(
+                    damage
+                        - AuditionPvStationPhase2SummonCounterCapture
+                            .AuthoredTierThreeLaserDamage) > HealthTolerance)
+            {
+                throw new InvalidOperationException(
+                    $"G06 observed an out-of-contract Skill1 followup hit at f{currentFrame}, tier {tier}, damage {damage:F3}.");
+            }
+
+            summonFollowupHitEventCount++;
+            summonFollowupHitFrame = currentFrame;
+            summonFollowupHitTier = tier;
+            summonFollowupHitDamage = damage;
         }
 
         private void HandleBossDamaged(DamageInfo damageInfo)

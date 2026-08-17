@@ -711,7 +711,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 new
                 {
                     suite = "recorder",
-                    name = "raw-warmup-and-logical-frame-mapping",
+                    name = "raw-warmup-canonical-source-and-recorded-handles",
                     artifactPath = warmupPath
                 },
                 new
@@ -758,17 +758,39 @@ namespace DimensionBrawl.Editor.AuditionPV
                 },
                 new
                 {
+                    suite = "provenance",
+                    name = "canonical-frame-sha256-ledger",
+                    artifactPath = ResolveDirectChildPath(
+                        ResolveDirectChildPath(captureDirectory, "evidence"),
+                        AuditionPvStationPhase2SummonCounterCapture
+                            .FrameHashLedgerFileName)
+                },
+                new
+                {
                     suite = "lifecycle",
                     name = "state-restored-and-product-scene-reopened",
                     artifactPath = proofPath
                 }
             };
+            string[] requiredGateNames = new[]
+                {
+                    "shot-authorship/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    "shot-authorship-runtime/"
+                        + AuditionPvStationPhase2SummonCounterCapture.ShotId
+                }
+                .Concat(
+                    AuditionPvStationPhase2SummonCounterCapture
+                        .GateSemanticBeatIds()
+                        .Select(beatId => "semantic-beat/" + beatId))
+                .ToArray();
             if (counterSegment.source.manifest.testResults.Length !=
-                requiredTests.Length)
+                requiredTests.Length + requiredGateNames.Length)
             {
                 throw new InvalidDataException(
-                    "The G06 source must contain the exact seven-result golden-runner "
-                    + "semantic evidence test set without substituted or extra results.");
+                    "The G06 source must contain the exact ordinary semantic evidence "
+                    + "test and 60-second Gate evidence result sets without substituted "
+                    + "or extra results.");
             }
 
             foreach (var required in requiredTests)
@@ -794,6 +816,35 @@ namespace DimensionBrawl.Editor.AuditionPV
                         "The G06 source must contain exactly one passed, canonically "
                         + "linked golden-runner evidence test "
                         + $"'{required.suite}/{required.name}'.");
+                }
+            }
+
+            foreach (string requiredName in requiredGateNames)
+            {
+                AuditionPvTestResult result = counterSegment.source.manifest.testResults
+                    .SingleOrDefault(value =>
+                        value != null
+                        && string.Equals(
+                            value.suite,
+                            AuditionPvStationPhase2SummonCounterCapture
+                                .GateEvidenceTestSuite,
+                            StringComparison.Ordinal)
+                        && string.Equals(
+                            value.name,
+                            requiredName,
+                            StringComparison.Ordinal));
+                if (result == null
+                    || !string.Equals(result.status, "passed", StringComparison.Ordinal)
+                    || string.IsNullOrWhiteSpace(result.artifactPath)
+                    || !File.Exists(result.artifactPath)
+                    || !result.details.Contains(
+                        "artifact-sha256="
+                        + FileSha256(result.artifactPath),
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidDataException(
+                        "The G06 source is missing exact Gate evidence '"
+                        + requiredName + "'.");
                 }
             }
         }
@@ -909,7 +960,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidDataException(
                     "The G06 runtime proof does not preserve the exact Recorder "
-                    + "padding or authored full-energy 300->100 contract.");
+                    + "padding or authored 300->100->300->0 resource contract.");
             }
 
             string warmupPath = ResolveG06EvidencePath(
@@ -1625,7 +1676,9 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             AuditionPvStationPhase2SummonCounterGoldenRunner.SequenceVisualMetrics
                 visual = runtime.visualMetrics;
-            const long exactVisualSampleCount = 1296000L;
+            const long samplesPerSourceFrame = 3600L;
+            long exactVisualSampleCount = samplesPerSourceFrame
+                * AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount;
             const long exactDeltaSampleCount = 115200L;
             if (visual.sampleCount != exactVisualSampleCount ||
                 visual.blackSampleCount < 0 ||
@@ -1640,9 +1693,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 0.000000000001d ||
                 visual.maximumFrameMagentaRatio < 0d ||
                 visual.healthyFrameCount < 0 ||
-                visual.healthyFrameCount > 360 ||
+                visual.healthyFrameCount >
+                    AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount ||
                 visual.magentaAffectedFrameCount < 0 ||
-                visual.magentaAffectedFrameCount > 360 ||
+                visual.magentaAffectedFrameCount >
+                    AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount ||
                 visual.minimumSampledLuma < 0 ||
                 visual.minimumSampledLuma > 255 ||
                 visual.maximumSampledLuma < 0 ||
@@ -4430,13 +4485,15 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const string Schema =
             "dimension-brawl.audition-pv.g06-runtime-proof.v1";
         internal const string Mapping =
-            "Recorder raw0 is preserved warm-up evidence; raw1..raw360 map to logical f0..f359.";
+            "Recorder raw0 is preserved warm-up evidence; raw1..raw720 map to canonical source f0..f719; logical f0..f359 map to source f180..f539.";
         internal const string ProductScreenProfile =
             "authored product profile used unchanged: enabled=true, domain=.14, "
             + "invert=.015, edge=.18, glitch=.03, duration=.42s.";
         internal const string SummonCounterContract =
-            "authored Slot1 cost=200, full EN 300->100, tier=2, "
-            + "screen intercept=1, automatic counter damage=29.44.";
+            "authored Slot1 cost=200, EN 300->100, tier=2, screen intercept=1, "
+            + "encounter followup pulse 100->300, HUD Skill1 tier=3 to EN 0, "
+            + "actual LaserSweep hit then FollowupHit/Ultimate playcount +2, "
+            + "automatic counter damage=29.44.";
 
         public string schema = string.Empty;
         public string captureId = string.Empty;

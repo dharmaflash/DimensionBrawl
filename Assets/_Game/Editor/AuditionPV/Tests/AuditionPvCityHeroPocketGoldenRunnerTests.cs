@@ -23,9 +23,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     AuditionPvCityShot.G03
                 }));
 
-            AssertShotMapping(AuditionPvCityShot.G01, 240, 241);
-            AssertShotMapping(AuditionPvCityShot.G02, 420, 421);
-            AssertShotMapping(AuditionPvCityShot.G03, 300, 301);
+            AssertShotMapping(AuditionPvCityShot.G01, 240, 600, 601);
+            AssertShotMapping(AuditionPvCityShot.G02, 420, 780, 781);
+            AssertShotMapping(AuditionPvCityShot.G03, 300, 660, 661);
             Assert.That(
                 AuditionPvCityHeroPocketGoldenRunner.G02DodgeVisualBeforeFrame,
                 Is.EqualTo(AuditionPvCityHeroPocketCapture.G02DodgeDownFrame - 1));
@@ -41,23 +41,23 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     0),
                 Is.EqualTo("frame_0000.png"));
             Assert.That(
-                AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
-                    AuditionPvCityShot.G02,
-                    420),
-                Is.EqualTo("frame_0420.png"));
+                    AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
+                        AuditionPvCityShot.G02,
+                    780),
+                Is.EqualTo("frame_0780.png"));
             Assert.That(
-                AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
-                    AuditionPvCityShot.G03,
-                    300),
-                Is.EqualTo("frame_0300.png"));
+                    AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
+                        AuditionPvCityShot.G03,
+                    660),
+                Is.EqualTo("frame_0660.png"));
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
                     AuditionPvCityShot.G01,
                     -1));
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
-                    AuditionPvCityShot.G01,
-                    241));
+                    AuditionPvCityHeroPocketGoldenRunner.RawFrameFileName(
+                        AuditionPvCityShot.G01,
+                    601));
         }
 
         [Test]
@@ -111,6 +111,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("director.BeginShotForRecorder("));
             Assert.That(source, Does.Contain(
                 "activeProof.recorderWarmupEndOfFrameCount"));
+            Assert.That(source, Does.Contain(
+                "activeProof.recordedPreHandleFrameCount++"));
+            Assert.That(source, Does.Contain(
+                "activeProof.recordedPostHandleFrameCount"));
+            Assert.That(source, Does.Contain(
+                "while (recorderController.IsRecording()"));
+            Assert.That(source, Does.Contain(
+                "WriteGateEvidenceArtifacts("));
+            Assert.That(source, Does.Contain(
+                "shot-authorship/"));
+            Assert.That(source, Does.Contain(
+                "semantic-beat/"));
             int warmupArmIndex = source.IndexOf(
                 "director.ArmG02RecorderWarmupSuspension();",
                 StringComparison.Ordinal);
@@ -325,15 +337,15 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     Assert.That(BitConverter.ToInt32(File.ReadAllBytes(warmup), 0),
                         Is.EqualTo(0));
                     AuditionPvCityHeroPocketGoldenRunner
-                        .ValidateLogicalFrameSequence(shot, frames);
+                        .ValidateSourceFrameSequence(shot, frames);
                     Assert.That(
                         BitConverter.ToInt32(
                             File.ReadAllBytes(Path.Combine(frames, "frame_0000.png")),
                             0),
                         Is.EqualTo(1));
-                    string last = AuditionPvCityHeroPocketCapture.FrameFileName(
+                    string last = AuditionPvCityHeroPocketCapture.SourceFrameFileName(
                         shot,
-                        AuditionPvCityHeroPocketCapture.GetLastFrame(shot));
+                        AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot));
                     Assert.That(
                         BitConverter.ToInt32(
                             File.ReadAllBytes(Path.Combine(frames, last)),
@@ -808,6 +820,18 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             proof.directorStateRestored = false;
             Assert.Throws<InvalidOperationException>(() =>
                 AuditionPvCityHeroPocketGoldenRunner.ValidateRecorderProof(proof));
+            proof = PassingRecorderProof(AuditionPvCityShot.G02);
+            proof.recordedPreHandleFrameCount--;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner.ValidateRecorderProof(proof));
+            proof = PassingRecorderProof(AuditionPvCityShot.G02);
+            proof.recordedPostHandleFrameCount--;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner.ValidateRecorderProof(proof));
+            proof = PassingRecorderProof(AuditionPvCityShot.G02);
+            proof.logicalFirstSourceFrame++;
+            Assert.Throws<InvalidOperationException>(() =>
+                AuditionPvCityHeroPocketGoldenRunner.ValidateRecorderProof(proof));
         }
 
         [Test]
@@ -1019,11 +1043,24 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         private static void AssertShotMapping(
             AuditionPvCityShot shot,
             int logicalCount,
+            int sourceCount,
             int rawCount)
         {
             Assert.That(
                 AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot),
                 Is.EqualTo(logicalCount));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot),
+                Is.EqualTo(sourceCount));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetSelectStartFrame(shot),
+                Is.EqualTo(180));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetSelectEndFrame(shot),
+                Is.EqualTo(180 + logicalCount - 1));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot),
+                Is.EqualTo(sourceCount - 1));
             Assert.That(
                 AuditionPvCityHeroPocketGoldenRunner.ExpectedRawFrameCount(shot),
                 Is.EqualTo(rawCount));
@@ -1041,6 +1078,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 expectedRawFrameCount =
                     AuditionPvCityHeroPocketGoldenRunner.ExpectedRawFrameCount(shot),
                 recorderWarmupEndOfFrameCount = 2,
+                canonicalSourceFrameCount =
+                    AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot),
+                logicalFirstSourceFrame =
+                    AuditionPvCityHeroPocketCapture.GetSelectStartFrame(shot),
+                logicalLastSourceFrame =
+                    AuditionPvCityHeroPocketCapture.GetSelectEndFrame(shot),
+                recordedPreHandleFrameCount =
+                    AuditionPvCityHeroPocketCapture.HandleFrameCount,
+                recordedPostHandleFrameCount =
+                    AuditionPvCityHeroPocketCapture.HandleFrameCount,
                 recorderPaddingActiveAtLogicalFrameZero = true,
                 recorderAutoStoppedAfterLastFrame = true,
                 presentedFrameCount =
@@ -1057,7 +1104,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             PassingVisualMetrics(AuditionPvCityShot shot)
         {
             int frameCount =
-                AuditionPvCityHeroPocketCapture.GetExpectedFrameCount(shot);
+                AuditionPvCityHeroPocketCapture.GetSourceExpectedFrameCount(shot);
             var metrics = new AuditionPvCityHeroPocketGoldenRunner
                 .SequenceVisualMetrics
             {
@@ -1076,17 +1123,22 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 case AuditionPvCityShot.G01:
                     metrics.hudProbes = new[]
                     {
-                        Hud(0, 0)
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 0), 0)
                     };
                     metrics.primaryDelta = Delta(1.5d, 0.05d);
                     break;
                 case AuditionPvCityShot.G02:
                     metrics.hudProbes = new[]
                     {
-                        Hud(0, 12),
-                        Hud(120, 12),
-                        Hud(240, 12),
-                        Hud(419, 12)
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 0), 12),
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 120), 12),
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 240), 12),
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 419), 12)
                     };
                     metrics.primaryDelta = Delta(3d, 0.12d);
                     metrics.dodgeDelta = Delta(2d, 0.05d);
@@ -1094,7 +1146,8 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 case AuditionPvCityShot.G03:
                     metrics.hudProbes = new[]
                     {
-                        Hud(0, 0)
+                        Hud(AuditionPvCityHeroPocketCapture.LogicalToSourceFrame(
+                            shot, 0), 0)
                     };
                     metrics.primaryDelta = Delta(60d, 0.70d);
                     metrics.fullCoverFrameCount = 24;

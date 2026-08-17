@@ -93,16 +93,33 @@ namespace DimensionBrawl.Editor.AuditionPV
             "Assets/_Game/Scripts/Presentation/AkazaPhase2CombatMotionDriver.cs";
         internal const string HudBinderPath =
             "Assets/_Game/UI/CombatHud/BossBarrageLaneReviewCombatHudBinder.cs";
+        internal const string SixtySecondGateManifestPath =
+            "Assets/_Game/Editor/AuditionPV/AuditionPvSixtySecondGateManifest.cs";
 
         internal const string ShotId = "g07";
         internal const string BaselinesFolderName = "baselines";
+        internal const string GateEvidenceTestSuite =
+            "AuditionPvSixtySecondEvidence";
+        internal const string GateCameraId =
+            "olympus-station-action-camera";
+        internal const string GateGameplayState =
+            "akaza-phase2-summon-curtain-hover-lance";
+        internal const string GateTimelineId =
+            "g07-product-clock-logical-000-419-v2";
         internal const string Bl08FileName =
             "BL08_AKAZA_PHASE2_SUMMON_CURTAIN__HUDON__t01.133333.png";
         internal const string Bl09FileName =
             "BL09_AKAZA_PHASE2_HOVER_LANCE__HUDON__t06.966667.png";
+        internal const int LogicalFirstFrame = 0;
+        internal const int LogicalLastFrame = 419;
+        internal const int LogicalExpectedFrameCount = 420;
+        internal const int HandleFrameCount = 180;
         internal const int FirstFrame = 0;
-        internal const int LastFrame = 419;
-        internal const int ExpectedFrameCount = 420;
+        internal const int SelectStartFrame = HandleFrameCount;
+        internal const int SelectEndFrame =
+            SelectStartFrame + LogicalExpectedFrameCount - 1;
+        internal const int LastFrame = SelectEndFrame + HandleFrameCount;
+        internal const int ExpectedFrameCount = LastFrame - FirstFrame + 1;
         internal const int CurtainWindupFrame = 10;
         internal const int CurtainFireFrame = 68;
         internal const int HoverWindupFrame = 368;
@@ -117,6 +134,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int PostRecordingSettleFrameBudget = 240;
         internal const int CurtainProjectileCount = 7;
         internal const int HoverProjectileCount = 4;
+        internal const int Bl08SourceFrame =
+            SelectStartFrame + CurtainFireFrame;
+        internal const int Bl09SourceFrame =
+            SelectStartFrame + HoverFireFrame;
         internal const float MinimumCurtainRiskDecrease = 0.12f;
         internal const float MinimumHoverLateralDisplacement = 1.5f;
         internal const float MinimumHoverDirectionDot = 0.98f;
@@ -134,13 +155,14 @@ namespace DimensionBrawl.Editor.AuditionPV
                 hudMode = "hud-on",
                 notes =
                     "Fresh Station threshold->public skip->Phase2 transition, then 90 unrecorded fixed-60Hz settle frames. "
+                    + "Canonical source f0..f779 has real 180-frame pre/post handles around logical f0..f419 at source f180..f599. "
                     + "The real emitter Tick path produces priority AkazaSummonCurtain windup f10/fire f68 (7), "
                     + "then sequence-index-0 AkazaHoverLance windup f368/fire f418 (4). "
                     + "Player response uses PlayerMovementController.SetMoveInput only: lane-back f17..f46, stop f47; "
                     + "opposite-lateral preview answer f374..f406, stop f407. No summon screen, intercept, damage, "
                     + "capture profile, manual windup/fire, camera/VFX/material override, or transform staging during recording. "
                     + "Logical f419 is the final safely framed hero composition. 2560x1440 PNG at 60fps; "
-                    + "BL08=f68 and BL09=f418 are byte-exact event-frame copies."
+                    + "BL08=source f248/logical f68 and BL09=source f598/logical f418 are byte-exact event-frame copies."
             };
         }
 
@@ -152,7 +174,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     id = "bl08",
                     shotId = ShotId,
-                    sourceFrame = CurtainFireFrame,
+                    sourceFrame = Bl08SourceFrame,
                     fileName = Bl08FileName,
                     hudMode = "hud-on",
                     status = "captured"
@@ -161,7 +183,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     id = "bl09",
                     shotId = ShotId,
-                    sourceFrame = HoverFireFrame,
+                    sourceFrame = Bl09SourceFrame,
                     fileName = Bl09FileName,
                     hudMode = "hud-on",
                     status = "captured"
@@ -189,6 +211,39 @@ namespace DimensionBrawl.Editor.AuditionPV
             return frameIndex / (float)AuditionPvCaptureContract.Fps;
         }
 
+        internal static int LogicalToSourceFrame(int logicalFrame)
+        {
+            if (logicalFrame < LogicalFirstFrame
+                || logicalFrame > LogicalLastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(logicalFrame));
+            }
+
+            return SelectStartFrame + logicalFrame;
+        }
+
+        internal static int SourceToLogicalFrame(int sourceFrame)
+        {
+            if (sourceFrame < FirstFrame || sourceFrame > LastFrame)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceFrame));
+            }
+
+            return sourceFrame >= SelectStartFrame && sourceFrame <= SelectEndFrame
+                ? sourceFrame - SelectStartFrame
+                : -1;
+        }
+
+        internal static string FrameLedgerRelativePath(int sourceFrame)
+        {
+            return $"frames/{ShotId}/{FrameFileName(sourceFrame)}";
+        }
+
+        internal static string[] GateSemanticBeatIds()
+        {
+            return new[] { "boss-pattern-2", "boss-pattern-3" };
+        }
+
         internal static PatternSchedule DeriveFloat32Schedule()
         {
             const float Delta = 1f / 60f;
@@ -204,7 +259,9 @@ namespace DimensionBrawl.Editor.AuditionPV
                 hoverFireFrame = -1
             };
 
-            for (int frame = FirstFrame; frame <= LastFrame; frame++)
+            for (int frame = LogicalFirstFrame;
+                frame <= LogicalLastFrame;
+                frame++)
             {
                 if (winding)
                 {
@@ -289,7 +346,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 CameraCueDriverPath,
                 ActionCameraPath,
                 MotionDriverPath,
-                HudBinderPath
+                HudBinderPath,
+                SixtySecondGateManifestPath
             };
         }
 
@@ -976,7 +1034,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G07 could not open the authored Curtain firing window.");
             }
 
-            currentFrame = AuditionPvStationPhase2PatternRelayCapture.FirstFrame;
+            currentFrame = AuditionPvStationPhase2PatternRelayCapture
+                .LogicalFirstFrame;
             IsRunning = true;
         }
 
@@ -1037,7 +1096,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 stayedInsideForwardBoundary &=
                     !lane.IsPastForwardBoundary(movement.transform.position);
                 if (currentFrame
-                    == AuditionPvStationPhase2PatternRelayCapture.LastFrame)
+                    == AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalLastFrame)
                 {
                     CaptureMovementResults();
                     ValidateCompletedShot();
@@ -2138,7 +2198,8 @@ namespace DimensionBrawl.Editor.AuditionPV
         private void ValidateCompletedShot()
         {
             if (emitterTickCount
-                    != AuditionPvStationPhase2PatternRelayCapture.ExpectedFrameCount
+                    != AuditionPvStationPhase2PatternRelayCapture
+                        .LogicalExpectedFrameCount
                 || windupEventCount != 2
                 || waveEventCount != 2
                 || curtainWindupFrame

@@ -67,9 +67,9 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(shots.Select(value => value.id),
                 Is.EqualTo(new[] { "g01", "g02", "g03" }));
             Assert.That(shots.Select(value => value.expectedFrameCount),
-                Is.EqualTo(new[] { 240, 420, 300 }));
+                Is.EqualTo(new[] { 600, 780, 660 }));
             Assert.That(shots.Select(value => value.endFrame),
-                Is.EqualTo(new[] { 239, 419, 299 }));
+                Is.EqualTo(new[] { 599, 779, 659 }));
             Assert.That(shots.Select(value => value.hudMode),
                 Is.EqualTo(new[] { "hud-off", "hud-on", "hud-off" }));
             Assert.That(AuditionPvCaptureContract.Fps, Is.EqualTo(60));
@@ -82,6 +82,24 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(
                 AuditionPvCityHeroPocketCapture.FixedDeltaTimeRestoreTolerance,
                 Is.EqualTo(0.0000001f));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetGateSemanticBeatIds(
+                    AuditionPvCityShot.G01),
+                Is.EqualTo(new[] { "city-alert", "city-skyline" }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetGateSemanticBeatIds(
+                    AuditionPvCityShot.G02),
+                Is.EqualTo(new[]
+                {
+                    "city-movement", "city-fire", "city-hud-gameplay"
+                }));
+            Assert.That(
+                AuditionPvCityHeroPocketCapture.GetGateSemanticBeatIds(
+                    AuditionPvCityShot.G03),
+                Is.EqualTo(new[]
+                {
+                    "dimensional-anomaly", "dimension-rift-transition"
+                }));
             Assert.That(
                 AuditionPvCityHeroPocketCapture.G02IgnoredProjectileTriggerFrames,
                 Is.EqualTo(new[] { 327, 329, 337 }));
@@ -111,10 +129,10 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             AuditionPvBaselineManifestEntry[] baselines =
                 AuditionPvCityHeroPocketCapture.CreateBaselineManifestEntries();
             Assert.That(baselines, Has.Length.EqualTo(2));
-            Assert.That(baselines[0].sourceFrame, Is.EqualTo(120));
+            Assert.That(baselines[0].sourceFrame, Is.EqualTo(300));
             Assert.That(baselines[0].fileName, Is.EqualTo(
                 "BL01_CITY_HERO_WIDE__HUDOFF__t02.000000.png"));
-            Assert.That(baselines[1].sourceFrame, Is.EqualTo(240));
+            Assert.That(baselines[1].sourceFrame, Is.EqualTo(420));
             Assert.That(baselines[1].fileName, Is.EqualTo(
                 "BL02_CITY_RIFLE_DODGE__HUDON__t04.000000.png"));
             Assert.That(
@@ -122,6 +140,28 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                     AuditionPvCityShot.G02,
                     240),
                 Is.EqualTo(4f));
+            foreach (AuditionPvCityShot shot in new[]
+                     {
+                         AuditionPvCityShot.G01,
+                         AuditionPvCityShot.G02,
+                         AuditionPvCityShot.G03
+                     })
+            {
+                Assert.That(
+                    AuditionPvCityHeroPocketCapture.GetSelectStartFrame(shot),
+                    Is.EqualTo(180));
+                Assert.That(
+                    AuditionPvCityHeroPocketCapture.SourceFrameRole(shot, 0),
+                    Is.EqualTo("prehandle"));
+                Assert.That(
+                    AuditionPvCityHeroPocketCapture.SourceFrameRole(shot, 180),
+                    Is.EqualTo("logical"));
+                Assert.That(
+                    AuditionPvCityHeroPocketCapture.SourceFrameRole(
+                        shot,
+                        AuditionPvCityHeroPocketCapture.GetSourceLastFrame(shot)),
+                    Is.EqualTo("posthandle"));
+            }
         }
 
         [Test]
@@ -327,6 +367,16 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab",
                 "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab",
                 "Assets/_Game/Scripts/Combat/LaneActionProjectile.cs",
+                "Assets/_Game/Scripts/Combat/SummonEnergyLadder.cs",
+                "Assets/_Game/Scripts/Combat/SummonFrontlineProxy.cs",
+                "Assets/_Game/Scripts/Combat/SummonPressureScreen.cs",
+                "Assets/_Game/Scripts/Player/PlayerSummonSlot1Action.cs",
+                "Assets/_Game/Scripts/Player/PlayerSummonSlot1Action.Runtime.cs",
+                "Assets/_Game/Scripts/Player/SummonSlotActionProfile.cs",
+                "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab",
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab",
                 "Assets/_Game/UI/CombatHud/OneRowCombatHudBinder.cs",
                 "Assets/_Game/UI/CombatHud/CombatHudInputBridge.cs",
@@ -354,6 +404,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 "Assets/_Game/Editor/AuditionPV/AuditionPvRecorderSettingsFactory.cs",
                 "Assets/_Game/Editor/AuditionPV/AuditionPvCaptureManifest.cs",
                 "Assets/_Game/Editor/AuditionPV/AuditionPvEnvironmentProbe.cs",
+                "Assets/_Game/Editor/AuditionPV/AuditionPvSixtySecondGateManifest.cs",
                 "Assets/_Game/Editor/AuditionPV/AuditionPvCityHeroPocketGoldenRunner.cs",
                 "Assets/_Game/Editor/AuditionPV/Tests/AuditionPvCityHeroPocketGoldenRunnerTests.cs"
             };

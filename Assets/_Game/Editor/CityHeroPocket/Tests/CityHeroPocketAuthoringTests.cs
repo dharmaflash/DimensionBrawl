@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using NUnit.Framework;
@@ -103,6 +104,21 @@ namespace DimensionBrawl.Editor.CityHeroPocket.Tests
                 Is.EqualTo(
                     "Assets/_Game/Art/VFX/CombatCues/Prefabs/" +
                     "DB_VFX_PlayerSummonPreSpawnPortal.prefab"));
+            Assert.That(CityHeroPocketSceneSetup.SummonSlot1ActionProfilePath,
+                Is.EqualTo(
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/" +
+                    "DB_SummonSlot1_ChargeBruiser.asset"));
+            Assert.That(CityHeroPocketSceneSetup.SummonSlot1ProjectilePrefabPath,
+                Is.EqualTo(
+                    "Assets/_Game/Prefabs/Combat/" +
+                    "PF_SummonSlot1Projectile_AssistBolt.prefab"));
+            Assert.That(CityHeroPocketSceneSetup.SummonSlot1EntryCuePrefabPath,
+                Is.EqualTo(
+                    "Assets/_Game/Prefabs/Combat/" +
+                    "PF_SummonSlot1EntryCue_MagicCircle.prefab"));
+            Assert.That(CityHeroPocketSceneSetup.SummonSlot1ActorPrefabPath,
+                Is.EqualTo(
+                    "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab"));
             Assert.That(CityHeroPocketSceneSetup.ExitTriggerPosition,
                 Is.EqualTo(new Vector3(0f, 1f, 7.6f)));
             Assert.That(CityHeroPocketSceneSetup.ExitTriggerSize,
@@ -148,6 +164,38 @@ namespace DimensionBrawl.Editor.CityHeroPocket.Tests
                     PlayerInputLockSource.CinematicCue
                     | PlayerInputLockSource.CityHeroPocketExitTransition),
                 "City exit input ownership must coexist with another cinematic cue.");
+        }
+
+        [Test]
+        public void CitySummonUsesExistingS1ProductsAndKeepsCompactPrefabSummonFree()
+        {
+            SummonSlotActionProfile profile =
+                AssetDatabase.LoadAssetAtPath<SummonSlotActionProfile>(
+                    CityHeroPocketSceneSetup.SummonSlot1ActionProfilePath);
+            GameObject projectile = AssetDatabase.LoadAssetAtPath<GameObject>(
+                CityHeroPocketSceneSetup.SummonSlot1ProjectilePrefabPath);
+            GameObject entryCue = AssetDatabase.LoadAssetAtPath<GameObject>(
+                CityHeroPocketSceneSetup.SummonSlot1EntryCuePrefabPath);
+            GameObject actor = AssetDatabase.LoadAssetAtPath<GameObject>(
+                CityHeroPocketSceneSetup.SummonSlot1ActorPrefabPath);
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                CityHeroPocketSceneSetup.PlayerPrefabPath);
+
+            Assert.That(profile, Is.Not.Null);
+            Assert.That(projectile, Is.Not.Null);
+            Assert.That(projectile.GetComponent<LaneActionProjectile>(), Is.Not.Null);
+            Assert.That(entryCue, Is.Not.Null);
+            Assert.That(actor, Is.Not.Null);
+            Assert.That(actor.GetComponent<SummonFrontlineProxy>(), Is.Not.Null);
+            Assert.That(playerPrefab, Is.Not.Null);
+            Assert.That(
+                playerPrefab.GetComponentsInChildren<SummonEnergyLadder>(true),
+                Is.Empty,
+                "Summon energy belongs only to the authored City scene instance.");
+            Assert.That(
+                playerPrefab.GetComponentsInChildren<PlayerSummonSlot1Action>(true),
+                Is.Empty,
+                "Summon S1 belongs only to the authored City scene instance.");
         }
 
         [Test]

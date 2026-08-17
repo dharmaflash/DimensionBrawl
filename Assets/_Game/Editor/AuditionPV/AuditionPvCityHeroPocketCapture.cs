@@ -167,10 +167,15 @@ namespace DimensionBrawl.Editor.AuditionPV
             "Assets/_Game/UI/CombatHud/CombatHudPointerActionInput.cs";
         internal const string HudJoystickPath =
             "Assets/_Game/UI/CombatHud/CombatHudVirtualJoystick.cs";
+        internal const string SixtySecondGateManifestPath =
+            "Assets/_Game/Editor/AuditionPV/AuditionPvSixtySecondGateManifest.cs";
+        internal const string GateEvidenceTestSuite =
+            "AuditionPvSixtySecondEvidence";
 
         internal const string G01ShotId = "g01";
         internal const string G02ShotId = "g02";
         internal const string G03ShotId = "g03";
+        internal const int HandleFrameCount = 180;
         internal const int FirstFrame = 0;
         internal const int G01LastFrame = 239;
         internal const int G01ExpectedFrameCount = 240;
@@ -178,8 +183,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int G02ExpectedFrameCount = 420;
         internal const int G03LastFrame = 299;
         internal const int G03ExpectedFrameCount = 300;
-        internal const int Bl01SourceFrame = 120;
-        internal const int Bl02SourceFrame = 240;
+        internal const int Bl01LogicalFrame = 120;
+        internal const int Bl02LogicalFrame = 240;
+        internal const int Bl01SourceFrame = HandleFrameCount + Bl01LogicalFrame;
+        internal const int Bl02SourceFrame = HandleFrameCount + Bl02LogicalFrame;
         internal const string Bl01FileName =
             "BL01_CITY_HERO_WIDE__HUDOFF__t02.000000.png";
         internal const string Bl02FileName =
@@ -327,31 +334,31 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     id = G01ShotId,
                     scenePath = CityScenePath,
-                    startFrame = FirstFrame,
-                    endFrame = G01LastFrame,
-                    expectedFrameCount = G01ExpectedFrameCount,
+                    startFrame = GetSourceFirstFrame(AuditionPvCityShot.G01),
+                    endFrame = GetSourceLastFrame(AuditionPvCityShot.G01),
+                    expectedFrameCount = GetSourceExpectedFrameCount(AuditionPvCityShot.G01),
                     hudMode = "hud-off",
-                    notes = "City establishing source; exact frame-index C1 SmoothStep rail; BL01 f120; authored ActionCamera remains enabled; 2560x1440 PNG at 60fps."
+                    notes = "City establishing source; canonical source f0..f599 with recorded 180-frame pre/post handles around logical f0..f239 at source f180..f419; exact frame-index C1 SmoothStep rail; BL01 source f300; authored ActionCamera remains enabled; 2560x1440 PNG at 60fps."
                 },
                 new AuditionPvShotManifestEntry
                 {
                     id = G02ShotId,
                     scenePath = CityScenePath,
-                    startFrame = FirstFrame,
-                    endFrame = G02LastFrame,
-                    expectedFrameCount = G02ExpectedFrameCount,
+                    startFrame = GetSourceFirstFrame(AuditionPvCityShot.G02),
+                    endFrame = GetSourceLastFrame(AuditionPvCityShot.G02),
+                    expectedFrameCount = GetSourceExpectedFrameCount(AuditionPvCityShot.G02),
                     hudMode = "hud-on",
-                    notes = "Uncut City product combat; exact real ExecuteEvents pointer schedule f12..f378; natural projectile damage/death/Won only; BL02 f240; exact frame-index C1 SmoothStep rail."
+                    notes = "Uncut City product combat; canonical source f0..f779 with recorded 180-frame pre/post handles around logical f0..f419 at source f180..f599; exact real ExecuteEvents pointer schedule logical f12..f378; natural projectile damage/death/Won only; BL02 source f420; exact frame-index C1 SmoothStep rail."
                 },
                 new AuditionPvShotManifestEntry
                 {
                     id = G03ShotId,
                     scenePath = CityScenePath,
-                    startFrame = FirstFrame,
-                    endFrame = G03LastFrame,
-                    expectedFrameCount = G03ExpectedFrameCount,
+                    startFrame = GetSourceFirstFrame(AuditionPvCityShot.G03),
+                    endFrame = GetSourceLastFrame(AuditionPvCityShot.G03),
+                    expectedFrameCount = GetSourceExpectedFrameCount(AuditionPvCityShot.G03),
                     hudMode = "hud-off",
-                    notes = "Same-session G02 Won continuation; real HUD joystick id401 at p0 with input (0.05,1.0), accepted trigger p36..p84 without capture-owned movement or transition start, HUD hidden before Recorder warm-up, authored 18/42/234/294 exit transition, and exact frame-index C1 SmoothStep rail."
+                    notes = "Same-session G02 Won continuation; canonical source f0..f659 with recorded 180-frame pre/post handles around logical f0..f299 at source f180..f479; real HUD joystick id401 at p0 with input (0.05,1.0), accepted trigger p36..p84 without capture-owned movement or transition start, HUD hidden before Recorder warm-up, authored logical 18/42/234/294 exit transition, and exact frame-index C1 SmoothStep rail."
                 }
             };
         }
@@ -395,6 +402,67 @@ namespace DimensionBrawl.Editor.AuditionPV
             return GetLastFrame(shot) + 1;
         }
 
+        internal static int GetSourceFirstFrame(AuditionPvCityShot shot)
+        {
+            _ = GetLastFrame(shot);
+            return FirstFrame;
+        }
+
+        internal static int GetSelectStartFrame(AuditionPvCityShot shot)
+        {
+            _ = GetLastFrame(shot);
+            return HandleFrameCount;
+        }
+
+        internal static int GetSelectEndFrame(AuditionPvCityShot shot)
+        {
+            return GetSelectStartFrame(shot) + GetExpectedFrameCount(shot) - 1;
+        }
+
+        internal static int GetSourceLastFrame(AuditionPvCityShot shot)
+        {
+            return GetSelectEndFrame(shot) + HandleFrameCount;
+        }
+
+        internal static int GetSourceExpectedFrameCount(AuditionPvCityShot shot)
+        {
+            return GetSourceLastFrame(shot) - GetSourceFirstFrame(shot) + 1;
+        }
+
+        internal static int LogicalToSourceFrame(
+            AuditionPvCityShot shot,
+            int logicalFrame)
+        {
+            ValidateFrameIndex(shot, logicalFrame);
+            return GetSelectStartFrame(shot) + logicalFrame;
+        }
+
+        internal static int SourceToLogicalFrame(
+            AuditionPvCityShot shot,
+            int sourceFrame)
+        {
+            ValidateSourceFrameIndex(shot, sourceFrame);
+            return sourceFrame >= GetSelectStartFrame(shot)
+                && sourceFrame <= GetSelectEndFrame(shot)
+                ? sourceFrame - GetSelectStartFrame(shot)
+                : -1;
+        }
+
+        internal static string SourceFrameRole(
+            AuditionPvCityShot shot,
+            int sourceFrame)
+        {
+            ValidateSourceFrameIndex(shot, sourceFrame);
+            if (sourceFrame < GetSelectStartFrame(shot))
+            {
+                return "prehandle";
+            }
+
+            return sourceFrame <= GetSelectEndFrame(shot)
+                ? "logical"
+                : "posthandle";
+        }
+
         internal static string GetShotId(AuditionPvCityShot shot)
         {
             return shot switch
@@ -406,10 +474,71 @@ namespace DimensionBrawl.Editor.AuditionPV
             };
         }
 
+        internal static string GetGateCameraId(AuditionPvCityShot shot)
+        {
+            return shot switch
+            {
+                AuditionPvCityShot.G01 => "city-g01-authored-action-camera-rail",
+                AuditionPvCityShot.G02 => "city-g02-authored-action-camera-rail",
+                AuditionPvCityShot.G03 => "city-g03-authored-exit-transition-rail",
+                _ => throw new ArgumentOutOfRangeException(nameof(shot))
+            };
+        }
+
+        internal static string GetGateGameplayState(AuditionPvCityShot shot)
+        {
+            return shot switch
+            {
+                AuditionPvCityShot.G01 => "city-live-alert-establishing",
+                AuditionPvCityShot.G02 => "city-live-combat-natural-won",
+                AuditionPvCityShot.G03 => "city-won-authored-rift-transition",
+                _ => throw new ArgumentOutOfRangeException(nameof(shot))
+            };
+        }
+
+        internal static string GetGateTimelineId(AuditionPvCityShot shot)
+        {
+            return shot switch
+            {
+                AuditionPvCityShot.G01 => "city-g01-product-clock-logical-000-239-v2",
+                AuditionPvCityShot.G02 => "city-g02-product-clock-logical-000-419-v2",
+                AuditionPvCityShot.G03 => "city-g03-product-clock-logical-000-299-v2",
+                _ => throw new ArgumentOutOfRangeException(nameof(shot))
+            };
+        }
+
+        internal static string[] GetGateSemanticBeatIds(AuditionPvCityShot shot)
+        {
+            return shot switch
+            {
+                AuditionPvCityShot.G01 => new[]
+                {
+                    "city-alert", "city-skyline"
+                },
+                AuditionPvCityShot.G02 => new[]
+                {
+                    "city-movement", "city-fire", "city-hud-gameplay"
+                },
+                AuditionPvCityShot.G03 => new[]
+                {
+                    "dimensional-anomaly", "dimension-rift-transition"
+                },
+                _ => throw new ArgumentOutOfRangeException(nameof(shot))
+            };
+        }
+
         internal static string FrameFileName(AuditionPvCityShot shot, int frameIndex)
         {
             ValidateFrameIndex(shot, frameIndex);
             return $"frame_{frameIndex:0000}.png";
+        }
+
+        internal static string SourceFrameFileName(
+            AuditionPvCityShot shot,
+            int sourceFrame)
+        {
+            ValidateSourceFrameIndex(shot, sourceFrame);
+            return $"frame_{sourceFrame:0000}.png";
         }
 
         internal static float FrameTimeSeconds(AuditionPvCityShot shot, int frameIndex)
@@ -655,6 +784,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab",
                 "Assets/_Game/Prefabs/Combat/PF_EnemyProjectile_RifleCrossfire.prefab",
                 "Assets/_Game/Scripts/Combat/LaneActionProjectile.cs",
+                "Assets/_Game/Scripts/Combat/SummonEnergyLadder.cs",
+                "Assets/_Game/Scripts/Combat/SummonFrontlineProxy.cs",
+                "Assets/_Game/Scripts/Combat/SummonPressureScreen.cs",
+                "Assets/_Game/Scripts/Player/PlayerSummonSlot1Action.cs",
+                "Assets/_Game/Scripts/Player/PlayerSummonSlot1Action.Runtime.cs",
+                "Assets/_Game/Scripts/Player/SummonSlotActionProfile.cs",
+                "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ChargeBruiser.asset",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab",
+                "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab",
                 "Assets/_Game/UI/CombatHud/PF_UI_CombatHud.prefab",
                 "Assets/_Game/UI/CombatHud/OneRowCombatHudBinder.cs",
                 "Assets/_Game/UI/CombatHud/CombatHudInputBridge.cs",
@@ -682,6 +821,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 "Assets/_Game/Editor/AuditionPV/AuditionPvRecorderSettingsFactory.cs",
                 "Assets/_Game/Editor/AuditionPV/AuditionPvCaptureManifest.cs",
                 "Assets/_Game/Editor/AuditionPV/AuditionPvEnvironmentProbe.cs",
+                SixtySecondGateManifestPath,
                 "Assets/_Game/Editor/AuditionPV/AuditionPvCityHeroPocketGoldenRunner.cs",
                 "Assets/_Game/Editor/AuditionPV/Tests/AuditionPvCityHeroPocketGoldenRunnerTests.cs"
             };
@@ -2001,6 +2141,17 @@ namespace DimensionBrawl.Editor.AuditionPV
             if (frameIndex < FirstFrame || frameIndex > GetLastFrame(shot))
             {
                 throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+
+        private static void ValidateSourceFrameIndex(
+            AuditionPvCityShot shot,
+            int sourceFrame)
+        {
+            if (sourceFrame < GetSourceFirstFrame(shot)
+                || sourceFrame > GetSourceLastFrame(shot))
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceFrame));
             }
         }
     }

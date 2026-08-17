@@ -122,9 +122,13 @@ independently.
 The boss `MovedTransform` position and rotation must remain exact from shot arm through the real
 impact, and success/failure cleanup restores the saved movement value.
 
-Recorder writes raw `0..360`. Two end-of-frame warm-ups precede the early-Update logical arm. Raw
-frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe remap maps
-raw `1..360` to logical `f0..f359`, exactly 360 QHD60 frames. During logical recording the director
+The current canonical source is 720 QHD60 frames (`source f0..f719`, 12 seconds): 180 actually
+recorded prefix-handle frames, the unchanged logical `f0..f359` at source `f180..f539`, and 180
+actually recorded suffix-handle frames. S090 selects source `f240..f539` (logical `f60..f359`), so
+the selected 300-frame role has 240 source frames available before it and 180 after it. Recorder
+writes raw `0..720`. Two end-of-frame warm-ups precede the 180-frame prefix and early-Update logical
+arm. Raw frame `0` is retained as `evidence/recorder_warmup_raw_frame_0000.png`; a collision-safe
+remap maps raw `1..720` to canonical source `f0..f719`. During logical recording the director
 issues exactly one gameplay action: public `PlayerRangedBasicAttackAction.TryFire` at `f1`. The same
 authored 12-damage, 24 m/s pooled projectile must move naturally and produce its physical impact,
 one boss `Died`, and one `BossTerminal` clear at `f62`. Direct lethal damage/impact, boss-health
@@ -135,7 +139,8 @@ The death-anchored product aftermath must acquire all eight distinct
 `BossTerminalAftermath` input leases at `f62`, preserve scale-one presentation after bounded lethal
 hit-stop, advance from the presentation clock at exactly 60 samples per second, and run its real
 Phase 2-anchored VFX, non-silent death audio, death motion, and dedicated authored finisher camera.
-Logical `f0..f61` are the causal gameplay handle, not approved hero footage. `f61` must still be the
+Logical `f0..f59` are excluded from S090. Logical `f60..f61` are its selected causal gameplay
+lead-in; `f61` must still be the
 exclusive gameplay camera with the exact player-facing `소환 에너지를 충전하세요` objective and
 `AKAZA` boss label; `f62` is the unique hard cut to the dedicated finisher Camera and its manually
 sampled 2.6-second Timeline. At `f61` the full boss envelope only has to intersect the gameplay
@@ -159,9 +164,12 @@ entrance spans exactly 28 logical frames: `f218..f220` remain the transparent ga
 canonical facts and result summary must remain the same instances presented by both overlay and
 result screen.
 
-Baselines are byte-exact logical-frame copies: BL10=`f62` death impact (`HUDON`), BL11=`f116`
-aftermath hero (`HUDOFF`), and BL12=`f246` interactive result (`AUTHOREDRESULT`). The package also
-requires the 360-frame SHA-256 ledger, QHD
+Baselines are byte-exact canonical-source copies: BL10=source `f242`/logical `f62` death impact
+(`HUDON`), BL11=source `f296`/logical `f116` aftermath hero (`HUDOFF`), and BL12=source
+`f426`/logical `f246` interactive result (`AUTHOREDRESULT`). The package also requires the 720-frame
+canonical-source SHA-256 ledger, exact G08 shot-authorship/runtime evidence, and exact
+`semantic-beat/boss-finisher`, `semantic-beat/boss-collapse`, and `semantic-beat/aftermath`
+artifacts bound to the immutable capture core and ledger, plus QHD
 decode/dimension checks, black/magenta health, independent impact/aftermath/result pixel deltas,
 result-surface color evidence, tight baked-skinned-vertex core-body projection, separate full-boss
 renderer-bounds envelope/frustum telemetry, exact
@@ -176,7 +184,8 @@ wing fold `52°`, and wing yaw `20°`. The dedicated FOV `44°` finisher camera 
 baked-geometry and projected-axis proof below. The visual sentinel is locked only to the exact
 independently reviewed take recorded below.
 
-Composition telemetry is the exact ordered set `f61/f62/f116/f181/f246`. Core-body acceptance is
+Composition telemetry is source `f241/f242/f296/f361/f426` (logical
+`f61/f62/f116/f181/f246`). Core-body acceptance is
 computed from baked vertices of exactly
 `DB_AkazaPhase2Combined_BodySilhouette` and
 `DB_AkazaPhase2Combined_FaceHairDetail`, transformed by each renderer's actual local-to-world
