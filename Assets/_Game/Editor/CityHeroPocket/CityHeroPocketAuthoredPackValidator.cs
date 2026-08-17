@@ -81,7 +81,8 @@ namespace DimensionBrawl.Editor.CityHeroPocket
                 : existing;
             try
             {
-                Require(SceneManager.SetActiveScene(scene),
+                Require(SceneManager.GetActiveScene().handle == scene.handle
+                        || SceneManager.SetActiveScene(scene),
                     "Failed to make CityHeroPocket active for scene-owned RenderSettings validation.");
                 ValidateLoadedScene(scene);
             }
