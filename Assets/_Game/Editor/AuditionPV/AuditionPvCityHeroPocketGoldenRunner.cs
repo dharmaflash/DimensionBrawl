@@ -2975,7 +2975,7 @@ namespace DimensionBrawl.Editor.AuditionPV
     [DefaultExecutionOrder(-32600)]
     public sealed class AuditionPvCityHeroPocketGoldenRunnerBehaviour : MonoBehaviour
     {
-        private const double ShotTimeoutSeconds = 90d;
+        private const double ShotTimeoutSeconds = 180d;
 
         private string statePath;
         private string outputDirectory;
