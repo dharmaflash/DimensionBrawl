@@ -51,6 +51,10 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int RawLastShotFrame =
             AuditionPvStationBossDeathAftermathCapture.ExpectedFrameCount;
         internal const int ExpectedRawFrameCount = RawLastShotFrame + 1;
+        internal const int S090EvidenceSourceRangeStartFrame = 60;
+        internal const int S090EvidenceSourceRangeEndFrame = 719;
+        internal const int S090EvidenceSelectStartFrame = 240;
+        internal const int S090EvidenceSelectEndFrame = 539;
         internal const string RuntimeMappingDescription =
             "Recorder raw0 is preserved warm-up evidence; raw1..raw720 map to canonical source f0..f719; logical f0..f359 map to source f180..f539; S090 selects source f240..f539.";
         internal const string RuntimeGameplayDescription =
@@ -1518,6 +1522,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     schema = RunnerSchema,
                     phase = RunnerPhase.AwaitingPlayMode.ToString(),
                     batchMode = batchMode,
+                    produceApprovedSixtySecondEvidence = batchMode &&
+                        Environment.GetCommandLineArgs().Any(value => string.Equals(
+                            value,
+                            "-pv60ApprovedEvidence",
+                            StringComparison.OrdinalIgnoreCase)),
                     startedAtUtc = startedAtUtc.ToString("O"),
                     captureId = output.captureId,
                     outputRoot = output.outputRoot,
@@ -2174,6 +2183,39 @@ namespace DimensionBrawl.Editor.AuditionPV
                 evidence,
                 captureCoreSha256,
                 startedAtUtc);
+            AuditionPvTestResult[] results = ordinaryResults
+                .Concat(gateResults)
+                .ToArray();
+            if (state.produceApprovedSixtySecondEvidence)
+            {
+                AuditionPvSixtySecondEvidenceBundle sixtySecondEvidence =
+                    AuditionPvSixtySecondEvidenceProducer.Produce(
+                        new AuditionPvSixtySecondEvidenceRequest
+                        {
+                            captureCoreManifest = captureCoreManifest,
+                            expectedCaptureCoreSha256 = captureCoreSha256,
+                            sourceShotId =
+                                AuditionPvStationBossDeathAftermathCapture.ShotId,
+                            sourceRangeStartFrame =
+                                S090EvidenceSourceRangeStartFrame,
+                            sourceRangeEndFrame = S090EvidenceSourceRangeEndFrame,
+                            selectStartFrame = S090EvidenceSelectStartFrame,
+                            selectEndFrame = S090EvidenceSelectEndFrame,
+                            runtimeWorkloadSealPath =
+                                state.s090RuntimeWorkloadSealPath,
+                            graphicsRootDirectory =
+                                AuditionPvSixtySecondGateManifestValidator
+                                    .ProductionGraphicsRoot,
+                            reviewRootDirectory =
+                                AuditionPvSixtySecondGateManifestValidator
+                                    .ProductionReviewRoot,
+                            approvedSourceRange = true,
+                            cleanPlate = false,
+                            linkedCleanPlateConfirmed = false
+                        });
+                results = AuditionPvSixtySecondEvidenceProducer
+                    .MergeCaptureTestResults(results, sixtySecondEvidence);
+            }
             AuditionPvCaptureManifest manifest =
                 AuditionPvCaptureManifestFactory.CreateForRoot(
                     state.captureId,
@@ -2181,7 +2223,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                     state.outputDirectory,
                     shots,
                     baselines,
-                    ordinaryResults.Concat(gateResults).ToArray(),
+                    results,
                     createdAtUtc: startedAtUtc,
                     gitSnapshot: CreateGitSnapshot(state),
                     engineSnapshot: CopyEngine(state.engine),
@@ -2841,12 +2883,17 @@ namespace DimensionBrawl.Editor.AuditionPV
                     $"artifact-sha256={ArtifactHash(artifactPath)}; semantic-fact={beatId}; capture-core-sha256={captureCoreSha256}; frame-ledger-sha256={frameLedgerSha256}; exact-runtime=true"));
             }
 
+            int fixedResultCount = expectedTests.Length + expectedGateTests.Count;
+            AuditionPvTestResult[] generatedEvidenceResults =
+                GeneratedSixtySecondEvidenceResults(roundTrip);
             if (roundTrip.testResults == null
                 || roundTrip.testResults.Length
-                    != expectedTests.Length + expectedGateTests.Count)
+                    != fixedResultCount + generatedEvidenceResults.Length
+                || generatedEvidenceResults.Length != 0
+                    && generatedEvidenceResults.Length != 7)
             {
                 throw new InvalidOperationException(
-                    "G08 manifest test-result count is not exact.");
+                    "G08 manifest must contain the exact ordinary/Gate records and either zero or one complete generated 60-second evidence set.");
             }
 
             for (int index = 0; index < expectedTests.Length; index++)
@@ -2896,6 +2943,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
             }
 
+            ValidateGeneratedSixtySecondEvidenceResults(
+                roundTrip,
+                generatedEvidenceResults,
+                captureCoreSha256,
+                S090EvidenceSourceRangeStartFrame,
+                S090EvidenceSourceRangeEndFrame);
+
             AuditionPvDependencyHash[] dependencies = roundTrip.dependencyHashes
                 ?? Array.Empty<AuditionPvDependencyHash>();
             if (dependencies.Length == 0
@@ -2944,6 +2998,101 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 throw new InvalidOperationException(
                     "G08 manifest dependency snapshot lacks the exact direct/core/meta/URP closure.");
+            }
+        }
+
+        private static AuditionPvTestResult[] GeneratedSixtySecondEvidenceResults(
+            AuditionPvCaptureManifest manifest)
+        {
+            string[] names =
+            {
+                "contact-sheet",
+                "missing-frame",
+                "error-magenta",
+                "resolution",
+                "rec709",
+                "renderer-material-scan",
+                "renderer-material-scan/runtime-workload"
+            };
+            return (manifest?.testResults ?? Array.Empty<AuditionPvTestResult>())
+                .Where(result => result != null
+                    && string.Equals(
+                        result.suite,
+                        AuditionPvStationBossDeathAftermathCapture
+                            .GateEvidenceTestSuite,
+                        StringComparison.Ordinal)
+                    && names.Contains(result.name, StringComparer.Ordinal))
+                .ToArray();
+        }
+
+        private static void ValidateGeneratedSixtySecondEvidenceResults(
+            AuditionPvCaptureManifest manifest,
+            AuditionPvTestResult[] results,
+            string captureCoreSha256,
+            int sourceRangeStartFrame,
+            int sourceRangeEndFrame)
+        {
+            results ??= Array.Empty<AuditionPvTestResult>();
+            if (results.Length == 0)
+            {
+                return;
+            }
+
+            string[] expectedNames =
+            {
+                "contact-sheet",
+                "missing-frame",
+                "error-magenta",
+                "resolution",
+                "rec709",
+                "renderer-material-scan",
+                "renderer-material-scan/runtime-workload"
+            };
+            string rangeToken = $"source-range={sourceRangeStartFrame}-{sourceRangeEndFrame}";
+            string outputRoot = Path.GetFullPath(manifest.outputDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            foreach (string expectedName in expectedNames)
+            {
+                AuditionPvTestResult[] matches = results
+                    .Where(result => string.Equals(
+                        result.name,
+                        expectedName,
+                        StringComparison.Ordinal))
+                    .ToArray();
+                if (matches.Length != 1)
+                {
+                    throw new InvalidOperationException(
+                        "G08 generated evidence test is missing or duplicated: "
+                        + expectedName);
+                }
+
+                AuditionPvTestResult result = matches[0];
+                string artifactPath = Path.GetFullPath(result.artifactPath ?? string.Empty);
+                bool valid = string.Equals(result.status, "passed", StringComparison.Ordinal)
+                    && result.durationMilliseconds >= 0
+                    && artifactPath.StartsWith(outputRoot, StringComparison.OrdinalIgnoreCase)
+                    && File.Exists(artifactPath);
+                if (valid)
+                {
+                    string artifactSha256 = AuditionPvSha256.FileHash(artifactPath);
+                    valid = result.details != null
+                        && result.details.Contains(
+                            "artifact-sha256=" + artifactSha256,
+                            StringComparison.Ordinal)
+                        && result.details.Contains(
+                            "capture-core-sha256=" + captureCoreSha256,
+                            StringComparison.Ordinal)
+                        && result.details.Contains("source-shot=g08", StringComparison.Ordinal)
+                        && result.details.Contains(rangeToken, StringComparison.Ordinal);
+                }
+
+                if (!valid)
+                {
+                    throw new InvalidOperationException(
+                        "G08 generated evidence test is unpinned or range-mismatched: "
+                        + expectedName);
+                }
             }
         }
 
@@ -4084,6 +4233,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string[] dependencyPaths = Array.Empty<string>();
             public AuditionPvDependencyHash[] dependencyHashesAtStart =
                 Array.Empty<AuditionPvDependencyHash>();
+            public bool produceApprovedSixtySecondEvidence;
+            public string s090RuntimeWorkloadSealPath = string.Empty;
             public RuntimeProof runtimeProof;
             public string failure = string.Empty;
         }
@@ -4794,6 +4945,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private AuditionPvStationBossDeathAftermathRenderProbe renderProbe;
         private AuditionPvRecorderSettingsBundle recorderSettings;
         private RecorderController recorderController;
+        private AuditionPvRuntimeWorkloadCaptureSession s090RuntimeWorkload;
         private bool armLogicalFrameZero;
         private bool beganLogicalShot;
         private bool cleaningUp;
@@ -4868,6 +5020,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G08 canonical product-state director did not finish preparation.");
             }
 
+            s090RuntimeWorkload = AuditionPvRuntimeWorkloadCaptureSession.Open(
+                new AuditionPvRuntimeWorkloadCaptureConfig
+                {
+                    captureId = state.captureId,
+                    captureOutputDirectory = outputDirectory,
+                    sourceShotId =
+                        AuditionPvStationBossDeathAftermathCapture.ShotId,
+                    sourceRangeStartFrame =
+                        AuditionPvStationBossDeathAftermathCapture.FirstFrame,
+                    sourceRangeEndFrame =
+                        AuditionPvStationBossDeathAftermathCapture.LastFrame,
+                    captureHudEvidence = false
+                });
+
             recorderSettings = AuditionPvRecorderSettingsFactory
                 .CreateLosslessPngSequence(
                     outputDirectory,
@@ -4895,6 +5061,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 handleFrame++)
             {
                 yield return new WaitForEndOfFrame();
+                CaptureRuntimeWorkload(handleFrame);
                 proof.recorderPreHandleEndOfFrameCount++;
             }
 
@@ -4971,6 +5138,23 @@ namespace DimensionBrawl.Editor.AuditionPV
 
             // Logical f359 occupies canonical source f539. The committed result
             // remains product-owned while Recorder captures the complete suffix.
+            int recordedPostHandleFrames = 0;
+            for (; recordedPostHandleFrames <
+                   AuditionPvStationBossDeathAftermathCapture.HandleFrameCount;
+                 recordedPostHandleFrames++)
+            {
+                if (!recorderController.IsRecording())
+                {
+                    throw new InvalidOperationException(
+                        "G08 Recorder stopped before the complete runtime-evidenced posthandle.");
+                }
+
+                yield return new WaitForEndOfFrame();
+                CaptureRuntimeWorkload(
+                    AuditionPvStationBossDeathAftermathCapture.SelectEndFrame + 1
+                    + recordedPostHandleFrames);
+            }
+
             while (recorderController.IsRecording()
                 && Time.realtimeSinceStartupAsDouble < deadline)
             {
@@ -4985,12 +5169,16 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G08 Recorder did not auto-stop after raw720/canonical source f719.");
             }
 
-            proof.recordedPostHandleFrameCount =
-                AuditionPvStationBossDeathAftermathCapture.HandleFrameCount;
+            proof.recordedPostHandleFrameCount = recordedPostHandleFrames;
+            state.s090RuntimeWorkloadSealPath = s090RuntimeWorkload.Complete();
+            s090RuntimeWorkload = null;
         }
 
         private void HandleFramePresented(int frameIndex)
         {
+            CaptureRuntimeWorkload(
+                AuditionPvStationBossDeathAftermathCapture.SelectStartFrame
+                + frameIndex);
             proof.presentedFramesExact &= frameIndex == nextPresentedFrame;
             proof.presentationClockExact &= PresentationClock.IsManuallyDriven
                 && Mathf.Abs(
@@ -5001,6 +5189,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     - 1f / AuditionPvCaptureContract.Fps) <= 0.00001f;
             proof.presentedFrameCount++;
             nextPresentedFrame++;
+        }
+
+        private void CaptureRuntimeWorkload(int sourceFrame)
+        {
+            s090RuntimeWorkload?.CapturePresentedFrame(sourceFrame);
         }
 
         private Exception CaptureDirectorProof()
@@ -5280,6 +5473,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 try
                 {
+                    s090RuntimeWorkload?.Dispose();
+                    s090RuntimeWorkload = null;
+                }
+                catch (Exception exception)
+                {
+                    failure = Combine(failure, exception);
+                }
+
+                try
+                {
                     recorderSettings?.Dispose();
                 }
                 catch (Exception exception)
@@ -5390,6 +5593,16 @@ namespace DimensionBrawl.Editor.AuditionPV
             try
             {
                 director?.RestoreCaptureOwnedState();
+            }
+            catch (Exception exception)
+            {
+                failure = Combine(failure, exception);
+            }
+
+            try
+            {
+                s090RuntimeWorkload?.Dispose();
+                s090RuntimeWorkload = null;
             }
             catch (Exception exception)
             {

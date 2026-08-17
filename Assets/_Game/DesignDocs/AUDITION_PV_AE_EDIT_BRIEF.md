@@ -104,12 +104,23 @@ AI 영상 생성 부분은 사용하지 않고 아래 편집·그래픽 원리�
 - long comp는 segment별 pre-render/cache를 쓰고, 동시에 여러 sequence를 RAM preview하지 않는다.
 - 실패 capture와 성공 capture를 섞지 않으며, manifest가 terminal-last로 확정되기 전에는 승인 take로 취급하지 않는다.
 
+현재 환경 고정값:
+
+- After Effects 2026 v26.3, Media Encoder 2026 v26.3.2, RAM 약 31GB.
+- AE 첫 실행 직후 disk cache를 C: Temp에서 `D:/DimensionBrawl_PV/90_cache/AE26_3`로 옮기고 100–150GB로 제한한다.
+- Adobe 공용 cache는 `D:/DimensionBrawl_PV/90_cache/AdobeCommon`을 사용한다.
+- 편집·precomp 단계에서는 Multi-Frame Rendering을 끄고 다른 앱용 RAM 10–12GB를 남긴다.
+- 프로젝트/자동저장/proxy는 각각 `D:/DimensionBrawl_PV/04_ae_project/project`, `autosave`, `proxies`에 둔다.
+- master/submission/QA는 각각 `D:/DimensionBrawl_PV/05_delivery/local_master`, `submission`, `qa`에 둔다.
+- Saber는 설치되어 있지 않으므로 사용하지 않는다. native Glow, Beam/Stroke, Fractal Noise, Lens/Blur, Lumetri, Mocha AE로 동일한 역할을 만든다.
+- 승인 take 한 개씩 1280×720/60fps ProRes Proxy를 만들고, 최종 렌더 때만 QHD60 Rec.709 originals로 교체한다.
+
 ## 7. 제출 QA와 산출물
 
 - 제21회 경기게임오디션 공고 기준 제출 영상은 1분 이내이며 MP4, MOV 등 재생 가능한 영상 파일이어야 한다.
 - 제출 파일명: `2026경기게임오디션_게임영상_팀명` 형식. 실제 팀명은 제출 패키지 동결 시 입력한다.
 - 게임소개서 등 전체 제출서류 합계는 1GB 이하여야 하며, 참가접수와 이메일 서류제출은 2026-08-20 14:00까지 모두 끝나야 한다.
-- 영상: 위 규격의 H.264 MP4 제출본, archive master, no-subtitle, no-audio, clean 버전.
+- 영상: 3600프레임/60초 archive master를 보존하되, 제출 H.264 MP4는 컨테이너·AAC padding까지 1분을 넘지 않도록 3594프레임/59.9초로 안전하게 마감한다. no-subtitle, no-audio, clean 버전도 함께 보존한다.
 - 검토: PC monitor, mobile, 이어폰, 스피커에서 밝기·색·타이포·음량·impact를 확인한다.
 - frame QA: 시작/종료, transition, subtitle, logo, action contact frame을 25%와 100%에서 검사한다.
 - 권리 QA: 실제 사용된 asset/font/audio/AI 항목만 최종 timeline-wide ledger에 연결한다.

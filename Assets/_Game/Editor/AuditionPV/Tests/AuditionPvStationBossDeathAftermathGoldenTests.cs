@@ -2488,6 +2488,53 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void SixtySecondEvidence_UsesFullG08SealAndExactS090BeforeTerminalCommit()
+        {
+            Assert.That(
+                new[]
+                {
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .S090EvidenceSourceRangeStartFrame,
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .S090EvidenceSourceRangeEndFrame,
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .S090EvidenceSelectStartFrame,
+                    AuditionPvStationBossDeathAftermathGoldenRunner
+                        .S090EvidenceSelectEndFrame
+                },
+                Is.EqualTo(new[] { 60, 719, 240, 539 }));
+
+            string source = ReadProjectFile(
+                AuditionPvStationBossDeathAftermathGoldenRunner.RunnerScriptPath)
+                .Replace("\r", string.Empty);
+            Assert.That(source, Does.Contain(
+                "sourceRangeStartFrame =\n                        AuditionPvStationBossDeathAftermathCapture.FirstFrame"));
+            Assert.That(source, Does.Contain(
+                "sourceRangeEndFrame =\n                        AuditionPvStationBossDeathAftermathCapture.LastFrame"));
+            Assert.That(source, Does.Contain(
+                "state.s090RuntimeWorkloadSealPath = s090RuntimeWorkload.Complete();"));
+            Assert.That(source, Does.Contain("s090RuntimeWorkload?.Dispose();"));
+            Assert.That(source, Does.Contain(
+                "generatedEvidenceResults.Length != 7"));
+            Assert.That(source, Does.Contain(
+                "renderer-material-scan/runtime-workload"));
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.Produce(",
+                StringComparison.Ordinal);
+            int merge = source.IndexOf(
+                ".MergeCaptureTestResults(results, sixtySecondEvidence)",
+                produce,
+                StringComparison.Ordinal);
+            int manifestWrite = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest);",
+                merge,
+                StringComparison.Ordinal);
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(manifestWrite, Is.GreaterThan(merge));
+        }
+
+        [Test]
         public void RuntimeProof_RejectsEveryCanonicalTimelineAndLifecycleSubstitution()
         {
             AssertRuntimeMutation(value =>

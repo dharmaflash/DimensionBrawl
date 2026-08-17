@@ -95,6 +95,68 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void ApprovedEvidenceFlag_IsExplicitAndCaseInsensitive()
+        {
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner
+                    .ResolveApprovedEvidenceRequest(Array.Empty<string>()),
+                Is.False);
+            Assert.That(
+                AuditionPvCityHeroPocketGoldenRunner
+                    .ResolveApprovedEvidenceRequest(
+                        new[] { "Unity.exe", "-PV60APPROVEDEVIDENCE" }),
+                Is.True);
+        }
+
+        [Test]
+        public void ApprovedEvidencePipeline_SealsAllCanonicalCityFramesBeforeManifest()
+        {
+            AuditionPvCityHeroPocketGoldenRunner.SixtySecondEvidenceRange[] ranges =
+                AuditionPvCityHeroPocketGoldenRunner
+                    .ApprovedSixtySecondEvidenceRanges;
+            Assert.That(ranges, Has.Length.EqualTo(4));
+            AssertRange(ranges[0], AuditionPvCityShot.G01, 0, 539, 180, 359);
+            AssertRange(ranges[1], AuditionPvCityShot.G02, 60, 779, 240, 599);
+            AssertRange(ranges[2], AuditionPvCityShot.G03, 0, 419, 180, 239);
+            AssertRange(ranges[3], AuditionPvCityShot.G03, 60, 659, 240, 479);
+
+            string source = ReadProjectFile(
+                AuditionPvCityHeroPocketGoldenRunner.RunnerScriptPath);
+
+            Assert.That(source, Does.Contain(
+                "AuditionPvRuntimeWorkloadCaptureSession.Open("));
+            Assert.That(source, Does.Contain(
+                "GetSourceFirstFrame(shot)"));
+            Assert.That(source, Does.Contain(
+                "GetSourceLastFrame(shot)"));
+            Assert.That(source, Does.Contain(
+                "LogicalToSourceFrame("));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture.Complete();"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.Dispose();"));
+            Assert.That(source, Does.Contain(
+                "foreach (SixtySecondEvidenceRange range in"));
+            Assert.That(source, Does.Contain(
+                "approvedSourceRange = true"));
+            Assert.That(source, Does.Contain(
+                "cleanPlate = false"));
+
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.Produce(",
+                StringComparison.Ordinal);
+            int merge = source.IndexOf(
+                ".MergeCaptureTestResults(results, evidence);",
+                StringComparison.Ordinal);
+            int write = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest)",
+                StringComparison.Ordinal);
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(write, Is.GreaterThan(merge));
+        }
+
+        [Test]
         public void RunnerSource_UsesPublicRecorderCoreAndSessionLifecycleOnly()
         {
             string source = ReadProjectFile(
@@ -116,7 +178,7 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain(
                 "activeProof.recordedPostHandleFrameCount"));
             Assert.That(source, Does.Contain(
-                "while (recorderController.IsRecording()"));
+                "nextPostHandleSourceFrame <= lastSourceFrame"));
             Assert.That(source, Does.Contain(
                 "yield return EndOfFrameYield;"));
             Assert.That(source, Does.Contain(
@@ -1305,6 +1367,23 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
                 typeof(DefaultExecutionOrder));
             Assert.That(attribute, Is.Not.Null, typeof(T).FullName);
             return attribute.order;
+        }
+
+        private static void AssertRange(
+            AuditionPvCityHeroPocketGoldenRunner.SixtySecondEvidenceRange actual,
+            AuditionPvCityShot shot,
+            int sourceStart,
+            int sourceEnd,
+            int selectStart,
+            int selectEnd)
+        {
+            Assert.That(actual.shot, Is.EqualTo(shot));
+            Assert.That(actual.sourceStartFrame, Is.EqualTo(sourceStart));
+            Assert.That(actual.sourceEndFrame, Is.EqualTo(sourceEnd));
+            Assert.That(actual.selectStartFrame, Is.EqualTo(selectStart));
+            Assert.That(actual.selectEndFrame, Is.EqualTo(selectEnd));
+            Assert.That(selectStart - sourceStart, Is.EqualTo(180));
+            Assert.That(sourceEnd - selectEnd, Is.EqualTo(180));
         }
 
         private static int CountOccurrences(string source, string value)

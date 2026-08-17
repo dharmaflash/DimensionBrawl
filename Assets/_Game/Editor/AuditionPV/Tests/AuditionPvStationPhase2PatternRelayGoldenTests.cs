@@ -71,6 +71,52 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void SixtySecondEvidence_SealsFullG07AndPublishesExactS070BeforeManifest()
+        {
+            Assert.That(
+                new[]
+                {
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .S070SourceRangeStartFrame,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .S070SourceRangeEndFrame,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .S070SelectStartFrame,
+                    AuditionPvStationPhase2PatternRelayGoldenRunner
+                        .S070SelectEndFrame
+                },
+                Is.EqualTo(new[] { 0, 779, 180, 599 }));
+
+            string source = File.ReadAllText(ProjectAbsolutePath(
+                AuditionPvStationPhase2PatternRelayGoldenRunner.RunnerScriptPath));
+            Assert.That(source, Does.Contain(
+                "s070RuntimeWorkload.CapturePresentedFrame(handleFrame);"));
+            Assert.That(source, Does.Contain(
+                "s070RuntimeWorkload?.CapturePresentedFrame("));
+            Assert.That(source, Does.Contain(
+                "state.s070RuntimeWorkloadSealPath = s070RuntimeWorkload.Complete();"));
+            Assert.That(source, Does.Contain("s070RuntimeWorkload?.Dispose();"));
+            Assert.That(source, Does.Contain(
+                "generatedEvidenceResults.Length != 7"));
+            Assert.That(source, Does.Contain(
+                "renderer-material-scan/runtime-workload"));
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.Produce(",
+                StringComparison.Ordinal);
+            int merge = source.IndexOf(
+                ".MergeCaptureTestResults(results, sixtySecondEvidence)",
+                produce,
+                StringComparison.Ordinal);
+            int manifestWrite = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest)",
+                merge,
+                StringComparison.Ordinal);
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(manifestWrite, Is.GreaterThan(merge));
+        }
+
+        [Test]
         public void AuthoredProfiles_IndependentlyPinFloat32ScheduleInputsAndColors()
         {
             BossBarragePatternProfile curtain = Load<BossBarragePatternProfile>(

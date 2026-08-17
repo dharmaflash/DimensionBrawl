@@ -2352,11 +2352,55 @@ namespace DimensionBrawl.Editor.AuditionPV
             int width, int height)
         {
             if (width <= 0 || height <= 0 ||
-                !TryLoadPngPixels(sourcePath, MaxQhdPngBytes, width, height,
-                    out Color32[] source) ||
-                !TryLoadPngPixels(outputPath, MaxQhdPngBytes, width, height,
-                    out Color32[] output)) return false;
-            return Rec709PixelTransformMatches(source, output);
+                !TryExpectedRec709RawDigest(sourcePath, width, height,
+                    out string expected) ||
+                !TryRawPngDigest(outputPath, width, height, out string actual)) return false;
+            return expected == actual;
+        }
+
+        // Keep source and output decoding in separate call frames so QHD verification never
+        // retains two decoded PNG arrays at once.
+        private static bool TryExpectedRec709RawDigest(string path, int width, int height,
+            out string digest)
+        {
+            digest = string.Empty;
+            if (!TryLoadPngPixels(path, MaxQhdPngBytes, width, height,
+                    out Color32[] pixels)) return false;
+            digest = RawPixelDigest(pixels, applyRec709Transform: true);
+            return true;
+        }
+
+        private static bool TryRawPngDigest(string path, int width, int height,
+            out string digest)
+        {
+            digest = string.Empty;
+            if (!TryLoadPngPixels(path, MaxQhdPngBytes, width, height,
+                    out Color32[] pixels)) return false;
+            digest = RawPixelDigest(pixels, applyRec709Transform: false);
+            return true;
+        }
+
+        private static string RawPixelDigest(Color32[] pixels, bool applyRec709Transform)
+        {
+            const int ChunkBytes = 64 * 1024;
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var chunk = new byte[ChunkBytes];
+            int used = 0;
+            foreach (Color32 value in pixels ?? Array.Empty<Color32>())
+            {
+                if (used + 4 > chunk.Length)
+                {
+                    sha.TransformBlock(chunk, 0, used, null, 0);
+                    used = 0;
+                }
+                chunk[used++] = applyRec709Transform ? Srgb8ToRec709Lut[value.r] : value.r;
+                chunk[used++] = applyRec709Transform ? Srgb8ToRec709Lut[value.g] : value.g;
+                chunk[used++] = applyRec709Transform ? Srgb8ToRec709Lut[value.b] : value.b;
+                chunk[used++] = value.a;
+            }
+            sha.TransformFinalBlock(chunk, 0, used);
+            return string.Concat((sha.Hash ?? Array.Empty<byte>()).Select(value =>
+                value.ToString("x2", CultureInfo.InvariantCulture)));
         }
 
         internal static bool Rec709PixelTransformMatches(Color32[] source, Color32[] output)
@@ -3470,34 +3514,120 @@ namespace DimensionBrawl.Editor.AuditionPV
                 RejectReparseChain(sheetPath);
                 int expectedWidth = checked(columns * (Width / 4));
                 int expectedHeight = checked(rows * (Height / 4));
-                if (!TryLoadPngPixels(sheetPath, MaxSheetPngBytes, expectedWidth, expectedHeight,
-                        out Color32[] sheetPixels))
+                if (!TryContactSheetCellDigests(
+                        sheetPath,
+                        expectedWidth,
+                        expectedHeight,
+                        columns,
+                        rows,
+                        out string[] sheetCellDigests))
                     return false;
-                int cellWidth = Width / 4, cellHeight = Height / 4;
                 for (int cell = 0; cell < sourcePaths.Length; cell++)
                 {
                     RejectReparseChain(sourcePaths[cell]);
-                    if (!TryLoadPngPixels(sourcePaths[cell], MaxQhdPngBytes, Width, Height,
-                            out Color32[] sourcePixels)) return false;
-                    int cellX = cell % columns, cellY = cell / columns;
-                    for (int y = 0; y < cellHeight; y++)
-                        for (int x = 0; x < cellWidth; x++)
-                            if (!sheetPixels[(cellY * cellHeight + y) * expectedWidth +
-                                    cellX * cellWidth + x].Equals(
-                                sourcePixels[(y * 4) * Width + x * 4])) return false;
+                    if (!TryQuarterScaleSourceDigest(
+                            sourcePaths[cell],
+                            out string sourceDigest) ||
+                        sheetCellDigests[cell] != sourceDigest) return false;
                 }
-                var clear = new Color32(0, 0, 0, 0);
+                string clearDigest = RepeatedPixelDigest(
+                    new Color32(0, 0, 0, 0),
+                    checked((Width / 4) * (Height / 4)));
                 for (int cell = sourcePaths.Length; cell < columns * rows; cell++)
-                {
-                    int cellX = cell % columns, cellY = cell / columns;
-                    for (int y = 0; y < cellHeight; y++)
-                        for (int x = 0; x < cellWidth; x++)
-                            if (!sheetPixels[(cellY * cellHeight + y) * expectedWidth +
-                                    cellX * cellWidth + x].Equals(clear)) return false;
-                }
+                    if (sheetCellDigests[cell] != clearDigest) return false;
                 return true;
             }
             catch (Exception exception) when (IsPathOrIo(exception)) { return false; }
+        }
+
+        private static bool TryContactSheetCellDigests(string path,
+            int expectedWidth, int expectedHeight, int columns, int rows,
+            out string[] digests)
+        {
+            digests = Array.Empty<string>();
+            if (!TryLoadPngPixels(path, MaxSheetPngBytes, expectedWidth, expectedHeight,
+                    out Color32[] pixels)) return false;
+            int cellWidth = Width / 4;
+            int cellHeight = Height / 4;
+            var result = new string[checked(columns * rows)];
+            for (int cell = 0; cell < result.Length; cell++)
+            {
+                result[cell] = PixelRegionDigest(
+                    pixels,
+                    expectedWidth,
+                    cell % columns * cellWidth,
+                    cell / columns * cellHeight,
+                    cellWidth,
+                    cellHeight,
+                    1);
+            }
+            digests = result;
+            return true;
+        }
+
+        private static bool TryQuarterScaleSourceDigest(string path, out string digest)
+        {
+            digest = string.Empty;
+            if (!TryLoadPngPixels(path, MaxQhdPngBytes, Width, Height,
+                    out Color32[] pixels)) return false;
+            digest = PixelRegionDigest(
+                pixels,
+                Width,
+                0,
+                0,
+                Width / 4,
+                Height / 4,
+                4);
+            return true;
+        }
+
+        private static string PixelRegionDigest(Color32[] pixels, int rowWidth,
+            int startX, int startY, int width, int height, int stride)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var chunk = new byte[64 * 1024];
+            int used = 0;
+            for (int y = 0; y < height; y++)
+            {
+                int row = checked((startY + y * stride) * rowWidth + startX);
+                for (int x = 0; x < width; x++)
+                {
+                    Color32 pixel = pixels[checked(row + x * stride)];
+                    AppendPixelToHash(sha, chunk, ref used, pixel);
+                }
+            }
+            sha.TransformFinalBlock(chunk, 0, used);
+            return string.Concat((sha.Hash ?? Array.Empty<byte>()).Select(value =>
+                value.ToString("x2", CultureInfo.InvariantCulture)));
+        }
+
+        private static string RepeatedPixelDigest(Color32 pixel, int count)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var chunk = new byte[64 * 1024];
+            int used = 0;
+            for (int index = 0; index < count; index++)
+                AppendPixelToHash(sha, chunk, ref used, pixel);
+            sha.TransformFinalBlock(chunk, 0, used);
+            return string.Concat((sha.Hash ?? Array.Empty<byte>()).Select(value =>
+                value.ToString("x2", CultureInfo.InvariantCulture)));
+        }
+
+        private static void AppendPixelToHash(
+            System.Security.Cryptography.HashAlgorithm sha,
+            byte[] chunk,
+            ref int used,
+            Color32 pixel)
+        {
+            if (used + 4 > chunk.Length)
+            {
+                sha.TransformBlock(chunk, 0, used, null, 0);
+                used = 0;
+            }
+            chunk[used++] = pixel.r;
+            chunk[used++] = pixel.g;
+            chunk[used++] = pixel.b;
+            chunk[used++] = pixel.a;
         }
 
         private static bool TryDecodedPngDimensions(string path, out int width, out int height)

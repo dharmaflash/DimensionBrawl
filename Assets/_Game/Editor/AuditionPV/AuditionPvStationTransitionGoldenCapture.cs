@@ -72,6 +72,18 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int Bl05LogicalFrame = 178;
         internal const int Bl04SourceFrame = SelectStartFrame + Bl04LogicalFrame;
         internal const int Bl05SourceFrame = SelectStartFrame + Bl05LogicalFrame;
+        internal const int C33EvidenceSourceStartFrame = 0;
+        internal const int C33EvidenceSourceEndFrame = 479;
+        internal const int C33EvidenceSelectStartFrame = 180;
+        internal const int C33EvidenceSelectEndFrame = 299;
+        internal const int C34EvidenceSourceStartFrame = 118;
+        internal const int C34EvidenceSourceEndFrame = 597;
+        internal const int C34EvidenceSelectStartFrame = 298;
+        internal const int C34EvidenceSelectEndFrame = 417;
+        internal const string C34AtomicShotId = "pv-s060-eye-open";
+        internal const string S060BucketId = "PV_S060";
+        internal const string CleanPlateCompanionProofFileName =
+            "g04_clean_plate_companion_proof.json";
 
         private const string TransitionRootName = "OlympusStation_AkazaPhase2TransitionRig";
         private const string ActorName = "AkazaPhase2_CinematicActor";
@@ -124,7 +136,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             try
             {
                 RequireNoAudioCommandLine();
-                string outputDirectory = CaptureGoldenSource();
+                string outputDirectory = CaptureGoldenSource(
+                    ResolveApprovedEvidenceRequest(Environment.GetCommandLineArgs()));
                 Debug.Log($"[AuditionPV] G04 batch capture passed: {outputDirectory}");
                 EditorApplication.Exit(0);
             }
@@ -136,6 +149,12 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         public static string CaptureGoldenSource()
+        {
+            return CaptureGoldenSource(produceApprovedSixtySecondEvidence: false);
+        }
+
+        internal static string CaptureGoldenSource(
+            bool produceApprovedSixtySecondEvidence)
         {
             DateTime startedAtUtc = DateTime.UtcNow;
             AuditionPvGitSnapshot gitAtStart = AuditionPvEnvironmentProbe.ReadGitSnapshot();
@@ -183,6 +202,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 {
                     UnityEngine.Random.InitState(DeterministicRandomSeed);
                     metrics = CaptureProductTimeline(
+                        captureId,
                         outputDirectory,
                         frameDirectory,
                         baselineDirectory);
@@ -275,6 +295,52 @@ namespace DimensionBrawl.Editor.AuditionPV
                 AuditionPvTestResult[] testResults = ordinaryResults
                     .Concat(gateResults)
                     .ToArray();
+                AuditionPvSixtySecondEvidenceBundle c34ReferenceEvidence = null;
+                if (produceApprovedSixtySecondEvidence)
+                {
+                    AuditionPvSixtySecondEvidenceBundle sourceEvidence =
+                        ProduceSixtySecondEvidence(
+                            captureCoreManifest,
+                            captureCoreSha256,
+                            ShotId,
+                            C33EvidenceSourceStartFrame,
+                            C33EvidenceSourceEndFrame,
+                            C33EvidenceSelectStartFrame,
+                            C33EvidenceSelectEndFrame,
+                            metrics.runtimeWorkloadSealPath,
+                            cleanPlate: false);
+                    testResults = AuditionPvSixtySecondEvidenceProducer
+                        .MergeCaptureTestResults(testResults, sourceEvidence);
+
+                    c34ReferenceEvidence = ProduceSixtySecondEvidence(
+                        captureCoreManifest,
+                        captureCoreSha256,
+                        ShotId,
+                        C34EvidenceSourceStartFrame,
+                        C34EvidenceSourceEndFrame,
+                        C34EvidenceSelectStartFrame,
+                        C34EvidenceSelectEndFrame,
+                        metrics.runtimeWorkloadSealPath,
+                        cleanPlate: false);
+                    testResults = AuditionPvSixtySecondEvidenceProducer
+                        .MergeCaptureTestResults(
+                            testResults,
+                            c34ReferenceEvidence);
+
+                    AuditionPvSixtySecondEvidenceBundle cleanEvidence =
+                        ProduceSixtySecondEvidence(
+                            captureCoreManifest,
+                            captureCoreSha256,
+                            CleanPlateShotId,
+                            C34EvidenceSourceStartFrame,
+                            C34EvidenceSourceEndFrame,
+                            C34EvidenceSelectStartFrame,
+                            C34EvidenceSelectEndFrame,
+                            metrics.cleanPlateRuntimeWorkloadSealPath,
+                            cleanPlate: true);
+                    testResults = AuditionPvSixtySecondEvidenceProducer
+                        .MergeCaptureTestResults(testResults, cleanEvidence);
+                }
                 AuditionPvCaptureManifest manifest =
                     AuditionPvCaptureManifestFactory.CreateForRoot(
                         captureId,
@@ -298,6 +364,15 @@ namespace DimensionBrawl.Editor.AuditionPV
                 }
                 string manifestPath = AuditionPvCaptureManifestWriter.WriteNew(manifest);
                 ValidateManifestRoundTrip(manifestPath);
+                if (produceApprovedSixtySecondEvidence)
+                {
+                    WriteCleanPlateCompanionProof(
+                        evidenceDirectory,
+                        manifestPath,
+                        captureId,
+                        c34ReferenceEvidence,
+                        startedAtUtc);
+                }
                 return outputDirectory.Replace('\\', '/');
             }
             catch (Exception exception)
@@ -376,6 +451,133 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal static string[] GateSemanticBeatIds()
         {
             return new[] { "c33-wing-deployment", "c34-eye-open" };
+        }
+
+        internal static bool ResolveApprovedEvidenceRequest(
+            IEnumerable<string> arguments) => (arguments ?? Array.Empty<string>()).Any(value =>
+            string.Equals(value, "-pv60ApprovedEvidence", StringComparison.OrdinalIgnoreCase));
+
+        private static AuditionPvSixtySecondEvidenceBundle ProduceSixtySecondEvidence(
+            AuditionPvCaptureManifest captureCoreManifest,
+            string captureCoreSha256,
+            string sourceShotId,
+            int sourceRangeStartFrame,
+            int sourceRangeEndFrame,
+            int selectStartFrame,
+            int selectEndFrame,
+            string runtimeWorkloadSealPath,
+            bool cleanPlate)
+        {
+            return AuditionPvSixtySecondEvidenceProducer.Produce(
+                new AuditionPvSixtySecondEvidenceRequest
+                {
+                    captureCoreManifest = captureCoreManifest,
+                    expectedCaptureCoreSha256 = captureCoreSha256,
+                    sourceShotId = sourceShotId,
+                    sourceRangeStartFrame = sourceRangeStartFrame,
+                    sourceRangeEndFrame = sourceRangeEndFrame,
+                    selectStartFrame = selectStartFrame,
+                    selectEndFrame = selectEndFrame,
+                    runtimeWorkloadSealPath = runtimeWorkloadSealPath,
+                    graphicsRootDirectory =
+                        AuditionPvSixtySecondGateManifestValidator
+                            .ProductionGraphicsRoot,
+                    reviewRootDirectory =
+                        AuditionPvSixtySecondGateManifestValidator
+                            .ProductionReviewRoot,
+                    approvedSourceRange = true,
+                    cleanPlate = cleanPlate,
+                    linkedCleanPlateConfirmed = cleanPlate
+                });
+        }
+
+        private static void WriteCleanPlateCompanionProof(
+            string evidenceDirectory,
+            string manifestPath,
+            string captureId,
+            AuditionPvSixtySecondEvidenceBundle referenceEvidence,
+            DateTime createdAtUtc)
+        {
+            if (referenceEvidence?.sourceFrameLedger == null ||
+                !AuditionPvSha256.IsSha256(
+                    referenceEvidence.sourceFrameLedger.sha256) ||
+                string.IsNullOrWhiteSpace(referenceEvidence.sourceFrameLedger.path) ||
+                !File.Exists(referenceEvidence.sourceFrameLedger.path) ||
+                !string.Equals(
+                    AuditionPvSha256.FileHash(referenceEvidence.sourceFrameLedger.path),
+                    referenceEvidence.sourceFrameLedger.sha256,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    "G04 clean-plate companion requires the exact C34 reference ledger.");
+            }
+
+            string manifestSha256 = AuditionPvSha256.FileHash(manifestPath);
+            if (!AuditionPvSha256.IsSha256(manifestSha256))
+            {
+                throw new InvalidDataException(
+                    "G04 clean-plate companion could not pin the final capture manifest.");
+            }
+
+            string proofPath = Path.Combine(
+                evidenceDirectory,
+                CleanPlateCompanionProofFileName);
+            WriteJsonNew(
+                proofPath,
+                CreateCleanPlateCompanionProof(
+                    captureId,
+                    manifestSha256,
+                    referenceEvidence.sourceFrameLedger.sha256,
+                    createdAtUtc));
+        }
+
+        internal static AuditionPvCleanPlateCompanionProofArtifact
+            CreateCleanPlateCompanionProof(
+                string captureId,
+                string manifestSha256,
+                string referenceFrameLedgerSha256,
+                DateTime createdAtUtc)
+        {
+            if (string.IsNullOrWhiteSpace(captureId) ||
+                !AuditionPvSha256.IsSha256(manifestSha256) ||
+                !AuditionPvSha256.IsSha256(referenceFrameLedgerSha256))
+            {
+                throw new ArgumentException(
+                    "G04 clean-plate companion identity is incomplete.");
+            }
+
+            return new AuditionPvCleanPlateCompanionProofArtifact
+            {
+                schemaVersion = AuditionPvSixtySecondGateManifestValidator
+                    .CleanPlateProofSchema,
+                captureId = captureId,
+                sourceManifestSha256 = manifestSha256,
+                sourceShotId = CleanPlateShotId,
+                bucketId = S060BucketId,
+                atomicShotId = C34AtomicShotId,
+                referenceTakeId = C34AtomicShotId + "-take-" + captureId,
+                referenceCaptureId = captureId,
+                referenceSourceManifestSha256 = manifestSha256,
+                referenceSourceShotId = ShotId,
+                referenceFrameLedgerSha256 = referenceFrameLedgerSha256,
+                referenceSourceRangeStartFrame = C34EvidenceSourceStartFrame,
+                referenceSourceRangeEndFrame = C34EvidenceSourceEndFrame,
+                referenceSelectStartFrame = C34EvidenceSelectStartFrame,
+                referenceSelectEndFrame = C34EvidenceSelectEndFrame,
+                scenePath = StationScenePath,
+                cameraId = GateCameraId,
+                gameplayState = GateGameplayState,
+                timelineId = GateTimelineId,
+                deterministicSeed = DeterministicRandomSeed,
+                sourceRangeStartFrame = C34EvidenceSourceStartFrame,
+                sourceRangeEndFrame = C34EvidenceSourceEndFrame,
+                selectStartFrame = C34EvidenceSelectStartFrame,
+                selectEndFrame = C34EvidenceSelectEndFrame,
+                proofTool = nameof(AuditionPvStationTransitionGoldenCapture),
+                createdAtUtc = createdAtUtc.ToUniversalTime().ToString(
+                    "O",
+                    CultureInfo.InvariantCulture)
+            };
         }
 
         internal static string FrameLedgerRelativePath(int frameIndex)
@@ -790,11 +992,14 @@ namespace DimensionBrawl.Editor.AuditionPV
         }
 
         private static CaptureMetrics CaptureProductTimeline(
+            string captureId,
             string outputDirectory,
             string frameDirectory,
             string baselineDirectory)
         {
             SceneLease lease = null;
+            AuditionPvRuntimeWorkloadCaptureSession runtimeWorkloadCapture = null;
+            AuditionPvRuntimeWorkloadCaptureSession cleanPlateWorkloadCapture = null;
             bool openedStationScene = false;
             try
             {
@@ -807,6 +1012,28 @@ namespace DimensionBrawl.Editor.AuditionPV
                 bindings.director.Stop();
                 bindings.director.RebuildGraph();
                 ValidateDirectorDuration(bindings.director);
+                runtimeWorkloadCapture = AuditionPvRuntimeWorkloadCaptureSession.Open(
+                    new AuditionPvRuntimeWorkloadCaptureConfig
+                    {
+                        captureId = captureId,
+                        captureOutputDirectory = outputDirectory,
+                        sourceShotId = ShotId,
+                        sourceRangeStartFrame = FirstFrame,
+                        sourceRangeEndFrame = LastFrame,
+                        captureHudEvidence = false
+                    });
+                cleanPlateWorkloadCapture =
+                    AuditionPvRuntimeWorkloadCaptureSession.Open(
+                        new AuditionPvRuntimeWorkloadCaptureConfig
+                        {
+                            captureId = captureId,
+                            captureOutputDirectory = outputDirectory,
+                            sourceShotId = CleanPlateShotId,
+                            sourceRangeStartFrame = FirstFrame,
+                            sourceRangeEndFrame = LastFrame,
+                            captureHudEvidence = true,
+                            captureCamera = bindings.wingCamera
+                        });
 
                 var metrics = new CaptureMetrics();
                 for (int frameIndex = FirstFrame; frameIndex <= LastFrame; frameIndex++)
@@ -818,6 +1045,10 @@ namespace DimensionBrawl.Editor.AuditionPV
                         AuditionPvCaptureContract.Height);
                     try
                     {
+                        runtimeWorkloadCapture.CapturePresentedFrame(frameIndex);
+                        cleanPlateWorkloadCapture.CapturePresentedFrame(
+                            frameIndex,
+                            camera);
                         AccumulateVisualSanity(frame, metrics);
                         if (frameIndex == WingClosedFrame)
                         {
@@ -864,6 +1095,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                     }
                 }
 
+                metrics.runtimeWorkloadSealPath =
+                    runtimeWorkloadCapture.Complete();
+                runtimeWorkloadCapture = null;
+                metrics.cleanPlateRuntimeWorkloadSealPath =
+                    cleanPlateWorkloadCapture.Complete();
+                cleanPlateWorkloadCapture = null;
+
                 ValidateExactCameraCut(bindings);
                 CopyNew(
                     Path.Combine(frameDirectory, FrameFileName(Bl04SourceFrame)),
@@ -878,15 +1116,31 @@ namespace DimensionBrawl.Editor.AuditionPV
             {
                 try
                 {
-                    lease?.Restore();
+                    runtimeWorkloadCapture?.Dispose();
                 }
                 finally
                 {
-                    if (openedStationScene)
+                    try
                     {
-                        // Discards every temporary scene mutation, including any
-                        // state an evaluated animation track may have written.
-                        EditorSceneManager.OpenScene(StationScenePath, OpenSceneMode.Single);
+                        cleanPlateWorkloadCapture?.Dispose();
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            lease?.Restore();
+                        }
+                        finally
+                        {
+                            if (openedStationScene)
+                            {
+                                // Discards every temporary scene mutation, including any
+                                // state an evaluated animation track may have written.
+                                EditorSceneManager.OpenScene(
+                                    StationScenePath,
+                                    OpenSceneMode.Single);
+                            }
+                        }
                     }
                 }
             }
@@ -1782,6 +2036,8 @@ namespace DimensionBrawl.Editor.AuditionPV
             public float wingOpenSpan = float.NaN;
             public int closedIrisPixels = -1;
             public int openIrisPixels = -1;
+            public string runtimeWorkloadSealPath = string.Empty;
+            public string cleanPlateRuntimeWorkloadSealPath = string.Empty;
         }
 
         private sealed class HudOffLease

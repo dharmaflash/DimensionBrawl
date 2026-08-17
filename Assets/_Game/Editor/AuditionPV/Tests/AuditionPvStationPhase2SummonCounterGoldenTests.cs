@@ -75,6 +75,66 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void SixtySecondEvidence_StreamsOneFullShotSealIntoBothExactAtomicRanges()
+        {
+            Assert.That(
+                new[]
+                {
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S070S080SourceRangeStartFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S070S080SourceRangeEndFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S070S080SelectStartFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S070S080SelectEndFrame
+                },
+                Is.EqualTo(new[] { 0, 659, 180, 479 }));
+            Assert.That(
+                new[]
+                {
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S080UltimateSourceRangeStartFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S080UltimateSourceRangeEndFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S080UltimateSelectStartFrame,
+                    AuditionPvStationPhase2SummonCounterGoldenRunner
+                        .S080UltimateSelectEndFrame
+                },
+                Is.EqualTo(new[] { 60, 719, 240, 539 }));
+
+            string source = File.ReadAllText(ProjectAbsolutePath(
+                AuditionPvStationPhase2SummonCounterGoldenRunner.RunnerScriptPath))
+                .Replace("\r", string.Empty);
+            Assert.That(source, Does.Contain(
+                "sourceRangeStartFrame =\n                        AuditionPvStationPhase2SummonCounterCapture.FirstFrame"));
+            Assert.That(source, Does.Contain(
+                "sourceRangeEndFrame =\n                        AuditionPvStationPhase2SummonCounterCapture.LastFrame"));
+            Assert.That(source, Does.Contain(
+                "state.runtimeWorkloadSealPath = runtimeWorkloadCapture.Complete();"));
+            Assert.That(source, Does.Contain(
+                "state.runtimeWorkloadSealPath);"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.CapturePresentedFrame("));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.Dispose();"));
+            int firstEvidence = source.IndexOf(
+                "ProduceApprovedEvidence(",
+                StringComparison.Ordinal);
+            int secondEvidence = source.IndexOf(
+                "ProduceApprovedEvidence(",
+                firstEvidence + 1,
+                StringComparison.Ordinal);
+            int manifestWrite = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest)",
+                StringComparison.Ordinal);
+            Assert.That(firstEvidence, Is.GreaterThanOrEqualTo(0));
+            Assert.That(secondEvidence, Is.GreaterThan(firstEvidence));
+            Assert.That(manifestWrite, Is.GreaterThan(secondEvidence));
+        }
+
+        [Test]
         public void RunnerTimeout_AllowsObservedQhdPngEncodingHeadroom()
         {
             string source = File.ReadAllText(ProjectAbsolutePath(

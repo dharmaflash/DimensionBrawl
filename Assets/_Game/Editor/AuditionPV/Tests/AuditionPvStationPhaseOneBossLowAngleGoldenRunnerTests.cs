@@ -207,6 +207,36 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void ApprovedEvidence_SealsRuntimeAndMergesBeforeImmutableManifest()
+        {
+            string projectRoot = Directory.GetParent(UnityEngine.Application.dataPath)
+                ?.FullName ?? throw new InvalidOperationException("Project root is missing.");
+            string source = File.ReadAllText(Path.Combine(
+                projectRoot,
+                AuditionPvStationPhaseOneBossLowAngleGoldenRunner.RunnerScriptPath));
+            int seal = source.IndexOf(
+                "runtimeWorkloadCapture.Complete()",
+                StringComparison.Ordinal);
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.Produce(",
+                StringComparison.Ordinal);
+            int merge = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(",
+                StringComparison.Ordinal);
+            int write = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest);",
+                StringComparison.Ordinal);
+
+            Assert.That(seal, Is.GreaterThanOrEqualTo(0));
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(write, Is.GreaterThan(merge));
+            Assert.That(source, Does.Contain("-pv60ApprovedEvidence"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadSealPath = take.runtimeWorkloadSealPath"));
+        }
+
+        [Test]
         public void GateBindings_PinAuthorshipRuntimeCoreAndEveryS050SemanticFact()
         {
             const string sha =

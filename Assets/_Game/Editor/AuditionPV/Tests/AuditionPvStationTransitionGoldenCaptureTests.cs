@@ -79,6 +79,171 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
             Assert.That(source, Does.Contain("UnityEngine.Random.state = randomState"));
         }
 
+        [Test]
+        public void ApprovedEvidencePipeline_SealsSourceAndCameraExactCleanPlateBeforeManifest()
+        {
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture
+                    .ResolveApprovedEvidenceRequest(Array.Empty<string>()),
+                Is.False);
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture
+                    .ResolveApprovedEvidenceRequest(
+                        new[] { "Unity", "-PV60APPROVEDEVIDENCE" }),
+                Is.True);
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C33EvidenceSourceStartFrame,
+                Is.EqualTo(0));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C33EvidenceSourceEndFrame,
+                Is.EqualTo(479));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C33EvidenceSelectStartFrame,
+                Is.EqualTo(180));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C33EvidenceSelectEndFrame,
+                Is.EqualTo(299));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C34EvidenceSourceStartFrame,
+                Is.EqualTo(118));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C34EvidenceSourceEndFrame,
+                Is.EqualTo(597));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C34EvidenceSelectStartFrame,
+                Is.EqualTo(298));
+            Assert.That(
+                AuditionPvStationTransitionGoldenCapture.C34EvidenceSelectEndFrame,
+                Is.EqualTo(417));
+
+            string source = File.ReadAllText(ProjectAbsolutePath(
+                AuditionPvStationTransitionGoldenCapture.CaptureScriptPath));
+            Assert.That(source, Does.Contain(
+                "sourceShotId = ShotId"));
+            Assert.That(source, Does.Contain(
+                "sourceShotId = CleanPlateShotId"));
+            Assert.That(source, Does.Contain(
+                "cleanPlateWorkloadCapture.CapturePresentedFrame("));
+            Assert.That(source, Does.Match(
+                @"cleanPlateWorkloadCapture\.CapturePresentedFrame\(\s*"
+                + @"frameIndex,\s*camera\s*\);"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture.Complete();"));
+            Assert.That(source, Does.Contain(
+                "cleanPlateWorkloadCapture.Complete();"));
+            Assert.That(source, Does.Contain(
+                "cleanPlate = cleanPlate"));
+            Assert.That(source, Does.Contain(
+                "linkedCleanPlateConfirmed = cleanPlate"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.Dispose();"));
+            Assert.That(source, Does.Contain(
+                "cleanPlateWorkloadCapture?.Dispose();"));
+
+            // Anchor the first range-specific call in FinalizeCapture. The direct
+            // producer invocation lives inside the helper declared later in this
+            // file, so using that implementation token would invert source order.
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceBundle sourceEvidence =",
+                StringComparison.Ordinal);
+            int merge = source.LastIndexOf(
+                ".MergeCaptureTestResults(testResults, cleanEvidence);",
+                StringComparison.Ordinal);
+            int write = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest)",
+                StringComparison.Ordinal);
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(write, Is.GreaterThan(merge));
+        }
+
+        [Test]
+        public void CleanPlateCompanionProof_BindsFinalManifestAndExactC34Reference()
+        {
+            string manifestSha = new string('a', 64);
+            string ledgerSha = new string('b', 64);
+            const string captureId = "g04-test-capture";
+            DateTime createdAtUtc = new DateTime(
+                2026,
+                8,
+                17,
+                1,
+                2,
+                3,
+                DateTimeKind.Utc);
+
+            AuditionPvCleanPlateCompanionProofArtifact proof =
+                AuditionPvStationTransitionGoldenCapture
+                    .CreateCleanPlateCompanionProof(
+                        captureId,
+                        manifestSha,
+                        ledgerSha,
+                        createdAtUtc);
+
+            Assert.That(
+                proof.schemaVersion,
+                Is.EqualTo(AuditionPvSixtySecondGateManifestValidator
+                    .CleanPlateProofSchema));
+            Assert.That(proof.captureId, Is.EqualTo(captureId));
+            Assert.That(proof.sourceManifestSha256, Is.EqualTo(manifestSha));
+            Assert.That(proof.sourceShotId, Is.EqualTo("g04-clean"));
+            Assert.That(proof.bucketId, Is.EqualTo("PV_S060"));
+            Assert.That(proof.atomicShotId, Is.EqualTo("pv-s060-eye-open"));
+            Assert.That(
+                proof.referenceTakeId,
+                Is.EqualTo("pv-s060-eye-open-take-" + captureId));
+            Assert.That(proof.referenceCaptureId, Is.EqualTo(captureId));
+            Assert.That(
+                proof.referenceSourceManifestSha256,
+                Is.EqualTo(manifestSha));
+            Assert.That(proof.referenceSourceShotId, Is.EqualTo("g04"));
+            Assert.That(proof.referenceFrameLedgerSha256, Is.EqualTo(ledgerSha));
+            Assert.That(proof.referenceSourceRangeStartFrame, Is.EqualTo(118));
+            Assert.That(proof.referenceSourceRangeEndFrame, Is.EqualTo(597));
+            Assert.That(proof.referenceSelectStartFrame, Is.EqualTo(298));
+            Assert.That(proof.referenceSelectEndFrame, Is.EqualTo(417));
+            Assert.That(proof.sourceRangeStartFrame, Is.EqualTo(118));
+            Assert.That(proof.sourceRangeEndFrame, Is.EqualTo(597));
+            Assert.That(proof.selectStartFrame, Is.EqualTo(298));
+            Assert.That(proof.selectEndFrame, Is.EqualTo(417));
+            Assert.That(proof.scenePath, Is.EqualTo(
+                AuditionPvStationTransitionGoldenCapture.StationScenePath));
+            Assert.That(proof.cameraId, Is.EqualTo(
+                AuditionPvStationTransitionGoldenCapture.GateCameraId));
+            Assert.That(proof.gameplayState, Is.EqualTo(
+                AuditionPvStationTransitionGoldenCapture.GateGameplayState));
+            Assert.That(proof.timelineId, Is.EqualTo(
+                AuditionPvStationTransitionGoldenCapture.GateTimelineId));
+            Assert.That(proof.deterministicSeed, Is.EqualTo(
+                AuditionPvStationTransitionGoldenCapture.DeterministicRandomSeed));
+            Assert.That(proof.createdAtUtc, Is.EqualTo("2026-08-17T01:02:03.0000000Z"));
+
+            var reference = new AuditionPvSixtySecondTakeCandidate
+            {
+                takeId = "pv-s060-eye-open-take-" + captureId,
+                sourceCaptureId = captureId,
+                sourceShotId = "g04",
+                sourceManifest = new AuditionPvPinnedArtifact
+                {
+                    path = "capture_manifest.json",
+                    sha256 = manifestSha
+                },
+                sourceFrameLedger = new AuditionPvPinnedArtifact
+                {
+                    path = "canonical_source_frame_hashes.sha256",
+                    sha256 = ledgerSha
+                },
+                sourceRangeStartFrame = 118,
+                sourceRangeEndFrame = 597,
+                selectStartFrame = 298,
+                selectEndFrame = 417
+            };
+            Assert.That(
+                AuditionPvSixtySecondGateManifestValidator
+                    .CleanPlateReferenceMatches(proof, reference),
+                Is.True);
+        }
+
         [TestCase(0, true)]
         [TestCase(179, true)]
         [TestCase(180, true)]

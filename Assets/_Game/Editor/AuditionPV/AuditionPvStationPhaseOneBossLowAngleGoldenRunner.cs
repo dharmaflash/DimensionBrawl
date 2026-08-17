@@ -132,7 +132,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                 ValidateBatchCommandLine(Environment.GetCommandLineArgs());
                 BeginCapture(
                     batchMode: true,
-                    ResolveRequestedTakeOrdinal(Environment.GetCommandLineArgs()));
+                    ResolveRequestedTakeOrdinal(Environment.GetCommandLineArgs()),
+                    ResolveApprovedEvidenceRequest(Environment.GetCommandLineArgs()));
             }
             catch (Exception exception)
             {
@@ -207,6 +208,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvStationPhaseOneBossLowAngleCapture.GetRailPreset(ordinal);
             return ordinal;
         }
+
+        internal static bool ResolveApprovedEvidenceRequest(
+            IEnumerable<string> arguments) => (arguments ?? Array.Empty<string>()).Any(value =>
+            string.Equals(value, "-pv60ApprovedEvidence", StringComparison.OrdinalIgnoreCase));
 
         internal static void EnsureNoDirtyOpenScenes()
         {
@@ -656,7 +661,10 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
         }
 
-        private static void BeginCapture(bool batchMode, int takeOrdinal)
+        private static void BeginCapture(
+            bool batchMode,
+            int takeOrdinal,
+            bool produceApprovedSixtySecondEvidence = false)
         {
             AuditionPvStationPhaseOneBossLowAngleCapture.GetRailPreset(takeOrdinal);
             if (SessionState.GetBool(SessionActiveKey, false)
@@ -747,6 +755,8 @@ namespace DimensionBrawl.Editor.AuditionPV
                     schema = StateSchema,
                     phase = RunnerPhase.AwaitingPlayMode.ToString(),
                     batchMode = batchMode,
+                    produceApprovedSixtySecondEvidence =
+                        produceApprovedSixtySecondEvidence,
                     startedAtUtc = startedAtUtc.ToString("O"),
                     outputRoot = AuditionPvCaptureContract.OutputRoot,
                     currentTakeIndex = 0,
@@ -1191,6 +1201,36 @@ namespace DimensionBrawl.Editor.AuditionPV
                 captureCoreSha256,
                 semanticArtifacts,
                 startedAtUtc);
+            if (state.produceApprovedSixtySecondEvidence)
+            {
+                AuditionPvSixtySecondEvidenceBundle evidence =
+                    AuditionPvSixtySecondEvidenceProducer.Produce(
+                        new AuditionPvSixtySecondEvidenceRequest
+                        {
+                            captureCoreManifest = coreManifest,
+                            expectedCaptureCoreSha256 = captureCoreSha256,
+                            sourceShotId = AuditionPvStationPhaseOneBossLowAngleCapture.ShotId,
+                            sourceRangeStartFrame =
+                                AuditionPvStationPhaseOneBossLowAngleCapture.FirstSourceFrame,
+                            sourceRangeEndFrame =
+                                AuditionPvStationPhaseOneBossLowAngleCapture.LastSourceFrame,
+                            selectStartFrame =
+                                AuditionPvStationPhaseOneBossLowAngleCapture.SelectedFirstSourceFrame,
+                            selectEndFrame =
+                                AuditionPvStationPhaseOneBossLowAngleCapture.SelectedLastSourceFrame,
+                            runtimeWorkloadSealPath = take.runtimeWorkloadSealPath,
+                            graphicsRootDirectory =
+                                AuditionPvSixtySecondGateManifestValidator.ProductionGraphicsRoot,
+                            reviewRootDirectory =
+                                AuditionPvSixtySecondGateManifestValidator.ProductionReviewRoot,
+                            approvedSourceRange = true,
+                            cleanPlate = false,
+                            linkedCleanPlateConfirmed = false
+                        });
+                tests = AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
+                    tests,
+                    evidence);
+            }
             AuditionPvCaptureManifest manifest = CreateCaptureManifest(
                 state,
                 take,
@@ -1960,6 +2000,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string schema = string.Empty;
             public string phase = string.Empty;
             public bool batchMode;
+            public bool produceApprovedSixtySecondEvidence;
             public string startedAtUtc = string.Empty;
             public string outputRoot = string.Empty;
             public int currentTakeIndex;
@@ -1995,6 +2036,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string captureId = string.Empty;
             public string outputDirectory = string.Empty;
             public bool complete;
+            public string runtimeWorkloadSealPath = string.Empty;
             public RuntimeProof runtimeProof;
         }
 
@@ -2183,6 +2225,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private AuditionPvStationPhaseOneBossLowAngleDirector director;
         private AuditionPvRecorderSettingsBundle recorderSettings;
         private RecorderController recorderController;
+        private AuditionPvRuntimeWorkloadCaptureSession runtimeWorkloadCapture;
         private Exception updateFailure;
         private bool armSourceFrameZero;
         private bool beganShot;
@@ -2274,6 +2317,19 @@ namespace DimensionBrawl.Editor.AuditionPV
                 .AttachToFreshActiveScene(take.takeOrdinal);
             proof.freshSceneValidated = director.IsPrepared;
             director.FramePresented += HandleFramePresented;
+            runtimeWorkloadCapture = AuditionPvRuntimeWorkloadCaptureSession.Open(
+                new AuditionPvRuntimeWorkloadCaptureConfig
+                {
+                    captureId = take.captureId,
+                    captureOutputDirectory = take.outputDirectory,
+                    sourceShotId =
+                        AuditionPvStationPhaseOneBossLowAngleCapture.ShotId,
+                    sourceRangeStartFrame =
+                        AuditionPvStationPhaseOneBossLowAngleCapture.FirstSourceFrame,
+                    sourceRangeEndFrame =
+                        AuditionPvStationPhaseOneBossLowAngleCapture.LastSourceFrame,
+                    captureHudEvidence = false
+                });
             recorderSettings = AuditionPvRecorderSettingsFactory
                 .CreateLosslessPngSequence(
                     take.outputDirectory,
@@ -2344,10 +2400,13 @@ namespace DimensionBrawl.Editor.AuditionPV
                 throw new InvalidOperationException(
                     "Recorder did not stop after raw600/source f599.");
             }
+            take.runtimeWorkloadSealPath = runtimeWorkloadCapture.Complete();
+            runtimeWorkloadCapture = null;
         }
 
         private void HandleFramePresented(int sourceFrame)
         {
+            runtimeWorkloadCapture?.CapturePresentedFrame(sourceFrame);
             proof.presentedFramesExact &= sourceFrame == nextSourceFrame;
             proof.presentationClockExact &= PresentationClock.IsManuallyDriven
                 && Mathf.Abs(
@@ -2426,6 +2485,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.presentationClockReleased = !PresentationClock.IsManuallyDriven;
                 proof.cadenceSuspensionCountAfterRestore =
                     BossCombatCadenceScheduler.ExternalSuspensionCount;
+            });
+            CaptureFailure(ref firstFailure, () =>
+            {
+                runtimeWorkloadCapture?.Dispose();
+                runtimeWorkloadCapture = null;
             });
             CaptureFailure(ref firstFailure, () =>
             {

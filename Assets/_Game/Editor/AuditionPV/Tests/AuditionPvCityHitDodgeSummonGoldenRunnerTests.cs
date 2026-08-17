@@ -60,6 +60,57 @@ namespace DimensionBrawl.Editor.AuditionPV.Tests
         }
 
         [Test]
+        public void ApprovedEvidenceFlag_IsExplicitAndCaseInsensitive()
+        {
+            Assert.That(
+                AuditionPvCityHitDodgeSummonGoldenRunner
+                    .ResolveApprovedEvidenceRequest(Array.Empty<string>()),
+                Is.False);
+            Assert.That(
+                AuditionPvCityHitDodgeSummonGoldenRunner
+                    .ResolveApprovedEvidenceRequest(
+                        new[] { "Unity", "-Pv60ApprovedEvidence" }),
+                Is.True);
+        }
+
+        [Test]
+        public void ApprovedEvidencePipeline_SealsCanonicalRangeBeforeManifest()
+        {
+            string source = File.ReadAllText(ProjectAbsolutePath(
+                AuditionPvCityHitDodgeSummonCapture.RunnerScriptPath));
+
+            Assert.That(source, Does.Contain(
+                "AuditionPvRuntimeWorkloadCaptureSession.Open("));
+            Assert.That(source, Does.Contain("sourceRangeStartFrame ="));
+            Assert.That(source, Does.Contain(
+                "AuditionPvCityHitDodgeSummonCapture.FirstSourceFrame"));
+            Assert.That(source, Does.Contain("sourceRangeEndFrame ="));
+            Assert.That(source, Does.Contain(
+                "AuditionPvCityHitDodgeSummonCapture.LastSourceFrame"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.CapturePresentedFrame(sourceFrame);"));
+            Assert.That(source, Does.Contain(
+                "state.runtimeWorkloadSealPath = runtimeWorkloadCapture.Complete();"));
+            Assert.That(source, Does.Contain(
+                "runtimeWorkloadCapture?.Dispose();"));
+            Assert.That(source, Does.Contain(
+                "approvedSourceRange = true"));
+
+            int produce = source.IndexOf(
+                "AuditionPvSixtySecondEvidenceProducer.Produce(",
+                StringComparison.Ordinal);
+            int merge = source.IndexOf(
+                ".MergeCaptureTestResults(tests, evidence);",
+                StringComparison.Ordinal);
+            int write = source.IndexOf(
+                "AuditionPvCaptureManifestWriter.WriteNew(manifest);",
+                StringComparison.Ordinal);
+            Assert.That(produce, Is.GreaterThanOrEqualTo(0));
+            Assert.That(merge, Is.GreaterThan(produce));
+            Assert.That(write, Is.GreaterThan(merge));
+        }
+
+        [Test]
         public void GateEvidence_WritesExactSuiteNamesAndPinnedArtifacts()
         {
             AuditionPvCityHitDodgeSummonRuntimeProof proof =

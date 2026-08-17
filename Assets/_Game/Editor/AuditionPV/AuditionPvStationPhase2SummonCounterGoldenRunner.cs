@@ -41,6 +41,19 @@ namespace DimensionBrawl.Editor.AuditionPV
         internal const int RawLastShotFrame =
             AuditionPvStationPhase2SummonCounterCapture.ExpectedFrameCount;
         internal const int ExpectedRawFrameCount = RawLastShotFrame + 1;
+        // The production EDL reuses the first atomic range for both S070 and
+        // S080, then overlaps it with the tier-3 ultimate range.  Keep the
+        // physical source/handle coordinates explicit so capture-time
+        // workload seals and post-capture evidence can never silently widen
+        // either atomic take to the whole G06 shot.
+        internal const int S070S080SourceRangeStartFrame = 0;
+        internal const int S070S080SourceRangeEndFrame = 659;
+        internal const int S070S080SelectStartFrame = 180;
+        internal const int S070S080SelectEndFrame = 479;
+        internal const int S080UltimateSourceRangeStartFrame = 60;
+        internal const int S080UltimateSourceRangeEndFrame = 719;
+        internal const int S080UltimateSelectStartFrame = 240;
+        internal const int S080UltimateSelectEndFrame = 539;
 
         private const string SessionActiveKey =
             "DimensionBrawl.AuditionPV.G06GoldenRunner.Active";
@@ -541,6 +554,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                     schema = RunnerSchema,
                     phase = RunnerPhase.AwaitingPlayMode.ToString(),
                     batchMode = batchMode,
+                    produceApprovedSixtySecondEvidence = batchMode &&
+                        Environment.GetCommandLineArgs().Any(value => string.Equals(
+                            value,
+                            "-pv60ApprovedEvidence",
+                            StringComparison.OrdinalIgnoreCase)),
                     startedAtUtc = startedAtUtc.ToString("O"),
                     captureId = output.captureId,
                     outputRoot = output.outputRoot,
@@ -1009,6 +1027,34 @@ namespace DimensionBrawl.Editor.AuditionPV
             AuditionPvTestResult[] results = ordinaryResults
                 .Concat(gateResults)
                 .ToArray();
+            if (state.produceApprovedSixtySecondEvidence)
+            {
+                AuditionPvSixtySecondEvidenceBundle sharedS070S080Evidence =
+                    ProduceApprovedEvidence(
+                        captureCoreManifest,
+                        captureCoreSha256,
+                        S070S080SourceRangeStartFrame,
+                        S070S080SourceRangeEndFrame,
+                        S070S080SelectStartFrame,
+                        S070S080SelectEndFrame,
+                        state.runtimeWorkloadSealPath);
+                results = AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
+                    results,
+                    sharedS070S080Evidence);
+
+                AuditionPvSixtySecondEvidenceBundle s080UltimateEvidence =
+                    ProduceApprovedEvidence(
+                        captureCoreManifest,
+                        captureCoreSha256,
+                        S080UltimateSourceRangeStartFrame,
+                        S080UltimateSourceRangeEndFrame,
+                        S080UltimateSelectStartFrame,
+                        S080UltimateSelectEndFrame,
+                        state.runtimeWorkloadSealPath);
+                results = AuditionPvSixtySecondEvidenceProducer.MergeCaptureTestResults(
+                    results,
+                    s080UltimateEvidence);
+            }
             AuditionPvCaptureManifest manifest =
                 AuditionPvCaptureManifestFactory.CreateForRoot(
                     state.captureId,
@@ -1037,6 +1083,37 @@ namespace DimensionBrawl.Editor.AuditionPV
             state.phase = RunnerPhase.Complete.ToString();
             state.runtimeProof = proof;
             SaveState(statePath, state);
+        }
+
+        private static AuditionPvSixtySecondEvidenceBundle ProduceApprovedEvidence(
+            AuditionPvCaptureManifest captureCoreManifest,
+            string captureCoreSha256,
+            int sourceRangeStartFrame,
+            int sourceRangeEndFrame,
+            int selectStartFrame,
+            int selectEndFrame,
+            string runtimeWorkloadSealPath)
+        {
+            return AuditionPvSixtySecondEvidenceProducer.Produce(
+                new AuditionPvSixtySecondEvidenceRequest
+                {
+                    captureCoreManifest = captureCoreManifest,
+                    expectedCaptureCoreSha256 = captureCoreSha256,
+                    sourceShotId =
+                        AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    sourceRangeStartFrame = sourceRangeStartFrame,
+                    sourceRangeEndFrame = sourceRangeEndFrame,
+                    selectStartFrame = selectStartFrame,
+                    selectEndFrame = selectEndFrame,
+                    runtimeWorkloadSealPath = runtimeWorkloadSealPath,
+                    graphicsRootDirectory =
+                        AuditionPvSixtySecondGateManifestValidator.ProductionGraphicsRoot,
+                    reviewRootDirectory =
+                        AuditionPvSixtySecondGateManifestValidator.ProductionReviewRoot,
+                    approvedSourceRange = true,
+                    cleanPlate = false,
+                    linkedCleanPlateConfirmed = false
+                });
         }
 
         internal static void ValidateRuntimeProof(RuntimeProof proof)
@@ -2164,6 +2241,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public string schema = string.Empty;
             public string phase = string.Empty;
             public bool batchMode;
+            public bool produceApprovedSixtySecondEvidence;
             public string startedAtUtc = string.Empty;
             public string captureId = string.Empty;
             public string outputRoot = string.Empty;
@@ -2178,6 +2256,7 @@ namespace DimensionBrawl.Editor.AuditionPV
             public AuditionPvDependencyHash[] dependencyHashesAtStart =
                 Array.Empty<AuditionPvDependencyHash>();
             public string stationSceneSha256AtStart = string.Empty;
+            public string runtimeWorkloadSealPath = string.Empty;
             public RuntimeProof runtimeProof = new();
             public string failure = string.Empty;
         }
@@ -2414,6 +2493,7 @@ namespace DimensionBrawl.Editor.AuditionPV
         private AuditionPvStationPhase2SummonCounterDirector director;
         private AuditionPvRecorderSettingsBundle recorderSettings;
         private RecorderController recorderController;
+        private AuditionPvRuntimeWorkloadCaptureSession runtimeWorkloadCapture;
         private Exception updateFailure;
         private bool armLogicalFrameZero;
         private bool beganLogicalShot;
@@ -2529,6 +2609,20 @@ namespace DimensionBrawl.Editor.AuditionPV
                     "G06 product-state director did not finish preparation.");
             }
 
+            runtimeWorkloadCapture = AuditionPvRuntimeWorkloadCaptureSession.Open(
+                new AuditionPvRuntimeWorkloadCaptureConfig
+                {
+                    captureId = state.captureId,
+                    captureOutputDirectory = outputDirectory,
+                    sourceShotId =
+                        AuditionPvStationPhase2SummonCounterCapture.ShotId,
+                    sourceRangeStartFrame =
+                        AuditionPvStationPhase2SummonCounterCapture.FirstFrame,
+                    sourceRangeEndFrame =
+                        AuditionPvStationPhase2SummonCounterCapture.LastFrame,
+                    captureHudEvidence = false
+                });
+
             recorderSettings =
                 AuditionPvRecorderSettingsFactory.CreateLosslessPngSequence(
                     outputDirectory,
@@ -2556,6 +2650,7 @@ namespace DimensionBrawl.Editor.AuditionPV
                 handleFrame++)
             {
                 yield return new WaitForEndOfFrame();
+                runtimeWorkloadCapture.CapturePresentedFrame(handleFrame);
                 proof.recorderPreHandleEndOfFrameCount++;
             }
 
@@ -2620,8 +2715,21 @@ namespace DimensionBrawl.Editor.AuditionPV
             // Logical f359 occupies canonical source f539. Keep recording and
             // let normal product coroutines advance for the complete 180-frame
             // posthandle until Recorder auto-stops at inclusive raw f720.
+            int recordedPostHandleFrames = 0;
+            for (; recordedPostHandleFrames <
+                   AuditionPvStationPhase2SummonCounterCapture.HandleFrameCount;
+                 recordedPostHandleFrames++)
+            {
+                if (!recorderController.IsRecording())
+                    throw new InvalidOperationException(
+                        "G06 Recorder stopped before the complete runtime-evidenced posthandle.");
+                yield return new WaitForEndOfFrame();
+                runtimeWorkloadCapture.CapturePresentedFrame(
+                    AuditionPvStationPhase2SummonCounterCapture.SelectEndFrame + 1 +
+                    recordedPostHandleFrames);
+            }
             while (recorderController.IsRecording()
-                && Time.realtimeSinceStartupAsDouble < deadline)
+                   && Time.realtimeSinceStartupAsDouble < deadline)
             {
                 yield return null;
             }
@@ -2635,11 +2743,15 @@ namespace DimensionBrawl.Editor.AuditionPV
             }
 
             proof.recordedPostHandleFrameCount =
-                AuditionPvStationPhase2SummonCounterCapture.HandleFrameCount;
+                recordedPostHandleFrames;
+            state.runtimeWorkloadSealPath = runtimeWorkloadCapture.Complete();
+            runtimeWorkloadCapture = null;
         }
 
         private void HandleFramePresented(int frameIndex)
         {
+            runtimeWorkloadCapture?.CapturePresentedFrame(
+                AuditionPvStationPhase2SummonCounterCapture.SelectStartFrame + frameIndex);
             proof.presentedFramesExact &= frameIndex == nextPresentedFrame;
             proof.presentationClockExact &= PresentationClock.IsManuallyDriven
                 && Mathf.Abs(
@@ -2826,6 +2938,11 @@ namespace DimensionBrawl.Editor.AuditionPV
                 proof.presentationClockReleased = !PresentationClock.IsManuallyDriven;
                 proof.cadenceSuspensionCountAfterRestore =
                     BossCombatCadenceScheduler.ExternalSuspensionCount;
+            });
+            CaptureFailure(ref firstFailure, () =>
+            {
+                runtimeWorkloadCapture?.Dispose();
+                runtimeWorkloadCapture = null;
             });
             CaptureFailure(ref firstFailure, () =>
             {
